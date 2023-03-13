@@ -1,3 +1,10 @@
+'''
+# GraphingLib
+
+Provides a simpler way to generate graphs with Matplotlib and an inclusion of certain Scipy
+functions to simplify the process of analysing data.
+'''
+
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,40 +15,17 @@ from matplotlib.colors import to_rgba
 
 
 class GraphingException(Exception):
+    '''
+    General exception raised for the GraphingLib module.
+    '''
     pass
-
-
-class Figure():
-    def __init__(self, size: tuple=(10,7)):
-        self.figure, self.axes = plt.subplots(figsize=size)
-        self.curves = []
-        self.labels = []
-        self.handles = []
-    
-    def add_curve(self, curve: list):
-        self.curves.append(curve)
-        self.labels.append(curve.label)
-
-    def generate_figure(self, legend=True, test=False):
-        if self.curves:
-            for curve in self.curves:
-                curve.plot_curve(self.axes)
-                self.handles.append(curve.handle)
-            if legend:
-                self.axes.legend(
-                    handles=self.handles,
-                    labels=self.labels,
-                    handler_map={Polygon:HandlerPatch(patch_func=histogram_legend_artist)}
-                    )
-            if not test:
-                plt.tight_layout()
-                plt.show()
-        else:
-            raise GraphingException('No curves to be plotted!')
 
 
 @dataclass
 class Curve():
+    '''
+    A general continuous curve.
+    '''
     xdata: list | np.ndarray
     ydata: list | np.ndarray
     color: str
@@ -60,6 +44,9 @@ class Curve():
 
 
 class Scatter(Curve):
+    '''
+    A general scatter plot.
+    '''
     def plot_curve(self, axes: plt.Axes):
         self.handle = axes.scatter(
             self.xdata,
@@ -70,11 +57,17 @@ class Scatter(Curve):
 
 
 class Dashed(Curve):
+    '''
+    A dashed curve derived from the Curve object.
+    '''
     pass
 
 
 @dataclass
 class Histogram():
+    '''
+    A histogram plot with minor changes to the lable icon.
+    '''
     xdata: list | np.ndarray
     bins: int
     label: str
@@ -101,6 +94,41 @@ class Histogram():
             histtype=self.hist_type,
             linewidth=self.line_width
             )
+
+
+class Figure():
+    '''
+    A general Matplotlib figure.
+    '''
+    def __init__(self, size: tuple=(10,7)):
+        self.figure, self.axes = plt.subplots(figsize=size)
+        self.curves = []
+        self.labels = []
+        self.handles = []
+    
+    def add_curve(self, curve: Curve):
+        '''
+        Adds a Curve object to the figure.
+        '''
+        self.curves.append(curve)
+        self.labels.append(curve.label)
+
+    def generate_figure(self, legend=True, test=False):
+        if self.curves:
+            for curve in self.curves:
+                curve.plot_curve(self.axes)
+                self.handles.append(curve.handle)
+            if legend:
+                self.axes.legend(
+                    handles=self.handles,
+                    labels=self.labels,
+                    handler_map={Polygon:HandlerPatch(patch_func=histogram_legend_artist)}
+                    )
+            if not test:
+                plt.tight_layout()
+                plt.show()
+        else:
+            raise GraphingException('No curves to be plotted!')
 
 
 def histogram_legend_artist(legend, orig_handle, xdescent, ydescent, width, height, fontsize):
