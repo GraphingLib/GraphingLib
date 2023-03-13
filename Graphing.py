@@ -10,8 +10,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 from matplotlib.patches import Polygon
-from matplotlib.legend_handler import HandlerPatch
+from matplotlib.legend_handler import HandlerPatch, HandlerLineCollection
 from matplotlib.colors import to_rgba
+from matplotlib.collections import LineCollection
+from Legend_artists import histogram_legend_artist
 
 
 class GraphingException(Exception):
@@ -35,7 +37,12 @@ class Curve:
         self.color = color
 
     def plot_curve(self, axes: plt.Axes):
-        self.handle, = axes.plot(self.xdata, self.ydata, color=self.color, label=self.label)
+        self.handle, = axes.plot(
+            self.xdata,
+            self.ydata,
+            color=self.color,
+            label=self.label
+        )
 
 
 class Scatter(Curve):
@@ -43,14 +50,26 @@ class Scatter(Curve):
     A general scatter plot.
     """
     def plot_curve(self, axes: plt.Axes):
-        self.handle = axes.scatter(self.xdata, self.ydata, color=self.color, label=self.label)
+        self.handle = axes.scatter(
+            self.xdata,
+            self.ydata,
+            color=self.color,
+            label=self.label
+        )
 
 
 class Dashed(Curve):
-    """
+    '''
     A dashed curve derived from the Curve object.
-    """
-    pass
+    '''
+    def plot_curve(self, axes: plt.Axes):
+        self.handle, = axes.plot(
+            self.xdata,
+            self.ydata,
+            color=self.color,
+            label=self.label,
+            linestyle='--'
+        )
 
 
 class FitFromPolynomial(Curve):
@@ -110,7 +129,7 @@ class Histogram:
     edge_color: str = "k"
     hist_type: str = "stepfilled"
     alpha: float = 1.0
-    line_width: int | float = 5
+    line_width: int | float = 2
 
     def plot_curve(self, axes: plt.Axes):
         xy = np.array([[0, 2, 2, 3, 3, 1, 1, 0, 0], [0, 0, 1, 1, 2, 2, 3, 3, 0]]).T
@@ -119,7 +138,7 @@ class Histogram:
             facecolor=to_rgba(self.face_color, self.alpha),
             edgecolor=to_rgba(self.edge_color, 1),
             linewidth=1
-            )
+        )
         axes.hist(
             self.xdata,
             bins=self.bins,
@@ -128,7 +147,17 @@ class Histogram:
             label=self.label,
             histtype=self.hist_type,
             linewidth=self.line_width
-            )
+        )
+
+
+@dataclass
+class HLines():
+    pass
+
+
+@dataclass
+class VLines():
+    pass
 
 
 class Figure:
@@ -157,18 +186,13 @@ class Figure:
                 self.axes.legend(
                     handles=self.handles,
                     labels=self.labels,
-                    handler_map={Polygon: HandlerPatch(patch_func=histogram_legend_artist)}
-                    )
+                    handler_map={
+                        Polygon: HandlerPatch(patch_func=histogram_legend_artist)#,
+                        # LineCollection: HandlerLineCollection()
+                    }
+                )
             if not test:
                 plt.tight_layout()
                 plt.show()
         else:
             raise GraphingException("No curves to be plotted!")
-
-
-def histogram_legend_artist(legend, orig_handle, xdescent, ydescent, width, height, fontsize):
-    xy = np.array([[0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 0], [0, 4, 4, 2.5, 2.5, 5, 5, 1.5, 1.5, 0, 0]]).T
-    xy[:, 0] = width * xy[:, 0] / 4 + xdescent
-    xy[:, 1] = height * xy[:, 1] / 5 - ydescent
-    patch = Polygon(xy, facecolor="silver", edgecolor="k")
-    return patch

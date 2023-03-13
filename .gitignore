@@ -2,3 +2,4 @@
 !/.gitignore
 !/Graphing_unittest.py
 !/Graphing.py
+!/Legend_artists.py
