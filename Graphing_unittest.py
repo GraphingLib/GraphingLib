@@ -1,8 +1,9 @@
 import unittest
-from Graphing import Figure, Curve, Scatter, GraphingException
+from Graphing import Figure, Curve, Scatter, GraphingException, Histogram
 from numpy import linspace, pi, sin, ndarray
 from matplotlib.axes import Axes
-from matplotlib.pyplot import subplots, close
+from matplotlib.pyplot import subplots
+from random import random
 
 
 class TestFigure(unittest.TestCase):
@@ -88,6 +89,32 @@ class TestScatter(unittest.TestCase):
 
     def test_curve_is_plotted(self):
         self.assertEqual(len(self.testAxes.collections), 1)
+
+
+class TestHisttogram(unittest.TestCase):
+    def setUp(self):
+        self.testHist = Histogram([random() for _ in range(100)], 20, 'Random Distribution', 'silver', 'k')
+    
+    def test_label_is_str(self):
+        self.assertIsInstance(self.testHist.label, str)
+
+    def test_xdata_is_list_or_ndarray(self):
+        self.assertIsInstance(self.testHist.xdata, list | ndarray)
+
+    def test_face_color_is_str(self):
+        self.assertIsInstance(self.testHist.face_color, str)
+
+    def test_edge_color_is_str(self):
+        self.assertIsInstance(self.testHist.edge_color, str)
+
+    def test_bins_is_int(self):
+        self.assertIsInstance(self.testHist.bins, int)
+
+    def test_alpha_is_float(self):
+        self.assertIsInstance(self.testHist.alpha, float)
+
+    def test_hist_type_is_str(self):
+        self.assertIsInstance(self.testHist.hist_type, str)
 
 
 if __name__ == '__main__':
