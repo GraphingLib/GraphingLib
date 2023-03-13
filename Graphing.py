@@ -32,9 +32,6 @@ class Figure():
                 plt.show()
         else:
             raise GraphingException('No curves to be plotted!')
-    
-    def generate_legend(self):
-        pass
 
 
 @dataclass
@@ -70,7 +67,7 @@ class Histogram():
     def plot_curve(self, axes: plt.Axes):
         axes.hist(self.xdata, bins=self.bins, color=self.color, label=self.label)
 
-def legend_artist(legend, orig_handle, xdescent, ydescent, width, height, fontsize):
+def histogram_legend_artist(legend, orig_handle, xdescent, ydescent, width, height, fontsize):
     xy = np.array([[0,0,1,1,2,2,3,3,4,4,0], [0,4,4,2.5,2.5,5,5,1.5,1.5,0,0]]).T
     xy[:,0] = width * xy[:,0] / 4 + xdescent
     xy[:,1] = height * xy[:,1] / 5 - ydescent
