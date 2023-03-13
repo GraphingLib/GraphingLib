@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 from matplotlib.patches import Polygon
+from matplotlib.legend_handler import HandlerPatch
 
 
 class GraphingException(Exception):
@@ -19,14 +20,18 @@ class Figure():
     def add_curve(self, curve: list):
         self.curves.append(curve)
         self.labels.append(curve.label)
-        self.handles.append(curve.handle)
 
     def generate_figure(self, legend=True, test=False):
         if self.curves:
             for curve in self.curves:
                 curve.plot_curve(self.axes)
+                self.handles.append(curve.handle)
             if legend:
-                self.generate_legend()
+                self.axes.legend(
+                    handles=self.handles,
+                    labels=self.labels,
+                    handler_map={Polygon:HandlerPatch(patch_func=histogram_legend_artist)}
+                    )
             if not test:
                 plt.tight_layout()
                 plt.show()
@@ -65,6 +70,8 @@ class Histogram():
     label: str
 
     def plot_curve(self, axes: plt.Axes):
+        xy = np.array([[0,2,2,3,3,1,1,0,0], [0,0,1,1,2,2,3,3,0]]).T
+        self.handle = Polygon(xy, facecolor='silver', edgecolor='k', linewidth=1)
         axes.hist(self.xdata, bins=self.bins, color=self.color, label=self.label)
 
 def histogram_legend_artist(legend, orig_handle, xdescent, ydescent, width, height, fontsize):
