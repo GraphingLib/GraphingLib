@@ -40,7 +40,7 @@ class Curve():
             self.ydata,
             color=self.color,
             label=self.label
-            )
+        )
 
 
 class Scatter(Curve):
@@ -53,14 +53,21 @@ class Scatter(Curve):
             self.ydata,
             color=self.color,
             label=self.label
-            )
+        )
 
 
 class Dashed(Curve):
     '''
     A dashed curve derived from the Curve object.
     '''
-    pass
+    def plot_curve(self, axes: plt.Axes):
+        self.hanlde, = axes.plot(
+            self.xdata,
+            self.ydata,
+            color=self.color,
+            label=self.label,
+            linestyle='--'
+        )
 
 
 @dataclass
@@ -84,7 +91,7 @@ class Histogram():
             facecolor=to_rgba(self.face_color, self.alpha),
             edgecolor=to_rgba(self.edge_color, 1),
             linewidth=1
-            )
+        )
         axes.hist(
             self.xdata,
             bins=self.bins,
@@ -93,7 +100,7 @@ class Histogram():
             label=self.label,
             histtype=self.hist_type,
             linewidth=self.line_width
-            )
+        )
 
 
 class Figure():
@@ -123,7 +130,7 @@ class Figure():
                     handles=self.handles,
                     labels=self.labels,
                     handler_map={Polygon:HandlerPatch(patch_func=histogram_legend_artist)}
-                    )
+                )
             if not test:
                 plt.tight_layout()
                 plt.show()
