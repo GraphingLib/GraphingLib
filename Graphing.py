@@ -10,8 +10,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
 from matplotlib.patches import Polygon
-from matplotlib.legend_handler import HandlerPatch
+from matplotlib.legend_handler import HandlerPatch, HandlerLineCollection
 from matplotlib.colors import to_rgba
+from matplotlib.collections import LineCollection
 from Legend_artists import histogram_legend_artist
 
 
@@ -141,7 +142,8 @@ class Figure():
                     handles=self.handles,
                     labels=self.labels,
                     handler_map={
-                        Polygon:HandlerPatch(patch_func=histogram_legend_artist)
+                        Polygon: HandlerPatch(patch_func=histogram_legend_artist)#,
+                        # LineCollection: HandlerLineCollection()
                     }
                 )
             if not test:
