@@ -1,2 +1,4 @@
-tests.py
-*.pyc
+*
+!/.gitignore
+!/Graphing_unittest.py
+!/Graphing.py
