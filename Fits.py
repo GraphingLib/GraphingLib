@@ -14,7 +14,7 @@ class FitFromPolynomial(Curve):
         self.coeffs = inversed_coeffs[::-1]
         self.cov_matrix = np.flip(inversed_cov_matrix)
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
-        self.function = self.get_polynomial_function()
+        self.function = self.polynomial_func_with_params()
         self.color = color
         self.label = label
         
@@ -38,9 +38,9 @@ class FitFromPolynomial(Curve):
     def format_power(power):
         return 'x^{0}'.format(power) if power != 0 else ''
 
-    def get_polynomial_function(self):
+    def polynomial_func_with_params(self):
         """
-        Returns a linear function using the given coefficients.
+        Returns a linear function using the class' coefficients.
         """
         return lambda x: sum(coeff * x**exponent for exponent, coeff in enumerate(self.coeffs))
     
@@ -59,7 +59,7 @@ class FitFromSine(Curve):
     def __init__(self, curve_to_be_fit: Curve, color: str, label: str):
         self.curve_to_be_fit = curve_to_be_fit
         self.calculate_parameters()
-        self.function = self.get_sine_func_with_params()
+        self.function = self.sine_func_with_params()
         self.color = color
         self.label = label
     
@@ -77,7 +77,7 @@ class FitFromSine(Curve):
     def sine_func_template(x, a, b, c, d):
             return a * np.sin(b*x + c) + d
     
-    def get_sine_func_with_params(self):
+    def sine_func_with_params(self):
         return lambda x: self.amplitude * np.sin(self.frequency_rad * x + self.phase) + self.vertical_shift
     
     def plot_curve(self, axes: plt.Axes):
