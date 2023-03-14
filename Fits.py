@@ -16,7 +16,7 @@ class FitFromPolynomial(Curve):
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
         self.function = self.polynomial_func_with_params()
         self.color = color
-        self.label = label
+        self.label = label + ' : ' + str(self)
         
     def __str__(self):
         coeff_chunks = []
@@ -61,10 +61,13 @@ class FitFromSine(Curve):
         self.calculate_parameters()
         self.function = self.sine_func_with_params()
         self.color = color
-        self.label = label
+        self.label = label + ' : ' + str(self)
     
     def __str__(self) -> str:
-        return f"{self.amplitude:.3f}sin({self.frequency_rad:.3f}x + {self.phase:.3f}) + {self.vertical_shift:.3f}"
+        part1 = f"{self.amplitude:.3f} sin({self.frequency_rad:.3f}x"
+        part2 = f" + {self.phase:.3f})" if self.phase >= 0 else f" - {abs(self.phase):.3f})"
+        part3 = f" + {self.vertical_shift:.3f}" if self.phase >= 0 else f" - {abs(self.vertical_shift):.3f}"
+        return part1 + part2 + part3
     
     def calculate_parameters(self):
         parameters, self.cov_matrix = curve_fit(self.sine_func_template,
