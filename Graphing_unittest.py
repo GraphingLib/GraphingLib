@@ -1,9 +1,11 @@
 import unittest
 from Graphing import Figure, Curve, Scatter, GraphingException, Histogram
+from Fits import FitFromPolynomial, FitFromSine
 from numpy import linspace, pi, sin, ndarray
 from matplotlib.axes import Axes
 from matplotlib.pyplot import subplots
 from random import random
+import numpy as np
 
 
 class TestFigure(unittest.TestCase):
@@ -116,6 +118,52 @@ class TestHisttogram(unittest.TestCase):
     def test_hist_type_is_str(self):
         self.assertIsInstance(self.testHist.hist_type, str)
 
+
+class TestFitFromPolynomial(unittest.TestCase):
+    def setUp(self):
+        x = linspace(0, 3*pi, 200)
+        self.scatter_first_degree = Scatter(x, 3*x + 2, 'k', 'Test Curve')
+        self.scatter_second_degree = Scatter(x, 4*x**2 - 3*x - 2, 'k', 'Test Curve')
+        self.fit_first_degree = FitFromPolynomial(self.scatter_first_degree, 1, 'k', 'First degree fit')
+        self.fit_second_degree = FitFromPolynomial(self.scatter_second_degree, 2, 'k', 'Second degree fit')
+    
+    def test_first_degree_coeffs(self):
+        self.assertListEqual([round(i, 5) for i in list(self.fit_first_degree.coeffs)], [2,3])
+    
+    def test_first_degree_cov(self):
+        self.assertIsInstance(self.fit_first_degree.cov_matrix, np.ndarray)
+        self.assertEqual(self.fit_first_degree.cov_matrix.shape, (2,2))
+    
+    def test_first_degree_cov(self):
+        self.assertIsInstance(self.fit_first_degree.standard_deviation, np.ndarray)
+        self.assertEqual(self.fit_first_degree.standard_deviation.shape, (2,))
+    
+    def test_first_degree_string(self):
+        self.assertEqual(str(self.fit_first_degree), "f(x) = 3.0x^1 + 2.0")
+    
+    def test_first_degree_functions(self):
+        self.assertEqual(round(self.fit_first_degree.function(5), 5), 17)
+    
+    def test_second_degree_cov(self):
+        self.assertIsInstance(self.fit_second_degree.cov_matrix, np.ndarray)
+        self.assertEqual(self.fit_second_degree.cov_matrix.shape, (3,3))
+    
+    def test_second_degree_cov(self):
+        self.assertIsInstance(self.fit_second_degree.cov_matrix, np.ndarray)
+        self.assertEqual(self.fit_second_degree.cov_matrix.shape, (3,3))
+    
+    def test_second_degree_cov(self):
+        self.assertIsInstance(self.fit_second_degree.standard_deviation, np.ndarray)
+        self.assertEqual(self.fit_second_degree.standard_deviation.shape, (3,))
+    
+    def test_second_degree_coeffs(self):
+        self.assertListEqual([round(i, 5) for i in list(self.fit_second_degree.coeffs)], [-2,-3,4])
+    
+    def test_second_degree_string(self):
+        self.assertEqual(str(self.fit_second_degree), "f(x) = 4.0x^2 - 3.0x^1 - 2.0")
+    
+    def test_second_degree_functions(self):
+        self.assertEqual(round(self.fit_second_degree.function(5), 5), 83)
 
 if __name__ == '__main__':
     unittest.main()
