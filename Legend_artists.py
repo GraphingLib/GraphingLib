@@ -1,5 +1,4 @@
 from matplotlib.patches import Polygon, Rectangle
-from matplotlib.collections import LineCollection
 from numpy import array
 
 

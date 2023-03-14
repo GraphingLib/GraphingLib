@@ -119,7 +119,7 @@ class TestHisttogram(unittest.TestCase):
 
 class TestHlines(unittest.TestCase):
     def setUp(self):
-        self.testHlines = Hlines(1, 0, 1)
+        self.testHlines = Hlines(1, 0, 1, 'Test Hlines')
 
     def test_y_is_list_ndarray_float_int(self):
         self.assertIsInstance(self.testHlines.y, list | ndarray | float | int)
@@ -136,25 +136,31 @@ class TestHlines(unittest.TestCase):
     def test_linestyles_is_str_list_or_none(self):
         self.assertIsInstance(self.testHlines.linestyles, list | str | None)
 
+    def test_label_is_str(self):
+        self.assertIsInstance(self.testHlines.label, str)
+
 
 class TestVlines(unittest.TestCase):
     def setUp(self):
-        self.testHlines = Vlines(1, 0, 1)
+        self.testVlines = Vlines(1, 0, 1, 'Test Vlines')
 
     def test_y_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.x, list | ndarray | float | int)
+        self.assertIsInstance(self.testVlines.x, list | ndarray | float | int)
 
     def test_xmin_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.ymin, list | ndarray | float | int)
+        self.assertIsInstance(self.testVlines.ymin, list | ndarray | float | int)
 
     def test_ymin_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.ymin, list | ndarray | float | int)
+        self.assertIsInstance(self.testVlines.ymin, list | ndarray | float | int)
 
     def test_colors_is_str_list_or_none(self):
-        self.assertIsInstance(self.testHlines.colors, list | str | None)
+        self.assertIsInstance(self.testVlines.colors, list | str | None)
 
     def test_linestyles_is_str_list_or_none(self):
-        self.assertIsInstance(self.testHlines.linestyles, list | str | None)
+        self.assertIsInstance(self.testVlines.linestyles, list | str | None)
+
+    def test_label_is_str(self):
+        self.assertIsInstance(self.testVlines.label, str)
 
 
 class TestDashed(unittest.TestCase):

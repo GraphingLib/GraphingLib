@@ -12,7 +12,6 @@ import scipy as sp
 from matplotlib.patches import Polygon, Rectangle
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.colors import to_rgba
-from matplotlib.collections import LineCollection
 from Legend_artists import histogram_legend_artist, hlines_legend_artist
 
 
@@ -158,6 +157,7 @@ class Hlines():
     y: list | np.ndarray
     xmin: list | np.ndarray
     xmax: list | np.ndarray
+    label: str
     colors: list | str = None
     linestyles: list[str] | str = 'solid'
 
@@ -179,6 +179,7 @@ class Vlines():
     x: list | np.ndarray
     ymin: list | np.ndarray
     ymax: list | np.ndarray
+    label: str
     colors: list | str = None
     linestyles: list[str] | str = 'solid'
 
@@ -219,8 +220,8 @@ class Figure:
                     handles=self.handles,
                     labels=self.labels,
                     handler_map={
-                        Polygon: HandlerPatch(patch_func=histogram_legend_artist),
-                        Rectangle :HandlerPatch(patch_func=hlines_legend_artist)
+                        Polygon: HandlerPatch(patch_func=histogram_legend_artist)#,
+                        # Rectangle :HandlerPatch(patch_func=hlines_legend_artist)
                     }
                 )
             if not test:
