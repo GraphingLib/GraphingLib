@@ -10,7 +10,9 @@ class FitFromPolynomial(Curve):
     
     def __init__(self, curve_to_be_fit: Curve, degree: int, color: str, label: str):
         self.curve_to_be_fit = curve_to_be_fit
-        self.coeffs = np.polyfit(self.curve_to_be_fit.xdata, self.curve_to_be_fit.ydata, degree)[::-1]
+        inversed_coeffs, inversed_cov_matrix = np.polyfit(self.curve_to_be_fit.xdata, self.curve_to_be_fit.ydata, degree, cov=True)
+        self.coeffs = inversed_coeffs[::-1]
+        self.cov_matrix = np.flip(inversed_cov_matrix)
         self.function = self.get_polynomial_function()
         self.color = color
         self.label = label
