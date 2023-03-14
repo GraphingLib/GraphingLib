@@ -151,15 +151,15 @@ class Histogram:
 
 
 @dataclass
-class HLines():
+class Hlines():
     """
     Horizontal lines.
     """
     y: list | np.ndarray
     xmin: list | np.ndarray
     xmax: list | np.ndarray
-    colors: list = None
-    linestyles: list[str] = 'solid'
+    colors: list | str = None
+    linestyles: list[str] | str = 'solid'
 
     def plot_curve(self, axes):
         self.handle = axes.hlines(
@@ -172,15 +172,15 @@ class HLines():
 
 
 @dataclass
-class VLines():
+class Vlines():
     """
     Vertical lines.
     """
     x: list | np.ndarray
     ymin: list | np.ndarray
     ymax: list | np.ndarray
-    colors: list = None
-    linestyles: list[str] = 'solid'
+    colors: list | str = None
+    linestyles: list[str] | str = 'solid'
 
     def plot_curve(self, axes):
         self.handle = axes.vlines(

@@ -1,5 +1,5 @@
 import unittest
-from Graphing import Figure, Curve, Scatter, GraphingException, Histogram
+from Graphing import *
 from numpy import linspace, pi, sin, ndarray
 from matplotlib.axes import Axes
 from matplotlib.pyplot import subplots
@@ -115,6 +115,55 @@ class TestHisttogram(unittest.TestCase):
 
     def test_hist_type_is_str(self):
         self.assertIsInstance(self.testHist.hist_type, str)
+
+
+class TestHlines(unittest.TestCase):
+    def setUp(self):
+        self.testHlines = Hlines(1, 0, 1)
+
+    def test_y_is_list_ndarray_float_int(self):
+        self.assertIsInstance(self.testHlines.y, list | ndarray | float | int)
+
+    def test_xmin_is_list_ndarray_float_int(self):
+        self.assertIsInstance(self.testHlines.xmin, list | ndarray | float | int)
+
+    def test_ymin_is_list_ndarray_float_int(self):
+        self.assertIsInstance(self.testHlines.xmin, list | ndarray | float | int)
+
+    def test_colors_is_str_list_or_none(self):
+        self.assertIsInstance(self.testHlines.colors, list | str | None)
+
+    def test_linestyles_is_str_list_or_none(self):
+        self.assertIsInstance(self.testHlines.linestyles, list | str | None)
+
+
+class TestVlines(unittest.TestCase):
+    def setUp(self):
+        self.testHlines = Vlines(1, 0, 1)
+
+    def test_y_is_list_ndarray_float_int(self):
+        self.assertIsInstance(self.testHlines.x, list | ndarray | float | int)
+
+    def test_xmin_is_list_ndarray_float_int(self):
+        self.assertIsInstance(self.testHlines.ymin, list | ndarray | float | int)
+
+    def test_ymin_is_list_ndarray_float_int(self):
+        self.assertIsInstance(self.testHlines.ymin, list | ndarray | float | int)
+
+    def test_colors_is_str_list_or_none(self):
+        self.assertIsInstance(self.testHlines.colors, list | str | None)
+
+    def test_linestyles_is_str_list_or_none(self):
+        self.assertIsInstance(self.testHlines.linestyles, list | str | None)
+
+
+class TestDashed(unittest.TestCase):
+    def setUp(self):
+        x = linspace(0, 3*pi, 200)
+        self.testDashed = Dashed(x, sin(x), 'k', 'Test Dashed')
+
+    def test_dashed_is_curve(self):
+        self.assertIsInstance(self.testDashed, Curve)
 
 
 if __name__ == '__main__':
