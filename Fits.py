@@ -13,6 +13,7 @@ class FitFromPolynomial(Curve):
         inversed_coeffs, inversed_cov_matrix = np.polyfit(self.curve_to_be_fit.xdata, self.curve_to_be_fit.ydata, degree, cov=True)
         self.coeffs = inversed_coeffs[::-1]
         self.cov_matrix = np.flip(inversed_cov_matrix)
+        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
         self.function = self.get_polynomial_function()
         self.color = color
         self.label = label
@@ -70,6 +71,7 @@ class FitFromSine(Curve):
                                                 self.curve_to_be_fit.xdata,
                                                 self.curve_to_be_fit.ydata)
         self.amplitude, self.frequency_rad, self.phase, self.vertical_shift = parameters
+        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
     
     @staticmethod
     def sine_func_template(x, a, b, c, d):
