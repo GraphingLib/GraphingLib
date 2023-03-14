@@ -1,5 +1,6 @@
 from Graphing import Curve
 import numpy as np
+import numpy.typing as npt
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
@@ -16,7 +17,7 @@ class FitFromPolynomial(Curve):
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
         self.function = self.polynomial_func_with_params()
         self.color = color
-        self.label = label + ' : ' + str(self)
+        self.label = label + ' : ' + 'f(x) = ' + str(self)
         
     def __str__(self):
         coeff_chunks = []
@@ -28,7 +29,7 @@ class FitFromPolynomial(Curve):
             coeff_chunks.append(self.format_coeff(coeff))
             power_chunks.append(self.format_power(power))
         coeff_chunks[0] = coeff_chunks[0].lstrip("+ ")
-        return 'f(x) = '+''.join([coeff_chunks[i] + power_chunks[i] for i in range(len(coeff_chunks))])
+        return ''.join([coeff_chunks[i] + power_chunks[i] for i in range(len(coeff_chunks))])
 
     @staticmethod
     def format_coeff(coeff):
@@ -56,12 +57,13 @@ class FitFromSine(Curve):
     Create a curve fit (continuous Curve) from an existing curve object using a sinusoidal fit.
     """
     
-    def __init__(self, curve_to_be_fit: Curve, color: str, label: str):
+    def __init__(self, curve_to_be_fit: Curve, color: str, label: str, guesses: npt.ArrayLike=None):
         self.curve_to_be_fit = curve_to_be_fit
+        self.guesses = guesses
         self.calculate_parameters()
         self.function = self.sine_func_with_params()
         self.color = color
-        self.label = label + ' : ' + str(self)
+        self.label = label + ' : ' + 'f(x) = ' + str(self)
     
     def __str__(self) -> str:
         part1 = f"{self.amplitude:.3f} sin({self.frequency_rad:.3f}x"
@@ -72,7 +74,7 @@ class FitFromSine(Curve):
     def calculate_parameters(self):
         parameters, self.cov_matrix = curve_fit(self.sine_func_template,
                                                 self.curve_to_be_fit.xdata,
-                                                self.curve_to_be_fit.ydata)
+                                                self.curve_to_be_fit.ydata, p0=self.guesses)
         self.amplitude, self.frequency_rad, self.phase, self.vertical_shift = parameters
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
     
@@ -88,3 +90,4 @@ class FitFromSine(Curve):
         xdata = np.linspace(self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points)
         ydata = self.function(xdata)
         self.handle, = axes.plot(xdata, ydata, color=self.color, label=self.label)
+        
