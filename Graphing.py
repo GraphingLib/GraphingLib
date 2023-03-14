@@ -9,11 +9,11 @@ from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy as sp
-from matplotlib.patches import Polygon
-from matplotlib.legend_handler import HandlerPatch, HandlerLineCollection
+from matplotlib.patches import Polygon, Rectangle
+from matplotlib.legend_handler import HandlerPatch
 from matplotlib.colors import to_rgba
 from matplotlib.collections import LineCollection
-from Legend_artists import histogram_legend_artist
+from Legend_artists import histogram_legend_artist, hlines_legend_artist
 
 
 class GraphingException(Exception):
@@ -59,9 +59,9 @@ class Scatter(Curve):
 
 
 class Dashed(Curve):
-    '''
+    """
     A dashed curve derived from the Curve object.
-    '''
+    """
     def plot_curve(self, axes: plt.Axes):
         self.handle, = axes.plot(
             self.xdata,
@@ -152,12 +152,44 @@ class Histogram:
 
 @dataclass
 class HLines():
-    pass
+    """
+    Horizontal lines.
+    """
+    y: list | np.ndarray
+    xmin: list | np.ndarray
+    xmax: list | np.ndarray
+    colors: list = None
+    linestyles: list[str] = 'solid'
+
+    def plot_curve(self, axes):
+        self.handle = axes.hlines(
+            self.y,
+            self.xmin,
+            self.xmax,
+            colors=self.colors,
+            linestyles=self.linestyles
+        )
 
 
 @dataclass
 class VLines():
-    pass
+    """
+    Vertical lines.
+    """
+    x: list | np.ndarray
+    ymin: list | np.ndarray
+    ymax: list | np.ndarray
+    colors: list = None
+    linestyles: list[str] = 'solid'
+
+    def plot_curve(self, axes):
+        self.handle = axes.vlines(
+            self.x,
+            self.ymin,
+            self.ymax,
+            colors=self.colors,
+            linestyles=self.linestyles
+        )
 
 
 class Figure:
@@ -187,8 +219,8 @@ class Figure:
                     handles=self.handles,
                     labels=self.labels,
                     handler_map={
-                        Polygon: HandlerPatch(patch_func=histogram_legend_artist)#,
-                        # LineCollection: HandlerLineCollection()
+                        Polygon: HandlerPatch(patch_func=histogram_legend_artist),
+                        Rectangle :HandlerPatch(patch_func=hlines_legend_artist)
                     }
                 )
             if not test:
