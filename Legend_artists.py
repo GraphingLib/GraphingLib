@@ -1,7 +1,8 @@
-from matplotlib.patches import Polygon, Rectangle, Patch
+from matplotlib.patches import Polygon
 from matplotlib.lines import Line2D
 from numpy import array, full_like
 from matplotlib.legend_handler import HandlerLineCollection
+from matplotlib.collections import LineCollection
 
 
 class HandlerMultipleLines(HandlerLineCollection):
@@ -10,7 +11,6 @@ class HandlerMultipleLines(HandlerLineCollection):
     """
     def create_artists(self, legend, orig_handle, xdescent, ydescent,
                                         width, height, fontsize, trans):
-        # figure out how many lines there are
         numlines = len(orig_handle.get_segments())
         xdata, xdata_marker = self.get_xdata(legend,
             xdescent,
@@ -43,6 +43,42 @@ class HandlerMultipleLines(HandlerLineCollection):
             line.set_linewidth(lw)
             lines.append(line)
         return lines
+
+
+class HandlerMultipleVerticalLines(HandlerLineCollection):
+    def create_artists(self, legend, orig_handle, xdescent, ydescent,
+                                        width, height, fontsize, trans):
+        numlines = len(orig_handle.get_segments())
+        lines = []
+        xdata = array([width / (numlines + 1), width / (numlines + 1)])
+        ydata = array([0, height])
+        print(width)
+        for i in range(numlines):
+            line = Line2D(xdata * (numlines - i) - xdescent, ydata - ydescent)
+            self.update_prop(line, orig_handle, legend)
+            try:
+                color = orig_handle.get_colors()[i]
+            except IndexError:
+                color = orig_handle.get_colors()[0]
+            try:
+                dashes = orig_handle.get_dashes()[i]
+            except IndexError:
+                dashes = orig_handle.get_dashes()[0]
+            try:
+                lw = orig_handle.get_linewidths()[i]
+            except IndexError:
+                lw = orig_handle.get_linewidths()[0]
+            if dashes[1] is not None:
+                line.set_dashes(dashes[1])
+            line.set_color(color)
+            line.set_transform(trans)
+            line.set_linewidth(lw)
+            lines.append(line)
+        return lines
+
+
+class VerticalLineCollection(LineCollection):
+    pass
 
 
 def histogram_legend_artist(legend, orig_handle, xdescent, ydescent, width, height, fontsize):

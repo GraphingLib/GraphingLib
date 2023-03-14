@@ -8,11 +8,11 @@ functions to simplify the process of analysing data.
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy as sp
-from matplotlib.patches import Polygon, Rectangle
+from matplotlib.patches import Polygon
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.colors import to_rgba
-from Legend_artists import histogram_legend_artist, hlines_legend_artist
+from Legend_artists import *
+from matplotlib.collections import LineCollection
 
 
 class GraphingException(Exception):
@@ -162,13 +162,23 @@ class Hlines():
     linestyles: list[str] | str = 'solid'
 
     def plot_curve(self, axes):
-        self.handle = axes.hlines(
-            self.y,
-            self.xmin,
-            self.xmax,
-            colors=self.colors,
-            linestyles=self.linestyles
-        )
+        if type(self.y) == list and len(self.y) > 1:
+            axes.hlines(
+                self.y,
+                self.xmin,
+                self.xmax,
+                colors=self.colors,
+                linestyles=self.linestyles
+            )
+            self.handle = LineCollection([[(0,0)]] * (len(self.y) if len(self.y) <= 3 else 3), color=self.colors, linestyle='solid')
+        else:
+            self.handle = axes.hlines(
+                self.y,
+                self.xmin,
+                self.xmax,
+                colors=self.colors,
+                linestyles=self.linestyles
+            )
 
 
 @dataclass
@@ -184,13 +194,23 @@ class Vlines():
     linestyles: list[str] | str = 'solid'
 
     def plot_curve(self, axes):
-        self.handle = axes.vlines(
-            self.x,
-            self.ymin,
-            self.ymax,
-            colors=self.colors,
-            linestyles=self.linestyles
-        )
+        if type(self.x) == list and len(self.x) > 1:
+            axes.vlines(
+                self.x,
+                self.ymin,
+                self.ymax,
+                colors=self.colors,
+                linestyles=self.linestyles
+            )
+            self.handle = VerticalLineCollection([[(0,0)]] * (len(self.x) if len(self.x) <= 4 else 4), color=self.colors, linestyle='solid')
+        else:
+            self.handle = axes.vlines(
+                self.x,
+                self.ymin,
+                self.ymax,
+                colors=self.colors,
+                linestyles=self.linestyles
+            )
 
 
 class Figure:
@@ -219,9 +239,11 @@ class Figure:
                 self.axes.legend(
                     handles=self.handles,
                     labels=self.labels,
+                    handleheight=1.3,
                     handler_map={
-                        Polygon: HandlerPatch(patch_func=histogram_legend_artist)#,
-                        # Rectangle :HandlerPatch(patch_func=hlines_legend_artist)
+                        Polygon: HandlerPatch(patch_func=histogram_legend_artist),
+                        LineCollection: HandlerMultipleLines(),
+                        VerticalLineCollection: HandlerMultipleVerticalLines()
                     }
                 )
             if not test:
