@@ -13,6 +13,7 @@ from matplotlib.legend_handler import HandlerPatch
 from matplotlib.colors import to_rgba
 from Legend_artists import *
 from matplotlib.collections import LineCollection
+from typing import Callable
 
 
 class GraphingException(Exception):
@@ -31,7 +32,14 @@ class Curve:
     ydata: list | np.ndarray
     color: str
     label: str
-
+    
+    @classmethod
+    def from_function(cls, func: Callable, xmin: float, xmax: float,
+                    color: str, label: str, number_of_points: int=500):
+        xdata = np.linspace(xmin, xmax, number_of_points)
+        ydata = func(xdata)
+        return cls(xdata, ydata, color, label)
+        
     def set_color(self, color: str or list[str]):
         self.color = color
 
