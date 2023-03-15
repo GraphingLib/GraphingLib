@@ -92,6 +92,10 @@ class Histogram:
     hist_type: str = "stepfilled"
     alpha: float = 1.0
     line_width: int | float = 2
+    
+    def __post_init__(self):
+        self.mean = np.mean(self.xdata)
+        self.standard_deviation = np.std(self.xdata)
 
     def plot_curve(self, axes: plt.Axes):
         self.handle = Polygon(
