@@ -131,9 +131,8 @@ class Histogram:
     line_width: int | float = 2
 
     def plot_curve(self, axes: plt.Axes):
-        xy = np.array([[0, 2, 2, 3, 3, 1, 1, 0, 0], [0, 0, 1, 1, 2, 2, 3, 3, 0]]).T
         self.handle = Polygon(
-            xy,
+            np.array([[0, 2, 2, 3, 3, 1, 1, 0, 0], [0, 0, 1, 1, 2, 2, 3, 3, 0]]).T,
             facecolor=to_rgba(self.face_color, self.alpha),
             edgecolor=to_rgba(self.edge_color, 1),
             linewidth=1
@@ -154,15 +153,26 @@ class Hlines():
     """
     Horizontal lines.
     """
-    y: list | np.ndarray
-    xmin: list | np.ndarray
-    xmax: list | np.ndarray
-    label: str
-    colors: list | str = None
-    linestyles: list[str] | str = 'solid'
+    def __init__(self, y: list | np.ndarray, xmin: list | np.ndarray, xmax: list | np.ndarray,
+                    label: str, colors: list[str] | str =None, linestyles: list[str] | str ='solid'):
+        self.y = y
+        self.xmin = xmin
+        self.xmax = xmax
+        self.label = label
+        self.colors = colors
+        self.linestyles = linestyles
+        if isinstance(self.y, (int, float)) and isinstance(self.colors, (list, np.ndarray)):
+            raise GraphingException("There can't be multiple colors for a single line!")
+        if isinstance(self.y, (int, float)) and isinstance(self.linestyles, (list, np.ndarray)):
+            raise GraphingException("There can't be multiple linestyles for a single line!")
+        if isinstance(self.y, (list, np.ndarray)) and isinstance(self.colors, list)\
+                                                    and isinstance(self.linestyles, list):
+            if len(self.y) != len(self.colors) or len(self.y) != len(self.linestyles):
+                raise GraphingException("There must be the same number of colors, "
+                                        + "linestyles and lines!")
 
     def plot_curve(self, axes):
-        if type(self.y) == list and len(self.y) > 1:
+        if isinstance(self.y, list) and len(self.y) > 1:
             axes.hlines(
                 self.y,
                 self.xmin,
@@ -170,7 +180,11 @@ class Hlines():
                 colors=self.colors,
                 linestyles=self.linestyles
             )
-            self.handle = LineCollection([[(0,0)]] * (len(self.y) if len(self.y) <= 3 else 3), color=self.colors, linestyle='solid')
+            self.handle = LineCollection(
+                [[(0,0)]] * (len(self.y) if len(self.y) <= 3 else 3),
+                color=self.colors,
+                linestyle='solid'
+            )
         else:
             self.handle = axes.hlines(
                 self.y,
@@ -181,20 +195,30 @@ class Hlines():
             )
 
 
-@dataclass
 class Vlines():
     """
     Vertical lines.
     """
-    x: list | np.ndarray
-    ymin: list | np.ndarray
-    ymax: list | np.ndarray
-    label: str
-    colors: list | str = None
-    linestyles: list[str] | str = 'solid'
+    def __init__(self, x: list | np.ndarray, ymin: list | np.ndarray, ymax: list | np.ndarray,
+                    label: str, colors: list[str] | str =None, linestyles: list[str] | str ='solid'):
+        self.x = x
+        self.ymin = ymin
+        self.ymax = ymax
+        self.label = label
+        self.colors = colors
+        self.linestyles = linestyles
+        if isinstance(self.x, (int, float)) and isinstance(self.colors, (list, np.ndarray)):
+            raise GraphingException("There can't be multiple colors for a single line!")
+        if isinstance(self.x, (int, float)) and isinstance(self.linestyles, (list, np.ndarray)):
+            raise GraphingException("There can't be multiple linestyles for a single line!")
+        if isinstance(self.x, (list, np.ndarray)) and isinstance(self.colors, list)\
+                                                    and isinstance(self.linestyles, list):
+            if len(self.x) != len(self.colors) or len(self.x) != len(self.linestyles):
+                raise GraphingException("There must be the same number of colors, "
+                                        + "linestyles and lines!")
 
     def plot_curve(self, axes):
-        if type(self.x) == list and len(self.x) > 1:
+        if isinstance(self.x, list) and len(self.x) > 1:
             axes.vlines(
                 self.x,
                 self.ymin,
@@ -202,7 +226,11 @@ class Vlines():
                 colors=self.colors,
                 linestyles=self.linestyles
             )
-            self.handle = VerticalLineCollection([[(0,0)]] * (len(self.x) if len(self.x) <= 4 else 4), color=self.colors, linestyle='solid')
+            self.handle = VerticalLineCollection(
+                [[(0,0)]] * (len(self.x) if len(self.x) <= 4 else 4),
+                color=self.colors,
+                linestyle='solid'
+            )
         else:
             self.handle = axes.vlines(
                 self.x,

@@ -93,8 +93,12 @@ class TestScatter(unittest.TestCase):
 
 class TestHisttogram(unittest.TestCase):
     def setUp(self):
-        self.testHist = Histogram([random() for _ in range(100)], 20, 'Random Distribution', 'silver', 'k')
-    
+        self.testHist = Histogram([random() for _ in range(100)], 20,
+                                    'Random Distribution', 'silver', 'k')
+        _, self.testAxes = subplots()
+        self.testHist.plot_curve(self.testAxes)
+        plt.close('all')
+
     def test_label_is_str(self):
         self.assertIsInstance(self.testHist.label, str)
 
@@ -120,6 +124,9 @@ class TestHisttogram(unittest.TestCase):
 class TestHlines(unittest.TestCase):
     def setUp(self):
         self.testHlines = Hlines(1, 0, 1, 'Test Hlines')
+        _, self.testAxes = subplots()
+        self.testHlines.plot_curve(self.testAxes)
+        plt.close('all')
 
     def test_y_is_list_ndarray_float_int(self):
         self.assertIsInstance(self.testHlines.y, list | ndarray | float | int)
@@ -143,6 +150,9 @@ class TestHlines(unittest.TestCase):
 class TestVlines(unittest.TestCase):
     def setUp(self):
         self.testVlines = Vlines(1, 0, 1, 'Test Vlines')
+        _, self.testAxes = subplots()
+        self.testVlines.plot_curve(self.testAxes)
+        plt.close('all')
 
     def test_y_is_list_ndarray_float_int(self):
         self.assertIsInstance(self.testVlines.x, list | ndarray | float | int)

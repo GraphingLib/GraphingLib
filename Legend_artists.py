@@ -52,7 +52,6 @@ class HandlerMultipleVerticalLines(HandlerLineCollection):
         lines = []
         xdata = array([width / (numlines + 1), width / (numlines + 1)])
         ydata = array([0, height])
-        print(width)
         for i in range(numlines):
             line = Line2D(xdata * (numlines - i) - xdescent, ydata - ydescent)
             self.update_prop(line, orig_handle, legend)
