@@ -14,7 +14,6 @@ from matplotlib.colors import to_rgba
 from Legend_artists import *
 from matplotlib.collections import LineCollection
 from typing import Callable
-from scipy.stats import binned_statistic
 
 
 class GraphingException(Exception):
