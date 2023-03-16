@@ -90,4 +90,3 @@ class FitFromSine(Curve):
         xdata = np.linspace(self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points)
         ydata = self.function(xdata)
         self.handle, = axes.plot(xdata, ydata, color=self.color, label=self.label)
-        

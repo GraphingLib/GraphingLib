@@ -85,13 +85,33 @@ class Histogram:
     A histogram plot with minor changes to the lable icon.
     """
     xdata: list | np.ndarray
-    bins: int
+    number_of_bins: int
     label: str
     face_color: str = "silver"
     edge_color: str = "k"
     hist_type: str = "stepfilled"
     alpha: float = 1.0
     line_width: int | float = 2
+    normalize: bool = True
+    show_pdf: str = None
+    
+    def __post_init__(self):
+        self.mean = np.mean(self.xdata)
+        self.standard_deviation = np.std(self.xdata)
+        parameters = np.histogram(self.xdata, bins=self.number_of_bins, density=self.normalize)
+        self.bin_heights, bin_edges = parameters[0], parameters[1]
+        bin_width = (bin_edges[1] - bin_edges[0])
+        bin_centers = bin_edges[1:] - bin_width/2
+        self.bin_width = bin_width
+        self.bin_centers = bin_centers
+        self.bin_edges = bin_edges
+        self.label = self.label + f' : $\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}'
+    
+    def normal_normalized(self, x): 
+        return (1 / (self.standard_deviation*np.sqrt(2*np.pi))) * np.exp(-0.5 * (((x-self.mean)/self.standard_deviation)**2))
+    
+    def normal_not_normalized(self, x):
+        return sum(self.bin_heights) * self.bin_width * self.normal_normalized(x)
 
     def plot_curve(self, axes: plt.Axes):
         self.handle = Polygon(
@@ -102,13 +122,29 @@ class Histogram:
         )
         axes.hist(
             self.xdata,
-            bins=self.bins,
+            bins=self.number_of_bins,
             facecolor=to_rgba(self.face_color, self.alpha),
             edgecolor=to_rgba(self.edge_color, 1),
             label=self.label,
             histtype=self.hist_type,
-            linewidth=self.line_width
+            linewidth=self.line_width,
+            density=self.normalize
         )
+        if self.show_pdf in ['normal', 'gaussian']:
+            normal = self.normal_normalized if self.normalize else self.normal_not_normalized
+            num_of_points = 500
+            xdata = np.linspace(self.bin_edges[0], self.bin_edges[-1], num_of_points)
+            ydata = normal(xdata)
+            axes.plot(xdata, ydata, color=self.edge_color, label=self.label)
+            curve_max_y = normal(self.mean)
+            curve_std_y = normal(self.mean + self.standard_deviation)
+            plt.vlines([self.mean - self.standard_deviation,
+                        self.mean,
+                        self.mean + self.standard_deviation],
+                        [0, 0, 0],
+                        [curve_std_y, curve_max_y, curve_std_y],
+                        linestyles=['dashed'],
+                        colors=['k', 'r', 'k'])
 
 
 @dataclass
