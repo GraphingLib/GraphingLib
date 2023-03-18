@@ -6,14 +6,15 @@ functions to simplify the process of analysing data.
 """
 
 from dataclasses import dataclass
+from typing import Callable
+
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Polygon
-from matplotlib.legend_handler import HandlerPatch
-from matplotlib.colors import to_rgba
 from Legend_artists import *
 from matplotlib.collections import LineCollection
-from typing import Callable
+from matplotlib.colors import to_rgba
+from matplotlib.legend_handler import HandlerPatch
+from matplotlib.patches import Polygon
 
 
 class GraphingException(Exception):
@@ -244,11 +245,14 @@ class Figure:
     """
     A general Matplotlib figure.
     """
-    def __init__(self, size: tuple = (10, 7)):
+    def __init__(self, x_label: str = 'x axis', y_label: str = 'y axis', size: tuple = (10, 7), legend_is_boxed: bool = True):
         self.figure, self.axes = plt.subplots(figsize=size)
         self.curves = []
         self.labels = []
         self.handles = []
+        self.x_axis_name = x_label
+        self.y_axis_name = y_label
+        self.legend_is_boxed = legend_is_boxed
 
     def add_curve(self, curve: Curve):
         """
@@ -258,21 +262,39 @@ class Figure:
         self.labels.append(curve.label)
 
     def generate_figure(self, legend=True, test=False):
+        self.axes.set_xlabel(self.x_axis_name)
+        self.axes.set_ylabel(self.y_axis_name)
+        
         if self.curves:
             for curve in self.curves:
                 curve.plot_curve(self.axes)
                 self.handles.append(curve.handle)
             if legend:
-                self.axes.legend(
-                    handles=self.handles,
-                    labels=self.labels,
-                    handleheight=1.3,
-                    handler_map={
-                        Polygon: HandlerPatch(patch_func=histogram_legend_artist),
-                        LineCollection: HandlerMultipleLines(),
-                        VerticalLineCollection: HandlerMultipleVerticalLines()
-                    }
-                )
+                try:
+                    self.axes.legend(
+                        handles=self.handles,
+                        labels=self.labels,
+                        handleheight=1.3,
+                        handler_map={
+                            Polygon: HandlerPatch(patch_func=histogram_legend_artist),
+                            LineCollection: HandlerMultipleLines(),
+                            VerticalLineCollection: HandlerMultipleVerticalLines()
+                        },
+                        frameon=self.legend_is_boxed,
+                        draggable=True
+                    )
+                except :
+                    self.axes.legend(
+                        handles=self.handles,
+                        labels=self.labels,
+                        handleheight=1.3,
+                        handler_map={
+                            Polygon: HandlerPatch(patch_func=histogram_legend_artist),
+                            LineCollection: HandlerMultipleLines(),
+                            VerticalLineCollection: HandlerMultipleVerticalLines()
+                        },
+                        frameon=self.legend_is_boxed
+                    )
             if not test:
                 plt.tight_layout()
                 plt.show()
