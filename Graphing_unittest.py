@@ -1,11 +1,12 @@
 import unittest
-from Graphing import *
+from random import random
+
+import numpy as np
 from Fits import FitFromPolynomial, FitFromSine
-from numpy import linspace, pi, sin, ndarray
+from Graphing import *
 from matplotlib.axes import Axes
 from matplotlib.pyplot import subplots
-from random import random
-import numpy as np
+from numpy import linspace, ndarray, pi, sin
 
 
 class TestFigure(unittest.TestCase):
@@ -114,7 +115,7 @@ class TestHisttogram(unittest.TestCase):
         self.assertIsInstance(self.testHist.edge_color, str)
 
     def test_bins_is_int(self):
-        self.assertIsInstance(self.testHist.bins, int)
+        self.assertIsInstance(self.testHist.number_of_bins, int)
 
     def test_alpha_is_float(self):
         self.assertIsInstance(self.testHist.alpha, float)
@@ -230,7 +231,7 @@ class TestFitFromPolynomial(unittest.TestCase):
 class TestFitFromSine(unittest.TestCase):
     def setUp(self):
         x = linspace(0, 3*pi, 200)
-        self.data = Scatter(x, 2*np.sin(3*x + 4) + 5 , 'k', 'Data')
+        self.data = Scatter(x, 2*sin(3*x + 4) + 5 , 'k', 'Data')
         self.fit = FitFromSine(self.data, 'k', 'Sinusoidal fit', guesses=[2.09,3.1,4.2,5.2])
     
     def test_parameters(self):
