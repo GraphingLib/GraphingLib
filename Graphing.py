@@ -251,18 +251,20 @@ class Figure:
     """
     A general Matplotlib figure.
     """
-    def __init__(self, x_label: str = 'x axis', y_label: str = 'y axis', size: tuple = (10, 7), legend_is_boxed: bool = True, figure_style: str = 'plain'):
-        self.figure, self.axes = plt.subplots(figsize=size)
+    def __init__(self, x_label: str = 'x axis', y_label: str = 'y axis', size: tuple = "default", legend_is_boxed: bool = "default", figure_style: str = 'plain'):
+        self.figure_style = figure_style
+        file_loader = FileLoader(self.figure_style)
+        self.default_params = file_loader.load()
+        size = size if size != "default" else self.default_params["Figure"]["size"]
+        self.size = size
+        legend_is_boxed = legend_is_boxed if legend_is_boxed != "default" else self.default_params["Figure"]["boxed_legend"]
+        self.figure, self.axes = plt.subplots(figsize=self.size)
         self.curves = []
         self.labels = []
         self.handles = []
         self.x_axis_name = x_label
         self.y_axis_name = y_label
         self.legend_is_boxed = legend_is_boxed
-        self.figure_style = figure_style
-        self.default_params = None
-        file_loader = FileLoader(self.figure_style)
-        self.default_params = file_loader.load()
         
 
     def add_curve(self, curve: Curve):

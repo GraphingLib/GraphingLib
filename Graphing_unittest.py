@@ -63,7 +63,15 @@ class TestFigure(unittest.TestCase):
         a_figure.add_curve(a_curve)
         a_figure.fill_in_missing_params(a_curve)
         self.assertEqual(a_curve.line_width, 3)
-
+    
+    def test_assign_figure_params_weird(self):
+        a_figure = Figure(figure_style='weird')
+        self.assertListEqual(a_figure.size, [10,7])
+    
+    def test_assign_figure_params_not_boxed(self):
+        a_figure = Figure(figure_style='weird', legend_is_boxed=False)
+        self.assertFalse(a_figure.legend_is_boxed)
+        
 class TestCurve(unittest.TestCase):
     def setUp(self):
         x = linspace(0, 3*pi, 200)

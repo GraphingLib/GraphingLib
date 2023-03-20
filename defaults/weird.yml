@@ -31,7 +31,7 @@ Vlines:
   line_styles: "solid"
 
 Figure:
-  size: (10, 7)
+  size: [10, 7]
   boxed_legend: True
 
 FitFromPolynomial:
