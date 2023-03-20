@@ -10,6 +10,7 @@ from typing import Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
+from File_manager import FileLoader
 from Legend_artists import *
 from matplotlib.collections import LineCollection
 from matplotlib.colors import to_rgba
@@ -31,8 +32,9 @@ class Curve:
     """
     xdata: list | np.ndarray
     ydata: list | np.ndarray
-    color: str
     label: str
+    color: str = "default"
+    line_width: int = "default"
     
     @classmethod
     def from_function(cls, func: Callable, xmin: float, xmax: float,
@@ -49,19 +51,22 @@ class Curve:
             self.xdata,
             self.ydata,
             color=self.color,
+            linewidth=self.line_width,
             label=self.label
         )
 
-
+@dataclass
 class Scatter(Curve):
     """
     A general scatter plot.
     """
+    marker_size: float = "default"
     def plot_curve(self, axes: plt.Axes):
         self.handle = axes.scatter(
             self.xdata,
             self.ydata,
             color=self.color,
+            s=self.marker_size,
             label=self.label
         )
 
@@ -75,6 +80,7 @@ class Dashed(Curve):
             self.xdata,
             self.ydata,
             color=self.color,
+            linewidth=self.line_width,
             label=self.label,
             linestyle='--'
         )
@@ -88,13 +94,13 @@ class Histogram:
     xdata: list | np.ndarray
     number_of_bins: int
     label: str
-    face_color: str = "silver"
-    edge_color: str = "k"
-    hist_type: str = "stepfilled"
-    alpha: float = 1.0
-    line_width: int | float = 2
-    normalize: bool = True
-    show_pdf: str = None
+    face_color: str = "default"
+    edge_color: str = "default"
+    hist_type: str = "default"
+    alpha: float = "default"
+    line_width: int | float = "default"
+    normalize: bool = "default"
+    show_pdf: str = "default"
     
     def __post_init__(self):
         self.mean = np.mean(self.xdata)
@@ -154,20 +160,20 @@ class Hlines():
     Horizontal lines.
     """
     def __init__(self, y: list | np.ndarray, xmin: list | np.ndarray, xmax: list | np.ndarray,
-                    label: str, colors: list[str] | str =None, linestyles: list[str] | str ='solid'):
+                    label: str, colors: list[str] | str = "default", line_styles: list[str] | str = "default"):
         self.y = y
         self.xmin = xmin
         self.xmax = xmax
         self.label = label
         self.colors = colors
-        self.linestyles = linestyles
+        self.line_styles = line_styles
         if isinstance(self.y, (int, float)) and isinstance(self.colors, (list, np.ndarray)):
             raise GraphingException("There can't be multiple colors for a single line!")
-        if isinstance(self.y, (int, float)) and isinstance(self.linestyles, (list, np.ndarray)):
+        if isinstance(self.y, (int, float)) and isinstance(self.line_styles, (list, np.ndarray)):
             raise GraphingException("There can't be multiple linestyles for a single line!")
         if isinstance(self.y, (list, np.ndarray)) and isinstance(self.colors, list)\
-                                                    and isinstance(self.linestyles, list):
-            if len(self.y) != len(self.colors) or len(self.y) != len(self.linestyles):
+                                                    and isinstance(self.line_styles, list):
+            if len(self.y) != len(self.colors) or len(self.y) != len(self.line_styles):
                 raise GraphingException("There must be the same number of colors, "
                                         + "linestyles and lines!")
 
@@ -178,7 +184,7 @@ class Hlines():
                 self.xmin,
                 self.xmax,
                 colors=self.colors,
-                linestyles=self.linestyles
+                linestyles=self.line_styles
             )
             self.handle = LineCollection(
                 [[(0,0)]] * (len(self.y) if len(self.y) <= 3 else 3),
@@ -191,7 +197,7 @@ class Hlines():
                 self.xmin,
                 self.xmax,
                 colors=self.colors,
-                linestyles=self.linestyles
+                linestyles=self.line_styles
             )
 
 
@@ -200,20 +206,20 @@ class Vlines():
     Vertical lines.
     """
     def __init__(self, x: list | np.ndarray, ymin: list | np.ndarray, ymax: list | np.ndarray,
-                    label: str, colors: list[str] | str =None, linestyles: list[str] | str ='solid'):
+                    label: str, colors: list[str] | str = "default", line_styles: list[str] | str = "default"):
         self.x = x
         self.ymin = ymin
         self.ymax = ymax
         self.label = label
         self.colors = colors
-        self.linestyles = linestyles
+        self.line_styles = line_styles
         if isinstance(self.x, (int, float)) and isinstance(self.colors, (list, np.ndarray)):
             raise GraphingException("There can't be multiple colors for a single line!")
-        if isinstance(self.x, (int, float)) and isinstance(self.linestyles, (list, np.ndarray)):
+        if isinstance(self.x, (int, float)) and isinstance(self.line_styles, (list, np.ndarray)):
             raise GraphingException("There can't be multiple linestyles for a single line!")
         if isinstance(self.x, (list, np.ndarray)) and isinstance(self.colors, list)\
-                                                    and isinstance(self.linestyles, list):
-            if len(self.x) != len(self.colors) or len(self.x) != len(self.linestyles):
+                                                    and isinstance(self.line_styles, list):
+            if len(self.x) != len(self.colors) or len(self.x) != len(self.line_styles):
                 raise GraphingException("There must be the same number of colors, "
                                         + "linestyles and lines!")
 
@@ -224,7 +230,7 @@ class Vlines():
                 self.ymin,
                 self.ymax,
                 colors=self.colors,
-                linestyles=self.linestyles
+                linestyles=self.line_styles
             )
             self.handle = VerticalLineCollection(
                 [[(0,0)]] * (len(self.x) if len(self.x) <= 4 else 4),
@@ -237,7 +243,7 @@ class Vlines():
                 self.ymin,
                 self.ymax,
                 colors=self.colors,
-                linestyles=self.linestyles
+                linestyles=self.line_styles
             )
 
 
@@ -245,7 +251,7 @@ class Figure:
     """
     A general Matplotlib figure.
     """
-    def __init__(self, x_label: str = 'x axis', y_label: str = 'y axis', size: tuple = (10, 7), legend_is_boxed: bool = True):
+    def __init__(self, x_label: str = 'x axis', y_label: str = 'y axis', size: tuple = (10, 7), legend_is_boxed: bool = True, figure_style: str = 'plain'):
         self.figure, self.axes = plt.subplots(figsize=size)
         self.curves = []
         self.labels = []
@@ -253,6 +259,11 @@ class Figure:
         self.x_axis_name = x_label
         self.y_axis_name = y_label
         self.legend_is_boxed = legend_is_boxed
+        self.figure_style = figure_style
+        self.default_params = None
+        file_loader = FileLoader(self.figure_style)
+        self.default_params = file_loader.load()
+        
 
     def add_curve(self, curve: Curve):
         """
@@ -267,6 +278,7 @@ class Figure:
         
         if self.curves:
             for curve in self.curves:
+                self.fill_in_missing_params(curve)
                 curve.plot_curve(self.axes)
                 self.handles.append(curve.handle)
             if legend:
@@ -300,3 +312,9 @@ class Figure:
                 plt.show()
         else:
             raise GraphingException("No curves to be plotted!")
+    
+    def fill_in_missing_params(self, curve):
+        object_type = type(curve).__name__
+        for property, value in vars(curve).items():
+            if (type(value) == str) and (value == "default"):
+                curve.__dict__[property] = self.default_params[object_type][property]
