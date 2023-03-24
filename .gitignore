@@ -5,6 +5,7 @@
 !/Legend_artists.py
 !/Fits.py
 !/File_manager.py
+!/Figure.py
 !/defaults/plain.yml
 !/defaults/weird.yml
 !*/

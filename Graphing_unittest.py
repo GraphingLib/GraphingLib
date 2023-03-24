@@ -5,6 +5,7 @@ import numpy as np
 from File_manager import FileLoader
 from Fits import FitFromPolynomial, FitFromSine
 from Graphing import *
+from Figure import *
 from matplotlib.axes import Axes
 from matplotlib.pyplot import subplots
 from numpy import linspace, ndarray, pi, sin
