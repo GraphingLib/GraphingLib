@@ -2,7 +2,7 @@ from File_manager import FileLoader
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib.collections import LineCollection
-from Graphing import GraphingException, Curve, Hlines, Vlines, Histogram
+from Graph_elements import GraphingException, Curve, Hlines, Vlines, Histogram
 from matplotlib.legend_handler import HandlerPatch
 from Legend_artists import *
 

@@ -1,7 +1,7 @@
 import unittest
 
 from Fits import *
-from Graphing import *
+from Graph_elements import *
 from numpy import linspace, pi, sin
 
 

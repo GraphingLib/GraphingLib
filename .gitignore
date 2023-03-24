@@ -1,12 +1,12 @@
 *
 !/.gitignore
 !/Graphing_unittest.py
-!/Graphing.py
+!/Graph_elements.py
 !/Legend_artists.py
 !/Fits.py
 !/File_manager.py
 !/Figure.py
-!/defaults/plain.yml
-!/defaults/weird.yml
+!/Default_styles/plain.yml
+!/Default_styles/weird.yml
 !/Unit_testing/*_test.py
 !*/

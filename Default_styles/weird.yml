@@ -21,6 +21,7 @@ Histogram:
   line_width: 2
   normalize: True
   show_pdf: None
+  show_params: True
 
 Hlines:
   colors: "k"
@@ -33,6 +34,7 @@ Vlines:
 Figure:
   size: [10, 7]
   boxed_legend: True
+  ticks_are_in: True
 
 FitFromPolynomial:
   color: "orange"
