@@ -101,6 +101,7 @@ class Histogram:
     line_width: int | float = "default"
     normalize: bool = "default"
     show_pdf: str = "default"
+    show_params: bool = "default"
     
     def __post_init__(self):
         self.mean = np.mean(self.xdata)
@@ -112,7 +113,15 @@ class Histogram:
         self.bin_width = bin_width
         self.bin_centers = bin_centers
         self.bin_edges = bin_edges
-        self.label = self.label + f' : $\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}'
+        self.create_label()
+    
+    def create_label(self):
+        lab = self.label
+        if self.label and self.show_params:
+            lab += ' :\n'
+        if self.show_params:
+            lab += f'$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}'
+        self.label = lab
     
     def normal_normalized(self, x): 
         return (1 / (self.standard_deviation*np.sqrt(2*np.pi))) * np.exp(-0.5 * (((x-self.mean)/self.standard_deviation)**2))
@@ -251,13 +260,14 @@ class Figure:
     """
     A general Matplotlib figure.
     """
-    def __init__(self, x_label: str = 'x axis', y_label: str = 'y axis', size: tuple = "default", legend_is_boxed: bool = "default", figure_style: str = 'plain'):
+    def __init__(self, x_label: str = 'x axis', y_label: str = 'y axis', size: tuple = "default", legend_is_boxed: bool = "default", ticks_are_in: bool = "default", figure_style: str = 'plain'):
         self.figure_style = figure_style
         file_loader = FileLoader(self.figure_style)
         self.default_params = file_loader.load()
         size = size if size != "default" else self.default_params["Figure"]["size"]
         self.size = size
         legend_is_boxed = legend_is_boxed if legend_is_boxed != "default" else self.default_params["Figure"]["boxed_legend"]
+        tick_are_in = ticks_are_in if ticks_are_in != "default" else self.default_params["Figure"]["ticks_are_in"]
         self.figure, self.axes = plt.subplots(figsize=self.size)
         self.curves = []
         self.labels = []
@@ -265,6 +275,7 @@ class Figure:
         self.x_axis_name = x_label
         self.y_axis_name = y_label
         self.legend_is_boxed = legend_is_boxed
+        self.ticks_are_in = ticks_are_in
         
 
     def add_curve(self, curve: Curve):
@@ -277,7 +288,8 @@ class Figure:
     def generate_figure(self, legend=True, test=False):
         self.axes.set_xlabel(self.x_axis_name)
         self.axes.set_ylabel(self.y_axis_name)
-        
+        if self.ticks_are_in:
+            self.axes.tick_params(axis="both", direction="in", which="both")
         if self.curves:
             for curve in self.curves:
                 self.fill_in_missing_params(curve)
@@ -309,6 +321,8 @@ class Figure:
                         },
                         frameon=self.legend_is_boxed
                     )
+            else:
+                self.axes.legend(draggable=True, frameon=self.legend_is_boxed)
             if not test:
                 plt.tight_layout()
                 plt.show()
