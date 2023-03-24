@@ -1,0 +1,43 @@
+Curve:
+  color: "purple"
+  line_width: 10
+
+Scatter:
+  color: "cyan"
+  marker_size: 60
+  line_width: 1
+
+Dashed:
+  color: "navy"
+  line_width: 1
+  line_style: "--.--"
+
+Histogram:
+  number_of_bins: 30
+  face_color: "silver"
+  edge_color: "k"
+  hist_type: "stepfilled"
+  alpha: 1.0
+  line_width: 2
+  normalize: True
+  show_pdf: None
+
+Hlines:
+  colors: "k"
+  line_styles: "-"
+
+Vlines:
+  colors: "k"
+  line_styles: "solid"
+
+Figure:
+  size: [10, 7]
+  boxed_legend: True
+
+FitFromPolynomial:
+  color: "orange"
+  line_width: 4
+
+FitFromSine:
+  color: "khaki"
+  line_width: 6

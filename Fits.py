@@ -1,15 +1,16 @@
-from Graphing import Curve
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-import matplotlib.pyplot as plt
+from Graphing import Curve
 from scipy.optimize import curve_fit
+
 
 class FitFromPolynomial(Curve):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a polynomial fit.
     """
     
-    def __init__(self, curve_to_be_fit: Curve, degree: int, color: str, label: str):
+    def __init__(self, curve_to_be_fit: Curve, degree: int, label: str, color: str = 'default', line_width: int = 'default'):
         self.curve_to_be_fit = curve_to_be_fit
         inversed_coeffs, inversed_cov_matrix = np.polyfit(self.curve_to_be_fit.xdata, self.curve_to_be_fit.ydata, degree, cov=True)
         self.coeffs = inversed_coeffs[::-1]
@@ -17,6 +18,7 @@ class FitFromPolynomial(Curve):
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
         self.function = self.polynomial_func_with_params()
         self.color = color
+        self.line_width = line_width
         self.label = label + ' : ' + 'f(x) = ' + str(self)
         
     def __str__(self):
@@ -49,7 +51,7 @@ class FitFromPolynomial(Curve):
         num_of_points = 500
         xdata = np.linspace(self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points)
         ydata = self.function(xdata)
-        self.handle, = axes.plot(xdata, ydata, color=self.color, label=self.label)
+        self.handle, = axes.plot(xdata, ydata, label=self.label, color=self.color, linewidth=self.line_width)
 
 
 class FitFromSine(Curve):
