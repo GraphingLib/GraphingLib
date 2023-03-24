@@ -8,4 +8,5 @@
 !/Figure.py
 !/defaults/plain.yml
 !/defaults/weird.yml
+!/Unit_testing/*_test.py
 !*/

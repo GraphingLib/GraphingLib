@@ -10,11 +10,9 @@ from typing import Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
-from File_manager import FileLoader
 from Legend_artists import *
 from matplotlib.collections import LineCollection
 from matplotlib.colors import to_rgba
-from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 
 

@@ -4,7 +4,7 @@ from matplotlib.patches import Polygon
 from matplotlib.collections import LineCollection
 from Graphing import GraphingException, Curve, Hlines, Vlines, Histogram
 from matplotlib.legend_handler import HandlerPatch
-from Legend_artists import VerticalLineCollection, HandlerMultipleLines, HandlerMultipleVerticalLines, histogram_legend_artist
+from Legend_artists import *
 
 
 class Figure:
