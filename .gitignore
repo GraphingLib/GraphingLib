@@ -2,6 +2,7 @@
 !/.gitignore
 !/setup.py
 !/README.md
+!/GraphingLib/__init__.py
 !/GraphingLib/Graph_elements.py
 !/GraphingLib/Legend_artists.py
 !/GraphingLib/Fits.py
