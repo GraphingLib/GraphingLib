@@ -1,12 +1,12 @@
 *
 !/.gitignore
 !/setup.py
+!/README.md
 !/GraphingLib/Graph_elements.py
 !/GraphingLib/Legend_artists.py
 !/GraphingLib/Fits.py
 !/GraphingLib/File_manager.py
 !/GraphingLib/Figure.py
-!/GraphingLib/README.md
 !/GraphingLib/Default_styles/plain.yml
 !/GraphingLib/Default_styles/weird.yml
 !/Unit_testing/*_test.py
