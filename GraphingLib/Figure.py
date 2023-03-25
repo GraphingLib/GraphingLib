@@ -1,6 +1,6 @@
-from File_manager import FileLoader
-from Graph_elements import GraphingException, Curve, Hlines, Vlines, Histogram
-from Legend_artists import *
+from GraphingLib.File_manager import *
+from GraphingLib.Graph_elements import *
+from GraphingLib.Legend_artists import *
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib.collections import LineCollection

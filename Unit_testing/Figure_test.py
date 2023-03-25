@@ -1,9 +1,6 @@
 import unittest
-import sys
 
-sys.path.insert(0,'..')
-
-from Figure import *
+from GraphingLib.Figure import *
 from numpy import linspace, sin, pi
 from matplotlib.pyplot import Axes
 

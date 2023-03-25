@@ -1,7 +1,7 @@
+from GraphingLib.Graph_elements import Curve
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-from Graph_elements import Curve
 from scipy.optimize import curve_fit
 
 

@@ -1,9 +1,6 @@
 import unittest
-import sys
 
-sys.path.insert(0,'..')
-
-from File_manager import FileLoader
+from GraphingLib.File_manager import FileLoader
 
 
 class TestFileLoader(unittest.TestCase):
