@@ -1,5 +1,8 @@
 import unittest
+import sys
 from random import random
+
+sys.path.insert(0,'..')
 
 from Graph_elements import *
 from numpy import ndarray, linspace, pi, sin

@@ -1,4 +1,7 @@
 import unittest
+import sys
+
+sys.path.insert(0,'..')
 
 from Figure import *
 from numpy import linspace, sin, pi

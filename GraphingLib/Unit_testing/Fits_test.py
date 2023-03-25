@@ -1,4 +1,7 @@
 import unittest
+import sys
+
+sys.path.insert(0,'..')
 
 from Fits import *
 from Graph_elements import *
