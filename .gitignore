@@ -1,7 +1,6 @@
 *
 !/.gitignore
 !/setup.py
-!/GraphingLib/Graphing_unittest.py
 !/GraphingLib/Graph_elements.py
 !/GraphingLib/Legend_artists.py
 !/GraphingLib/Fits.py
@@ -10,5 +9,5 @@
 !/GraphingLib/README.md
 !/GraphingLib/Default_styles/plain.yml
 !/GraphingLib/Default_styles/weird.yml
-!/GraphingLib/Unit_testing/*_test.py
+!/Unit_testing/*_test.py
 !*/

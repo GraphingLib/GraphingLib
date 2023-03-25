@@ -1,6 +1,6 @@
 import unittest
 
-from File_manager import FileLoader
+from GraphingLib.File_manager import FileLoader
 
 
 class TestFileLoader(unittest.TestCase):

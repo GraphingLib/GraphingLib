@@ -1,6 +1,6 @@
 import unittest
 
-from Figure import *
+from GraphingLib.Figure import *
 from numpy import linspace, sin, pi
 from matplotlib.pyplot import Axes
 
