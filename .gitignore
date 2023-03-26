@@ -15,16 +15,5 @@
 !graphinglib/default_styles/
 !graphinglib/default_styles/*.yml
 
-!Graphinglib/
-!Graphinglib/__init__.py
-!Graphinglib/Figure.py
-!Graphinglib/File_manager.py
-!Graphinglib/Fits.py
-!Graphinglib/Graph_elements.py
-!Graphinglib/Legend_artists.py
-
-!Graphinglib/Default_styles/
-!Graphinglib/Default_styles/*.yml
-
 !Unit_testing/
 !Unit_testing/*_test.py
