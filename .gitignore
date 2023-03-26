@@ -3,6 +3,7 @@
 !.gitignore
 !setup.py
 !README.md
+!MANIFEST.in
 
 !graphinglib/
 !graphinglib/__init__.py
