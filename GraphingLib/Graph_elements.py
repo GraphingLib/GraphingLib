@@ -1,10 +1,3 @@
-"""
-# GraphingLib
-
-Provides a simpler way to generate graphs with Matplotlib and an inclusion of certain Scipy
-functions to simplify the process of analysing data.
-"""
-
 from dataclasses import dataclass
 from typing import Callable
 
