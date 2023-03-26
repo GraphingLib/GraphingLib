@@ -245,3 +245,14 @@ class Vlines():
                 colors=self.colors,
                 linestyles=self.line_styles
             )
+
+
+@dataclass
+class Point():
+    """
+    A general point object.
+    """
+    x: int | float
+    y: int | float
+    
+
