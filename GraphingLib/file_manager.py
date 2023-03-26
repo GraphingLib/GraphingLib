@@ -15,4 +15,4 @@ class FileLoader:
         return info
     
     def resource_path(self):
-        return f"{path.dirname(__file__)}/Default_styles/{self.filename}.yml"
+        return f"{path.dirname(__file__)}/default_styles/{self.filename}.yml"
