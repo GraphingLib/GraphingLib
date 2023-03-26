@@ -1,16 +1,9 @@
-"""
-# GraphingLib
-
-Provides a simpler way to generate graphs with Matplotlib and an inclusion of certain Scipy
-functions to simplify the process of analysing data.
-"""
-
 from dataclasses import dataclass
 from typing import Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
-from GraphingLib.Legend_artists import *
+from .Legend_artists import *
 from matplotlib.collections import LineCollection
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
