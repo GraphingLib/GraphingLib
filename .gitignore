@@ -4,14 +4,16 @@
 !setup.py
 !README.md
 
-!GraphingLib/
-!GraphingLib/__init__.py
-!GraphingLib/Figure.py
-!GraphingLib/File_manager.py
-!GraphingLib/Fits.py
-!GraphingLib/Graph_elements.py
-!GraphingLib/Legend_artists.py
-!GraphingLib/Default_styles/*.yml
+!graphinglib/
+!graphinglib/__init__.py
+!graphinglib/figure.py
+!graphinglib/file_manager.py
+!graphinglib/fits.py
+!graphinglib/graph_elements.py
+!graphinglib/legend_artists.py
+
+!graphinglib/default_styles/
+!graphinglib/default_styles/*.yml
 
 !Unit_testing/
 !Unit_testing/*_test.py

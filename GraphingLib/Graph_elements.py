@@ -3,7 +3,7 @@ from typing import Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
-from .Legend_artists import *
+from .legend_artists import *
 from matplotlib.collections import LineCollection
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
