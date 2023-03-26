@@ -13,6 +13,7 @@
 !graphinglib/legend_artists.py
 
 !graphinglib/default_styles/
+!graphinglib/default_styles/__init__.py
 !graphinglib/default_styles/*.yml
 
 !Unit_testing/
