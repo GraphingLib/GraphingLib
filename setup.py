@@ -5,6 +5,6 @@ setup(
     version='0.0.2',
     description='A simpler way to view data in Python',
     url='https://github.com/yalap13/GraphingLib.git',
-    packages=find_packages(),
+    packages=['graphinglib', 'graphinglib.default_styles'],
     install_requires=['numpy','scipy','matplotlib','pyyaml']
 )
