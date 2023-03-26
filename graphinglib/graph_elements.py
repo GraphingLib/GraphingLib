@@ -154,7 +154,6 @@ class Histogram:
                         colors=['k', 'r', 'k'])
 
 
-@dataclass
 class Hlines():
     """
     Horizontal lines.
@@ -254,5 +253,13 @@ class Point():
     """
     x: int | float
     y: int | float
-    
+    label: str
+    face_color: str
+    edge_color: str
+    marker_size: int | float
+    marker_style: str
+    lines_to_axis: bool
+    show_coordinates: bool
+
+
 
