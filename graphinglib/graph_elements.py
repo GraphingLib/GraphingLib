@@ -29,7 +29,7 @@ class Curve:
     
     @classmethod
     def from_function(cls, func: Callable, xmin: float, xmax: float,
-                    color: str, label: str, number_of_points: int=500):
+                      color: str, label: str, number_of_points: int=500):
         xdata = np.linspace(xmin, xmax, number_of_points)
         ydata = func(xdata)
         return cls(xdata, ydata, color, label)
@@ -52,12 +52,17 @@ class Scatter(Curve):
     A general scatter plot.
     """
     marker_size: float = "default"
+    edge_color: str = "default"
+    marker_style: str = "default"
+
     def plot_curve(self, axes: plt.Axes):
         self.handle = axes.scatter(
             self.xdata,
             self.ydata,
             color=self.color,
+            edgecolors=self.edge_color,
             s=self.marker_size,
+            marker=self.marker_style,
             label=self.label
         )
 
@@ -159,7 +164,7 @@ class Hlines():
     Horizontal lines.
     """
     def __init__(self, y: list | np.ndarray, xmin: list | np.ndarray, xmax: list | np.ndarray,
-                    label: str, colors: list[str] | str = "default", line_styles: list[str] | str = "default"):
+                 label: str, colors: list[str] | str = "default", line_styles: list[str] | str = "default"):
         self.y = y
         self.xmin = xmin
         self.xmax = xmax
@@ -205,7 +210,7 @@ class Vlines():
     Vertical lines.
     """
     def __init__(self, x: list | np.ndarray, ymin: list | np.ndarray, ymax: list | np.ndarray,
-                    label: str, colors: list[str] | str = "default", line_styles: list[str] | str = "default"):
+                 label: str, colors: list[str] | str = "default", line_styles: list[str] | str = "default"):
         self.x = x
         self.ymin = ymin
         self.ymax = ymax
@@ -251,15 +256,37 @@ class Point():
     """
     A general point object.
     """
-    x: int | float
-    y: int | float
-    label: str
-    face_color: str
-    edge_color: str
-    marker_size: int | float
-    marker_style: str
-    lines_to_axis: bool
-    show_coordinates: bool
+    def __init__(self, x: int | float, y: int | float, label: str = "", color: str = "default",
+                 edge_color: str = "default", marker_size: int | float = "default",
+                 marker_style: str = "default", line_width: int | float = "default",
+                 lines_to_axis: bool = True, show_coordinates: bool = False):
+        if not isinstance(x, int|float) or not isinstance(y, int|float):
+            raise GraphingException("The x and y coordinates for a point must be a single number each!")
+        else:
+            self.x = x
+            self.y = y
+        self.label = label
+        self.color = color
+        self.edge_color = edge_color
+        self.marker_size = marker_size
+        self.marker_style = marker_style
+        self.line_width = line_width
+        self.lines_to_axis = lines_to_axis
+        self.show_coordinates = show_coordinates
 
+    def plot_curve(self, axes):
+        axes.scatter(self.x, self.y, c=self.color, edgecolors=self.edge_color, s=self.marker_size,
+                     marker=self.marker_style, linewidths=self.line_width)
+        if self.lines_to_axis:
+            self.add_lines_to_axis(axes)
+        if self.show_coordinates:
+            self.add_coordinates(axes)
+
+    def add_lines_to_axis(self, axes):
+        axes.hlines(self.y, axes.get_xlim()[0], self.x, linestyle='--', color='k', zorder=0)
+        axes.vlines(self.x, axes.get_ylim()[0], self.y, linestyle='--', color='k', zorder=0)
+
+    def add_coordinates(self):
+        raise NotImplementedError
 
 

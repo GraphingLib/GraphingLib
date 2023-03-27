@@ -41,7 +41,7 @@ class TestCurve(unittest.TestCase):
 class TestScatter(unittest.TestCase):
     def setUp(self):
         x = linspace(0, 3*pi, 200)
-        self.testScatter = Scatter(x, sin(x), 'Test Curve', 'k')
+        self.testScatter = Scatter(x, sin(x), 'Test Curve')
 
     def test_scatter_is_curve(self):
         self.assertIsInstance(self.testScatter, Curve)
@@ -61,7 +61,7 @@ class TestScatter(unittest.TestCase):
 
     def test_curve_is_plotted(self):
         x = linspace(0, 3*pi, 200)
-        self.testScatter = Scatter(x, sin(x), 'Test Curve', 'k', line_width=1, marker_size=10)
+        self.testScatter = Scatter(x, sin(x), 'test scatter', color='k', line_width=1, marker_size=30, marker_style='o', edge_color="none")
         _, self.testAxes = subplots()
         self.testScatter.plot_curve(self.testAxes)
         self.assertEqual(len(self.testAxes.collections), 1)
@@ -162,3 +162,7 @@ class TestDashed(unittest.TestCase):
     
     def test_line_width_is_default(self):
         self.assertEqual(self.testDashed.line_width, "default")
+
+
+class TestPoint(unittest.TestCase):
+    pass
