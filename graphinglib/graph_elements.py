@@ -142,3 +142,23 @@ class Point():
         raise NotImplementedError
 
 
+@dataclass
+class Text():
+    """
+    A text object to be displayed on a graph.
+    """
+    x: int | float
+    y: int | float
+    text: str
+    color: str = "k"
+    size: int | float = 10
+    add_arrow: bool = False
+    arrow_pointing_to: tuple[float] = None
+
+    def plot_curve(self, axes):
+        axes.text(self.x, self.y, self.text)
+        if self.add_arrow:
+            self.add_arrow_pointing_to(self.arrow_pointing_to)
+
+    def add_arrow_pointing_to(self, points_to):
+        raise NotImplementedError
