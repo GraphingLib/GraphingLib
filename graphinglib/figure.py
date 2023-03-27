@@ -1,6 +1,7 @@
 from .file_manager import *
 from .graph_elements import *
 from .legend_artists import *
+from .data_plotting_1d import *
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 from matplotlib.collections import LineCollection
