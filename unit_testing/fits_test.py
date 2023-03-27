@@ -2,6 +2,7 @@ import unittest
 
 from graphinglib.fits import *
 from graphinglib.graph_elements import *
+from graphinglib.data_plotting_1d import *
 from numpy import linspace, pi, sin
 
 

@@ -2,6 +2,7 @@ import unittest
 from random import random
 
 from graphinglib.graph_elements import *
+from graphinglib.data_plotting_1d import *
 from numpy import ndarray, linspace, pi, sin
 from matplotlib.pyplot import subplots
 
