@@ -135,8 +135,8 @@ class Point():
             self.add_coordinates(axes)
 
     def add_lines_to_axis(self, axes):
-        axes.hlines(self.y, axes.get_xlim()[0], self.x, linestyle='--', color='k', zorder=0)
-        axes.vlines(self.x, axes.get_ylim()[0], self.y, linestyle='--', color='k', zorder=0)
+        axes.hlines(self.y, axes.get_xlim()[0], self.x, linestyle=':', color='k', zorder=0)
+        axes.vlines(self.x, axes.get_ylim()[0], self.y, linestyle=':', color='k', zorder=0)
 
     def add_coordinates(self):
         raise NotImplementedError
