@@ -12,6 +12,7 @@
 !graphinglib/fits.py
 !graphinglib/graph_elements.py
 !graphinglib/legend_artists.py
+!graphinglib/data_plotting_1d.py
 
 !graphinglib/default_styles/
 !graphinglib/default_styles/__init__.py

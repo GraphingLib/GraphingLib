@@ -1,4 +1,4 @@
-from .graph_elements import Curve
+from .data_plotting_1d import Curve
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
