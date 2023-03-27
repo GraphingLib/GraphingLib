@@ -4,8 +4,10 @@ Curve:
 
 Scatter:
   color: "k"
+  edge_color: "none"
   marker_size: 30
-  line_width: 1
+  line_width: 1.5
+  marker_style: "o"
 
 Dashed:
   color: "k"
@@ -43,3 +45,10 @@ FitFromPolynomial:
 FitFromSine:
   color: "k"
   line_width: 1
+
+Point:
+  color: "k"
+  edge_color: "none"
+  marker_size: 30
+  marker_style: "o"
+  line_width: 1.5

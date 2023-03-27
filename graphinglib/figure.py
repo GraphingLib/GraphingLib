@@ -46,7 +46,10 @@ class Figure:
             for curve in self.curves:
                 self.fill_in_missing_params(curve)
                 curve.plot_curve(self.axes)
-                self.handles.append(curve.handle)
+                try:
+                    self.handles.append(curve.handle)
+                except:
+                    continue
             if legend:
                 try:
                     self.axes.legend(
