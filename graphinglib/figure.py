@@ -36,7 +36,10 @@ class Figure:
         Adds a Curve object to the figure.
         """
         self.curves.append(curve)
-        self.labels.append(curve.label)
+        try:
+            self.labels.append(curve.label)
+        except AttributeError:
+            pass
 
     def generate_figure(self, legend=True, test=False):
         self.axes.set_xlabel(self.x_axis_name)
@@ -49,7 +52,7 @@ class Figure:
                 curve.plot_curve(self.axes)
                 try:
                     self.handles.append(curve.handle)
-                except:
+                except AttributeError:
                     continue
             if legend:
                 try:
