@@ -47,7 +47,7 @@ class FitFromPolynomial(Curve):
         """
         return lambda x: sum(coeff * x**exponent for exponent, coeff in enumerate(self.coeffs))
     
-    def plot_curve(self, axes: plt.Axes):
+    def plot_element(self, axes: plt.Axes):
         num_of_points = 500
         xdata = np.linspace(self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points)
         ydata = self.function(xdata)
@@ -87,7 +87,7 @@ class FitFromSine(Curve):
     def sine_func_with_params(self):
         return lambda x: self.amplitude * np.sin(self.frequency_rad * x + self.phase) + self.vertical_shift
     
-    def plot_curve(self, axes: plt.Axes):
+    def plot_element(self, axes: plt.Axes):
         num_of_points = 500
         xdata = np.linspace(self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points)
         ydata = self.function(xdata)

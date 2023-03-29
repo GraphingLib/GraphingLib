@@ -22,7 +22,7 @@ class Figure:
         legend_is_boxed = legend_is_boxed if legend_is_boxed != "default" else self.default_params["Figure"]["boxed_legend"]
         tick_are_in = ticks_are_in if ticks_are_in != "default" else self.default_params["Figure"]["ticks_are_in"]
         self.figure, self.axes = plt.subplots(figsize=self.size)
-        self.curves = []
+        self.elements = []
         self.labels = []
         self.handles = []
         self.x_axis_name = x_label
@@ -31,11 +31,11 @@ class Figure:
         self.ticks_are_in = ticks_are_in
         
 
-    def add_curve(self, curve: Curve | Hlines | Vlines | Histogram):
+    def add_element(self, curve: Curve | Hlines | Vlines | Histogram):
         """
         Adds a Curve object to the figure.
         """
-        self.curves.append(curve)
+        self.elements.append(curve)
         try:
             self.labels.append(curve.label)
         except AttributeError:
@@ -46,10 +46,10 @@ class Figure:
         self.axes.set_ylabel(self.y_axis_name)
         if self.ticks_are_in:
             self.axes.tick_params(axis="both", direction="in", which="both")
-        if self.curves:
-            for curve in self.curves:
+        if self.elements:
+            for curve in self.elements:
                 self.fill_in_missing_params(curve)
-                curve.plot_curve(self.axes)
+                curve.plot_element(self.axes)
                 try:
                     self.handles.append(curve.handle)
                 except AttributeError:
