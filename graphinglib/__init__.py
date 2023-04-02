@@ -4,7 +4,7 @@
 A simpler way to visualise data.
 """
 
-from .figure import Figure
 from .data_plotting_1d import Curve, Dashed, Histogram, Scatter
-from .graph_elements import Hlines, Vlines, GraphingException, Point
-from .fits import FitFromPolynomial, FitFromSine
+from .figure import Figure
+from .fits import FitFromExponential, FitFromPolynomial, FitFromSine
+from .graph_elements import GraphingException, Hlines, Point, Vlines
