@@ -1,0 +1,18 @@
+[project]
+name = "GraphingLib"
+version = "0.1.0"
+description = "A simpler way to view data in Python"
+authors = [
+    "Gustave Coulombe",
+    "Yannick Lapointe"
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "pyyaml"
+]
+
+[project.urls]
+homepage = "https://github.com/GraphingLib/GraphingLib.git"
+repository = "https://github.com/GraphingLib/GraphingLib.git"

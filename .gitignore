@@ -1,9 +1,10 @@
 *
 
 !.gitignore
-!setup.py
+# !setup.py
 !README.md
 !MANIFEST.in
+!pyproject.toml
 
 !graphinglib/
 !graphinglib/__init__.py
