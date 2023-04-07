@@ -16,3 +16,10 @@ dependencies = [
 [project.urls]
 homepage = "https://github.com/GraphingLib/GraphingLib.git"
 repository = "https://github.com/GraphingLib/GraphingLib.git"
+
+[tool.setuptools]
+include-package-data = true
+
+[build-system]
+requires = ["setuptools>=43.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
