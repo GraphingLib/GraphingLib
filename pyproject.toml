@@ -3,8 +3,8 @@ name = "GraphingLib"
 version = "0.1.0"
 description = "A simpler way to view data in Python"
 authors = [
-    "Gustave Coulombe",
-    "Yannick Lapointe"
+    {name = "Gustave Coulombe"},
+    {name = "Yannick Lapointe"}
 ]
 dependencies = [
     "numpy",
