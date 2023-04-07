@@ -1,7 +1,6 @@
 *
 
 !.gitignore
-# !setup.py
 !README.md
 !MANIFEST.in
 !pyproject.toml
