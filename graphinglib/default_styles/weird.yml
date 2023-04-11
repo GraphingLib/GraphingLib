@@ -37,6 +37,8 @@ Figure:
   size: [10, 7]
   boxed_legend: True
   ticks_are_in: True
+  log_scale_x: False
+  log_scale_y: False
 
 FitFromPolynomial:
   color: "orange"
