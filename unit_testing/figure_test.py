@@ -1,15 +1,16 @@
 import unittest
 
-from graphinglib.figure import *
-from numpy import linspace, sin, pi
 from matplotlib.pyplot import Axes
+from numpy import linspace, pi, sin
+
+from graphinglib.figure import *
 
 
 class TestFigure(unittest.TestCase):
     def setUp(self):
-        x = linspace(0, 3*pi, 200)
+        x = linspace(0, 3 * pi, 200)
         self.testFigure = Figure()
-        self.testCurve = Curve(x, sin(x), 'Test Curve', color='k')
+        self.testCurve = Curve(x, sin(x), "Test Curve", color="k")
 
     def test_curves_is_list(self):
         self.assertIsInstance(self.testFigure.curves, list)
@@ -30,39 +31,41 @@ class TestFigure(unittest.TestCase):
     def test_all_curves_plotted(self):
         self.testFigure.add_curve(self.testCurve)
         self.testFigure.generate_figure(test=True)
-        self.assertEqual(len(self.testFigure.axes.get_lines()), len(self.testFigure.curves))
+        self.assertEqual(
+            len(self.testFigure.axes.get_lines()), len(self.testFigure.curves)
+        )
 
     def test_raise_exception_if_no_curve_added(self):
         self.assertRaises(GraphingException, self.testFigure.generate_figure)
-    
+
     def test_auto_assign_default_params(self):
-        x = linspace(0, 3*pi, 200)
-        a_curve = Curve(x, sin(x), label='Test Curve')
+        x = linspace(0, 3 * pi, 200)
+        a_curve = Curve(x, sin(x), label="Test Curve")
         a_figure = Figure()
         a_figure.add_curve(a_curve)
         a_figure.fill_in_missing_params(a_curve)
         self.assertEqual(a_curve.line_width, 1)
-    
+
     def test_auto_assign_default_params_weird(self):
-        x = linspace(0, 3*pi, 200)
-        a_curve = Curve(x, sin(x), label='Test Curve')
-        a_figure = Figure(figure_style='weird')
+        x = linspace(0, 3 * pi, 200)
+        a_curve = Curve(x, sin(x), label="Test Curve")
+        a_figure = Figure(figure_style="weird")
         a_figure.add_curve(a_curve)
         a_figure.fill_in_missing_params(a_curve)
         self.assertEqual(a_curve.line_width, 10)
-    
+
     def test_auto_assign_default_params_skip_predefined(self):
-        x = linspace(0, 3*pi, 200)
-        a_curve = Curve(x, sin(x), label='Test Curve', line_width=3)
+        x = linspace(0, 3 * pi, 200)
+        a_curve = Curve(x, sin(x), label="Test Curve", line_width=3)
         a_figure = Figure()
         a_figure.add_curve(a_curve)
         a_figure.fill_in_missing_params(a_curve)
         self.assertEqual(a_curve.line_width, 3)
-    
+
     def test_assign_figure_params_weird(self):
-        a_figure = Figure(figure_style='weird')
-        self.assertListEqual(a_figure.size, [10,7])
-    
+        a_figure = Figure(figure_style="weird")
+        self.assertListEqual(list(a_figure.size), [10, 7])
+
     def test_assign_figure_params_not_boxed(self):
-        a_figure = Figure(figure_style='weird', legend_is_boxed=False)
+        a_figure = Figure(figure_style="weird", legend_is_boxed=False)
         self.assertFalse(a_figure.legend_is_boxed)
