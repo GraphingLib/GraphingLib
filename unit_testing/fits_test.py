@@ -1,9 +1,10 @@
 import unittest
 
+from numpy import exp, linspace, pi, sin
+
+from graphinglib.data_plotting_1d import *
 from graphinglib.fits import *
 from graphinglib.graph_elements import *
-from graphinglib.data_plotting_1d import *
-from numpy import linspace, pi, sin
 
 
 class TestFitFromPolynomial(unittest.TestCase):
@@ -68,6 +69,29 @@ class TestFitFromSine(unittest.TestCase):
     
     def test_string(self):
         self.assertEqual(str(self.fit), "2.000 sin(3.000x + 4.000) + 5.000")
+    
+    def test_function(self):
+        self.assertAlmostEqual(self.fit.function(17), 3.00048965)
+        
+class TestFitFromExponential(unittest.TestCase):
+    def setUp(self):
+        x = linspace(0, 10, 200)
+        self.data = Scatter(x, 2*exp(3*x + 4) , 'k', 'Data')
+        self.fit = FitFromExponential(self.data, 'k', 'Sinusoidal fit')
+    
+    def test_parameters(self):
+        self.assertListEqual(list(self.fit.parameters), [2,3,4])
+    
+    def test_cov(self):
+        self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
+        self.assertEqual(self.fit.cov_matrix.shape, (3,3))
+    
+    def test_std_dev(self):
+        self.assertIsInstance(self.fit.standard_deviation, np.ndarray)
+        self.assertEqual(self.fit.standard_deviation.shape, (3,))
+    
+    def test_string(self):
+        self.assertEqual(str(self.fit), "2.000 exp(3.000x + 4.000)")
     
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(17), 3.00048965)

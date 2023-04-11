@@ -1,25 +1,18 @@
-[project]
-name = "GraphingLib"
+[tool.poetry]
+name = "graphinglib"
 version = "0.1.0"
 description = "A simpler way to view data in Python"
-authors = [
-    {name = "Gustave Coulombe"},
-    {name = "Yannick Lapointe"}
-]
-dependencies = [
-    "numpy",
-    "scipy",
-    "matplotlib",
-    "pyyaml"
-]
+authors = ["Gustave Coulombe", "Yannick Lapointe"]
+readme = "README.md"
 
-[project.urls]
-homepage = "https://github.com/GraphingLib/GraphingLib.git"
-repository = "https://github.com/GraphingLib/GraphingLib.git"
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+numpy = "^1.24.2"
+scipy = "^1.10.1"
+matplotlib = "^3.7.1"
+PyYAML = "^6.0"
 
-[tool.setuptools]
-include-package-data = true
 
 [build-system]
-requires = ["setuptools>=43.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
