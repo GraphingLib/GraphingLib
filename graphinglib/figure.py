@@ -36,12 +36,13 @@ class Figure:
         self.ticks_are_in = ticks_are_in
         
 
-    def add_curve(self, curve: Curve | Hlines | Vlines | Histogram):
+    def add_element(self, *curves: Curve | Hlines | Vlines | Histogram):
         """
         Adds a Curve object to the figure.
         """
-        self.curves.append(curve)
-        self.labels.append(curve.label)
+        for curve in curves:
+            self.curves.append(curve)
+            self.labels.append(curve.label)
 
     def generate_figure(self, legend=True, test=False):
         self.axes.set_xlabel(self.x_axis_name)
