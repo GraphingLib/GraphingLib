@@ -22,14 +22,14 @@ class TestFigure(unittest.TestCase):
         self.assertIsInstance(self.testFigure.handles, list)
 
     def test_curve_is_added(self):
-        self.testFigure.add_curve(self.testCurve)
+        self.testFigure.add_element(self.testCurve)
         self.assertIs(self.testFigure.curves[0], self.testCurve)
 
     def test_axes_is_Axes(self):
         self.assertIsInstance(self.testFigure.axes, Axes)
 
     def test_all_curves_plotted(self):
-        self.testFigure.add_curve(self.testCurve)
+        self.testFigure.add_element(self.testCurve)
         self.testFigure.generate_figure(test=True)
         self.assertEqual(
             len(self.testFigure.axes.get_lines()), len(self.testFigure.curves)
@@ -42,7 +42,7 @@ class TestFigure(unittest.TestCase):
         x = linspace(0, 3 * pi, 200)
         a_curve = Curve(x, sin(x), label="Test Curve")
         a_figure = Figure()
-        a_figure.add_curve(a_curve)
+        a_figure.add_element(a_curve)
         a_figure.fill_in_missing_params(a_curve)
         self.assertEqual(a_curve.line_width, 1)
 
@@ -50,7 +50,7 @@ class TestFigure(unittest.TestCase):
         x = linspace(0, 3 * pi, 200)
         a_curve = Curve(x, sin(x), label="Test Curve")
         a_figure = Figure(figure_style="weird")
-        a_figure.add_curve(a_curve)
+        a_figure.add_element(a_curve)
         a_figure.fill_in_missing_params(a_curve)
         self.assertEqual(a_curve.line_width, 10)
 
@@ -58,7 +58,7 @@ class TestFigure(unittest.TestCase):
         x = linspace(0, 3 * pi, 200)
         a_curve = Curve(x, sin(x), label="Test Curve", line_width=3)
         a_figure = Figure()
-        a_figure.add_curve(a_curve)
+        a_figure.add_element(a_curve)
         a_figure.fill_in_missing_params(a_curve)
         self.assertEqual(a_curve.line_width, 3)
 
