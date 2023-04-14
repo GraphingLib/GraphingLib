@@ -1,8 +1,9 @@
-from .data_plotting_1d import Curve
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from scipy.optimize import curve_fit
+
+from .data_plotting_1d import Curve
 
 
 class FitFromPolynomial(Curve):
@@ -70,7 +71,7 @@ class FitFromSine(Curve):
     def __str__(self) -> str:
         part1 = f"{self.amplitude:.3f} sin({self.frequency_rad:.3f}x"
         part2 = f" + {self.phase:.3f})" if self.phase >= 0 else f" - {abs(self.phase):.3f})"
-        part3 = f" + {self.vertical_shift:.3f}" if self.phase >= 0 else f" - {abs(self.vertical_shift):.3f}"
+        part3 = f" + {self.vertical_shift:.3f}" if self.vertical_shift >= 0 else f" - {abs(self.vertical_shift):.3f}"
         return part1 + part2 + part3
     
     def calculate_parameters(self):
@@ -88,6 +89,45 @@ class FitFromSine(Curve):
         return lambda x: self.amplitude * np.sin(self.frequency_rad * x + self.phase) + self.vertical_shift
     
     def plot_element(self, axes: plt.Axes):
+        num_of_points = 500
+        xdata = np.linspace(self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points)
+        ydata = self.function(xdata)
+        self.handle, = axes.plot(xdata, ydata, color=self.color, label=self.label)
+        
+
+class FitFromExponential(Curve):
+    """
+    Create a curve fit (continuous Curve) from an existing curve object using a sinusoidal fit.
+    """
+    
+    def __init__(self, curve_to_be_fit: Curve, color: str, label: str, guesses: npt.ArrayLike=None):
+        self.curve_to_be_fit = curve_to_be_fit
+        self.guesses = guesses
+        self.calculate_parameters()
+        self.function = self.exp_func_with_params()
+        self.color = color
+        self.label = label + ' : ' + 'f(x) = ' + str(self)
+    
+    def __str__(self) -> str:
+        part1 = f"{self.parameters[0]:.3f} exp({self.parameters[1]:.3f}x"
+        part2 = f" + {self.parameters[2]:.3f})" if self.parameters[2] >= 0 else f" - {abs(self.parameters[2]):.3f})"
+        return part1 + part2
+    
+    def calculate_parameters(self):
+        parameters, self.cov_matrix = curve_fit(self.exp_func_template,
+                                                self.curve_to_be_fit.xdata,
+                                                self.curve_to_be_fit.ydata, p0=self.guesses)
+        self.parameters = parameters
+        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
+    
+    @staticmethod
+    def exp_func_template(x, a, b, c):
+            return a * np.exp(b*x + c)
+    
+    def exp_func_with_params(self):
+        return lambda x: self.parameters[0] * np.exp(self.parameters[1] * x + self.parameters[2])
+    
+    def plot_curve(self, axes: plt.Axes):
         num_of_points = 500
         xdata = np.linspace(self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points)
         ydata = self.function(xdata)

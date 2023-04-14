@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "graphinglib"
+version = "0.1.0"
+description = "A simpler way to view data in Python"
+authors = ["Gustave Coulombe", "Yannick Lapointe"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+numpy = "^1.24.2"
+scipy = "^1.10.1"
+matplotlib = "^3.7.1"
+PyYAML = "^6.0"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
