@@ -34,7 +34,7 @@ class Hlines():
                 raise GraphingException("There must be the same number of colors, "
                                         + "linestyles and lines!")
 
-    def plot_curve(self, axes):
+    def plot_element(self, axes):
         if isinstance(self.y, list) and len(self.y) > 1:
             axes.hlines(
                 self.y,
@@ -80,7 +80,7 @@ class Vlines():
                 raise GraphingException("There must be the same number of colors, "
                                         + "linestyles and lines!")
 
-    def plot_curve(self, axes):
+    def plot_element(self, axes):
         if isinstance(self.x, list) and len(self.x) > 1:
             axes.vlines(
                 self.x,
@@ -126,7 +126,7 @@ class Point():
         self.lines_to_axis = lines_to_axis
         self.show_coordinates = show_coordinates
 
-    def plot_curve(self, axes):
+    def plot_element(self, axes):
         axes.scatter(self.x, self.y, c=self.color, edgecolors=self.edge_color, s=self.marker_size,
                      marker=self.marker_style, linewidths=self.line_width)
         if self.lines_to_axis:
@@ -155,7 +155,7 @@ class Text():
     add_arrow: bool = False
     arrow_pointing_to: tuple[float] = None
 
-    def plot_curve(self, axes):
+    def plot_element(self, axes):
         axes.text(self.x, self.y, self.text)
         if self.add_arrow:
             self.add_arrow_pointing_to(self.arrow_pointing_to)

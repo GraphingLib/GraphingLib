@@ -25,7 +25,7 @@ class Figure:
         log_scale_x = log_scale_x if log_scale_x != "default" else self.default_params["Figure"]["log_scale_x"]
         log_scale_y = log_scale_y if log_scale_y != "default" else self.default_params["Figure"]["log_scale_y"]
         self.figure, self.axes = plt.subplots(figsize=self.size)
-        self.curves = []
+        self.elements = []
         self.labels = []
         self.handles = []
         self.x_axis_name = x_label
@@ -34,7 +34,7 @@ class Figure:
         self.log_scale_y = log_scale_y
         self.legend_is_boxed = legend_is_boxed
         self.ticks_are_in = ticks_are_in
-        
+
 
     def add_element(self, *curves: Curve | Hlines | Vlines | Histogram):
         """
@@ -42,7 +42,11 @@ class Figure:
         """
         for curve in curves:
             self.curves.append(curve)
-            self.labels.append(curve.label)
+            try:
+                self.labels.append(curve.label)
+            except AttributeError:
+                pass
+
 
     def generate_figure(self, legend=True, test=False):
         self.axes.set_xlabel(self.x_axis_name)
@@ -53,13 +57,13 @@ class Figure:
             self.axes.set_yscale('log')
         if self.ticks_are_in:
             self.axes.tick_params(axis="both", direction="in", which="both")
-        if self.curves:
-            for curve in self.curves:
+        if self.elements:
+            for curve in self.elements:
                 self.fill_in_missing_params(curve)
-                curve.plot_curve(self.axes)
+                curve.plot_element(self.axes)
                 try:
                     self.handles.append(curve.handle)
-                except:
+                except AttributeError:
                     continue
             if legend:
                 try:
@@ -94,7 +98,8 @@ class Figure:
                 plt.show()
         else:
             raise GraphingException("No curves to be plotted!")
-    
+
+
     def fill_in_missing_params(self, curve):
         object_type = type(curve).__name__
         for property, value in vars(curve).items():

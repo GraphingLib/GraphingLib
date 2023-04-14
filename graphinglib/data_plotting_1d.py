@@ -28,7 +28,7 @@ class Curve:
     def set_color(self, color: str or list[str]):
         self.color = color
 
-    def plot_curve(self, axes: plt.Axes):
+    def plot_element(self, axes: plt.Axes):
         self.handle, = axes.plot(
             self.xdata,
             self.ydata,
@@ -46,7 +46,7 @@ class Scatter(Curve):
     edge_color: str = "default"
     marker_style: str = "default"
 
-    def plot_curve(self, axes: plt.Axes):
+    def plot_element(self, axes: plt.Axes):
         self.handle = axes.scatter(
             self.xdata,
             self.ydata,
@@ -62,7 +62,7 @@ class Dashed(Curve):
     """
     A dashed curve derived from the Curve object.
     """
-    def plot_curve(self, axes: plt.Axes):
+    def plot_element(self, axes: plt.Axes):
         self.handle, = axes.plot(
             self.xdata,
             self.ydata,
@@ -116,7 +116,7 @@ class Histogram:
     def normal_not_normalized(self, x):
         return sum(self.bin_heights) * self.bin_width * self.normal_normalized(x)
 
-    def plot_curve(self, axes: plt.Axes):
+    def plot_element(self, axes: plt.Axes):
         self.handle = Polygon(
             np.array([[0, 2, 2, 3, 3, 1, 1, 0, 0], [0, 0, 1, 1, 2, 2, 3, 3, 0]]).T,
             facecolor=to_rgba(self.face_color, self.alpha),
