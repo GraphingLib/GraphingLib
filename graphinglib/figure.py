@@ -41,7 +41,7 @@ class Figure:
         Adds a Curve object to the figure.
         """
         for curve in curves:
-            self.curves.append(curve)
+            self.elements.append(curve)
             try:
                 self.labels.append(curve.label)
             except AttributeError:
