@@ -1,3 +1,5 @@
+from tracemalloc import Statistic
+
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
@@ -127,6 +129,33 @@ class FitFromExponential(Curve):
     def exp_func_with_params(self):
         return lambda x: self.parameters[0] * np.exp(self.parameters[1] * x + self.parameters[2])
     
+    def plot_curve(self, axes: plt.Axes):
+        num_of_points = 500
+        xdata = np.linspace(self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points)
+        ydata = self.function(xdata)
+        self.handle, = axes.plot(xdata, ydata, color=self.color, label=self.label)
+
+class FitFromGaussian(Curve):
+    """
+    Create a curve fit (continuous Curve) from an existing curve object using a sinusoidal fit.
+    """
+    
+    def __init__(self, curve_to_be_fit: Curve, color: str, label: str, guesses: npt.ArrayLike=None):
+        ...
+        
+    def __str__(self) -> str:
+        ...
+    
+    def calculate_parameters(self):
+        ...
+    
+    @staticmethod
+    def gaussian_func_template(self):
+        ...
+    
+    def gaussian_func_with_params(self):
+        ...
+
     def plot_curve(self, axes: plt.Axes):
         num_of_points = 500
         xdata = np.linspace(self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points)
