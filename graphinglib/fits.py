@@ -183,7 +183,7 @@ class FitFromExponential(Curve):
             self.parameters[1] * x + self.parameters[2]
         )
 
-    def plot_curve(self, axes: plt.Axes):
+    def plot_element(self, axes: plt.Axes):
         num_of_points = 500
         xdata = np.linspace(
             self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
