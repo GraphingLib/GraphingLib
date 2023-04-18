@@ -212,7 +212,7 @@ class FitFromGaussian(Curve):
         self.label = label + " : " + "f(x) = " + str(self)
 
     def __str__(self) -> str:
-        return "mock_string"
+        return f"{self.amplitude} exp()"
 
     def calculate_parameters(self):
         parameters, self.cov_matrix = curve_fit(
@@ -228,11 +228,11 @@ class FitFromGaussian(Curve):
 
     @staticmethod
     def gaussian_func_template(x, amplitude, mean, standard_deviation):
-        return amplitude * np.exp(-(((x - mean) / 4 / standard_deviation) ** 2))
+        return amplitude * np.exp(-(((x - mean) / standard_deviation) ** 2) / 2)
 
     def gaussian_func_with_params(self):
         return lambda x: self.amplitude * np.exp(
-            -(((x - self.mean) / 4 / self.standard_deviation) ** 2)
+            -(((x - self.mean) / self.standard_deviation) ** 2) / 2
         )
 
     def plot_element(self, axes: plt.Axes):
