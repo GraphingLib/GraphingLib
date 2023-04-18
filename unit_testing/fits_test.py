@@ -1,6 +1,6 @@
 import unittest
 
-from numpy import exp, linspace, pi, sin
+from numpy import exp, linspace, pi, random, sin
 
 from graphinglib.data_plotting_1d import *
 from graphinglib.fits import *
@@ -116,3 +116,29 @@ class TestFitFromExponential(unittest.TestCase):
 
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(0.001), 109.524, places=3)
+
+
+class TestFitFromGaussian(unittest.TestCase):
+    def setUp(self) -> None:
+        x = linspace(-4, 6, 1000)
+        noise = 0.01 * random.rand(len(x)) - 0.005
+        self.data = Scatter(
+            x, 5 * np.exp(-(((x - 1) / 1) ** 2) / 2) + noise, "k", "Data"
+        )
+        self.fit = FitFromGaussian(self.data, "k", "Gaussian fit")
+
+    def test_cov(self):
+        self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
+        self.assertEqual(self.fit.cov_matrix.shape, (3, 3))
+
+    def test_parameters(self):
+        params = [self.fit.amplitude, self.fit.mean, self.fit.standard_deviation]
+        rounded_params = [round(i, 3) for i in params]
+        self.assertListEqual(rounded_params, [5, 1, 1])
+
+    def test_std_dev(self):
+        self.assertIsInstance(self.fit.standard_deviation_of_fit_params, np.ndarray)
+        self.assertEqual(self.fit.standard_deviation_of_fit_params.shape, (3,))
+
+    def test_str(self):
+        self.assertEqual(str(self.fit), "$\mu$ = 1.000, $\sigma$ = 1.000, $A$ = 5.000")
