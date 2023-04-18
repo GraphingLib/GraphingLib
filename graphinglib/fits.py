@@ -209,10 +209,10 @@ class FitFromGaussian(Curve):
         self.calculate_parameters()
         self.function = self.gaussian_func_with_params()
         self.color = color
-        self.label = label + " : " + "f(x) = " + str(self)
+        self.label = label + " : " + str(self)
 
     def __str__(self) -> str:
-        return f"{self.amplitude} exp()"
+        return f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}, $A$ = {self.amplitude:.3f}"
 
     def calculate_parameters(self):
         parameters, self.cov_matrix = curve_fit(
