@@ -1,5 +1,3 @@
-from tracemalloc import Statistic
-
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
@@ -138,7 +136,7 @@ class FitFromSine(Curve):
 
 class FitFromExponential(Curve):
     """
-    Create a curve fit (continuous Curve) from an existing curve object using a sinusoidal fit.
+    Create a curve fit (continuous Curve) from an existing curve object using an exponential fit.
     """
 
     def __init__(
@@ -194,7 +192,7 @@ class FitFromExponential(Curve):
 
 class FitFromGaussian(Curve):
     """
-    Create a curve fit (continuous Curve) from an existing curve object using a sinusoidal fit.
+    Create a curve fit (continuous Curve) from an existing curve object using a gaussian fit.
     """
 
     def __init__(
@@ -270,11 +268,16 @@ class FitFromSquareRoot(Curve):
         raise NotImplementedError()
 
     @staticmethod
-    def gaussian_func_template(x, amplitude, mean, standard_deviation):
+    def square_root_func_template(x, amplitude, mean, standard_deviation):
         raise NotImplementedError()
 
-    def gaussian_func_with_params(self):
+    def square_root_func_with_params(self):
         raise NotImplementedError()
 
     def plot_element(self, axes: plt.Axes):
-        raise NotImplementedError()
+        num_of_points = 500
+        xdata = np.linspace(
+            self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
+        )
+        ydata = self.function(xdata)
+        (self.handle,) = axes.plot(xdata, ydata, color=self.color, label=self.label)
