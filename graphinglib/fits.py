@@ -242,3 +242,39 @@ class FitFromGaussian(Curve):
         )
         ydata = self.function(xdata)
         (self.handle,) = axes.plot(xdata, ydata, color=self.color, label=self.label)
+
+
+class FitFromSquareRoot(Curve):
+    """
+    Create a curve fit (continuous Curve) from an existing curve object using a square root fit.
+    """
+
+    def __init__(
+        self,
+        curve_to_be_fit: Curve,
+        color: str,
+        label: str,
+        guesses: npt.ArrayLike = None,
+    ):
+        self.curve_to_be_fit = curve_to_be_fit
+        self.guesses = guesses
+        self.calculate_parameters()
+        self.function = self.square_root_func_with_params()
+        self.color = color
+        self.label = label + " : " + str(self)
+
+    def __str__(self) -> str:
+        raise NotImplementedError()
+
+    def calculate_parameters(self):
+        raise NotImplementedError()
+
+    @staticmethod
+    def gaussian_func_template(x, amplitude, mean, standard_deviation):
+        raise NotImplementedError()
+
+    def gaussian_func_with_params(self):
+        raise NotImplementedError()
+
+    def plot_element(self, axes: plt.Axes):
+        raise NotImplementedError()
