@@ -264,7 +264,7 @@ class FitFromLog(Curve):
         self.label = label + " : " + str(self)
 
     def __str__(self) -> str:
-        return "Mock func"
+        return "Mock string"
 
     def calculate_parameters(self):
         self.parameters, self.cov_matrix = curve_fit(
