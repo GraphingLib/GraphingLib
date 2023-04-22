@@ -252,6 +252,7 @@ class FitFromLog(Curve):
     def __init__(
         self,
         curve_to_be_fit: Curve,
+        log_base: float,
         color: str,
         label: str,
         guesses: npt.ArrayLike = None,
@@ -268,7 +269,7 @@ class FitFromLog(Curve):
 
     def calculate_parameters(self):
         parameters, self.cov_matrix = curve_fit(
-            self.log_func_template,
+            self.log_func_template(),
             self.curve_to_be_fit.xdata,
             self.curve_to_be_fit.ydata,
             p0=self.guesses,
@@ -278,9 +279,8 @@ class FitFromLog(Curve):
         self.standard_deviation = parameters[2]
         self.standard_deviation_of_fit_params = np.sqrt(np.diag(self.cov_matrix))
 
-    @staticmethod
-    def log_func_template(x, amplitude, mean, standard_deviation):
-        raise NotImplementedError
+    def log_func_template(self):
+        return lambda x, a, b, c: a * (np.log(x + b) / np.log(self.log_base)) + c
 
     def log_func_with_params(self):
         raise NotImplementedError
