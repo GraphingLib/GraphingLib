@@ -136,7 +136,7 @@ class FitFromSine(Curve):
 
 class FitFromExponential(Curve):
     """
-    Create a curve fit (continuous Curve) from an existing curve object using a sinusoidal fit.
+    Create a curve fit (continuous Curve) from an existing curve object using an exponential fit.
     """
 
     def __init__(
@@ -192,7 +192,7 @@ class FitFromExponential(Curve):
 
 class FitFromGaussian(Curve):
     """
-    Create a curve fit (continuous Curve) from an existing curve object using a sinusoidal fit.
+    Create a curve fit (continuous Curve) from an existing curve object using a gaussian fit.
     """
 
     def __init__(
@@ -242,6 +242,57 @@ class FitFromGaussian(Curve):
         (self.handle,) = axes.plot(xdata, ydata, color=self.color, label=self.label)
 
 
+class FitFromSquareRoot(Curve):
+    """
+    Create a curve fit (continuous Curve) from an existing curve object using a square root fit.
+    """
+    
+    def __init__(
+        self,
+        curve_to_be_fit: Curve,
+        color: str,
+        label: str,
+        guesses: npt.ArrayLike = None,
+    ):
+        self.curve_to_be_fit = curve_to_be_fit
+        self.guesses = guesses
+        self.calculate_parameters()
+        self.function = self.square_root_func_with_params()
+        self.color = color
+        self.label = label + " : " + str(self) 
+        
+    def __str__(self) -> str:
+        return f"{self.parameters[0]:.3f} sqrt(x {'+' if self.parameters[1] > 0 else '-'} {abs(self.parameters[1]):.3f}) {'+' if self.parameters[2] > 0 else '-'} {abs(self.parameters[2]):.3f}"
+
+    def calculate_parameters(self) -> None:
+        parameters, self.cov_matrix = curve_fit(
+            self.square_root_func_template,
+            self.curve_to_be_fit.xdata,
+            self.curve_to_be_fit.ydata,
+            p0=self.guesses,
+        )
+        self.parameters = parameters
+        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
+
+    @staticmethod
+    def square_root_func_template(x, a, b, c):
+        return a * np.sqrt(x + b) + c
+
+    def square_root_func_with_params(self):
+        return (
+            lambda x: self.parameters[0] * np.sqrt(x + self.parameters[1])
+            + self.parameters[2]
+        )
+
+    def plot_element(self, axes: plt.Axes):
+        num_of_points = 500
+        xdata = np.linspace(
+            self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
+        )
+        ydata = self.function(xdata)
+        (self.handle,) = axes.plot(xdata, ydata, color=self.color, label=self.label)
+        
+        
 class FitFromLog(Curve):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a logarithmic fit.
@@ -262,6 +313,7 @@ class FitFromLog(Curve):
         self.function = self.log_func_with_params()
         self.color = color
         self.label = label + " : " + str(self)
+        
 
     def __str__(self) -> str:
         return f"{self.parameters[0]:.3f} log_{self.log_base if self.log_base != np.e else 'e'}(x {'-' if self.parameters[1] < 0 else '+'} {abs(self.parameters[1]):.3f}) {'-' if self.parameters[2] < 0 else '+'} {abs(self.parameters[2]):.3f}"
