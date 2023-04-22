@@ -268,22 +268,23 @@ class FitFromLog(Curve):
         raise NotImplementedError
 
     def calculate_parameters(self):
-        parameters, self.cov_matrix = curve_fit(
+        self.parameters, self.cov_matrix = curve_fit(
             self.log_func_template(),
             self.curve_to_be_fit.xdata,
             self.curve_to_be_fit.ydata,
             p0=self.guesses,
         )
-        self.amplitude = parameters[0]
-        self.mean = parameters[1]
-        self.standard_deviation = parameters[2]
-        self.standard_deviation_of_fit_params = np.sqrt(np.diag(self.cov_matrix))
+        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
 
     def log_func_template(self):
         return lambda x, a, b, c: a * (np.log(x + b) / np.log(self.log_base)) + c
 
     def log_func_with_params(self):
-        raise NotImplementedError
+        return (
+            lambda x: self.parameters[0]
+            * (np.log(x + self.parameters[1]) / np.log(self.log_base))
+            + self.parameters[2]
+        )
 
     def plot_element(self, axes: plt.Axes):
         num_of_points = 500
