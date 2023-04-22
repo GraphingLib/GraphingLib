@@ -242,3 +242,53 @@ class FitFromGaussian(Curve):
         )
         ydata = self.function(xdata)
         (self.handle,) = axes.plot(xdata, ydata, color=self.color, label=self.label)
+
+
+class FitFromLog(Curve):
+    """
+    Create a curve fit (continuous Curve) from an existing curve object using a logarithmic fit.
+    """
+
+    def __init__(
+        self,
+        curve_to_be_fit: Curve,
+        color: str,
+        label: str,
+        guesses: npt.ArrayLike = None,
+    ):
+        self.curve_to_be_fit = curve_to_be_fit
+        self.guesses = guesses
+        self.calculate_parameters()
+        self.function = self.log_func_with_params()
+        self.color = color
+        self.label = label + " : " + str(self)
+
+    def __str__(self) -> str:
+        raise NotImplementedError
+
+    def calculate_parameters(self):
+        parameters, self.cov_matrix = curve_fit(
+            self.log_func_template,
+            self.curve_to_be_fit.xdata,
+            self.curve_to_be_fit.ydata,
+            p0=self.guesses,
+        )
+        self.amplitude = parameters[0]
+        self.mean = parameters[1]
+        self.standard_deviation = parameters[2]
+        self.standard_deviation_of_fit_params = np.sqrt(np.diag(self.cov_matrix))
+
+    @staticmethod
+    def log_func_template(x, amplitude, mean, standard_deviation):
+        raise NotImplementedError
+
+    def log_func_with_params(self):
+        raise NotImplementedError
+
+    def plot_element(self, axes: plt.Axes):
+        num_of_points = 500
+        xdata = np.linspace(
+            self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
+        )
+        ydata = self.function(xdata)
+        (self.handle,) = axes.plot(xdata, ydata, color=self.color, label=self.label)
