@@ -1,6 +1,6 @@
 import unittest
 
-from numpy import exp, linspace, pi, random, sin
+from numpy import e, exp, linspace, log, pi, random, sin
 
 from graphinglib.data_plotting_1d import *
 from graphinglib.fits import *
@@ -142,3 +142,28 @@ class TestFitFromGaussian(unittest.TestCase):
 
     def test_str(self):
         self.assertEqual(str(self.fit), "$\mu$ = 1.000, $\sigma$ = 1.000, $A$ = 5.000")
+
+
+class TestFitFromLog(unittest.TestCase):
+    def setUp(self):
+        x = linspace(0, 10, 200)
+        self.data = Scatter(x, 2 * log(x + 3) + 4, "k", "Data")
+        self.fit = FitFromLog(self.data, "k", "Logarithmic fit")
+
+    def test_parameters(self):
+        rounded_params = [round(i) for i in list(self.fit.parameters)]
+        self.assertListEqual(rounded_params, [2, 3, 4])
+
+    def test_cov(self):
+        self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
+        self.assertEqual(self.fit.cov_matrix.shape, (3, 3))
+
+    def test_std_dev(self):
+        self.assertIsInstance(self.fit.standard_deviation, np.ndarray)
+        self.assertEqual(self.fit.standard_deviation.shape, (3,))
+
+    def test_string(self):
+        self.assertEqual(str(self.fit), "2.000 log_e(x + 3.000) + 4.000")
+
+    def test_function(self):
+        self.assertAlmostEqual(self.fit.function(0.001), 6.19789, places=3)
