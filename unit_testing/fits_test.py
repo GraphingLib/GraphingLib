@@ -142,3 +142,25 @@ class TestFitFromGaussian(unittest.TestCase):
 
     def test_str(self):
         self.assertEqual(str(self.fit), "$\mu$ = 1.000, $\sigma$ = 1.000, $A$ = 5.000")
+
+
+class TestFitFromSquareRoot(unittest.TestCase):
+    def setUp(self) -> None:
+        x = linspace(-1, 6, 1000)
+        self.data = Scatter(x, 3 * np.sqrt(x + 4) + 5, "k", "Data")
+        self.fit = FitFromSquareRoot(self.data, "k", "Square root fit")
+
+    def test_cov(self):
+        self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
+        self.assertEqual(self.fit.cov_matrix.shape, (3, 3))
+
+    def test_parameters(self):
+        rounded_params = [round(i, 3) for i in list(self.fit.parameters)]
+        self.assertListEqual(rounded_params, [3, 4, 5])
+
+    def test_std_dev(self):
+        self.assertIsInstance(self.fit.standard_deviation, np.ndarray)
+        self.assertEqual(self.fit.standard_deviation.shape, (3,))
+
+    def test_str(self):
+        self.assertEqual(str(self.fit), "3.000 sqrt(x + 4.000) + 5.000")
