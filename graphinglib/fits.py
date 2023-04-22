@@ -1,5 +1,3 @@
-from tracemalloc import Statistic
-
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
@@ -258,6 +256,7 @@ class FitFromLog(Curve):
         guesses: npt.ArrayLike = None,
     ):
         self.curve_to_be_fit = curve_to_be_fit
+        self.log_base = log_base
         self.guesses = guesses
         self.calculate_parameters()
         self.function = self.log_func_with_params()
@@ -265,7 +264,7 @@ class FitFromLog(Curve):
         self.label = label + " : " + str(self)
 
     def __str__(self) -> str:
-        raise NotImplementedError
+        return "Mock func"
 
     def calculate_parameters(self):
         self.parameters, self.cov_matrix = curve_fit(
