@@ -250,9 +250,9 @@ class FitFromLog(Curve):
     def __init__(
         self,
         curve_to_be_fit: Curve,
-        log_base: float,
         color: str,
         label: str,
+        log_base: float = np.e,
         guesses: npt.ArrayLike = None,
     ):
         self.curve_to_be_fit = curve_to_be_fit
@@ -264,7 +264,7 @@ class FitFromLog(Curve):
         self.label = label + " : " + str(self)
 
     def __str__(self) -> str:
-        return "Mock string"
+        return f"{self.parameters[0]:.3f} log_{self.log_base if self.log_base != np.e else 'e'}(x {'-' if self.parameters[1] < 0 else '+'} {abs(self.parameters[1]):.3f}) {'-' if self.parameters[2] < 0 else '+'} {abs(self.parameters[2]):.3f}"
 
     def calculate_parameters(self):
         self.parameters, self.cov_matrix = curve_fit(

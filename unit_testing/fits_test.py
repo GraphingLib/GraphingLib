@@ -151,7 +151,8 @@ class TestFitFromLog(unittest.TestCase):
         self.fit = FitFromLog(self.data, e, "k", "Logarithmic fit")
 
     def test_parameters(self):
-        self.assertListEqual([round(i) for i in list(self.fit.parameters)[1:]], [3, 4])
+        rounded_params = [round(i) for i in list(self.fit.parameters)]
+        self.assertListEqual(rounded_params, [2, 3, 4])
 
     def test_cov(self):
         self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
