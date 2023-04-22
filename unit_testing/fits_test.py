@@ -148,7 +148,7 @@ class TestFitFromLog(unittest.TestCase):
     def setUp(self):
         x = linspace(0, 10, 200)
         self.data = Scatter(x, 2 * log(x + 3) + 4, "k", "Data")
-        self.fit = FitFromLog(self.data, e, "k", "Logarithmic fit")
+        self.fit = FitFromLog(self.data, "k", "Logarithmic fit")
 
     def test_parameters(self):
         rounded_params = [round(i) for i in list(self.fit.parameters)]
@@ -163,7 +163,7 @@ class TestFitFromLog(unittest.TestCase):
         self.assertEqual(self.fit.standard_deviation.shape, (3,))
 
     def test_string(self):
-        self.assertEqual(str(self.fit)[5:-6], " exp(3.000x + ")
+        self.assertEqual(str(self.fit)[5:-6], " log_e(x + 3.000) +")
 
     def test_function(self):
-        self.assertAlmostEqual(self.fit.function(0.001), 109.524, places=3)
+        self.assertAlmostEqual(self.fit.function(0.001), 6.19789, places=3)
