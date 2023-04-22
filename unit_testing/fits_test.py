@@ -143,6 +143,9 @@ class TestFitFromGaussian(unittest.TestCase):
     def test_str(self):
         self.assertEqual(str(self.fit), "$\mu$ = 1.000, $\sigma$ = 1.000, $A$ = 5.000")
 
+    def test_function(self):
+        self.assertAlmostEqual(self.fit.function(3), 0.676515, places=3)
+
 
 class TestFitFromSquareRoot(unittest.TestCase):
     def setUp(self) -> None:
@@ -164,3 +167,6 @@ class TestFitFromSquareRoot(unittest.TestCase):
 
     def test_str(self):
         self.assertEqual(str(self.fit), "3.000 sqrt(x + 4.000) + 5.000")
+
+    def test_function(self):
+        self.assertAlmostEqual(self.fit.function(3), 12.937, places=3)
