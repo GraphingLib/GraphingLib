@@ -163,7 +163,7 @@ class TestFitFromLog(unittest.TestCase):
         self.assertEqual(self.fit.standard_deviation.shape, (3,))
 
     def test_string(self):
-        self.assertEqual(str(self.fit)[5:-6], " log_e(x + 3.000) +")
+        self.assertEqual(str(self.fit), "2.000 log_e(x + 3.000) + 4.000")
 
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(0.001), 6.19789, places=3)
