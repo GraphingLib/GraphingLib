@@ -65,7 +65,7 @@ class TestFitFromSine(unittest.TestCase):
         x = linspace(0, 3 * pi, 200)
         self.data = Scatter(x, 2 * sin(3 * x + 4) + 5, "k", "Data")
         self.fit = FitFromSine(
-            self.data, "k", "Sinusoidal fit", guesses=[2.09, 3.1, 4.2, 5.2]
+            self.data, "Sinusoidal fit", guesses=[2.09, 3.1, 4.2, 5.2]
         )
 
     def test_parameters(self):
@@ -97,8 +97,8 @@ class TestFitFromSine(unittest.TestCase):
 class TestFitFromExponential(unittest.TestCase):
     def setUp(self):
         x = linspace(0, 10, 200)
-        self.data = Scatter(x, 2 * exp(3 * x + 4), "k", "Data")
-        self.fit = FitFromExponential(self.data, "k", "Sinusoidal fit")
+        self.data = Scatter(x, 2 * exp(3 * x + 4), "Data")
+        self.fit = FitFromExponential(self.data, "Sinusoidal fit")
 
     def test_parameters(self):
         self.assertListEqual([round(i) for i in list(self.fit.parameters)[1:]], [3, 4])
@@ -122,10 +122,8 @@ class TestFitFromGaussian(unittest.TestCase):
     def setUp(self) -> None:
         x = linspace(-4, 6, 1000)
         noise = 0.01 * random.rand(len(x)) - 0.005
-        self.data = Scatter(
-            x, 5 * np.exp(-(((x - 1) / 1) ** 2) / 2) + noise, "k", "Data"
-        )
-        self.fit = FitFromGaussian(self.data, "k", "Gaussian fit")
+        self.data = Scatter(x, 5 * np.exp(-(((x - 1) / 1) ** 2) / 2) + noise, "Data")
+        self.fit = FitFromGaussian(self.data, "Gaussian fit")
 
     def test_cov(self):
         self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
@@ -150,21 +148,21 @@ class TestFitFromGaussian(unittest.TestCase):
 class TestFitFromSquareRoot(unittest.TestCase):
     def setUp(self) -> None:
         x = linspace(-1, 6, 1000)
-        self.data = Scatter(x, 3 * np.sqrt(x + 4) + 5, "k", "Data")
-        self.fit = FitFromSquareRoot(self.data, "k", "Square root fit")
-    
+        self.data = Scatter(x, 3 * np.sqrt(x + 4) + 5, "Data")
+        self.fit = FitFromSquareRoot(self.data, "Square root fit")
+
     def test_parameters(self):
         rounded_params = [round(i, 3) for i in list(self.fit.parameters)]
         self.assertListEqual(rounded_params, [3, 4, 5])
-    
+
     def test_cov(self):
         self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
         self.assertEqual(self.fit.cov_matrix.shape, (3, 3))
-    
+
     def test_std_dev(self):
         self.assertIsInstance(self.fit.standard_deviation, np.ndarray)
         self.assertEqual(self.fit.standard_deviation.shape, (3,))
-        
+
     def test_str(self):
         self.assertEqual(str(self.fit), "3.000 sqrt(x + 4.000) + 5.000")
 
@@ -175,8 +173,8 @@ class TestFitFromSquareRoot(unittest.TestCase):
 class TestFitFromLog(unittest.TestCase):
     def setUp(self):
         x = linspace(0, 10, 200)
-        self.data = Scatter(x, 2 * log(x + 3) + 4, "k", "Data")
-        self.fit = FitFromLog(self.data, "k", "Logarithmic fit")
+        self.data = Scatter(x, 2 * log(x + 3) + 4, "Data")
+        self.fit = FitFromLog(self.data, "Logarithmic fit")
 
     def test_parameters(self):
         rounded_params = [round(i) for i in list(self.fit.parameters)]
