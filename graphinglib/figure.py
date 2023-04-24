@@ -1,3 +1,5 @@
+from fileinput import filename
+
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
@@ -13,17 +15,43 @@ class Figure:
     """
     A general Matplotlib figure.
     """
-    def __init__(self, x_label: str = 'x axis', y_label: str = 'y axis', size: tuple = "default",
-                    log_scale_x: bool = "default", log_scale_y: bool = "default", legend_is_boxed: bool = "default", ticks_are_in: bool = "default", figure_style: str = 'plain'):
+
+    def __init__(
+        self,
+        x_label: str = "x axis",
+        y_label: str = "y axis",
+        size: tuple = "default",
+        log_scale_x: bool = "default",
+        log_scale_y: bool = "default",
+        legend_is_boxed: bool = "default",
+        ticks_are_in: bool = "default",
+        figure_style: str = "plain",
+    ):
         self.figure_style = figure_style
         file_loader = FileLoader(self.figure_style)
         self.default_params = file_loader.load()
         size = size if size != "default" else self.default_params["Figure"]["size"]
         self.size = size
-        legend_is_boxed = legend_is_boxed if legend_is_boxed != "default" else self.default_params["Figure"]["boxed_legend"]
-        tick_are_in = ticks_are_in if ticks_are_in != "default" else self.default_params["Figure"]["ticks_are_in"]
-        log_scale_x = log_scale_x if log_scale_x != "default" else self.default_params["Figure"]["log_scale_x"]
-        log_scale_y = log_scale_y if log_scale_y != "default" else self.default_params["Figure"]["log_scale_y"]
+        legend_is_boxed = (
+            legend_is_boxed
+            if legend_is_boxed != "default"
+            else self.default_params["Figure"]["boxed_legend"]
+        )
+        tick_are_in = (
+            ticks_are_in
+            if ticks_are_in != "default"
+            else self.default_params["Figure"]["ticks_are_in"]
+        )
+        log_scale_x = (
+            log_scale_x
+            if log_scale_x != "default"
+            else self.default_params["Figure"]["log_scale_x"]
+        )
+        log_scale_y = (
+            log_scale_y
+            if log_scale_y != "default"
+            else self.default_params["Figure"]["log_scale_y"]
+        )
         self.figure, self.axes = plt.subplots(figsize=self.size)
         self.elements = []
         self.labels = []
@@ -34,7 +62,6 @@ class Figure:
         self.log_scale_y = log_scale_y
         self.legend_is_boxed = legend_is_boxed
         self.ticks_are_in = ticks_are_in
-
 
     def add_element(self, *curves: Curve | Hlines | Vlines | Histogram):
         """
@@ -47,14 +74,13 @@ class Figure:
             except AttributeError:
                 pass
 
-
-    def generate_figure(self, legend=True, test=False):
+    def prepare_figure(self, legend=True):
         self.axes.set_xlabel(self.x_axis_name)
         self.axes.set_ylabel(self.y_axis_name)
         if self.log_scale_x:
-            self.axes.set_xscale('log')
+            self.axes.set_xscale("log")
         if self.log_scale_y:
-            self.axes.set_yscale('log')
+            self.axes.set_yscale("log")
         if self.ticks_are_in:
             self.axes.tick_params(axis="both", direction="in", which="both")
         if self.elements:
@@ -74,12 +100,12 @@ class Figure:
                         handler_map={
                             Polygon: HandlerPatch(patch_func=histogram_legend_artist),
                             LineCollection: HandlerMultipleLines(),
-                            VerticalLineCollection: HandlerMultipleVerticalLines()
+                            VerticalLineCollection: HandlerMultipleVerticalLines(),
                         },
                         frameon=self.legend_is_boxed,
-                        draggable=True
+                        draggable=True,
                     )
-                except :
+                except:
                     self.axes.legend(
                         handles=self.handles,
                         labels=self.labels,
@@ -87,18 +113,25 @@ class Figure:
                         handler_map={
                             Polygon: HandlerPatch(patch_func=histogram_legend_artist),
                             LineCollection: HandlerMultipleLines(),
-                            VerticalLineCollection: HandlerMultipleVerticalLines()
+                            VerticalLineCollection: HandlerMultipleVerticalLines(),
                         },
-                        frameon=self.legend_is_boxed
+                        frameon=self.legend_is_boxed,
                     )
             else:
                 self.axes.legend(draggable=True, frameon=self.legend_is_boxed)
-            if not test:
-                plt.tight_layout()
-                plt.show()
         else:
             raise GraphingException("No curves to be plotted!")
 
+    def generate_figure(self, legend=True, test=False):
+        self.prepare_figure(legend=legend)
+        if not test:
+            plt.tight_layout()
+            plt.show()
+
+    def save_figure(self, file_name: str, legend=True):
+        self.prepare_figure(legend=legend)
+        plt.tight_layout()
+        plt.savefig(file_name, bbox_inches="tight")
 
     def fill_in_missing_params(self, curve):
         object_type = type(curve).__name__
