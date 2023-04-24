@@ -54,3 +54,33 @@ Point:
   marker_size: 200
   line_width: 1.5
   marker_style: "D"
+
+FitFromPolynomial:
+  color: "khaki"
+  line_width: 5
+  line_style: "--"
+
+FitFromExponential:
+  color: "khaki"
+  line_width: 5
+  line_style: "--"
+
+FitFromGaussian:
+  color: "khaki"
+  line_width: 5
+  line_style: "--"
+
+FitFromSine:
+  color: "khaki"
+  line_width: 5
+  line_style: "--"
+
+FitFromSquareRoot:
+  color: "khaki"
+  line_width: 5
+  line_style: "--"
+
+FitFromLog:
+  color: "khaki"
+  line_width: 5
+  line_style: "--"

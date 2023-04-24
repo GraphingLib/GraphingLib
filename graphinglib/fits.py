@@ -18,6 +18,7 @@ class FitFromPolynomial(Curve):
         label: str,
         color: str = "default",
         line_width: int = "default",
+        line_style: int = "default",
     ):
         self.curve_to_be_fit = curve_to_be_fit
         inversed_coeffs, inversed_cov_matrix = np.polyfit(
@@ -30,6 +31,7 @@ class FitFromPolynomial(Curve):
         self.color = color
         self.line_width = line_width
         self.label = label + " : " + "f(x) = " + str(self)
+        self.line_style = line_style
 
     def __str__(self):
         coeff_chunks = []
@@ -70,7 +72,12 @@ class FitFromPolynomial(Curve):
         )
         ydata = self.function(xdata)
         (self.handle,) = axes.plot(
-            xdata, ydata, label=self.label, color=self.color, linewidth=self.line_width
+            xdata,
+            ydata,
+            label=self.label,
+            color=self.color,
+            linewidth=self.line_width,
+            linestyle=self.line_style,
         )
 
 
@@ -82,9 +89,11 @@ class FitFromSine(Curve):
     def __init__(
         self,
         curve_to_be_fit: Curve,
-        color: str,
         label: str,
         guesses: npt.ArrayLike = None,
+        color: str = "default",
+        line_width: str = "default",
+        line_style: str = "default",
     ):
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
@@ -92,6 +101,8 @@ class FitFromSine(Curve):
         self.function = self.sine_func_with_params()
         self.color = color
         self.label = label + " : " + "f(x) = " + str(self)
+        self.line_width = line_width
+        self.line_style = line_style
 
     def __str__(self) -> str:
         part1 = f"{self.amplitude:.3f} sin({self.frequency_rad:.3f}x"
@@ -131,7 +142,14 @@ class FitFromSine(Curve):
             self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
         )
         ydata = self.function(xdata)
-        (self.handle,) = axes.plot(xdata, ydata, color=self.color, label=self.label)
+        (self.handle,) = axes.plot(
+            xdata,
+            ydata,
+            color=self.color,
+            label=self.label,
+            linewidth=self.line_width,
+            linestyle=self.line_style,
+        )
 
 
 class FitFromExponential(Curve):
@@ -142,9 +160,11 @@ class FitFromExponential(Curve):
     def __init__(
         self,
         curve_to_be_fit: Curve,
-        color: str,
         label: str,
         guesses: npt.ArrayLike = None,
+        color: str = "default",
+        line_width: int = "default",
+        line_style: str = "default",
     ):
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
@@ -152,6 +172,8 @@ class FitFromExponential(Curve):
         self.function = self.exp_func_with_params()
         self.color = color
         self.label = label + " : " + "f(x) = " + str(self)
+        self.line_width = line_width
+        self.line_style = line_style
 
     def __str__(self) -> str:
         part1 = f"{self.parameters[0]:.3f} exp({self.parameters[1]:.3f}x"
@@ -187,7 +209,14 @@ class FitFromExponential(Curve):
             self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
         )
         ydata = self.function(xdata)
-        (self.handle,) = axes.plot(xdata, ydata, color=self.color, label=self.label)
+        (self.handle,) = axes.plot(
+            xdata,
+            ydata,
+            color=self.color,
+            label=self.label,
+            line_width=self.line_width,
+            linestyle=self.line_style,
+        )
 
 
 class FitFromGaussian(Curve):
@@ -198,9 +227,11 @@ class FitFromGaussian(Curve):
     def __init__(
         self,
         curve_to_be_fit: Curve,
-        color: str,
         label: str,
         guesses: npt.ArrayLike = None,
+        color: str = "default",
+        line_width: int = "default",
+        line_style: str = "default",
     ):
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
@@ -208,6 +239,8 @@ class FitFromGaussian(Curve):
         self.function = self.gaussian_func_with_params()
         self.color = color
         self.label = label + " : " + str(self)
+        self.line_width = line_width
+        self.line_style = line_style
 
     def __str__(self) -> str:
         return f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}, $A$ = {self.amplitude:.3f}"
@@ -239,28 +272,39 @@ class FitFromGaussian(Curve):
             self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
         )
         ydata = self.function(xdata)
-        (self.handle,) = axes.plot(xdata, ydata, color=self.color, label=self.label)
+        (self.handle,) = axes.plot(
+            xdata,
+            ydata,
+            color=self.color,
+            label=self.label,
+            linewidth=self.line_width,
+            linestyle=self.line_style,
+        )
 
 
 class FitFromSquareRoot(Curve):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a square root fit.
     """
-    
+
     def __init__(
         self,
         curve_to_be_fit: Curve,
-        color: str,
         label: str,
         guesses: npt.ArrayLike = None,
+        color: str = "default",
+        line_width: int = "default",
+        line_style: str = "default",
     ):
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
         self.calculate_parameters()
         self.function = self.square_root_func_with_params()
         self.color = color
-        self.label = label + " : " + str(self) 
-        
+        self.label = label + " : " + str(self)
+        self.line_width = line_width
+        self.line_style = line_style
+
     def __str__(self) -> str:
         return f"{self.parameters[0]:.3f} sqrt(x {'+' if self.parameters[1] > 0 else '-'} {abs(self.parameters[1]):.3f}) {'+' if self.parameters[2] > 0 else '-'} {abs(self.parameters[2]):.3f}"
 
@@ -290,9 +334,16 @@ class FitFromSquareRoot(Curve):
             self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
         )
         ydata = self.function(xdata)
-        (self.handle,) = axes.plot(xdata, ydata, color=self.color, label=self.label)
-        
-        
+        (self.handle,) = axes.plot(
+            xdata,
+            ydata,
+            color=self.color,
+            label=self.label,
+            linewidth=self.line_width,
+            linestyle=self.line_style,
+        )
+
+
 class FitFromLog(Curve):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a logarithmic fit.
@@ -301,10 +352,12 @@ class FitFromLog(Curve):
     def __init__(
         self,
         curve_to_be_fit: Curve,
-        color: str,
         label: str,
         log_base: float = np.e,
         guesses: npt.ArrayLike = None,
+        color: str = "default",
+        line_width: int = "default",
+        line_style: str = "default",
     ):
         self.curve_to_be_fit = curve_to_be_fit
         self.log_base = log_base
@@ -313,7 +366,8 @@ class FitFromLog(Curve):
         self.function = self.log_func_with_params()
         self.color = color
         self.label = label + " : " + str(self)
-        
+        self.line_width = line_width
+        self.line_style = line_style
 
     def __str__(self) -> str:
         return f"{self.parameters[0]:.3f} log_{self.log_base if self.log_base != np.e else 'e'}(x {'-' if self.parameters[1] < 0 else '+'} {abs(self.parameters[1]):.3f}) {'-' if self.parameters[2] < 0 else '+'} {abs(self.parameters[2]):.3f}"
@@ -343,4 +397,11 @@ class FitFromLog(Curve):
             self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
         )
         ydata = self.function(xdata)
-        (self.handle,) = axes.plot(xdata, ydata, color=self.color, label=self.label)
+        (self.handle,) = axes.plot(
+            xdata,
+            ydata,
+            color=self.color,
+            label=self.label,
+            linewidth=self.line_width,
+            linestyle=self.line_style,
+        )
