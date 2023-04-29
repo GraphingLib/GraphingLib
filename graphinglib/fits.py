@@ -80,6 +80,23 @@ class FitFromPolynomial(Curve):
             linestyle=self.line_style,
         )
 
+    def show_residual_curves(self):
+        xdata = self.curve_to_be_fit.xdata
+        ydata = self.curve_to_be_fit.ydata
+        yfit = self.function(xdata)
+        residuals = yfit - ydata
+        std = np.std(residuals)
+        y_fit_plus_std = yfit + std
+        y_fit_minus_std = yfit - std
+        # (self.handle,) = axes.plot(
+        #     xdata,
+        #     ydata,
+        #     label=self.label,
+        #     color=self.color,
+        #     linewidth=self.line_width,
+        #     linestyle=self.line_style,
+        # )
+
 
 class FitFromSine(Curve):
     """
