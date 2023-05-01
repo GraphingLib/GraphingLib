@@ -41,9 +41,8 @@ class GeneralFit(Curve):
         )
         if self._res_curves_to_be_plotted:
             xdata = self.curve_to_be_fit.xdata
-            ydata = self.curve_to_be_fit.ydata
             yfit = self.function(xdata)
-            residuals = yfit - ydata
+            residuals = self.calculate_residuals()
             std = np.std(residuals)
             y_fit_plus_std = yfit + (self.res_sigma_multiplier * std)
             y_fit_minus_std = yfit - (self.res_sigma_multiplier * std)
@@ -76,6 +75,13 @@ class GeneralFit(Curve):
         self.res_color = color
         self.res_line_width = line_width
         self.res_line_style = line_style
+
+    def calculate_residuals(self) -> np.ndarray:
+        xdata = self.curve_to_be_fit.xdata
+        ydata = self.curve_to_be_fit.ydata
+        yfit = self.function(xdata)
+        residuals = yfit - ydata
+        return residuals
 
 
 class FitFromPolynomial(GeneralFit):
