@@ -117,6 +117,36 @@ class Histogram:
         self.bin_edges = bin_edges
         self.create_label()
 
+    @classmethod
+    def plot_residuals_from_fit(
+        cls,
+        fit,
+        number_of_bins: int,
+        label: str,
+        face_color: str = "default",
+        edge_color: str = "default",
+        hist_type: str = "default",
+        alpha: int = "default",
+        line_width: int = "default",
+        normalize: bool = "default",
+        show_pdf: str = "default",
+        show_params: bool = "default",
+    ):
+        residuals = fit.calculate_residuals()
+        return cls(
+            residuals,
+            number_of_bins,
+            label,
+            face_color,
+            edge_color,
+            hist_type,
+            alpha,
+            line_width,
+            normalize,
+            show_pdf,
+            show_params,
+        )
+
     def create_label(self):
         lab = self.label
         if self.label and self.show_params:

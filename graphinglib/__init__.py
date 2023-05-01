@@ -9,9 +9,10 @@ from .figure import Figure
 from .fits import (
     FitFromExponential,
     FitFromGaussian,
+    FitFromLog,
     FitFromPolynomial,
     FitFromSine,
     FitFromSquareRoot,
-    FitFromLog,
+    GeneralFit,
 )
 from .graph_elements import GraphingException, Hlines, Point, Text, Vlines
