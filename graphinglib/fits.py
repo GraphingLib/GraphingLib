@@ -6,7 +6,85 @@ from scipy.optimize import curve_fit
 from .data_plotting_1d import Curve
 
 
-class FitFromPolynomial(Curve):
+class GeneralFit(Curve):
+    def __init__(
+        self,
+        curve_to_be_fit: Curve,
+        label: str,
+        color: str = "default",
+        line_width: int = "default",
+        line_style: int = "default",
+    ):
+        self.curve_to_be_fit = curve_to_be_fit
+        self.color = color
+        self.line_width = line_width
+        self.label = label + " : " + "f(x) = " + str(self)
+        self.line_style = line_style
+        self._res_curves_to_be_plotted = False
+
+    def __str__(self):
+        raise NotImplementedError()
+
+    def plot_element(self, axes: plt.Axes):
+        num_of_points = 500
+        xdata = np.linspace(
+            self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
+        )
+        ydata = self.function(xdata)
+        (self.handle,) = axes.plot(
+            xdata,
+            ydata,
+            label=self.label,
+            color=self.color,
+            linewidth=self.line_width,
+            linestyle=self.line_style,
+        )
+        if self._res_curves_to_be_plotted:
+            xdata = self.curve_to_be_fit.xdata
+            yfit = self.function(xdata)
+            residuals = self.calculate_residuals()
+            std = np.std(residuals)
+            y_fit_plus_std = yfit + (self.res_sigma_multiplier * std)
+            y_fit_minus_std = yfit - (self.res_sigma_multiplier * std)
+            axes.plot(
+                xdata,
+                y_fit_minus_std,
+                label=self.label,
+                color=self.res_color,
+                linewidth=self.res_line_width,
+                linestyle=self.res_line_style,
+            )
+            axes.plot(
+                xdata,
+                y_fit_plus_std,
+                label=self.label,
+                color=self.res_color,
+                linewidth=self.res_line_width,
+                linestyle=self.res_line_style,
+            )
+
+    def show_residual_curves(
+        self,
+        sigma_multiplier: float = 1,
+        color: str = "default",
+        line_width: float = "default",
+        line_style: str = "default",
+    ):
+        self._res_curves_to_be_plotted = True
+        self.res_sigma_multiplier = sigma_multiplier
+        self.res_color = color
+        self.res_line_width = line_width
+        self.res_line_style = line_style
+
+    def calculate_residuals(self) -> np.ndarray:
+        xdata = self.curve_to_be_fit.xdata
+        ydata = self.curve_to_be_fit.ydata
+        yfit = self.function(xdata)
+        residuals = yfit - ydata
+        return residuals
+
+
+class FitFromPolynomial(GeneralFit):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a polynomial fit.
     """
@@ -32,6 +110,7 @@ class FitFromPolynomial(Curve):
         self.line_width = line_width
         self.label = label + " : " + "f(x) = " + str(self)
         self.line_style = line_style
+        self._res_curves_to_be_plotted = False
 
     def __str__(self):
         coeff_chunks = []
@@ -65,23 +144,8 @@ class FitFromPolynomial(Curve):
             coeff * x**exponent for exponent, coeff in enumerate(self.coeffs)
         )
 
-    def plot_element(self, axes: plt.Axes):
-        num_of_points = 500
-        xdata = np.linspace(
-            self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
-        )
-        ydata = self.function(xdata)
-        (self.handle,) = axes.plot(
-            xdata,
-            ydata,
-            label=self.label,
-            color=self.color,
-            linewidth=self.line_width,
-            linestyle=self.line_style,
-        )
 
-
-class FitFromSine(Curve):
+class FitFromSine(GeneralFit):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a sinusoidal fit.
     """
@@ -103,6 +167,7 @@ class FitFromSine(Curve):
         self.label = label + " : " + "f(x) = " + str(self)
         self.line_width = line_width
         self.line_style = line_style
+        self._res_curves_to_be_plotted = False
 
     def __str__(self) -> str:
         part1 = f"{self.amplitude:.3f} sin({self.frequency_rad:.3f}x"
@@ -136,23 +201,8 @@ class FitFromSine(Curve):
             + self.vertical_shift
         )
 
-    def plot_element(self, axes: plt.Axes):
-        num_of_points = 500
-        xdata = np.linspace(
-            self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
-        )
-        ydata = self.function(xdata)
-        (self.handle,) = axes.plot(
-            xdata,
-            ydata,
-            color=self.color,
-            label=self.label,
-            linewidth=self.line_width,
-            linestyle=self.line_style,
-        )
 
-
-class FitFromExponential(Curve):
+class FitFromExponential(GeneralFit):
     """
     Create a curve fit (continuous Curve) from an existing curve object using an exponential fit.
     """
@@ -174,6 +224,7 @@ class FitFromExponential(Curve):
         self.label = label + " : " + "f(x) = " + str(self)
         self.line_width = line_width
         self.line_style = line_style
+        self._res_curves_to_be_plotted = False
 
     def __str__(self) -> str:
         part1 = f"{self.parameters[0]:.3f} exp({self.parameters[1]:.3f}x"
@@ -203,23 +254,8 @@ class FitFromExponential(Curve):
             self.parameters[1] * x + self.parameters[2]
         )
 
-    def plot_element(self, axes: plt.Axes):
-        num_of_points = 500
-        xdata = np.linspace(
-            self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
-        )
-        ydata = self.function(xdata)
-        (self.handle,) = axes.plot(
-            xdata,
-            ydata,
-            color=self.color,
-            label=self.label,
-            line_width=self.line_width,
-            linestyle=self.line_style,
-        )
 
-
-class FitFromGaussian(Curve):
+class FitFromGaussian(GeneralFit):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a gaussian fit.
     """
@@ -241,6 +277,7 @@ class FitFromGaussian(Curve):
         self.label = label + " : " + str(self)
         self.line_width = line_width
         self.line_style = line_style
+        self._res_curves_to_be_plotted = False
 
     def __str__(self) -> str:
         return f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}, $A$ = {self.amplitude:.3f}"
@@ -266,23 +303,8 @@ class FitFromGaussian(Curve):
             -(((x - self.mean) / self.standard_deviation) ** 2) / 2
         )
 
-    def plot_element(self, axes: plt.Axes):
-        num_of_points = 500
-        xdata = np.linspace(
-            self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
-        )
-        ydata = self.function(xdata)
-        (self.handle,) = axes.plot(
-            xdata,
-            ydata,
-            color=self.color,
-            label=self.label,
-            linewidth=self.line_width,
-            linestyle=self.line_style,
-        )
 
-
-class FitFromSquareRoot(Curve):
+class FitFromSquareRoot(GeneralFit):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a square root fit.
     """
@@ -304,6 +326,7 @@ class FitFromSquareRoot(Curve):
         self.label = label + " : " + str(self)
         self.line_width = line_width
         self.line_style = line_style
+        self._res_curves_to_be_plotted = False
 
     def __str__(self) -> str:
         return f"{self.parameters[0]:.3f} sqrt(x {'+' if self.parameters[1] > 0 else '-'} {abs(self.parameters[1]):.3f}) {'+' if self.parameters[2] > 0 else '-'} {abs(self.parameters[2]):.3f}"
@@ -328,23 +351,8 @@ class FitFromSquareRoot(Curve):
             + self.parameters[2]
         )
 
-    def plot_element(self, axes: plt.Axes):
-        num_of_points = 500
-        xdata = np.linspace(
-            self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
-        )
-        ydata = self.function(xdata)
-        (self.handle,) = axes.plot(
-            xdata,
-            ydata,
-            color=self.color,
-            label=self.label,
-            linewidth=self.line_width,
-            linestyle=self.line_style,
-        )
 
-
-class FitFromLog(Curve):
+class FitFromLog(GeneralFit):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a logarithmic fit.
     """
@@ -368,6 +376,7 @@ class FitFromLog(Curve):
         self.label = label + " : " + str(self)
         self.line_width = line_width
         self.line_style = line_style
+        self._res_curves_to_be_plotted = False
 
     def __str__(self) -> str:
         return f"{self.parameters[0]:.3f} log_{self.log_base if self.log_base != np.e else 'e'}(x {'-' if self.parameters[1] < 0 else '+'} {abs(self.parameters[1]):.3f}) {'-' if self.parameters[2] < 0 else '+'} {abs(self.parameters[2]):.3f}"
@@ -389,19 +398,4 @@ class FitFromLog(Curve):
             lambda x: self.parameters[0]
             * (np.log(x + self.parameters[1]) / np.log(self.log_base))
             + self.parameters[2]
-        )
-
-    def plot_element(self, axes: plt.Axes):
-        num_of_points = 500
-        xdata = np.linspace(
-            self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
-        )
-        ydata = self.function(xdata)
-        (self.handle,) = axes.plot(
-            xdata,
-            ydata,
-            color=self.color,
-            label=self.label,
-            linewidth=self.line_width,
-            linestyle=self.line_style,
         )
