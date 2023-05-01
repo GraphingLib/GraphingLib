@@ -67,23 +67,38 @@ FitFromExponential:
   color: "khaki"
   line_width: 5
   line_style: "--"
+  res_color: "r"
+  res_line_width: 1
+  res_line_style: "--"
 
 FitFromGaussian:
   color: "khaki"
   line_width: 5
   line_style: "--"
+  res_color: "r"
+  res_line_width: 1
+  res_line_style: "--"
 
 FitFromSine:
   color: "khaki"
   line_width: 5
   line_style: "--"
+  res_color: "r"
+  res_line_width: 1
+  res_line_style: "--"
 
 FitFromSquareRoot:
   color: "khaki"
   line_width: 5
   line_style: "--"
+  res_color: "r"
+  res_line_width: 1
+  res_line_style: "--"
 
 FitFromLog:
   color: "khaki"
   line_width: 5
   line_style: "--"
+  res_color: "r"
+  res_line_width: 1
+  res_line_style: "--"
