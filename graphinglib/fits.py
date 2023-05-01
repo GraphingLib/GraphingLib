@@ -32,7 +32,7 @@ class FitFromPolynomial(Curve):
         self.line_width = line_width
         self.label = label + " : " + "f(x) = " + str(self)
         self.line_style = line_style
-        self._plot_the_res_curves = False
+        self._res_curves_to_be_plotted = False
 
     def __str__(self):
         coeff_chunks = []
@@ -80,8 +80,30 @@ class FitFromPolynomial(Curve):
             linewidth=self.line_width,
             linestyle=self.line_style,
         )
-        if self._plot_the_res_curves:
-            self._plot_residual_curves(axes)
+        if self._res_curves_to_be_plotted:
+            xdata = self.curve_to_be_fit.xdata
+            ydata = self.curve_to_be_fit.ydata
+            yfit = self.function(xdata)
+            residuals = yfit - ydata
+            std = np.std(residuals)
+            y_fit_plus_std = yfit + (self.res_sigma_multiplier * std)
+            y_fit_minus_std = yfit - (self.res_sigma_multiplier * std)
+            axes.plot(
+                xdata,
+                y_fit_minus_std,
+                label=self.label,
+                color=self.res_color,
+                linewidth=self.res_line_width,
+                linestyle=self.res_line_style,
+            )
+            axes.plot(
+                xdata,
+                y_fit_plus_std,
+                label=self.label,
+                color=self.res_color,
+                linewidth=self.res_line_width,
+                linestyle=self.res_line_style,
+            )
 
     def show_residual_curves(
         self,
@@ -90,36 +112,11 @@ class FitFromPolynomial(Curve):
         line_width: float = "default",
         line_style: str = "default",
     ):
-        self._plot_the_res_curves = True
+        self._res_curves_to_be_plotted = True
         self.res_sigma_multiplier = sigma_multiplier
         self.res_color = color
         self.res_line_width = line_width
         self.res_line_style = line_style
-
-    def _plot_residual_curves(self, axes: plt.Axes):
-        xdata = self.curve_to_be_fit.xdata
-        ydata = self.curve_to_be_fit.ydata
-        yfit = self.function(xdata)
-        residuals = yfit - ydata
-        std = np.std(residuals)
-        y_fit_plus_std = yfit + (self.res_sigma_multiplier * std)
-        y_fit_minus_std = yfit - (self.res_sigma_multiplier * std)
-        axes.plot(
-            xdata,
-            y_fit_minus_std,
-            label=self.label,
-            color=self.res_color,
-            linewidth=self.res_line_width,
-            linestyle=self.res_line_style,
-        )
-        axes.plot(
-            xdata,
-            y_fit_plus_std,
-            label=self.label,
-            color=self.res_color,
-            linewidth=self.res_line_width,
-            linestyle=self.res_line_style,
-        )
 
 
 class FitFromSine(Curve):
