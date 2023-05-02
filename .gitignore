@@ -14,9 +14,10 @@
 !graphinglib/graph_elements.py
 !graphinglib/legend_artists.py
 !graphinglib/data_plotting_1d.py
+!docs/
+!docs/**
 
 !graphinglib/default_styles/
-!graphinglib/default_styles/__init__.py
 !graphinglib/default_styles/*.yml
 
 !Unit_testing/
