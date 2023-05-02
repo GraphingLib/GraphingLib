@@ -75,8 +75,16 @@
 
 <div class="viewcode-block" id="Curve"><a class="viewcode-back" href="../../graphinglib.html#graphinglib.data_plotting_1d.Curve">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">Curve</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A general continuous curve.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A general continuous curve.</span>
+
+<span class="sd">    Creates a Curve object which can be plotted on a Figure.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        xdata: An array of x values for the curve.</span>
+<span class="sd">        ydata: An array of y values for the curve.</span>
+<span class="sd">        label: The name of the curve that will show up in the legend.</span>
+<span class="sd">        color: The color of the curve.</span>
+<span class="sd">        line_width: The line width of the curve.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">xdata</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>

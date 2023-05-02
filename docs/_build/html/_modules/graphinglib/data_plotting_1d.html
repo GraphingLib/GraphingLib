@@ -75,8 +75,22 @@
 
 <div class="viewcode-block" id="Curve"><a class="viewcode-back" href="../../graphinglib.html#graphinglib.data_plotting_1d.Curve">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">Curve</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A general continuous curve.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A general continuous curve.</span>
+
+<span class="sd">    Creates a Curve object which can be plotted on a Figure. Optional parameters which are left blank will be filled according to the default parameters of the chosen ``figure_style`` (choose when creating the `graphinglib.Figure` object).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        xdata: list or ndarray</span>
+<span class="sd">            An array of x values for the curve.</span>
+<span class="sd">        ydata: list or ndarray</span>
+<span class="sd">            An array of y values for the curve.</span>
+<span class="sd">        label: str</span>
+<span class="sd">            The name of the curve which will appear on the legend.</span>
+<span class="sd">        color: str, optional</span>
+<span class="sd">            The color of the curve.</span>
+<span class="sd">        line_width: float, optional</span>
+<span class="sd">            The width of the curve.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">xdata</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
@@ -96,6 +110,32 @@
         <span class="n">line_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
         <span class="n">number_of_points</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
     <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a Curve object from a function instead of from a list of x and y values.</span>
+
+<span class="sd">        Optional parameters which are left blank will be filled according to the default parameters of the chosen ``figure_style`` (choose when creating the `graphinglib.Figure` object).</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ---------</span>
+<span class="sd">            func: Callable</span>
+<span class="sd">                The function to be plotted. Must be a function of x only.</span>
+<span class="sd">            xmin: float</span>
+<span class="sd">                The curve will be plotted starting at this x value.</span>
+<span class="sd">            xmax: float</span>
+<span class="sd">                The curve will be plotted until this x value is reached.</span>
+<span class="sd">            label: str</span>
+<span class="sd">                The name of the curve which will appear on the legend.</span>
+<span class="sd">            color: str, optional</span>
+<span class="sd">                The color of the curve. Standard matplotlib colors are available.</span>
+<span class="sd">            line_width: int, optional</span>
+<span class="sd">                The width of the curve.</span>
+<span class="sd">            number_of_points: int</span>
+<span class="sd">                The number of sample points. Defaults to 500.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            curve: Curve</span>
+<span class="sd">                The curve object with the specified parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">xdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">,</span> <span class="n">number_of_points</span><span class="p">)</span>
         <span class="n">ydata</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">xdata</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">xdata</span><span class="p">,</span> <span class="n">ydata</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">line_width</span><span class="p">)</span></div>
@@ -117,6 +157,25 @@
 <span class="k">class</span> <span class="nc">Scatter</span><span class="p">(</span><span class="n">Curve</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A general scatter plot.</span>
+
+<span class="sd">    Creates a Scatter object which can be plotted on a Figure. Optional parameters which are left blank will be filled according to the default parameters of the chosen ``figure_style`` (choose when creating the `graphinglib.Figure` object).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        xdata: list or ndarray</span>
+<span class="sd">            An array of x values for the curve.</span>
+<span class="sd">        ydata: list or ndarray</span>
+<span class="sd">            An array of y values for the curve.</span>
+<span class="sd">        label: str</span>
+<span class="sd">            The name of the curve which will appear on the legend.</span>
+<span class="sd">        color: str, optional</span>
+<span class="sd">            The color of the curve. Standard matplotlib colors are available.</span>
+<span class="sd">        marker_size: float, optional</span>
+<span class="sd">            The size of the marker used to draw the individual points.</span>
+<span class="sd">        edge_color: str, optional</span>
+<span class="sd">            The color of the marker&#39;s edges.</span>
+<span class="sd">        marker_style: str, optional</span>
+<span class="sd">            The type of marker. See https://matplotlib.org/stable/api/markers_api.html for options.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">marker_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
@@ -137,7 +196,20 @@
 
 <div class="viewcode-block" id="Dashed"><a class="viewcode-back" href="../../graphinglib.html#graphinglib.data_plotting_1d.Dashed">[docs]</a><span class="k">class</span> <span class="nc">Dashed</span><span class="p">(</span><span class="n">Curve</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A dashed curve derived from the Curve object.</span>
+<span class="sd">    A general dashed curve.</span>
+
+<span class="sd">    Creates a Dashed object which can be plotted on a Figure. Optional parameters which are left blank will be filled according to the default parameters of the chosen ``figure_style`` (choose when creating the `graphinglib.Figure` object).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        xdata: list or ndarray</span>
+<span class="sd">            An array of x values for the curve.</span>
+<span class="sd">        ydata: list or ndarray</span>
+<span class="sd">            An array of y values for the curve.</span>
+<span class="sd">        label: str</span>
+<span class="sd">            The name of the curve which will appear on the legend.</span>
+<span class="sd">        color: str, optional</span>
+<span class="sd">            The color of the curve. Standard matplotlib colors are available.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="Dashed.plot_element"><a class="viewcode-back" href="../../graphinglib.html#graphinglib.data_plotting_1d.Dashed.plot_element">[docs]</a>    <span class="k">def</span> <span class="nf">plot_element</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">):</span>
@@ -154,7 +226,38 @@
 <div class="viewcode-block" id="Histogram"><a class="viewcode-back" href="../../graphinglib.html#graphinglib.data_plotting_1d.Histogram">[docs]</a><span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">Histogram</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A histogram plot with minor changes to the lable icon.</span>
+<span class="sd">    A histogram plot created from a one dimensional array.</span>
+
+<span class="sd">    The mean and standard deviation of the data can be accessed with::</span>
+
+<span class="sd">        hist = gl.Histogram(xdata=data, number_of_bins=30, label=&quot;Histogram of results&quot;)</span>
+<span class="sd">        mean = hist.mean</span>
+<span class="sd">        std = hist.standard_deviation</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        xdata: list or ndarray</span>
+<span class="sd">            An array of values to be plotted.</span>
+<span class="sd">        number_of_bins: int</span>
+<span class="sd">            The number of bins that the data will be sorted in.</span>
+<span class="sd">        label: str</span>
+<span class="sd">            The name of the histogram which will appear on the legend.</span>
+<span class="sd">        face_color: str, optional</span>
+<span class="sd">            The color of the histogram&#39;s fill.</span>
+<span class="sd">        edge_color: str, optional</span>
+<span class="sd">            The color of the histogram&#39;s edges.</span>
+<span class="sd">        hist_type: str, optional</span>
+<span class="sd">            Options are &#39;bar&#39;, &#39;step&#39;, and &#39;stepfilled&#39;. &#39;bar&#39; is a standard bar graph, step is just the outline of the histgram, and stepfilled is the outline with a fill.</span>
+<span class="sd">        alpha: float, optional</span>
+<span class="sd">            Value between 0 and 1 which determines the opacity of the fill.</span>
+<span class="sd">        line_width: float, optional</span>
+<span class="sd">            The width of the histogram&#39;s edges.</span>
+<span class="sd">        normalize: bool, optional</span>
+<span class="sd">            If True, the total area of the histogram will be equal to 1. This takes into account the width of the bars.</span>
+<span class="sd">        show_pdf: str, optional</span>
+<span class="sd">            If &#39;normal&#39; or &#39;gaussian&#39;, a normal probability density function with the data&#39;s mean and standard deviation will be overlayed onto the histogram.</span>
+<span class="sd">        show_params: bool, optional</span>
+<span class="sd">            If True, the histogram&#39;s mean and standard deviation will be shown in the legend.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">xdata</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
@@ -164,7 +267,7 @@
     <span class="n">edge_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
     <span class="n">hist_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
     <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
-    <span class="n">line_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
+    <span class="n">line_width</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
     <span class="n">normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
     <span class="n">show_pdf</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
     <span class="n">show_params</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>
@@ -198,6 +301,33 @@
         <span class="n">show_pdf</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
         <span class="n">show_params</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
     <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a histogram of the residuals of a curve fit.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">            fit: Fit</span>
+<span class="sd">                Any fit object.</span>
+<span class="sd">            number_of_bins: int</span>
+<span class="sd">                The number of bins that the data will be sorted in.</span>
+<span class="sd">            label: str</span>
+<span class="sd">                The name of the histogram which will appear on the legend.</span>
+<span class="sd">            face_color: str, optional</span>
+<span class="sd">                The color of the histogram&#39;s fill.</span>
+<span class="sd">            edge_color: str, optional</span>
+<span class="sd">                The color of the histogram&#39;s edges.</span>
+<span class="sd">            hist_type: str, optional</span>
+<span class="sd">                Options are &#39;bar&#39;, &#39;step&#39;, and &#39;stepfilled&#39;. &#39;bar&#39; is a standard bar graph, step is just the outline of the histgram, and stepfilled is the outline with a fill.</span>
+<span class="sd">            alpha: float, optional</span>
+<span class="sd">                Value between 0 and 1 which determines the opacity of the fill.</span>
+<span class="sd">            line_width: float, optional</span>
+<span class="sd">                The width of the histogram&#39;s edges.</span>
+<span class="sd">            normalize: bool, optional</span>
+<span class="sd">                If True, the total area of the histogram will be equal to 1. This takes into account the width of the bars.</span>
+<span class="sd">            show_pdf: str, optional</span>
+<span class="sd">                If &#39;normal&#39; or &#39;gaussian&#39;, a normal probability density function with the data&#39;s mean and standard deviation will be overlayed onto the histogram.</span>
+<span class="sd">            show_params: bool, optional</span>
+<span class="sd">                If True, the histogram&#39;s mean and standard deviation will be shown in the legend.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">residuals</span> <span class="o">=</span> <span class="n">fit</span><span class="o">.</span><span class="n">calculate_residuals</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">residuals</span><span class="p">,</span>

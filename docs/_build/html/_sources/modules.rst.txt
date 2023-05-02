@@ -6,4 +6,3 @@ GraphingLib
 
    graphinglib
    setup
-   testing_graph_lib

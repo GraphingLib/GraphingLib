@@ -9,8 +9,22 @@ from matplotlib.patches import Polygon
 
 @dataclass
 class Curve:
-    """
-    A general continuous curve.
+    """A general continuous curve.
+
+    Creates a Curve object which can be plotted on a Figure. Optional parameters which are left blank will be filled according to the default parameters of the chosen ``figure_style`` (choose when creating the `graphinglib.Figure` object).
+
+    Parameters
+    ----------
+        xdata: list or ndarray
+            An array of x values for the curve.
+        ydata: list or ndarray
+            An array of y values for the curve.
+        label: str
+            The name of the curve which will appear on the legend.
+        color: str, optional
+            The color of the curve.
+        line_width: float, optional
+            The width of the curve.
     """
 
     xdata: list | np.ndarray
@@ -30,6 +44,32 @@ class Curve:
         line_width: int = "default",
         number_of_points: int = 500,
     ):
+        """Creates a Curve object from a function instead of from a list of x and y values.
+
+        Optional parameters which are left blank will be filled according to the default parameters of the chosen ``figure_style`` (choose when creating the `graphinglib.Figure` object).
+
+        Arguments
+        ---------
+            func: Callable
+                The function to be plotted. Must be a function of x only.
+            xmin: float
+                The curve will be plotted starting at this x value.
+            xmax: float
+                The curve will be plotted until this x value is reached.
+            label: str
+                The name of the curve which will appear on the legend.
+            color: str, optional
+                The color of the curve. Standard matplotlib colors are available.
+            line_width: int, optional
+                The width of the curve.
+            number_of_points: int
+                The number of sample points. Defaults to 500.
+
+        Returns
+        -------
+            curve: Curve
+                The curve object with the specified parameters.
+        """
         xdata = np.linspace(xmin, xmax, number_of_points)
         ydata = func(xdata)
         return cls(xdata, ydata, label, color, line_width)
@@ -51,6 +91,25 @@ class Curve:
 class Scatter(Curve):
     """
     A general scatter plot.
+
+    Creates a Scatter object which can be plotted on a Figure. Optional parameters which are left blank will be filled according to the default parameters of the chosen ``figure_style`` (choose when creating the `graphinglib.Figure` object).
+
+    Parameters
+    ----------
+        xdata: list or ndarray
+            An array of x values for the curve.
+        ydata: list or ndarray
+            An array of y values for the curve.
+        label: str
+            The name of the curve which will appear on the legend.
+        color: str, optional
+            The color of the curve. Standard matplotlib colors are available.
+        marker_size: float, optional
+            The size of the marker used to draw the individual points.
+        edge_color: str, optional
+            The color of the marker's edges.
+        marker_style: str, optional
+            The type of marker. See https://matplotlib.org/stable/api/markers_api.html for options.
     """
 
     marker_size: float = "default"
@@ -71,7 +130,20 @@ class Scatter(Curve):
 
 class Dashed(Curve):
     """
-    A dashed curve derived from the Curve object.
+    A general dashed curve.
+
+    Creates a Dashed object which can be plotted on a Figure. Optional parameters which are left blank will be filled according to the default parameters of the chosen ``figure_style`` (choose when creating the `graphinglib.Figure` object).
+
+    Parameters
+    ----------
+        xdata: list or ndarray
+            An array of x values for the curve.
+        ydata: list or ndarray
+            An array of y values for the curve.
+        label: str
+            The name of the curve which will appear on the legend.
+        color: str, optional
+            The color of the curve. Standard matplotlib colors are available.
     """
 
     def plot_element(self, axes: plt.Axes):
@@ -88,7 +160,38 @@ class Dashed(Curve):
 @dataclass
 class Histogram:
     """
-    A histogram plot with minor changes to the lable icon.
+    A histogram plot created from a one dimensional array.
+
+    The mean and standard deviation of the data can be accessed with::
+
+        hist = gl.Histogram(xdata=data, number_of_bins=30, label="Histogram of results")
+        mean = hist.mean
+        std = hist.standard_deviation
+
+    Parameters
+    ----------
+        xdata: list or ndarray
+            An array of values to be plotted.
+        number_of_bins: int
+            The number of bins that the data will be sorted in.
+        label: str
+            The name of the histogram which will appear on the legend.
+        face_color: str, optional
+            The color of the histogram's fill.
+        edge_color: str, optional
+            The color of the histogram's edges.
+        hist_type: str, optional
+            Options are 'bar', 'step', and 'stepfilled'. 'bar' is a standard bar graph, step is just the outline of the histgram, and stepfilled is the outline with a fill.
+        alpha: float, optional
+            Value between 0 and 1 which determines the opacity of the fill.
+        line_width: float, optional
+            The width of the histogram's edges.
+        normalize: bool, optional
+            If True, the total area of the histogram will be equal to 1. This takes into account the width of the bars.
+        show_pdf: str, optional
+            If 'normal' or 'gaussian', a normal probability density function with the data's mean and standard deviation will be overlayed onto the histogram.
+        show_params: bool, optional
+            If True, the histogram's mean and standard deviation will be shown in the legend.
     """
 
     xdata: list | np.ndarray
@@ -98,7 +201,7 @@ class Histogram:
     edge_color: str = "default"
     hist_type: str = "default"
     alpha: float = "default"
-    line_width: int | float = "default"
+    line_width: float = "default"
     normalize: bool = "default"
     show_pdf: str = "default"
     show_params: bool = "default"
@@ -132,6 +235,33 @@ class Histogram:
         show_pdf: str = "default",
         show_params: bool = "default",
     ):
+        """Creates a histogram of the residuals of a curve fit.
+
+        Parameters
+        ----------
+            fit: Fit
+                Any fit object.
+            number_of_bins: int
+                The number of bins that the data will be sorted in.
+            label: str
+                The name of the histogram which will appear on the legend.
+            face_color: str, optional
+                The color of the histogram's fill.
+            edge_color: str, optional
+                The color of the histogram's edges.
+            hist_type: str, optional
+                Options are 'bar', 'step', and 'stepfilled'. 'bar' is a standard bar graph, step is just the outline of the histgram, and stepfilled is the outline with a fill.
+            alpha: float, optional
+                Value between 0 and 1 which determines the opacity of the fill.
+            line_width: float, optional
+                The width of the histogram's edges.
+            normalize: bool, optional
+                If True, the total area of the histogram will be equal to 1. This takes into account the width of the bars.
+            show_pdf: str, optional
+                If 'normal' or 'gaussian', a normal probability density function with the data's mean and standard deviation will be overlayed onto the histogram.
+            show_params: bool, optional
+                If True, the histogram's mean and standard deviation will be shown in the legend.
+        """
         residuals = fit.calculate_residuals()
         return cls(
             residuals,
