@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>graphinglib package &mdash; Graphinglib 0.1.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Graphinglib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">graphinglib package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-graphinglib.data_plotting_1d">graphinglib.data_plotting_1d module</a><ul>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve"><code class="docutils literal notranslate"><span class="pre">Curve</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve.color"><code class="docutils literal notranslate"><span class="pre">Curve.color</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve.from_function"><code class="docutils literal notranslate"><span class="pre">Curve.from_function()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve.label"><code class="docutils literal notranslate"><span class="pre">Curve.label</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve.line_width"><code class="docutils literal notranslate"><span class="pre">Curve.line_width</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve.plot_element"><code class="docutils literal notranslate"><span class="pre">Curve.plot_element()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve.set_color"><code class="docutils literal notranslate"><span class="pre">Curve.set_color()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve.xdata"><code class="docutils literal notranslate"><span class="pre">Curve.xdata</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve.ydata"><code class="docutils literal notranslate"><span class="pre">Curve.ydata</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Dashed"><code class="docutils literal notranslate"><span class="pre">Dashed</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Dashed.plot_element"><code class="docutils literal notranslate"><span class="pre">Dashed.plot_element()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram"><code class="docutils literal notranslate"><span class="pre">Histogram</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.alpha"><code class="docutils literal notranslate"><span class="pre">Histogram.alpha</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.create_label"><code class="docutils literal notranslate"><span class="pre">Histogram.create_label()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.edge_color"><code class="docutils literal notranslate"><span class="pre">Histogram.edge_color</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.face_color"><code class="docutils literal notranslate"><span class="pre">Histogram.face_color</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.hist_type"><code class="docutils literal notranslate"><span class="pre">Histogram.hist_type</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.label"><code class="docutils literal notranslate"><span class="pre">Histogram.label</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.line_width"><code class="docutils literal notranslate"><span class="pre">Histogram.line_width</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.normal_normalized"><code class="docutils literal notranslate"><span class="pre">Histogram.normal_normalized()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.normal_not_normalized"><code class="docutils literal notranslate"><span class="pre">Histogram.normal_not_normalized()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.normalize"><code class="docutils literal notranslate"><span class="pre">Histogram.normalize</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.number_of_bins"><code class="docutils literal notranslate"><span class="pre">Histogram.number_of_bins</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.plot_element"><code class="docutils literal notranslate"><span class="pre">Histogram.plot_element()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.plot_residuals_from_fit"><code class="docutils literal notranslate"><span class="pre">Histogram.plot_residuals_from_fit()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.show_params"><code class="docutils literal notranslate"><span class="pre">Histogram.show_params</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.show_pdf"><code class="docutils literal notranslate"><span class="pre">Histogram.show_pdf</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram.xdata"><code class="docutils literal notranslate"><span class="pre">Histogram.xdata</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Scatter"><code class="docutils literal notranslate"><span class="pre">Scatter</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Scatter.edge_color"><code class="docutils literal notranslate"><span class="pre">Scatter.edge_color</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Scatter.marker_size"><code class="docutils literal notranslate"><span class="pre">Scatter.marker_size</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Scatter.marker_style"><code class="docutils literal notranslate"><span class="pre">Scatter.marker_style</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.data_plotting_1d.Scatter.plot_element"><code class="docutils literal notranslate"><span class="pre">Scatter.plot_element()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-graphinglib.figure">graphinglib.figure module</a><ul>
+<li><a class="reference internal" href="#graphinglib.figure.Figure"><code class="docutils literal notranslate"><span class="pre">Figure</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.figure.Figure.add_element"><code class="docutils literal notranslate"><span class="pre">Figure.add_element()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.figure.Figure.fill_in_missing_params"><code class="docutils literal notranslate"><span class="pre">Figure.fill_in_missing_params()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.figure.Figure.generate_figure"><code class="docutils literal notranslate"><span class="pre">Figure.generate_figure()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.figure.Figure.prepare_figure"><code class="docutils literal notranslate"><span class="pre">Figure.prepare_figure()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.figure.Figure.save_figure"><code class="docutils literal notranslate"><span class="pre">Figure.save_figure()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-graphinglib.file_manager">graphinglib.file_manager module</a><ul>
+<li><a class="reference internal" href="#graphinglib.file_manager.FileLoader"><code class="docutils literal notranslate"><span class="pre">FileLoader</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.file_manager.FileLoader.load"><code class="docutils literal notranslate"><span class="pre">FileLoader.load()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.file_manager.FileLoader.resource_path"><code class="docutils literal notranslate"><span class="pre">FileLoader.resource_path()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-graphinglib.fits">graphinglib.fits module</a><ul>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromExponential"><code class="docutils literal notranslate"><span class="pre">FitFromExponential</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromExponential.calculate_parameters"><code class="docutils literal notranslate"><span class="pre">FitFromExponential.calculate_parameters()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromExponential.exp_func_template"><code class="docutils literal notranslate"><span class="pre">FitFromExponential.exp_func_template()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromExponential.exp_func_with_params"><code class="docutils literal notranslate"><span class="pre">FitFromExponential.exp_func_with_params()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromGaussian"><code class="docutils literal notranslate"><span class="pre">FitFromGaussian</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromGaussian.calculate_parameters"><code class="docutils literal notranslate"><span class="pre">FitFromGaussian.calculate_parameters()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromGaussian.gaussian_func_template"><code class="docutils literal notranslate"><span class="pre">FitFromGaussian.gaussian_func_template()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromGaussian.gaussian_func_with_params"><code class="docutils literal notranslate"><span class="pre">FitFromGaussian.gaussian_func_with_params()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromLog"><code class="docutils literal notranslate"><span class="pre">FitFromLog</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromLog.calculate_parameters"><code class="docutils literal notranslate"><span class="pre">FitFromLog.calculate_parameters()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromLog.log_func_template"><code class="docutils literal notranslate"><span class="pre">FitFromLog.log_func_template()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromLog.log_func_with_params"><code class="docutils literal notranslate"><span class="pre">FitFromLog.log_func_with_params()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromPolynomial"><code class="docutils literal notranslate"><span class="pre">FitFromPolynomial</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromPolynomial.format_coeff"><code class="docutils literal notranslate"><span class="pre">FitFromPolynomial.format_coeff()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromPolynomial.format_power"><code class="docutils literal notranslate"><span class="pre">FitFromPolynomial.format_power()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromPolynomial.polynomial_func_with_params"><code class="docutils literal notranslate"><span class="pre">FitFromPolynomial.polynomial_func_with_params()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromSine"><code class="docutils literal notranslate"><span class="pre">FitFromSine</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromSine.calculate_parameters"><code class="docutils literal notranslate"><span class="pre">FitFromSine.calculate_parameters()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromSine.sine_func_template"><code class="docutils literal notranslate"><span class="pre">FitFromSine.sine_func_template()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromSine.sine_func_with_params"><code class="docutils literal notranslate"><span class="pre">FitFromSine.sine_func_with_params()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromSquareRoot"><code class="docutils literal notranslate"><span class="pre">FitFromSquareRoot</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromSquareRoot.calculate_parameters"><code class="docutils literal notranslate"><span class="pre">FitFromSquareRoot.calculate_parameters()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromSquareRoot.square_root_func_template"><code class="docutils literal notranslate"><span class="pre">FitFromSquareRoot.square_root_func_template()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.FitFromSquareRoot.square_root_func_with_params"><code class="docutils literal notranslate"><span class="pre">FitFromSquareRoot.square_root_func_with_params()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.fits.GeneralFit"><code class="docutils literal notranslate"><span class="pre">GeneralFit</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.fits.GeneralFit.calculate_residuals"><code class="docutils literal notranslate"><span class="pre">GeneralFit.calculate_residuals()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.GeneralFit.plot_element"><code class="docutils literal notranslate"><span class="pre">GeneralFit.plot_element()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.fits.GeneralFit.show_residual_curves"><code class="docutils literal notranslate"><span class="pre">GeneralFit.show_residual_curves()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-graphinglib.graph_elements">graphinglib.graph_elements module</a><ul>
+<li><a class="reference internal" href="#graphinglib.graph_elements.GraphingException"><code class="docutils literal notranslate"><span class="pre">GraphingException</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Hlines"><code class="docutils literal notranslate"><span class="pre">Hlines</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Hlines.plot_element"><code class="docutils literal notranslate"><span class="pre">Hlines.plot_element()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Point"><code class="docutils literal notranslate"><span class="pre">Point</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Point.add_coordinates"><code class="docutils literal notranslate"><span class="pre">Point.add_coordinates()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Point.add_lines_to_axis"><code class="docutils literal notranslate"><span class="pre">Point.add_lines_to_axis()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Point.plot_element"><code class="docutils literal notranslate"><span class="pre">Point.plot_element()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Text"><code class="docutils literal notranslate"><span class="pre">Text</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Text.add_arrow"><code class="docutils literal notranslate"><span class="pre">Text.add_arrow</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Text.add_arrow_pointing_to"><code class="docutils literal notranslate"><span class="pre">Text.add_arrow_pointing_to()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Text.arrow_pointing_to"><code class="docutils literal notranslate"><span class="pre">Text.arrow_pointing_to</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Text.color"><code class="docutils literal notranslate"><span class="pre">Text.color</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Text.plot_element"><code class="docutils literal notranslate"><span class="pre">Text.plot_element()</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Text.size"><code class="docutils literal notranslate"><span class="pre">Text.size</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Text.text"><code class="docutils literal notranslate"><span class="pre">Text.text</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Text.x"><code class="docutils literal notranslate"><span class="pre">Text.x</span></code></a></li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Text.y"><code class="docutils literal notranslate"><span class="pre">Text.y</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Vlines"><code class="docutils literal notranslate"><span class="pre">Vlines</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.graph_elements.Vlines.plot_element"><code class="docutils literal notranslate"><span class="pre">Vlines.plot_element()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-graphinglib.legend_artists">graphinglib.legend_artists module</a><ul>
+<li><a class="reference internal" href="#graphinglib.legend_artists.HandlerMultipleLines"><code class="docutils literal notranslate"><span class="pre">HandlerMultipleLines</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.legend_artists.HandlerMultipleLines.create_artists"><code class="docutils literal notranslate"><span class="pre">HandlerMultipleLines.create_artists()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.legend_artists.HandlerMultipleVerticalLines"><code class="docutils literal notranslate"><span class="pre">HandlerMultipleVerticalLines</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.legend_artists.HandlerMultipleVerticalLines.create_artists"><code class="docutils literal notranslate"><span class="pre">HandlerMultipleVerticalLines.create_artists()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.legend_artists.VerticalLineCollection"><code class="docutils literal notranslate"><span class="pre">VerticalLineCollection</span></code></a><ul>
+<li><a class="reference internal" href="#graphinglib.legend_artists.VerticalLineCollection.set"><code class="docutils literal notranslate"><span class="pre">VerticalLineCollection.set()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graphinglib.legend_artists.histogram_legend_artist"><code class="docutils literal notranslate"><span class="pre">histogram_legend_artist()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-graphinglib">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Graphinglib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">graphinglib package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/graphinglib.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="graphinglib-package">
+<h1>graphinglib package<a class="headerlink" href="#graphinglib-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+</section>
+<section id="module-graphinglib.data_plotting_1d">
+<span id="graphinglib-data-plotting-1d-module"></span><h2>graphinglib.data_plotting_1d module<a class="headerlink" href="#module-graphinglib.data_plotting_1d" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Curve">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.data_plotting_1d.</span></span><span class="sig-name descname"><span class="pre">Curve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ydata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Curve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Curve" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A general continuous curve.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Curve.color">
+<span class="sig-name descname"><span class="pre">color</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Curve.color" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Curve.from_function">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">500</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Curve.from_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Curve.from_function" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Curve.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Curve.label" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Curve.line_width">
+<span class="sig-name descname"><span class="pre">line_width</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Curve.line_width" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Curve.plot_element">
+<span class="sig-name descname"><span class="pre">plot_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Curve.plot_element"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Curve.plot_element" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Curve.set_color">
+<span class="sig-name descname"><span class="pre">set_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Curve.set_color"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Curve.set_color" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Curve.xdata">
+<span class="sig-name descname"><span class="pre">xdata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Curve.xdata" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Curve.ydata">
+<span class="sig-name descname"><span class="pre">ydata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Curve.ydata" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Dashed">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.data_plotting_1d.</span></span><span class="sig-name descname"><span class="pre">Dashed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ydata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Dashed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Dashed" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#graphinglib.data_plotting_1d.Curve" title="graphinglib.data_plotting_1d.Curve"><code class="xref py py-class docutils literal notranslate"><span class="pre">Curve</span></code></a></p>
+<p>A dashed curve derived from the Curve object.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Dashed.plot_element">
+<span class="sig-name descname"><span class="pre">plot_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Dashed.plot_element"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Dashed.plot_element" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.data_plotting_1d.</span></span><span class="sig-name descname"><span class="pre">Histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_bins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hist_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_pdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Histogram"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A histogram plot with minor changes to the lable icon.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.alpha">
+<span class="sig-name descname"><span class="pre">alpha</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.alpha" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.create_label">
+<span class="sig-name descname"><span class="pre">create_label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Histogram.create_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.create_label" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.edge_color">
+<span class="sig-name descname"><span class="pre">edge_color</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.edge_color" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.face_color">
+<span class="sig-name descname"><span class="pre">face_color</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.face_color" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.hist_type">
+<span class="sig-name descname"><span class="pre">hist_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.hist_type" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.label">
+<span class="sig-name descname"><span class="pre">label</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.label" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.line_width">
+<span class="sig-name descname"><span class="pre">line_width</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.line_width" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.normal_normalized">
+<span class="sig-name descname"><span class="pre">normal_normalized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Histogram.normal_normalized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.normal_normalized" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.normal_not_normalized">
+<span class="sig-name descname"><span class="pre">normal_not_normalized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Histogram.normal_not_normalized"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.normal_not_normalized" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.normalize">
+<span class="sig-name descname"><span class="pre">normalize</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.normalize" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.number_of_bins">
+<span class="sig-name descname"><span class="pre">number_of_bins</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.number_of_bins" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.plot_element">
+<span class="sig-name descname"><span class="pre">plot_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Histogram.plot_element"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.plot_element" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.plot_residuals_from_fit">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">plot_residuals_from_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_bins</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hist_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_pdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Histogram.plot_residuals_from_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.plot_residuals_from_fit" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.show_params">
+<span class="sig-name descname"><span class="pre">show_params</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.show_params" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.show_pdf">
+<span class="sig-name descname"><span class="pre">show_pdf</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.show_pdf" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Histogram.xdata">
+<span class="sig-name descname"><span class="pre">xdata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Histogram.xdata" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Scatter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.data_plotting_1d.</span></span><span class="sig-name descname"><span class="pre">Scatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xdata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ydata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Scatter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Scatter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#graphinglib.data_plotting_1d.Curve" title="graphinglib.data_plotting_1d.Curve"><code class="xref py py-class docutils literal notranslate"><span class="pre">Curve</span></code></a></p>
+<p>A general scatter plot.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Scatter.edge_color">
+<span class="sig-name descname"><span class="pre">edge_color</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Scatter.edge_color" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Scatter.marker_size">
+<span class="sig-name descname"><span class="pre">marker_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Scatter.marker_size" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Scatter.marker_style">
+<span class="sig-name descname"><span class="pre">marker_style</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></em><a class="headerlink" href="#graphinglib.data_plotting_1d.Scatter.marker_style" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.data_plotting_1d.Scatter.plot_element">
+<span class="sig-name descname"><span class="pre">plot_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/data_plotting_1d.html#Scatter.plot_element"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.data_plotting_1d.Scatter.plot_element" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-graphinglib.figure">
+<span id="graphinglib-figure-module"></span><h2>graphinglib.figure module<a class="headerlink" href="#module-graphinglib.figure" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.figure.Figure">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.figure.</span></span><span class="sig-name descname"><span class="pre">Figure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'x</span> <span class="pre">axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'y</span> <span class="pre">axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_scale_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_scale_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend_is_boxed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticks_are_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figure_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'plain'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/figure.html#Figure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.figure.Figure" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A general Matplotlib figure.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.figure.Figure.add_element">
+<span class="sig-name descname"><span class="pre">add_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">curves</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve" title="graphinglib.data_plotting_1d.Curve"><span class="pre">Curve</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#graphinglib.graph_elements.Hlines" title="graphinglib.graph_elements.Hlines"><span class="pre">Hlines</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#graphinglib.graph_elements.Vlines" title="graphinglib.graph_elements.Vlines"><span class="pre">Vlines</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="#graphinglib.data_plotting_1d.Histogram" title="graphinglib.data_plotting_1d.Histogram"><span class="pre">Histogram</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/figure.html#Figure.add_element"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.figure.Figure.add_element" title="Permalink to this definition"></a></dt>
+<dd><p>Adds a Curve object to the figure.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.figure.Figure.fill_in_missing_params">
+<span class="sig-name descname"><span class="pre">fill_in_missing_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">curve</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/figure.html#Figure.fill_in_missing_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.figure.Figure.fill_in_missing_params" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.figure.Figure.generate_figure">
+<span class="sig-name descname"><span class="pre">generate_figure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/figure.html#Figure.generate_figure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.figure.Figure.generate_figure" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.figure.Figure.prepare_figure">
+<span class="sig-name descname"><span class="pre">prepare_figure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/figure.html#Figure.prepare_figure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.figure.Figure.prepare_figure" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.figure.Figure.save_figure">
+<span class="sig-name descname"><span class="pre">save_figure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/figure.html#Figure.save_figure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.figure.Figure.save_figure" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-graphinglib.file_manager">
+<span id="graphinglib-file-manager-module"></span><h2>graphinglib.file_manager module<a class="headerlink" href="#module-graphinglib.file_manager" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.file_manager.FileLoader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.file_manager.</span></span><span class="sig-name descname"><span class="pre">FileLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/file_manager.html#FileLoader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.file_manager.FileLoader" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.file_manager.FileLoader.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/file_manager.html#FileLoader.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.file_manager.FileLoader.load" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.file_manager.FileLoader.resource_path">
+<span class="sig-name descname"><span class="pre">resource_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/file_manager.html#FileLoader.resource_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.file_manager.FileLoader.resource_path" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-graphinglib.fits">
+<span id="graphinglib-fits-module"></span><h2>graphinglib.fits module<a class="headerlink" href="#module-graphinglib.fits" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromExponential">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.fits.</span></span><span class="sig-name descname"><span class="pre">FitFromExponential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">curve_to_be_fit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve" title="graphinglib.data_plotting_1d.Curve"><span class="pre">Curve</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guesses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromExponential"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromExponential" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#graphinglib.fits.GeneralFit" title="graphinglib.fits.GeneralFit"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeneralFit</span></code></a></p>
+<p>Create a curve fit (continuous Curve) from an existing curve object using an exponential fit.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromExponential.calculate_parameters">
+<span class="sig-name descname"><span class="pre">calculate_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromExponential.calculate_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromExponential.calculate_parameters" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromExponential.exp_func_template">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">exp_func_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromExponential.exp_func_template"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromExponential.exp_func_template" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromExponential.exp_func_with_params">
+<span class="sig-name descname"><span class="pre">exp_func_with_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromExponential.exp_func_with_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromExponential.exp_func_with_params" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromGaussian">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.fits.</span></span><span class="sig-name descname"><span class="pre">FitFromGaussian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">curve_to_be_fit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve" title="graphinglib.data_plotting_1d.Curve"><span class="pre">Curve</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guesses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromGaussian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromGaussian" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#graphinglib.fits.GeneralFit" title="graphinglib.fits.GeneralFit"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeneralFit</span></code></a></p>
+<p>Create a curve fit (continuous Curve) from an existing curve object using a gaussian fit.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromGaussian.calculate_parameters">
+<span class="sig-name descname"><span class="pre">calculate_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromGaussian.calculate_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromGaussian.calculate_parameters" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromGaussian.gaussian_func_template">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">gaussian_func_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amplitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standard_deviation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromGaussian.gaussian_func_template"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromGaussian.gaussian_func_template" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromGaussian.gaussian_func_with_params">
+<span class="sig-name descname"><span class="pre">gaussian_func_with_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromGaussian.gaussian_func_with_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromGaussian.gaussian_func_with_params" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromLog">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.fits.</span></span><span class="sig-name descname"><span class="pre">FitFromLog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">curve_to_be_fit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve" title="graphinglib.data_plotting_1d.Curve"><span class="pre">Curve</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_base</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.718281828459045</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guesses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromLog"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromLog" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#graphinglib.fits.GeneralFit" title="graphinglib.fits.GeneralFit"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeneralFit</span></code></a></p>
+<p>Create a curve fit (continuous Curve) from an existing curve object using a logarithmic fit.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromLog.calculate_parameters">
+<span class="sig-name descname"><span class="pre">calculate_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromLog.calculate_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromLog.calculate_parameters" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromLog.log_func_template">
+<span class="sig-name descname"><span class="pre">log_func_template</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromLog.log_func_template"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromLog.log_func_template" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromLog.log_func_with_params">
+<span class="sig-name descname"><span class="pre">log_func_with_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromLog.log_func_with_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromLog.log_func_with_params" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromPolynomial">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.fits.</span></span><span class="sig-name descname"><span class="pre">FitFromPolynomial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">curve_to_be_fit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve" title="graphinglib.data_plotting_1d.Curve"><span class="pre">Curve</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">degree</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromPolynomial"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromPolynomial" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#graphinglib.fits.GeneralFit" title="graphinglib.fits.GeneralFit"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeneralFit</span></code></a></p>
+<p>Create a curve fit (continuous Curve) from an existing curve object using a polynomial fit.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromPolynomial.format_coeff">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">format_coeff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coeff</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromPolynomial.format_coeff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromPolynomial.format_coeff" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromPolynomial.format_power">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">format_power</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">power</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromPolynomial.format_power"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromPolynomial.format_power" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromPolynomial.polynomial_func_with_params">
+<span class="sig-name descname"><span class="pre">polynomial_func_with_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromPolynomial.polynomial_func_with_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromPolynomial.polynomial_func_with_params" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a linear function using the class’ coefficients.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromSine">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.fits.</span></span><span class="sig-name descname"><span class="pre">FitFromSine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">curve_to_be_fit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve" title="graphinglib.data_plotting_1d.Curve"><span class="pre">Curve</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guesses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromSine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromSine" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#graphinglib.fits.GeneralFit" title="graphinglib.fits.GeneralFit"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeneralFit</span></code></a></p>
+<p>Create a curve fit (continuous Curve) from an existing curve object using a sinusoidal fit.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromSine.calculate_parameters">
+<span class="sig-name descname"><span class="pre">calculate_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromSine.calculate_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromSine.calculate_parameters" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromSine.sine_func_template">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sine_func_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromSine.sine_func_template"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromSine.sine_func_template" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromSine.sine_func_with_params">
+<span class="sig-name descname"><span class="pre">sine_func_with_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromSine.sine_func_with_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromSine.sine_func_with_params" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromSquareRoot">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.fits.</span></span><span class="sig-name descname"><span class="pre">FitFromSquareRoot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">curve_to_be_fit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve" title="graphinglib.data_plotting_1d.Curve"><span class="pre">Curve</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guesses</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">_SupportsArray</span><span class="p"><span class="pre">[</span></span><span class="pre">dtype</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">_NestedSequence</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">complex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromSquareRoot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromSquareRoot" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#graphinglib.fits.GeneralFit" title="graphinglib.fits.GeneralFit"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeneralFit</span></code></a></p>
+<p>Create a curve fit (continuous Curve) from an existing curve object using a square root fit.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromSquareRoot.calculate_parameters">
+<span class="sig-name descname"><span class="pre">calculate_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromSquareRoot.calculate_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromSquareRoot.calculate_parameters" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromSquareRoot.square_root_func_template">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">square_root_func_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromSquareRoot.square_root_func_template"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromSquareRoot.square_root_func_template" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.FitFromSquareRoot.square_root_func_with_params">
+<span class="sig-name descname"><span class="pre">square_root_func_with_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#FitFromSquareRoot.square_root_func_with_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.FitFromSquareRoot.square_root_func_with_params" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.fits.GeneralFit">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.fits.</span></span><span class="sig-name descname"><span class="pre">GeneralFit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">curve_to_be_fit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#graphinglib.data_plotting_1d.Curve" title="graphinglib.data_plotting_1d.Curve"><span class="pre">Curve</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#GeneralFit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.GeneralFit" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#graphinglib.data_plotting_1d.Curve" title="graphinglib.data_plotting_1d.Curve"><code class="xref py py-class docutils literal notranslate"><span class="pre">Curve</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.GeneralFit.calculate_residuals">
+<span class="sig-name descname"><span class="pre">calculate_residuals</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/graphinglib/fits.html#GeneralFit.calculate_residuals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.GeneralFit.calculate_residuals" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.GeneralFit.plot_element">
+<span class="sig-name descname"><span class="pre">plot_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#GeneralFit.plot_element"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.GeneralFit.plot_element" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.fits.GeneralFit.show_residual_curves">
+<span class="sig-name descname"><span class="pre">show_residual_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma_multiplier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/fits.html#GeneralFit.show_residual_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.fits.GeneralFit.show_residual_curves" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-graphinglib.graph_elements">
+<span id="graphinglib-graph-elements-module"></span><h2>graphinglib.graph_elements module<a class="headerlink" href="#module-graphinglib.graph_elements" title="Permalink to this heading"></a></h2>
+<dl class="py exception">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.GraphingException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.graph_elements.</span></span><span class="sig-name descname"><span class="pre">GraphingException</span></span><a class="reference internal" href="_modules/graphinglib/graph_elements.html#GraphingException"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.graph_elements.GraphingException" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>General exception raised for the GraphingLib module.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Hlines">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.graph_elements.</span></span><span class="sig-name descname"><span class="pre">Hlines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xmax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_styles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/graph_elements.html#Hlines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.graph_elements.Hlines" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Horizontal lines.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Hlines.plot_element">
+<span class="sig-name descname"><span class="pre">plot_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/graph_elements.html#Hlines.plot_element"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.graph_elements.Hlines.plot_element" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Point">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.graph_elements.</span></span><span class="sig-name descname"><span class="pre">Point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_style</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines_to_axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_coordinates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/graph_elements.html#Point"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.graph_elements.Point" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A general point object.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Point.add_coordinates">
+<span class="sig-name descname"><span class="pre">add_coordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/graph_elements.html#Point.add_coordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.graph_elements.Point.add_coordinates" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Point.add_lines_to_axis">
+<span class="sig-name descname"><span class="pre">add_lines_to_axis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/graph_elements.html#Point.add_lines_to_axis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.graph_elements.Point.add_lines_to_axis" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Point.plot_element">
+<span class="sig-name descname"><span class="pre">plot_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/graph_elements.html#Point.plot_element"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.graph_elements.Point.plot_element" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Text">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.graph_elements.</span></span><span class="sig-name descname"><span class="pre">Text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'k'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_arrow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrow_pointing_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/graph_elements.html#Text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.graph_elements.Text" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A text object to be displayed on a graph.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Text.add_arrow">
+<span class="sig-name descname"><span class="pre">add_arrow</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#graphinglib.graph_elements.Text.add_arrow" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Text.add_arrow_pointing_to">
+<span class="sig-name descname"><span class="pre">add_arrow_pointing_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points_to</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/graph_elements.html#Text.add_arrow_pointing_to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.graph_elements.Text.add_arrow_pointing_to" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Text.arrow_pointing_to">
+<span class="sig-name descname"><span class="pre">arrow_pointing_to</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#graphinglib.graph_elements.Text.arrow_pointing_to" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Text.color">
+<span class="sig-name descname"><span class="pre">color</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'k'</span></em><a class="headerlink" href="#graphinglib.graph_elements.Text.color" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Text.plot_element">
+<span class="sig-name descname"><span class="pre">plot_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/graph_elements.html#Text.plot_element"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.graph_elements.Text.plot_element" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Text.size">
+<span class="sig-name descname"><span class="pre">size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#graphinglib.graph_elements.Text.size" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Text.text">
+<span class="sig-name descname"><span class="pre">text</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#graphinglib.graph_elements.Text.text" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Text.x">
+<span class="sig-name descname"><span class="pre">x</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#graphinglib.graph_elements.Text.x" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Text.y">
+<span class="sig-name descname"><span class="pre">y</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#graphinglib.graph_elements.Text.y" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Vlines">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.graph_elements.</span></span><span class="sig-name descname"><span class="pre">Vlines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ymin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ymax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line_styles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/graph_elements.html#Vlines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.graph_elements.Vlines" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Vertical lines.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.graph_elements.Vlines.plot_element">
+<span class="sig-name descname"><span class="pre">plot_element</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/graph_elements.html#Vlines.plot_element"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.graph_elements.Vlines.plot_element" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-graphinglib.legend_artists">
+<span id="graphinglib-legend-artists-module"></span><h2>graphinglib.legend_artists module<a class="headerlink" href="#module-graphinglib.legend_artists" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.legend_artists.HandlerMultipleLines">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.legend_artists.</span></span><span class="sig-name descname"><span class="pre">HandlerMultipleLines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">marker_pad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numpoints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/legend_artists.html#HandlerMultipleLines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.legend_artists.HandlerMultipleLines" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">HandlerLineCollection</span></code></p>
+<p>Custom Handler for LineCollection instances.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.legend_artists.HandlerMultipleLines.create_artists">
+<span class="sig-name descname"><span class="pre">create_artists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">legend</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orig_handle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xdescent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ydescent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/legend_artists.html#HandlerMultipleLines.create_artists"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.legend_artists.HandlerMultipleLines.create_artists" title="Permalink to this definition"></a></dt>
+<dd><p>Return the legend artists generated.</p>
+<section id="parameters">
+<h3>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h3>
+<dl>
+<dt>legend<span class="classifier"><cite>~matplotlib.legend.Legend</cite></span></dt><dd><p>The legend for which these legend artists are being created.</p>
+</dd>
+<dt>orig_handle<span class="classifier"><cite>~matplotlib.artist.Artist</cite> or similar</span></dt><dd><p>The object for which these legend artists are being created.</p>
+</dd>
+<dt>xdescent, ydescent, width, height<span class="classifier">int</span></dt><dd><p>The rectangle (<em>xdescent</em>, <em>ydescent</em>, <em>width</em>, <em>height</em>) that the
+legend artists being created should fit within.</p>
+</dd>
+<dt>fontsize<span class="classifier">int</span></dt><dd><p>The fontsize in pixels. The legend artists being created should
+be scaled according to the given fontsize.</p>
+</dd>
+<dt>trans<span class="classifier"><cite>~matplotlib.transforms.Transform</cite></span></dt><dd><p>The transform that is applied to the legend artists being created.
+Typically from unit coordinates in the handler box to screen
+coordinates.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.legend_artists.HandlerMultipleVerticalLines">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.legend_artists.</span></span><span class="sig-name descname"><span class="pre">HandlerMultipleVerticalLines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">marker_pad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numpoints</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/legend_artists.html#HandlerMultipleVerticalLines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.legend_artists.HandlerMultipleVerticalLines" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">HandlerLineCollection</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.legend_artists.HandlerMultipleVerticalLines.create_artists">
+<span class="sig-name descname"><span class="pre">create_artists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">legend</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orig_handle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xdescent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ydescent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/legend_artists.html#HandlerMultipleVerticalLines.create_artists"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.legend_artists.HandlerMultipleVerticalLines.create_artists" title="Permalink to this definition"></a></dt>
+<dd><p>Return the legend artists generated.</p>
+<section id="id1">
+<h3>Parameters<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h3>
+<dl>
+<dt>legend<span class="classifier"><cite>~matplotlib.legend.Legend</cite></span></dt><dd><p>The legend for which these legend artists are being created.</p>
+</dd>
+<dt>orig_handle<span class="classifier"><cite>~matplotlib.artist.Artist</cite> or similar</span></dt><dd><p>The object for which these legend artists are being created.</p>
+</dd>
+<dt>xdescent, ydescent, width, height<span class="classifier">int</span></dt><dd><p>The rectangle (<em>xdescent</em>, <em>ydescent</em>, <em>width</em>, <em>height</em>) that the
+legend artists being created should fit within.</p>
+</dd>
+<dt>fontsize<span class="classifier">int</span></dt><dd><p>The fontsize in pixels. The legend artists being created should
+be scaled according to the given fontsize.</p>
+</dd>
+<dt>trans<span class="classifier"><cite>~matplotlib.transforms.Transform</cite></span></dt><dd><p>The transform that is applied to the legend artists being created.
+Typically from unit coordinates in the handler box to screen
+coordinates.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="graphinglib.legend_artists.VerticalLineCollection">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">graphinglib.legend_artists.</span></span><span class="sig-name descname"><span class="pre">VerticalLineCollection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segments</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zorder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/legend_artists.html#VerticalLineCollection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.legend_artists.VerticalLineCollection" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">LineCollection</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="graphinglib.legend_artists.VerticalLineCollection.set">
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">agg_filter=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">animated=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">antialiased=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capstyle=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clim=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_box=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_on=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_path=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colors=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgecolor=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facecolor=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gid=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hatch=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_layout=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">joinstyle=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linestyle=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linewidth=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mouseover=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset_transform=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsets=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_effects=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paths=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">picker=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pickradius=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rasterized=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segments=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sketch_params=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snap=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">urls=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verts=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visible=&lt;UNSET&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zorder=&lt;UNSET&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#graphinglib.legend_artists.VerticalLineCollection.set" title="Permalink to this definition"></a></dt>
+<dd><p>Set multiple properties at once.</p>
+<p>Supported properties are</p>
+<dl class="simple">
+<dt>Properties:</dt><dd><p>agg_filter: a filter function, which takes a (m, n, 3) float array and a dpi value, and returns a (m, n, 3) array and two offsets from the bottom left corner of the image
+alpha: array-like or scalar or None
+animated: bool
+antialiased or aa or antialiaseds: bool or list of bools
+array: array-like or None
+capstyle: <cite>.CapStyle</cite> or {‘butt’, ‘projecting’, ‘round’}
+clim: (vmin: float, vmax: float)
+clip_box: <cite>.Bbox</cite>
+clip_on: bool
+clip_path: Patch or (Path, Transform) or None
+cmap: <cite>.Colormap</cite> or str or None
+color: color or list of colors
+colors: color or list of colors
+edgecolor or ec or edgecolors: color or list of colors or ‘face’
+facecolor or facecolors or fc: color or list of colors
+figure: <cite>.Figure</cite>
+gid: str
+hatch: {‘/’, ‘\’, ‘|’, ‘-’, ‘+’, ‘x’, ‘o’, ‘O’, ‘.’, ‘*’}
+in_layout: bool
+joinstyle: <cite>.JoinStyle</cite> or {‘miter’, ‘round’, ‘bevel’}
+label: object
+linestyle or dashes or linestyles or ls: str or tuple or list thereof
+linewidth or linewidths or lw: float or list of floats
+mouseover: bool
+norm: <cite>.Normalize</cite> or str or None
+offset_transform or transOffset: unknown
+offsets: (N, 2) or (2,) array-like
+path_effects: <cite>.AbstractPathEffect</cite>
+paths: unknown
+picker: None or bool or float or callable
+pickradius: unknown
+rasterized: bool
+segments: unknown
+sketch_params: (scale: float, length: float, randomness: float)
+snap: bool or None
+transform: <cite>.Transform</cite>
+url: str
+urls: list of str or None
+verts: unknown
+visible: bool
+zorder: float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="graphinglib.legend_artists.histogram_legend_artist">
+<span class="sig-prename descclassname"><span class="pre">graphinglib.legend_artists.</span></span><span class="sig-name descname"><span class="pre">histogram_legend_artist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">legend</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orig_handle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xdescent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ydescent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontsize</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/graphinglib/legend_artists.html#histogram_legend_artist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#graphinglib.legend_artists.histogram_legend_artist" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-graphinglib">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-graphinglib" title="Permalink to this heading"></a></h2>
+<p># GraphingLib</p>
+<p>A simpler way to visualise data.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Gustave Coulombe, Yannick Lapointe.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
