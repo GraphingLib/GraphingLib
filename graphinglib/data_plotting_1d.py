@@ -89,8 +89,7 @@ class Curve:
 
 @dataclass
 class Scatter(Curve):
-    """
-    A general scatter plot.
+    """A general scatter plot.
 
     Creates a Scatter object which can be plotted on a Figure. Optional parameters which are left blank will be filled according to the default parameters of the chosen ``figure_style`` (choose when creating the `graphinglib.Figure` object).
 
@@ -129,8 +128,7 @@ class Scatter(Curve):
 
 
 class Dashed(Curve):
-    """
-    A general dashed curve.
+    """A general dashed curve.
 
     Creates a Dashed object which can be plotted on a Figure. Optional parameters which are left blank will be filled according to the default parameters of the chosen ``figure_style`` (choose when creating the `graphinglib.Figure` object).
 
@@ -159,8 +157,7 @@ class Dashed(Curve):
 
 @dataclass
 class Histogram:
-    """
-    A histogram plot created from a one dimensional array.
+    """A histogram plot created from a one dimensional array.
 
     The mean and standard deviation of the data can be accessed with::
 
