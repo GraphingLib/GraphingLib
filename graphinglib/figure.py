@@ -14,6 +14,27 @@ from .legend_artists import *
 class Figure:
     """
     A general Matplotlib figure.
+
+    A Figure object always has a ``figure_style`` which determines the style parameters of the figure itself and all the elements and curves it contains. If a style parameter is specified for either the figure or an element, then it overrides the default set by the ``figure_style`` for that parameter.
+
+    Parameters
+    ----------
+        x_label: str
+            The label of the figure's x axis.
+        y_label: str
+            The label of the figure's y axis.
+        size: tuple
+            The size of the figure.
+        log_scale_x: bool
+            If True, the x axis will be logarithmic.
+        log_scale_y: bool
+            If True, the y axis will be logarithmic.
+        legend_is_boxed: bool
+            If True, the legend will have an outline.
+        ticks_are_in: bool
+            If True, the tick marks for both axes will be inside the figure as opposed to outside.
+        figure_style: str
+            The name of the desired default style .yml file. Currently available defaults are "plain" and "weird". Custom styles can be created by creating your own .yaml file with your own custom name and adding them to the default_styles folder.
     """
 
     def __init__(
@@ -37,7 +58,7 @@ class Figure:
             if legend_is_boxed != "default"
             else self.default_params["Figure"]["boxed_legend"]
         )
-        tick_are_in = (
+        ticks_are_in = (
             ticks_are_in
             if ticks_are_in != "default"
             else self.default_params["Figure"]["ticks_are_in"]
@@ -65,7 +86,12 @@ class Figure:
 
     def add_element(self, *curves: Curve | Hlines | Vlines | Histogram):
         """
-        Adds a Curve object to the figure.
+        Adds a Curve or other object to the figure.
+
+        Parameters
+        ----------
+            curves : Curve
+                The curve or other object to be added. Multiple objects can added at once as separate parameters.
         """
         for curve in curves:
             self.elements.append(curve)
@@ -123,12 +149,30 @@ class Figure:
             raise GraphingException("No curves to be plotted!")
 
     def generate_figure(self, legend=True, test=False):
+        """Prepares and displays the Matplotlib figure.
+
+        Parameters
+        ----------
+            legend: bool, optional
+                If True, displays the legend using the labels of each object in the figure.
+            test: bool, optional
+                If True, doesn't display the figure, just prepares it.
+        """
         self.prepare_figure(legend=legend)
         if not test:
             plt.tight_layout()
             plt.show()
 
     def save_figure(self, file_name: str, legend=True):
+        """Saves the figure to a file.
+
+        Parameters
+        ----------
+            file_name: str
+                The name of the file with the extension. Ex: "figure_1.png", "figure_2.pdf", "figure_3.jpg"
+            legend: bool, optional
+                If True, displays the legend using the labels of each object in the figure.
+        """
         self.prepare_figure(legend=legend)
         plt.tight_layout()
         plt.savefig(file_name, bbox_inches="tight")
