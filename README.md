@@ -4,7 +4,7 @@
 
 ## 1. Description
 
-GraphingLib is a object oriented library combining the functionality of Matplotlib and Scipy. With this library it is possible to create scientific graphs to visualise data while fitting the data with simple, single line commmands.
+GraphingLib is a object oriented library combining the functionality of Matplotlib and Scipy. With this library it is possible to create scientific graphs to visualise data while fitting the data with simple, single-line commmands.
 
 GraphingLib also provides the ability to create multiple predefined themes for different applications. Once those themes are specified, they can be applied to figures with a single option.
 
@@ -44,7 +44,7 @@ fig_1.generate_figure()
 
 ## 4. Why GraphingLib
 
-It is our belief that the best way to explain the simplicity of GraphingLib is by providing an example. This is why we have included the code below, creating the exact same graph as before, but using the commands difined in Matplotlib and scipy.
+It is our belief that the best way to explain the simplicity of GraphingLib is by providing an example. This is why we have included the code below, creating the exact same graph as before, but using the commands defined in Matplotlib and scipy.
 
 ```python
 import matplotlib.pyplot as plt
@@ -88,3 +88,11 @@ plt.show()
 ```
 
 In this simple example, 38 lines of code were nessesary to get the same result we obtained in only 20 lines of code with GraphingLib.
+
+GraphingLib also simplifies the customization of figure looks by adding the option to specify custom themes. Those themes can then be used by adding a simple parameter the the Figure object. Here are two examples of themes that are predefined :
+
+In the example above the theme is the "plain" one. If we instead use the "horrible" theme instead we get
+```python
+fig_1 = gl.Figure(x_label="x values", y_label="y values", figure_style="horrible")
+```
+<div style="text-align:center"><img src="images/Horrible-theme.png" /></div>
