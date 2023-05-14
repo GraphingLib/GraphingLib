@@ -16,6 +16,8 @@
 !graphinglib/data_plotting_1d.py
 !docs/
 !docs/**
+!examples/
+!examples/**
 
 !graphinglib/default_styles/
 !graphinglib/default_styles/*.yml
