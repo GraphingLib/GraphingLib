@@ -18,6 +18,7 @@ class Curve:
     label: str
     color: str = "default"
     line_width: int = "default"
+    line_style: str = "default"
 
     @classmethod
     def from_function(
@@ -28,11 +29,12 @@ class Curve:
         label: str,
         color: str = "default",
         line_width: int = "default",
+        line_style: str = "default",
         number_of_points: int = 500,
     ):
         xdata = np.linspace(xmin, xmax, number_of_points)
         ydata = func(xdata)
-        return cls(xdata, ydata, label, color, line_width)
+        return cls(xdata, ydata, label, color, line_width, line_style)
 
     def set_color(self, color: str or list[str]):
         self.color = color
@@ -66,22 +68,6 @@ class Scatter(Curve):
             s=self.marker_size,
             marker=self.marker_style,
             label=self.label,
-        )
-
-
-class Dashed(Curve):
-    """
-    A dashed curve derived from the Curve object.
-    """
-
-    def plot_element(self, axes: plt.Axes):
-        (self.handle,) = axes.plot(
-            self.xdata,
-            self.ydata,
-            color=self.color,
-            linewidth=self.line_width,
-            label=self.label,
-            linestyle="--",
         )
 
 

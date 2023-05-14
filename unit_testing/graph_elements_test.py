@@ -165,20 +165,5 @@ class TestVlines(unittest.TestCase):
         self.assertEqual(self.testVlines.label, "Test Vlines")
 
 
-class TestDashed(unittest.TestCase):
-    def setUp(self):
-        x = linspace(0, 3 * pi, 200)
-        self.testDashed = Dashed(x, sin(x), "Test Dashed", color="k")
-
-    def test_dashed_is_curve(self):
-        self.assertIsInstance(self.testDashed, Curve)
-
-    def test_color_init(self):
-        self.assertEqual(self.testDashed.color, "k")
-
-    def test_line_width_is_default(self):
-        self.assertEqual(self.testDashed.line_width, "default")
-
-
 class TestPoint(unittest.TestCase):
     pass
