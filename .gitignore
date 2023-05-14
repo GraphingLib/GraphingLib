@@ -24,3 +24,6 @@
 
 !Unit_testing/
 !Unit_testing/*_test.py
+
+!images/
+!images/*
