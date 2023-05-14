@@ -2,11 +2,13 @@
 
 <div style="text-align:center"><img src="images/GraphingLib-Logo-Bolder.svg" width="40%" /></div>
 
-## Description
+## 1. Description
 
+GraphingLib is a object oriented library combining the functionality of Matplotlib and Scipy. With this library it is possible to create scientific graphs to visualise data while fitting the data with simple, single line commmands.
 
+GraphingLib also provides the ability to create multiple predefined themes for different applications. Once those themes are specified, they can be applied to figures with a single option.
 
-## Installation
+## 2. Installation
 
 From source with
 
@@ -14,7 +16,7 @@ From source with
 pip install git+https://github.com/GraphingLib/GraphingLib.git
 ```
 
-## Quick usage
+## 3. Quick usage
 
 ```python
 import graphinglib as gl
@@ -40,3 +42,49 @@ fig_1.generate_figure()
 ```
 <div style="text-align:center"><img src="images/Quick-Usage.png" /></div>
 
+## 4. Why GraphingLib
+
+It is our belief that the best way to explain the simplicity of GraphingLib is by providing an example. This is why we have included the code below, creating the exact same graph as before, but using the commands difined in Matplotlib and scipy.
+
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import curve_fit
+
+
+# Create function to be plotted
+def my_func(x_data, a, b, c, d):
+    return a * x_data**3 + b * x_data**2 + c * x_data + d
+
+
+# Create some noisy random data :
+x_data = np.linspace(-10, 10, 100)
+noise = np.random.normal(0, 5, len(x_data))
+y_data = my_func(x_data, 0.05, 1, 1, 1) + noise
+
+# Create the figure
+fig, ax = plt.subplots()
+
+# Create a scatter plot
+ax.scatter(x_data, y_data, label="Scatter plot", color="k")
+
+# Create a curve fit
+popt, pcov = curve_fit(my_func, x_data, y_data)
+ax.plot(
+    x_data,
+    my_func(x_data, popt[0], popt[1], popt[2], popt[3]),
+    label=f"Curve fit : {popt[0]:.3f}x^3+{popt[1]:.3f}x^2+{popt[2]:.3f}x+{popt[3]:.3f}",
+    color="red",
+)
+
+# Formatting the figure
+ax.tick_params(axis="both", direction="in")
+ax.set_xlabel("x values")
+ax.set_ylabel("y values")
+ax.legend(frameon=False)
+
+# Show the figure
+plt.show()
+```
+
+In this simple example, 38 lines of code were nessesary to get the same result we obtained in only 20 lines of code with GraphingLib.
