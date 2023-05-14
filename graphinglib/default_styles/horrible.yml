@@ -1,6 +1,7 @@
 Curve:
   color: "purple"
   line_width: 10
+  line_style: "--.--"
 
 Scatter:
   color: "cyan"

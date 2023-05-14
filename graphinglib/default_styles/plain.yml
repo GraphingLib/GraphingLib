@@ -1,6 +1,7 @@
 Curve:
   color: "k"
   line_width: 1
+  line_style: "-"
 
 Scatter:
   color: "k"
@@ -57,7 +58,7 @@ Point:
 
 FitFromPolynomial:
   color: "r"
-  line_width: 1
+  line_width: 2
   line_style: "-"
   res_color: "r"
   res_line_width: 1
@@ -65,7 +66,7 @@ FitFromPolynomial:
 
 FitFromExponential:
   color: "r"
-  line_width: 1
+  line_width: 2
   line_style: "-"
   res_color: "r"
   res_line_width: 1
@@ -73,7 +74,7 @@ FitFromExponential:
 
 FitFromGaussian:
   color: "r"
-  line_width: 1
+  line_width: 2
   line_style: "-"
   res_color: "r"
   res_line_width: 1
@@ -81,7 +82,7 @@ FitFromGaussian:
 
 FitFromSine:
   color: "r"
-  line_width: 1
+  line_width: 2
   line_style: "-"
   res_color: "r"
   res_line_width: 1
@@ -89,7 +90,7 @@ FitFromSine:
 
 FitFromSquareRoot:
   color: "r"
-  line_width: 1
+  line_width: 2
   line_style: "-"
   res_color: "r"
   res_line_width: 1
@@ -97,7 +98,7 @@ FitFromSquareRoot:
 
 FitFromLog:
   res_color: "r"
-  res_line_width: 1
+  res_line_width: 2
   res_line_style: "--"
   color: "r"
   line_width: 1
