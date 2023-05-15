@@ -137,14 +137,17 @@ class Figure:
         object_type = type(element).__name__
         for property, value in vars(element).items():
             if (type(value) == str) and (value == "default"):
-                element.__dict__[property] = self.default_params[object_type][property]
-            if (type(value) == str) and (value == "same as curve"):
-                element.__dict__["errorbars_color"] = self.default_params[object_type][
-                    "color"
-                ]
-                element.__dict__["errorbars_line_width"] = self.default_params[
-                    object_type
-                ]["line_width"]
-                element.__dict__["cap_thickness"] = self.default_params[object_type][
-                    "line_width"
-                ]
+                if self.default_params[object_type][property] == "same as curve":
+                    element.__dict__["errorbars_color"] = self.default_params[
+                        object_type
+                    ]["color"]
+                    element.__dict__["errorbars_line_width"] = self.default_params[
+                        object_type
+                    ]["line_width"]
+                    element.__dict__["cap_thickness"] = self.default_params[
+                        object_type
+                    ]["line_width"]
+                else:
+                    element.__dict__[property] = self.default_params[object_type][
+                        property
+                    ]

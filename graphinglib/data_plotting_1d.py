@@ -44,9 +44,9 @@ class Curve:
         x_error=None,
         y_error=None,
         cap_width="default",
-        errorbars_color="same as curve",
-        errorbars_line_width="same as curve",
-        cap_thickness="same as curve",
+        errorbars_color="default",
+        errorbars_line_width="default",
+        cap_thickness="default",
     ):
         self.errorbars = True
         self.x_error = x_error

@@ -3,6 +3,9 @@ Curve:
   line_width: 10
   line_style: "-."
   cap_width: 10
+  errorbars_color: "same as curve"
+  errorbars_line_width: "same as curve"
+  cap_thickness: "same as curve"
 
 Scatter:
   face_color: "cyan"
@@ -10,6 +13,9 @@ Scatter:
   marker_size: 60
   marker_style: "+"
   cap_width: 10
+  errorbars_color: "same as curve"
+  errorbars_line_width: "same as curve"
+  cap_thickness: "same as curve"
 
 Dashed:
   color: "navy"
