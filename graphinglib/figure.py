@@ -21,6 +21,8 @@ class Figure:
         x_label: str = "x axis",
         y_label: str = "y axis",
         size: tuple = "default",
+        x_lim: tuple = None,
+        y_lim: tuple = None,
         log_scale_x: bool = "default",
         log_scale_y: bool = "default",
         legend_is_boxed: bool = "default",
@@ -58,6 +60,8 @@ class Figure:
         self.handles = []
         self.x_axis_name = x_label
         self.y_axis_name = y_label
+        self.x_lim = x_lim
+        self.y_lim = y_lim
         self.log_scale_x = log_scale_x
         self.log_scale_y = log_scale_y
         self.legend_is_boxed = legend_is_boxed
@@ -77,6 +81,10 @@ class Figure:
     def prepare_figure(self, legend=True):
         self.axes.set_xlabel(self.x_axis_name)
         self.axes.set_ylabel(self.y_axis_name)
+        if self.x_lim:
+            self.axes.set_xlim(*self.x_lim)
+        if self.y_lim:
+            self.axes.set_ylim(*self.y_lim)
         if self.log_scale_x:
             self.axes.set_xscale("log")
         if self.log_scale_y:
