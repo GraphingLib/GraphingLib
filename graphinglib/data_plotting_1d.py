@@ -45,25 +45,49 @@ class Curve:
             self.ydata,
             color=self.color,
             linewidth=self.line_width,
+            linestyle=self.line_style,
             label=self.label,
         )
 
 
 @dataclass
-class Scatter(Curve):
+class Scatter:
     """
     A general scatter plot.
     """
 
-    marker_size: float = "default"
+    xdata: list | np.ndarray
+    ydata: list | np.ndarray
+    label: str
+    face_color: str = "default"
     edge_color: str = "default"
+    marker_size: float = "default"
     marker_style: str = "default"
+
+    @classmethod
+    def from_function(
+        cls,
+        func: Callable,
+        xmin: float,
+        xmax: float,
+        label: str,
+        face_color: str = "default",
+        edge_color: str = "default",
+        marker_size: int = "default",
+        marker_style: str = "default",
+        number_of_points: int = 500,
+    ):
+        xdata = np.linspace(xmin, xmax, number_of_points)
+        ydata = func(xdata)
+        return cls(
+            xdata, ydata, label, face_color, edge_color, marker_size, marker_style
+        )
 
     def plot_element(self, axes: plt.Axes):
         self.handle = axes.scatter(
             self.xdata,
             self.ydata,
-            color=self.color,
+            color=self.face_color,
             edgecolors=self.edge_color,
             s=self.marker_size,
             marker=self.marker_style,

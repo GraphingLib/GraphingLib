@@ -4,16 +4,10 @@ Curve:
   line_style: "-"
 
 Scatter:
-  color: "k"
+  face_color: "k"
   edge_color: "none"
   marker_size: 30
-  line_width: 1.5
   marker_style: "o"
-
-Dashed:
-  color: "k"
-  line_width: 1
-  line_style: "--"
 
 Histogram:
   number_of_bins: 30

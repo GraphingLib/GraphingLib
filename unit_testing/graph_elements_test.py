@@ -34,7 +34,9 @@ class TestCurve(unittest.TestCase):
 
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
-        self.testCurve = Curve(x, sin(x), "Test Curve", color="k", line_width=3)
+        self.testCurve = Curve(
+            x, sin(x), "Test Curve", color="k", line_width=3, line_style="--"
+        )
         _, self.testAxes = subplots()
         self.testCurve.plot_element(self.testAxes)
         self.assertEqual(len(self.testAxes.get_lines()), 1)
@@ -45,21 +47,18 @@ class TestScatter(unittest.TestCase):
         x = linspace(0, 3 * pi, 200)
         self.testScatter = Scatter(x, sin(x), "Test Curve")
 
-    def test_scatter_is_curve(self):
-        self.assertIsInstance(self.testScatter, Curve)
+    def test_scatter_is_scatter(self):
+        self.assertIsInstance(self.testScatter, Scatter)
 
     def test_xdata_is_list_or_ndarray(self):
         self.assertIsInstance(self.testScatter.xdata, list | ndarray)
 
     def test_color_is_str(self):
-        self.assertIsInstance(self.testScatter.color, str)
+        self.assertIsInstance(self.testScatter.face_color, str)
+        self.assertIsInstance(self.testScatter.edge_color, str)
 
     def test_label_is_str(self):
         self.assertIsInstance(self.testScatter.label, str)
-
-    def test_color_is_changed(self):
-        self.testScatter.set_color("r")
-        self.assertEqual(self.testScatter.color, "r")
 
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
@@ -67,11 +66,10 @@ class TestScatter(unittest.TestCase):
             x,
             sin(x),
             "test scatter",
-            color="k",
-            line_width=1,
+            face_color="k",
+            edge_color="k",
             marker_size=30,
             marker_style="o",
-            edge_color="none",
         )
         _, self.testAxes = subplots()
         self.testScatter.plot_element(self.testAxes)
