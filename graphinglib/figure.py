@@ -133,8 +133,18 @@ class Figure:
         plt.tight_layout()
         plt.savefig(file_name, bbox_inches="tight")
 
-    def fill_in_missing_params(self, curve):
-        object_type = type(curve).__name__
-        for property, value in vars(curve).items():
+    def fill_in_missing_params(self, element):
+        object_type = type(element).__name__
+        for property, value in vars(element).items():
             if (type(value) == str) and (value == "default"):
-                curve.__dict__[property] = self.default_params[object_type][property]
+                element.__dict__[property] = self.default_params[object_type][property]
+            if (type(value) == str) and (value == "same as curve"):
+                element.__dict__["errorbars_color"] = self.default_params[object_type][
+                    "color"
+                ]
+                element.__dict__["errorbars_line_width"] = self.default_params[
+                    object_type
+                ]["line_width"]
+                element.__dict__["cap_thickness"] = self.default_params[object_type][
+                    "line_width"
+                ]

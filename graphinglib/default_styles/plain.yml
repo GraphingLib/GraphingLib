@@ -2,12 +2,14 @@ Curve:
   color: "k"
   line_width: 1
   line_style: "-"
+  cap_width: 3
 
 Scatter:
   face_color: "k"
   edge_color: "none"
   marker_size: 30
   marker_style: "o"
+  cap_width: 3
 
 Histogram:
   number_of_bins: 30

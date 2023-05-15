@@ -39,6 +39,23 @@ class Curve:
     def set_color(self, color: str or list[str]):
         self.color = color
 
+    def add_errorbars(
+        self,
+        x_error=None,
+        y_error=None,
+        cap_width="default",
+        errorbars_color="same as curve",
+        errorbars_line_width="same as curve",
+        cap_thickness="same as curve",
+    ):
+        self.errorbars = True
+        self.x_error = x_error
+        self.y_error = y_error
+        self.errorbars_color = errorbars_color
+        self.errorbars_line_width = errorbars_line_width
+        self.cap_thickness = cap_thickness
+        self.cap_width = cap_width
+
     def plot_element(self, axes: plt.Axes):
         (self.handle,) = axes.plot(
             self.xdata,
@@ -48,6 +65,17 @@ class Curve:
             linestyle=self.line_style,
             label=self.label,
         )
+        if self.errorbars:
+            axes.errorbar(
+                self.xdata,
+                self.ydata,
+                xerr=self.x_error,
+                yerr=self.y_error,
+                color=self.errorbars_color,
+                linewidth=self.errorbars_line_width,
+                capsize=self.cap_width,
+                capthick=self.cap_thickness,
+            )
 
 
 @dataclass
@@ -83,6 +111,23 @@ class Scatter:
             xdata, ydata, label, face_color, edge_color, marker_size, marker_style
         )
 
+    def add_errorbars(
+        self,
+        x_error=None,
+        y_error=None,
+        cap_width="default",
+        errorbars_color="same as curve",
+        errorbars_line_width="same as curve",
+        cap_thickness="same as curve",
+    ):
+        self.errorbars = True
+        self.x_error = x_error
+        self.y_error = y_error
+        self.errorbars_color = errorbars_color
+        self.errorbars_line_width = errorbars_line_width
+        self.cap_thickness = cap_thickness
+        self.cap_width = cap_width
+
     def plot_element(self, axes: plt.Axes):
         self.handle = axes.scatter(
             self.xdata,
@@ -93,6 +138,17 @@ class Scatter:
             marker=self.marker_style,
             label=self.label,
         )
+        if self.errorbars:
+            axes.errorbar(
+                self.xdata,
+                self.ydata,
+                xerr=self.x_error,
+                yerr=self.y_error,
+                color=self.errorbars_color,
+                linewidth=self.errorbars_line_width,
+                capsize=self.cap_width,
+                capthick=self.cap_thickness,
+            )
 
 
 @dataclass

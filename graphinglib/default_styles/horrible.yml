@@ -1,18 +1,20 @@
 Curve:
   color: "purple"
   line_width: 10
-  line_style: "--.--"
+  line_style: "-."
+  cap_width: 10
 
 Scatter:
   face_color: "cyan"
   edge_color: "red"
   marker_size: 60
   marker_style: "+"
+  cap_width: 10
 
 Dashed:
   color: "navy"
   line_width: 1
-  line_style: "--.--"
+  line_style: "-."
 
 Histogram:
   number_of_bins: 30
