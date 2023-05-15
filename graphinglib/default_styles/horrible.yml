@@ -4,10 +4,9 @@ Curve:
   line_style: "--.--"
 
 Scatter:
-  color: "cyan"
+  face_color: "cyan"
   edge_color: "red"
   marker_size: 60
-  line_width: 1.5
   marker_style: "+"
 
 Dashed:
