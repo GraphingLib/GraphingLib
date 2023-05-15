@@ -34,7 +34,9 @@ class TestCurve(unittest.TestCase):
 
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
-        self.testCurve = Curve(x, sin(x), "Test Curve", color="k", line_width=3)
+        self.testCurve = Curve(
+            x, sin(x), "Test Curve", color="k", line_width=3, line_style="--"
+        )
         _, self.testAxes = subplots()
         self.testCurve.plot_element(self.testAxes)
         self.assertEqual(len(self.testAxes.get_lines()), 1)
