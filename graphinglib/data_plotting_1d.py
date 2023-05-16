@@ -19,6 +19,7 @@ class Curve:
     color: str = "default"
     line_width: int = "default"
     line_style: str = "default"
+    errorbars: bool = False
 
     @classmethod
     def from_function(
@@ -91,6 +92,7 @@ class Scatter:
     edge_color: str = "default"
     marker_size: float = "default"
     marker_style: str = "default"
+    errorbars: bool = False
 
     @classmethod
     def from_function(
