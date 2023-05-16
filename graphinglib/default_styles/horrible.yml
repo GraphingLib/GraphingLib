@@ -110,3 +110,8 @@ FitFromLog:
   res_color: "r"
   res_line_width: 1
   res_line_style: "--"
+
+Heatmap:
+  aspect_ratio: "equal"
+  origin_position: "lower"
+  color_map: "prism"
