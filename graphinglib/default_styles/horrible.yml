@@ -112,6 +112,5 @@ FitFromLog:
   res_line_style: "--"
 
 Heatmap:
-  normalize: False
   aspect_ratio: "equal"
   origin_position: "lower"

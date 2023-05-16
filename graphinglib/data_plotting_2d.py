@@ -14,7 +14,6 @@ class Heatmap:
 
     image: ArrayLike
     color_map: str | Colormap = "default"
-    normalize: bool = "default"
     alpha_value: float = 1.0
     aspect_ratio: str | float = "default"
     origin_position: str = "default"
@@ -23,7 +22,6 @@ class Heatmap:
         axes.imshow(
             self.image,
             cmap=self.color_map,
-            norm=self.normalize,
             alpha=self.alpha_value,
             aspect=self.aspect_ratio,
             origin=self.origin_position,
