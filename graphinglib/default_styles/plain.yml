@@ -109,3 +109,4 @@ FitFromLog:
 Heatmap:
   aspect_ratio: "equal"
   origin_position: "upper"
+  color_map: "coolwarm"
