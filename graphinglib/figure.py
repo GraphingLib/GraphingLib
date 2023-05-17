@@ -39,7 +39,7 @@ class Figure:
             if legend_is_boxed != "default"
             else self.default_params["Figure"]["boxed_legend"]
         )
-        tick_are_in = (
+        ticks_are_in = (
             ticks_are_in
             if ticks_are_in != "default"
             else self.default_params["Figure"]["ticks_are_in"]
