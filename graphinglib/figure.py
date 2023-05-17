@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
+from matplotlib import rcParamsDefault
 
 from .data_plotting_1d import *
 from .file_manager import *
@@ -28,7 +29,14 @@ class Figure:
         legend_is_boxed: bool = "default",
         ticks_are_in: bool = "default",
         figure_style: str = "plain",
+        use_latex: bool = False,
     ):
+        if use_latex:
+            plt.rcParams.update(
+                {"text.usetex": True, "font.family": "serif", "font.size": 16}
+            )
+        else:
+            plt.rcParams.update(rcParamsDefault)
         self.figure_style = figure_style
         file_loader = FileLoader(self.figure_style)
         self.default_params = file_loader.load()
