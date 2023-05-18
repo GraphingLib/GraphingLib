@@ -5,6 +5,7 @@
 !MANIFEST.in
 !pyproject.toml
 !setup.py
+!LICENSE
 
 !graphinglib/
 !graphinglib/__init__.py
