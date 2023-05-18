@@ -18,6 +18,7 @@ class Heatmap:
     alpha_value: float = 1.0
     aspect_ratio: str | float = "default"
     origin_position: str = "default"
+    interpolation: str = "none"
 
     def __post_init__(self):
         if isinstance(self.image, str):
@@ -31,6 +32,7 @@ class Heatmap:
             alpha=self.alpha_value,
             aspect=self.aspect_ratio,
             origin=self.origin_position,
+            interpolation=self.interpolation,
         )
         fig = axes.get_figure()
         if self.color_bar:
