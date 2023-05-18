@@ -18,7 +18,7 @@ class GeneralFit(Curve):
         self.curve_to_be_fit = curve_to_be_fit
         self.color = color
         self.line_width = line_width
-        self.label = label + " : " + "f(x) = " + str(self)
+        self.label = label + " : " + "$f(x) = $" + str(self)
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
 
@@ -108,7 +108,7 @@ class FitFromPolynomial(GeneralFit):
         self.function = self.polynomial_func_with_params()
         self.color = color
         self.line_width = line_width
-        self.label = label + " : " + "f(x) = " + str(self)
+        self.label = label + " : " + "$f(x) = $" + str(self)
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
 
@@ -130,11 +130,11 @@ class FitFromPolynomial(GeneralFit):
 
     @staticmethod
     def format_coeff(coeff):
-        return " - {0}".format(abs(coeff)) if coeff < 0 else " + {0}".format(coeff)
+        return "$ - {0}$".format(abs(coeff)) if coeff < 0 else "$ + {0}$".format(coeff)
 
     @staticmethod
     def format_power(power):
-        return "x^{0}".format(power) if power != 0 else ""
+        return "$x^{0}$".format(power) if power != 0 else ""
 
     def polynomial_func_with_params(self):
         """
@@ -164,20 +164,22 @@ class FitFromSine(GeneralFit):
         self.calculate_parameters()
         self.function = self.sine_func_with_params()
         self.color = color
-        self.label = label + " : " + "f(x) = " + str(self)
+        self.label = label + " : " + "$f(x) = $" + str(self)
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
 
     def __str__(self) -> str:
-        part1 = f"{self.amplitude:.3f} sin({self.frequency_rad:.3f}x"
+        part1 = f"${self.amplitude:.3f} \sin({self.frequency_rad:.3f}x$"
         part2 = (
-            f" + {self.phase:.3f})" if self.phase >= 0 else f" - {abs(self.phase):.3f})"
+            f"$ + {self.phase:.3f})"
+            if self.phase >= 0
+            else f"$ - {abs(self.phase):.3f})$"
         )
         part3 = (
-            f" + {self.vertical_shift:.3f}"
+            f"$ + {self.vertical_shift:.3f}$"
             if self.vertical_shift >= 0
-            else f" - {abs(self.vertical_shift):.3f}"
+            else f"$ - {abs(self.vertical_shift):.3f}$"
         )
         return part1 + part2 + part3
 
@@ -221,17 +223,17 @@ class FitFromExponential(GeneralFit):
         self.calculate_parameters()
         self.function = self.exp_func_with_params()
         self.color = color
-        self.label = label + " : " + "f(x) = " + str(self)
+        self.label = label + " : " + "$f(x) = $" + str(self)
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
 
     def __str__(self) -> str:
-        part1 = f"{self.parameters[0]:.3f} exp({self.parameters[1]:.3f}x"
+        part1 = f"${self.parameters[0]:.3f} \exp({self.parameters[1]:.3f}x$"
         part2 = (
-            f" + {self.parameters[2]:.3f})"
+            f"$ + {self.parameters[2]:.3f})$"
             if self.parameters[2] >= 0
-            else f" - {abs(self.parameters[2]):.3f})"
+            else f"$ - {abs(self.parameters[2]):.3f})$"
         )
         return part1 + part2
 
@@ -280,7 +282,7 @@ class FitFromGaussian(GeneralFit):
         self._res_curves_to_be_plotted = False
 
     def __str__(self) -> str:
-        return f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}, $A$ = {self.amplitude:.3f}"
+        return f"$\mu = {self.mean:.3f}, \sigma = {self.standard_deviation:.3f}, A = {self.amplitude:.3f}$"
 
     def calculate_parameters(self):
         parameters, self.cov_matrix = curve_fit(
@@ -329,7 +331,7 @@ class FitFromSquareRoot(GeneralFit):
         self._res_curves_to_be_plotted = False
 
     def __str__(self) -> str:
-        return f"{self.parameters[0]:.3f} sqrt(x {'+' if self.parameters[1] > 0 else '-'} {abs(self.parameters[1]):.3f}) {'+' if self.parameters[2] > 0 else '-'} {abs(self.parameters[2]):.3f}"
+        return f"${self.parameters[0]:.3f} \sqrt{{x {'+' if self.parameters[1] > 0 else '-'} {abs(self.parameters[1]):.3f}}} {'+' if self.parameters[2] > 0 else '-'} {abs(self.parameters[2]):.3f}$"
 
     def calculate_parameters(self) -> None:
         parameters, self.cov_matrix = curve_fit(
@@ -379,7 +381,7 @@ class FitFromLog(GeneralFit):
         self._res_curves_to_be_plotted = False
 
     def __str__(self) -> str:
-        return f"{self.parameters[0]:.3f} log_{self.log_base if self.log_base != np.e else 'e'}(x {'-' if self.parameters[1] < 0 else '+'} {abs(self.parameters[1]):.3f}) {'-' if self.parameters[2] < 0 else '+'} {abs(self.parameters[2]):.3f}"
+        return f"${self.parameters[0]:.3f} log_{self.log_base if self.log_base != np.e else 'e'}(x {'-' if self.parameters[1] < 0 else '+'} {abs(self.parameters[1]):.3f}) {'-' if self.parameters[2] < 0 else '+'} {abs(self.parameters[2]):.3f}$"
 
     def calculate_parameters(self):
         self.parameters, self.cov_matrix = curve_fit(
