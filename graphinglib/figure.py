@@ -1,5 +1,3 @@
-from fileinput import filename
-
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
@@ -99,6 +97,8 @@ class Figure:
             self.axes.set_yscale("log")
         if self.ticks_are_in:
             self.axes.tick_params(axis="both", direction="in", which="both")
+        if not self.labels:
+            legend = False
         if self.elements:
             for curve in self.elements:
                 self.fill_in_missing_params(curve)
@@ -108,6 +108,7 @@ class Figure:
                 except AttributeError:
                     continue
             if legend:
+                pass
                 try:
                     self.axes.legend(
                         handles=self.handles,
@@ -133,8 +134,6 @@ class Figure:
                         },
                         frameon=self.legend_is_boxed,
                     )
-            else:
-                self.axes.legend(draggable=True, frameon=self.legend_is_boxed)
         else:
             raise GraphingException("No curves to be plotted!")
 
