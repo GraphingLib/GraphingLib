@@ -1,5 +1,3 @@
-from fileinput import filename
-
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
