@@ -43,12 +43,12 @@ class Heatmap:
         aspect_ratio: str | float = "default",
         origin_position: str = "default",
         interpolation: str = "none",
-        number_of_points: tuple[int, int] = (100, 100),
+        number_of_points: tuple[int, int] = (50, 50),
     ):
         x = np.linspace(x_axis_range[0], x_axis_range[1], number_of_points[0])
         y = np.linspace(y_axis_range[0], y_axis_range[1], number_of_points[1])
-        xy_grid = np.meshgrid(x, y)
-        z = func(x, y)
+        x_grid, y_grid = np.meshgrid(x, y)
+        z = func(x_grid, y_grid)
         return cls(
             z,
             x_axis_range,
