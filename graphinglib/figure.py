@@ -116,7 +116,6 @@ class Figure:
                     continue
                 z_order += 2
             if legend:
-                pass
                 try:
                     self.axes.legend(
                         handles=self.handles,
@@ -160,7 +159,6 @@ class Figure:
         object_type = type(element).__name__
         for property, value in vars(element).items():
             if (type(value) == str) and (value == "default"):
-                print(self.default_params[object_type][property])
                 if self.default_params[object_type][property] == "same as curve":
                     element.__dict__["errorbars_color"] = self.default_params[
                         object_type

@@ -38,7 +38,7 @@ class TestCurve(unittest.TestCase):
             x, sin(x), "Test Curve", color="k", line_width=3, line_style="--"
         )
         _, self.testAxes = subplots()
-        self.testCurve.plot_element(self.testAxes)
+        self.testCurve.plot_element(self.testAxes, 0)
         self.assertEqual(len(self.testAxes.get_lines()), 1)
 
 
@@ -72,7 +72,7 @@ class TestScatter(unittest.TestCase):
             marker_style="o",
         )
         _, self.testAxes = subplots()
-        self.testScatter.plot_element(self.testAxes)
+        self.testScatter.plot_element(self.testAxes, 0)
         self.assertEqual(len(self.testAxes.collections), 1)
 
 
