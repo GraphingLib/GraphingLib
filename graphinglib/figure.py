@@ -28,13 +28,19 @@ class Figure:
         ticks_are_in: bool = "default",
         figure_style: str = "plain",
         use_latex: bool = False,
+        font_size: int = 12,
     ):
         if use_latex:
             plt.rcParams.update(
-                {"text.usetex": True, "font.family": "serif", "font.size": 16}
+                {
+                    "text.usetex": True,
+                    "font.family": "serif",
+                    "font.size": font_size + 3,
+                }
             )
         else:
             plt.rcParams.update(rcParamsDefault)
+            plt.rcParams["font.size"] = font_size
         self.figure_style = figure_style
         file_loader = FileLoader(self.figure_style)
         self.default_params = file_loader.load()
@@ -83,9 +89,6 @@ class Figure:
                 self.labels.append(curve.label)
             except AttributeError:
                 pass
-
-    def set_font_size(self, font_size: int):
-        plt.rcParams.update({"font.size": font_size})
 
     def prepare_figure(self, legend=True):
         self.axes.set_xlabel(self.x_axis_name)
