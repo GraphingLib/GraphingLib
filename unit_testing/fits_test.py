@@ -139,7 +139,7 @@ class TestFitFromGaussian(unittest.TestCase):
         self.assertEqual(self.fit.standard_deviation_of_fit_params.shape, (3,))
 
     def test_str(self):
-        self.assertEqual(str(self.fit), "$\mu$ = 1.000, $\sigma$ = 1.000, $A$ = 5.000")
+        self.assertEqual(str(self.fit), "$\mu = 1.000, \sigma = 1.000, A = 5.000$")
 
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(3), 0.676515, places=3)
@@ -189,7 +189,7 @@ class TestFitFromLog(unittest.TestCase):
         self.assertEqual(self.fit.standard_deviation.shape, (3,))
 
     def test_string(self):
-        self.assertEqual(str(self.fit), "2.000 log_e(x + 3.000) + 4.000")
+        self.assertEqual(str(self.fit), "$2.000 log_e(x + 3.000) + 4.000$")
 
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(0.001), 6.19789, places=3)
