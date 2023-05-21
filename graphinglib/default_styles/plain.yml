@@ -13,9 +13,9 @@ Scatter:
   marker_size: 30
   marker_style: "o"
   cap_width: 3
-  errorbars_color: "same as curve"
-  errorbars_line_width: "same as curve"
-  cap_thickness: "same as curve"
+  errorbars_color: "same as scatter"
+  errorbars_line_width: 1
+  cap_thickness: 1
 
 Histogram:
   number_of_bins: 30
