@@ -84,6 +84,9 @@ class Figure:
             except AttributeError:
                 pass
 
+    def set_font_size(self, font_size: int):
+        plt.rcParams.update({"font.size": font_size})
+
     def prepare_figure(self, legend=True):
         self.axes.set_xlabel(self.x_axis_name)
         self.axes.set_ylabel(self.y_axis_name)
