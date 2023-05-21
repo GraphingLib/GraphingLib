@@ -403,3 +403,20 @@ class FitFromLog(GeneralFit):
             * (np.log(x + self.parameters[1]) / np.log(self.log_base))
             + self.parameters[2]
         )
+
+
+class FitFromFunction(GeneralFit):
+    """
+    Create a curve fit (continuous Curve) from a curve object using an arbitrary function passed as an argument.
+    """
+
+    def __init__(
+        self, function, curve_to_fit, label, guesses, color, line_width, line_style
+    ):
+        self.function_template = function
+        self.curve_to_be_fit = curve_to_fit
+        self.label = label
+        self.guesses = guesses
+        self.color = color
+        self.line_width = line_width
+        self.line_style = line_style
