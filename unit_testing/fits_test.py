@@ -35,7 +35,7 @@ class TestFitFromPolynomial(unittest.TestCase):
         self.assertEqual(self.fit_first_degree.standard_deviation.shape, (2,))
 
     def test_first_degree_string(self):
-        self.assertEqual(str(self.fit_first_degree), "3.0x^1 + 2.0")
+        self.assertEqual(str(self.fit_first_degree), "$3.0x^1 + 2.0$")
 
     def test_first_degree_functions(self):
         self.assertAlmostEqual(self.fit_first_degree.function(5), 17)
@@ -54,7 +54,7 @@ class TestFitFromPolynomial(unittest.TestCase):
         self.assertEqual(self.fit_second_degree.standard_deviation.shape, (3,))
 
     def test_second_degree_string(self):
-        self.assertEqual(str(self.fit_second_degree), "4.0x^2 - 3.0x^1 - 2.0")
+        self.assertEqual(str(self.fit_second_degree), "$4.0x^2 - 3.0x^1 - 2.0$")
 
     def test_second_degree_functions(self):
         self.assertAlmostEqual(round(self.fit_second_degree.function(5), 5), 83)
@@ -88,7 +88,7 @@ class TestFitFromSine(unittest.TestCase):
         self.assertEqual(self.fit.standard_deviation.shape, (4,))
 
     def test_string(self):
-        self.assertEqual(str(self.fit), "2.000 sin(3.000x + 4.000) + 5.000")
+        self.assertEqual(str(self.fit), "$2.000 \\sin(3.000x + 4.000) + 5.000$")
 
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(17), 3.00048965)
@@ -112,7 +112,7 @@ class TestFitFromExponential(unittest.TestCase):
         self.assertEqual(self.fit.standard_deviation.shape, (3,))
 
     def test_string(self):
-        self.assertEqual(str(self.fit)[5:-6], " exp(3.000x + ")
+        self.assertEqual(str(self.fit)[6:-7], " \exp(3.000x + ")
 
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(0.001), 109.524, places=3)
@@ -139,7 +139,7 @@ class TestFitFromGaussian(unittest.TestCase):
         self.assertEqual(self.fit.standard_deviation_of_fit_params.shape, (3,))
 
     def test_str(self):
-        self.assertEqual(str(self.fit), "$\mu$ = 1.000, $\sigma$ = 1.000, $A$ = 5.000")
+        self.assertEqual(str(self.fit), "$\mu = 1.000, \sigma = 1.000, A = 5.000$")
 
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(3), 0.676515, places=3)
@@ -164,7 +164,7 @@ class TestFitFromSquareRoot(unittest.TestCase):
         self.assertEqual(self.fit.standard_deviation.shape, (3,))
 
     def test_str(self):
-        self.assertEqual(str(self.fit), "3.000 sqrt(x + 4.000) + 5.000")
+        self.assertEqual(str(self.fit), "$3.000 \\sqrt{x + 4.000} + 5.000$")
 
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(3), 12.937, places=3)
@@ -189,7 +189,7 @@ class TestFitFromLog(unittest.TestCase):
         self.assertEqual(self.fit.standard_deviation.shape, (3,))
 
     def test_string(self):
-        self.assertEqual(str(self.fit), "2.000 log_e(x + 3.000) + 4.000")
+        self.assertEqual(str(self.fit), "$2.000 log_e(x + 3.000) + 4.000$")
 
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(0.001), 6.19789, places=3)
