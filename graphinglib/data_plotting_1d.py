@@ -57,7 +57,7 @@ class Curve:
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
 
-    def plot_element(self, axes: plt.Axes):
+    def plot_element(self, axes: plt.Axes, z_order: int):
         (self.handle,) = axes.plot(
             self.xdata,
             self.ydata,
@@ -65,6 +65,7 @@ class Curve:
             linewidth=self.line_width,
             linestyle=self.line_style,
             label=self.label,
+            zorder=z_order,
         )
         if self.errorbars:
             axes.errorbar(
@@ -73,9 +74,11 @@ class Curve:
                 xerr=self.x_error,
                 yerr=self.y_error,
                 color=self.errorbars_color,
-                linewidth=self.errorbars_line_width,
+                elinewidth=self.errorbars_line_width,
                 capsize=self.cap_width,
                 capthick=self.cap_thickness,
+                fmt="none",
+                zorder=z_order - 1,
             )
 
 
@@ -118,9 +121,9 @@ class Scatter:
         x_error=None,
         y_error=None,
         cap_width="default",
-        errorbars_color="same as curve",
-        errorbars_line_width="same as curve",
-        cap_thickness="same as curve",
+        errorbars_color="default",
+        errorbars_line_width="default",
+        cap_thickness="default",
     ):
         self.errorbars = True
         self.x_error = x_error
@@ -130,7 +133,7 @@ class Scatter:
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
 
-    def plot_element(self, axes: plt.Axes):
+    def plot_element(self, axes: plt.Axes, z_order: int):
         self.handle = axes.scatter(
             self.xdata,
             self.ydata,
@@ -139,6 +142,7 @@ class Scatter:
             s=self.marker_size,
             marker=self.marker_style,
             label=self.label,
+            zorder=z_order,
         )
         if self.errorbars:
             axes.errorbar(
@@ -147,9 +151,11 @@ class Scatter:
                 xerr=self.x_error,
                 yerr=self.y_error,
                 color=self.errorbars_color,
-                linewidth=self.errorbars_line_width,
+                elinewidth=self.errorbars_line_width,
                 capsize=self.cap_width,
                 capthick=self.cap_thickness,
+                fmt="none",
+                zorder=z_order - 1,
             )
 
 
@@ -231,7 +237,7 @@ class Histogram:
     def normal_not_normalized(self, x):
         return sum(self.bin_heights) * self.bin_width * self.normal_normalized(x)
 
-    def plot_element(self, axes: plt.Axes):
+    def plot_element(self, axes: plt.Axes, z_order: int):
         self.handle = Polygon(
             np.array([[0, 2, 2, 3, 3, 1, 1, 0, 0], [0, 0, 1, 1, 2, 2, 3, 3, 0]]).T,
             facecolor=to_rgba(self.face_color, self.alpha),
@@ -247,6 +253,7 @@ class Histogram:
             histtype=self.hist_type,
             linewidth=self.line_width,
             density=self.normalize,
+            zorder=z_order,
         )
         if self.show_pdf in ["normal", "gaussian"]:
             normal = (
@@ -255,7 +262,13 @@ class Histogram:
             num_of_points = 500
             xdata = np.linspace(self.bin_edges[0], self.bin_edges[-1], num_of_points)
             ydata = normal(xdata)
-            axes.plot(xdata, ydata, color=self.edge_color, label=self.label)
+            axes.plot(
+                xdata,
+                ydata,
+                color=self.edge_color,
+                label=self.label,
+                zorder=z_order - 1,
+            )
             curve_max_y = normal(self.mean)
             curve_std_y = normal(self.mean + self.standard_deviation)
             plt.vlines(
@@ -268,4 +281,5 @@ class Histogram:
                 [curve_std_y, curve_max_y, curve_std_y],
                 linestyles=["dashed"],
                 colors=["k", "r", "k"],
+                zorder=z_order - 1,
             )

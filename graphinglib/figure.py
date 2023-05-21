@@ -106,13 +106,15 @@ class Figure:
         if not self.labels:
             legend = False
         if self.elements:
+            z_order = 0
             for curve in self.elements:
                 self.fill_in_missing_params(curve)
-                curve.plot_element(self.axes)
+                curve.plot_element(self.axes, z_order)
                 try:
                     self.handles.append(curve.handle)
                 except AttributeError:
                     continue
+                z_order += 2
             if legend:
                 pass
                 try:
@@ -158,6 +160,7 @@ class Figure:
         object_type = type(element).__name__
         for property, value in vars(element).items():
             if (type(value) == str) and (value == "default"):
+                print(self.default_params[object_type][property])
                 if self.default_params[object_type][property] == "same as curve":
                     element.__dict__["errorbars_color"] = self.default_params[
                         object_type
@@ -168,6 +171,10 @@ class Figure:
                     element.__dict__["cap_thickness"] = self.default_params[
                         object_type
                     ]["line_width"]
+                elif self.default_params[object_type][property] == "same as scatter":
+                    element.__dict__["errorbars_color"] = self.default_params[
+                        object_type
+                    ]["face_color"]
                 else:
                     element.__dict__[property] = self.default_params[object_type][
                         property

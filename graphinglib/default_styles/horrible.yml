@@ -13,9 +13,9 @@ Scatter:
   marker_size: 60
   marker_style: "+"
   cap_width: 10
-  errorbars_color: "same as curve"
-  errorbars_line_width: "same as curve"
-  cap_thickness: "same as curve"
+  errorbars_color: "same as scatter"
+  errorbars_line_width: 3
+  cap_thickness: 3
 
 Dashed:
   color: "navy"
