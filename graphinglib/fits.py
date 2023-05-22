@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from scipy.optimize import curve_fit
+from typing import Callable
 
 from .data_plotting_1d import Curve, Scatter
 
@@ -17,7 +18,7 @@ class GeneralFit(Curve):
         color: str = "default",
         line_width: int = "default",
         line_style: int = "default",
-    ):
+    ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
         self.color = color
         self.line_width = line_width
@@ -25,10 +26,10 @@ class GeneralFit(Curve):
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
 
-    def __str__(self):
+    def __str__(self) -> None:
         raise NotImplementedError()
 
-    def plot_element(self, axes: plt.Axes, z_order: int):
+    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         num_of_points = 500
         xdata = np.linspace(
             self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
@@ -75,7 +76,7 @@ class GeneralFit(Curve):
         color: str = "default",
         line_width: float = "default",
         line_style: str = "default",
-    ):
+    ) -> None:
         self._res_curves_to_be_plotted = True
         self.res_sigma_multiplier = sigma_multiplier
         self.res_color = color
@@ -103,7 +104,7 @@ class FitFromPolynomial(GeneralFit):
         color: str = "default",
         line_width: int = "default",
         line_style: int = "default",
-    ):
+    ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
         inversed_coeffs, inversed_cov_matrix = np.polyfit(
             self.curve_to_be_fit.xdata, self.curve_to_be_fit.ydata, degree, cov=True
@@ -118,7 +119,7 @@ class FitFromPolynomial(GeneralFit):
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
 
-    def __str__(self):
+    def __str__(self) -> str:
         coeff_chunks = []
         power_chunks = []
         ordered_rounded_coeffs = [round(coeff, 3) for coeff in self.coeffs[::-1]]
@@ -139,14 +140,14 @@ class FitFromPolynomial(GeneralFit):
         )
 
     @staticmethod
-    def format_coeff(coeff):
+    def format_coeff(coeff: float) -> str:
         return " - {0}".format(abs(coeff)) if coeff < 0 else " + {0}".format(coeff)
 
     @staticmethod
-    def format_power(power):
+    def format_power(power: int) -> str:
         return "x^{0}".format(power) if power != 0 else ""
 
-    def polynomial_func_with_params(self):
+    def polynomial_func_with_params(self) -> Callable:
         """
         Returns a linear function using the class' coefficients.
         """
@@ -168,7 +169,7 @@ class FitFromSine(GeneralFit):
         color: str = "default",
         line_width: str = "default",
         line_style: str = "default",
-    ):
+    ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
         self.calculate_parameters()
@@ -191,7 +192,7 @@ class FitFromSine(GeneralFit):
         )
         return f"${part1 + part2 + part3}$"
 
-    def calculate_parameters(self):
+    def calculate_parameters(self) -> None:
         parameters, self.cov_matrix = curve_fit(
             self.sine_func_template,
             self.curve_to_be_fit.xdata,
@@ -202,10 +203,12 @@ class FitFromSine(GeneralFit):
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
 
     @staticmethod
-    def sine_func_template(x, a, b, c, d):
+    def sine_func_template(
+        x: np.ndarray, a: float, b: float, c: float, d: float
+    ) -> np.ndarray:
         return a * np.sin(b * x + c) + d
 
-    def sine_func_with_params(self):
+    def sine_func_with_params(self) -> Callable:
         return (
             lambda x: self.amplitude * np.sin(self.frequency_rad * x + self.phase)
             + self.vertical_shift
@@ -225,7 +228,7 @@ class FitFromExponential(GeneralFit):
         color: str = "default",
         line_width: int = "default",
         line_style: str = "default",
-    ):
+    ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
         self.calculate_parameters()
@@ -245,7 +248,7 @@ class FitFromExponential(GeneralFit):
         )
         return f"${part1 + part2}$"
 
-    def calculate_parameters(self):
+    def calculate_parameters(self) -> None:
         parameters, self.cov_matrix = curve_fit(
             self.exp_func_template,
             self.curve_to_be_fit.xdata,
@@ -256,10 +259,10 @@ class FitFromExponential(GeneralFit):
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
 
     @staticmethod
-    def exp_func_template(x, a, b, c):
+    def exp_func_template(x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
         return a * np.exp(b * x + c)
 
-    def exp_func_with_params(self):
+    def exp_func_with_params(self) -> Callable:
         return lambda x: self.parameters[0] * np.exp(
             self.parameters[1] * x + self.parameters[2]
         )
@@ -278,7 +281,7 @@ class FitFromGaussian(GeneralFit):
         color: str = "default",
         line_width: int = "default",
         line_style: str = "default",
-    ):
+    ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
         self.calculate_parameters()
@@ -292,7 +295,7 @@ class FitFromGaussian(GeneralFit):
     def __str__(self) -> str:
         return f"$\mu = {self.mean:.3f}, \sigma = {self.standard_deviation:.3f}, A = {self.amplitude:.3f}$"
 
-    def calculate_parameters(self):
+    def calculate_parameters(self) -> None:
         parameters, self.cov_matrix = curve_fit(
             self.gaussian_func_template,
             self.curve_to_be_fit.xdata,
@@ -305,10 +308,12 @@ class FitFromGaussian(GeneralFit):
         self.standard_deviation_of_fit_params = np.sqrt(np.diag(self.cov_matrix))
 
     @staticmethod
-    def gaussian_func_template(x, amplitude, mean, standard_deviation):
+    def gaussian_func_template(
+        x: np.ndarray, amplitude: float, mean: float, standard_deviation: float
+    ) -> np.ndarray:
         return amplitude * np.exp(-(((x - mean) / standard_deviation) ** 2) / 2)
 
-    def gaussian_func_with_params(self):
+    def gaussian_func_with_params(self) -> Callable:
         return lambda x: self.amplitude * np.exp(
             -(((x - self.mean) / self.standard_deviation) ** 2) / 2
         )
@@ -327,7 +332,7 @@ class FitFromSquareRoot(GeneralFit):
         color: str = "default",
         line_width: int = "default",
         line_style: str = "default",
-    ):
+    ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
         self.calculate_parameters()
@@ -352,10 +357,12 @@ class FitFromSquareRoot(GeneralFit):
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
 
     @staticmethod
-    def square_root_func_template(x, a, b, c):
+    def square_root_func_template(
+        x: np.ndarray, a: float, b: float, c: float
+    ) -> np.ndarray:
         return a * np.sqrt(x + b) + c
 
-    def square_root_func_with_params(self):
+    def square_root_func_with_params(self) -> Callable:
         return (
             lambda x: self.parameters[0] * np.sqrt(x + self.parameters[1])
             + self.parameters[2]
@@ -376,7 +383,7 @@ class FitFromLog(GeneralFit):
         color: str = "default",
         line_width: int = "default",
         line_style: str = "default",
-    ):
+    ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
         self.log_base = log_base
         self.guesses = guesses
@@ -391,7 +398,7 @@ class FitFromLog(GeneralFit):
     def __str__(self) -> str:
         return f"${self.parameters[0]:.3f} log_{self.log_base if self.log_base != np.e else 'e'}(x {'-' if self.parameters[1] < 0 else '+'} {abs(self.parameters[1]):.3f}) {'-' if self.parameters[2] < 0 else '+'} {abs(self.parameters[2]):.3f}$"
 
-    def calculate_parameters(self):
+    def calculate_parameters(self) -> None:
         self.parameters, self.cov_matrix = curve_fit(
             self.log_func_template(),
             self.curve_to_be_fit.xdata,
@@ -400,10 +407,10 @@ class FitFromLog(GeneralFit):
         )
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
 
-    def log_func_template(self):
+    def log_func_template(self) -> Callable:
         return lambda x, a, b, c: a * (np.log(x + b) / np.log(self.log_base)) + c
 
-    def log_func_with_params(self):
+    def log_func_with_params(self) -> Callable:
         return (
             lambda x: self.parameters[0]
             * (np.log(x + self.parameters[1]) / np.log(self.log_base))
