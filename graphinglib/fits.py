@@ -26,7 +26,7 @@ class GeneralFit(Curve):
     def __str__(self) -> None:
         raise NotImplementedError()
 
-    def plot_element(self, axes: plt.Axes) -> None:
+    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         num_of_points = 500
         xdata = np.linspace(
             self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points

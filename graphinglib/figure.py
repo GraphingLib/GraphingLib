@@ -144,7 +144,7 @@ class Figure:
         else:
             raise GraphingException("No curves to be plotted!")
 
-    def generate_figure(self, legend: bool = True) -> None:
+    def display(self, legend: bool = True) -> None:
         self.prepare_figure(legend=legend)
         plt.tight_layout()
         plt.show()
