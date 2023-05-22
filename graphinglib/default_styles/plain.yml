@@ -106,6 +106,14 @@ FitFromLog:
   line_width: 1
   line_style: "-"
 
+FitFromFunction:
+  res_color: "r"
+  res_line_width: 2
+  res_line_style: "--"
+  color: "r"
+  line_width: 1
+  line_style: "-"
+
 Heatmap:
   aspect_ratio: "equal"
   origin_position: "upper"
