@@ -1,10 +1,13 @@
+from functools import partial
+from typing import Callable
+
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from scipy.optimize import curve_fit
 from typing import Callable
 
-from .data_plotting_1d import Curve
+from .data_plotting_1d import Curve, Scatter
 
 
 class GeneralFit(Curve):
@@ -39,6 +42,7 @@ class GeneralFit(Curve):
             color=self.color,
             linewidth=self.line_width,
             linestyle=self.line_style,
+            zorder=z_order,
         )
         if self._res_curves_to_be_plotted:
             xdata = self.curve_to_be_fit.xdata
@@ -54,6 +58,7 @@ class GeneralFit(Curve):
                 color=self.res_color,
                 linewidth=self.res_line_width,
                 linestyle=self.res_line_style,
+                zorder=z_order,
             )
             axes.plot(
                 xdata,
@@ -62,6 +67,7 @@ class GeneralFit(Curve):
                 color=self.res_color,
                 linewidth=self.res_line_width,
                 linestyle=self.res_line_style,
+                zorder=z_order,
             )
 
     def show_residual_curves(
@@ -410,3 +416,49 @@ class FitFromLog(GeneralFit):
             * (np.log(x + self.parameters[1]) / np.log(self.log_base))
             + self.parameters[2]
         )
+
+
+class FitFromFunction(GeneralFit):
+    """
+    Create a curve fit (continuous Curve) from a curve object using an arbitrary function passed as an argument.
+    """
+
+    def __init__(
+        self,
+        function: Callable,
+        curve_to_fit: Curve | Scatter,
+        label: str,
+        guesses: list[str],
+        color: str,
+        line_width: int,
+        line_style: str,
+    ):
+        self.function_template = function
+        self.curve_to_be_fit = curve_to_fit
+        self.guesses = guesses
+        self.color = color
+        self.line_width = line_width
+        self.line_style = line_style
+
+        self.calculate_parameters()
+        self.function = self.get_function_with_params()
+        self.label = label
+        self._res_curves_to_be_plotted = False
+
+    def calculate_parameters(self) -> None:
+        self.parameters, self.cov_matrix = curve_fit(
+            self.function_template,
+            self.curve_to_be_fit.xdata,
+            self.curve_to_be_fit.ydata,
+            p0=self.guesses,
+        )
+        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
+
+    def get_function_with_params(self) -> Callable:
+        argument_names = self.function_template.__code__.co_varnames[
+            : self.function_template.__code__.co_argcount
+        ][1:]
+        args_dict = {
+            argument_names[i]: self.parameters[i] for i in range(len(argument_names))
+        }
+        return partial(self.function_template, **args_dict)
