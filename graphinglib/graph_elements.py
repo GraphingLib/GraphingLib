@@ -31,7 +31,7 @@ class Hlines:
         y: ArrayLike,
         xmin: ArrayLike,
         xmax: ArrayLike,
-        label: str,
+        label: str = None,
         colors: list[str] | str = "default",
         line_styles: list[str] | str = "default",
     ) -> None:
@@ -98,7 +98,7 @@ class Vlines:
         x: ArrayLike,
         ymin: ArrayLike,
         ymax: ArrayLike,
-        label: str,
+        label: str = None,
         colors: list[str] | str = "default",
         line_styles: list[str] | str = "default",
     ) -> None:
@@ -164,7 +164,7 @@ class Point:
         self,
         x: float,
         y: float,
-        label: str = "",
+        label: str = None,
         color: str = "default",
         edge_color: str = "default",
         marker_size: float = "default",

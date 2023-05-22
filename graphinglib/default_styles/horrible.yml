@@ -111,6 +111,14 @@ FitFromLog:
   res_line_width: 1
   res_line_style: "--"
 
+FitFromFunction:
+  color: "khaki"
+  line_width: 5
+  line_style: "--"
+  res_color: "r"
+  res_line_width: 1
+  res_line_style: "--"
+
 Heatmap:
   aspect_ratio: "equal"
   origin_position: "lower"

@@ -86,7 +86,8 @@ class Figure:
         for element in elements:
             self.elements.append(element)
             try:
-                self.labels.append(element.label)
+                if element.label is not None:
+                    self.labels.append(element.label)
             except AttributeError:
                 pass
 
@@ -107,11 +108,12 @@ class Figure:
             legend = False
         if self.elements:
             z_order = 0
-            for curve in self.elements:
-                self.fill_in_missing_params(curve)
-                curve.plot_element(self.axes, z_order)
+            for element in self.elements:
+                self.fill_in_missing_params(element)
+                element.plot_element(self.axes, z_order)
                 try:
-                    self.handles.append(curve.handle)
+                    if element.label is not None:
+                        self.handles.append(element.handle)
                 except AttributeError:
                     continue
                 z_order += 2

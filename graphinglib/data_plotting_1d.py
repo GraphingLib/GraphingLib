@@ -33,7 +33,7 @@ class Curve:
 
     xdata: ArrayLike
     ydata: ArrayLike
-    label: str
+    label: str = None
     color: str = "default"
     line_width: int = "default"
     line_style: str = "default"
@@ -45,7 +45,7 @@ class Curve:
         func: Callable,
         xmin: float,
         xmax: float,
-        label: str,
+        label: str = None,
         color: str = "default",
         line_width: int = "default",
         line_style: str = "default",
@@ -108,7 +108,7 @@ class Scatter:
 
     xdata: ArrayLike
     ydata: ArrayLike
-    label: str
+    label: str = None
     face_color: str = "default"
     edge_color: str = "default"
     marker_size: float = "default"
@@ -121,7 +121,7 @@ class Scatter:
         func: Callable,
         xmin: float,
         xmax: float,
-        label: str,
+        label: str = None,
         face_color: str = "default",
         edge_color: str = "default",
         marker_size: int = "default",
@@ -185,7 +185,7 @@ class Histogram:
 
     xdata: ArrayLike
     number_of_bins: int
-    label: str
+    label: str = None
     face_color: str = "default"
     edge_color: str = "default"
     hist_type: str = "default"
@@ -214,7 +214,7 @@ class Histogram:
         cls,
         fit: Fit,
         number_of_bins: int,
-        label: str,
+        label: str = None,
         face_color: str = "default",
         edge_color: str = "default",
         hist_type: str = "default",
@@ -242,9 +242,12 @@ class Histogram:
     def create_label(self) -> None:
         lab = self.label
         if self.label and self.show_params:
-            lab += " :\n"
-        if self.show_params:
-            lab += f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
+            lab += (
+                " :\n"
+                + f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
+            )
+        elif self.show_params:
+            lab = f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
         self.label = lab
 
     def normal_normalized(self, x: ArrayLike) -> ArrayLike:
