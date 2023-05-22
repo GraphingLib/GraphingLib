@@ -428,7 +428,6 @@ class FitFromFunction(GeneralFit):
     ):
         self.function_template = function
         self.curve_to_be_fit = curve_to_fit
-        self.label = label
         self.guesses = guesses
         self.color = color
         self.line_width = line_width
@@ -436,10 +435,8 @@ class FitFromFunction(GeneralFit):
 
         self.calculate_parameters()
         self.function = self.get_function_with_params()
+        self.label = label
         self._res_curves_to_be_plotted = False
-
-    def __str__(self):
-        ...
 
     def calculate_parameters(self) -> None:
         self.parameters, self.cov_matrix = curve_fit(
