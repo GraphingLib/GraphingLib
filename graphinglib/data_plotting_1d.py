@@ -1,12 +1,28 @@
 from dataclasses import dataclass
-from typing import Callable, Self
+from typing import Callable, Self, Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
-from .fits import GeneralFit
+
+
+class Fit(Protocol):
+    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        pass
+
+    def show_residual_curves(
+        self,
+        sigma_multiplier: float,
+        color: str,
+        line_width: float,
+        line_style: str,
+    ) -> None:
+        pass
+
+    def calculate_residuals(self) -> np.ndarray:
+        pass
 
 
 @dataclass
@@ -196,7 +212,7 @@ class Histogram:
     @classmethod
     def plot_residuals_from_fit(
         cls,
-        fit: GeneralFit,
+        fit: Fit,
         number_of_bins: int,
         label: str,
         face_color: str = "default",

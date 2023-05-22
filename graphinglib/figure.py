@@ -144,11 +144,10 @@ class Figure:
         else:
             raise GraphingException("No curves to be plotted!")
 
-    def generate_figure(self, legend: bool = True, test=False) -> None:
+    def generate_figure(self, legend: bool = True) -> None:
         self.prepare_figure(legend=legend)
-        if not test:
-            plt.tight_layout()
-            plt.show()
+        plt.tight_layout()
+        plt.show()
 
     def save_figure(self, file_name: str, legend: bool = True) -> None:
         self.prepare_figure(legend=legend)

@@ -3,7 +3,6 @@ import numpy as np
 import numpy.typing as npt
 from scipy.optimize import curve_fit
 from typing import Callable
-from numpy.typing import ArrayLike
 
 from .data_plotting_1d import Curve
 

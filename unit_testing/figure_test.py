@@ -30,7 +30,7 @@ class TestFigure(unittest.TestCase):
 
     def test_all_curves_plotted(self):
         self.testFigure.add_element(self.testCurve)
-        self.testFigure.generate_figure(test=True)
+        self.testFigure.prepare_figure()
         self.assertEqual(
             len(self.testFigure.axes.get_lines()), len(self.testFigure.elements)
         )
