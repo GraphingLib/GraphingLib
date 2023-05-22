@@ -29,7 +29,7 @@ class Figure:
         figure_style: str = "plain",
         use_latex: bool = False,
         font_size: int = 12,
-    ):
+    ) -> None:
         if use_latex:
             plt.rcParams.update(
                 {
@@ -79,18 +79,18 @@ class Figure:
         self.legend_is_boxed = legend_is_boxed
         self.ticks_are_in = ticks_are_in
 
-    def add_element(self, *curves: Curve | Hlines | Vlines | Histogram):
+    def add_element(self, *elements: Plottable) -> None:
         """
         Adds a Curve object to the figure.
         """
-        for curve in curves:
-            self.elements.append(curve)
+        for element in elements:
+            self.elements.append(element)
             try:
-                self.labels.append(curve.label)
+                self.labels.append(element.label)
             except AttributeError:
                 pass
 
-    def prepare_figure(self, legend=True):
+    def prepare_figure(self, legend: bool = True) -> None:
         self.axes.set_xlabel(self.x_axis_name)
         self.axes.set_ylabel(self.y_axis_name)
         if self.x_lim:
@@ -144,18 +144,18 @@ class Figure:
         else:
             raise GraphingException("No curves to be plotted!")
 
-    def generate_figure(self, legend=True, test=False):
+    def generate_figure(self, legend: bool = True, test=False) -> None:
         self.prepare_figure(legend=legend)
         if not test:
             plt.tight_layout()
             plt.show()
 
-    def save_figure(self, file_name: str, legend=True):
+    def save_figure(self, file_name: str, legend: bool = True) -> None:
         self.prepare_figure(legend=legend)
         plt.tight_layout()
         plt.savefig(file_name, bbox_inches="tight")
 
-    def fill_in_missing_params(self, element):
+    def fill_in_missing_params(self, element: Plottable) -> None:
         object_type = type(element).__name__
         for property, value in vars(element).items():
             if (type(value) == str) and (value == "default"):

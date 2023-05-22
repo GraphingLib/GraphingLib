@@ -1,8 +1,16 @@
 from dataclasses import dataclass
 
 import numpy as np
+import matplotlib.pyplot as plt
 from .legend_artists import VerticalLineCollection
 from matplotlib.collections import LineCollection
+from typing import Protocol
+from numpy.typing import ArrayLike
+
+
+class Plottable(Protocol):
+    def plot_element(self, axes: plt.Axes, z_order: int):
+        pass
 
 
 class GraphingException(Exception):
@@ -20,13 +28,13 @@ class Hlines:
 
     def __init__(
         self,
-        y: list | np.ndarray,
-        xmin: list | np.ndarray,
-        xmax: list | np.ndarray,
+        y: ArrayLike,
+        xmin: ArrayLike,
+        xmax: ArrayLike,
         label: str,
         colors: list[str] | str = "default",
         line_styles: list[str] | str = "default",
-    ):
+    ) -> None:
         self.y = y
         self.xmin = xmin
         self.xmax = xmax
@@ -54,7 +62,7 @@ class Hlines:
                     + "linestyles and lines!"
                 )
 
-    def plot_element(self, axes, z_order: int):
+    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         if isinstance(self.y, list) and len(self.y) > 1:
             axes.hlines(
                 self.y,
@@ -87,13 +95,13 @@ class Vlines:
 
     def __init__(
         self,
-        x: list | np.ndarray,
-        ymin: list | np.ndarray,
-        ymax: list | np.ndarray,
+        x: ArrayLike,
+        ymin: ArrayLike,
+        ymax: ArrayLike,
         label: str,
         colors: list[str] | str = "default",
         line_styles: list[str] | str = "default",
-    ):
+    ) -> None:
         self.x = x
         self.ymin = ymin
         self.ymax = ymax
@@ -121,7 +129,7 @@ class Vlines:
                     + "linestyles and lines!"
                 )
 
-    def plot_element(self, axes, z_order: int):
+    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         if isinstance(self.x, list) and len(self.x) > 1:
             axes.vlines(
                 self.x,
@@ -154,17 +162,17 @@ class Point:
 
     def __init__(
         self,
-        x: int | float,
-        y: int | float,
+        x: float,
+        y: float,
         label: str = "",
         color: str = "default",
         edge_color: str = "default",
-        marker_size: int | float = "default",
+        marker_size: float = "default",
         marker_style: str = "default",
-        line_width: int | float = "default",
+        line_width: float = "default",
         lines_to_axis: bool = True,
         show_coordinates: bool = False,
-    ):
+    ) -> None:
         if not isinstance(x, int | float) or not isinstance(y, int | float):
             raise GraphingException(
                 "The x and y coordinates for a point must be a single number each!"
@@ -181,7 +189,7 @@ class Point:
         self.lines_to_axis = lines_to_axis
         self.show_coordinates = show_coordinates
 
-    def add_lines_to_axis(self, axes):
+    def add_lines_to_axis(self, axes: plt.Axes) -> None:
         axes.hlines(
             self.y, axes.get_xlim()[0], self.x, linestyle=":", color="k", zorder=0
         )
@@ -189,10 +197,10 @@ class Point:
             self.x, axes.get_ylim()[0], self.y, linestyle=":", color="k", zorder=0
         )
 
-    def add_coordinates(self):
+    def add_coordinates(self) -> None:
         raise NotImplementedError
 
-    def plot_element(self, axes, z_order: int):
+    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         axes.scatter(
             self.x,
             self.y,
@@ -215,11 +223,11 @@ class Text:
     A text object to be displayed on a graph.
     """
 
-    x: int | float
-    y: int | float
+    x: float
+    y: float
     text: str
     color: str = "k"
-    size: int | float = None
+    size: float = None
     h_align: str = "center"
     v_align: str = "center"
     arrow_pointing_to: tuple[float] = None
@@ -231,7 +239,7 @@ class Text:
         shrink: float = None,
         head_width: float = None,
         head_length: float = None,
-    ):
+    ) -> None:
         self.arrow_pointing_to = points_to
         self.width = width
         self.shrink = shrink
@@ -245,7 +253,7 @@ class Text:
         if head_length is not None:
             self.arrow_properties["headlength"] = head_length
 
-    def plot_element(self, axes, z_order: int):
+    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         axes.text(
             self.x,
             self.y,

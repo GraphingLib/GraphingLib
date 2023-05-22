@@ -1,10 +1,12 @@
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Self
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
+from numpy.typing import ArrayLike
+from .fits import GeneralFit
 
 
 @dataclass
@@ -13,8 +15,8 @@ class Curve:
     A general continuous curve.
     """
 
-    xdata: list | np.ndarray
-    ydata: list | np.ndarray
+    xdata: ArrayLike
+    ydata: ArrayLike
     label: str
     color: str = "default"
     line_width: int = "default"
@@ -32,23 +34,23 @@ class Curve:
         line_width: int = "default",
         line_style: str = "default",
         number_of_points: int = 500,
-    ):
+    ) -> Self:
         xdata = np.linspace(xmin, xmax, number_of_points)
         ydata = func(xdata)
         return cls(xdata, ydata, label, color, line_width, line_style)
 
-    def set_color(self, color: str or list[str]):
+    def set_color(self, color: str | list[str]) -> None:
         self.color = color
 
     def add_errorbars(
         self,
-        x_error=None,
-        y_error=None,
-        cap_width="default",
-        errorbars_color="default",
-        errorbars_line_width="default",
-        cap_thickness="default",
-    ):
+        x_error: ArrayLike = None,
+        y_error: ArrayLike = None,
+        cap_width: float = "default",
+        errorbars_color: str = "default",
+        errorbars_line_width: float = "default",
+        cap_thickness: float = "default",
+    ) -> None:
         self.errorbars = True
         self.x_error = x_error
         self.y_error = y_error
@@ -57,7 +59,7 @@ class Curve:
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
 
-    def plot_element(self, axes: plt.Axes, z_order: int):
+    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         (self.handle,) = axes.plot(
             self.xdata,
             self.ydata,
@@ -88,8 +90,8 @@ class Scatter:
     A general scatter plot.
     """
 
-    xdata: list | np.ndarray
-    ydata: list | np.ndarray
+    xdata: ArrayLike
+    ydata: ArrayLike
     label: str
     face_color: str = "default"
     edge_color: str = "default"
@@ -109,7 +111,7 @@ class Scatter:
         marker_size: int = "default",
         marker_style: str = "default",
         number_of_points: int = 500,
-    ):
+    ) -> Self:
         xdata = np.linspace(xmin, xmax, number_of_points)
         ydata = func(xdata)
         return cls(
@@ -118,13 +120,13 @@ class Scatter:
 
     def add_errorbars(
         self,
-        x_error=None,
-        y_error=None,
-        cap_width="default",
-        errorbars_color="default",
-        errorbars_line_width="default",
-        cap_thickness="default",
-    ):
+        x_error: ArrayLike = None,
+        y_error: ArrayLike = None,
+        cap_width: float = "default",
+        errorbars_color: str = "default",
+        errorbars_line_width: float = "default",
+        cap_thickness: float = "default",
+    ) -> None:
         self.errorbars = True
         self.x_error = x_error
         self.y_error = y_error
@@ -133,7 +135,7 @@ class Scatter:
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
 
-    def plot_element(self, axes: plt.Axes, z_order: int):
+    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         self.handle = axes.scatter(
             self.xdata,
             self.ydata,
@@ -165,7 +167,7 @@ class Histogram:
     A histogram plot with minor changes to the lable icon.
     """
 
-    xdata: list | np.ndarray
+    xdata: ArrayLike
     number_of_bins: int
     label: str
     face_color: str = "default"
@@ -177,7 +179,7 @@ class Histogram:
     show_pdf: str = "default"
     show_params: bool = "default"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.mean = np.mean(self.xdata)
         self.standard_deviation = np.std(self.xdata)
         parameters = np.histogram(
@@ -194,7 +196,7 @@ class Histogram:
     @classmethod
     def plot_residuals_from_fit(
         cls,
-        fit,
+        fit: GeneralFit,
         number_of_bins: int,
         label: str,
         face_color: str = "default",
@@ -205,7 +207,7 @@ class Histogram:
         normalize: bool = "default",
         show_pdf: str = "default",
         show_params: bool = "default",
-    ):
+    ) -> Self:
         residuals = fit.calculate_residuals()
         return cls(
             residuals,
@@ -221,7 +223,7 @@ class Histogram:
             show_params,
         )
 
-    def create_label(self):
+    def create_label(self) -> None:
         lab = self.label
         if self.label and self.show_params:
             lab += " :\n"
@@ -229,15 +231,15 @@ class Histogram:
             lab += f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
         self.label = lab
 
-    def normal_normalized(self, x):
+    def normal_normalized(self, x: ArrayLike) -> ArrayLike:
         return (1 / (self.standard_deviation * np.sqrt(2 * np.pi))) * np.exp(
             -0.5 * (((x - self.mean) / self.standard_deviation) ** 2)
         )
 
-    def normal_not_normalized(self, x):
+    def normal_not_normalized(self, x: ArrayLike) -> ArrayLike:
         return sum(self.bin_heights) * self.bin_width * self.normal_normalized(x)
 
-    def plot_element(self, axes: plt.Axes, z_order: int):
+    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         self.handle = Polygon(
             np.array([[0, 2, 2, 3, 3, 1, 1, 0, 0], [0, 0, 1, 1, 2, 2, 3, 3, 0]]).T,
             facecolor=to_rgba(self.face_color, self.alpha),
