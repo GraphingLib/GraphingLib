@@ -30,13 +30,13 @@ class TestFigure(unittest.TestCase):
 
     def test_all_curves_plotted(self):
         self.testFigure.add_element(self.testCurve)
-        self.testFigure.generate_figure(test=True)
+        self.testFigure.prepare_figure()
         self.assertEqual(
             len(self.testFigure.axes.get_lines()), len(self.testFigure.elements)
         )
 
     def test_raise_exception_if_no_curve_added(self):
-        self.assertRaises(GraphingException, self.testFigure.generate_figure)
+        self.assertRaises(GraphingException, self.testFigure.display)
 
     def test_auto_assign_default_params(self):
         x = linspace(0, 3 * pi, 200)
