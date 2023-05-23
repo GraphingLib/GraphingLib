@@ -1,11 +1,12 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Optional, Protocol
 
-import numpy as np
 import matplotlib.pyplot as plt
-from .legend_artists import VerticalLineCollection
+import numpy as np
 from matplotlib.collections import LineCollection
-from typing import Protocol
 from numpy.typing import ArrayLike
+
+from .legend_artists import VerticalLineCollection
 
 
 class Plottable(Protocol):
@@ -170,8 +171,6 @@ class Point:
         marker_size: float = "default",
         marker_style: str = "default",
         line_width: float = "default",
-        lines_to_axis: bool = True,
-        show_coordinates: bool = False,
     ) -> None:
         if not isinstance(x, int | float) or not isinstance(y, int | float):
             raise GraphingException(
@@ -186,19 +185,20 @@ class Point:
         self.marker_size = marker_size
         self.marker_style = marker_style
         self.line_width = line_width
-        self.lines_to_axis = lines_to_axis
-        self.show_coordinates = show_coordinates
+        self._show_coordinates: bool = False
 
-    def add_lines_to_axis(self, axes: plt.Axes) -> None:
-        axes.hlines(
-            self.y, axes.get_xlim()[0], self.x, linestyle=":", color="k", zorder=0
-        )
-        axes.vlines(
-            self.x, axes.get_ylim()[0], self.y, linestyle=":", color="k", zorder=0
-        )
-
-    def add_coordinates(self) -> None:
-        raise NotImplementedError
+    def add_coordinates(
+        self,
+        text_color: str = "k",
+        font_size: int = "same as figure",
+        h_align: str = "left",
+        v_align: str = "bottom",
+    ) -> None:
+        self._show_coordinates = True
+        self.text_color = text_color
+        self.font_size = font_size
+        self.h_align = h_align
+        self.v_align = v_align
 
     def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         axes.scatter(
@@ -211,10 +211,20 @@ class Point:
             linewidths=self.line_width,
             zorder=z_order,
         )
-        if self.lines_to_axis:
-            self.add_lines_to_axis(axes)
-        if self.show_coordinates:
-            self.add_coordinates(axes)
+        if self._show_coordinates:
+            size = self.font_size if self.font_size != "same as figure" else None
+            prefix = " " if self.h_align == "left" else ""
+            postfix = " " if self.h_align == "right" else ""
+            point_label = prefix + f"({self.x:.3f}, {self.y:.3f})" + postfix
+            axes.annotate(
+                point_label,
+                (self.x, self.y),
+                color=self.text_color,
+                fontsize=size,
+                horizontalalignment=self.h_align,
+                verticalalignment=self.v_align,
+                zorder=z_order,
+            )
 
 
 @dataclass
@@ -227,10 +237,10 @@ class Text:
     y: float
     text: str
     color: str = "k"
-    size: float = None
+    font_size: float = "same as figure"
     h_align: str = "center"
     v_align: str = "center"
-    arrow_pointing_to: tuple[float] = None
+    _arrow_pointing_to: Optional[tuple[float]] = field(default=None, init=False)
 
     def attach_arrow(
         self,
@@ -240,7 +250,7 @@ class Text:
         head_width: float = None,
         head_length: float = None,
     ) -> None:
-        self.arrow_pointing_to = points_to
+        self._arrow_pointing_to = points_to
         self.width = width
         self.shrink = shrink
         self.arrow_properties = {"color": self.color}
@@ -254,6 +264,7 @@ class Text:
             self.arrow_properties["headlength"] = head_length
 
     def plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        size = self.font_size if self.font_size != "same as figure" else None
         axes.text(
             self.x,
             self.y,
@@ -261,17 +272,17 @@ class Text:
             horizontalalignment=self.h_align,
             verticalalignment=self.v_align,
             color=self.color,
-            fontsize=self.size,
+            fontsize=size,
             zorder=z_order,
         )
-        if self.arrow_pointing_to is not None:
+        if self._arrow_pointing_to is not None:
             axes.annotate(
                 self.text,
-                self.arrow_pointing_to,
+                self._arrow_pointing_to,
                 xytext=(self.x, self.y),
                 color=self.color,
                 arrowprops=self.arrow_properties,
-                fontsize=self.size,
+                fontsize=size,
                 horizontalalignment=self.h_align,
                 verticalalignment=self.v_align,
                 zorder=z_order,
