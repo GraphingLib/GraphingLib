@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Optional, Protocol, Self
+from typing import Callable, Literal, Optional, Protocol, Self
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -35,7 +35,7 @@ class Curve:
     y_data: ArrayLike
     label: Optional[str] = None
     color: str = "default"
-    line_width: int = "default"
+    line_width: int | Literal["default"] = "default"
     line_style: str = "default"
     errorbars: bool = False
 
@@ -47,7 +47,7 @@ class Curve:
         x_max: float,
         label: Optional[str] = None,
         color: str = "default",
-        line_width: int = "default",
+        line_width: int | Literal["default"] = "default",
         line_style: str = "default",
         number_of_points: int = 500,
     ) -> Self:
@@ -59,10 +59,10 @@ class Curve:
         self,
         x_error: ArrayLike,
         y_error: ArrayLike,
-        cap_width: float = "default",
+        cap_width: float | Literal["default"] = "default",
         errorbars_color: str = "default",
-        errorbars_line_width: float = "default",
-        cap_thickness: float = "default",
+        errorbars_line_width: float | Literal["default"] = "default",
+        cap_thickness: float | Literal["default"] = "default",
     ) -> None:
         self.errorbars = True
         self.x_error = x_error
@@ -108,20 +108,20 @@ class Scatter:
     label: Optional[str] = None
     face_color: str = "default"
     edge_color: str = "default"
-    marker_size: float = "default"
+    marker_size: float | Literal["default"] = "default"
     marker_style: str = "default"
     errorbars: bool = False
 
     @classmethod
     def from_function(
         cls,
-        func: Callable,
+        func: Callable[[ArrayLike], ArrayLike],
         x_min: float,
         x_max: float,
         label: Optional[str] = None,
         face_color: str = "default",
         edge_color: str = "default",
-        marker_size: int = "default",
+        marker_size: int | Literal["default"] = "default",
         marker_style: str = "default",
         number_of_points: int = 500,
     ) -> Self:
@@ -135,10 +135,10 @@ class Scatter:
         self,
         x_error: ArrayLike,
         y_error: ArrayLike,
-        cap_width: float = "default",
+        cap_width: float | Literal["default"] = "default",
         errorbars_color: str = "default",
-        errorbars_line_width: float = "default",
-        cap_thickness: float = "default",
+        errorbars_line_width: float | Literal["default"] = "default",
+        cap_thickness: float | Literal["default"] = "default",
     ) -> None:
         self.errorbars = True
         self.x_error = x_error
@@ -186,11 +186,11 @@ class Histogram:
     face_color: str = "default"
     edge_color: str = "default"
     hist_type: str = "default"
-    alpha: float = "default"
-    line_width: float = "default"
-    normalize: bool = "default"
+    alpha: float | Literal["default"] = "default"
+    line_width: float | Literal["default"] = "default"
+    normalize: bool | Literal["default"] = "default"
     show_pdf: str = "default"
-    show_params: bool = "default"
+    show_params: bool | Literal["default"] = "default"
 
     def __post_init__(self) -> None:
         self.mean = np.mean(self.x_data)
@@ -215,11 +215,11 @@ class Histogram:
         face_color: str = "default",
         edge_color: str = "default",
         hist_type: str = "default",
-        alpha: int = "default",
-        line_width: int = "default",
-        normalize: bool = "default",
-        show_pdf: str = "default",
-        show_params: bool = "default",
+        alpha: int | Literal["default"] = "default",
+        line_width: int | Literal["default"] = "default",
+        normalize: bool | Literal["default"] = "default",
+        show_pdf: str | Literal["default"] = "default",
+        show_params: bool | Literal["default"] = "default",
     ) -> Self:
         residuals = fit._calculate_residuals()
         return cls(
