@@ -42,7 +42,7 @@ fig_1.add_element(scatter)
 # Display the figure
 fig_1.display()
 ```
-<div style="text-align:center"><img src="images/Quick-Usage.png" /></div>
+![quick usage image](https://github.com/GraphingLib/GraphingLib/blob/master/images/Quick-Usage.png?raw=true)
 
 ## 4. Why GraphingLib
 
@@ -97,4 +97,4 @@ In the example above the theme is the "plain" one. If we instead use the "horrib
 ```python
 fig_1 = gl.Figure(x_label="x values", y_label="y values", figure_style="horrible")
 ```
-<div style="text-align:center"><img src="images/Horrible-theme.png" /></div>
+![horrible theme image](https://github.com/GraphingLib/GraphingLib/blob/master/images/Horrible-theme.png?raw=true)
