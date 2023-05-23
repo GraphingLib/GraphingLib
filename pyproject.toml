@@ -1,7 +1,8 @@
 [tool.poetry]
 name = "graphinglib"
-version = "0.1.0"
+version = "1.0.0"
 description = "A simpler way to view data in Python"
+license = "MIT"
 authors = ["Gustave Coulombe", "Yannick Lapointe"]
 readme = "README.md"
 
@@ -14,9 +15,7 @@ PyYAML = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
-sphinx = ">=1.6,<7"
 ipykernel = "^6.23.0"
-sphinx-rtd-theme = "^1.2.0"
 
 [build-system]
 requires = ["poetry-core"]
