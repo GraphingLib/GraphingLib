@@ -73,7 +73,7 @@ class Curve:
         self.cap_width = cap_width
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
-        (self._handle,) = axes.plot(
+        (self.handle,) = axes.plot(
             self.x_data,
             self.y_data,
             color=self.color,
@@ -149,7 +149,7 @@ class Scatter:
         self.cap_width = cap_width
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
-        self._handle = axes.scatter(
+        self.handle = axes.scatter(
             self.x_data,
             self.y_data,
             color=self.face_color,
@@ -256,7 +256,7 @@ class Histogram:
         return sum(self._bin_heights) * self._bin_width * self._normal_normalized(x)
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
-        self._handle = Polygon(
+        self.handle = Polygon(
             np.array([[0, 2, 2, 3, 3, 1, 1, 0, 0], [0, 0, 1, 1, 2, 2, 3, 3, 0]]).T,
             facecolor=to_rgba(self.face_color, self.alpha),
             edgecolor=to_rgba(self.edge_color, 1),

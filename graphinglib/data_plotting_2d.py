@@ -29,7 +29,7 @@ class Heatmap:
             self.image = imread(self.image)
             self.show_color_bar = False
         if self.x_axis_range is not None and self.y_axis_range is not None:
-            self.__xy_range__ = self.x_axis_range + self.y_axis_range
+            self._xy_range = self.x_axis_range + self.y_axis_range
 
     @classmethod
     def from_function(
@@ -61,7 +61,7 @@ class Heatmap:
             interpolation,
         )
 
-    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         if self.x_axis_range is not None and self.y_axis_range is not None:
             image = axes.imshow(
                 self.image,
@@ -70,7 +70,7 @@ class Heatmap:
                 aspect=self.aspect_ratio,
                 origin=self.origin_position,
                 interpolation=self.interpolation,
-                extent=self.__xy_range__,
+                extent=self._xy_range,
                 zorder=z_order,
             )
         else:
