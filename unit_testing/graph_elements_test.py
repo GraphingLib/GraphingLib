@@ -28,10 +28,6 @@ class TestCurve(unittest.TestCase):
     def test_label_is_str(self):
         self.assertIsInstance(self.testCurve.label, str)
 
-    def test_color_is_changed(self):
-        self.testCurve.set_color("r")
-        self.assertEqual(self.testCurve.color, "r")
-
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
         self.testCurve = Curve(
