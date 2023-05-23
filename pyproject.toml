@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "graphinglib"
 version = "1.0.0"
-description = "A simpler way to view data in Python"
+description = "An object oriented wrapper combining the functionalities of Matplotlib and Scipy"
 license = "MIT"
 authors = ["Gustave Coulombe", "Yannick Lapointe"]
 readme = "README.md"
