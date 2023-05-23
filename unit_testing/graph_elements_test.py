@@ -118,10 +118,10 @@ class TestHlines(unittest.TestCase):
         self.assertIsInstance(self.testHlines.y, list | ndarray | float | int)
 
     def test_xmin_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines._xmin, list | ndarray | float | int)
+        self.assertIsInstance(self.testHlines.x_min, list | ndarray | float | int)
 
     def test_ymin_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines._xmin, list | ndarray | float | int)
+        self.assertIsInstance(self.testHlines.x_min, list | ndarray | float | int)
 
     def test_colors_is_str_list_or_none(self):
         self.assertIsInstance(self.testHlines.colors, list | str | None)
