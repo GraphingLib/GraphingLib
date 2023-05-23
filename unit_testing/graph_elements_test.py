@@ -26,7 +26,7 @@ class TestCurve(unittest.TestCase):
         self.assertIsInstance(self.testCurve.color, str)
 
     def test_label_is_str(self):
-        self.assertIsInstance(self.testCurve.label, str)
+        self.assertIsInstance(self.testCurve._label, str)
 
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)

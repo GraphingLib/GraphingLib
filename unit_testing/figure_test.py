@@ -42,7 +42,7 @@ class TestFigure(unittest.TestCase):
 
     def test_auto_assign_default_params(self):
         x = linspace(0, 3 * pi, 200)
-        a_curve = Curve(x, sin(x), label="Test Curve")
+        a_curve = Curve(x, sin(x), _label="Test Curve")
         a_figure = Figure()
         a_figure.add_element(a_curve)
         a_figure._fill_in_missing_params(a_curve)
@@ -50,7 +50,7 @@ class TestFigure(unittest.TestCase):
 
     def test_auto_assign_default_params_weird(self):
         x = linspace(0, 3 * pi, 200)
-        a_curve = Curve(x, sin(x), label="Test Curve")
+        a_curve = Curve(x, sin(x), _label="Test Curve")
         a_figure = Figure(figure_style="horrible")
         a_figure.add_element(a_curve)
         a_figure._fill_in_missing_params(a_curve)
@@ -58,7 +58,7 @@ class TestFigure(unittest.TestCase):
 
     def test_auto_assign_default_params_skip_predefined(self):
         x = linspace(0, 3 * pi, 200)
-        a_curve = Curve(x, sin(x), label="Test Curve", line_width=3)
+        a_curve = Curve(x, sin(x), _label="Test Curve", line_width=3)
         a_figure = Figure()
         a_figure.add_element(a_curve)
         a_figure._fill_in_missing_params(a_curve)
@@ -66,8 +66,8 @@ class TestFigure(unittest.TestCase):
 
     def test_assign_figure_params_weird(self):
         a_figure = Figure(figure_style="horrible")
-        self.assertListEqual(list(a_figure._size), [10, 7])
+        self.assertListEqual(list(a_figure.size), [10, 7])
 
     def test_assign_figure_params_not_boxed(self):
         a_figure = Figure(figure_style="horrible", legend_is_boxed=False)
-        self.assertFalse(a_figure._legend_is_boxed)
+        self.assertFalse(a_figure.legend_is_boxed)

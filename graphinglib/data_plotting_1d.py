@@ -33,7 +33,7 @@ class Curve:
 
     x_data: ArrayLike
     y_data: ArrayLike
-    label: Optional[str] = None
+    _label: Optional[str] = None
     color: str = "default"
     line_width: int = "default"
     line_style: str = "default"
@@ -79,7 +79,7 @@ class Curve:
             color=self.color,
             linewidth=self.line_width,
             linestyle=self.line_style,
-            label=self.label,
+            label=self._label,
             zorder=z_order,
         )
         if self.errorbars:
