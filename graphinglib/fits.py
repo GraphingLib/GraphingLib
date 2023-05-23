@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, Optional
+from typing import Callable, Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,8 +15,8 @@ class GeneralFit(Curve):
         curve_to_be_fit: Curve,
         label: Optional[str] = None,
         color: str = "default",
-        line_width: int = "default",
-        line_style: int = "default",
+        line_width: int | Literal["default"] = "default",
+        line_style: str = "default",
     ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
         self.color = color
@@ -28,7 +28,7 @@ class GeneralFit(Curve):
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
 
-    def __str__(self) -> None:
+    def __str__(self) -> str:
         raise NotImplementedError()
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
@@ -78,7 +78,7 @@ class GeneralFit(Curve):
         self,
         sigma_multiplier: float = 1,
         color: str = "default",
-        line_width: float = "default",
+        line_width: float | Literal["default"] = "default",
         line_style: str = "default",
     ) -> None:
         self._res_curves_to_be_plotted = True
@@ -106,8 +106,8 @@ class FitFromPolynomial(GeneralFit):
         degree: int,
         label: Optional[str] = None,
         color: str = "default",
-        line_width: int = "default",
-        line_style: int = "default",
+        line_width: int | Literal["default"] = "default",
+        line_style: int | Literal["default"] = "default",
     ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
         inversed_coeffs, inversed_cov_matrix = np.polyfit(
@@ -154,7 +154,9 @@ class FitFromPolynomial(GeneralFit):
     def _format_power(power: int) -> str:
         return "x^{0}".format(power) if power != 0 else ""
 
-    def _polynomial_func_with_params(self) -> Callable:
+    def _polynomial_func_with_params(
+        self,
+    ) -> Callable[float | np.ndarray, float | np.ndarray]:
         """
         Returns a linear function using the class' coefficients.
         """
@@ -218,7 +220,9 @@ class FitFromSine(GeneralFit):
     ) -> np.ndarray:
         return a * np.sin(b * x + c) + d
 
-    def _sine_func_with_params(self) -> Callable:
+    def _sine_func_with_params(
+        self,
+    ) -> Callable[float | np.ndarray, float | np.ndarray]:
         return (
             lambda x: self.amplitude * np.sin(self.frequency_rad * x + self.phase)
             + self.vertical_shift
@@ -236,7 +240,7 @@ class FitFromExponential(GeneralFit):
         label: Optional[str] = None,
         guesses: Optional[npt.ArrayLike] = None,
         color: str = "default",
-        line_width: int = "default",
+        line_width: int | Literal["default"] = "default",
         line_style: str = "default",
     ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
@@ -275,7 +279,7 @@ class FitFromExponential(GeneralFit):
     def _exp_func_template(x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
         return a * np.exp(b * x + c)
 
-    def _exp_func_with_params(self) -> Callable:
+    def _exp_func_with_params(self) -> Callable[float | np.ndarray, float | np.ndarray]:
         return lambda x: self.parameters[0] * np.exp(
             self.parameters[1] * x + self.parameters[2]
         )
@@ -292,7 +296,7 @@ class FitFromGaussian(GeneralFit):
         label: Optional[str] = None,
         guesses: Optional[npt.ArrayLike] = None,
         color: str = "default",
-        line_width: int = "default",
+        line_width: int | Literal["default"] = "default",
         line_style: str = "default",
     ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
@@ -329,7 +333,9 @@ class FitFromGaussian(GeneralFit):
     ) -> np.ndarray:
         return amplitude * np.exp(-(((x - mean) / standard_deviation) ** 2) / 2)
 
-    def _gaussian_func_with_params(self) -> Callable:
+    def _gaussian_func_with_params(
+        self,
+    ) -> Callable[float | np.ndarray, float | np.ndarray]:
         return lambda x: self.amplitude * np.exp(
             -(((x - self.mean) / self.standard_deviation) ** 2) / 2
         )
@@ -346,7 +352,7 @@ class FitFromSquareRoot(GeneralFit):
         label: Optional[str] = None,
         guesses: Optional[npt.ArrayLike] = None,
         color: str = "default",
-        line_width: int = "default",
+        line_width: int | Literal["default"] = "default",
         line_style: str = "default",
     ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
@@ -381,7 +387,9 @@ class FitFromSquareRoot(GeneralFit):
     ) -> np.ndarray:
         return a * np.sqrt(x + b) + c
 
-    def _square_root_func_with_params(self) -> Callable:
+    def _square_root_func_with_params(
+        self,
+    ) -> Callable[float | np.ndarray, float | np.ndarray]:
         return (
             lambda x: self.parameters[0] * np.sqrt(x + self.parameters[1])
             + self.parameters[2]
@@ -400,7 +408,7 @@ class FitFromLog(GeneralFit):
         log_base: float = np.e,
         guesses: Optional[npt.ArrayLike] = None,
         color: str = "default",
-        line_width: int = "default",
+        line_width: int | Literal["default"] = "default",
         line_style: str = "default",
     ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
@@ -429,10 +437,12 @@ class FitFromLog(GeneralFit):
         )
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
 
-    def _log_func_template(self) -> Callable:
+    def _log_func_template(
+        self,
+    ) -> Callable[[float | np.ndarray, float, float, float], float | np.ndarray]:
         return lambda x, a, b, c: a * (np.log(x + b) / np.log(self.log_base)) + c
 
-    def _log_func_with_params(self) -> Callable:
+    def _log_func_with_params(self) -> Callable[float | np.ndarray, float | np.ndarray]:
         return (
             lambda x: self.parameters[0]
             * (np.log(x + self.parameters[1]) / np.log(self.log_base))
@@ -452,7 +462,7 @@ class FitFromFunction(GeneralFit):
         label: Optional[str] = None,
         guesses: Optional[npt.ArrayLike] = None,
         color: str = "default",
-        line_width: int = "default",
+        line_width: int | Literal["default"] = "default",
         line_style: str = "default",
     ):
         self._function_template = function
