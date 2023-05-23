@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Self
+from typing import Callable, Optional, Self
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,8 +15,8 @@ class Heatmap:
     """
 
     image: ArrayLike | str
-    x_axis_range: tuple[float, float] = None
-    y_axis_range: tuple[float, float] = None
+    x_axis_range: Optional[tuple[float, float]] = None
+    y_axis_range: Optional[tuple[float, float]] = None
     color_map: str | Colormap = "default"
     show_color_bar: bool = True
     alpha_value: float = 1.0
@@ -34,7 +34,7 @@ class Heatmap:
     @classmethod
     def from_function(
         cls,
-        func: Callable,
+        func: Callable[[ArrayLike, ArrayLike], ArrayLike],
         x_axis_range: tuple[float, float],
         y_axis_range: tuple[float, float],
         color_map: str | Colormap = "default",

@@ -9,7 +9,7 @@ from numpy.typing import ArrayLike
 
 
 class Fit(Protocol):
-    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         pass
 
     def show_residual_curves(
@@ -21,7 +21,7 @@ class Fit(Protocol):
     ) -> None:
         pass
 
-    def calculate_residuals(self) -> np.ndarray:
+    def _calculate_residuals(self) -> np.ndarray:
         pass
 
 
@@ -42,7 +42,7 @@ class Curve:
     @classmethod
     def from_function(
         cls,
-        func: Callable,
+        func: Callable[[ArrayLike], ArrayLike],
         x_min: float,
         x_max: float,
         label: Optional[str] = None,
@@ -72,8 +72,8 @@ class Curve:
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
 
-    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
-        (self.handle,) = axes.plot(
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        (self._handle,) = axes.plot(
             self.x_data,
             self.y_data,
             color=self.color,
@@ -148,8 +148,8 @@ class Scatter:
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
 
-    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
-        self.handle = axes.scatter(
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        self._handle = axes.scatter(
             self.x_data,
             self.y_data,
             color=self.face_color,
@@ -198,13 +198,13 @@ class Histogram:
         parameters = np.histogram(
             self.x_data, bins=self.number_of_bins, density=self.normalize
         )
-        self.bin_heights, bin_edges = parameters[0], parameters[1]
+        self._bin_heights, bin_edges = parameters[0], parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
         bin_centers = bin_edges[1:] - bin_width / 2
-        self.bin_width = bin_width
-        self.bin_centers = bin_centers
-        self.bin_edges = bin_edges
-        self.create_label()
+        self._bin_width = bin_width
+        self._bin_centers = bin_centers
+        self._bin_edges = bin_edges
+        self._create_label()
 
     @classmethod
     def plot_residuals_from_fit(
@@ -221,7 +221,7 @@ class Histogram:
         show_pdf: str = "default",
         show_params: bool = "default",
     ) -> Self:
-        residuals = fit.calculate_residuals()
+        residuals = fit._calculate_residuals()
         return cls(
             residuals,
             number_of_bins,
@@ -236,7 +236,7 @@ class Histogram:
             show_params,
         )
 
-    def create_label(self) -> None:
+    def _create_label(self) -> None:
         lab = self.label
         if self.label and self.show_params:
             lab += (
@@ -247,16 +247,16 @@ class Histogram:
             lab = f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
         self.label = lab
 
-    def normal_normalized(self, x: ArrayLike) -> ArrayLike:
+    def _normal_normalized(self, x: ArrayLike) -> ArrayLike:
         return (1 / (self.standard_deviation * np.sqrt(2 * np.pi))) * np.exp(
             -0.5 * (((x - self.mean) / self.standard_deviation) ** 2)
         )
 
-    def normal_not_normalized(self, x: ArrayLike) -> ArrayLike:
-        return sum(self.bin_heights) * self.bin_width * self.normal_normalized(x)
+    def _normal_not_normalized(self, x: ArrayLike) -> ArrayLike:
+        return sum(self._bin_heights) * self._bin_width * self._normal_normalized(x)
 
-    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
-        self.handle = Polygon(
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        self._handle = Polygon(
             np.array([[0, 2, 2, 3, 3, 1, 1, 0, 0], [0, 0, 1, 1, 2, 2, 3, 3, 0]]).T,
             facecolor=to_rgba(self.face_color, self.alpha),
             edgecolor=to_rgba(self.edge_color, 1),
@@ -275,10 +275,12 @@ class Histogram:
         )
         if self.show_pdf in ["normal", "gaussian"]:
             normal = (
-                self.normal_normalized if self.normalize else self.normal_not_normalized
+                self._normal_normalized
+                if self.normalize
+                else self._normal_not_normalized
             )
             num_of_points = 500
-            x_data = np.linspace(self.bin_edges[0], self.bin_edges[-1], num_of_points)
+            x_data = np.linspace(self._bin_edges[0], self._bin_edges[-1], num_of_points)
             y_data = normal(x_data)
             axes.plot(
                 x_data,
