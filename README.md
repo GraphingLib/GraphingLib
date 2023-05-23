@@ -1,6 +1,6 @@
 # GraphingLib
 
-<div style="text-align:center"><img src="images/GraphingLib-Logo-Bolder.svg" width="40%" /></div>
+![graphinglib logo](https://github.com/GraphingLib/GraphingLib/blob/master/images/GraphingLib-Logo-Bolder.svg?raw=true)
 
 ## 1. Description
 
