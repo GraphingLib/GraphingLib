@@ -40,7 +40,7 @@ fig_1 = gl.Figure(x_label="x values", y_label="y values")
 fig_1.add_element(scatter)
 
 # Display the figure
-fig_1.generate_figure()
+fig_1.display()
 ```
 <div style="text-align:center"><img src="images/Quick-Usage.png" /></div>
 
