@@ -26,7 +26,7 @@ class TestCurve(unittest.TestCase):
         self.assertIsInstance(self.testCurve.color, str)
 
     def test_label_is_str(self):
-        self.assertIsInstance(self.testCurve._label, str)
+        self.assertIsInstance(self.testCurve.label, str)
 
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
@@ -118,10 +118,10 @@ class TestHlines(unittest.TestCase):
         self.assertIsInstance(self.testHlines.y, list | ndarray | float | int)
 
     def test_xmin_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.xmin, list | ndarray | float | int)
+        self.assertIsInstance(self.testHlines._xmin, list | ndarray | float | int)
 
     def test_ymin_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.xmin, list | ndarray | float | int)
+        self.assertIsInstance(self.testHlines._xmin, list | ndarray | float | int)
 
     def test_colors_is_str_list_or_none(self):
         self.assertIsInstance(self.testHlines.colors, list | str | None)
@@ -135,7 +135,7 @@ class TestHlines(unittest.TestCase):
 
 class TestVlines(unittest.TestCase):
     def setUp(self):
-        self.testVlines = Vlines(x=[4, 5, 6, 7], ymin=0, ymax=1, label="Test Vlines")
+        self.testVlines = Vlines(x=[4, 5, 6, 7], y_min=0, y_max=1, label="Test Vlines")
         # _, self.testAxes = subplots()
         # self.testVlines.plot_curve(self.testAxes)
         # plt.close('all')
@@ -144,10 +144,10 @@ class TestVlines(unittest.TestCase):
         self.assertListEqual(self.testVlines.x, [4, 5, 6, 7])
 
     def test_ymin_is_list_ndarray_float_int(self):
-        self.assertEqual(self.testVlines.ymin, 0)
+        self.assertEqual(self.testVlines.y_min, 0)
 
     def test_ymax_is_list_ndarray_float_int(self):
-        self.assertEqual(self.testVlines.ymax, 1)
+        self.assertEqual(self.testVlines.y_max, 1)
 
     def test_colors_is_default(self):
         self.assertEqual(self.testVlines.colors, "default")

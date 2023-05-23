@@ -1,11 +1,11 @@
-from matplotlib.patches import Polygon
-from matplotlib.lines import Line2D
-from numpy import array, full_like
-from matplotlib.legend_handler import HandlerLineCollection
+from matplotlib.artist import Artist
 from matplotlib.collections import LineCollection
 from matplotlib.legend import Legend
-from matplotlib.artist import Artist
+from matplotlib.legend_handler import HandlerLineCollection
+from matplotlib.lines import Line2D
+from matplotlib.patches import Polygon
 from matplotlib.transforms import Transform
+from numpy import array, full_like
 
 
 class HandlerMultipleLines(HandlerLineCollection):

@@ -33,7 +33,7 @@ class Curve:
 
     x_data: ArrayLike
     y_data: ArrayLike
-    _label: Optional[str] = None
+    label: Optional[str] = None
     color: str = "default"
     line_width: int = "default"
     line_style: str = "default"
@@ -79,7 +79,7 @@ class Curve:
             color=self.color,
             linewidth=self.line_width,
             linestyle=self.line_style,
-            label=self._label,
+            label=self.label,
             zorder=z_order,
         )
         if self.errorbars:
@@ -271,7 +271,7 @@ class Histogram:
             histtype=self.hist_type,
             linewidth=self.line_width,
             density=self.normalize,
-            zorder=z_order,
+            zorder=z_order - 1,
         )
         if self.show_pdf in ["normal", "gaussian"]:
             normal = (
@@ -286,8 +286,7 @@ class Histogram:
                 x_data,
                 y_data,
                 color=self.edge_color,
-                label=self.label,
-                zorder=z_order - 1,
+                zorder=z_order,
             )
             curve_max_y = normal(self.mean)
             curve_std_y = normal(self.mean + self.standard_deviation)

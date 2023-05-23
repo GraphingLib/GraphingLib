@@ -1,4 +1,3 @@
-from curses import def_prog_mode
 from functools import partial
 from typing import Callable, Optional
 
@@ -19,13 +18,13 @@ class GeneralFit(Curve):
         line_width: int = "default",
         line_style: int = "default",
     ) -> None:
-        self._curve_to_be_fit = curve_to_be_fit
+        self.curve_to_be_fit = curve_to_be_fit
         self.color = color
         self.line_width = line_width
         if label:
-            self._label = label + " : " + "$f(x) = $" + str(self)
+            self.label = label + " : " + "$f(x) = $" + str(self)
         else:
-            self._label = "$f(x) = $" + str(self)
+            self.label = "$f(x) = $" + str(self)
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
 
@@ -35,22 +34,22 @@ class GeneralFit(Curve):
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         number_of_points = 500
         x_data = np.linspace(
-            self._curve_to_be_fit.x_data[0],
-            self._curve_to_be_fit.x_data[-1],
+            self.curve_to_be_fit.x_data[0],
+            self.curve_to_be_fit.x_data[-1],
             number_of_points,
         )
         y_data = self.function(x_data)
         (self.handle,) = axes.plot(
             x_data,
             y_data,
-            label=self._label,
+            label=self.label,
             color=self.color,
             linewidth=self.line_width,
             linestyle=self.line_style,
             zorder=z_order,
         )
         if self._res_curves_to_be_plotted:
-            x_data = self._curve_to_be_fit.x_data
+            x_data = self.curve_to_be_fit.x_data
             y_fit = self.function(x_data)
             residuals = self.calculate_residuals()
             std = np.std(residuals)
@@ -59,7 +58,7 @@ class GeneralFit(Curve):
             axes.plot(
                 x_data,
                 y_fit_minus_std,
-                label=self._label,
+                label=self.label,
                 color=self.res_color,
                 linewidth=self.res_line_width,
                 linestyle=self.res_line_style,
@@ -68,7 +67,7 @@ class GeneralFit(Curve):
             axes.plot(
                 x_data,
                 y_fit_plus_std,
-                label=self._label,
+                label=self.label,
                 color=self.res_color,
                 linewidth=self.res_line_width,
                 linestyle=self.res_line_style,
@@ -89,8 +88,8 @@ class GeneralFit(Curve):
         self.res_line_style = line_style
 
     def calculate_residuals(self) -> np.ndarray:
-        x_data = self._curve_to_be_fit.x_data
-        y_data = self._curve_to_be_fit.y_data
+        x_data = self.curve_to_be_fit.x_data
+        y_data = self.curve_to_be_fit.y_data
         y_fit = self.function(x_data)
         residuals = y_fit - y_data
         return residuals
@@ -110,9 +109,9 @@ class FitFromPolynomial(GeneralFit):
         line_width: int = "default",
         line_style: int = "default",
     ) -> None:
-        self._curve_to_be_fit = curve_to_be_fit
+        self.curve_to_be_fit = curve_to_be_fit
         inversed_coeffs, inversed_cov_matrix = np.polyfit(
-            self._curve_to_be_fit.x_data, self._curve_to_be_fit.y_data, degree, cov=True
+            self.curve_to_be_fit.x_data, self.curve_to_be_fit.y_data, degree, cov=True
         )
         self.coeffs = inversed_coeffs[::-1]
         self.cov_matrix = np.flip(inversed_cov_matrix)
@@ -121,9 +120,9 @@ class FitFromPolynomial(GeneralFit):
         self.color = color
         self.line_width = line_width
         if label:
-            self._label = label + " : " + "$f(x) = $" + str(self)
+            self.label = label + " : " + "$f(x) = $" + str(self)
         else:
-            self._label = "$f(x) = $" + str(self)
+            self.label = "$f(x) = $" + str(self)
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
 
@@ -178,15 +177,15 @@ class FitFromSine(GeneralFit):
         line_width: str = "default",
         line_style: str = "default",
     ) -> None:
-        self._curve_to_be_fit = curve_to_be_fit
-        self._guesses = guesses
+        self.curve_to_be_fit = curve_to_be_fit
+        self.guesses = guesses
         self._calculate_parameters()
         self.function = self._sine_func_with_params()
         self.color = color
         if label:
-            self._label = label + " : " + "$f(x) = $" + str(self)
+            self.label = label + " : " + "$f(x) = $" + str(self)
         else:
-            self._label = "$f(x) = $" + str(self)
+            self.label = "$f(x) = $" + str(self)
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
@@ -206,9 +205,9 @@ class FitFromSine(GeneralFit):
     def _calculate_parameters(self) -> None:
         parameters, self.cov_matrix = curve_fit(
             self._sine_func_template,
-            self._curve_to_be_fit.x_data,
-            self._curve_to_be_fit.y_data,
-            p0=self._guesses,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
+            p0=self.guesses,
         )
         self.amplitude, self.frequency_rad, self.phase, self.vertical_shift = parameters
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
@@ -240,15 +239,15 @@ class FitFromExponential(GeneralFit):
         line_width: int = "default",
         line_style: str = "default",
     ) -> None:
-        self._curve_to_be_fit = curve_to_be_fit
-        self._guesses = guesses
+        self.curve_to_be_fit = curve_to_be_fit
+        self.guesses = guesses
         self._calculate_parameters()
         self.function = self._exp_func_with_params()
         self.color = color
         if label:
-            self._label = label + " : " + "$f(x) = $" + str(self)
+            self.label = label + " : " + "$f(x) = $" + str(self)
         else:
-            self._label = "$f(x) = $" + str(self)
+            self.label = "$f(x) = $" + str(self)
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
@@ -265,9 +264,9 @@ class FitFromExponential(GeneralFit):
     def _calculate_parameters(self) -> None:
         parameters, self.cov_matrix = curve_fit(
             self._exp_func_template,
-            self._curve_to_be_fit.x_data,
-            self._curve_to_be_fit.y_data,
-            p0=self._guesses,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
+            p0=self.guesses,
         )
         self.parameters = parameters
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
@@ -296,15 +295,15 @@ class FitFromGaussian(GeneralFit):
         line_width: int = "default",
         line_style: str = "default",
     ) -> None:
-        self._curve_to_be_fit = curve_to_be_fit
-        self._guesses = guesses
+        self.curve_to_be_fit = curve_to_be_fit
+        self.guesses = guesses
         self._calculate_parameters()
         self.function = self._gaussian_func_with_params()
         self.color = color
         if label:
-            self._label = label + " : " + str(self)
+            self.label = label + " : " + str(self)
         else:
-            self._label = str(self)
+            self.label = str(self)
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
@@ -315,9 +314,9 @@ class FitFromGaussian(GeneralFit):
     def _calculate_parameters(self) -> None:
         parameters, self.cov_matrix = curve_fit(
             self._gaussian_func_template,
-            self._curve_to_be_fit.x_data,
-            self._curve_to_be_fit.y_data,
-            p0=self._guesses,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
+            p0=self.guesses,
         )
         self.amplitude = parameters[0]
         self.mean = parameters[1]
@@ -350,15 +349,15 @@ class FitFromSquareRoot(GeneralFit):
         line_width: int = "default",
         line_style: str = "default",
     ) -> None:
-        self._curve_to_be_fit = curve_to_be_fit
-        self._guesses = guesses
+        self.curve_to_be_fit = curve_to_be_fit
+        self.guesses = guesses
         self._calculate_parameters()
         self.function = self._square_root_func_with_params()
         self.color = color
         if label:
-            self._label = label + " : " + str(self)
+            self.label = label + " : " + str(self)
         else:
-            self._label = str(self)
+            self.label = str(self)
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
@@ -369,9 +368,9 @@ class FitFromSquareRoot(GeneralFit):
     def _calculate_parameters(self) -> None:
         parameters, self.cov_matrix = curve_fit(
             self._square_root_func_template,
-            self._curve_to_be_fit.x_data,
-            self._curve_to_be_fit.y_data,
-            p0=self._guesses,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
+            p0=self.guesses,
         )
         self.parameters = parameters
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
@@ -404,39 +403,39 @@ class FitFromLog(GeneralFit):
         line_width: int = "default",
         line_style: str = "default",
     ) -> None:
-        self._curve_to_be_fit = curve_to_be_fit
-        self._log_base = log_base
-        self._guesses = guesses
+        self.curve_to_be_fit = curve_to_be_fit
+        self.log_base = log_base
+        self.guesses = guesses
         self._calculate_parameters()
         self.function = self._log_func_with_params()
         self.color = color
         if label:
-            self._label = label + " : " + str(self)
+            self.label = label + " : " + str(self)
         else:
-            self._label = str(self)
+            self.label = str(self)
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
 
     def __str__(self) -> str:
-        return f"${self.parameters[0]:.3f} log_{self._log_base if self._log_base != np.e else 'e'}(x {'-' if self.parameters[1] < 0 else '+'} {abs(self.parameters[1]):.3f}) {'-' if self.parameters[2] < 0 else '+'} {abs(self.parameters[2]):.3f}$"
+        return f"${self.parameters[0]:.3f} log_{self.log_base if self.log_base != np.e else 'e'}(x {'-' if self.parameters[1] < 0 else '+'} {abs(self.parameters[1]):.3f}) {'-' if self.parameters[2] < 0 else '+'} {abs(self.parameters[2]):.3f}$"
 
     def _calculate_parameters(self) -> None:
         self.parameters, self.cov_matrix = curve_fit(
             self._log_func_template(),
-            self._curve_to_be_fit.x_data,
-            self._curve_to_be_fit.y_data,
-            p0=self._guesses,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
+            p0=self.guesses,
         )
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
 
     def _log_func_template(self) -> Callable:
-        return lambda x, a, b, c: a * (np.log(x + b) / np.log(self._log_base)) + c
+        return lambda x, a, b, c: a * (np.log(x + b) / np.log(self.log_base)) + c
 
     def _log_func_with_params(self) -> Callable:
         return (
             lambda x: self.parameters[0]
-            * (np.log(x + self.parameters[1]) / np.log(self._log_base))
+            * (np.log(x + self.parameters[1]) / np.log(self.log_base))
             + self.parameters[2]
         )
 
@@ -457,23 +456,23 @@ class FitFromFunction(GeneralFit):
         line_style: str = "default",
     ):
         self._function_template = function
-        self._curve_to_be_fit = curve_to_fit
-        self._guesses = guesses
+        self.curve_to_be_fit = curve_to_fit
+        self.guesses = guesses
         self.color = color
         self.line_width = line_width
         self.line_style = line_style
 
         self._calculate_parameters()
         self.function = self._get_function_with_params()
-        self._label = label
+        self.label = label
         self._res_curves_to_be_plotted = False
 
     def _calculate_parameters(self) -> None:
         self.parameters, self.cov_matrix = curve_fit(
             self._function_template,
-            self._curve_to_be_fit.x_data,
-            self._curve_to_be_fit.y_data,
-            p0=self._guesses,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
+            p0=self.guesses,
         )
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
 
