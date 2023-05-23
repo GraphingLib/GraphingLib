@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Self
+from typing import Callable, Optional, Self
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,8 +15,8 @@ class Heatmap:
     """
 
     image: ArrayLike | str
-    x_axis_range: tuple[float, float] = None
-    y_axis_range: tuple[float, float] = None
+    x_axis_range: Optional[tuple[float, float]] = None
+    y_axis_range: Optional[tuple[float, float]] = None
     color_map: str | Colormap = "default"
     show_color_bar: bool = True
     alpha_value: float = 1.0
@@ -29,12 +29,12 @@ class Heatmap:
             self.image = imread(self.image)
             self.show_color_bar = False
         if self.x_axis_range is not None and self.y_axis_range is not None:
-            self.__xy_range__ = self.x_axis_range + self.y_axis_range
+            self._xy_range = self.x_axis_range + self.y_axis_range
 
     @classmethod
     def from_function(
         cls,
-        func: Callable,
+        func: Callable[[ArrayLike, ArrayLike], ArrayLike],
         x_axis_range: tuple[float, float],
         y_axis_range: tuple[float, float],
         color_map: str | Colormap = "default",
@@ -61,7 +61,7 @@ class Heatmap:
             interpolation,
         )
 
-    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         if self.x_axis_range is not None and self.y_axis_range is not None:
             image = axes.imshow(
                 self.image,
@@ -70,7 +70,7 @@ class Heatmap:
                 aspect=self.aspect_ratio,
                 origin=self.origin_position,
                 interpolation=self.interpolation,
-                extent=self.__xy_range__,
+                extent=self._xy_range,
                 zorder=z_order,
             )
         else:

@@ -18,6 +18,8 @@ pip install git+https://github.com/GraphingLib/GraphingLib.git
 
 ## 3. Quick usage
 
+Here is a simple example of a curve fit using GraphingLib. For more examples, see the examples folder.
+
 ```python
 import graphinglib as gl
 import numpy as np

@@ -10,7 +10,7 @@ from .legend_artists import VerticalLineCollection
 
 
 class Plottable(Protocol):
-    def plot_element(self, axes: plt.Axes, z_order: int):
+    def _plot_element(self, axes: plt.Axes, z_order: int):
         pass
 
 
@@ -30,15 +30,15 @@ class Hlines:
     def __init__(
         self,
         y: ArrayLike,
-        xmin: ArrayLike,
-        xmax: ArrayLike,
-        label: str = None,
+        x_min: ArrayLike,
+        x_max: ArrayLike,
+        label: Optional[str] = None,
         colors: list[str] | str = "default",
         line_styles: list[str] | str = "default",
     ) -> None:
         self.y = y
-        self.xmin = xmin
-        self.xmax = xmax
+        self.x_min = x_min
+        self.x_max = x_max
         self.label = label
         self.colors = colors
         self.line_styles = line_styles
@@ -63,12 +63,12 @@ class Hlines:
                     + "linestyles and lines!"
                 )
 
-    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         if isinstance(self.y, list) and len(self.y) > 1:
             axes.hlines(
                 self.y,
-                self.xmin,
-                self.xmax,
+                self.x_min,
+                self.x_max,
                 colors=self.colors,
                 linestyles=self.line_styles,
                 zorder=z_order,
@@ -81,8 +81,8 @@ class Hlines:
         else:
             self.handle = axes.hlines(
                 self.y,
-                self.xmin,
-                self.xmax,
+                self.x_min,
+                self.x_max,
                 colors=self.colors,
                 linestyles=self.line_styles,
                 zorder=z_order,
@@ -97,15 +97,15 @@ class Vlines:
     def __init__(
         self,
         x: ArrayLike,
-        ymin: ArrayLike,
-        ymax: ArrayLike,
-        label: str = None,
+        y_min: ArrayLike,
+        y_max: ArrayLike,
+        label: Optional[str] = None,
         colors: list[str] | str = "default",
         line_styles: list[str] | str = "default",
     ) -> None:
         self.x = x
-        self.ymin = ymin
-        self.ymax = ymax
+        self.y_min = y_min
+        self.y_max = y_max
         self.label = label
         self.colors = colors
         self.line_styles = line_styles
@@ -130,12 +130,12 @@ class Vlines:
                     + "linestyles and lines!"
                 )
 
-    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         if isinstance(self.x, list) and len(self.x) > 1:
             axes.vlines(
                 self.x,
-                self.ymin,
-                self.ymax,
+                self.y_min,
+                self.y_max,
                 colors=self.colors,
                 linestyles=self.line_styles,
                 zorder=z_order,
@@ -148,8 +148,8 @@ class Vlines:
         else:
             self.handle = axes.vlines(
                 self.x,
-                self.ymin,
-                self.ymax,
+                self.y_min,
+                self.y_max,
                 colors=self.colors,
                 linestyles=self.line_styles,
                 zorder=z_order,
@@ -165,7 +165,7 @@ class Point:
         self,
         x: float,
         y: float,
-        label: str = None,
+        label: Optional[str] = None,
         color: str = "default",
         edge_color: str = "default",
         marker_size: float = "default",
@@ -200,7 +200,7 @@ class Point:
         self.h_align = h_align
         self.v_align = v_align
 
-    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         axes.scatter(
             self.x,
             self.y,
@@ -236,10 +236,10 @@ class Text:
     x: float
     y: float
     text: str
-    color: str = "k"
+    color: str = "default"
     font_size: float = "same as figure"
-    h_align: str = "center"
-    v_align: str = "center"
+    h_align: str = "default"
+    v_align: str = "default"
     _arrow_pointing_to: Optional[tuple[float]] = field(default=None, init=False)
 
     def attach_arrow(
@@ -263,7 +263,7 @@ class Text:
         if head_length is not None:
             self.arrow_properties["headlength"] = head_length
 
-    def plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         size = self.font_size if self.font_size != "same as figure" else None
         axes.text(
             self.x,

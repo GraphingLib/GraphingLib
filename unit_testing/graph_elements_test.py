@@ -14,10 +14,10 @@ class TestCurve(unittest.TestCase):
         self.testCurve = Curve(x, sin(x), "Test Curve", color="k")
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testCurve.xdata, list | ndarray)
+        self.assertIsInstance(self.testCurve.x_data, list | ndarray)
 
     def test_ydata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testCurve.ydata, list | ndarray)
+        self.assertIsInstance(self.testCurve.y_data, list | ndarray)
 
     def test_default_value(self):
         self.assertEqual(self.testCurve.line_width, "default")
@@ -28,17 +28,13 @@ class TestCurve(unittest.TestCase):
     def test_label_is_str(self):
         self.assertIsInstance(self.testCurve.label, str)
 
-    def test_color_is_changed(self):
-        self.testCurve.set_color("r")
-        self.assertEqual(self.testCurve.color, "r")
-
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
         self.testCurve = Curve(
             x, sin(x), "Test Curve", color="k", line_width=3, line_style="--"
         )
         _, self.testAxes = subplots()
-        self.testCurve.plot_element(self.testAxes, 0)
+        self.testCurve._plot_element(self.testAxes, 0)
         self.assertEqual(len(self.testAxes.get_lines()), 1)
 
 
@@ -51,7 +47,7 @@ class TestScatter(unittest.TestCase):
         self.assertIsInstance(self.testScatter, Scatter)
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testScatter.xdata, list | ndarray)
+        self.assertIsInstance(self.testScatter.x_data, list | ndarray)
 
     def test_color_is_str(self):
         self.assertIsInstance(self.testScatter.face_color, str)
@@ -72,7 +68,7 @@ class TestScatter(unittest.TestCase):
             marker_style="o",
         )
         _, self.testAxes = subplots()
-        self.testScatter.plot_element(self.testAxes, 0)
+        self.testScatter._plot_element(self.testAxes, 0)
         self.assertEqual(len(self.testAxes.collections), 1)
 
 
@@ -93,7 +89,7 @@ class TestHistogram(unittest.TestCase):
         self.assertEqual(self.testHist.label[:19], "Random Distribution")
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testHist.xdata, list | ndarray)
+        self.assertIsInstance(self.testHist.x_data, list | ndarray)
 
     def test_face_color_is_str(self):
         self.assertEqual(self.testHist.face_color, "silver")
@@ -122,10 +118,10 @@ class TestHlines(unittest.TestCase):
         self.assertIsInstance(self.testHlines.y, list | ndarray | float | int)
 
     def test_xmin_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.xmin, list | ndarray | float | int)
+        self.assertIsInstance(self.testHlines.x_min, list | ndarray | float | int)
 
     def test_ymin_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.xmin, list | ndarray | float | int)
+        self.assertIsInstance(self.testHlines.x_min, list | ndarray | float | int)
 
     def test_colors_is_str_list_or_none(self):
         self.assertIsInstance(self.testHlines.colors, list | str | None)
@@ -139,7 +135,7 @@ class TestHlines(unittest.TestCase):
 
 class TestVlines(unittest.TestCase):
     def setUp(self):
-        self.testVlines = Vlines(x=[4, 5, 6, 7], ymin=0, ymax=1, label="Test Vlines")
+        self.testVlines = Vlines(x=[4, 5, 6, 7], y_min=0, y_max=1, label="Test Vlines")
         # _, self.testAxes = subplots()
         # self.testVlines.plot_curve(self.testAxes)
         # plt.close('all')
@@ -148,10 +144,10 @@ class TestVlines(unittest.TestCase):
         self.assertListEqual(self.testVlines.x, [4, 5, 6, 7])
 
     def test_ymin_is_list_ndarray_float_int(self):
-        self.assertEqual(self.testVlines.ymin, 0)
+        self.assertEqual(self.testVlines.y_min, 0)
 
     def test_ymax_is_list_ndarray_float_int(self):
-        self.assertEqual(self.testVlines.ymax, 1)
+        self.assertEqual(self.testVlines.y_max, 1)
 
     def test_colors_is_default(self):
         self.assertEqual(self.testVlines.colors, "default")

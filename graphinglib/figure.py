@@ -1,13 +1,19 @@
+from typing import Optional
+
 import matplotlib.pyplot as plt
+from matplotlib import rcParamsDefault
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
-from matplotlib import rcParamsDefault
 
-from .data_plotting_1d import *
-from .file_manager import *
-from .graph_elements import *
-from .legend_artists import *
+from .file_manager import FileLoader
+from .graph_elements import GraphingException, Plottable
+from .legend_artists import (
+    HandlerMultipleLines,
+    HandlerMultipleVerticalLines,
+    VerticalLineCollection,
+    histogram_legend_artist,
+)
 
 
 class Figure:
@@ -20,8 +26,8 @@ class Figure:
         x_label: str = "x axis",
         y_label: str = "y axis",
         size: tuple = "default",
-        x_lim: tuple = None,
-        y_lim: tuple = None,
+        x_lim: Optional[tuple[float, float]] = None,
+        y_lim: Optional[tuple[float, float]] = None,
         log_scale_x: bool = "default",
         log_scale_y: bool = "default",
         legend_is_boxed: bool = "default",
@@ -66,10 +72,10 @@ class Figure:
             if log_scale_y != "default"
             else self.default_params["Figure"]["log_scale_y"]
         )
-        self.figure, self.axes = plt.subplots(figsize=self.size)
-        self.elements = []
-        self.labels = []
-        self.handles = []
+        self._figure, self._axes = plt.subplots(figsize=self.size)
+        self._elements = []
+        self._labels = []
+        self._handles = []
         self.x_axis_name = x_label
         self.y_axis_name = y_label
         self.x_lim = x_lim
@@ -84,44 +90,44 @@ class Figure:
         Adds a Curve object to the figure.
         """
         for element in elements:
-            self.elements.append(element)
+            self._elements.append(element)
             try:
                 if element.label is not None:
-                    self.labels.append(element.label)
+                    self._labels.append(element.label)
             except AttributeError:
                 pass
 
-    def prepare_figure(self, legend: bool = True) -> None:
-        self.axes.set_xlabel(self.x_axis_name)
-        self.axes.set_ylabel(self.y_axis_name)
+    def _prepare_figure(self, legend: bool = True) -> None:
+        self._axes.set_xlabel(self.x_axis_name)
+        self._axes.set_ylabel(self.y_axis_name)
         if self.x_lim:
-            self.axes.set_xlim(*self.x_lim)
+            self._axes.set_xlim(*self.x_lim)
         if self.y_lim:
-            self.axes.set_ylim(*self.y_lim)
+            self._axes.set_ylim(*self.y_lim)
         if self.log_scale_x:
-            self.axes.set_xscale("log")
+            self._axes.set_xscale("log")
         if self.log_scale_y:
-            self.axes.set_yscale("log")
+            self._axes.set_yscale("log")
         if self.ticks_are_in:
-            self.axes.tick_params(axis="both", direction="in", which="both")
-        if not self.labels:
+            self._axes.tick_params(axis="both", direction="in", which="both")
+        if not self._labels:
             legend = False
-        if self.elements:
+        if self._elements:
             z_order = 0
-            for element in self.elements:
-                self.fill_in_missing_params(element)
-                element.plot_element(self.axes, z_order)
+            for element in self._elements:
+                self._fill_in_missing_params(element)
+                element._plot_element(self._axes, z_order)
                 try:
-                    if element.label is not None:
-                        self.handles.append(element.handle)
+                    if element._label is not None:
+                        self._handles.append(element._handle)
                 except AttributeError:
                     continue
                 z_order += 2
             if legend:
                 try:
-                    self.axes.legend(
-                        handles=self.handles,
-                        labels=self.labels,
+                    self._axes.legend(
+                        handles=self._handles,
+                        labels=self._labels,
                         handleheight=1.3,
                         handler_map={
                             Polygon: HandlerPatch(patch_func=histogram_legend_artist),
@@ -132,9 +138,9 @@ class Figure:
                         draggable=True,
                     )
                 except:
-                    self.axes.legend(
-                        handles=self.handles,
-                        labels=self.labels,
+                    self._axes.legend(
+                        handles=self._handles,
+                        labels=self._labels,
                         handleheight=1.3,
                         handler_map={
                             Polygon: HandlerPatch(patch_func=histogram_legend_artist),
@@ -147,16 +153,16 @@ class Figure:
             raise GraphingException("No curves to be plotted!")
 
     def display(self, legend: bool = True) -> None:
-        self.prepare_figure(legend=legend)
+        self._prepare_figure(legend=legend)
         plt.tight_layout()
         plt.show()
 
     def save_figure(self, file_name: str, legend: bool = True) -> None:
-        self.prepare_figure(legend=legend)
+        self._prepare_figure(legend=legend)
         plt.tight_layout()
         plt.savefig(file_name, bbox_inches="tight")
 
-    def fill_in_missing_params(self, element: Plottable) -> None:
+    def _fill_in_missing_params(self, element: Plottable) -> None:
         object_type = type(element).__name__
         for property, value in vars(element).items():
             if (type(value) == str) and (value == "default"):
