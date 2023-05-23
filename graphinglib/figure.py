@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
+from matplotlib import rcParamsDefault
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
-from matplotlib import rcParamsDefault
 
 from .data_plotting_1d import *
 from .file_manager import *
@@ -66,7 +66,7 @@ class Figure:
             if log_scale_y != "default"
             else self.default_params["Figure"]["log_scale_y"]
         )
-        self.figure, self.axes = plt.subplots(figsize=self.size)
+        self._figure, self.axes = plt.subplots(figsize=self.size)
         self.elements = []
         self.labels = []
         self.handles = []
