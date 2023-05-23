@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from scipy.optimize import curve_fit
-from typing import Callable
 
 from .data_plotting_1d import Curve, Scatter
 
@@ -35,7 +34,9 @@ class GeneralFit(Curve):
     def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         num_of_points = 500
         xdata = np.linspace(
-            self.curve_to_be_fit.xdata[0], self.curve_to_be_fit.xdata[-1], num_of_points
+            self.curve_to_be_fit.x_data[0],
+            self.curve_to_be_fit.x_data[-1],
+            num_of_points,
         )
         ydata = self.function(xdata)
         (self.handle,) = axes.plot(
@@ -48,7 +49,7 @@ class GeneralFit(Curve):
             zorder=z_order,
         )
         if self._res_curves_to_be_plotted:
-            xdata = self.curve_to_be_fit.xdata
+            xdata = self.curve_to_be_fit.x_data
             yfit = self.function(xdata)
             residuals = self.calculate_residuals()
             std = np.std(residuals)
@@ -87,8 +88,8 @@ class GeneralFit(Curve):
         self.res_line_style = line_style
 
     def calculate_residuals(self) -> np.ndarray:
-        xdata = self.curve_to_be_fit.xdata
-        ydata = self.curve_to_be_fit.ydata
+        xdata = self.curve_to_be_fit.x_data
+        ydata = self.curve_to_be_fit.y_data
         yfit = self.function(xdata)
         residuals = yfit - ydata
         return residuals
@@ -110,7 +111,7 @@ class FitFromPolynomial(GeneralFit):
     ) -> None:
         self.curve_to_be_fit = curve_to_be_fit
         inversed_coeffs, inversed_cov_matrix = np.polyfit(
-            self.curve_to_be_fit.xdata, self.curve_to_be_fit.ydata, degree, cov=True
+            self.curve_to_be_fit.x_data, self.curve_to_be_fit.y_data, degree, cov=True
         )
         self.coeffs = inversed_coeffs[::-1]
         self.cov_matrix = np.flip(inversed_cov_matrix)
@@ -204,8 +205,8 @@ class FitFromSine(GeneralFit):
     def calculate_parameters(self) -> None:
         parameters, self.cov_matrix = curve_fit(
             self.sine_func_template,
-            self.curve_to_be_fit.xdata,
-            self.curve_to_be_fit.ydata,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
             p0=self.guesses,
         )
         self.amplitude, self.frequency_rad, self.phase, self.vertical_shift = parameters
@@ -263,8 +264,8 @@ class FitFromExponential(GeneralFit):
     def calculate_parameters(self) -> None:
         parameters, self.cov_matrix = curve_fit(
             self.exp_func_template,
-            self.curve_to_be_fit.xdata,
-            self.curve_to_be_fit.ydata,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
             p0=self.guesses,
         )
         self.parameters = parameters
@@ -313,8 +314,8 @@ class FitFromGaussian(GeneralFit):
     def calculate_parameters(self) -> None:
         parameters, self.cov_matrix = curve_fit(
             self.gaussian_func_template,
-            self.curve_to_be_fit.xdata,
-            self.curve_to_be_fit.ydata,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
             p0=self.guesses,
         )
         self.amplitude = parameters[0]
@@ -367,8 +368,8 @@ class FitFromSquareRoot(GeneralFit):
     def calculate_parameters(self) -> None:
         parameters, self.cov_matrix = curve_fit(
             self.square_root_func_template,
-            self.curve_to_be_fit.xdata,
-            self.curve_to_be_fit.ydata,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
             p0=self.guesses,
         )
         self.parameters = parameters
@@ -422,8 +423,8 @@ class FitFromLog(GeneralFit):
     def calculate_parameters(self) -> None:
         self.parameters, self.cov_matrix = curve_fit(
             self.log_func_template(),
-            self.curve_to_be_fit.xdata,
-            self.curve_to_be_fit.ydata,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
             p0=self.guesses,
         )
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
@@ -469,8 +470,8 @@ class FitFromFunction(GeneralFit):
     def calculate_parameters(self) -> None:
         self.parameters, self.cov_matrix = curve_fit(
             self.function_template,
-            self.curve_to_be_fit.xdata,
-            self.curve_to_be_fit.ydata,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
             p0=self.guesses,
         )
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))

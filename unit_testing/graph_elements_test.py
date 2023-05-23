@@ -14,10 +14,10 @@ class TestCurve(unittest.TestCase):
         self.testCurve = Curve(x, sin(x), "Test Curve", color="k")
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testCurve.xdata, list | ndarray)
+        self.assertIsInstance(self.testCurve.x_data, list | ndarray)
 
     def test_ydata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testCurve.ydata, list | ndarray)
+        self.assertIsInstance(self.testCurve.y_data, list | ndarray)
 
     def test_default_value(self):
         self.assertEqual(self.testCurve.line_width, "default")
@@ -51,7 +51,7 @@ class TestScatter(unittest.TestCase):
         self.assertIsInstance(self.testScatter, Scatter)
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testScatter.xdata, list | ndarray)
+        self.assertIsInstance(self.testScatter.x_data, list | ndarray)
 
     def test_color_is_str(self):
         self.assertIsInstance(self.testScatter.face_color, str)
@@ -93,7 +93,7 @@ class TestHistogram(unittest.TestCase):
         self.assertEqual(self.testHist.label[:19], "Random Distribution")
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testHist.xdata, list | ndarray)
+        self.assertIsInstance(self.testHist.x_data, list | ndarray)
 
     def test_face_color_is_str(self):
         self.assertEqual(self.testHist.face_color, "silver")

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Self, Protocol
+from typing import Callable, Optional, Protocol, Self
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -31,9 +31,9 @@ class Curve:
     A general continuous curve.
     """
 
-    xdata: ArrayLike
-    ydata: ArrayLike
-    label: str = None
+    x_data: ArrayLike
+    y_data: ArrayLike
+    label: Optional[str] = None
     color: str = "default"
     line_width: int = "default"
     line_style: str = "default"
@@ -43,25 +43,22 @@ class Curve:
     def from_function(
         cls,
         func: Callable,
-        xmin: float,
-        xmax: float,
-        label: str = None,
+        x_min: float,
+        x_max: float,
+        label: Optional[str] = None,
         color: str = "default",
         line_width: int = "default",
         line_style: str = "default",
         number_of_points: int = 500,
     ) -> Self:
-        xdata = np.linspace(xmin, xmax, number_of_points)
-        ydata = func(xdata)
-        return cls(xdata, ydata, label, color, line_width, line_style)
-
-    def set_color(self, color: str | list[str]) -> None:
-        self.color = color
+        x_data = np.linspace(x_min, x_max, number_of_points)
+        y_data = func(x_data)
+        return cls(x_data, y_data, label, color, line_width, line_style)
 
     def add_errorbars(
         self,
-        x_error: ArrayLike = None,
-        y_error: ArrayLike = None,
+        x_error: ArrayLike,
+        y_error: ArrayLike,
         cap_width: float = "default",
         errorbars_color: str = "default",
         errorbars_line_width: float = "default",
@@ -77,8 +74,8 @@ class Curve:
 
     def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         (self.handle,) = axes.plot(
-            self.xdata,
-            self.ydata,
+            self.x_data,
+            self.y_data,
             color=self.color,
             linewidth=self.line_width,
             linestyle=self.line_style,
@@ -87,8 +84,8 @@ class Curve:
         )
         if self.errorbars:
             axes.errorbar(
-                self.xdata,
-                self.ydata,
+                self.x_data,
+                self.y_data,
                 xerr=self.x_error,
                 yerr=self.y_error,
                 color=self.errorbars_color,
@@ -106,9 +103,9 @@ class Scatter:
     A general scatter plot.
     """
 
-    xdata: ArrayLike
-    ydata: ArrayLike
-    label: str = None
+    x_data: ArrayLike
+    y_data: ArrayLike
+    label: Optional[str] = None
     face_color: str = "default"
     edge_color: str = "default"
     marker_size: float = "default"
@@ -119,25 +116,25 @@ class Scatter:
     def from_function(
         cls,
         func: Callable,
-        xmin: float,
-        xmax: float,
-        label: str = None,
+        x_min: float,
+        x_max: float,
+        label: Optional[str] = None,
         face_color: str = "default",
         edge_color: str = "default",
         marker_size: int = "default",
         marker_style: str = "default",
         number_of_points: int = 500,
     ) -> Self:
-        xdata = np.linspace(xmin, xmax, number_of_points)
-        ydata = func(xdata)
+        x_data = np.linspace(x_min, x_max, number_of_points)
+        y_data = func(x_data)
         return cls(
-            xdata, ydata, label, face_color, edge_color, marker_size, marker_style
+            x_data, y_data, label, face_color, edge_color, marker_size, marker_style
         )
 
     def add_errorbars(
         self,
-        x_error: ArrayLike = None,
-        y_error: ArrayLike = None,
+        x_error: ArrayLike,
+        y_error: ArrayLike,
         cap_width: float = "default",
         errorbars_color: str = "default",
         errorbars_line_width: float = "default",
@@ -153,8 +150,8 @@ class Scatter:
 
     def plot_element(self, axes: plt.Axes, z_order: int) -> None:
         self.handle = axes.scatter(
-            self.xdata,
-            self.ydata,
+            self.x_data,
+            self.y_data,
             color=self.face_color,
             edgecolors=self.edge_color,
             s=self.marker_size,
@@ -164,8 +161,8 @@ class Scatter:
         )
         if self.errorbars:
             axes.errorbar(
-                self.xdata,
-                self.ydata,
+                self.x_data,
+                self.y_data,
                 xerr=self.x_error,
                 yerr=self.y_error,
                 color=self.errorbars_color,
@@ -183,23 +180,23 @@ class Histogram:
     A histogram plot with minor changes to the lable icon.
     """
 
-    xdata: ArrayLike
+    x_data: ArrayLike
     number_of_bins: int
-    label: str = None
+    label: Optional[str] = None
     face_color: str = "default"
     edge_color: str = "default"
     hist_type: str = "default"
     alpha: float = "default"
-    line_width: int | float = "default"
+    line_width: float = "default"
     normalize: bool = "default"
     show_pdf: str = "default"
     show_params: bool = "default"
 
     def __post_init__(self) -> None:
-        self.mean = np.mean(self.xdata)
-        self.standard_deviation = np.std(self.xdata)
+        self.mean = np.mean(self.x_data)
+        self.standard_deviation = np.std(self.x_data)
         parameters = np.histogram(
-            self.xdata, bins=self.number_of_bins, density=self.normalize
+            self.x_data, bins=self.number_of_bins, density=self.normalize
         )
         self.bin_heights, bin_edges = parameters[0], parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
@@ -214,7 +211,7 @@ class Histogram:
         cls,
         fit: Fit,
         number_of_bins: int,
-        label: str = None,
+        label: Optional[str] = None,
         face_color: str = "default",
         edge_color: str = "default",
         hist_type: str = "default",
@@ -266,7 +263,7 @@ class Histogram:
             linewidth=1,
         )
         axes.hist(
-            self.xdata,
+            self.x_data,
             bins=self.number_of_bins,
             facecolor=to_rgba(self.face_color, self.alpha),
             edgecolor=to_rgba(self.edge_color, 1),
@@ -281,11 +278,11 @@ class Histogram:
                 self.normal_normalized if self.normalize else self.normal_not_normalized
             )
             num_of_points = 500
-            xdata = np.linspace(self.bin_edges[0], self.bin_edges[-1], num_of_points)
-            ydata = normal(xdata)
+            x_data = np.linspace(self.bin_edges[0], self.bin_edges[-1], num_of_points)
+            y_data = normal(x_data)
             axes.plot(
-                xdata,
-                ydata,
+                x_data,
+                y_data,
                 color=self.edge_color,
                 label=self.label,
                 zorder=z_order - 1,
