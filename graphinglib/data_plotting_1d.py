@@ -6,6 +6,9 @@ import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
+from scipy.interpolate import interp1d
+
+from .graph_elements import Point
 
 
 class Fit(Protocol):
@@ -71,6 +74,29 @@ class Curve:
         self.errorbars_line_width = errorbars_line_width
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
+
+    def get_point_at_x(
+        self,
+        x_data: float,
+        interpolation_kind: str = "linear",
+        label: Optional[str] = None,
+        color: str = "default",
+        edge_color: str = "default",
+        marker_size: float = "default",
+        marker_style: str = "default",
+        line_width: float = "default",
+    ) -> Point:
+        point = Point(
+            x_data,
+            float(interp1d(self.x_data, self.y_data, kind=interpolation_kind)(x_data)),
+            label=label,
+            color=color,
+            edge_color=edge_color,
+            marker_size=marker_size,
+            marker_style=marker_style,
+            line_width=line_width,
+        )
+        return point
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         (self.handle,) = axes.plot(
@@ -147,6 +173,29 @@ class Scatter:
         self.errorbars_line_width = errorbars_line_width
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
+
+    def get_point_at_x(
+        self,
+        x_data: float,
+        interpolation_kind: str = "linear",
+        label: Optional[str] = None,
+        color: str = "default",
+        edge_color: str = "default",
+        marker_size: float = "default",
+        marker_style: str = "default",
+        line_width: float = "default",
+    ) -> Point:
+        point = Point(
+            x_data,
+            float(interp1d(self.x_data, self.y_data, kind=interpolation_kind)(x_data)),
+            label=label,
+            color=color,
+            edge_color=edge_color,
+            marker_size=marker_size,
+            marker_style=marker_style,
+            line_width=line_width,
+        )
+        return point
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         self.handle = axes.scatter(
