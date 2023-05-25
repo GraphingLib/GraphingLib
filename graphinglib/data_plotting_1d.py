@@ -77,7 +77,7 @@ class Curve:
 
     def get_point_at_x(
         self,
-        x_data: float,
+        x: float,
         interpolation_kind: str = "linear",
         label: Optional[str] = None,
         color: str = "default",
@@ -87,8 +87,8 @@ class Curve:
         line_width: float = "default",
     ) -> Point:
         point = Point(
-            x_data,
-            float(interp1d(self.x_data, self.y_data, kind=interpolation_kind)(x_data)),
+            x,
+            float(interp1d(self.x_data, self.y_data, kind=interpolation_kind)(x)),
             label=label,
             color=color,
             edge_color=edge_color,
@@ -97,6 +97,19 @@ class Curve:
             line_width=line_width,
         )
         return point
+
+    def get_points_at_y(
+        self, y: float, interpolation_kind: str = "linear"
+    ) -> list[Point]:
+        interpolator = interp1d(self.x_data, self.y_data, kind=interpolation_kind)
+        x_interpolated = np.linspace(min(self.x_data), max(self.x_data), 10000000)
+        y_interpolated = interpolator(x_interpolated)
+
+        points_of_interest = x_interpolated[np.isclose(y_interpolated, y, rtol=5e-6)]
+        points_of_interest = remove_duplicates(points_of_interest, 5e-4)
+        print(points_of_interest)
+        points = [Point(point, y) for point in points_of_interest]
+        return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         (self.handle,) = axes.plot(
@@ -176,7 +189,7 @@ class Scatter:
 
     def get_point_at_x(
         self,
-        x_data: float,
+        x: float,
         interpolation_kind: str = "linear",
         label: Optional[str] = None,
         color: str = "default",
@@ -187,7 +200,7 @@ class Scatter:
     ) -> Point:
         point = Point(
             x_data,
-            float(interp1d(self.x_data, self.y_data, kind=interpolation_kind)(x_data)),
+            float(interp1d(self.x, self.y_data, kind=interpolation_kind)(x)),
             label=label,
             color=color,
             edge_color=edge_color,
@@ -196,6 +209,19 @@ class Scatter:
             line_width=line_width,
         )
         return point
+
+    def get_points_at_y(
+        self, y: float, interpolation_kind: str = "linear"
+    ) -> list[Point]:
+        interpolator = interp1d(self.x_data, self.y_data, kind=interpolation_kind)
+        x_interpolated = np.linspace(min(self.x_data), max(self.x_data), 10000000)
+        y_interpolated = interpolator(x_interpolated)
+
+        points_of_interest = x_interpolated[np.isclose(y_interpolated, y, rtol=5e-6)]
+        points_of_interest = remove_duplicates(points_of_interest, 5e-4)
+        print(points_of_interest)
+        points = [Point(point, y) for point in points_of_interest]
+        return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         self.handle = axes.scatter(
@@ -351,3 +377,19 @@ class Histogram:
                 colors=["k", "r", "k"],
                 zorder=z_order - 1,
             )
+
+
+def remove_duplicates(numbers: list[float], relative_tolerance: float):
+    result: list[float] = []
+    for num in numbers:
+        similar_points: list[float] = [num]
+        for existing_num in result:
+            if abs(num - existing_num) <= relative_tolerance * abs(existing_num):
+                similar_points.append(existing_num)
+        if len(similar_points) > 1:
+            average = sum(similar_points) / len(similar_points)
+            result = [x for x in result if x not in similar_points]
+            result.append(average)
+        else:
+            result.append(num)
+    return result
