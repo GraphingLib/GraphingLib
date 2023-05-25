@@ -101,11 +101,13 @@ class Curve:
     def get_points_at_y(
         self, y: float, interpolation_kind: str = "linear"
     ) -> list[Point]:
-        crossings = np.where(np.diff(np.sign(self.y_data - y)))[0]
+        xs = self.x_data
+        ys = self.y_data
+        crossings = np.where(np.diff(np.sign(ys - y)))[0]
         roots: list[float] = []
         for cross in crossings:
-            x1, x2 = self.x_data[cross], self.x_data[cross + 1]
-            y1, y2 = self.y_data[cross], self.y_data[cross + 1]
+            x1, x2 = xs[cross], xs[cross + 1]
+            y1, y2 = ys[cross], ys[cross + 1]
             f = interp1d([y1, y2], [x1, x2], kind=interpolation_kind)
             root = f(y)
             roots.append(float(root))
@@ -214,13 +216,17 @@ class Scatter:
     def get_points_at_y(
         self, y: float, interpolation_kind: str = "linear"
     ) -> list[Point]:
-        interpolator = interp1d(self.x_data, self.y_data, kind=interpolation_kind)
-        x_interpolated = np.linspace(min(self.x_data), max(self.x_data), 10000000)
-        y_interpolated = interpolator(x_interpolated)
-
-        points_of_interest = x_interpolated[np.isclose(y_interpolated, y, rtol=5e-6)]
-        points_of_interest = remove_duplicates(points_of_interest, 5e-4)
-        points = [Point(point, y) for point in points_of_interest]
+        xs = self.x_data
+        ys = self.y_data
+        crossings = np.where(np.diff(np.sign(ys - y)))[0]
+        roots: list[float] = []
+        for cross in crossings:
+            x1, x2 = xs[cross], xs[cross + 1]
+            y1, y2 = ys[cross], ys[cross + 1]
+            f = interp1d([y1, y2], [x1, x2], kind=interpolation_kind)
+            root = f(y)
+            roots.append(float(root))
+        points = [Point(root, y) for root in roots]
         return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:

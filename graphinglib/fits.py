@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from scipy.optimize import curve_fit
+from scipy.interpolate import interp1d
+
+from graphinglib.graph_elements import Point
 
 from .data_plotting_1d import Curve, Scatter
 
@@ -27,9 +30,41 @@ class GeneralFit(Curve):
             self.label = "$f(x) = $" + str(self)
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
+        self.function: Callable[[np.ndarray], np.ndarray]
 
     def __str__(self) -> None:
         raise NotImplementedError()
+
+    def get_point_at_x(
+        self,
+        x: float,
+        interpolation_kind: str = "linear",
+        label: str | None = None,
+        color: str = "default",
+        edge_color: str = "default",
+        marker_size: float = "default",
+        marker_style: str = "default",
+        line_width: float = "default",
+    ) -> Point:
+        raise NotImplementedError(
+            "With fits, use fit.function(x) instead for a more accurate result."
+        )
+
+    def get_points_at_y(
+        self, y: float, interpolation_kind: str = "linear"
+    ) -> list[Point]:
+        xs = self.curve_to_be_fit.x_data
+        ys = self.function(xs)
+        crossings = np.where(np.diff(np.sign(ys - y)))[0]
+        roots: list[float] = []
+        for cross in crossings:
+            x1, x2 = xs[cross], xs[cross + 1]
+            y1, y2 = ys[cross], ys[cross + 1]
+            f = interp1d([y1, y2], [x1, x2], kind=interpolation_kind)
+            root = f(y)
+            roots.append(float(root))
+        points = [Point(root, y) for root in roots]
+        return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         number_of_points = 500
