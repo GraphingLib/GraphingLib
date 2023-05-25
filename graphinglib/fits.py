@@ -46,9 +46,7 @@ class GeneralFit(Curve):
         marker_style: str = "default",
         line_width: float = "default",
     ) -> Point:
-        raise NotImplementedError(
-            "With fits, use fit.function(x) instead for a more accurate result."
-        )
+        return Point(x, self.function(x))
 
     def get_points_at_y(
         self, y: float, interpolation_kind: str = "linear"
