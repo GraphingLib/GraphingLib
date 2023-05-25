@@ -107,7 +107,6 @@ class Curve:
 
         points_of_interest = x_interpolated[np.isclose(y_interpolated, y, rtol=5e-6)]
         points_of_interest = remove_duplicates(points_of_interest, 5e-4)
-        print(points_of_interest)
         points = [Point(point, y) for point in points_of_interest]
         return points
 
