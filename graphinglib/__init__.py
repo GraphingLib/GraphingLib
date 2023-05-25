@@ -14,6 +14,6 @@ from .fits import (
     FitFromPolynomial,
     FitFromSine,
     FitFromSquareRoot,
-    GeneralFit,
+    FitFromFunction,
 )
 from .graph_elements import GraphingException, Hlines, Point, Text, Vlines
