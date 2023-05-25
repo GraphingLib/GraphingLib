@@ -10,6 +10,12 @@ GraphingLib also provides the ability to create multiple predefined themes for d
 
 ## 2. Installation
 
+From PyPI with
+
+```text
+pip install graphinglib
+```
+
 From source with
 
 ```text
