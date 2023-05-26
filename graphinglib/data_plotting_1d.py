@@ -60,8 +60,8 @@ class Curve:
 
     def add_errorbars(
         self,
-        x_error: ArrayLike,
-        y_error: ArrayLike,
+        x_error: Optional[ArrayLike] = None,
+        y_error: Optional[ArrayLike] = None,
         cap_width: float = "default",
         errorbars_color: str = "default",
         errorbars_line_width: float = "default",
@@ -195,8 +195,8 @@ class Scatter:
 
     def add_errorbars(
         self,
-        x_error: ArrayLike,
-        y_error: ArrayLike,
+        x_error: Optional[ArrayLike] = None,
+        y_error: Optional[ArrayLike] = None,
         cap_width: float = "default",
         errorbars_color: str = "default",
         errorbars_line_width: float = "default",

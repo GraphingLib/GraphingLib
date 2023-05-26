@@ -123,3 +123,8 @@ Heatmap:
   aspect_ratio: "equal"
   origin_position: "lower"
   color_map: "prism"
+
+Text:
+  color: "orange"
+  h_align: "right"
+  v_align: "top"

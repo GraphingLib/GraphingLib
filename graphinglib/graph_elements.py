@@ -201,6 +201,10 @@ class Point:
         self.v_align = v_align
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        size = self.font_size if self.font_size != "same as figure" else None
+        prefix = " " if self.h_align == "left" else ""
+        postfix = " " if self.h_align == "right" else ""
+        point_label = prefix + self.label + postfix
         axes.scatter(
             self.x,
             self.y,
@@ -211,11 +215,28 @@ class Point:
             linewidths=self.line_width,
             zorder=z_order,
         )
+        axes.annotate(
+            point_label,
+            (self.x, self.y),
+            color=self.text_color,
+            fontsize=size,
+            horizontalalignment=self.h_align,
+            verticalalignment=self.v_align,
+            zorder=z_order,
+        )
         if self._show_coordinates:
-            size = self.font_size if self.font_size != "same as figure" else None
             prefix = " " if self.h_align == "left" else ""
             postfix = " " if self.h_align == "right" else ""
-            point_label = prefix + f"({self.x:.3f}, {self.y:.3f})" + postfix
+            if self.label is not None:
+                point_label = (
+                    prefix
+                    + self.label
+                    + " : "
+                    + f"({self.x:.3f}, {self.y:.3f})"
+                    + postfix
+                )
+            else:
+                point_label = prefix + f"({self.x:.3f}, {self.y:.3f})" + postfix
             axes.annotate(
                 point_label,
                 (self.x, self.y),
