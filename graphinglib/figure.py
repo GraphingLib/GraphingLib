@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParamsDefault
@@ -25,13 +25,13 @@ class Figure:
         self,
         x_label: str = "x axis",
         y_label: str = "y axis",
-        size: tuple = "default",
+        size: tuple[float, float] | Literal["default"] = "default",
         x_lim: Optional[tuple[float, float]] = None,
         y_lim: Optional[tuple[float, float]] = None,
-        log_scale_x: bool = "default",
-        log_scale_y: bool = "default",
-        legend_is_boxed: bool = "default",
-        ticks_are_in: bool = "default",
+        log_scale_x: bool | Literal["default"] = "default",
+        log_scale_y: bool | Literal["default"] = "default",
+        legend_is_boxed: bool | Literal["default"] = "default",
+        ticks_are_in: bool | Literal["default"] = "default",
         figure_style: str = "plain",
         use_latex: bool = False,
         font_size: int = 12,
@@ -73,8 +73,8 @@ class Figure:
             else self.default_params["Figure"]["log_scale_y"]
         )
         self._figure, self._axes = plt.subplots(figsize=self.size)
-        self._elements = []
-        self._labels = []
+        self._elements: list[Plottable] = []
+        self._labels: list[str | None] = []
         self._handles = []
         self.x_axis_name = x_label
         self.y_axis_name = y_label
