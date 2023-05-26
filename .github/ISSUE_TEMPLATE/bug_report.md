@@ -1,16 +1,16 @@
 ---
 name: Bug report
-about: 'Report a bug '
+about: Report a bug
 title: "[BUG]"
 labels: bug
 assignees: ''
 
 ---
 
-**Describe the bug**
+### Describe the bug
 
 
-**To Reproduce**
+### To Reproduce
 
 
-**Expected behavior**
+### Expected behavior
