@@ -1,9 +1,9 @@
 [tool.poetry]
 name = "graphinglib"
-version = "1.0.0"
+version = "1.0.1"
 description = "An object oriented wrapper combining the functionalities of Matplotlib and Scipy"
 license = "MIT"
-authors = ["Gustave Coulombe", "Yannick Lapointe"]
+authors = ["Gustave Coulombe <magikgus@gmail.com>", "Yannick Lapointe <yannicklapointe77@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]

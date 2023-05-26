@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from scipy.optimize import curve_fit
+from scipy.interpolate import interp1d
+
+from graphinglib.graph_elements import Point
 
 from .data_plotting_1d import Curve, Scatter
 
@@ -27,9 +30,67 @@ class GeneralFit(Curve):
             self.label = "$f(x) = $" + str(self)
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
+        self.function: Callable[[np.ndarray], np.ndarray]
 
     def __str__(self) -> str:
         raise NotImplementedError()
+
+    def get_point_at_x(
+        self,
+        x: float,
+        label: str | None = None,
+        color: str = "default",
+        edge_color: str = "default",
+        marker_size: float = "default",
+        marker_style: str = "default",
+        line_width: float = "default",
+    ) -> Point:
+        return Point(
+            x,
+            self.function(x),
+            label=label,
+            color=color,
+            edge_color=edge_color,
+            marker_size=marker_size,
+            marker_style=marker_style,
+            line_width=line_width,
+        )
+
+    def get_points_at_y(
+        self,
+        y: float,
+        interpolation_kind: str = "linear",
+        label: str | None = None,
+        color: str = "default",
+        edge_color: str = "default",
+        marker_size: float = "default",
+        marker_style: str = "default",
+        line_width: float = "default",
+    ) -> list[Point]:
+        xs = self.curve_to_be_fit.x_data
+        ys = self.function(xs)
+        crossings = np.where(np.diff(np.sign(ys - y)))[0]
+        x_vals: list[float] = []
+        for cross in crossings:
+            x1, x2 = xs[cross], xs[cross + 1]
+            y1, y2 = ys[cross], ys[cross + 1]
+            f = interp1d([y1, y2], [x1, x2], kind=interpolation_kind)
+            x_val = f(y)
+            x_vals.append(float(x_val))
+        points = [
+            Point(
+                x_val,
+                y,
+                label=label,
+                color=color,
+                edge_color=edge_color,
+                marker_size=marker_size,
+                marker_style=marker_style,
+                line_width=line_width,
+            )
+            for x_val in x_vals
+        ]
+        return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         number_of_points = 500
