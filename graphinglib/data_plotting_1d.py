@@ -6,6 +6,9 @@ import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
+from scipy.interpolate import interp1d
+
+from .graph_elements import Point
 
 
 class Fit(Protocol):
@@ -71,6 +74,65 @@ class Curve:
         self.errorbars_line_width = errorbars_line_width
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
+
+    def get_point_at_x(
+        self,
+        x: float,
+        interpolation_kind: str = "linear",
+        label: Optional[str] = None,
+        color: str = "default",
+        edge_color: str = "default",
+        marker_size: float = "default",
+        marker_style: str = "default",
+        line_width: float = "default",
+    ) -> Point:
+        point = Point(
+            x,
+            float(interp1d(self.x_data, self.y_data, kind=interpolation_kind)(x)),
+            label=label,
+            color=color,
+            edge_color=edge_color,
+            marker_size=marker_size,
+            marker_style=marker_style,
+            line_width=line_width,
+        )
+        return point
+
+    def get_points_at_y(
+        self,
+        y: float,
+        interpolation_kind: str = "linear",
+        label: str | None = None,
+        color: str = "default",
+        edge_color: str = "default",
+        marker_size: float = "default",
+        marker_style: str = "default",
+        line_width: float = "default",
+    ) -> list[Point]:
+        xs = self.x_data
+        ys = self.y_data
+        crossings = np.where(np.diff(np.sign(ys - y)))[0]
+        x_vals: list[float] = []
+        for cross in crossings:
+            x1, x2 = xs[cross], xs[cross + 1]
+            y1, y2 = ys[cross], ys[cross + 1]
+            f = interp1d([y1, y2], [x1, x2], kind=interpolation_kind)
+            x_val = f(y)
+            x_vals.append(float(x_val))
+        points = [
+            Point(
+                x_val,
+                y,
+                label=label,
+                color=color,
+                edge_color=edge_color,
+                marker_size=marker_size,
+                marker_style=marker_style,
+                line_width=line_width,
+            )
+            for x_val in x_vals
+        ]
+        return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         (self.handle,) = axes.plot(
@@ -147,6 +209,65 @@ class Scatter:
         self.errorbars_line_width = errorbars_line_width
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
+
+    def get_point_at_x(
+        self,
+        x: float,
+        interpolation_kind: str = "linear",
+        label: Optional[str] = None,
+        color: str = "default",
+        edge_color: str = "default",
+        marker_size: float = "default",
+        marker_style: str = "default",
+        line_width: float = "default",
+    ) -> Point:
+        point = Point(
+            x,
+            float(interp1d(self.x_data, self.y_data, kind=interpolation_kind)(x)),
+            label=label,
+            color=color,
+            edge_color=edge_color,
+            marker_size=marker_size,
+            marker_style=marker_style,
+            line_width=line_width,
+        )
+        return point
+
+    def get_points_at_y(
+        self,
+        y: float,
+        interpolation_kind: str = "linear",
+        label: str | None = None,
+        color: str = "default",
+        edge_color: str = "default",
+        marker_size: float = "default",
+        marker_style: str = "default",
+        line_width: float = "default",
+    ) -> list[Point]:
+        xs = self.x_data
+        ys = self.y_data
+        crossings = np.where(np.diff(np.sign(ys - y)))[0]
+        x_vals: list[float] = []
+        for cross in crossings:
+            x1, x2 = xs[cross], xs[cross + 1]
+            y1, y2 = ys[cross], ys[cross + 1]
+            f = interp1d([y1, y2], [x1, x2], kind=interpolation_kind)
+            x_val = f(y)
+            x_vals.append(float(x_val))
+        points = [
+            Point(
+                x_val,
+                y,
+                label=label,
+                color=color,
+                edge_color=edge_color,
+                marker_size=marker_size,
+                marker_style=marker_style,
+                line_width=line_width,
+            )
+            for x_val in x_vals
+        ]
+        return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         self.handle = axes.scatter(
@@ -302,3 +423,19 @@ class Histogram:
                 colors=["k", "r", "k"],
                 zorder=z_order - 1,
             )
+
+
+def remove_duplicates(numbers: list[float], relative_tolerance: float):
+    result: list[float] = []
+    for num in numbers:
+        similar_points: list[float] = [num]
+        for existing_num in result:
+            if abs(num - existing_num) <= relative_tolerance * abs(existing_num):
+                similar_points.append(existing_num)
+        if len(similar_points) > 1:
+            average = sum(similar_points) / len(similar_points)
+            result = [x for x in result if x not in similar_points]
+            result.append(average)
+        else:
+            result.append(num)
+    return result

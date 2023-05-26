@@ -28,6 +28,39 @@ class TestCurve(unittest.TestCase):
     def test_label_is_str(self):
         self.assertIsInstance(self.testCurve.label, str)
 
+    def test_from_function(self):
+        self.assertIsInstance(
+            Curve.from_function(
+                lambda x: x**2,
+                0,
+                1,
+                "Test",
+                color="k",
+                line_width=1,
+                line_style="-",
+                number_of_points=400,
+            ),
+            Curve,
+        )
+
+    def test_add_errorbars(self):
+        self.testCurve.add_errorbars(0.1, 0.1)
+        self.testCurve.add_errorbars(0.1, [0.2, 0.3] * 100)
+        self.testCurve.add_errorbars([0.2, 0.3] * 100, 0.1)
+        self.testCurve.add_errorbars(0.3, None)
+        self.testCurve.add_errorbars(None, 0.3)
+
+    def test_get_point_at_x(self):
+        point = self.testCurve.get_point_at_x(0.5)
+        self.assertEqual(point.x, 0.5)
+        self.assertAlmostEqual(point.y, sin(0.5), places=3)
+
+    def test_get_points_at_y(self):
+        points = self.testCurve.get_points_at_y(0)
+        for i, point in enumerate(points):
+            self.assertEqual(point.y, 0)
+            self.assertAlmostEqual(point.x, i * pi, places=3)
+
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
         self.testCurve = Curve(
@@ -55,6 +88,40 @@ class TestScatter(unittest.TestCase):
 
     def test_label_is_str(self):
         self.assertIsInstance(self.testScatter.label, str)
+
+    def test_from_function(self):
+        self.assertIsInstance(
+            Scatter.from_function(
+                lambda x: x**2,
+                0,
+                1,
+                "Test",
+                face_color="k",
+                edge_color="k",
+                marker_size=1,
+                marker_style="o",
+                number_of_points=400,
+            ),
+            Scatter,
+        )
+
+    def test_add_errorbars(self):
+        self.testScatter.add_errorbars(0.1, 0.1)
+        self.testScatter.add_errorbars(0.1, [0.2, 0.3] * 100)
+        self.testScatter.add_errorbars([0.2, 0.3] * 100, 0.1)
+        self.testScatter.add_errorbars(0.3, None)
+        self.testScatter.add_errorbars(None, 0.3)
+
+    def test_get_point_at_x(self):
+        point = self.testScatter.get_point_at_x(0.5)
+        self.assertEqual(point.x, 0.5)
+        self.assertAlmostEqual(point.y, sin(0.5), places=3)
+
+    def test_get_points_at_y(self):
+        points = self.testScatter.get_points_at_y(0)
+        for i, point in enumerate(points):
+            self.assertEqual(point.y, 0)
+            self.assertAlmostEqual(point.x, i * pi, places=3)
 
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
