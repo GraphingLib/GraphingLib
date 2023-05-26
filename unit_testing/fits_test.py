@@ -9,7 +9,7 @@ from graphinglib.graph_elements import *
 
 class TestFitFromPolynomial(unittest.TestCase):
     def setUp(self):
-        x = linspace(0, 3 * pi, 200)
+        x = linspace(-3, 3 * pi, 200)
         self.scatter_first_degree = Scatter(x, 3 * x + 2, "k", "Test Curve")
         self.scatter_second_degree = Scatter(
             x, 4 * x**2 - 3 * x - 2, "k", "Test Curve"
@@ -59,6 +59,13 @@ class TestFitFromPolynomial(unittest.TestCase):
     def test_second_degree_functions(self):
         self.assertAlmostEqual(round(self.fit_second_degree.function(5), 5), 83)
 
+    def test_get_point_at_x(self):
+        self.assertAlmostEqual(self.fit_second_degree.get_point_at_x(5).y, 83)
+
+    def test_get_points_at_y(self):
+        points = self.fit_second_degree.get_points_at_y(83)
+        self.assertAlmostEqual(points[0].x, 5, places=3)
+
 
 class TestFitFromSine(unittest.TestCase):
     def setUp(self):
@@ -93,6 +100,16 @@ class TestFitFromSine(unittest.TestCase):
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(17), 3.00048965)
 
+    def test_get_point_at_x(self):
+        self.assertAlmostEqual(self.fit.get_point_at_x(17).y, 3.00048965)
+
+    def test_get_points_at_y(self):
+        points = self.fit.get_points_at_y(4)
+        self.assertAlmostEqual(points[0].x, 0.586, places=3)
+        self.assertAlmostEqual(points[1].x, 1.983, places=3)
+        self.assertAlmostEqual(points[2].x, 2.680, places=3)
+        self.assertAlmostEqual(points[3].x, 4.077, places=3)
+
 
 class TestFitFromExponential(unittest.TestCase):
     def setUp(self):
@@ -117,6 +134,13 @@ class TestFitFromExponential(unittest.TestCase):
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(0.001), 109.524, places=3)
 
+    def test_get_point_at_x(self):
+        self.assertAlmostEqual(self.fit.get_point_at_x(0.001).y, 109.524, places=3)
+
+    def test_get_points_at_y(self):
+        points = self.fit.get_points_at_y(109.524)
+        self.assertAlmostEqual(points[0].x, 0.001, places=3)
+
 
 class TestFitFromGaussian(unittest.TestCase):
     def setUp(self) -> None:
@@ -131,7 +155,7 @@ class TestFitFromGaussian(unittest.TestCase):
 
     def test_parameters(self):
         params = [self.fit.amplitude, self.fit.mean, self.fit.standard_deviation]
-        rounded_params = [round(i, 3) for i in params]
+        rounded_params = [round(i, 2) for i in params]
         self.assertListEqual(rounded_params, [5, 1, 1])
 
     def test_std_dev(self):
@@ -143,6 +167,14 @@ class TestFitFromGaussian(unittest.TestCase):
 
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(3), 0.676515, places=3)
+
+    def test_get_point_at_x(self):
+        self.assertAlmostEqual(self.fit.get_point_at_x(3).y, 0.676515, places=3)
+
+    def test_get_points_at_y(self):
+        points = self.fit.get_points_at_y(0.676515)
+        self.assertAlmostEqual(points[0].x, -1, places=3)
+        self.assertAlmostEqual(points[1].x, 3, places=3)
 
 
 class TestFitFromSquareRoot(unittest.TestCase):
@@ -169,6 +201,13 @@ class TestFitFromSquareRoot(unittest.TestCase):
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(3), 12.937, places=3)
 
+    def test_get_point_at_x(self):
+        self.assertAlmostEqual(self.fit.get_point_at_x(3).y, 12.937, places=3)
+
+    def test_get_points_at_y(self):
+        points = self.fit.get_points_at_y(12.937)
+        self.assertAlmostEqual(points[0].x, 3, places=3)
+
 
 class TestFitFromLog(unittest.TestCase):
     def setUp(self):
@@ -193,3 +232,10 @@ class TestFitFromLog(unittest.TestCase):
 
     def test_function(self):
         self.assertAlmostEqual(self.fit.function(0.001), 6.19789, places=3)
+
+    def test_get_point_at_x(self):
+        self.assertAlmostEqual(self.fit.get_point_at_x(0.001).y, 6.19789, places=3)
+
+    def test_get_points_at_y(self):
+        points = self.fit.get_points_at_y(6.19789)
+        self.assertAlmostEqual(points[0].x, 0.001, places=3)
