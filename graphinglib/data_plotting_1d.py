@@ -134,6 +134,58 @@ class Curve:
         ]
         return points
 
+    # Create new Curve object which is derivative of current Curve object
+    def derivative(
+        self,
+        label: Optional[str] = None,
+        color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+    ) -> Self:
+        x_data = self.x_data
+        y_data = np.gradient(self.y_data, x_data)
+        return Curve(x_data, y_data, label, color, line_width, line_style)
+
+    # Create new Curve object which is integral of current Curve object
+    def integral(
+        self,
+        label: Optional[str] = None,
+        color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+    ) -> Self:
+        x_data = self.x_data
+        y_data = np.cumsum(self.y_data) * np.diff(x_data)[0]
+        return Curve(x_data, y_data, label, color, line_width, line_style)
+
+    # Create new Curve object which a tangent at a certain x value of current Curve object
+    def tangent(
+        self,
+        x: float,
+        label: Optional[str] = None,
+        color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+    ) -> Self:
+        point = self.get_point_at_x(x)
+        gradient = self.derivative().get_point_at_x(x).y
+        y_data = gradient * (self.x_data - x) + point.y
+        return Curve(self.x_data, y_data, label, color, line_width, line_style)
+
+    # Create a new Curve object which is the normal at a certain x value of current Curve object
+    def normal(
+        self,
+        x: float,
+        label: Optional[str] = None,
+        color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+    ) -> Self:
+        point = self.get_point_at_x(x)
+        gradient = self.derivative().get_point_at_x(x).y
+        y_data = -1 / gradient * (self.x_data - x) + point.y
+        return Curve(self.x_data, y_data, label, color, line_width, line_style)
+
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         (self.handle,) = axes.plot(
             self.x_data,
