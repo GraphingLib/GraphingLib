@@ -7,10 +7,10 @@ assignees: ''
 
 ---
 
-**Describe the feature**
+### Describe the feature
 
 
-**Is there currently a (suboptimal?) way to do this?**
+### Is there currently a (suboptimal?) way to do this?
 
 
-**Describe the solution you'd like**
+### Describe the solution you'd like
