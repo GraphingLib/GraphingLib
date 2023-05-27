@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Literal, Optional, Protocol, Self
 
 import matplotlib.pyplot as plt
@@ -40,7 +40,8 @@ class Curve:
     color: str = "default"
     line_width: int | Literal["default"] = "default"
     line_style: str = "default"
-    errorbars: bool = False
+    errorbars: bool = field(default=False, init=False)
+    fill_curve_between: Optional[tuple[float, float]] = field(init=False, default=None)
 
     @classmethod
     def from_function(
@@ -134,7 +135,6 @@ class Curve:
         ]
         return points
 
-    # Create new Curve object which is derivative of current Curve object
     def derivative(
         self,
         label: Optional[str] = None,
@@ -146,7 +146,6 @@ class Curve:
         y_data = np.gradient(self.y_data, x_data)
         return Curve(x_data, y_data, label, color, line_width, line_style)
 
-    # Create new Curve object which is integral of current Curve object
     def integral(
         self,
         label: Optional[str] = None,
@@ -158,7 +157,6 @@ class Curve:
         y_data = np.cumsum(self.y_data) * np.diff(x_data)[0]
         return Curve(x_data, y_data, label, color, line_width, line_style)
 
-    # Create new Curve object which a tangent at a certain x value of current Curve object
     def tangent(
         self,
         x: float,
@@ -170,9 +168,9 @@ class Curve:
         point = self.get_point_at_x(x)
         gradient = self.derivative().get_point_at_x(x).y
         y_data = gradient * (self.x_data - x) + point.y
-        return Curve(self.x_data, y_data, label, color, line_width, line_style)
+        tangent_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
+        return tangent_curve
 
-    # Create a new Curve object which is the normal at a certain x value of current Curve object
     def normal(
         self,
         x: float,
@@ -184,7 +182,26 @@ class Curve:
         point = self.get_point_at_x(x)
         gradient = self.derivative().get_point_at_x(x).y
         y_data = -1 / gradient * (self.x_data - x) + point.y
-        return Curve(self.x_data, y_data, label, color, line_width, line_style)
+        normal_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
+        return normal_curve
+
+    def arc_length(self, x1: float, x2: float) -> float:
+        y_data = self.y_data
+        x_data = self.x_data
+        f = interp1d(x_data, y_data)
+        x = np.linspace(x1, x2, 1000)
+        y = f(x)
+        return np.trapz(np.sqrt(1 + np.gradient(y, x) ** 2), x)
+
+    def area(self, x1: float, x2: float, fill_under: bool = False) -> float:
+        if fill_under:
+            self.fill_curve_between = (x1, x2)
+        y_data = self.y_data
+        x_data = self.x_data
+        f = interp1d(x_data, y_data)
+        x = np.linspace(x1, x2, 1000)
+        y = f(x)
+        return np.trapz(y, x)
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         (self.handle,) = axes.plot(
@@ -208,6 +225,18 @@ class Curve:
                 capthick=self.cap_thickness,
                 fmt="none",
                 zorder=z_order - 1,
+            )
+        if self.fill_curve_between:
+            axes.fill_between(
+                self.x_data,
+                self.y_data,
+                where=np.logical_and(
+                    self.x_data >= self.fill_curve_between[0],
+                    self.x_data <= self.fill_curve_between[1],
+                ),
+                # color=self.fill_color,
+                alpha=0.2,
+                zorder=z_order - 2,
             )
 
 
