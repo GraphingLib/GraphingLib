@@ -144,6 +144,29 @@ class TestFitFromSine(unittest.TestCase):
         self.assertAlmostEqual(points[2].x, 2.680, places=3)
         self.assertAlmostEqual(points[3].x, 4.077, places=3)
 
+    def test_get_derivative_curve(self):
+        self.assertIsInstance(self.fit.get_derivative_curve(), Curve)
+
+    def test_get_integral_curve(self):
+        self.assertIsInstance(self.fit.get_integral_curve(), Curve)
+
+    def test_get_tangent_curve(self):
+        self.assertIsInstance(self.fit.get_tangent_curve(0), Curve)
+
+    def test_get_normal_curve(self):
+        self.assertIsInstance(self.fit.get_normal_curve(0), Curve)
+
+    def test_area_between(self):
+        self.assertAlmostEqual(self.fit.area_between(0, np.pi / 2), 7.9228, places=3)
+
+    def test_slope_at(self):
+        self.assertAlmostEqual(self.fit.slope_at(np.pi), -6 * np.cos(4), places=2)
+
+    def test_arc_length_between(self):
+        self.assertAlmostEqual(
+            self.fit.arc_length_between(0, np.pi / 2), 5.538, places=2
+        )
+
 
 class TestFitFromExponential(unittest.TestCase):
     def setUp(self):
