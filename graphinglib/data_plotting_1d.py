@@ -24,7 +24,7 @@ class Fit(Protocol):
     ) -> None:
         pass
 
-    def _calculate_residuals(self) -> np.ndarray:
+    def calculate_residuals(self) -> np.ndarray:
         pass
 
 
@@ -426,7 +426,7 @@ class Histogram:
         show_pdf: str | Literal["default"] = "default",
         show_params: bool | Literal["default"] = "default",
     ) -> Self:
-        residuals = fit._calculate_residuals()
+        residuals = fit.calculate_residuals()
         return cls(
             residuals,
             number_of_bins,

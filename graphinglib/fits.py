@@ -154,7 +154,8 @@ class GeneralFit(Curve):
         self.res_line_style = line_style
 
     def calculate_residuals(self) -> np.ndarray:
-        residuals = self.y_data - self.curve_to_be_fit.y_data
+        y_data = self.function(self.curve_to_be_fit.x_data)
+        residuals = y_data - self.curve_to_be_fit.y_data
         return residuals
 
 
