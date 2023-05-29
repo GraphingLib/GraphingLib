@@ -41,7 +41,7 @@ class Curve:
     line_width: int | Literal["default"] = "default"
     line_style: str = "default"
     errorbars: bool = field(default=False, init=False)
-    fill_curve_between: Optional[tuple[float, float]] = field(init=False, default=None)
+    _fill_curve_between: Optional[tuple[float, float]] = field(init=False, default=None)
 
     @classmethod
     def from_function(
@@ -198,7 +198,7 @@ class Curve:
 
     def area_between(self, x1: float, x2: float, fill_under: bool = False) -> float:
         if fill_under:
-            self.fill_curve_between = (x1, x2)
+            self._fill_curve_between = (x1, x2)
         y_data = self.y_data
         x_data = self.x_data
         f = interp1d(x_data, y_data)
@@ -229,13 +229,13 @@ class Curve:
                 fmt="none",
                 zorder=z_order - 1,
             )
-        if self.fill_curve_between:
+        if self._fill_curve_between:
             axes.fill_between(
                 self.x_data,
                 self.y_data,
                 where=np.logical_and(
-                    self.x_data >= self.fill_curve_between[0],
-                    self.x_data <= self.fill_curve_between[1],
+                    self.x_data >= self._fill_curve_between[0],
+                    self.x_data <= self._fill_curve_between[1],
                 ),
                 # color=self.fill_color,
                 alpha=0.2,

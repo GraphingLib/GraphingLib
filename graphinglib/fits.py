@@ -127,6 +127,18 @@ class GeneralFit(Curve):
                 linestyle=self.res_line_style,
                 zorder=z_order,
             )
+        if self._fill_curve_between:
+            axes.fill_between(
+                self.x_data,
+                self.y_data,
+                where=np.logical_and(
+                    self.x_data >= self._fill_curve_between[0],
+                    self.x_data <= self._fill_curve_between[1],
+                ),
+                # color=self.fill_color,
+                alpha=0.2,
+                zorder=z_order - 2,
+            )
 
     def show_residual_curves(
         self,
@@ -183,6 +195,7 @@ class FitFromPolynomial(GeneralFit):
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
+        self._fill_curve_between = False
 
     def __str__(self) -> str:
         coeff_chunks = []
@@ -256,6 +269,7 @@ class FitFromSine(GeneralFit):
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
+        self._fill_curve_between = False
 
     def __str__(self) -> str:
         part1 = f"{self.amplitude:.3f} \sin({self.frequency_rad:.3f}x"
@@ -327,6 +341,7 @@ class FitFromExponential(GeneralFit):
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
+        self._fill_curve_between = False
 
     def __str__(self) -> str:
         part1 = f"{self.parameters[0]:.3f} \exp({self.parameters[1]:.3f}x"
@@ -390,6 +405,7 @@ class FitFromGaussian(GeneralFit):
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
+        self._fill_curve_between = False
 
     def __str__(self) -> str:
         return f"$\mu = {self.mean:.3f}, \sigma = {self.standard_deviation:.3f}, A = {self.amplitude:.3f}$"
@@ -453,6 +469,7 @@ class FitFromSquareRoot(GeneralFit):
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
+        self._fill_curve_between = False
 
     def __str__(self) -> str:
         return f"${self.parameters[0]:.3f} \sqrt{{x {'+' if self.parameters[1] > 0 else '-'} {abs(self.parameters[1]):.3f}}} {'+' if self.parameters[2] > 0 else '-'} {abs(self.parameters[2]):.3f}$"
@@ -517,6 +534,7 @@ class FitFromLog(GeneralFit):
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
+        self._fill_curve_between = False
 
     def __str__(self) -> str:
         return f"${self.parameters[0]:.3f} log_{self.log_base if self.log_base != np.e else 'e'}(x {'-' if self.parameters[1] < 0 else '+'} {abs(self.parameters[1]):.3f}) {'-' if self.parameters[2] < 0 else '+'} {abs(self.parameters[2]):.3f}$"
@@ -576,6 +594,7 @@ class FitFromFunction(GeneralFit):
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
+        self._fill_curve_between = False
 
     def _calculate_parameters(self) -> None:
         self.parameters, self.cov_matrix = curve_fit(
