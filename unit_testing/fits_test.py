@@ -198,6 +198,31 @@ class TestFitFromExponential(unittest.TestCase):
         points = self.fit.get_points_at_y(109.524)
         self.assertAlmostEqual(points[0].x, 0.001, places=3)
 
+    def test_get_derivative_curve(self):
+        self.assertIsInstance(self.fit.get_derivative_curve(), Curve)
+
+    def test_get_integral_curve(self):
+        self.assertIsInstance(self.fit.get_integral_curve(), Curve)
+
+    def test_get_tangent_curve(self):
+        self.assertIsInstance(self.fit.get_tangent_curve(0), Curve)
+
+    def test_get_normal_curve(self):
+        self.assertIsInstance(self.fit.get_normal_curve(0), Curve)
+
+    def test_area_between(self):
+        self.assertAlmostEqual(self.fit.area_between(0, 1), 694.69, places=0)
+
+    def test_slope_at(self):
+        self.assertAlmostEqual(
+            self.fit.slope_at(0.5),
+            1468.15,
+            places=-1,
+        )
+
+    def test_arc_length_between(self):
+        self.assertAlmostEqual(self.fit.arc_length_between(0, 1), 2084.07, places=0)
+
 
 class TestFitFromGaussian(unittest.TestCase):
     def setUp(self) -> None:
