@@ -93,16 +93,9 @@ class GeneralFit(Curve):
         return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
-        number_of_points = 500
-        x_data = np.linspace(
-            self.curve_to_be_fit.x_data[0],
-            self.curve_to_be_fit.x_data[-1],
-            number_of_points,
-        )
-        y_data = self.function(x_data)
         (self.handle,) = axes.plot(
-            x_data,
-            y_data,
+            self.x_data,
+            self.y_data,
             label=self.label,
             color=self.color,
             linewidth=self.line_width,
@@ -110,14 +103,14 @@ class GeneralFit(Curve):
             zorder=z_order,
         )
         if self._res_curves_to_be_plotted:
-            x_data = self.curve_to_be_fit.x_data
-            y_fit = self.function(x_data)
+            x_data = self.x_data
+            y_fit = self.y_data
             residuals = self.calculate_residuals()
             std = np.std(residuals)
             y_fit_plus_std = y_fit + (self.res_sigma_multiplier * std)
             y_fit_minus_std = y_fit - (self.res_sigma_multiplier * std)
             axes.plot(
-                x_data,
+                self.x_data,
                 y_fit_minus_std,
                 label=self.label,
                 color=self.res_color,
@@ -126,7 +119,7 @@ class GeneralFit(Curve):
                 zorder=z_order,
             )
             axes.plot(
-                x_data,
+                self.x_data,
                 y_fit_plus_std,
                 label=self.label,
                 color=self.res_color,
@@ -149,10 +142,7 @@ class GeneralFit(Curve):
         self.res_line_style = line_style
 
     def calculate_residuals(self) -> np.ndarray:
-        x_data = self.curve_to_be_fit.x_data
-        y_data = self.curve_to_be_fit.y_data
-        y_fit = self.function(x_data)
-        residuals = y_fit - y_data
+        residuals = self.y_data - self.curve_to_be_fit.y_data
         return residuals
 
 
@@ -186,6 +176,13 @@ class FitFromPolynomial(GeneralFit):
             self.label = "$f(x) = $" + str(self)
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
+        number_of_points = 500
+        self.x_data = np.linspace(
+            self.curve_to_be_fit.x_data[0],
+            self.curve_to_be_fit.x_data[-1],
+            number_of_points,
+        )
+        self.y_data = self.function(self.x_data)
 
     def __str__(self) -> str:
         coeff_chunks = []
@@ -252,6 +249,13 @@ class FitFromSine(GeneralFit):
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
+        number_of_points = 500
+        self.x_data = np.linspace(
+            self.curve_to_be_fit.x_data[0],
+            self.curve_to_be_fit.x_data[-1],
+            number_of_points,
+        )
+        self.y_data = self.function(self.x_data)
 
     def __str__(self) -> str:
         part1 = f"{self.amplitude:.3f} \sin({self.frequency_rad:.3f}x"
@@ -316,6 +320,13 @@ class FitFromExponential(GeneralFit):
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
+        number_of_points = 500
+        self.x_data = np.linspace(
+            self.curve_to_be_fit.x_data[0],
+            self.curve_to_be_fit.x_data[-1],
+            number_of_points,
+        )
+        self.y_data = self.function(self.x_data)
 
     def __str__(self) -> str:
         part1 = f"{self.parameters[0]:.3f} \exp({self.parameters[1]:.3f}x"
@@ -372,6 +383,13 @@ class FitFromGaussian(GeneralFit):
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
+        number_of_points = 500
+        self.x_data = np.linspace(
+            self.curve_to_be_fit.x_data[0],
+            self.curve_to_be_fit.x_data[-1],
+            number_of_points,
+        )
+        self.y_data = self.function(self.x_data)
 
     def __str__(self) -> str:
         return f"$\mu = {self.mean:.3f}, \sigma = {self.standard_deviation:.3f}, A = {self.amplitude:.3f}$"
@@ -428,6 +446,13 @@ class FitFromSquareRoot(GeneralFit):
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
+        number_of_points = 500
+        self.x_data = np.linspace(
+            self.curve_to_be_fit.x_data[0],
+            self.curve_to_be_fit.x_data[-1],
+            number_of_points,
+        )
+        self.y_data = self.function(self.x_data)
 
     def __str__(self) -> str:
         return f"${self.parameters[0]:.3f} \sqrt{{x {'+' if self.parameters[1] > 0 else '-'} {abs(self.parameters[1]):.3f}}} {'+' if self.parameters[2] > 0 else '-'} {abs(self.parameters[2]):.3f}$"
@@ -485,6 +510,13 @@ class FitFromLog(GeneralFit):
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
+        number_of_points = 500
+        self.x_data = np.linspace(
+            self.curve_to_be_fit.x_data[0],
+            self.curve_to_be_fit.x_data[-1],
+            number_of_points,
+        )
+        self.y_data = self.function(self.x_data)
 
     def __str__(self) -> str:
         return f"${self.parameters[0]:.3f} log_{self.log_base if self.log_base != np.e else 'e'}(x {'-' if self.parameters[1] < 0 else '+'} {abs(self.parameters[1]):.3f}) {'-' if self.parameters[2] < 0 else '+'} {abs(self.parameters[2]):.3f}$"
@@ -537,6 +569,13 @@ class FitFromFunction(GeneralFit):
         self.function = self._get_function_with_params()
         self.label = label
         self._res_curves_to_be_plotted = False
+        number_of_points = 500
+        self.x_data = np.linspace(
+            self.curve_to_be_fit.x_data[0],
+            self.curve_to_be_fit.x_data[-1],
+            number_of_points,
+        )
+        self.y_data = self.function(self.x_data)
 
     def _calculate_parameters(self) -> None:
         self.parameters, self.cov_matrix = curve_fit(
