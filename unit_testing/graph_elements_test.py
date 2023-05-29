@@ -5,6 +5,7 @@ from matplotlib.pyplot import subplots
 from numpy import linspace, ndarray, pi, sin
 
 from graphinglib.data_plotting_1d import *
+from graphinglib.fits import FitFromPolynomial
 from graphinglib.graph_elements import *
 
 
@@ -171,9 +172,6 @@ class TestHistogram(unittest.TestCase):
             face_color="silver",
             edge_color="k",
         )
-        # _, self.testAxes = subplots()
-        # self.testHist.plot_curve(self.testAxes)
-        # plt.close('all')
 
     def test_label_is_str(self):
         self.assertEqual(self.testHist.label[:19], "Random Distribution")
@@ -196,13 +194,16 @@ class TestHistogram(unittest.TestCase):
     def test_hist_type_is_str(self):
         self.assertEqual(self.testHist.hist_type, "default")
 
+    def test_plot_residuals_from_fit(self):
+        curve = Curve.from_function(lambda x: x**2, 0, 1)
+        fit = FitFromPolynomial(curve, degree=2)
+        histo = self.testHist.plot_residuals_from_fit(fit, 30)
+        self.assertIsInstance(histo, Histogram)
+
 
 class TestHlines(unittest.TestCase):
     def setUp(self):
         self.testHlines = Hlines(1, 0, 1, "Test Hlines")
-        # _, self.testAxes = subplots()
-        # self.testHlines.plot_curve(self.testAxes)
-        # plt.close('all')
 
     def test_y_is_list_ndarray_float_int(self):
         self.assertIsInstance(self.testHlines.y, list | ndarray | float | int)
