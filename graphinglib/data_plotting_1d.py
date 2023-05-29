@@ -135,7 +135,7 @@ class Curve:
         ]
         return points
 
-    def derivative(
+    def get_derivative_curve(
         self,
         label: Optional[str] = None,
         color: str = "default",
@@ -146,7 +146,7 @@ class Curve:
         y_data = np.gradient(self.y_data, x_data)
         return Curve(x_data, y_data, label, color, line_width, line_style)
 
-    def integral(
+    def get_integral_curve(
         self,
         label: Optional[str] = None,
         color: str = "default",
@@ -157,7 +157,7 @@ class Curve:
         y_data = np.cumsum(self.y_data) * np.diff(x_data)[0]
         return Curve(x_data, y_data, label, color, line_width, line_style)
 
-    def tangent(
+    def get_tangent_curve(
         self,
         x: float,
         label: Optional[str] = None,
@@ -166,12 +166,12 @@ class Curve:
         line_style: str = "default",
     ) -> Self:
         point = self.get_point_at_x(x)
-        gradient = self.derivative().get_point_at_x(x).y
+        gradient = self.get_derivative_curve().get_point_at_x(x).y
         y_data = gradient * (self.x_data - x) + point.y
         tangent_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
         return tangent_curve
 
-    def normal(
+    def get_normal_curve(
         self,
         x: float,
         label: Optional[str] = None,
@@ -180,12 +180,15 @@ class Curve:
         line_style: str = "default",
     ) -> Self:
         point = self.get_point_at_x(x)
-        gradient = self.derivative().get_point_at_x(x).y
+        gradient = self.get_derivative_curve().get_point_at_x(x).y
         y_data = -1 / gradient * (self.x_data - x) + point.y
         normal_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
         return normal_curve
 
-    def arc_length(self, x1: float, x2: float) -> float:
+    def slope_at(self, x: float) -> float:
+        return self.get_derivative_curve().get_point_at_x(x).y
+
+    def arc_length_between(self, x1: float, x2: float) -> float:
         y_data = self.y_data
         x_data = self.x_data
         f = interp1d(x_data, y_data)
@@ -193,7 +196,7 @@ class Curve:
         y = f(x)
         return np.trapz(np.sqrt(1 + np.gradient(y, x) ** 2), x)
 
-    def area(self, x1: float, x2: float, fill_under: bool = False) -> float:
+    def area_between(self, x1: float, x2: float, fill_under: bool = False) -> float:
         if fill_under:
             self.fill_curve_between = (x1, x2)
         y_data = self.y_data
