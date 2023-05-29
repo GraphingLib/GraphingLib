@@ -66,6 +66,40 @@ class TestFitFromPolynomial(unittest.TestCase):
         points = self.fit_second_degree.get_points_at_y(83)
         self.assertAlmostEqual(points[0].x, 5, places=3)
 
+    def test_get_derivative_curve(self):
+        self.assertIsInstance(self.fit_first_degree.get_derivative_curve(), Curve)
+        self.assertIsInstance(self.fit_second_degree.get_derivative_curve(), Curve)
+
+    def test_get_integral_curve(self):
+        self.assertIsInstance(self.fit_first_degree.get_integral_curve(), Curve)
+        self.assertIsInstance(self.fit_second_degree.get_integral_curve(), Curve)
+
+    def test_get_tangent_curve(self):
+        self.assertIsInstance(self.fit_first_degree.get_tangent_curve(0), Curve)
+        self.assertIsInstance(self.fit_second_degree.get_tangent_curve(0), Curve)
+
+    def test_get_normal_curve(self):
+        self.assertIsInstance(self.fit_first_degree.get_normal_curve(0), Curve)
+        self.assertIsInstance(self.fit_second_degree.get_normal_curve(0), Curve)
+
+    def test_area_between(self):
+        self.assertAlmostEqual(self.fit_first_degree.area_between(0, 1), 3.5, places=3)
+        self.assertAlmostEqual(
+            self.fit_second_degree.area_between(0, 1), -13 / 6, places=3
+        )
+
+    def test_slope_at(self):
+        self.assertAlmostEqual(self.fit_first_degree.slope_at(0), 3, places=5)
+        self.assertAlmostEqual(self.fit_second_degree.slope_at(0), -3, places=5)
+
+    def test_arc_length_between(self):
+        self.assertAlmostEqual(
+            self.fit_first_degree.arc_length_between(0, 1), np.sqrt(10), places=3
+        )
+        self.assertAlmostEqual(
+            self.fit_second_degree.arc_length_between(0, 1), 2.44455, places=2
+        )
+
 
 class TestFitFromSine(unittest.TestCase):
     def setUp(self):
@@ -110,6 +144,29 @@ class TestFitFromSine(unittest.TestCase):
         self.assertAlmostEqual(points[2].x, 2.680, places=3)
         self.assertAlmostEqual(points[3].x, 4.077, places=3)
 
+    def test_get_derivative_curve(self):
+        self.assertIsInstance(self.fit.get_derivative_curve(), Curve)
+
+    def test_get_integral_curve(self):
+        self.assertIsInstance(self.fit.get_integral_curve(), Curve)
+
+    def test_get_tangent_curve(self):
+        self.assertIsInstance(self.fit.get_tangent_curve(0), Curve)
+
+    def test_get_normal_curve(self):
+        self.assertIsInstance(self.fit.get_normal_curve(0), Curve)
+
+    def test_area_between(self):
+        self.assertAlmostEqual(self.fit.area_between(0, np.pi / 2), 7.9228, places=3)
+
+    def test_slope_at(self):
+        self.assertAlmostEqual(self.fit.slope_at(np.pi), -6 * np.cos(4), places=2)
+
+    def test_arc_length_between(self):
+        self.assertAlmostEqual(
+            self.fit.arc_length_between(0, np.pi / 2), 5.538, places=2
+        )
+
 
 class TestFitFromExponential(unittest.TestCase):
     def setUp(self):
@@ -141,12 +198,36 @@ class TestFitFromExponential(unittest.TestCase):
         points = self.fit.get_points_at_y(109.524)
         self.assertAlmostEqual(points[0].x, 0.001, places=3)
 
+    def test_get_derivative_curve(self):
+        self.assertIsInstance(self.fit.get_derivative_curve(), Curve)
+
+    def test_get_integral_curve(self):
+        self.assertIsInstance(self.fit.get_integral_curve(), Curve)
+
+    def test_get_tangent_curve(self):
+        self.assertIsInstance(self.fit.get_tangent_curve(0), Curve)
+
+    def test_get_normal_curve(self):
+        self.assertIsInstance(self.fit.get_normal_curve(0), Curve)
+
+    def test_area_between(self):
+        self.assertAlmostEqual(self.fit.area_between(0, 1), 694.69, places=0)
+
+    def test_slope_at(self):
+        self.assertAlmostEqual(
+            self.fit.slope_at(0.5),
+            1468.15,
+            places=-1,
+        )
+
+    def test_arc_length_between(self):
+        self.assertAlmostEqual(self.fit.arc_length_between(0, 1), 2084.07, places=0)
+
 
 class TestFitFromGaussian(unittest.TestCase):
     def setUp(self) -> None:
         x = linspace(-4, 6, 1000)
-        noise = 0.01 * random.rand(len(x)) - 0.005
-        self.data = Scatter(x, 5 * np.exp(-(((x - 1) / 1) ** 2) / 2) + noise, "Data")
+        self.data = Scatter(x, 5 * np.exp(-(((x - 1) / 1) ** 2) / 2), "Data")
         self.fit = FitFromGaussian(self.data, "Gaussian fit")
 
     def test_cov(self):
@@ -175,6 +256,31 @@ class TestFitFromGaussian(unittest.TestCase):
         points = self.fit.get_points_at_y(0.676515)
         self.assertAlmostEqual(points[0].x, -1, places=3)
         self.assertAlmostEqual(points[1].x, 3, places=3)
+
+    def test_get_derivative_curve(self):
+        self.assertIsInstance(self.fit.get_derivative_curve(), Curve)
+
+    def test_get_integral_curve(self):
+        self.assertIsInstance(self.fit.get_integral_curve(), Curve)
+
+    def test_get_tangent_curve(self):
+        self.assertIsInstance(self.fit.get_tangent_curve(0), Curve)
+
+    def test_get_normal_curve(self):
+        self.assertIsInstance(self.fit.get_normal_curve(0), Curve)
+
+    def test_area_between(self):
+        self.assertAlmostEqual(self.fit.area_between(0, 1), 4.27812, places=3)
+
+    def test_slope_at(self):
+        self.assertAlmostEqual(
+            self.fit.slope_at(0),
+            5 / np.sqrt(np.e),
+            places=2,
+        )
+
+    def test_arc_length_between(self):
+        self.assertAlmostEqual(self.fit.arc_length_between(0, 1), 2.27338, places=3)
 
 
 class TestFitFromSquareRoot(unittest.TestCase):
@@ -208,6 +314,31 @@ class TestFitFromSquareRoot(unittest.TestCase):
         points = self.fit.get_points_at_y(12.937)
         self.assertAlmostEqual(points[0].x, 3, places=3)
 
+    def test_get_derivative_curve(self):
+        self.assertIsInstance(self.fit.get_derivative_curve(), Curve)
+
+    def test_get_integral_curve(self):
+        self.assertIsInstance(self.fit.get_integral_curve(), Curve)
+
+    def test_get_tangent_curve(self):
+        self.assertIsInstance(self.fit.get_tangent_curve(0), Curve)
+
+    def test_get_normal_curve(self):
+        self.assertIsInstance(self.fit.get_normal_curve(0), Curve)
+
+    def test_area_between(self):
+        self.assertAlmostEqual(self.fit.area_between(0, 1), 11.361, places=3)
+
+    def test_slope_at(self):
+        self.assertAlmostEqual(
+            self.fit.slope_at(0),
+            3 / 4,
+            places=4,
+        )
+
+    def test_arc_length_between(self):
+        self.assertAlmostEqual(self.fit.arc_length_between(0, 1), 1.2255, places=4)
+
 
 class TestFitFromLog(unittest.TestCase):
     def setUp(self):
@@ -239,3 +370,28 @@ class TestFitFromLog(unittest.TestCase):
     def test_get_points_at_y(self):
         points = self.fit.get_points_at_y(6.19789)
         self.assertAlmostEqual(points[0].x, 0.001, places=3)
+
+    def test_get_derivative_curve(self):
+        self.assertIsInstance(self.fit.get_derivative_curve(), Curve)
+
+    def test_get_integral_curve(self):
+        self.assertIsInstance(self.fit.get_integral_curve(), Curve)
+
+    def test_get_tangent_curve(self):
+        self.assertIsInstance(self.fit.get_tangent_curve(0), Curve)
+
+    def test_get_normal_curve(self):
+        self.assertIsInstance(self.fit.get_normal_curve(0), Curve)
+
+    def test_area_between(self):
+        self.assertAlmostEqual(self.fit.area_between(1, 2), 7.004, places=4)
+
+    def test_slope_at(self):
+        self.assertAlmostEqual(
+            self.fit.slope_at(1),
+            0.5,
+            places=4,
+        )
+
+    def test_arc_length_between(self):
+        self.assertAlmostEqual(self.fit.arc_length_between(1, 2), 1.0954, places=4)

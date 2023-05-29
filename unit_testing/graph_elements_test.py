@@ -70,6 +70,29 @@ class TestCurve(unittest.TestCase):
         self.testCurve._plot_element(self.testAxes, 0)
         self.assertEqual(len(self.testAxes.get_lines()), 1)
 
+    def test_get_derivative_curve(self):
+        self.assertIsInstance(self.testCurve.get_derivative_curve(), Curve)
+
+    def test_get_integral_curve(self):
+        self.assertIsInstance(self.testCurve.get_integral_curve(), Curve)
+
+    def test_get_tangent_curve(self):
+        self.assertIsInstance(self.testCurve.get_tangent_curve(0), Curve)
+
+    def test_get_normal_curve(self):
+        self.assertIsInstance(self.testCurve.get_normal_curve(0), Curve)
+
+    def test_area_between(self):
+        self.assertAlmostEqual(self.testCurve.area_between(0, np.pi), 2, places=3)
+
+    def test_slope_at(self):
+        self.assertAlmostEqual(self.testCurve.slope_at(np.pi / 2), 0, places=5)
+
+    def test_arc_length_between(self):
+        self.assertAlmostEqual(
+            self.testCurve.arc_length_between(0, np.pi), 3.820, places=3
+        )
+
 
 class TestScatter(unittest.TestCase):
     def setUp(self):
