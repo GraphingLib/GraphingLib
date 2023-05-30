@@ -5,7 +5,6 @@ from matplotlib import rcParamsDefault
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
-from scipy.__config__ import show
 
 from .file_manager import FileLoader
 from .graph_elements import GraphingException, Plottable
