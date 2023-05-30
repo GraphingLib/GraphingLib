@@ -184,3 +184,18 @@ class Figure:
                     element.__dict__[property] = self.default_params[object_type][
                         property
                     ]
+
+    def set_grid(
+        self,
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+        color: str = "default",
+        alpha: float | Literal["default"] = "default",
+    ) -> None:
+        self._axes.grid(
+            which="major",
+            linestyle=line_style,
+            linewidth=line_width,
+            color=color,
+            alpha=alpha,
+        )
