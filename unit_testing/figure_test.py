@@ -48,7 +48,7 @@ class TestFigure(unittest.TestCase):
         a_figure._fill_in_missing_params(a_curve)
         self.assertEqual(a_curve.line_width, 1)
 
-    def test_auto_assign_default_params_weird(self):
+    def test_auto_assign_default_params_horrible(self):
         x = linspace(0, 3 * pi, 200)
         a_curve = Curve(x, sin(x), label="Test Curve")
         a_figure = Figure(figure_style="horrible")
@@ -64,7 +64,7 @@ class TestFigure(unittest.TestCase):
         a_figure._fill_in_missing_params(a_curve)
         self.assertEqual(a_curve.line_width, 3)
 
-    def test_assign_figure_params_weird(self):
+    def test_assign_figure_params_horrible(self):
         a_figure = Figure(figure_style="horrible")
         self.assertListEqual(list(a_figure.size), [10, 7])
 
