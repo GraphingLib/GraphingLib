@@ -30,6 +30,7 @@ class Figure:
         y_lim: Optional[tuple[float, float]] = None,
         log_scale_x: bool | Literal["default"] = "default",
         log_scale_y: bool | Literal["default"] = "default",
+        show_grid: bool | Literal["default"] = "default",
         legend_is_boxed: bool | Literal["default"] = "default",
         ticks_are_in: bool | Literal["default"] = "default",
         figure_style: str = "plain",
@@ -72,6 +73,11 @@ class Figure:
             if log_scale_y != "default"
             else self.default_params["Figure"]["log_scale_y"]
         )
+        show_grid = (
+            show_grid
+            if show_grid != "default"
+            else self.default_params["Figure"]["show_grid"]
+        )
         self._figure, self._axes = plt.subplots(figsize=self.size)
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
@@ -84,6 +90,8 @@ class Figure:
         self.log_scale_y = log_scale_y
         self.legend_is_boxed = legend_is_boxed
         self.ticks_are_in = ticks_are_in
+        if show_grid:
+            self.set_grid()
 
     def add_element(self, *elements: Plottable) -> None:
         """
@@ -184,3 +192,35 @@ class Figure:
                     element.__dict__[property] = self.default_params[object_type][
                         property
                     ]
+
+    def set_grid(
+        self,
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+        color: str = "default",
+        alpha: float | Literal["default"] = "default",
+    ) -> None:
+        line_style = (
+            line_style
+            if line_style != "default"
+            else self.default_params["Figure"]["grid_line_style"]
+        )
+        line_width = (
+            line_width
+            if line_width != "default"
+            else self.default_params["Figure"]["grid_line_width"]
+        )
+        color = (
+            color if color != "default" else self.default_params["Figure"]["grid_color"]
+        )
+        alpha = (
+            alpha if alpha != "default" else self.default_params["Figure"]["grid_alpha"]
+        )
+
+        self._axes.grid(
+            which="major",
+            linestyle=line_style,
+            linewidth=line_width,
+            color=color,
+            alpha=alpha,
+        )
