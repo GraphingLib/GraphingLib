@@ -171,6 +171,10 @@ class Point:
         marker_size: float = "default",
         marker_style: str = "default",
         line_width: float = "default",
+        font_size: int = "same as figure",
+        text_color: str = "k",
+        h_align: str = "left",
+        v_align: str = "bottom",
     ) -> None:
         if not isinstance(x, int | float) or not isinstance(y, int | float):
             raise GraphingException(
@@ -185,20 +189,14 @@ class Point:
         self.marker_size = marker_size
         self.marker_style = marker_style
         self.line_width = line_width
-        self._show_coordinates: bool = False
-
-    def add_coordinates(
-        self,
-        text_color: str = "k",
-        font_size: int = "same as figure",
-        h_align: str = "left",
-        v_align: str = "bottom",
-    ) -> None:
-        self._show_coordinates = True
-        self.text_color = text_color
         self.font_size = font_size
+        self.text_color = text_color
         self.h_align = h_align
         self.v_align = v_align
+        self._show_coordinates: bool = False
+
+    def add_coordinates(self) -> None:
+        self._show_coordinates = True
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         size = self.font_size if self.font_size != "same as figure" else None
