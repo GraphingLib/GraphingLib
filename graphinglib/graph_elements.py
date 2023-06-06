@@ -170,7 +170,7 @@ class Point:
         edge_color: str = "default",
         marker_size: float = "default",
         marker_style: str = "default",
-        line_width: float = "default",
+        edge_width: float = "default",
         font_size: int = "same as figure",
         text_color: str = "k",
         h_align: str = "left",
@@ -188,7 +188,7 @@ class Point:
         self.edge_color = edge_color
         self.marker_size = marker_size
         self.marker_style = marker_style
-        self.line_width = line_width
+        self.edge_width = edge_width
         self.font_size = font_size
         self.text_color = text_color
         self.h_align = h_align
@@ -210,7 +210,7 @@ class Point:
             edgecolors=self.edge_color,
             s=self.marker_size,
             marker=self.marker_style,
-            linewidths=self.line_width,
+            linewidths=self.edge_width,
             zorder=z_order,
         )
         axes.annotate(
