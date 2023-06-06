@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from re import I
 from typing import Callable, Literal, Optional, Protocol, Self
 
 import matplotlib.pyplot as plt
@@ -6,6 +7,8 @@ import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
+from pyparsing import Opt
+import scipy
 from scipy.interpolate import interp1d
 
 from .graph_elements import Point
@@ -205,6 +208,71 @@ class Curve:
         x = np.linspace(x1, x2, 1000)
         y = f(x)
         return np.trapz(y, x)
+
+    # A method with calculates the intersection point of two functions. Returns a list of Point objects. Uses interp and npwhere
+    def intersection(
+        self,
+        other: Self,
+        labels: Optional[list[str] | str] = None,
+        colors: Optional[list[str] | str] = None,
+        edge_colors: Optional[list[str] | str] = None,
+        marker_sizes: Optional[list[float] | float] = None,
+        marker_styles: Optional[list[str] | str] = None,
+        edge_widths: Optional[list[float] | float] = None,
+    ) -> list[Point]:
+        y = self.y_data - other.y_data
+        s = np.abs(np.diff(np.sign(y))).astype(bool)
+        intersections_x = self.x_data[:-1][s] + np.diff(self.x_data)[s] / (
+            np.abs(y[1:][s] / y[:-1][s]) + 1
+        )
+        intersections_y = np.interp(intersections_x, self.x_data, self.y_data)
+        points = []
+        for i in range(len(intersections_x)):
+            x_val = intersections_x[i]
+            y_val = intersections_y[i]
+            try:
+                assert isinstance(labels, list)
+                label = labels[i]
+            except (IndexError, TypeError, AssertionError):
+                label = labels
+            try:
+                assert isinstance(colors, list)
+                color = colors[i]
+            except (IndexError, TypeError, AssertionError):
+                color = colors
+            try:
+                assert isinstance(edge_colors, list)
+                edge_color = edge_colors[i]
+            except (IndexError, TypeError, AssertionError):
+                edge_color = edge_colors
+            try:
+                assert isinstance(marker_sizes, list)
+                marker_size = marker_sizes[i]
+            except (IndexError, TypeError, AssertionError):
+                marker_size = marker_sizes
+            try:
+                assert isinstance(marker_styles, list)
+                marker_style = marker_styles[i]
+            except (IndexError, TypeError, AssertionError):
+                marker_style = marker_styles
+            try:
+                assert isinstance(edge_widths, list)
+                edge_width = edge_widths[i]
+            except (IndexError, TypeError, AssertionError):
+                edge_width = edge_widths
+            points.append(
+                Point(
+                    x_val,
+                    y_val,
+                    label=label,
+                    color=color,
+                    edge_color=edge_color,
+                    marker_size=marker_size,
+                    marker_style=marker_style,
+                    edge_width=edge_width,
+                )
+            )
+        return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         (self.handle,) = axes.plot(
