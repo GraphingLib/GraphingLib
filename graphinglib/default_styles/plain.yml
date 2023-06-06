@@ -61,7 +61,7 @@ Point:
   edge_color: "none"
   marker_size: 30
   marker_style: "o"
-  line_width: 1.5
+  edge_width: 1.5
 
 FitFromPolynomial:
   color: "r"

@@ -66,7 +66,7 @@ Point:
   color: "cyan"
   edge_color: "red"
   marker_size: 200
-  line_width: 1.5
+  edge_width: 1.5
   marker_style: "D"
 
 FitFromPolynomial:
