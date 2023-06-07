@@ -28,6 +28,8 @@ class Heatmap:
         if isinstance(self.image, str):
             self.image = imread(self.image)
             self.show_color_bar = False
+        else:
+            self.image = np.array(self.image)
         if self.x_axis_range is not None and self.y_axis_range is not None:
             self._xy_range = self.x_axis_range + self.y_axis_range
 

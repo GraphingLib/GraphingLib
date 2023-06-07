@@ -62,6 +62,10 @@ class Curve:
         y_data = func(x_data)
         return cls(x_data, y_data, label, color, line_width, line_style)
 
+    def __post_init__(self):
+        self.x_data = np.array(self.x_data)
+        self.y_data = np.array(self.y_data)
+
     def add_errorbars(
         self,
         x_error: Optional[ArrayLike] = None,
@@ -72,8 +76,8 @@ class Curve:
         cap_thickness: float | Literal["default"] = "default",
     ) -> None:
         self.errorbars = True
-        self.x_error = x_error
-        self.y_error = y_error
+        self.x_error = np.array(x_error)
+        self.y_error = np.array(y_error)
         self.errorbars_color = errorbars_color
         self.errorbars_line_width = errorbars_line_width
         self.cap_thickness = cap_thickness
@@ -86,9 +90,9 @@ class Curve:
         label: Optional[str] = None,
         color: str = "default",
         edge_color: str = "default",
-        marker_size: float = "default",
+        marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
-        line_width: float = "default",
+        line_width: float | Literal["default"] = "default",
     ) -> Point:
         point = Point(
             x,
@@ -345,6 +349,10 @@ class Scatter:
             x_data, y_data, label, face_color, edge_color, marker_size, marker_style
         )
 
+    def __post_init__(self) -> None:
+        self.x_data = np.array(self.x_data)
+        self.y_data = np.array(self.y_data)
+
     def add_errorbars(
         self,
         x_error: Optional[ArrayLike] = None,
@@ -355,8 +363,8 @@ class Scatter:
         cap_thickness: float | Literal["default"] = "default",
     ) -> None:
         self.errorbars = True
-        self.x_error = x_error
-        self.y_error = y_error
+        self.x_error = np.array(x_error)
+        self.y_error = np.array(y_error)
         self.errorbars_color = errorbars_color
         self.errorbars_line_width = errorbars_line_width
         self.cap_thickness = cap_thickness
@@ -369,9 +377,9 @@ class Scatter:
         label: Optional[str] = None,
         color: str = "default",
         edge_color: str = "default",
-        marker_size: float = "default",
+        marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
-        line_width: float = "default",
+        line_width: float | Literal["default"] = "default",
     ) -> Point:
         point = Point(
             x,
@@ -392,12 +400,13 @@ class Scatter:
         label: str | None = None,
         color: str = "default",
         edge_color: str = "default",
-        marker_size: float = "default",
+        marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
-        line_width: float = "default",
+        line_width: float | Literal["default"] = "default",
     ) -> list[Point]:
         xs = self.x_data
         ys = self.y_data
+        assert isinstance(xs, np.ndarray) and isinstance(ys, np.ndarray)
         crossings = np.where(np.diff(np.sign(ys - y)))[0]
         x_vals: list[float] = []
         for cross in crossings:
@@ -466,6 +475,7 @@ class Histogram:
     show_params: bool | Literal["default"] = "default"
 
     def __post_init__(self) -> None:
+        self.x_data = np.array(self.x_data)
         self.mean = np.mean(self.x_data)
         self.standard_deviation = np.std(self.x_data)
         parameters = np.histogram(
@@ -511,7 +521,7 @@ class Histogram:
 
     def _create_label(self) -> None:
         lab = self.label
-        if self.label and self.show_params:
+        if lab and self.show_params:
             lab += (
                 " :\n"
                 + f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
@@ -521,11 +531,13 @@ class Histogram:
         self.label = lab
 
     def _normal_normalized(self, x: ArrayLike) -> ArrayLike:
+        x = np.array(x)
         return (1 / (self.standard_deviation * np.sqrt(2 * np.pi))) * np.exp(
             -0.5 * (((x - self.mean) / self.standard_deviation) ** 2)
         )
 
     def _normal_not_normalized(self, x: ArrayLike) -> ArrayLike:
+        x = np.array(x)
         return sum(self._bin_heights) * self._bin_width * self._normal_normalized(x)
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:

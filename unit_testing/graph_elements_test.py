@@ -232,7 +232,7 @@ class TestVlines(unittest.TestCase):
         # plt.close('all')
 
     def test_x_is_list_ndarray_float_int(self):
-        self.assertListEqual(self.testVlines.x, [4, 5, 6, 7])
+        self.assertListEqual(list(self.testVlines.x), [4, 5, 6, 7])
 
     def test_ymin_is_list_ndarray_float_int(self):
         self.assertEqual(self.testVlines.y_min, 0)
