@@ -1,10 +1,17 @@
 import unittest
 
-from numpy import e, exp, linspace, log, pi, random, sin
+from numpy import exp, linspace, log, pi, sin
 
 from graphinglib.data_plotting_1d import *
-from graphinglib.fits import *
-from graphinglib.graph_elements import *
+from graphinglib.fits import (
+    FitFromExponential,
+    FitFromPolynomial,
+    FitFromFunction,
+    FitFromGaussian,
+    FitFromLog,
+    FitFromSine,
+    FitFromSquareRoot,
+)
 
 
 class TestFitFromPolynomial(unittest.TestCase):
