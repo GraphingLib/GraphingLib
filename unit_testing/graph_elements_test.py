@@ -1,12 +1,7 @@
 import unittest
-from random import random
+from numpy import ndarray
 
-from matplotlib.pyplot import subplots
-from numpy import linspace, ndarray, pi, sin
-
-from graphinglib.data_plotting_1d import *
-from graphinglib.fits import FitFromPolynomial
-from graphinglib.graph_elements import *
+from graphinglib.graph_elements import Hlines, Point, Vlines, Text
 
 
 class TestHlines(unittest.TestCase):
@@ -35,9 +30,6 @@ class TestHlines(unittest.TestCase):
 class TestVlines(unittest.TestCase):
     def setUp(self):
         self.testVlines = Vlines(x=[4, 5, 6, 7], y_min=0, y_max=1, label="Test Vlines")
-        # _, self.testAxes = subplots()
-        # self.testVlines.plot_curve(self.testAxes)
-        # plt.close('all')
 
     def test_x_is_list_ndarray_float_int(self):
         self.assertListEqual(list(self.testVlines.x), [4, 5, 6, 7])
@@ -59,4 +51,10 @@ class TestVlines(unittest.TestCase):
 
 
 class TestPoint(unittest.TestCase):
-    pass
+    # TODO: Write tests for Point
+    ...
+
+
+class TestText(unittest.TestCase):
+    # TODO: Write tests for Text
+    ...
