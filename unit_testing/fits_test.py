@@ -402,3 +402,57 @@ class TestFitFromLog(unittest.TestCase):
 
     def test_arc_length_between(self):
         self.assertAlmostEqual(self.fit.arc_length_between(1, 2), 1.0954, places=4)
+
+
+class TestFitFromFunction(unittest.TestCase):
+    def setUp(self):
+        x = linspace(1, 10, 500)
+        self.data = Scatter(x, 1 / x + 3 * x, "Data")
+        self.fit = FitFromFunction(lambda x, a, b: a / x + b * x, self.data)
+
+    def test_parameters(self):
+        rounded_params = [round(i) for i in list(self.fit.parameters)]
+        self.assertListEqual(rounded_params, [1, 3])
+
+    def test_cov(self):
+        self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
+        self.assertEqual(self.fit.cov_matrix.shape, (2, 2))
+
+    def test_std_dev(self):
+        self.assertIsInstance(self.fit.standard_deviation, np.ndarray)
+        self.assertEqual(self.fit.standard_deviation.shape, (2,))
+
+    def test_function(self):
+        self.assertAlmostEqual(self.fit.function(1), 4, places=3)
+
+    def test_get_point_at_x(self):
+        self.assertAlmostEqual(self.fit.get_point_at_x(1).y, 4, places=3)
+
+    def test_get_points_at_y(self):
+        points = self.fit.get_points_at_y(4)
+        self.assertAlmostEqual(points[0].x, 1, places=3)
+
+    def test_get_derivative_curve(self):
+        self.assertIsInstance(self.fit.get_derivative_curve(), Curve)
+
+    def test_get_integral_curve(self):
+        self.assertIsInstance(self.fit.get_integral_curve(), Curve)
+
+    def test_get_tangent_curve(self):
+        self.assertIsInstance(self.fit.get_tangent_curve(2), Curve)
+
+    def test_get_normal_curve(self):
+        self.assertIsInstance(self.fit.get_normal_curve(2), Curve)
+
+    def test_area_between(self):
+        self.assertAlmostEqual(self.fit.area_between(1, 2), 5.1931, places=3)
+
+    def test_slope_at(self):
+        self.assertAlmostEqual(
+            self.fit.slope_at(1),
+            2,
+            places=1,
+        )
+
+    def test_arc_length_between(self):
+        self.assertAlmostEqual(self.fit.arc_length_between(1, 2), 2.6937, places=3)
