@@ -521,8 +521,7 @@ class Histogram:
 
     def _create_label(self) -> None:
         lab = self.label
-        assert isinstance(lab, str)
-        if self.label and self.show_params:
+        if lab and self.show_params:
             lab += (
                 " :\n"
                 + f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
