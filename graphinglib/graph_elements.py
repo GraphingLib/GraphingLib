@@ -220,7 +220,10 @@ class Point:
         size = self.font_size if self.font_size != "same as figure" else None
         prefix = " " if self.h_align == "left" else ""
         postfix = " " if self.h_align == "right" else ""
-        point_label = prefix + self.label + postfix
+        if self.label is not None and not self._show_coordinates:
+            point_label = prefix + self.label + postfix
+        else:
+            point_label = None
         axes.scatter(
             self.x,
             self.y,
