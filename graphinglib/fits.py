@@ -15,7 +15,7 @@ from .data_plotting_1d import Curve, Scatter
 class GeneralFit(Curve):
     def __init__(
         self,
-        curve_to_be_fit: Curve,
+        curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
         color: str = "default",
         line_width: int | Literal["default"] = "default",
@@ -41,9 +41,9 @@ class GeneralFit(Curve):
         label: str | None = None,
         color: str = "default",
         edge_color: str = "default",
-        marker_size: float = "default",
+        marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
-        line_width: float = "default",
+        line_width: float | Literal["default"] = "default",
     ) -> Point:
         return Point(
             x,
@@ -63,9 +63,9 @@ class GeneralFit(Curve):
         label: str | None = None,
         color: str = "default",
         edge_color: str = "default",
-        marker_size: float = "default",
+        marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
-        line_width: float = "default",
+        line_width: float | Literal["default"] = "default",
     ) -> list[Point]:
         xs = self.curve_to_be_fit.x_data
         ys = self.function(xs)
@@ -166,7 +166,7 @@ class FitFromPolynomial(GeneralFit):
 
     def __init__(
         self,
-        curve_to_be_fit: Curve,
+        curve_to_be_fit: Curve | Scatter,
         degree: int,
         label: Optional[str] = None,
         color: str = "default",
@@ -244,7 +244,7 @@ class FitFromSine(GeneralFit):
 
     def __init__(
         self,
-        curve_to_be_fit: Curve,
+        curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
         guesses: Optional[npt.ArrayLike] = None,
         color: str = "default",
@@ -316,7 +316,7 @@ class FitFromExponential(GeneralFit):
 
     def __init__(
         self,
-        curve_to_be_fit: Curve,
+        curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
         guesses: Optional[npt.ArrayLike] = None,
         color: str = "default",
@@ -380,7 +380,7 @@ class FitFromGaussian(GeneralFit):
 
     def __init__(
         self,
-        curve_to_be_fit: Curve,
+        curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
         guesses: Optional[npt.ArrayLike] = None,
         color: str = "default",
@@ -444,7 +444,7 @@ class FitFromSquareRoot(GeneralFit):
 
     def __init__(
         self,
-        curve_to_be_fit: Curve,
+        curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
         guesses: Optional[npt.ArrayLike] = None,
         color: str = "default",
@@ -507,7 +507,7 @@ class FitFromLog(GeneralFit):
 
     def __init__(
         self,
-        curve_to_be_fit: Curve,
+        curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
         log_base: float = np.e,
         guesses: Optional[npt.ArrayLike] = None,
@@ -570,7 +570,7 @@ class FitFromFunction(GeneralFit):
     def __init__(
         self,
         function: Callable,
-        curve_to_fit: Curve | Scatter,
+        curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
         guesses: Optional[npt.ArrayLike] = None,
         color: str = "default",
@@ -578,7 +578,7 @@ class FitFromFunction(GeneralFit):
         line_style: str = "default",
     ):
         self._function_template = function
-        self.curve_to_be_fit = curve_to_fit
+        self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
         self.color = color
         self.line_width = line_width
