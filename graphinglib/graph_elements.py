@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, Protocol
+from typing import Literal, Optional, Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -36,9 +36,18 @@ class Hlines:
         colors: list[str] | str = "default",
         line_styles: list[str] | str = "default",
     ) -> None:
-        self.y = y
-        self.x_min = x_min
-        self.x_max = x_max
+        if isinstance(y, (int, float)):
+            self.y = y
+        elif isinstance(y, (list, np.ndarray)):
+            self.y = np.array(y)
+        if isinstance(x_min, (int, float)):
+            self.x_min = x_min
+        elif isinstance(x_min, (list, np.ndarray)):
+            self.x_min = np.array(x_min)
+        if isinstance(x_max, (int, float)):
+            self.x_max = x_max
+        elif isinstance(x_max, (list, np.ndarray)):
+            self.x_max = np.array(x_max)
         self.label = label
         self.colors = colors
         self.line_styles = line_styles
@@ -103,9 +112,18 @@ class Vlines:
         colors: list[str] | str = "default",
         line_styles: list[str] | str = "default",
     ) -> None:
-        self.x = x
-        self.y_min = y_min
-        self.y_max = y_max
+        if isinstance(x, (int, float)):
+            self.x = x
+        elif isinstance(x, (list, np.ndarray)):
+            self.x = np.array(x)
+        if isinstance(y_min, (int, float)):
+            self.y_min = y_min
+        elif isinstance(y_min, (list, np.ndarray)):
+            self.y_min = np.array(y_min)
+        if isinstance(y_max, (int, float)):
+            self.y_max = y_max
+        elif isinstance(y_max, (list, np.ndarray)):
+            self.y_max = np.array(y_max)
         self.label = label
         self.colors = colors
         self.line_styles = line_styles
@@ -168,10 +186,10 @@ class Point:
         label: Optional[str] = None,
         color: str = "default",
         edge_color: str = "default",
-        marker_size: float = "default",
+        marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
-        edge_width: float = "default",
-        font_size: int = "same as figure",
+        edge_width: float | Literal["default"] = "default",
+        font_size: int | Literal["same as figure"] = "same as figure",
         text_color: str = "k",
         h_align: str = "left",
         v_align: str = "bottom",
@@ -256,7 +274,7 @@ class Text:
     y: float
     text: str
     color: str = "default"
-    font_size: float = "same as figure"
+    font_size: float | Literal["same as figure"] = "same as figure"
     h_align: str = "default"
     v_align: str = "default"
     _arrow_pointing_to: Optional[tuple[float]] = field(default=None, init=False)
@@ -264,10 +282,10 @@ class Text:
     def attach_arrow(
         self,
         points_to: tuple[float],
-        width: float = None,
-        shrink: float = None,
-        head_width: float = None,
-        head_length: float = None,
+        width: Optional[float] = None,
+        shrink: Optional[float] = None,
+        head_width: Optional[float] = None,
+        head_length: Optional[float] = None,
     ) -> None:
         self._arrow_pointing_to = points_to
         self.width = width
