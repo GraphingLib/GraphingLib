@@ -6,6 +6,7 @@ from numpy import linspace, ndarray, pi, sin
 
 from graphinglib.data_plotting_1d import Curve, Scatter, Histogram
 from graphinglib.fits import FitFromPolynomial
+from graphinglib.graph_elements import Point
 
 
 class TestCurve(unittest.TestCase):
@@ -92,6 +93,18 @@ class TestCurve(unittest.TestCase):
         self.assertAlmostEqual(
             self.testCurve.arc_length_between(0, pi), 3.820, places=3
         )
+
+    def test_intersection(self):
+        x = linspace(0, 3 * pi, 200)
+        other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
+        points = self.testCurve.intersection(other_curve)
+        points_x = [0.1, 2.9962, 6.6072, 8.9052]
+        points_y = [0.1, 0.14489, 0.3183, 0.4965]
+        self.assertEqual(len(points), 4)
+        for i, point in enumerate(points):
+            self.assertIsInstance(point, Point)
+            self.assertAlmostEqual(point.x, points_x[i], places=3)
+            self.assertAlmostEqual(point.y, points_y[i], places=3)
 
 
 class TestScatter(unittest.TestCase):
