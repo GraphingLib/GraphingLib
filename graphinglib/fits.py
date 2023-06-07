@@ -53,7 +53,7 @@ class GeneralFit(Curve):
             edge_color=edge_color,
             marker_size=marker_size,
             marker_style=marker_style,
-            line_width=line_width,
+            edge_width=line_width,
         )
 
     def get_points_at_y(
@@ -86,7 +86,7 @@ class GeneralFit(Curve):
                 edge_color=edge_color,
                 marker_size=marker_size,
                 marker_style=marker_style,
-                line_width=line_width,
+                edge_width=line_width,
             )
             for x_val in x_vals
         ]

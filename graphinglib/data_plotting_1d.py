@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from re import I
 from typing import Callable, Literal, Optional, Protocol, Self
 
 import matplotlib.pyplot as plt
@@ -7,8 +6,6 @@ import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
-from pyparsing import Opt
-import scipy
 from scipy.interpolate import interp1d
 
 from .graph_elements import Point
@@ -102,7 +99,7 @@ class Curve:
             edge_color=edge_color,
             marker_size=marker_size,
             marker_style=marker_style,
-            line_width=line_width,
+            edge_width=line_width,
         )
         return point
 
@@ -136,7 +133,7 @@ class Curve:
                 edge_color=edge_color,
                 marker_size=marker_size,
                 marker_style=marker_style,
-                line_width=line_width,
+                edge_width=line_width,
             )
             for x_val in x_vals
         ]
@@ -389,7 +386,7 @@ class Scatter:
             edge_color=edge_color,
             marker_size=marker_size,
             marker_style=marker_style,
-            line_width=line_width,
+            edge_width=line_width,
         )
         return point
 
@@ -424,7 +421,7 @@ class Scatter:
                 edge_color=edge_color,
                 marker_size=marker_size,
                 marker_style=marker_style,
-                line_width=line_width,
+                edge_width=line_width,
             )
             for x_val in x_vals
         ]
