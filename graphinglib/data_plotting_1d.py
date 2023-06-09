@@ -215,11 +215,11 @@ class Curve:
         self,
         other: Self,
         labels: Optional[list[str] | str] = None,
-        colors: Optional[list[str] | str] = None,
-        edge_colors: Optional[list[str] | str] = None,
-        marker_sizes: Optional[list[float] | float] = None,
-        marker_styles: Optional[list[str] | str] = None,
-        edge_widths: Optional[list[float] | float] = None,
+        colors: list[str] | str = "default",
+        edge_colors: list[str] | str = "default",
+        marker_sizes: list[float] | float | Literal["default"] = "default",
+        marker_styles: list[str] | str = "default",
+        edge_widths: list[float] | float | Literal["default"] = "default",
     ) -> list[Point]:
         y = self.y_data - other.y_data
         s = np.abs(np.diff(np.sign(y))).astype(bool)
