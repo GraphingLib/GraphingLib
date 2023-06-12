@@ -130,6 +130,13 @@ Heatmap:
   origin_position: "lower"
   color_map: "prism"
 
+Contour:
+  number_of_levels: 10
+  color_map: "prism"
+  show_color_bar: False
+  filled: False
+  alpha: 0.5
+
 Text:
   color: "orange"
   h_align: "right"

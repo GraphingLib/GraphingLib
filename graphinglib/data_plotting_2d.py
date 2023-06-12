@@ -119,7 +119,7 @@ class Contour:
         color_map: str | Colormap | Literal["default"] = "default",
         show_color_bar: bool | Literal["default"] = "default",
         filled: bool | Literal["default"] = "default",
-        alpha_value: float | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
         number_of_points: tuple[int, int] = (500, 500),
     ) -> Self:
         x = np.linspace(x_axis_range[0], x_axis_range[1], number_of_points[0])
@@ -134,12 +134,12 @@ class Contour:
             color_map,
             show_color_bar,
             filled,
-            alpha_value,
+            alpha,
         )
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         if self.filled:
-            axes.contourf(
+            cont = axes.contourf(
                 self.x_mesh,
                 self.y_mesh,
                 self.z_data,
@@ -149,7 +149,7 @@ class Contour:
                 zorder=z_order,
             )
         else:
-            axes.contour(
+            cont = axes.contour(
                 self.x_mesh,
                 self.y_mesh,
                 self.z_data,
@@ -160,4 +160,4 @@ class Contour:
             )
         if self.show_color_bar:
             fig = axes.get_figure()
-            fig.colorbar(axes.collections[0], ax=axes)
+            fig.colorbar(cont, ax=axes)
