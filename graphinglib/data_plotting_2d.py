@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Callable, Optional, Self
+from textwrap import fill
+from typing import Callable, Literal, Optional, Self
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -88,3 +89,75 @@ class Heatmap:
         fig = axes.get_figure()
         if self.show_color_bar:
             fig.colorbar(image, ax=axes)
+
+
+@dataclass
+class Contour:
+    """Basic contour plot class."""
+
+    x_mesh: ArrayLike
+    y_mesh: ArrayLike
+    z_data: ArrayLike
+    number_of_levels: int | Literal["default"] = "default"
+    color_map: str | Colormap | Literal["default"] = "default"
+    show_color_bar: bool | Literal["default"] = "default"
+    filled: bool | Literal["default"] = "default"
+    alpha: float | Literal["default"] = "default"
+
+    def __post_init__(self) -> None:
+        self.x_mesh = np.array(self.x_mesh)
+        self.y_mesh = np.array(self.y_mesh)
+        self.z_data = np.array(self.z_data)
+
+    @classmethod
+    def from_function(
+        cls,
+        func: Callable[[ArrayLike, ArrayLike], ArrayLike],
+        x_axis_range: tuple[float, float],
+        y_axis_range: tuple[float, float],
+        number_of_levels: int | Literal["default"] = "default",
+        color_map: str | Colormap | Literal["default"] = "default",
+        show_color_bar: bool | Literal["default"] = "default",
+        filled: bool | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
+        number_of_points: tuple[int, int] = (500, 500),
+    ) -> Self:
+        x = np.linspace(x_axis_range[0], x_axis_range[1], number_of_points[0])
+        y = np.linspace(y_axis_range[0], y_axis_range[1], number_of_points[1])
+        x_mesh, y_mesh = np.meshgrid(x, y)
+        z_data = func(x_mesh, y_mesh)
+        return cls(
+            x_mesh,
+            y_mesh,
+            z_data,
+            number_of_levels,
+            color_map,
+            show_color_bar,
+            filled,
+            alpha,
+        )
+
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        if self.filled:
+            cont = axes.contourf(
+                self.x_mesh,
+                self.y_mesh,
+                self.z_data,
+                levels=self.number_of_levels,
+                cmap=self.color_map,
+                alpha=self.alpha,
+                zorder=z_order,
+            )
+        else:
+            cont = axes.contour(
+                self.x_mesh,
+                self.y_mesh,
+                self.z_data,
+                levels=self.number_of_levels,
+                cmap=self.color_map,
+                alpha=self.alpha,
+                zorder=z_order,
+            )
+        if self.show_color_bar:
+            fig = axes.get_figure()
+            fig.colorbar(cont, ax=axes)

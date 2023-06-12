@@ -124,6 +124,13 @@ Heatmap:
   origin_position: "upper"
   color_map: "coolwarm"
 
+Contour:
+  number_of_levels: 10
+  color_map: "coolwarm"
+  show_color_bar: True
+  filled: True
+  alpha: 1.0
+
 Text:
   color: "k"
   h_align: "center"
