@@ -5,7 +5,7 @@ A simpler way to visualise data.
 """
 
 from .data_plotting_1d import Curve, Histogram, Scatter
-from .data_plotting_2d import Heatmap, Contour
+from .data_plotting_2d import Heatmap, Contour, VectorField
 from .figure import Figure
 from .fits import (
     FitFromExponential,

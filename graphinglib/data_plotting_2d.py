@@ -92,6 +92,84 @@ class Heatmap:
 
 
 @dataclass
+class VectorField:
+    """V=Basic vector field class."""
+
+    x_data: ArrayLike
+    y_data: ArrayLike
+    u_data: ArrayLike
+    v_data: ArrayLike
+    arrow_length_multiplier: Optional[float | Literal["default"]] = "default"
+    arrow_width: float | Literal["default"] = "default"
+    arrow_head_width: float | Literal["default"] = "default"
+    arrow_head_length: float | Literal["default"] = "default"
+    arrow_head_axis_length: float | Literal["default"] = "default"
+    angle_in_data_coords: bool = False
+    color: str | Literal["default"] = "default"
+
+    def __post_init__(self) -> None:
+        self.x_data = np.array(self.x_data)
+        self.y_data = np.array(self.y_data)
+        self.u_data = np.array(self.u_data)
+        self.v_data = np.array(self.v_data)
+
+    @classmethod
+    def from_function(
+        cls,
+        func: Callable[[ArrayLike, ArrayLike], [ArrayLike, ArrayLike]],
+        x_axis_range: tuple[float, float],
+        y_axis_range: tuple[float, float],
+        number_of_arrows_x: int | Literal["default"] = "default",
+        number_of_arrows_y: int | Literal["default"] = "default",
+        arrow_length_multiplier: Optional[float | Literal["default"]] = "default",
+        arrow_width: float | Literal["default"] = "default",
+        arrow_head_width: float | Literal["default"] = "default",
+        arrow_head_length: float | Literal["default"] = "default",
+        arrow_head_axis_length: float | Literal["default"] = "default",
+        angle_in_data_coords: bool = False,
+        color: str | Literal["default"] = "default",
+    ) -> Self:
+        x = np.linspace(x_axis_range[0], x_axis_range[-1], number_of_arrows_x)
+        y = np.linspace(y_axis_range[0], y_axis_range[-1], number_of_arrows_y)
+        x_grid, y_grid = np.meshgrid(x, y)
+        u, v = func(x_grid, y_grid)
+        return cls(
+            x_grid,
+            y_grid,
+            u,
+            v,
+            arrow_length_multiplier,
+            arrow_width,
+            arrow_head_width,
+            arrow_head_length,
+            arrow_head_axis_length,
+            angle_in_data_coords,
+            color,
+        )
+
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        if self.angle_in_data_coords:
+            angle = "xy"
+        else:
+            angle = "uv"
+            print(self.arrow_length_multiplier)
+        axes.quiver(
+            self.x_data,
+            self.y_data,
+            self.u_data,
+            self.v_data,
+            color=self.color,
+            zorder=z_order,
+            angles=angle,
+            # scale=self.arrow_length_multiplier,
+            width=self.arrow_width,
+            headwidth=self.arrow_head_width,
+            headlength=self.arrow_head_length,
+            headaxislength=self.arrow_head_axis_length,
+        )
+
+
+@dataclass
 class Contour:
     """Basic contour plot class."""
 
