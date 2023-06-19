@@ -152,7 +152,6 @@ class VectorField:
             angle = "xy"
         else:
             angle = "uv"
-            print(self.arrow_length_multiplier)
         axes.quiver(
             self.x_data,
             self.y_data,
