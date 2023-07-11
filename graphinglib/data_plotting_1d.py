@@ -66,7 +66,15 @@ class Curve:
     def __add__(self, other: Self | float) -> Self:
         if isinstance(other, Curve):
             if not np.array_equal(self.x_data, other.x_data):
-                raise ValueError("Can only add two curves with the same x-data.")
+                if len(self.x_data) > len(other.x_data):
+                    x_data = other.x_data
+                    y_data = interp1d(self.x_data, self.y_data)(x_data)
+                    return Curve(x_data, y_data + other.y_data)
+                else:
+                    x_data = self.x_data
+                    y_data = interp1d(other.x_data, other.y_data)(x_data)
+                    return Curve(x_data, y_data + self.y_data)
+
             new_y_data = self.y_data + other.y_data
             return Curve(self.x_data, new_y_data)
         elif isinstance(other, (int, float)):
@@ -78,7 +86,14 @@ class Curve:
     def __sub__(self, other: Self | float) -> Self:
         if isinstance(other, Curve):
             if not np.array_equal(self.x_data, other.x_data):
-                raise ValueError("Can only subtract two curves with the same x-data.")
+                if len(self.x_data) > len(other.x_data):
+                    x_data = other.x_data
+                    y_data = interp1d(self.x_data, self.y_data)(x_data)
+                    return Curve(x_data, y_data - other.y_data)
+                else:
+                    x_data = self.x_data
+                    y_data = interp1d(other.x_data, other.y_data)(x_data)
+                    return Curve(x_data, self.y_data - y_data)
             new_y_data = self.y_data - other.y_data
             return Curve(self.x_data, new_y_data)
         elif isinstance(other, (int, float)):
@@ -90,7 +105,14 @@ class Curve:
     def __mul__(self, other: Self | float) -> Self:
         if isinstance(other, Curve):
             if not np.array_equal(self.x_data, other.x_data):
-                raise ValueError("Can only multiply two curves with the same x-data.")
+                if len(self.x_data) > len(other.x_data):
+                    x_data = other.x_data
+                    y_data = interp1d(self.x_data, self.y_data)(x_data)
+                    return Curve(x_data, y_data * other.y_data)
+                else:
+                    x_data = self.x_data
+                    y_data = interp1d(other.x_data, other.y_data)(x_data)
+                    return Curve(x_data, y_data * self.y_data)
             new_y_data = self.y_data * other.y_data
             return Curve(self.x_data, new_y_data)
         elif isinstance(other, (int, float)):
@@ -102,7 +124,14 @@ class Curve:
     def __truediv__(self, other: Self | float) -> Self:
         if isinstance(other, Curve):
             if not np.array_equal(self.x_data, other.x_data):
-                raise ValueError("Can only divide two curves with the same x-data.")
+                if len(self.x_data) > len(other.x_data):
+                    x_data = other.x_data
+                    y_data = interp1d(self.x_data, self.y_data)(x_data)
+                    return Curve(x_data, y_data / other.y_data)
+                else:
+                    x_data = self.x_data
+                    y_data = interp1d(other.x_data, other.y_data)(x_data)
+                    return Curve(x_data, self.y_data / y_data)
             new_y_data = self.y_data / other.y_data
             return Curve(self.x_data, new_y_data)
         elif isinstance(other, (int, float)):
