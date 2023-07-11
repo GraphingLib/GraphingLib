@@ -131,6 +131,17 @@ Contour:
   filled: True
   alpha: 1.0
 
+VectorField:
+  arrow_width: 0.005
+  arrow_length_multiplier: None
+  arrow_head_width: 3
+  arrow_head_length: 5
+  arrow_head_axis_length: 4.5
+  color: "k"
+  angle_in_data_coords: False
+  number_of_arrows_x: 10
+  number_of_arrows_y: 10
+
 Text:
   color: "k"
   h_align: "center"

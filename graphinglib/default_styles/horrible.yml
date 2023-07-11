@@ -137,6 +137,17 @@ Contour:
   filled: False
   alpha: 0.5
 
+VectorField:
+  arrow_width: 0.015
+  arrow_length_multiplier: None
+  arrow_head_width: 3
+  arrow_head_length: 5
+  arrow_head_axis_length: 6
+  color: "k"
+  angle_in_data_coords: False
+  number_of_arrows_x: 50
+  number_of_arrows_y: 50
+
 Text:
   color: "orange"
   h_align: "right"
