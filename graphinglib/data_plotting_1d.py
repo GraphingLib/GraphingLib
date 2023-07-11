@@ -63,6 +63,57 @@ class Curve:
         self.x_data = np.array(self.x_data)
         self.y_data = np.array(self.y_data)
 
+    def __add__(self, other: Self | float) -> Self:
+        if isinstance(other, Curve):
+            if not np.array_equal(self.x_data, other.x_data):
+                raise ValueError("Can only add two curves with the same x-data.")
+            new_y_data = self.y_data + other.y_data
+            return Curve(self.x_data, new_y_data)
+        elif isinstance(other, (int, float)):
+            new_y_data = self.y_data + other
+            return Curve(self.x_data, new_y_data)
+        else:
+            raise TypeError("Can only add a curve to another curve or a number.")
+
+    def __sub__(self, other: Self | float) -> Self:
+        if isinstance(other, Curve):
+            if not np.array_equal(self.x_data, other.x_data):
+                raise ValueError("Can only subtract two curves with the same x-data.")
+            new_y_data = self.y_data - other.y_data
+            return Curve(self.x_data, new_y_data)
+        elif isinstance(other, (int, float)):
+            new_y_data = self.y_data - other
+            return Curve(self.x_data, new_y_data)
+        else:
+            raise TypeError("Can only subtract a curve from another curve or a number.")
+
+    def __mul__(self, other: Self | float) -> Self:
+        if isinstance(other, Curve):
+            if not np.array_equal(self.x_data, other.x_data):
+                raise ValueError("Can only multiply two curves with the same x-data.")
+            new_y_data = self.y_data * other.y_data
+            return Curve(self.x_data, new_y_data)
+        elif isinstance(other, (int, float)):
+            new_y_data = self.y_data * other
+            return Curve(self.x_data, new_y_data)
+        else:
+            raise TypeError("Can only multiply a curve by another curve or a number.")
+
+    def __truediv__(self, other: Self | float) -> Self:
+        if isinstance(other, Curve):
+            if not np.array_equal(self.x_data, other.x_data):
+                raise ValueError("Can only divide two curves with the same x-data.")
+            new_y_data = self.y_data / other.y_data
+            return Curve(self.x_data, new_y_data)
+        elif isinstance(other, (int, float)):
+            new_y_data = self.y_data / other
+            return Curve(self.x_data, new_y_data)
+        else:
+            raise TypeError("Can only divide a curve by another curve or a number.")
+
+    def __iter__(self):
+        return iter(self.y_data)
+
     def add_errorbars(
         self,
         x_error: Optional[ArrayLike] = None,
