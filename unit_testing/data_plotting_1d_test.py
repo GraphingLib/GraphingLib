@@ -4,7 +4,7 @@ from random import random
 from matplotlib.pyplot import subplots
 from numpy import linspace, ndarray, pi, sin
 
-from graphinglib.data_plotting_1d import Curve, Scatter, Histogram
+from graphinglib.data_plotting_1d import Curve, Histogram, Scatter
 from graphinglib.fits import FitFromPolynomial
 from graphinglib.graph_elements import Point
 
@@ -106,6 +106,53 @@ class TestCurve(unittest.TestCase):
             self.assertAlmostEqual(point.x, points_x[i], places=3)
             self.assertAlmostEqual(point.y, points_y[i], places=3)
 
+    def test_add_curves(self):
+        x = linspace(0, 3 * pi, 200)
+        other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
+        curve_sum = self.testCurve + other_curve
+        self.assertIsInstance(curve_sum, Curve)
+        self.assertAlmostEqual(curve_sum.get_point_at_x(0).y, 0.1, places=3)
+        self.assertAlmostEqual(curve_sum.get_point_at_x(2).y, 1.029, places=3)
+
+    def test_subtract_curves(self):
+        x = linspace(0, 3 * pi, 200)
+        other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
+        curve_sub = self.testCurve - other_curve
+        self.assertIsInstance(curve_sub, Curve)
+        self.assertAlmostEqual(curve_sub.get_point_at_x(0).y, -0.1, places=3)
+        self.assertAlmostEqual(curve_sub.get_point_at_x(2).y, 0.789, places=3)
+
+    def test_multiply_curves(self):
+        x = linspace(0, 3 * pi, 200)
+        other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
+        curve_mult = self.testCurve * other_curve
+        self.assertIsInstance(curve_mult, Curve)
+        self.assertAlmostEqual(curve_mult.get_point_at_x(0).y, 0, places=3)
+        self.assertAlmostEqual(curve_mult.get_point_at_x(2).y, 0.109, places=3)
+
+    def test_divide_curves(self):
+        x = linspace(0, 3 * pi, 200)
+        other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
+        curve_div = self.testCurve / other_curve
+        self.assertIsInstance(curve_div, Curve)
+        self.assertAlmostEqual(curve_div.get_point_at_x(0).y, 0, places=3)
+        self.assertAlmostEqual(curve_div.get_point_at_x(2).y, 7.57748, places=2)
+
+    def test_max_curves(self):
+        curve_max = max(self.testCurve)
+        self.assertAlmostEqual(curve_max, 1, places=3)
+
+    def test_min_curves(self):
+        curve_min = min(self.testCurve)
+        self.assertAlmostEqual(curve_min, -1, places=3)
+
+    def test_add_different_sizes(self):
+        x = linspace(0, 3 * pi, 100)
+        other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
+        curve_sum = self.testCurve + other_curve
+        self.assertIsInstance(curve_sum, Curve)
+        self.assertAlmostEqual(curve_sum.get_point_at_x(0).y, 0.1, places=3)
+
 
 class TestScatter(unittest.TestCase):
     def setUp(self):
@@ -173,6 +220,52 @@ class TestScatter(unittest.TestCase):
         _, self.testAxes = subplots()
         self.testScatter._plot_element(self.testAxes, 0)
         self.assertEqual(len(self.testAxes.collections), 1)
+
+    def test_add_scatter(self):
+        x = linspace(0, 3 * pi, 200)
+        other_scatter = Scatter(x, 0.005 * x**2 + 0.1, "Other Scatter")
+        scatter_sum = self.testScatter + other_scatter
+        self.assertIsInstance(scatter_sum, Scatter)
+        self.assertAlmostEqual(scatter_sum.get_point_at_x(0).y, 0.1, places=3)
+        self.assertAlmostEqual(scatter_sum.get_point_at_x(2).y, 1.029, places=3)
+
+    def test_subtract_scatter(self):
+        x = linspace(0, 3 * pi, 200)
+        other_scatter = Scatter(x, 0.005 * x**2 + 0.1, "Other Scatter")
+        scatter_sub = self.testScatter - other_scatter
+        self.assertIsInstance(scatter_sub, Scatter)
+        self.assertAlmostEqual(scatter_sub.get_point_at_x(0).y, -0.1, places=3)
+        self.assertAlmostEqual(scatter_sub.get_point_at_x(2).y, 0.789, places=3)
+
+    def test_multiply_scatter(self):
+        x = linspace(0, 3 * pi, 200)
+        other_scatter = Scatter(x, 0.005 * x**2 + 0.1, "Other Scatter")
+        scatter_mult = self.testScatter * other_scatter
+        self.assertIsInstance(scatter_mult, Scatter)
+        self.assertAlmostEqual(scatter_mult.get_point_at_x(0).y, 0, places=3)
+        self.assertAlmostEqual(scatter_mult.get_point_at_x(2).y, 0.109, places=3)
+
+    def test_divide_scatter(self):
+        x = linspace(0, 3 * pi, 200)
+        other_scatter = Scatter(x, 0.005 * x**2 + 0.1, "Other Scatter")
+        scatter_div = self.testScatter / other_scatter
+        self.assertIsInstance(scatter_div, Scatter)
+        self.assertAlmostEqual(scatter_div.get_point_at_x(0).y, 0, places=3)
+        self.assertAlmostEqual(scatter_div.get_point_at_x(2).y, 7.57748, places=2)
+
+    def test_max_scatter(self):
+        scatter_max = max(self.testScatter)
+        self.assertAlmostEqual(scatter_max, 1, places=3)
+
+    def test_min_scatter(self):
+        scatter_min = min(self.testScatter)
+        self.assertAlmostEqual(scatter_min, -1, places=3)
+
+    def test_add_different_sizes(self):
+        x = linspace(0, 3 * pi, 100)
+        other_scatter = Scatter(x, 0.005 * x**2 + 0.1, "Other Scatter")
+        with self.assertRaises(ValueError):
+            new_scatter = self.testScatter + other_scatter
 
 
 class TestHistogram(unittest.TestCase):

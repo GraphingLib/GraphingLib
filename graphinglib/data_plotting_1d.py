@@ -38,7 +38,7 @@ class Curve:
     y_data: ArrayLike
     label: Optional[str] = None
     color: str = "default"
-    line_width: int | Literal["default"] = "default"
+    line_width: float | Literal["default"] = "default"
     line_style: str = "default"
     errorbars: bool = field(default=False, init=False)
     _fill_curve_between: Optional[tuple[float, float]] = field(init=False, default=None)
@@ -51,7 +51,7 @@ class Curve:
         x_max: float,
         label: Optional[str] = None,
         color: str = "default",
-        line_width: int | Literal["default"] = "default",
+        line_width: float | Literal["default"] = "default",
         line_style: str = "default",
         number_of_points: int = 500,
     ) -> Self:
@@ -190,9 +190,9 @@ class Curve:
         label: str | None = None,
         color: str = "default",
         edge_color: str = "default",
-        marker_size: float = "default",
+        marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
-        line_width: float = "default",
+        line_width: float | Literal["default"] = "default",
     ) -> list[Point]:
         xs = self.x_data
         ys = self.y_data
@@ -429,6 +429,81 @@ class Scatter:
     def __post_init__(self) -> None:
         self.x_data = np.array(self.x_data)
         self.y_data = np.array(self.y_data)
+
+    def __add__(self, other: Self | float) -> Self:
+        """Check that x arrays are the same length and the same values, then add y arrays."""
+        try:
+            assert np.array_equal(self.x_data, other.x_data)
+        except AssertionError:
+            raise ValueError("Cannot add two scatter plots with different x values.")
+        if isinstance(other, Scatter):
+            new_y_data = self.y_data + other.y_data
+            return Scatter(self.x_data, new_y_data)
+        elif isinstance(other, (int, float)):
+            new_y_data = self.y_data + other
+            return Scatter(self.x_data, new_y_data)
+        else:
+            raise TypeError(
+                "Can only add a scatter plot to another scatter plot or a number."
+            )
+
+    def __sub__(self, other: Self | float) -> Self:
+        """Check that x arrays are the same length and the same values, then subtract y arrays."""
+        try:
+            assert np.array_equal(self.x_data, other.x_data)
+        except AssertionError:
+            raise ValueError(
+                "Cannot subtract two scatter plots with different x values."
+            )
+        if isinstance(other, Scatter):
+            new_y_data = self.y_data - other.y_data
+            return Scatter(self.x_data, new_y_data)
+        elif isinstance(other, (int, float)):
+            new_y_data = self.y_data - other
+            return Scatter(self.x_data, new_y_data)
+        else:
+            raise TypeError(
+                "Can only subtract a scatter plot from another scatter plot or a number."
+            )
+
+    def __mul__(self, other: Self | float) -> Self:
+        """Check that x arrays are the same length and the same values, then multiply y arrays."""
+        try:
+            assert np.array_equal(self.x_data, other.x_data)
+        except AssertionError:
+            raise ValueError(
+                "Cannot multiply two scatter plots with different x values."
+            )
+        if isinstance(other, Scatter):
+            new_y_data = self.y_data * other.y_data
+            return Scatter(self.x_data, new_y_data)
+        elif isinstance(other, (int, float)):
+            new_y_data = self.y_data * other
+            return Scatter(self.x_data, new_y_data)
+        else:
+            raise TypeError(
+                "Can only multiply a scatter plot by another scatter plot or a number."
+            )
+
+    def __truediv__(self, other: Self | float) -> Self:
+        """Check that x arrays are the same length and the same values, then divide y arrays."""
+        try:
+            assert np.array_equal(self.x_data, other.x_data)
+        except AssertionError:
+            raise ValueError("Cannot divide two scatter plots with different x values.")
+        if isinstance(other, Scatter):
+            new_y_data = self.y_data / other.y_data
+            return Scatter(self.x_data, new_y_data)
+        elif isinstance(other, (int, float)):
+            new_y_data = self.y_data / other
+            return Scatter(self.x_data, new_y_data)
+        else:
+            raise TypeError(
+                "Can only divide a scatter plot by another scatter plot or a number."
+            )
+
+    def __iter__(self):
+        return iter(self.y_data)
 
     def add_errorbars(
         self,
