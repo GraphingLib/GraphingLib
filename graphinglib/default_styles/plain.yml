@@ -48,6 +48,9 @@ Figure:
   grid_color: "grey"
   grid_alpha: 0.5
 
+Multifigure:
+  size: [6.4, 4.8]
+
 FitFromPolynomial:
   color: "k"
   line_width: 1

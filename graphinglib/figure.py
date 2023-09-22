@@ -48,8 +48,7 @@ class Figure:
         else:
             plt.rcParams.update(rcParamsDefault)
             plt.rcParams["font.size"] = font_size
-        self.figure_style = figure_style
-        file_loader = FileLoader(self.figure_style)
+        file_loader = FileLoader(figure_style)
         self.default_params = file_loader.load()
         size = size if size != "default" else self.default_params["Figure"]["size"]
         self.size = size
