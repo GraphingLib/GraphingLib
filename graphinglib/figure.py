@@ -78,7 +78,6 @@ class Figure:
             if show_grid != "default"
             else self.default_params["Figure"]["show_grid"]
         )
-        self._figure, self._axes = plt.subplots(figsize=self.size)
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
         self._handles = []
@@ -106,6 +105,17 @@ class Figure:
                 pass
 
     def _prepare_figure(self, legend: bool = True) -> None:
+        self._figure, self._axes = plt.subplots(figsize=self.size)
+        try:
+            self._axes.grid(
+                which="major",
+                linestyle=self.grid_line_style,
+                linewidth=self.grid_line_width,
+                color=self.grid_color,
+                alpha=self.grid_alpha,
+            )
+        except:
+            pass
         self._axes.set_xlabel(self.x_axis_name)
         self._axes.set_ylabel(self.y_axis_name)
         if self.x_lim:
@@ -200,27 +210,19 @@ class Figure:
         color: str = "default",
         alpha: float | Literal["default"] = "default",
     ) -> None:
-        line_style = (
+        self.grid_line_style = (
             line_style
             if line_style != "default"
             else self.default_params["Figure"]["grid_line_style"]
         )
-        line_width = (
+        self.grid_line_width = (
             line_width
             if line_width != "default"
             else self.default_params["Figure"]["grid_line_width"]
         )
-        color = (
+        self.grid_color = (
             color if color != "default" else self.default_params["Figure"]["grid_color"]
         )
-        alpha = (
+        self.grid_alpha = (
             alpha if alpha != "default" else self.default_params["Figure"]["grid_alpha"]
-        )
-
-        self._axes.grid(
-            which="major",
-            linestyle=line_style,
-            linewidth=line_width,
-            color=color,
-            alpha=alpha,
         )

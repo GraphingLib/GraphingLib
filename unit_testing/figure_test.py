@@ -27,9 +27,6 @@ class TestFigure(unittest.TestCase):
         self.testFigure.add_element(self.testCurve)
         self.assertIs(self.testFigure._elements[0], self.testCurve)
 
-    def test_axes_is_Axes(self):
-        self.assertIsInstance(self.testFigure._axes, Axes)
-
     def test_all_curves_plotted(self):
         self.testFigure.add_element(self.testCurve)
         self.testFigure._prepare_figure()
