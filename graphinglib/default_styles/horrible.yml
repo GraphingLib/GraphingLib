@@ -53,6 +53,19 @@ Figure:
   grid_color: "orange"
   grid_alpha: 0.3
 
+Multifigure:
+  size: [10, 7]
+
+Subfigure:
+  boxed_legend: True
+  ticks_are_in: True
+  log_scale_x: False
+  log_scale_y: False
+  show_grid: True
+  grid_line_style: "-."
+  grid_line_width: 5
+  grid_color: "orange"
+  grid_alpha: 0.3
 
 FitFromPolynomial:
   color: "orange"

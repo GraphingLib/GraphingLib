@@ -48,6 +48,20 @@ Figure:
   grid_color: "grey"
   grid_alpha: 0.5
 
+Multifigure:
+  size: [6.4, 4.8]
+
+Subfigure:
+  boxed_legend: False
+  ticks_are_in: True
+  log_scale_x: False
+  log_scale_y: False
+  show_grid: False
+  grid_line_style: "-"
+  grid_line_width: 0.5
+  grid_color: "grey"
+  grid_alpha: 0.5
+
 FitFromPolynomial:
   color: "k"
   line_width: 1
