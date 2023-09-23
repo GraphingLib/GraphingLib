@@ -55,6 +55,7 @@ Figure:
 
 Multifigure:
   size: [10, 7]
+  boxed_legend: True
 
 Subfigure:
   boxed_legend: True
