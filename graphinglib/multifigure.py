@@ -1,11 +1,13 @@
 from typing import Literal, Optional
-from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParamsDefault
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
+from matplotlib.gridspec import GridSpec
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
 from numpy import empty
 
 from .file_manager import FileLoader
@@ -18,22 +20,87 @@ from .legend_artists import (
 )
 
 
-@dataclass
 class Subfigure:
     """
     A single plot inside a multifigure.
+
+    placement: (row, col, rowspan, colspan)
     """
 
-    x_label: str = "x axis"
-    y_label: str = "y axis"
-    x_lim: Optional[tuple[float, float]] = None
-    y_lim: Optional[tuple[float, float]] = None
-    log_scale_x: bool | Literal["default"] = "default"
-    log_scale_y: bool | Literal["default"] = "default"
-    show_grid: bool | Literal["default"] = "default"
-    legend_is_boxed: bool | Literal["default"] = "default"
-    ticks_are_in: bool | Literal["default"] = "default"
-    placement: Optional[tuple[int, int]] = None
+    def __init__(
+        self,
+        placement: tuple[int, int, int, int],
+        x_label: str = "x axis",
+        y_label: str = "y axis",
+        x_lim: Optional[tuple[float, float]] = None,
+        y_lim: Optional[tuple[float, float]] = None,
+        figure_style: str = "plain",
+        log_scale_x: bool | Literal["default"] = "default",
+        log_scale_y: bool | Literal["default"] = "default",
+        show_grid: bool | Literal["default"] = "default",
+        legend_is_boxed: bool | Literal["default"] = "default",
+        ticks_are_in: bool | Literal["default"] = "default",
+    ):
+        self.x_label = x_label
+        self.y_label = y_label
+        self.x_lim = x_lim
+        self.y_lim = y_lim
+        self.placement = placement
+        file_loader = FileLoader(figure_style)
+        self.default_params = file_loader.load()
+        legend_is_boxed = (
+            legend_is_boxed
+            if legend_is_boxed != "default"
+            else self.default_params["Figure"]["boxed_legend"]
+        )
+        ticks_are_in = (
+            ticks_are_in
+            if ticks_are_in != "default"
+            else self.default_params["Figure"]["ticks_are_in"]
+        )
+        log_scale_x = (
+            log_scale_x
+            if log_scale_x != "default"
+            else self.default_params["Figure"]["log_scale_x"]
+        )
+        log_scale_y = (
+            log_scale_y
+            if log_scale_y != "default"
+            else self.default_params["Figure"]["log_scale_y"]
+        )
+        show_grid = (
+            show_grid
+            if show_grid != "default"
+            else self.default_params["Figure"]["show_grid"]
+        )
+        self.log_scale_x = log_scale_x
+        self.log_scale_y = log_scale_y
+        self.legend_is_boxed = legend_is_boxed
+        self.ticks_are_in = ticks_are_in
+        self._elements: list[Plottable] = []
+        self._labels: list[str | None] = []
+        self._handles = []
+
+    def add_element(self, *elements: Plottable) -> None:
+        """
+        Adds a Plottable element to the subfigure.
+        """
+        for element in elements:
+            self._elements.append(element)
+            try:
+                if element.label is not None:
+                    self._labels.append(element.label)
+            except AttributeError:
+                pass
+
+    def _prepare_subfigure(self, grid: GridSpec, legend: bool = True) -> Axes:
+        ax = plt.subplot(
+            grid.new_subplotspec(
+                (self.placement[0], self.placement[1]),
+                rowspan=self.placement[2],
+                colspan=self.placement[3],
+            )
+        )
 
 
 class Multifigure:
@@ -54,6 +121,7 @@ class Multifigure:
         self.num_rows = num_rows
         self.num_cols = num_cols
         self.title = title
+        self.figure_style = figure_style
         file_loader = FileLoader(figure_style)
         self.default_params = file_loader.load()
         size = size if size != "default" else self.default_params["Figure"]["size"]
@@ -69,7 +137,7 @@ class Multifigure:
         else:
             plt.rcParams.update(rcParamsDefault)
             plt.rcParams["font.size"] = font_size
-        self._subfigures = empty((self.num_rows, self.num_cols)).astype(Subfigure)
+        self._subfigures = []
 
     def add_subfigure(
         self,
@@ -90,33 +158,34 @@ class Multifigure:
             )
         if placement[0] < 0 or placement[1] < 0:
             raise GraphingException("The placement value cannot be negative.")
-        placement = [i - 1 for i in placement]
         new_subfigure = Subfigure(
+            placement,
             x_label,
             y_label,
             x_lim,
             y_lim,
+            self.figure_style,
             log_scale_x,
             log_scale_y,
             show_grid,
             legend_is_boxed,
             ticks_are_in,
-            placement=placement,
         )
-        self._subfigures[placement[0], placement[1]] = new_subfigure
+        self._subfigures.append(new_subfigure)
         return new_subfigure
 
-    def _prepare_multifigure(self) -> None:
-        pass
+    def _prepare_multifigure(self, legend: bool = True) -> None:
+        self._figure = plt.figure(layout="constrained")
+        multifigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
+        for subfigure in self._subfigures:
+            subfigure._prepare_subfigure(multifigure_grid)
 
     def display(self, legend: bool = True) -> None:
-        # self._prepare_figure(legend=legend)
-        plt.tight_layout()
+        self._prepare_multifigure(legend=legend)
         plt.show()
 
     def save_figure(self, file_name: str, legend: bool = True) -> None:
-        # self._prepare_figure(legend=legend)
-        plt.tight_layout()
+        self._prepare_multifigure(legend=legend)
         plt.savefig(file_name, bbox_inches="tight")
 
     def _fill_in_missing_params(self, element: Plottable) -> None:

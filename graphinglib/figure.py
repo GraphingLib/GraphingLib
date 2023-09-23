@@ -94,7 +94,7 @@ class Figure:
 
     def add_element(self, *elements: Plottable) -> None:
         """
-        Adds a Curve object to the figure.
+        Adds a Plottable object to the figure.
         """
         for element in elements:
             self._elements.append(element)
