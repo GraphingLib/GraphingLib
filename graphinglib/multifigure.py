@@ -77,6 +77,7 @@ class Subfigure:
         self.log_scale_y = log_scale_y
         self.legend_is_boxed = legend_is_boxed
         self.ticks_are_in = ticks_are_in
+        self.grid_is_set = False
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
         self._handles = []
@@ -113,6 +114,14 @@ class Subfigure:
             self._axes.set_yscale("log")
         if self.ticks_are_in:
             self._axes.tick_params(axis="both", direction="in", which="both")
+        if self.grid_is_set:
+            self._axes.grid(
+                which="major",
+                linestyle=self.grid_line_style,
+                linewidth=self.grid_line_width,
+                color=self.grid_color,
+                alpha=self.grid_alpha,
+            )
         if not self._labels:
             legend = False
         if self._elements:
@@ -177,6 +186,31 @@ class Subfigure:
                     element.__dict__[property] = self.default_params[object_type][
                         property
                     ]
+
+    def set_grid(
+        self,
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+        color: str = "default",
+        alpha: float | Literal["default"] = "default",
+    ) -> None:
+        self.grid_line_style = (
+            line_style
+            if line_style != "default"
+            else self.default_params["Figure"]["grid_line_style"]
+        )
+        self.grid_line_width = (
+            line_width
+            if line_width != "default"
+            else self.default_params["Figure"]["grid_line_width"]
+        )
+        self.grid_color = (
+            color if color != "default" else self.default_params["Figure"]["grid_color"]
+        )
+        self.grid_alpha = (
+            alpha if alpha != "default" else self.default_params["Figure"]["grid_alpha"]
+        )
+        self.grid_is_set = True
 
 
 class Multifigure:
