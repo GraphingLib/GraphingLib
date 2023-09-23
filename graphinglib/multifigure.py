@@ -6,9 +6,7 @@ from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.gridspec import GridSpec
-from matplotlib.figure import Figure
 from matplotlib.axes import Axes
-from numpy import empty
 
 from .file_manager import FileLoader
 from .graph_elements import GraphingException, Plottable
