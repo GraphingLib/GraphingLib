@@ -41,8 +41,8 @@ class Subfigure:
         legend_is_boxed: bool | Literal["default"] = "default",
         ticks_are_in: bool | Literal["default"] = "default",
     ):
-        self.x_label = x_label
-        self.y_label = y_label
+        self.x_axis_name = x_label
+        self.y_axis_name = y_label
         self.x_lim = x_lim
         self.y_lim = y_lim
         self.placement = placement
@@ -94,13 +94,89 @@ class Subfigure:
                 pass
 
     def _prepare_subfigure(self, grid: GridSpec, legend: bool = True) -> Axes:
-        ax = plt.subplot(
+        self._axes = plt.subplot(
             grid.new_subplotspec(
                 (self.placement[0], self.placement[1]),
                 rowspan=self.placement[2],
                 colspan=self.placement[3],
             )
         )
+        self._axes.set_xlabel(self.x_axis_name)
+        self._axes.set_ylabel(self.y_axis_name)
+        if self.x_lim:
+            self._axes.set_xlim(*self.x_lim)
+        if self.y_lim:
+            self._axes.set_ylim(*self.y_lim)
+        if self.log_scale_x:
+            self._axes.set_xscale("log")
+        if self.log_scale_y:
+            self._axes.set_yscale("log")
+        if self.ticks_are_in:
+            self._axes.tick_params(axis="both", direction="in", which="both")
+        if not self._labels:
+            legend = False
+        if self._elements:
+            z_order = 0
+            for element in self._elements:
+                self._fill_in_missing_params(element)
+                element._plot_element(self._axes, z_order)
+                try:
+                    if element._label is not None:
+                        self._handles.append(element._handle)
+                except AttributeError:
+                    continue
+                z_order += 2
+            if legend:
+                try:
+                    self._axes.legend(
+                        handles=self._handles,
+                        labels=self._labels,
+                        handleheight=1.3,
+                        handler_map={
+                            Polygon: HandlerPatch(patch_func=histogram_legend_artist),
+                            LineCollection: HandlerMultipleLines(),
+                            VerticalLineCollection: HandlerMultipleVerticalLines(),
+                        },
+                        frameon=self.legend_is_boxed,
+                        draggable=True,
+                    )
+                except:
+                    self._axes.legend(
+                        handles=self._handles,
+                        labels=self._labels,
+                        handleheight=1.3,
+                        handler_map={
+                            Polygon: HandlerPatch(patch_func=histogram_legend_artist),
+                            LineCollection: HandlerMultipleLines(),
+                            VerticalLineCollection: HandlerMultipleVerticalLines(),
+                        },
+                        frameon=self.legend_is_boxed,
+                    )
+        else:
+            raise GraphingException("No curves to be plotted!")
+
+    def _fill_in_missing_params(self, element: Plottable) -> None:
+        object_type = type(element).__name__
+        for property, value in vars(element).items():
+            if (type(value) == str) and (value == "default"):
+                if self.default_params[object_type][property] == "same as curve":
+                    element.__dict__["errorbars_color"] = self.default_params[
+                        object_type
+                    ]["color"]
+                    element.__dict__["errorbars_line_width"] = self.default_params[
+                        object_type
+                    ]["line_width"]
+                    element.__dict__["cap_thickness"] = self.default_params[
+                        object_type
+                    ]["line_width"]
+                elif self.default_params[object_type][property] == "same as scatter":
+                    element.__dict__["errorbars_color"] = self.default_params[
+                        object_type
+                    ]["face_color"]
+                else:
+                    element.__dict__[property] = self.default_params[object_type][
+                        property
+                    ]
 
 
 class Multifigure:
@@ -179,6 +255,7 @@ class Multifigure:
         multifigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
         for subfigure in self._subfigures:
             subfigure._prepare_subfigure(multifigure_grid)
+        self._figure.suptitle(self.title)
 
     def display(self, legend: bool = True) -> None:
         self._prepare_multifigure(legend=legend)
