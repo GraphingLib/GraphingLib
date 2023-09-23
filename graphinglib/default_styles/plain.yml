@@ -50,6 +50,7 @@ Figure:
 
 Multifigure:
   size: [6.4, 4.8]
+  boxed_legend: False
 
 Subfigure:
   boxed_legend: False

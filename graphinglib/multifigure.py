@@ -161,6 +161,7 @@ class Subfigure:
                     )
         else:
             raise GraphingException("No curves to be plotted!")
+        return self._labels, self._handles
 
     def _fill_in_missing_params(self, element: Plottable) -> None:
         object_type = type(element).__name__
@@ -225,6 +226,7 @@ class Multifigure:
         figure_style: str = "plain",
         use_latex: bool = False,
         font_size: int = 12,
+        legend_is_boxed: bool | Literal["default"] = "default",
     ) -> None:
         self.num_rows = num_rows
         self.num_cols = num_cols
@@ -234,6 +236,12 @@ class Multifigure:
         self.default_params = file_loader.load()
         size = size if size != "default" else self.default_params["Figure"]["size"]
         self.size = size
+        legend_is_boxed = (
+            legend_is_boxed
+            if legend_is_boxed != "default"
+            else self.default_params["Figure"]["boxed_legend"]
+        )
+        self.legend_is_boxed = legend_is_boxed
         if use_latex:
             plt.rcParams.update(
                 {
@@ -282,14 +290,46 @@ class Multifigure:
         self._subfigures.append(new_subfigure)
         return new_subfigure
 
-    def _prepare_multifigure(self, legend: bool = True) -> None:
-        self._figure = plt.figure(layout="constrained")
+    def _prepare_multifigure(self, legend: bool = False) -> None:
+        self._figure = plt.figure(layout="constrained", figsize=self.size)
         multifigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
+        subfigures_legend = True if not legend else False
+        labels, handles = [], []
         for subfigure in self._subfigures:
-            subfigure._prepare_subfigure(multifigure_grid)
+            subfigure_labels, subfigure_handles = subfigure._prepare_subfigure(
+                multifigure_grid, legend=subfigures_legend
+            )
+            labels += subfigure_labels
+            handles += subfigure_handles
+        if legend:
+            try:
+                self._figure.legend(
+                    handles=handles,
+                    labels=labels,
+                    handleheight=1.3,
+                    handler_map={
+                        Polygon: HandlerPatch(patch_func=histogram_legend_artist),
+                        LineCollection: HandlerMultipleLines(),
+                        VerticalLineCollection: HandlerMultipleVerticalLines(),
+                    },
+                    frameon=self.legend_is_boxed,
+                    draggable=True,
+                )
+            except:
+                self._figure.legend(
+                    handles=handles,
+                    labels=labels,
+                    handleheight=1.3,
+                    handler_map={
+                        Polygon: HandlerPatch(patch_func=histogram_legend_artist),
+                        LineCollection: HandlerMultipleLines(),
+                        VerticalLineCollection: HandlerMultipleVerticalLines(),
+                    },
+                    frameon=self.legend_is_boxed,
+                )
         self._figure.suptitle(self.title)
 
-    def display(self, legend: bool = True) -> None:
+    def display(self, legend: bool = False) -> None:
         self._prepare_multifigure(legend=legend)
         plt.show()
 
