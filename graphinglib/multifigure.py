@@ -22,17 +22,20 @@ class Subfigure:
     """
     This class implements the individual plots added inside the Multifigure object.
 
+    Note
+    ----
+
     This class is not meant to be used directly by the user. Instead, it is used in
     conjunction with the Multifigure class.
     """
 
     def __init__(
         self,
-        placement: tuple[int],
+        placement: tuple[int, int, int, int],
         x_label: str = "x axis",
         y_label: str = "y axis",
-        x_lim: Optional[tuple[float]] = None,
-        y_lim: Optional[tuple[float]] = None,
+        x_lim: Optional[tuple[float, float]] = None,
+        y_lim: Optional[tuple[float, float]] = None,
         figure_style: str = "plain",
         log_scale_x: bool | Literal["default"] = "default",
         log_scale_y: bool | Literal["default"] = "default",
@@ -43,14 +46,14 @@ class Subfigure:
         """
         Parameters
         ----------
-        placement : tuple[int]
+        placement : tuple[int, int, int, int]
             The position occupied by the subfigure in the grid of the Multifigure.
             Specified as `(row, column, number of rows spanned, number of columns spanned)`.
             The `row` and `column` refer to the upper-left corner of the subfigure.
         x_label, y_label : string
             The indentification for the x-axis and y-axis.
             Defaults to `"x axis"` and `"y axis"`.
-        x_lim, y_lim : tuple[float], optional
+        x_lim, y_lim : tuple[float, float], optional
             The limits for the x-axis and y-axis.
         figure_style : string
             The figure style to use for the figure.
@@ -127,7 +130,7 @@ class Subfigure:
 
     def _prepare_subfigure(self, grid: GridSpec, legend: bool = True) -> Axes:
         """
-        Prepares the subfigure to be plotted.
+        Prepares the subfigure to be displayed.
         """
         self._axes = plt.subplot(
             grid.new_subplotspec(
@@ -271,20 +274,46 @@ class Subfigure:
 
 class Multifigure:
     """
-    The container for multiple plots.
+    This class implements the canvas on which multiple plots are displayed.
+
+    The "canvas" consists of a grid of a specified size on which the Subfigure
+    objects are displayed.
     """
 
     def __init__(
         self,
         num_rows: int,
         num_cols: int,
-        size: tuple[float] | Literal["default"] = "default",
+        size: tuple[float, float] | Literal["default"] = "default",
         title: Optional[str] = None,
         figure_style: str = "plain",
         use_latex: bool = False,
         font_size: int = 12,
         legend_is_boxed: bool | Literal["default"] = "default",
     ) -> None:
+        """
+        Parameters
+        ----------
+        num_rows, num_cols : int
+            Number of rows and columns for the grid. These parameters determine the
+            the number of "squares" on which a plot can be placed. Note that a single
+            plot can span multiple squares.
+        size : tuple[float, float]
+            Overall size of the figure.
+            Default depends on the figure style configuration.
+        title : string, optional
+            General title of the figure.
+        figure_style : string
+            The figure style to use for the figure.
+        use_latex : bool
+            Wheter or not to use LaTeX to render text and math symbols in the figure.
+            Requires a LaTeX distribution.
+        font_size : int
+            Font size used to render the text and math symbols in the figure.
+        legend_is_boxed : bool
+            Wheter or not to display the legend inside a box.
+            Default depends on the figure style configuration.
+        """
         self.num_rows = num_rows
         self.num_cols = num_cols
         self.title = title
@@ -314,17 +343,44 @@ class Multifigure:
 
     def add_subfigure(
         self,
-        placement: tuple[int, int],
+        placement: tuple[int, int, int, int],
         x_label: str = "x axis",
         y_label: str = "y axis",
-        x_lim: Optional[tuple[float]] = None,
-        y_lim: Optional[tuple[float]] = None,
+        x_lim: Optional[tuple[float, float]] = None,
+        y_lim: Optional[tuple[float, float]] = None,
         log_scale_x: bool | Literal["default"] = "default",
         log_scale_y: bool | Literal["default"] = "default",
         show_grid: bool | Literal["default"] = "default",
         legend_is_boxed: bool | Literal["default"] = "default",
         ticks_are_in: bool | Literal["default"] = "default",
     ) -> Subfigure:
+        """
+        Adds a subfigure to the multifigure.
+
+        Parameters
+        ----------
+        placement : tuple[int, int, int, int]
+            The position occupied by the subfigure in the grid of the Multifigure.
+            Specified as `(row, column, number of rows spanned, number of columns spanned)`.
+            The `row` and `column` refer to the upper-left corner of the subfigure.
+        x_label, y_label : string
+            The indentification for the x-axis and y-axis.
+            Defaults to `"x axis"` and `"y axis"`.
+        x_lim, y_lim : tuple[float, float], optional
+            The limits for the x-axis and y-axis.
+        log_scale_x, log_scale_y : bool
+            Whether or not to set the scale of the x- or y-axis to logaritmic scale.
+            Default depends on the figure style configuration.
+        show_grid : bool
+            Wheter or not to show the grid.
+            Default depends on the figure style configuration.
+        legend_is_boxed : bool
+            Wheter or not to display the legend inside a box.
+            Default depends on the figure style configuration.
+        ticks_are_in : bool
+            Wheter or not to display the axis ticks inside the axis.
+            Default depends on the figure style configuration.
+        """
         if placement[0] >= self.size[0] or placement[1] >= self.size[1]:
             raise GraphingException(
                 "The placement value must be inside the size of the Multifigure."
@@ -348,6 +404,9 @@ class Multifigure:
         return new_subfigure
 
     def _prepare_multifigure(self, legend: bool = False) -> None:
+        """
+        Prepares the multifigure to be displayed.
+        """
         self._figure = plt.figure(layout="constrained", figsize=self.size)
         multifigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
         subfigures_legend = True if not legend else False
@@ -387,14 +446,41 @@ class Multifigure:
         self._figure.suptitle(self.title)
 
     def display(self, legend: bool = False) -> None:
+        """
+        Displays the multifigure.
+
+        Parameters
+        ----------
+        legend : bool
+            Wheter or not to display a overall legend for the multifigure containing
+            the labels for every subfigure in it. Note that enabling this option will
+            disable the individual legends for every subfigure.
+            Defaults to `False`.
+        """
         self._prepare_multifigure(legend=legend)
         plt.show()
 
     def save_figure(self, file_name: str, legend: bool = True) -> None:
+        """
+        Saves the multifigure.
+
+        Parameters
+        ----------
+        file_name : str
+            File name or path at which to save the figure.
+        legend : bool
+            Wheter or not to display a overall legend for the multifigure containing
+            the labels for every subfigure in it. Note that enabling this option will
+            disable the individual legends for every subfigure.
+            Defaults to `False`.
+        """
         self._prepare_multifigure(legend=legend)
         plt.savefig(file_name, bbox_inches="tight")
 
     def _fill_in_missing_params(self, element: Plottable) -> None:
+        """
+        Fills in the missing parameters from the specified figure style.
+        """
         object_type = type(element).__name__
         for property, value in vars(element).items():
             if (type(value) == str) and (value == "default"):
