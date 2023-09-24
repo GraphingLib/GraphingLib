@@ -1,5 +1,6 @@
 """
-# GraphingLib
+GraphingLib
+===========
 
 An object oriented wrapper combining the functionalities of Matplotlib and Scipy.
 
@@ -22,7 +23,7 @@ as Matplotlib. For further reference on those conventions, see the
 from .data_plotting_1d import Curve, Histogram, Scatter
 from .data_plotting_2d import Heatmap, Contour, VectorField
 from .figure import Figure
-from .multifigure import Multifigure, Subfigure
+from .multifigure import MultiFigure, SubFigure
 from .fits import (
     FitFromExponential,
     FitFromGaussian,
