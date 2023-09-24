@@ -52,6 +52,9 @@ class Curve:
     line_width : float
         Width of the curve.
         Default depends on the figure style configuration.
+    line_style : str
+        Style of the curve.
+        Default depends on the figure style configuration.
     """
 
     x_data: ArrayLike
@@ -741,7 +744,7 @@ class Scatter:
     edge_color: str = "default"
     marker_size: float | Literal["default"] = "default"
     marker_style: str = "default"
-    errorbars: bool = False
+    errorbars: bool = field(default=False, init=False)
 
     @classmethod
     def from_function(
@@ -980,7 +983,7 @@ class Scatter:
         self,
         y: float,
         interpolation_method: str = "linear",
-        label: str | None = None,
+        label: Optional[str] = None,
         color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
@@ -1311,34 +1314,3 @@ class Histogram:
                 colors=["k", "r", "k"],
                 zorder=z_order - 1,
             )
-
-
-def remove_duplicates(numbers: list[float], relative_tolerance: float) -> list[float]:
-    """
-    Removes duplicates from a list of numbers with a given relative tolerance.
-
-    Parameters
-    ----------
-    numbers : list[float]
-        The list of numbers to be cleaned.
-    relative_tolerance : float
-        The relative tolerance to be used for the cleaning.
-
-    Returns
-    -------
-    result : list[float]
-        The list of numbers without duplicates.
-    """
-    result: list[float] = []
-    for num in numbers:
-        similar_points: list[float] = [num]
-        for existing_num in result:
-            if abs(num - existing_num) <= relative_tolerance * abs(existing_num):
-                similar_points.append(existing_num)
-        if len(similar_points) > 1:
-            average = sum(similar_points) / len(similar_points)
-            result = [x for x in result if x not in similar_points]
-            result.append(average)
-        else:
-            result.append(num)
-    return result
