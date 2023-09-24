@@ -15,6 +15,9 @@ class Plottable(Protocol):
     """
 
     def _plot_element(self, axes: plt.Axes, z_order: int):
+        """
+        Plots the element in the specified axes.
+        """
         pass
 
 
@@ -41,6 +44,8 @@ class Hlines:
         line_styles: list[str] | str = "default",
     ) -> None:
         """
+        This class implements simple horizontal lines.
+
         Parameters
         ----------
         y : ArrayLike
@@ -139,6 +144,8 @@ class Vlines:
         line_styles: list[str] | str = "default",
     ) -> None:
         """
+        This class implements simple vertical lines.
+
         Parameters
         ----------
         x : ArrayLike
@@ -246,6 +253,11 @@ class Point:
         v_align: str = "bottom",
     ) -> None:
         """
+        This class implements a point object.
+
+        The point object can be used to show important coordinates in a plot
+        or add a label to some point.
+
         Parameters
         ----------
         x, y : float

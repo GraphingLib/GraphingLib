@@ -18,15 +18,15 @@ from .legend_artists import (
 )
 
 
-class Subfigure:
+class SubFigure:
     """
-    This class implements the individual plots added inside the Multifigure object.
+    This class implements the individual plots added inside the MultiFigure object.
 
     Note
     ----
 
     This class is not meant to be used directly by the user. Instead, it is used in
-    conjunction with the Multifigure class.
+    conjunction with the MultiFigure class.
     """
 
     def __init__(
@@ -44,12 +44,20 @@ class Subfigure:
         ticks_are_in: bool | Literal["default"] = "default",
     ):
         """
+        This class implements the individual plots added inside the MultiFigure object.
+
+        Note
+        ----
+
+        This class is not meant to be used directly by the user. Instead, it is used in
+        conjunction with the MultiFigure class.
+
         Parameters
         ----------
         placement : tuple[int, int, int, int]
-            The position occupied by the subfigure in the grid of the Multifigure.
+            The position occupied by the SubFigure in the grid of the MultiFigure.
             Specified as `(row, column, number of rows spanned, number of columns spanned)`.
-            The `row` and `column` refer to the upper-left corner of the subfigure.
+            The `row` and `column` refer to the upper-left corner of the SubFigure.
         x_label, y_label : str
             The indentification for the x-axis and y-axis.
             Defaults to `"x axis"` and `"y axis"`.
@@ -113,12 +121,12 @@ class Subfigure:
 
     def add_element(self, *elements: Plottable) -> None:
         """
-        Adds a Plottable element to the subfigure.
+        Adds a Plottable element to the SubFigure.
 
         Parameters
         ----------
         *elements : Plottable
-            Elements to plot in the subfigure.
+            Elements to plot in the SubFigure.
         """
         for element in elements:
             self._elements.append(element)
@@ -128,9 +136,9 @@ class Subfigure:
             except AttributeError:
                 pass
 
-    def _prepare_subfigure(self, grid: GridSpec, legend: bool = True) -> Axes:
+    def _prepare_SubFigure(self, grid: GridSpec, legend: bool = True) -> Axes:
         """
-        Prepares the subfigure to be displayed.
+        Prepares the SubFigure to be displayed.
         """
         self._axes = plt.subplot(
             grid.new_subplotspec(
@@ -236,7 +244,7 @@ class Subfigure:
         alpha: float | Literal["default"] = "default",
     ) -> None:
         """
-        Sets the grid in the subfigure.
+        Sets the grid in the SubFigure.
 
         Parameters
         ----------
@@ -272,11 +280,11 @@ class Subfigure:
         self.grid_is_set = True
 
 
-class Multifigure:
+class MultiFigure:
     """
     This class implements the canvas on which multiple plots are displayed.
 
-    The "canvas" consists of a grid of a specified size on which the Subfigure
+    The "canvas" consists of a grid of a specified size on which the SubFigure
     objects are displayed.
     """
 
@@ -292,6 +300,11 @@ class Multifigure:
         legend_is_boxed: bool | Literal["default"] = "default",
     ) -> None:
         """
+        This class implements the canvas on which multiple plots are displayed.
+
+        The "canvas" consists of a grid of a specified size on which the SubFigure
+        objects are displayed.
+
         Parameters
         ----------
         num_rows, num_cols : int
@@ -339,9 +352,9 @@ class Multifigure:
         else:
             plt.rcParams.update(rcParamsDefault)
             plt.rcParams["font.size"] = font_size
-        self._subfigures = []
+        self._SubFigures = []
 
-    def add_subfigure(
+    def add_SubFigure(
         self,
         placement: tuple[int, int, int, int],
         x_label: str = "x axis",
@@ -353,16 +366,16 @@ class Multifigure:
         show_grid: bool | Literal["default"] = "default",
         legend_is_boxed: bool | Literal["default"] = "default",
         ticks_are_in: bool | Literal["default"] = "default",
-    ) -> Subfigure:
+    ) -> SubFigure:
         """
-        Adds a subfigure to the multifigure.
+        Adds a SubFigure to the MultiFigure.
 
         Parameters
         ----------
         placement : tuple[int, int, int, int]
-            The position occupied by the subfigure in the grid of the Multifigure.
+            The position occupied by the SubFigure in the grid of the MultiFigure.
             Specified as `(row, column, number of rows spanned, number of columns spanned)`.
-            The `row` and `column` refer to the upper-left corner of the subfigure.
+            The `row` and `column` refer to the upper-left corner of the SubFigure.
         x_label, y_label : str
             The indentification for the x-axis and y-axis.
             Defaults to `"x axis"` and `"y axis"`.
@@ -383,16 +396,16 @@ class Multifigure:
 
         Returns
         -------
-        new_subfigure : Subfigure
-            Subfigure to be added to the multifigure.
+        new_SubFigure : SubFigure
+            SubFigure to be added to the MultiFigure.
         """
         if placement[0] >= self.size[0] or placement[1] >= self.size[1]:
             raise GraphingException(
-                "The placement value must be inside the size of the Multifigure."
+                "The placement value must be inside the size of the MultiFigure."
             )
         if placement[0] < 0 or placement[1] < 0:
             raise GraphingException("The placement value cannot be negative.")
-        new_subfigure = Subfigure(
+        new_SubFigure = SubFigure(
             placement,
             x_label,
             y_label,
@@ -405,23 +418,23 @@ class Multifigure:
             legend_is_boxed,
             ticks_are_in,
         )
-        self._subfigures.append(new_subfigure)
-        return new_subfigure
+        self._SubFigures.append(new_SubFigure)
+        return new_SubFigure
 
-    def _prepare_multifigure(self, legend: bool = False) -> None:
+    def _prepare_MultiFigure(self, legend: bool = False) -> None:
         """
-        Prepares the multifigure to be displayed.
+        Prepares the MultiFigure to be displayed.
         """
         self._figure = plt.figure(layout="constrained", figsize=self.size)
-        multifigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
-        subfigures_legend = True if not legend else False
+        MultiFigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
+        SubFigures_legend = True if not legend else False
         labels, handles = [], []
-        for subfigure in self._subfigures:
-            subfigure_labels, subfigure_handles = subfigure._prepare_subfigure(
-                multifigure_grid, legend=subfigures_legend
+        for SubFigure in self._SubFigures:
+            SubFigure_labels, SubFigure_handles = SubFigure._prepare_SubFigure(
+                MultiFigure_grid, legend=SubFigures_legend
             )
-            labels += subfigure_labels
-            handles += subfigure_handles
+            labels += SubFigure_labels
+            handles += SubFigure_handles
         if legend:
             try:
                 self._figure.legend(
@@ -452,34 +465,34 @@ class Multifigure:
 
     def display(self, legend: bool = False) -> None:
         """
-        Displays the multifigure.
+        Displays the MultiFigure.
 
         Parameters
         ----------
         legend : bool
-            Wheter or not to display a overall legend for the multifigure containing
-            the labels for every subfigure in it. Note that enabling this option will
-            disable the individual legends for every subfigure.
+            Wheter or not to display a overall legend for the MultiFigure containing
+            the labels for every SubFigure in it. Note that enabling this option will
+            disable the individual legends for every SubFigure.
             Defaults to `False`.
         """
-        self._prepare_multifigure(legend=legend)
+        self._prepare_MultiFigure(legend=legend)
         plt.show()
 
     def save_figure(self, file_name: str, legend: bool = True) -> None:
         """
-        Saves the multifigure.
+        Saves the MultiFigure.
 
         Parameters
         ----------
         file_name : str
             File name or path at which to save the figure.
         legend : bool
-            Wheter or not to display a overall legend for the multifigure containing
-            the labels for every subfigure in it. Note that enabling this option will
-            disable the individual legends for every subfigure.
+            Wheter or not to display a overall legend for the MultiFigure containing
+            the labels for every SubFigure in it. Note that enabling this option will
+            disable the individual legends for every SubFigure.
             Defaults to `False`.
         """
-        self._prepare_multifigure(legend=legend)
+        self._prepare_MultiFigure(legend=legend)
         plt.savefig(file_name, bbox_inches="tight")
 
     def _fill_in_missing_params(self, element: Plottable) -> None:

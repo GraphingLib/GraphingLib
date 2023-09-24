@@ -10,6 +10,13 @@ Provides one-line commands for:
 
 Also provides the ability to create multiple visual styles for your plots and save
 them to be used anytime you want.
+
+Notes
+-----
+
+Graphinglib uses the same named colors, line styles, marker styles and other conventions
+as Matplotlib. For further reference on those conventions, see the
+[Matplotlib documentation](https://matplotlib.org/stable/index.html).
 """
 
 from .data_plotting_1d import Curve, Histogram, Scatter
