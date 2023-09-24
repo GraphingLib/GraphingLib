@@ -4,6 +4,5 @@
 
 .. automodule:: graphinglib.graph_elements
    :members:
-   :undoc-members:
    :show-inheritance:
    :private-members:

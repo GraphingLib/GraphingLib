@@ -2,6 +2,8 @@
 Handbook
 ========
 
+This section is still a work in progress!
+
 .. toctree::
    :maxdepth: 1
 
