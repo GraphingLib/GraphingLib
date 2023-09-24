@@ -12,7 +12,14 @@ from .graph_elements import Point
 
 
 class Fit(Protocol):
+    """
+    Dummy class to allow type hinting of Fit objects.
+    """
+
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        """
+        Plots the element in the specified axes.
+        """
         pass
 
     def show_residual_curves(
@@ -31,7 +38,23 @@ class Fit(Protocol):
 @dataclass
 class Curve:
     """
-    A general continuous curve.
+    This class implements a general continuous curve.
+
+    Parameters
+    ----------
+    x_data, y_data : ArrayLike
+        Arrays of x and y values to be plotted.
+    label : str, optional
+        Label to be displayed in the legend.
+    color : str
+        Color of the curve.
+        Default depends on the figure style configuration.
+    line_width : float
+        Width of the curve.
+        Default depends on the figure style configuration.
+    line_style : str
+        Style of the curve.
+        Default depends on the figure style configuration.
     """
 
     x_data: ArrayLike
@@ -55,6 +78,31 @@ class Curve:
         line_style: str = "default",
         number_of_points: int = 500,
     ) -> Self:
+        """
+        Creates a curve from a function and a range of x values.
+
+        Parameters
+        ----------
+        func : Callable[[ArrayLike], ArrayLike]
+            Function to be plotted. Works with regular functions and lambda functions.
+        x_min, x_max : float
+            The curve will be plotted between these two values.
+        label : str, optional
+            Label to be displayed in the legend.
+        color : str
+            Color of the curve.
+            Default depends on the figure style configuration.
+        line_width : float
+            Width of the curve.
+            Default depends on the figure style configuration.
+        number_of_points : int
+            Number of points to be used to plot the curve (resolution).
+            Default is 500.
+
+        Returns
+        -------
+        A Curve object created from the given function and x range.
+        """
         x_data = np.linspace(x_min, x_max, number_of_points)
         y_data = func(x_data)
         return cls(x_data, y_data, label, color, line_width, line_style)
@@ -64,6 +112,9 @@ class Curve:
         self.y_data = np.array(self.y_data)
 
     def __add__(self, other: Self | float) -> Self:
+        """
+        Defines the addition of two curves or a curve and a number.
+        """
         if isinstance(other, Curve):
             if not np.array_equal(self.x_data, other.x_data):
                 if len(self.x_data) > len(other.x_data):
@@ -84,6 +135,9 @@ class Curve:
             raise TypeError("Can only add a curve to another curve or a number.")
 
     def __sub__(self, other: Self | float) -> Self:
+        """
+        Defines the subtraction of two curves or a curve and a number.
+        """
         if isinstance(other, Curve):
             if not np.array_equal(self.x_data, other.x_data):
                 if len(self.x_data) > len(other.x_data):
@@ -103,6 +157,9 @@ class Curve:
             raise TypeError("Can only subtract a curve from another curve or a number.")
 
     def __mul__(self, other: Self | float) -> Self:
+        """
+        Defines the multiplication of two curves or a curve and a number.
+        """
         if isinstance(other, Curve):
             if not np.array_equal(self.x_data, other.x_data):
                 if len(self.x_data) > len(other.x_data):
@@ -122,6 +179,9 @@ class Curve:
             raise TypeError("Can only multiply a curve by another curve or a number.")
 
     def __truediv__(self, other: Self | float) -> Self:
+        """
+        Defines the division of two curves or a curve and a number.
+        """
         if isinstance(other, Curve):
             if not np.array_equal(self.x_data, other.x_data):
                 if len(self.x_data) > len(other.x_data):
@@ -141,6 +201,9 @@ class Curve:
             raise TypeError("Can only divide a curve by another curve or a number.")
 
     def __iter__(self):
+        """
+        Defines the iteration of a curve. Returns the y values.
+        """
         return iter(self.y_data)
 
     def add_errorbars(
@@ -152,6 +215,26 @@ class Curve:
         errorbars_line_width: float | Literal["default"] = "default",
         cap_thickness: float | Literal["default"] = "default",
     ) -> None:
+        """
+        Adds errorbars to the curve.
+
+        Parameters
+        ----------
+        x_error, y_error : ArrayLike, optional
+            Arrays of x and y errors. Use one or both.
+        cap_width : float
+            Width of the errorbar caps.
+            Default depends on the figure style configuration.
+        errorbars_color : str
+            Color of the errorbars.
+            Default depends on the figure style configuration.
+        errorbars_line_width : float
+            Width of the errorbars.
+            Default depends on the figure style configuration.
+        cap_thickness : float
+            Thickness of the errorbar caps.
+            Default depends on the figure style configuration.
+        """
         self.errorbars = True
         self.x_error = np.array(x_error)
         self.y_error = np.array(y_error)
@@ -163,7 +246,7 @@ class Curve:
     def get_point_at_x(
         self,
         x: float,
-        interpolation_kind: str = "linear",
+        interpolation_method: str = "linear",
         label: Optional[str] = None,
         color: str = "default",
         edge_color: str = "default",
@@ -171,9 +254,42 @@ class Curve:
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
     ) -> Point:
+        """
+        Gets the point on the curve at a given x value.
+
+        Parameters
+        ----------
+        x : float
+            The x value of the point.
+        interpolation_method : str,
+            The type of interpolation to be used, as defined in [scipy.interpolate.interp1d](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html).
+            Default is "linear".
+        label : str, optional
+            Label to be displayed in the legend.
+        color : str
+            Face color of the point.
+            Default depends on the figure style configuration.
+        edge_color : str
+            Edge color of the point.
+            Default depends on the figure style configuration.
+        marker_size : float
+            Size of the point.
+            Default depends on the figure style configuration.
+        marker_style : str
+            Style of the point.
+            Default depends on the figure style configuration.
+        line_width : float
+            Width of the point edge.
+            Default depends on the figure style configuration.
+
+        Returns
+        -------
+        point: Point
+            The point on the curve at the given x value.
+        """
         point = Point(
             x,
-            float(interp1d(self.x_data, self.y_data, kind=interpolation_kind)(x)),
+            float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
             label=label,
             color=color,
             edge_color=edge_color,
@@ -186,7 +302,7 @@ class Curve:
     def get_points_at_y(
         self,
         y: float,
-        interpolation_kind: str = "linear",
+        interpolation_method: str = "linear",
         label: str | None = None,
         color: str = "default",
         edge_color: str = "default",
@@ -194,6 +310,39 @@ class Curve:
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
     ) -> list[Point]:
+        """
+        Gets the points on the curve at a given y value.
+
+        Parameters
+        ----------
+        y : float
+            The y value of the desired points.
+        interpolation_method : str
+            The type of interpolation to be used, as defined in [scipy.interpolate.interp1d](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html).
+            Default is "linear".
+        label : str, optional
+            Label to be displayed in the legend.
+        color : str
+            Face color of the point.
+            Default depends on the figure style configuration.
+        edge_color : str
+            Edge color of the point.
+            Default depends on the figure style configuration.
+        marker_size : float
+            Size of the point.
+            Default depends on the figure style configuration.
+        marker_style : str
+            Style of the point.
+            Default depends on the figure style configuration.
+        line_width : float
+            Width of the point edge.
+            Default depends on the figure style configuration.
+
+        Returns
+        -------
+        points: list[Point]
+            The points on the curve at the given y value.
+        """
         xs = self.x_data
         ys = self.y_data
         crossings = np.where(np.diff(np.sign(ys - y)))[0]
@@ -201,7 +350,7 @@ class Curve:
         for cross in crossings:
             x1, x2 = xs[cross], xs[cross + 1]
             y1, y2 = ys[cross], ys[cross + 1]
-            f = interp1d([y1, y2], [x1, x2], kind=interpolation_kind)
+            f = interp1d([y1, y2], [x1, x2], kind=interpolation_method)
             x_val = f(y)
             x_vals.append(float(x_val))
         points = [
@@ -226,6 +375,27 @@ class Curve:
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
     ) -> Self:
+        """
+        Creates a new curve which is the derivative of the original curve.
+
+        Parameters
+        ----------
+        label : str, optional
+            Label of the new curve to be displayed in the legend.
+        color : str
+            Color of the new curve.
+            Default depends on the figure style configuration.
+        line_width : float
+            Width of the new curve.
+            Default depends on the figure style configuration.
+        line_style : str
+            Style of the new curve.
+            Default depends on the figure style configuration.
+
+        Returns
+        -------
+        A Curve object which is the derivative of the original curve.
+        """
         x_data = self.x_data
         y_data = np.gradient(self.y_data, x_data)
         return Curve(x_data, y_data, label, color, line_width, line_style)
@@ -237,6 +407,27 @@ class Curve:
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
     ) -> Self:
+        """
+        Creates a new curve which is the integral of the original curve.
+
+        Parameters
+        ----------
+        label : str, optional
+            Label of the new curve to be displayed in the legend.
+        color : str
+            Color of the new curve.
+            Default depends on the figure style configuration.
+        line_width : float
+            Width of the new curve.
+            Default depends on the figure style configuration.
+        line_style : str
+            Style of the new curve.
+            Default depends on the figure style configuration.
+
+        Returns
+        -------
+        A Curve object which is the integral of the original curve.
+        """
         x_data = self.x_data
         y_data = np.cumsum(self.y_data) * np.diff(x_data)[0]
         return Curve(x_data, y_data, label, color, line_width, line_style)
@@ -249,6 +440,30 @@ class Curve:
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
     ) -> Self:
+        """
+        Creates a new curve which is the tangent to the original curve at a given x value.
+
+        Parameters
+        ----------
+        x : float
+            The x value at which the tangent is to be calculated.
+        label : str, optional
+            Label of the new curve to be displayed in the legend.
+        color : str
+            Color of the new curve.
+            Default depends on the figure style configuration.
+        line_width : float
+            Width of the new curve.
+            Default depends on the figure style configuration.
+        line_style : str
+            Style of the new curve.
+            Default depends on the figure style configuration.
+
+        Returns
+        -------
+        tangent_curve: Curve
+            A Curve object which is the tangent to the original curve at a given x value.
+        """
         point = self.get_point_at_x(x)
         gradient = self.get_derivative_curve().get_point_at_x(x).y
         y_data = gradient * (self.x_data - x) + point.y
@@ -263,6 +478,30 @@ class Curve:
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
     ) -> Self:
+        """
+        Creates a new curve which is the normal to the original curve at a given x value.
+
+        Parameters
+        ----------
+        x : float
+            The x value at which the normal is to be calculated.
+        label : str, optional
+            Label of the new curve to be displayed in the legend.
+        color : str
+            Color of the new curve.
+            Default depends on the figure style configuration.
+        line_width : float
+            Width of the new curve.
+            Default depends on the figure style configuration.
+        line_style : str
+            Style of the new curve.
+            Default depends on the figure style configuration.
+
+        Returns
+        -------
+        normal_curve: Curve
+            A Curve object which is the normal to the original curve at a given x value.
+        """
         point = self.get_point_at_x(x)
         gradient = self.get_derivative_curve().get_point_at_x(x).y
         y_data = -1 / gradient * (self.x_data - x) + point.y
@@ -270,9 +509,33 @@ class Curve:
         return normal_curve
 
     def slope_at(self, x: float) -> float:
+        """
+        Calculates the slope of the curve at a given x value.
+
+        Parameters
+        ----------
+        x : float
+            The x value at which the slope is to be calculated.
+
+        Returns
+        -------
+        The slope of the curve (float) at the given x value.
+        """
         return self.get_derivative_curve().get_point_at_x(x).y
 
     def arc_length_between(self, x1: float, x2: float) -> float:
+        """
+        Calculates the arc length of the curve between two x values.
+
+        Parameters
+        ----------
+        x1, x2 : float
+            The x values between which the arc length is to be calculated.
+
+        Returns
+        -------
+        The arc length of the curve (float) between the two given x values.
+        """
         y_data = self.y_data
         x_data = self.x_data
         f = interp1d(x_data, y_data)
@@ -281,6 +544,22 @@ class Curve:
         return np.trapz(np.sqrt(1 + np.gradient(y, x) ** 2), x)
 
     def area_between(self, x1: float, x2: float, fill_under: bool = False) -> float:
+        """
+        Calculates the area between the curve and the x axis between two x values.
+        This is the definite integral of the curve between the two x values.
+
+        Parameters
+        ----------
+        x1, x2 : float
+            The x values between which the area is to be calculated.
+        fill_under : bool
+            Whether to fill the specified area between the curve and the x axis when displaying.
+            Default is False.
+
+        Returns
+        -------
+        The area (float) between the curve and the x axis between the two given x values.
+        """
         if fill_under:
             self._fill_curve_between = (x1, x2)
         y_data = self.y_data
@@ -290,7 +569,6 @@ class Curve:
         y = f(x)
         return np.trapz(y, x)
 
-    # A method with calculates the intersection point of two functions. Returns a list of Point objects. Uses interp and npwhere
     def intersection(
         self,
         other: Self,
@@ -301,6 +579,42 @@ class Curve:
         marker_styles: list[str] | str = "default",
         edge_widths: list[float] | float | Literal["default"] = "default",
     ) -> list[Point]:
+        """
+        Calculates the intersection points between two curves.
+
+        Parameters
+        ----------
+        other : Curve
+            The other curve to calculate the intersections with.
+        labels : list[str] or str, optional
+            Labels of the intersection points to be displayed in the legend.
+            If a single string is passed, all intersection points will have the same label.
+        colors : list[str] or str
+            Face colors of the intersection points.
+            If a single string is passed, all intersection points will have the same color.
+            Default depends on the figure style configuration.
+        edge_colors : list[str] or str
+            Edge colors of the intersection points.
+            If a single string is passed, all intersection points will have the same color.
+            Default depends on the figure style configuration.
+        marker_sizes : list[float] or float
+            Sizes of the intersection points.
+            If a single float is passed, all intersection points will have the same size.
+            Default depends on the figure style configuration.
+        marker_styles : list[str] or str
+            Styles of the intersection points.
+            If a single string is passed, all intersection points will have the same style.
+            Default depends on the figure style configuration.
+        edge_widths : list[float] or float
+            Widths of the intersection points.
+            If a single float is passed, all intersection points will have the same width.
+            Default depends on the figure style configuration.
+
+        Returns
+        -------
+        points: list[Point]
+            A list of Point objects which are the intersection points between the two curves.
+        """
         y = self.y_data - other.y_data
         s = np.abs(np.diff(np.sign(y))).astype(bool)
         intersections_x = self.x_data[:-1][s] + np.diff(self.x_data)[s] / (
@@ -356,6 +670,9 @@ class Curve:
         return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        """
+        Plots the element in the specified axes.
+        """
         (self.handle,) = axes.plot(
             self.x_data,
             self.y_data,
@@ -395,7 +712,29 @@ class Curve:
 @dataclass
 class Scatter:
     """
-    A general scatter plot.
+    This class implements a general scatter plot.
+
+    Parameters
+    ----------
+    x_data, y_data : ArrayLike
+        Arrays of x and y values to be plotted.
+    label : str, optional
+        Label to be displayed in the legend.
+    face_color : str
+        Face color of the points.
+        Default depends on the figure style configuration.
+    edge_color : str
+        Edge color of the points.
+        Default depends on the figure style configuration.
+    marker_size : float
+        Size of the points.
+        Default depends on the figure style configuration.
+    marker_style : str
+        Style of the points.
+        Default depends on the figure style configuration.
+    errorbars : bool
+        Whether or not to display errorbars.
+        Default is False.
     """
 
     x_data: ArrayLike
@@ -405,7 +744,7 @@ class Scatter:
     edge_color: str = "default"
     marker_size: float | Literal["default"] = "default"
     marker_style: str = "default"
-    errorbars: bool = False
+    errorbars: bool = field(default=False, init=False)
 
     @classmethod
     def from_function(
@@ -418,8 +757,39 @@ class Scatter:
         edge_color: str = "default",
         marker_size: int | Literal["default"] = "default",
         marker_style: str = "default",
-        number_of_points: int = 500,
+        number_of_points: int = 30,
     ) -> Self:
+        """
+        Creates a scatter plot from a function and a range of x values.
+
+        Parameters
+        ----------
+        func : Callable[[ArrayLike], ArrayLike]
+            The function to be plotted.
+        x_min, x_max : float
+            The scatter plot will be created for x values between x_min and x_max.
+        label : str, optional
+            Label to be displayed in the legend.
+        face_color : str
+            Face color of the points.
+            Default depends on the figure style configuration.
+        edge_color : str
+            Edge color of the points.
+            Default depends on the figure style configuration.
+        marker_size : int
+            Size of the points.
+            Default depends on the figure style configuration.
+        marker_style : str
+            Style of the points.
+            Default depends on the figure style configuration.
+        number_of_points : int
+            Number of points to be plotted.
+            Default is 30.
+
+        Returns
+        -------
+        A Scatter object created from a function and a range of x values.
+        """
         x_data = np.linspace(x_min, x_max, number_of_points)
         y_data = func(x_data)
         return cls(
@@ -431,7 +801,9 @@ class Scatter:
         self.y_data = np.array(self.y_data)
 
     def __add__(self, other: Self | float) -> Self:
-        """Check that x arrays are the same length and the same values, then add y arrays."""
+        """
+        Defines the addition of two scatter plots or a scatter plot and a number.
+        """
         try:
             assert np.array_equal(self.x_data, other.x_data)
         except AssertionError:
@@ -448,7 +820,9 @@ class Scatter:
             )
 
     def __sub__(self, other: Self | float) -> Self:
-        """Check that x arrays are the same length and the same values, then subtract y arrays."""
+        """
+        Defines the subtraction of two scatter plots or a scatter plot and a number.
+        """
         try:
             assert np.array_equal(self.x_data, other.x_data)
         except AssertionError:
@@ -467,7 +841,9 @@ class Scatter:
             )
 
     def __mul__(self, other: Self | float) -> Self:
-        """Check that x arrays are the same length and the same values, then multiply y arrays."""
+        """
+        Defines the multiplication of two scatter plots or a scatter plot and a number.
+        """
         try:
             assert np.array_equal(self.x_data, other.x_data)
         except AssertionError:
@@ -486,7 +862,9 @@ class Scatter:
             )
 
     def __truediv__(self, other: Self | float) -> Self:
-        """Check that x arrays are the same length and the same values, then divide y arrays."""
+        """
+        Defines the division of two scatter plots or a scatter plot and a number.
+        """
         try:
             assert np.array_equal(self.x_data, other.x_data)
         except AssertionError:
@@ -503,6 +881,9 @@ class Scatter:
             )
 
     def __iter__(self):
+        """
+        Defines the iteration of a scatter plot. Returns the y values.
+        """
         return iter(self.y_data)
 
     def add_errorbars(
@@ -514,6 +895,26 @@ class Scatter:
         errorbars_line_width: float | Literal["default"] = "default",
         cap_thickness: float | Literal["default"] = "default",
     ) -> None:
+        """
+        Adds errorbars to the scatter plot.
+
+        Parameters
+        ----------
+        x_error, y_error : ArrayLike, optional
+            Arrays of x and y errors. Use one or both.
+        cap_width : float
+            Width of the errorbar caps.
+            Default depends on the figure style configuration.
+        errorbars_color : str
+            Color of the errorbars.
+            Default depends on the figure style configuration.
+        errorbars_line_width : float
+            Width of the errorbars.
+            Default depends on the figure style configuration.
+        cap_thickness : float
+            Thickness of the errorbar caps.
+            Default depends on the figure style configuration.
+        """
         self.errorbars = True
         self.x_error = np.array(x_error)
         self.y_error = np.array(y_error)
@@ -525,7 +926,7 @@ class Scatter:
     def get_point_at_x(
         self,
         x: float,
-        interpolation_kind: str = "linear",
+        interpolation_method: str = "linear",
         label: Optional[str] = None,
         color: str = "default",
         edge_color: str = "default",
@@ -533,9 +934,42 @@ class Scatter:
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
     ) -> Point:
+        """
+        Gets the point on the curve at a given x value.
+
+        Parameters
+        ----------
+        x : float
+            The x value of the point.
+        interpolation_method : str,
+            The type of interpolation to be used, as defined in [scipy.interpolate.interp1d](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html).
+            Default is "linear".
+        label : str, optional
+            Label to be displayed in the legend.
+        color : str
+            Face color of the point.
+            Default depends on the figure style configuration.
+        edge_color : str
+            Edge color of the point.
+            Default depends on the figure style configuration.
+        marker_size : float
+            Size of the point.
+            Default depends on the figure style configuration.
+        marker_style : str
+            Style of the point.
+            Default depends on the figure style configuration.
+        line_width : float
+            Width of the point edge.
+            Default depends on the figure style configuration.
+
+        Returns
+        -------
+        point: Point
+            The point on the curve at the given x value.
+        """
         point = Point(
             x,
-            float(interp1d(self.x_data, self.y_data, kind=interpolation_kind)(x)),
+            float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
             label=label,
             color=color,
             edge_color=edge_color,
@@ -548,14 +982,47 @@ class Scatter:
     def get_points_at_y(
         self,
         y: float,
-        interpolation_kind: str = "linear",
-        label: str | None = None,
+        interpolation_method: str = "linear",
+        label: Optional[str] = None,
         color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
     ) -> list[Point]:
+        """
+        Gets the points on the curve at a given y value.
+
+        Parameters
+        ----------
+        y : float
+            The y value of the desired points.
+        interpolation_method : str
+            The type of interpolation to be used, as defined in [scipy.interpolate.interp1d](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html).
+            Default is "linear".
+        label : str, optional
+            Label to be displayed in the legend.
+        color : str
+            Face color of the point.
+            Default depends on the figure style configuration.
+        edge_color : str
+            Edge color of the point.
+            Default depends on the figure style configuration.
+        marker_size : float
+            Size of the point.
+            Default depends on the figure style configuration.
+        marker_style : str
+            Style of the point.
+            Default depends on the figure style configuration.
+        line_width : float
+            Width of the point edge.
+            Default depends on the figure style configuration.
+
+        Returns
+        -------
+        points: list[Point]
+            The points on the curve at the given y value.
+        """
         xs = self.x_data
         ys = self.y_data
         assert isinstance(xs, np.ndarray) and isinstance(ys, np.ndarray)
@@ -564,7 +1031,7 @@ class Scatter:
         for cross in crossings:
             x1, x2 = xs[cross], xs[cross + 1]
             y1, y2 = ys[cross], ys[cross + 1]
-            f = interp1d([y1, y2], [x1, x2], kind=interpolation_kind)
+            f = interp1d([y1, y2], [x1, x2], kind=interpolation_method)
             x_val = f(y)
             x_vals.append(float(x_val))
         points = [
@@ -583,6 +1050,9 @@ class Scatter:
         return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        """
+        Plots the element in the specified axes.
+        """
         self.handle = axes.scatter(
             self.x_data,
             self.y_data,
@@ -611,10 +1081,44 @@ class Scatter:
 @dataclass
 class Histogram:
     """
-    A histogram plot with minor changes to the lable icon.
+    This class implements a general histogram.
+
+    Parameters
+    ----------
+    data : ArrayLike
+        Array of values to be plotted.
+    number_of_bins : int
+        Number of bins to be used in the histogram.
+    label : str, optional
+        Label to be displayed in the legend.
+    face_color : str
+        Face color of the histogram.
+        Default depends on the figure style configuration.
+    edge_color : str
+        Edge color of the histogram.
+        Default depends on the figure style configuration.
+    hist_type : str
+        Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
+        Default depends on the figure style configuration.
+    alpha : float
+        Transparency of the histogram.
+        Default depends on the figure style configuration.
+    line_width : float
+        Width of the histogram edge.
+        Default depends on the figure style configuration.
+    normalize : bool
+        Whether or not to normalize the histogram.
+        Default depends on the figure style configuration.
+    show_pdf : str
+        Whether or not to show the probability density function.
+        Can be "normal" or "gaussian".
+        Default depends on the figure style configuration.
+    show_params : bool
+        Whether or not to show the mean and standard deviation of the data.
+        Default depends on the figure style configuration.
     """
 
-    x_data: ArrayLike
+    data: ArrayLike
     number_of_bins: int
     label: Optional[str] = None
     face_color: str = "default"
@@ -627,11 +1131,11 @@ class Histogram:
     show_params: bool | Literal["default"] = "default"
 
     def __post_init__(self) -> None:
-        self.x_data = np.array(self.x_data)
-        self.mean = np.mean(self.x_data)
-        self.standard_deviation = np.std(self.x_data)
+        self.data = np.array(self.data)
+        self.mean = np.mean(self.data)
+        self.standard_deviation = np.std(self.data)
         parameters = np.histogram(
-            self.x_data, bins=self.number_of_bins, density=self.normalize
+            self.data, bins=self.number_of_bins, density=self.normalize
         )
         self._bin_heights, bin_edges = parameters[0], parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
@@ -656,6 +1160,47 @@ class Histogram:
         show_pdf: str | Literal["default"] = "default",
         show_params: bool | Literal["default"] = "default",
     ) -> Self:
+        """
+        Calculates the residuals of a fit and plots them as a histogram.
+
+        Parameters
+        ----------
+        fit : Fit
+            The fit from which the residuals are to be calculated.
+        number_of_bins : int
+            Number of bins to be used in the histogram.
+        label : str, optional
+            Label to be displayed in the legend.
+        face_color : str
+            Face color of the histogram.
+            Default depends on the figure style configuration.
+        edge_color : str
+            Edge color of the histogram.
+            Default depends on the figure style configuration.
+        hist_type : str
+            Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
+            Default depends on the figure style configuration.
+        alpha : float
+            Transparency of the histogram.
+            Default depends on the figure style configuration.
+        line_width : float
+            Width of the histogram edge.
+            Default depends on the figure style configuration.
+        normalize : bool
+            Whether or not to normalize the histogram.
+            Default depends on the figure style configuration.
+        show_pdf : str
+            Whether or not to show the probability density function.
+            Can be "normal" or "gaussian".
+            Default depends on the figure style configuration.
+        show_params : bool
+            Whether or not to show the mean and standard deviation of the data.
+            Default depends on the figure style configuration.
+
+        Returns
+        -------
+        A Histogram object created from the residuals of a fit.
+        """
         residuals = fit.calculate_residuals()
         return cls(
             residuals,
@@ -672,6 +1217,9 @@ class Histogram:
         )
 
     def _create_label(self) -> None:
+        """
+        Creates the label of the histogram (with or without parameters).
+        """
         lab = self.label
         if lab and self.show_params:
             lab += (
@@ -683,16 +1231,43 @@ class Histogram:
         self.label = lab
 
     def _normal_normalized(self, x: ArrayLike) -> ArrayLike:
+        """
+        Calculates the normalized gaussian curve from the mean and standard deviation of the data.
+
+        Parameters
+        ----------
+        x : ArrayLike
+            The x values at which the gaussian curve is to be calculated.
+
+        Returns
+        -------
+        The corresponding array of y values of the gaussian curve.
+        """
         x = np.array(x)
         return (1 / (self.standard_deviation * np.sqrt(2 * np.pi))) * np.exp(
             -0.5 * (((x - self.mean) / self.standard_deviation) ** 2)
         )
 
     def _normal_not_normalized(self, x: ArrayLike) -> ArrayLike:
+        """
+        Calculates the (not normalized) gaussian curve from the mean and standard deviation of the data.
+
+        Parameters
+        ----------
+        x : ArrayLike
+            The x values at which the gaussian curve is to be calculated.
+
+        Returns
+        -------
+        The corresponding array of y values of the gaussian curve.
+        """
         x = np.array(x)
         return sum(self._bin_heights) * self._bin_width * self._normal_normalized(x)
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        """
+        Plots the element in the specified axes.
+        """
         self.handle = Polygon(
             np.array([[0, 2, 2, 3, 3, 1, 1, 0, 0], [0, 0, 1, 1, 2, 2, 3, 3, 0]]).T,
             facecolor=to_rgba(self.face_color, self.alpha),
@@ -700,7 +1275,7 @@ class Histogram:
             linewidth=1,
         )
         axes.hist(
-            self.x_data,
+            self.data,
             bins=self.number_of_bins,
             facecolor=to_rgba(self.face_color, self.alpha),
             edgecolor=to_rgba(self.edge_color, 1),
@@ -739,19 +1314,3 @@ class Histogram:
                 colors=["k", "r", "k"],
                 zorder=z_order - 1,
             )
-
-
-def remove_duplicates(numbers: list[float], relative_tolerance: float):
-    result: list[float] = []
-    for num in numbers:
-        similar_points: list[float] = [num]
-        for existing_num in result:
-            if abs(num - existing_num) <= relative_tolerance * abs(existing_num):
-                similar_points.append(existing_num)
-        if len(similar_points) > 1:
-            average = sum(similar_points) / len(similar_points)
-            result = [x for x in result if x not in similar_points]
-            result.append(average)
-        else:
-            result.append(num)
-    return result
