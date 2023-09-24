@@ -4,6 +4,5 @@
 
 .. automodule:: graphinglib.legend_artists
    :members:
-   :undoc-members:
    :show-inheritance:
    :private-members:

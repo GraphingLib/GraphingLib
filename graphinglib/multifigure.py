@@ -27,6 +27,32 @@ class SubFigure:
 
     This class is not meant to be used directly by the user. Instead, it is used in
     conjunction with the MultiFigure class.
+
+    Parameters
+    ----------
+    placement : tuple[int, int, int, int]
+        The position occupied by the SubFigure in the grid of the MultiFigure.
+        Specified as `(row, column, number of rows spanned, number of columns spanned)`.
+        The `row` and `column` refer to the upper-left corner of the SubFigure.
+    x_label, y_label : str
+        The indentification for the x-axis and y-axis.
+        Defaults to `"x axis"` and `"y axis"`.
+    x_lim, y_lim : tuple[float, float], optional
+        The limits for the x-axis and y-axis.
+    figure_style : str
+        The figure style to use for the figure.
+    log_scale_x, log_scale_y : bool
+        Whether or not to set the scale of the x- or y-axis to logaritmic scale.
+        Default depends on the figure style configuration.
+    show_grid : bool
+        Wheter or not to show the grid.
+        Default depends on the figure style configuration.
+    legend_is_boxed : bool
+        Wheter or not to display the legend inside a box.
+        Default depends on the figure style configuration.
+    ticks_are_in : bool
+        Wheter or not to display the axis ticks inside the axis.
+        Default depends on the figure style configuration.
     """
 
     def __init__(
@@ -286,6 +312,28 @@ class MultiFigure:
 
     The "canvas" consists of a grid of a specified size on which the SubFigure
     objects are displayed.
+
+    Parameters
+    ----------
+    num_rows, num_cols : int
+        Number of rows and columns for the grid. These parameters determine the
+        the number of "squares" on which a plot can be placed. Note that a single
+        plot can span multiple squares.
+    size : tuple[float, float]
+        Overall size of the figure.
+        Default depends on the figure style configuration.
+    title : str, optional
+        General title of the figure.
+    figure_style : str
+        The figure style to use for the figure.
+    use_latex : bool
+        Wheter or not to use LaTeX to render text and math symbols in the figure.
+        Requires a LaTeX distribution.
+    font_size : int
+        Font size used to render the text and math symbols in the figure.
+    legend_is_boxed : bool
+        Wheter or not to display the legend inside a box.
+        Default depends on the figure style configuration.
     """
 
     def __init__(

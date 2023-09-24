@@ -32,6 +32,24 @@ class GraphingException(Exception):
 class Hlines:
     """
     This class implements simple horizontal lines.
+
+    Parameters
+    ----------
+    y : ArrayLike
+        Vertical positions at which the lines should be plotted.
+    x_min, x_max : ArrayLike
+        Horizontal positions at which the lines should start and end. Different
+        positions can be specified for every line.
+    label : str, optional
+        Label to be displayed in the legend.
+    colors : list[str]
+        Colors to use for the lines. One color for every line or a color
+        per line can be specified.
+        Default depends on the figure style configuration.
+    line_styles : list[str]
+        Line styles to use for the lines. One style for every line or a style
+        per line can be specified.
+        Default depends on the figure style configuration.
     """
 
     def __init__(
@@ -132,6 +150,24 @@ class Hlines:
 class Vlines:
     """
     This class implements simple vertical lines.
+
+    Parameters
+    ----------
+    x : ArrayLike
+        Horizontal positions at which the lines should be plotted.
+    y_min, y_max : ArrayLike
+        Vertical positions at which the lines should start and end. Different
+        positions can be specified for every line.
+    label : str, optional
+        Label to be displayed in the legend.
+    colors : list[str]
+        Colors to use for the lines. One color for every line or a color
+        per line can be specified.
+        Default depends on the figure style configuration.
+    line_styles : list[str]
+        Line styles to use for the lines. One style for every line or a style
+        per line can be specified.
+        Default depends on the figure style configuration.
     """
 
     def __init__(
@@ -235,6 +271,38 @@ class Point:
 
     The point object can be used to show important coordinates in a plot
     or add a label to some point.
+
+    Parameters
+    ----------
+    x, y : float
+        The x and y coordinates of the point.
+    label : str, optional
+        Label to be attached to the point.
+    color : str
+        Face color of the marker.
+        Default depends on the figure style configuration.
+    edge_color : str
+        Edge color of the marker.
+        Default depends on the figure style configuration.
+    marker_size : float
+        Size of the marker.
+        Default depends on the figure style configuration.
+    marker_style : str
+        Style of the marker.
+        Default depends on the figure style configuration.
+    edge_width : float
+        Edge width of the marker.
+        Default depends on the figure style configuration.
+    font_size : float
+        Font size for the text attached to the marker.
+        Default depends on the figure style configuration.
+    text_color : str
+        Color of the text attached to the marker.
+        Defaults to `"k"` (black).
+    h_align, v_align : str
+        Horizontal and vertical alignment of the text attached
+        to the point.
+        Defaults to bottom left.
     """
 
     def __init__(

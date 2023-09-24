@@ -4,6 +4,5 @@
 
 .. automodule:: graphinglib.file_manager
    :members:
-   :undoc-members:
    :show-inheritance:
    :private-members:

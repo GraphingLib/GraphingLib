@@ -14,6 +14,22 @@ from .graph_elements import Point
 class GeneralFit(Curve):
     """
     Dummy class for curve fits. Do not use directly. Defines the interface for all curve fits.
+
+    Parameters
+    ----------
+    curve_to_be_fit : Curve | Scatter
+        The object to be fit.
+    label : str, optional
+        Label to be displayed in the legend.
+    color : str
+        Color of the curve.
+        Default depends on the figure style configuration.
+    line_width : int
+        Line width of the curve.
+        Default depends on the figure style configuration.
+    line_style : str
+        Line style of the curve.
+        Default depends on the figure style configuration.
     """
 
     def __init__(
@@ -273,6 +289,35 @@ class GeneralFit(Curve):
 class FitFromPolynomial(GeneralFit):
     """
     Creates a curve fit (continuous Curve) from an existing curve object using a polynomial fit.
+
+    Parameters
+    ----------
+    curve_to_be_fit : Curve | Scatter
+        The object to be fit.
+    degree : int
+        Degree of the polynomial fit.
+    label : str, optional
+        Label to be displayed in the legend.
+    color : str
+        Color of the curve.
+        Default depends on the figure style configuration.
+    line_width : int
+        Line width of the curve.
+        Default depends on the figure style configuration.
+    line_style : str
+        Line style of the curve.
+        Default depends on the figure style configuration.
+
+    Attributes
+    ----------
+    coeffs : np.ndarray
+        Coefficients of the polynomial fit. The first element is the coefficient of the lowest order term (constant term).
+    cov_matrix : np.ndarray
+        Covariance matrix of the polynomial fit (using the same order as the coeffs attribute).
+    standard_deviation : np.ndarray
+        Standard deviation of the coefficients of the polynomial fit (same order as coeffs).
+    function : Callable
+        Polynomial function with the parameters of the fit.
     """
 
     def __init__(
@@ -399,6 +444,41 @@ class FitFromPolynomial(GeneralFit):
 class FitFromSine(GeneralFit):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a sinusoidal fit.
+
+    Parameters
+    ----------
+    curve_to_be_fit : Curve | Scatter
+        The object to be fit.
+    label : str, optional
+        Label to be displayed in the legend.
+    guesses : ArrayLike, optional
+        Initial guesses for the parameters of the fit (order: amplitude (a), frequency (b), phase (c), vertical shift (d) as written above).
+    color : str
+        Color of the curve.
+        Default depends on the figure style configuration.
+    line_width : int
+        Line width of the curve.
+        Default depends on the figure style configuration.
+    line_style : str
+        Line style of the curve.
+        Default depends on the figure style configuration.
+
+    Attributes
+    ----------
+    amplitude : float
+        Amplitude of the sine function.
+    frequency_rad : float
+        Frequency of the sine function in radians.
+    phase : float
+        Phase of the sine function.
+    vertical_shift : float
+        Vertical shift of the sine function.
+    cov_matrix : np.ndarray
+        Covariance matrix of the parameters of the fit.
+    standard_deviation : np.ndarray
+        Standard deviation of the parameters of the fit.
+    function : Callable
+        Sine function with the parameters of the fit.
     """
 
     def __init__(
@@ -528,6 +608,35 @@ class FitFromSine(GeneralFit):
 class FitFromExponential(GeneralFit):
     """
     Create a curve fit (continuous Curve) from an existing curve object using an exponential fit.
+
+    Parameters
+    ----------
+    curve_to_be_fit : Curve | Scatter
+        The object to be fit.
+    label : str, optional
+        Label to be displayed in the legend.
+    guesses : ArrayLike, optional
+        Initial guesses for the parameters of the fit. Order is a, b, c as written above.
+    color : str
+        Color of the curve.
+        Default depends on the figure style configuration.
+    line_width : int
+        Line width of the curve.
+        Default depends on the figure style configuration.
+    line_style : str
+        Line style of the curve.
+        Default depends on the figure style configuration.
+
+    Attributes
+    ----------
+    parameters : np.ndarray
+        Parameters of the fit (same order as guesses).
+    cov_matrix : np.ndarray
+        Covariance matrix of the parameters of the fit.
+    standard_deviation : np.ndarray
+        Standard deviation of the parameters of the fit.
+    function : Callable
+        Exponential function with the parameters of the fit.
     """
 
     def __init__(
@@ -645,6 +754,45 @@ class FitFromExponential(GeneralFit):
 class FitFromGaussian(GeneralFit):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a gaussian fit.
+
+    Fits a gaussian function of the form :math:`f(x) = A e^{-\\frac{(x - \mu)^2}{2 \sigma^2}}` to the given curve. All standard Curve attributes and methods are available.
+
+    Parameters
+    ----------
+    curve_to_be_fit : Curve | Scatter
+        The object to be fit.
+    label : str, optional
+        Label to be displayed in the legend.
+    guesses : ArrayLike, optional
+        Initial guesses for the parameters of the fit.
+    color : str
+        Color of the curve.
+        Default depends on the figure style configuration.
+    line_width : int
+        Line width of the curve.
+        Default depends on the figure style configuration.
+    line_style : str
+        Line style of the curve.
+        Default depends on the figure style configuration.
+
+    Attributes
+    ----------
+    amplitude : float
+        Amplitude of the gaussian function.
+    mean : float
+        Mean of the gaussian function.
+    standard_deviation : float
+        Standard deviation of the gaussian function.
+    cov_matrix : np.ndarray
+        Covariance matrix of the parameters of the fit.
+    standard_deviation_of_fit_params : np.ndarray
+        Standard deviation of the parameters of the fit.
+    function : Callable
+        Gaussian function with the parameters of the fit.
+
+    Warning
+    -------
+    The `standard_deviation` attribute doesn't represent the standard deviation of the fit parameters as it does in the other fit classes. Instead, it represents the standard deviation of the gaussian function (it is one of parameters of the fit). The standard deviation of the fit parameters can be found in the `standard_deviation_of_fit_params` attribute.
     """
 
     def __init__(
@@ -768,6 +916,37 @@ class FitFromGaussian(GeneralFit):
 class FitFromSquareRoot(GeneralFit):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a square root fit.
+
+    Fits a square root function of the form :math:`f(x) = a \sqrt{x + b} + c` to the given curve. All standard Curve attributes and methods are available.
+
+    Parameters
+    ----------
+    curve_to_be_fit : Curve | Scatter
+        The object to be fit.
+    label : str, optional
+        Label to be displayed in the legend.
+    guesses : ArrayLike, optional
+        Initial guesses for the parameters of the fit. Order is a, b, c as written above.
+    color : str
+        Color of the curve.
+        Default depends on the figure style configuration.
+    line_width : int
+        Line width of the curve.
+        Default depends on the figure style configuration.
+    line_style : str
+        Line style of the curve.
+        Default depends on the figure style configuration.
+
+    Attributes
+    ----------
+    parameters : np.ndarray
+        Parameters of the fit (same order as guesses).
+    cov_matrix : np.ndarray
+        Covariance matrix of the parameters of the fit.
+    standard_deviation : np.ndarray
+        Standard deviation of the parameters of the fit.
+    function : Callable
+        Square root function with the parameters of the fit.
     """
 
     def __init__(
@@ -882,6 +1061,40 @@ class FitFromSquareRoot(GeneralFit):
 class FitFromLog(GeneralFit):
     """
     Create a curve fit (continuous Curve) from an existing curve object using a logarithmic fit.
+
+    Fits a logarithmic function of the form :math:`f(x) = a \log_{base}(x + b) + c` to the given curve. All standard Curve attributes and methods are available.
+
+    Parameters
+    ----------
+    curve_to_be_fit : Curve | Scatter
+        The object to be fit.
+    label : str, optional
+        Label to be displayed in the legend.
+    log_base : float
+        Base of the logarithm.
+        Default is e.
+    guesses : ArrayLike, optional
+        Initial guesses for the parameters of the fit. Order is a, b, c as written above.
+    color : str
+        Color of the curve.
+        Default depends on the figure style configuration.
+    line_width : int
+        Line width of the curve.
+        Default depends on the figure style configuration.
+    line_style : str
+        Line style of the curve.
+        Default depends on the figure style configuration.
+
+    Attributes
+    ----------
+    parameters : np.ndarray
+        Parameters of the fit (same order as guesses).
+    cov_matrix : np.ndarray
+        Covariance matrix of the parameters of the fit.
+    standard_deviation : np.ndarray
+        Standard deviation of the parameters of the fit.
+    function : Callable
+        Logarithmic function with the parameters of the fit.
     """
 
     def __init__(
@@ -1000,6 +1213,39 @@ class FitFromLog(GeneralFit):
 class FitFromFunction(GeneralFit):
     """
     Create a curve fit (continuous Curve) from a curve object using an arbitrary function passed as an argument.
+
+    Fits a function of the form :math:`f(x, a, b, c, ...)` to the given curve. All standard Curve attributes and methods are available.
+
+    Parameters
+    ----------
+    function : Callable
+        Function to be passed to the curve_fit function.
+    curve_to_be_fit : Curve | Scatter
+        The object to be fit.
+    label : str, optional
+        Label to be displayed in the legend.
+    guesses : ArrayLike, optional
+        Initial guesses for the parameters of the fit. Order is a, b, c, ... as written above.
+    color : str
+        Color of the curve.
+        Default depends on the figure style configuration.
+    line_width : int
+        Line width of the curve.
+        Default depends on the figure style configuration.
+    line_style : str
+        Line style of the curve.
+        Default depends on the figure style configuration.
+
+    Attributes
+    ----------
+    parameters : np.ndarray
+        Parameters of the fit (same order as guesses).
+    cov_matrix : np.ndarray
+        Covariance matrix of the parameters of the fit.
+    standard_deviation : np.ndarray
+        Standard deviation of the parameters of the fit.
+    function : Callable
+        Function with the parameters of the fit.
     """
 
     def __init__(
