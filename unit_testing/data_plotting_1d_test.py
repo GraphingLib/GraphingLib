@@ -282,7 +282,7 @@ class TestHistogram(unittest.TestCase):
         self.assertEqual(self.testHist.label[:19], "Random Distribution")
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testHist.x_data, list | ndarray)
+        self.assertIsInstance(self.testHist.data, list | ndarray)
 
     def test_face_color_is_str(self):
         self.assertEqual(self.testHist.face_color, "silver")
