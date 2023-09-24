@@ -7,9 +7,8 @@ import numpy.typing as npt
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 
-from graphinglib.graph_elements import Point
-
 from .data_plotting_1d import Curve, Scatter
+from .graph_elements import Point
 
 
 class GeneralFit(Curve):
