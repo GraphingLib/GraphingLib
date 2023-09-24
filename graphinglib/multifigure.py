@@ -20,18 +20,19 @@ from .legend_artists import (
 
 class Subfigure:
     """
-    A single plot inside a multifigure.
+    This class implements the individual plots added inside the Multifigure object.
 
-    placement: (row, col, rowspan, colspan)
+    This class is not meant to be used directly by the user. Instead, it is used in
+    conjunction with the Multifigure class.
     """
 
     def __init__(
         self,
-        placement: tuple[int, int, int, int],
+        placement: tuple[int],
         x_label: str = "x axis",
         y_label: str = "y axis",
-        x_lim: Optional[tuple[float, float]] = None,
-        y_lim: Optional[tuple[float, float]] = None,
+        x_lim: Optional[tuple[float]] = None,
+        y_lim: Optional[tuple[float]] = None,
         figure_style: str = "plain",
         log_scale_x: bool | Literal["default"] = "default",
         log_scale_y: bool | Literal["default"] = "default",
@@ -39,6 +40,33 @@ class Subfigure:
         legend_is_boxed: bool | Literal["default"] = "default",
         ticks_are_in: bool | Literal["default"] = "default",
     ):
+        """
+        Parameters
+        ----------
+        placement : tuple[int]
+            The position occupied by the subfigure in the grid of the Multifigure.
+            Specified as `(row, column, number of rows spanned, number of columns spanned)`.
+            The `row` and `column` refer to the upper-left corner of the subfigure.
+        x_label, y_label : string
+            The indentification for the x-axis and y-axis.
+            Defaults to `"x axis"` and `"y axis"`.
+        x_lim, y_lim : tuple[float], optional
+            The limits for the x-axis and y-axis.
+        figure_style : string
+            The figure style to use for the figure.
+        log_scale_x, log_scale_y : bool
+            Whether or not to set the scale of the x- or y-axis to logaritmic scale.
+            Default depends on the figure style configuration.
+        show_grid : bool
+            Wheter or not to show the grid.
+            Default depends on the figure style configuration.
+        legend_is_boxed : bool
+            Wheter or not to display the legend inside a box.
+            Default depends on the figure style configuration.
+        ticks_are_in : bool
+            Wheter or not to display the axis ticks inside the axis.
+            Default depends on the figure style configuration.
+        """
         self.x_axis_name = x_label
         self.y_axis_name = y_label
         self.x_lim = x_lim
@@ -83,6 +111,11 @@ class Subfigure:
     def add_element(self, *elements: Plottable) -> None:
         """
         Adds a Plottable element to the subfigure.
+
+        Parameters
+        ----------
+        *elements : Plottable
+            Elements to plot in the subfigure.
         """
         for element in elements:
             self._elements.append(element)
@@ -93,6 +126,9 @@ class Subfigure:
                 pass
 
     def _prepare_subfigure(self, grid: GridSpec, legend: bool = True) -> Axes:
+        """
+        Prepares the subfigure to be plotted.
+        """
         self._axes = plt.subplot(
             grid.new_subplotspec(
                 (self.placement[0], self.placement[1]),
@@ -164,6 +200,9 @@ class Subfigure:
         return self._labels, self._handles
 
     def _fill_in_missing_params(self, element: Plottable) -> None:
+        """
+        Fills in the missing parameters from the specified figure style.
+        """
         object_type = type(element).__name__
         for property, value in vars(element).items():
             if (type(value) == str) and (value == "default"):
@@ -193,6 +232,24 @@ class Subfigure:
         color: str = "default",
         alpha: float | Literal["default"] = "default",
     ) -> None:
+        """
+        Sets the grid in the subfigure.
+
+        Parameters
+        ----------
+        line_width : float
+            Width of the lines forming the grid.
+            Default depends on the figure style configuration.
+        line_style : str
+            Line style of the lines forming the grid.
+            Default depends on the figure style configuration.
+        color : str
+            Color of the lines forming the grid.
+            Default depends on the figure style configuration.
+        alpha : float
+            Opacity of the lines forming the grid.
+            Default depends on the figure style configuration.
+        """
         self.grid_line_style = (
             line_style
             if line_style != "default"
@@ -221,7 +278,7 @@ class Multifigure:
         self,
         num_rows: int,
         num_cols: int,
-        size: tuple[float, float] | Literal["default"] = "default",
+        size: tuple[float] | Literal["default"] = "default",
         title: Optional[str] = None,
         figure_style: str = "plain",
         use_latex: bool = False,
@@ -260,8 +317,8 @@ class Multifigure:
         placement: tuple[int, int],
         x_label: str = "x axis",
         y_label: str = "y axis",
-        x_lim: Optional[tuple[float, float]] = None,
-        y_lim: Optional[tuple[float, float]] = None,
+        x_lim: Optional[tuple[float]] = None,
+        y_lim: Optional[tuple[float]] = None,
         log_scale_x: bool | Literal["default"] = "default",
         log_scale_y: bool | Literal["default"] = "default",
         show_grid: bool | Literal["default"] = "default",
