@@ -10,6 +10,10 @@ from .legend_artists import VerticalLineCollection
 
 
 class Plottable(Protocol):
+    """
+    Dummy class for a general plottable object.
+    """
+
     def _plot_element(self, axes: plt.Axes, z_order: int):
         pass
 
@@ -24,7 +28,7 @@ class GraphingException(Exception):
 
 class Hlines:
     """
-    Horizontal lines.
+    This class implements simple horizontal lines.
     """
 
     def __init__(
@@ -36,6 +40,25 @@ class Hlines:
         colors: list[str] | str = "default",
         line_styles: list[str] | str = "default",
     ) -> None:
+        """
+        Parameters
+        ----------
+        y : ArrayLike
+            Vertical positions at which the lines should be plotted.
+        x_min, x_max : ArrayLike
+            Horizontal positions at which the lines should start and end. Different
+            positions can be specified for every line.
+        label : str, optional
+            Label to be displayed in the legend.
+        colors : list[str]
+            Colors to use for the lines. One color for every line or a color
+            per line can be specified.
+            Default depends on the figure style configuration.
+        line_styles : list[str]
+            Line styles to use for the lines. One style for every line or a style
+            per line can be specified.
+            Default depends on the figure style configuration.
+        """
         if isinstance(y, (int, float)):
             self.y = y
         elif isinstance(y, (list, np.ndarray)):
@@ -73,6 +96,9 @@ class Hlines:
                 )
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        """
+        Plots the element in the specified axes.
+        """
         if isinstance(self.y, list) and len(self.y) > 1:
             axes.hlines(
                 self.y,
@@ -100,7 +126,7 @@ class Hlines:
 
 class Vlines:
     """
-    Vertical lines.
+    This class implements simple vertical lines.
     """
 
     def __init__(
@@ -112,6 +138,25 @@ class Vlines:
         colors: list[str] | str = "default",
         line_styles: list[str] | str = "default",
     ) -> None:
+        """
+        Parameters
+        ----------
+        x : ArrayLike
+            Horizontal positions at which the lines should be plotted.
+        y_min, y_max : ArrayLike
+            Vertical positions at which the lines should start and end. Different
+            positions can be specified for every line.
+        label : str, optional
+            Label to be displayed in the legend.
+        colors : list[str]
+            Colors to use for the lines. One color for every line or a color
+            per line can be specified.
+            Default depends on the figure style configuration.
+        line_styles : list[str]
+            Line styles to use for the lines. One style for every line or a style
+            per line can be specified.
+            Default depends on the figure style configuration.
+        """
         if isinstance(x, (int, float)):
             self.x = x
         elif isinstance(x, (list, np.ndarray)):
@@ -149,6 +194,9 @@ class Vlines:
                 )
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        """
+        Plots the element in the specified axes.
+        """
         if isinstance(self.x, list) and len(self.x) > 1:
             axes.vlines(
                 self.x,
@@ -176,7 +224,10 @@ class Vlines:
 
 class Point:
     """
-    A general point object.
+    This class implements a point object.
+
+    The point object can be used to show important coordinates in a plot
+    or add a label to some point.
     """
 
     def __init__(
@@ -194,6 +245,39 @@ class Point:
         h_align: str = "left",
         v_align: str = "bottom",
     ) -> None:
+        """
+        Parameters
+        ----------
+        x, y : float
+            The x and y coordinates of the point.
+        label : str, optional
+            Label to be attached to the point.
+        color : str
+            Face color of the marker.
+            Default depends on the figure style configuration.
+        edge_color : str
+            Edge color of the marker.
+            Default depends on the figure style configuration.
+        marker_size : float
+            Size of the marker.
+            Default depends on the figure style configuration.
+        marker_style : str
+            Style of the marker.
+            Default depends on the figure style configuration.
+        edge_width : float
+            Edge width of the marker.
+            Default depends on the figure style configuration.
+        font_size : float
+            Font size for the text attached to the marker.
+            Default depends on the figure style configuration.
+        text_color : str
+            Color of the text attached to the marker.
+            Defaults to `"k"` (black).
+        h_align, v_align : str
+            Horizontal and vertical alignment of the text attached
+            to the point.
+            Defaults to bottom left.
+        """
         if not isinstance(x, int | float) or not isinstance(y, int | float):
             raise GraphingException(
                 "The x and y coordinates for a point must be a single number each!"
@@ -214,9 +298,15 @@ class Point:
         self._show_coordinates: bool = False
 
     def add_coordinates(self) -> None:
+        """
+        Displays the coordinates of the point next to it.
+        """
         self._show_coordinates = True
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        """
+        Plots the element in the specified axes.
+        """
         size = self.font_size if self.font_size != "same as figure" else None
         prefix = " " if self.h_align == "left" else ""
         postfix = " " if self.h_align == "right" else ""
@@ -270,7 +360,26 @@ class Point:
 @dataclass
 class Text:
     """
-    A text object to be displayed on a graph.
+    This class allows text to be plotted.
+
+    It is also possible to attach an arrow to the text with the method
+    `attach_arrow()` to point at something of interest in the plot.
+
+    Parameters
+    ----------
+    x, y : float
+        The x and y coordinates at which to plot the text.
+    text : str
+        The text to be plotted.
+    color : str
+        Color of the text.
+        Default depends on the figure style configuration.
+    font_size : float
+        Font size of the text.
+        Default depends on the figure style configuration.
+    h_align, v_align : str
+        Horizontal and vertical alignment of the text.
+        Default depends on the figure style configuration.
     """
 
     x: float
@@ -284,12 +393,29 @@ class Text:
 
     def attach_arrow(
         self,
-        points_to: tuple[float],
+        points_to: tuple[float, float],
         width: Optional[float] = None,
         shrink: Optional[float] = None,
         head_width: Optional[float] = None,
         head_length: Optional[float] = None,
     ) -> None:
+        """
+        Adds an arrow pointing from the text to a specified point.
+
+        Parameters
+        ----------
+        points_to: tuple[float, float]
+            Coordinates at which to point.
+        width : float, optional
+            Arrow width.
+        shrink : float, optional
+            Shrinking factor to apply to the arrow length. Values must be
+            between 0 and 1.
+        head_width : float, optional
+            Width of the head of the arrow.
+        head_length : float, optional
+            Length of the head of the arrow.
+        """
         self._arrow_pointing_to = points_to
         self.width = width
         self.shrink = shrink
@@ -304,6 +430,9 @@ class Text:
             self.arrow_properties["headlength"] = head_length
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        """
+        Plots the element in the specified axes.
+        """
         size = self.font_size if self.font_size != "same as figure" else None
         axes.text(
             self.x,
