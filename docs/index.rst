@@ -17,10 +17,12 @@ Contents
 ========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    
    installation
    handbook/index
+   reference/index
+   release_notes/index
 
 Indices and tables
 ==================
