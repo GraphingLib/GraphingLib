@@ -132,7 +132,7 @@ class Figure:
 
         Parameters
         ----------
-        *elements : Plottable
+        elements : Plottable
             Elements to plot in the figure.
         """
         for element in elements:

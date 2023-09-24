@@ -125,7 +125,7 @@ class SubFigure:
 
         Parameters
         ----------
-        *elements : Plottable
+        elements : Plottable
             Elements to plot in the SubFigure.
         """
         for element in elements:

@@ -18,7 +18,9 @@
 !graphinglib/data_plotting_2d.py
 !graphinglib/multifigure.py
 !docs/
-!docs/**
+!docs/*
+!docs/handbook/*
+!docs/reference/*
 !examples/
 !examples/**
 
