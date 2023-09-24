@@ -4,8 +4,8 @@ from typing import Callable, Literal, Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-from scipy.optimize import curve_fit
 from scipy.interpolate import interp1d
+from scipy.optimize import curve_fit
 
 from graphinglib.graph_elements import Point
 
@@ -228,7 +228,7 @@ class FitFromPolynomial(GeneralFit):
 
     def _polynomial_func_with_params(
         self,
-    ) -> Callable[float | np.ndarray, float | np.ndarray]:
+    ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         """
         Returns a linear function using the class' coefficients.
         """
@@ -302,7 +302,7 @@ class FitFromSine(GeneralFit):
 
     def _sine_func_with_params(
         self,
-    ) -> Callable[float | np.ndarray, float | np.ndarray]:
+    ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         return (
             lambda x: self.amplitude * np.sin(self.frequency_rad * x + self.phase)
             + self.vertical_shift
@@ -367,7 +367,9 @@ class FitFromExponential(GeneralFit):
     def _exp_func_template(x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
         return a * np.exp(b * x + c)
 
-    def _exp_func_with_params(self) -> Callable[float | np.ndarray, float | np.ndarray]:
+    def _exp_func_with_params(
+        self,
+    ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         return lambda x: self.parameters[0] * np.exp(
             self.parameters[1] * x + self.parameters[2]
         )
@@ -431,7 +433,7 @@ class FitFromGaussian(GeneralFit):
 
     def _gaussian_func_with_params(
         self,
-    ) -> Callable[float | np.ndarray, float | np.ndarray]:
+    ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         return lambda x: self.amplitude * np.exp(
             -(((x - self.mean) / self.standard_deviation) ** 2) / 2
         )
@@ -493,7 +495,7 @@ class FitFromSquareRoot(GeneralFit):
 
     def _square_root_func_with_params(
         self,
-    ) -> Callable[float | np.ndarray, float | np.ndarray]:
+    ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         return (
             lambda x: self.parameters[0] * np.sqrt(x + self.parameters[1])
             + self.parameters[2]
@@ -554,7 +556,9 @@ class FitFromLog(GeneralFit):
     ) -> Callable[[float | np.ndarray, float, float, float], float | np.ndarray]:
         return lambda x, a, b, c: a * (np.log(x + b) / np.log(self.log_base)) + c
 
-    def _log_func_with_params(self) -> Callable[float | np.ndarray, float | np.ndarray]:
+    def _log_func_with_params(
+        self,
+    ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         return (
             lambda x: self.parameters[0]
             * (np.log(x + self.parameters[1]) / np.log(self.log_base))
