@@ -10,7 +10,7 @@ from numpy import array, full_like
 
 class HandlerMultipleLines(HandlerLineCollection):
     """
-    Custom Handler for LineCollection instances.
+    Custom Handler for LineCollection objects.
     """
 
     def create_artists(
@@ -53,6 +53,10 @@ class HandlerMultipleLines(HandlerLineCollection):
 
 
 class HandlerMultipleVerticalLines(HandlerLineCollection):
+    """
+    Custom handler for VerticalLineCollection objects.
+    """
+
     def create_artists(
         self,
         legend: Legend,
@@ -93,6 +97,10 @@ class HandlerMultipleVerticalLines(HandlerLineCollection):
 
 
 class VerticalLineCollection(LineCollection):
+    """
+    Dummy class for vertical LineCollection.
+    """
+
     pass
 
 
@@ -105,6 +113,9 @@ def histogram_legend_artist(
     height: float,
     fontsize: float,
 ) -> Polygon:
+    """
+    The custom histogram legend artist polygon.
+    """
     xy = array(
         [[0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 0], [0, 4, 4, 2.5, 2.5, 5, 5, 1.5, 1.5, 0, 0]]
     ).T
