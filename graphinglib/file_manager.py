@@ -4,6 +4,10 @@ import yaml
 
 
 class FileLoader:
+    """
+    This class implements the file loader for the default styles files.
+    """
+
     def __init__(self, file_name: str) -> None:
         self._file_name = file_name
         self._file_name = self._resource_path()
