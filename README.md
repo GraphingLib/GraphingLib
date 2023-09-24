@@ -22,7 +22,11 @@ From source with
 pip install git+https://github.com/GraphingLib/GraphingLib.git
 ```
 
-## 3. Quick usage
+## 3. Documentation
+
+As of v1.1.0, a documentation page has been created and is accessible [here](https://graphinglib.readthedocs.io/). Note however that it is still a work in progress and that it will be improving in the future.
+
+## 4. Quick usage
 
 Here is a simple example of a curve fit using GraphingLib. For more examples, see the examples folder.
 
@@ -50,7 +54,7 @@ fig_1.display()
 ```
 ![quick usage image](https://github.com/GraphingLib/GraphingLib/blob/master/images/Quick-Usage.png?raw=true)
 
-## 4. Why GraphingLib
+## 5. Why GraphingLib
 
 It is our belief that the best way to explain the simplicity of GraphingLib is by providing an example. This is why we have included the code below, creating the exact same graph as before, but using the commands defined in Matplotlib and Scipy.
 
