@@ -39,7 +39,7 @@ class Heatmap:
     interpolation : str
         Interpolation method to be applied to the image.
         Defaults to `"none"`. For other interpolation methods, refer to
-        `"Interpolations for imshow" <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_.
+        ["Interpolations for imshow"](https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html).
     """
 
     image: ArrayLike | str
