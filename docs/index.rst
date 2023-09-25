@@ -13,7 +13,7 @@ Provides one-line commands for:
 Also provides the ability to create multiple visual styles for your plots and save
 them to be used anytime you want.
 
-Contents
+Overview
 ========
 
 .. toctree::
