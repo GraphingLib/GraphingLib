@@ -14,7 +14,7 @@ Also provides the ability to create multiple visual styles for your plots and sa
 them to be used anytime you want.
 
 Overview
-========
+--------
 
 .. toctree::
    :maxdepth: 3
@@ -25,7 +25,7 @@ Overview
    release_notes/index
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

@@ -6,10 +6,10 @@ GraphingLib is an object oriented library combining the functionalities of Matpl
 
 GraphingLib also provides the ability to create multiple predefined themes for different applications. Once those themes are specified, they can be applied to figures with a one-word parameter.
 
-Quick Usage
------------
+Why GraphingLib?
+----------------
 
-Here is a simple example of a curve fit using GraphingLib. ::
+It is our belief that the best way to explain the simplicity of GraphingLib is by providing an example and so, here is a curve fit calculated and plotted using GraphingLib. ::
 
     import graphinglib as gl
     import numpy as np
@@ -34,11 +34,7 @@ Here is a simple example of a curve fit using GraphingLib. ::
 
 .. image:: ../../images/Quick-Usage.png
 
-
-Why GraphingLib?
-----------------
-
-It is our belief that the best way to explain the simplicity of GraphingLib is by providing an example. This is why we have included the code below, creating the exact same graph as before, but using the commands defined in Matplotlib and Scipy. ::
+Now, here is the same code using Matplotlib and Scipy. ::
 
     import matplotlib.pyplot as plt
     import numpy as np

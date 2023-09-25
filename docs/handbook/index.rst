@@ -13,7 +13,8 @@ Sections in this handbook
    :maxdepth: 1
 
    overview
-   basic_plotting
+   quick_reference
+   1D_plotting
    curve_fitting
    2D_plotting
    multifigure
