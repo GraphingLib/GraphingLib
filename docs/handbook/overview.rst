@@ -1,3 +1,5 @@
+.. _overview:
+
 ========
 Overview
 ========
@@ -14,71 +16,57 @@ It is our belief that the best way to explain the simplicity of GraphingLib is b
     import graphinglib as gl
     import numpy as np
 
-    # Create some noisy random data :
-    x_data = np.linspace(-10, 10, 100)
-    noise = np.random.normal(0, 5, len(x_data))
-    y_data = 0.05 * x_data ** 3 + x_data ** 2 + x_data + noise
+    canvas = gl.MultiFigure(2, 2, (10, 10), title="Complex Example", use_latex=True)
 
-    # Create the Scatter object
-    scatter = gl.Scatter(x_data, y_data, label="Scatter plot")
+    # Figure 1 - Polynomial curve fit of noisy data
 
-    # Create a curve fit
-    fit = gl.FitFromPolynomial(scatter, degree=3, label="Curve fit")
+    x_data = np.linspace(0, 10, 100)
+    y_data = 3 * x_data**2 - 2 * x_data + np.random.normal(0, 10, 100)
+    scatter = gl.Scatter(x_data, y_data, label="Data")
+    fit = gl.FitFromPolynomial(scatter, degree=2, label="Fit", color="red")
 
-    # Create the figure object and add the Scatter object to the figure
-    fig_1 = gl.Figure(x_label="x values", y_label="y values")
-    fig_1.add_element(scatter)
+    fig1 = canvas.add_SubFigure((0, 0, 1, 1), y_lim=(-30, 360))
+    fig1.add_element(scatter, fit)
 
-    # Display the figure
-    fig_1.display()
+    # Figure 2 - Histogram of random data
 
-.. image:: ../../images/Quick-Usage.png
+    data = np.random.normal(0, 1, 1000)
+    hist = gl.Histogram(data, number_of_bins=20, label="Residuals", show_pdf="normal")
 
-Now, here is the same code using Matplotlib and Scipy. ::
+    fig2 = canvas.add_SubFigure((0, 1, 1, 1), y_lim=(0, 0.5))
+    fig2.add_element(hist)
 
-    import matplotlib.pyplot as plt
-    import numpy as np
-    from scipy.optimize import curve_fit
+    # Figure 3 - Intersection of two curves
 
-
-    # Create function to be plotted
-    def my_func(x_data, a, b, c, d):
-        return a * x_data**3 + b * x_data**2 + c * x_data + d
-
-
-    # Create some noisy random data :
-    x_data = np.linspace(-10, 10, 100)
-    noise = np.random.normal(0, 5, len(x_data))
-    y_data = my_func(x_data, 0.05, 1, 1, 1) + noise
-
-    # Create the figure
-    fig, ax = plt.subplots()
-
-    # Create a scatter plot
-    ax.scatter(x_data, y_data, label="Scatter plot", color="k")
-
-    # Create a curve fit
-    popt, pcov = curve_fit(my_func, x_data, y_data)
-    ax.plot(
-        x_data,
-        my_func(x_data, popt[0], popt[1], popt[2], popt[3]),
-        label=f"Curve fit : {popt[0]:.3f}x^3+{popt[1]:.3f}x^2+{popt[2]:.3f}x+{popt[3]:.3f}",
-        color="red",
+    curve1 = gl.Curve.from_function(
+        lambda x: x**2, x_min=-2, x_max=2, label="Curve 1", color="green"
     )
+    curve2 = gl.Curve.from_function(
+        lambda x: np.sin(x), x_min=-2, x_max=2, label="Curve 2", color="blue"
+    )
+    intersection_points = curve1.intersection(curve2, colors="red")
 
-    # Formatting the figure
-    ax.tick_params(axis="both", direction="in")
-    ax.set_xlabel("x values")
-    ax.set_ylabel("y values")
-    ax.legend(frameon=False)
+    for point in intersection_points:
+        point.add_coordinates()
+        point.h_align = "left"
+        point.v_align = "top"
 
-    # Show the figure
-    plt.show()
+    fig3 = canvas.add_SubFigure((1, 0, 1, 1))
+    fig3.add_element(curve1, curve2, *intersection_points)
 
-In this simple example, 38 lines of code were necessary to get the same result we obtained in only 20 lines of code with GraphingLib.
+    # Figure 4 - Integral of a curve between two points and tangent line
 
-GraphingLib also simplifies the customization of figure looks by adding the option to specify custom themes. Those themes can then be used by adding a simple parameter the the Figure object. Here are two examples of themes that are predefined :
+    curve = gl.Curve.from_function(lambda x: x**2 + 7, x_min=0, x_max=5, label="Curve")
+    area = curve.area_between(2, 4, fill_under=True)
+    tangent = curve.get_tangent_curve(1, label="Tangent", color="orange", line_style="--")
+    area_text = gl.Text(3, 5, "A = {:.2f}".format(area), color="k")
 
-In the example above the theme is the "plain" one. If we instead use the "horrible" theme instead we get
+    fig4 = canvas.add_SubFigure((1, 1, 1, 1))
+    fig4.add_element(curve, tangent, area_text)
 
-.. image:: ../../images/Horrible-theme.png
+    # canvas.save_figure("complex_example.png", legend=False)
+    canvas.display(legend=False)
+
+
+.. image:: ../../images/complex_example.png
+
