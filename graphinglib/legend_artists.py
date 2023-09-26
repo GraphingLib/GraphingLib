@@ -10,7 +10,9 @@ from numpy import array, full_like
 
 class HandlerMultipleLines(HandlerLineCollection):
     """
-    Custom Handler for LineCollection objects.
+    Custom Handler for `LineCollection <https://matplotlib.org/stable/api/collections_api.html#matplotlib.collections.LineCollection>`_ objects.
+
+    .. seealso:: The Matplotlib documentation on `legend handlers <https://matplotlib.org/stable/api/legend_handler_api.html>`_.
     """
 
     def create_artists(
@@ -54,7 +56,9 @@ class HandlerMultipleLines(HandlerLineCollection):
 
 class HandlerMultipleVerticalLines(HandlerLineCollection):
     """
-    Custom handler for VerticalLineCollection objects.
+    Custom handler for :class:`~graphinglib.legend_artists.VerticalLineCollection` objects.
+
+    .. seealso:: The Matplotlib documentation on `legend handlers <https://matplotlib.org/stable/api/legend_handler_api.html>`_.
     """
 
     def create_artists(
@@ -98,7 +102,7 @@ class HandlerMultipleVerticalLines(HandlerLineCollection):
 
 class VerticalLineCollection(LineCollection):
     """
-    Dummy class for vertical LineCollection.
+    Dummy class for vertical `LineCollection <https://matplotlib.org/stable/api/collections_api.html#matplotlib.collections.LineCollection>`_.
     """
 
     pass
@@ -114,7 +118,7 @@ def histogram_legend_artist(
     fontsize: float,
 ) -> Polygon:
     """
-    The custom histogram legend artist polygon.
+    The custom :class:`~graphinglib.data_plotting_1d.Histogram` legend artist.
     """
     xy = array(
         [[0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 0], [0, 4, 4, 2.5, 2.5, 5, 5, 1.5, 1.5, 0, 0]]
