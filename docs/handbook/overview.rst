@@ -70,3 +70,4 @@ It is our belief that the best way to explain the simplicity of GraphingLib is b
 
 .. image:: ../../images/complex_example.png
 
+Now, bear with us, here is the same figure generated with Matplotlib and Scipy directly.

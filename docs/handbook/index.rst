@@ -14,8 +14,13 @@ Sections in this handbook
 
    overview
    quick_reference
-   1D_plotting
-   curve_fitting
-   2D_plotting
+   figure
    multifigure
-   curve_and_scatter
+   curve_scatter
+   histogram
+   graph_elements
+   curve_fitting
+   heatmap
+   contour
+   vector_field
+   figure_style_file
