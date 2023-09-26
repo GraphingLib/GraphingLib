@@ -13,8 +13,8 @@ Provides one-line commands for:
 Also provides the ability to create multiple visual styles for your plots and save
 them to be used anytime you want.
 
-Contents
-========
+Overview
+--------
 
 .. toctree::
    :maxdepth: 3
@@ -25,7 +25,7 @@ Contents
    release_notes/index
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
