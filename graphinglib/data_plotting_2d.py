@@ -21,25 +21,29 @@ class Heatmap:
         The range of x and y values used for the axes as tuples containing the
         start and end of the range.
     color_map : str, Colormap
-        The color map to use for the heatmap. Can either be specified as a
+        The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
         string (named colormap from Matplotlib) or a Colormap object.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     show_color_bar : bool
         Whether or not to display the color bar next to the plot.
-        Defaults to `True`.
+        Defaults to ``True``.
     alpha_value : float
-        Opacity value of the heatmap.
-        Defaults to `1.0`.
+        Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
+        Defaults to 1.0.
     aspect_ratio : str or float
         Aspect ratio of the axes.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     origin_position : str
         Position of the origin of the axes (upper left or lower left corner).
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     interpolation : str
         Interpolation method to be applied to the image.
-        Defaults to `"none"`. For other interpolation methods, refer to
-        ["Interpolations for imshow"](https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html).
+        Defaults to ``"none"``.
+
+        .. seealso::
+
+            For other interpolation methods, refer to
+            `Interpolations for imshow <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_.
     """
 
     image: ArrayLike | str
@@ -87,32 +91,36 @@ class Heatmap:
             The range of x and y values used for the axes as tuples containing the
             start and end of the range.
         color_map : str, Colormap
-            The color map to use for the heatmap. Can either be specified as a
+            The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
-            Defaults to `True`.
+            Defaults to ``True``.
         alpha_value : float
-            Opacity value of the heatmap.
-            Defaults to `1.0`.
+            Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
+            Defaults to 1.0.
         aspect_ratio : str or float
             Aspect ratio of the axes.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         origin_position : str
             Position of the origin of the axes (upper left or lower left corner).
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         interpolation : str
             Interpolation method to be applied to the image.
-            Defaults to `"none"`. For other interpolation methods, refer to
-            ["Interpolations for imshow"](https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html).
+            Defaults to ``"none"``.
+
+            .. seealso::
+                For other interpolation methods, refer to
+                `Interpolations for imshow <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_.
+
         number_of_points : tuple[int, int]
             Number of points in the x and y coordinates.
-            Defaults to `(50, 50)`.
+            Defaults to ``(50, 50)``.
 
         Returns
         -------
-        A Heatmap object created from a function.
+        A :class:`graphinglib.data_plotting_2d.Heatmap` object created from a function.
         """
         x = np.linspace(x_axis_range[0], x_axis_range[1], number_of_points[0])
         y = np.linspace(y_axis_range[0], y_axis_range[1], number_of_points[1])
@@ -132,7 +140,8 @@ class Heatmap:
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
-        Plots the element in the specified axes.
+        Plots the element in the specified
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         if self.x_axis_range is not None and self.y_axis_range is not None:
             image = axes.imshow(
@@ -173,26 +182,26 @@ class VectorField:
         Magnitudes in the x and y coordinates.
     arrow_length_multiplier : float, optional
         Arrow length scaling factor.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     arrow_width : float
         Arrow width.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     arrow_head_width : float
         Arrow head width.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     arrow_head_length : float
         Arrow head length.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     arrow_head_axis_length : float
         Arrow head axis length.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     angle_in_data_coords : bool
         Wheter to use the screen coordinates or the data coordinates to
         determine the vector directions.
-        Defaults to `True`.
+        Defaults to ``True``.
     color : str
         Color of the vector arrows.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     """
 
     x_data: ArrayLike
@@ -230,7 +239,7 @@ class VectorField:
         color: str | Literal["default"] = "default",
     ) -> Self:
         """
-        Creates a vector field from a function.
+        Creates a :class:`~graphinglib.data_plotting_2d.VectorField` from a function.
 
         Parameters
         ----------
@@ -243,30 +252,30 @@ class VectorField:
             Magnitudes in the x and y coordinates.
         arrow_length_multiplier : float, optional
             Arrow length scaling factor.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         arrow_width : float
             Arrow width.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         arrow_head_width : float
             Arrow head width.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         arrow_head_length : float
             Arrow head length.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         arrow_head_axis_length : float
             Arrow head axis length.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         angle_in_data_coords : bool
             Wheter to use the screen coordinates or the data coordinates to
             determine the vector directions.
-            Defaults to `True`.
+            Defaults to ``True``.
         color : str
             Color of the vector arrows.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        A VectorField object from a function.
+        A :class:`~graphinglib.data_plotting_2d.VectorField` object from a function.
         """
         x = np.linspace(x_axis_range[0], x_axis_range[-1], number_of_arrows_x)
         y = np.linspace(y_axis_range[0], y_axis_range[-1], number_of_arrows_y)
@@ -288,7 +297,8 @@ class VectorField:
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
-        Plots the element in the specified axes.
+        Plots the element in the specified
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         if self.angle_in_data_coords:
             angle = "xy"
@@ -323,20 +333,20 @@ class Contour:
         Data for each point of the mesh.
     number_of_levels : int
         Number of distinct levels of contour plot.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     color_map : str or Colormap
-        The color map to use for the contour plot. Can either be specified as a
+        The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
         string (named colormap from Matplotlib) or a Colormap object.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     show_color_bar : bool
         Whether or not to display the color bar next to the plot.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     filled : bool
         Wheter or not to fill the contour with color.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the filled contour.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     """
 
     x_mesh: ArrayLike
@@ -380,24 +390,24 @@ class Contour:
             Data for each point of the mesh.
         number_of_levels : int
             Number of distinct levels of contour plot.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
-            The color map to use for the contour plot. Can either be specified as a
+            The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         filled : bool
             Wheter or not to fill the contour with color.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the filled contour.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        A Contour object from a function.
+        A :class:`~graphinglib.data_plotting_2d.Contour` object from a function.
         """
         x = np.linspace(x_axis_range[0], x_axis_range[1], number_of_points[0])
         y = np.linspace(y_axis_range[0], y_axis_range[1], number_of_points[1])
@@ -416,7 +426,8 @@ class Contour:
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
-        Plots the element in the specified axes.
+        Plots the element in the specified
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         if self.filled:
             cont = axes.contourf(

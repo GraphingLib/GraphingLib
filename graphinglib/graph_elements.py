@@ -12,18 +12,22 @@ from .legend_artists import VerticalLineCollection
 class Plottable(Protocol):
     """
     Dummy class for a general plottable object.
+
+    .. attention:: Not to be used directly.
+
     """
 
     def _plot_element(self, axes: plt.Axes, z_order: int):
         """
-        Plots the element in the specified axes.
+        Plots the element in the specified
+        Axes
         """
         pass
 
 
 class GraphingException(Exception):
     """
-    General exception raised for the GraphingLib module.
+    General exception raised for the GraphingLib modules.
     """
 
     pass
@@ -39,17 +43,17 @@ class Hlines:
         Vertical positions at which the lines should be plotted.
     x_min, x_max : ArrayLike
         Horizontal positions at which the lines should start and end. Different
-        positions can be specified for every line.
+        positions can be specified for each line.
     label : str, optional
         Label to be displayed in the legend.
     colors : list[str]
         Colors to use for the lines. One color for every line or a color
         per line can be specified.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_styles : list[str]
         Line styles to use for the lines. One style for every line or a style
         per line can be specified.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -70,17 +74,17 @@ class Hlines:
             Vertical positions at which the lines should be plotted.
         x_min, x_max : ArrayLike
             Horizontal positions at which the lines should start and end. Different
-            positions can be specified for every line.
+            positions can be specified for each line.
         label : str, optional
             Label to be displayed in the legend.
         colors : list[str]
             Colors to use for the lines. One color for every line or a color
             per line can be specified.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_styles : list[str]
             Line styles to use for the lines. One style for every line or a style
             per line can be specified.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         """
         if isinstance(y, (int, float)):
             self.y = y
@@ -120,7 +124,8 @@ class Hlines:
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
-        Plots the element in the specified axes.
+        Plots the element in the specified
+        Axes
         """
         if isinstance(self.y, list) and len(self.y) > 1:
             axes.hlines(
@@ -157,17 +162,17 @@ class Vlines:
         Horizontal positions at which the lines should be plotted.
     y_min, y_max : ArrayLike
         Vertical positions at which the lines should start and end. Different
-        positions can be specified for every line.
+        positions can be specified for each line.
     label : str, optional
         Label to be displayed in the legend.
     colors : list[str]
         Colors to use for the lines. One color for every line or a color
         per line can be specified.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_styles : list[str]
         Line styles to use for the lines. One style for every line or a style
         per line can be specified.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -188,17 +193,17 @@ class Vlines:
             Horizontal positions at which the lines should be plotted.
         y_min, y_max : ArrayLike
             Vertical positions at which the lines should start and end. Different
-            positions can be specified for every line.
+            positions can be specified for each line.
         label : str, optional
             Label to be displayed in the legend.
         colors : list[str]
             Colors to use for the lines. One color for every line or a color
             per line can be specified.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_styles : list[str]
             Line styles to use for the lines. One style for every line or a style
             per line can be specified.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         """
         if isinstance(x, (int, float)):
             self.x = x
@@ -238,7 +243,8 @@ class Vlines:
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
-        Plots the element in the specified axes.
+        Plots the element in the specified
+        Axes
         """
         if isinstance(self.x, list) and len(self.x) > 1:
             axes.vlines(
@@ -269,39 +275,40 @@ class Point:
     """
     This class implements a point object.
 
-    The point object can be used to show important coordinates in a plot
+    The :class:`~graphinglib.graph_elements.Point`
+    object can be used to show important coordinates in a plot
     or add a label to some point.
 
     Parameters
     ----------
     x, y : float
-        The x and y coordinates of the point.
+        The x and y coordinates of the :class:`~graphinglib.graph_elements.Point`.
     label : str, optional
-        Label to be attached to the point.
+        Label to be attached to the :class:`~graphinglib.graph_elements.Point`.
     color : str
         Face color of the marker.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     edge_color : str
         Edge color of the marker.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     marker_size : float
         Size of the marker.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     marker_style : str
         Style of the marker.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     edge_width : float
         Edge width of the marker.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     font_size : float
         Font size for the text attached to the marker.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     text_color : str
         Color of the text attached to the marker.
         Defaults to `"k"` (black).
     h_align, v_align : str
         Horizontal and vertical alignment of the text attached
-        to the point.
+        to the :class:`~graphinglib.graph_elements.Point`.
         Defaults to bottom left.
     """
 
@@ -329,33 +336,33 @@ class Point:
         Parameters
         ----------
         x, y : float
-            The x and y coordinates of the point.
+            The x and y coordinates of the :class:`~graphinglib.graph_elements.Point`.
         label : str, optional
-            Label to be attached to the point.
+            Label to be attached to the :class:`~graphinglib.graph_elements.Point`.
         color : str
             Face color of the marker.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the marker.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the marker.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the marker.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         edge_width : float
             Edge width of the marker.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         font_size : float
             Font size for the text attached to the marker.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         text_color : str
             Color of the text attached to the marker.
-            Defaults to `"k"` (black).
+            Defaults to ``"k"``.
         h_align, v_align : str
             Horizontal and vertical alignment of the text attached
-            to the point.
+            to the :class:`~graphinglib.graph_elements.Point`.
             Defaults to bottom left.
         """
         if not isinstance(x, int | float) or not isinstance(y, int | float):
@@ -379,13 +386,14 @@ class Point:
 
     def add_coordinates(self) -> None:
         """
-        Displays the coordinates of the point next to it.
+        Displays the coordinates of the :class:`~graphinglib.graph_elements.Point` next to it.
         """
         self._show_coordinates = True
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
-        Plots the element in the specified axes.
+        Plots the element in the specified
+        Axes
         """
         size = self.font_size if self.font_size != "same as figure" else None
         prefix = " " if self.h_align == "left" else ""
@@ -442,24 +450,25 @@ class Text:
     """
     This class allows text to be plotted.
 
-    It is also possible to attach an arrow to the text with the method
-    `attach_arrow()` to point at something of interest in the plot.
+    It is also possible to attach an arrow to the :class:`~graphinglib.graph_elements.Text`
+    with the method :py:meth:`~graphinglib.graph_elements.Text.attach_arrow`
+    to point at something of interest in the plot.
 
     Parameters
     ----------
     x, y : float
-        The x and y coordinates at which to plot the text.
+        The x and y coordinates at which to plot the :class:`~graphinglib.graph_elements.Text`.
     text : str
         The text to be plotted.
     color : str
         Color of the text.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     font_size : float
         Font size of the text.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     h_align, v_align : str
         Horizontal and vertical alignment of the text.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     """
 
     x: float
@@ -480,7 +489,8 @@ class Text:
         head_length: Optional[float] = None,
     ) -> None:
         """
-        Adds an arrow pointing from the text to a specified point.
+        Adds an arrow pointing from the :class:`~graphinglib.graph_elements.Text`
+        to a specified point.
 
         Parameters
         ----------
@@ -489,8 +499,8 @@ class Text:
         width : float, optional
             Arrow width.
         shrink : float, optional
-            Shrinking factor to apply to the arrow length. Values must be
-            between 0 and 1.
+            Fraction of the total length of the arrow to shrink from both ends.
+            A value of 0.5 means the arrow is no longer visible.
         head_width : float, optional
             Width of the head of the arrow.
         head_length : float, optional
@@ -511,7 +521,8 @@ class Text:
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
-        Plots the element in the specified axes.
+        Plots the element in the specified
+        Axes
         """
         size = self.font_size if self.font_size != "same as figure" else None
         axes.text(

@@ -13,23 +13,25 @@ from .graph_elements import Point
 
 class GeneralFit(Curve):
     """
-    Dummy class for curve fits. Do not use directly. Defines the interface for all curve fits.
+    Dummy class for curve fits. Defines the interface for all curve fits.
+
+    .. attention:: Not to be used directly.
 
     Parameters
     ----------
-    curve_to_be_fit : Curve | Scatter
+    curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
         The object to be fit.
     label : str, optional
         Label to be displayed in the legend.
     color : str
         Color of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -43,19 +45,19 @@ class GeneralFit(Curve):
         """
         Parameters
         ----------
-        curve_to_be_fit : Curve | Scatter
+        curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
             The object to be fit.
         label : str, optional
             Label to be displayed in the legend.
         color : str
             Color of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         """
         self.curve_to_be_fit = curve_to_be_fit
         self.color = color
@@ -95,23 +97,23 @@ class GeneralFit(Curve):
             Label to be displayed in the legend.
         color : str
             Face color of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the edge of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        Point object on the curve at the given x value.
+        :class:`~graphinglib.graph_elements.Point` object on the curve at the given x value.
         """
         return Point(
             x,
@@ -149,24 +151,24 @@ class GeneralFit(Curve):
             Label to be displayed in the legend.
         color : str
             Face color of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the edge of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        points : list[Point]
-            List of Point objects on the curve at the given y value.
+        points : list[:class:`~graphinglib.graph_elements.Point`]
+            List of :class:`~graphinglib.graph_elements.Point` objects on the curve at the given y value.
         """
         xs = self.curve_to_be_fit.x_data
         ys = self.function(xs)
@@ -195,7 +197,8 @@ class GeneralFit(Curve):
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
-        Plots the element in the specified axes.
+        Plots the element in the specified
+        Axes
         """
         (self.handle,) = axes.plot(
             self.x_data,
@@ -252,7 +255,7 @@ class GeneralFit(Curve):
         line_style: str = "default",
     ) -> None:
         """
-        Displays two curves `"sigma_multiplier"` standard deviations above and below the fit curve.
+        Displays two curves ``"sigma_multiplier"`` standard deviations above and below the fit curve.
 
         Parameters
         ----------
@@ -261,10 +264,10 @@ class GeneralFit(Curve):
             Default is 1.
         color : str
             Color of the residual curves.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Line width of the residual curves.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         """
         self._res_curves_to_be_plotted = True
         self.res_sigma_multiplier = sigma_multiplier
@@ -288,25 +291,28 @@ class GeneralFit(Curve):
 
 class FitFromPolynomial(GeneralFit):
     """
-    Creates a curve fit (continuous Curve) from an existing curve object using a polynomial fit.
+    Creates a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing curve object using a polynomial fit.
+
+    Fits a polynomial of the form :math:`f(x) = a_0 + a_1 x + a_2 x^2 + ... + a_n x^n` to the given curve. All standard Curve attributes
+    and methods are available.
 
     Parameters
     ----------
-    curve_to_be_fit : Curve | Scatter
+    curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
         The object to be fit.
     degree : int
         Degree of the polynomial fit.
     label : str, optional
         Label to be displayed in the legend.
     color : str
-        Color of the curve.
-        Default depends on the figure style configuration.
+        Color of the :class:`~graphinglib.data_plotting_1d.Curve`.
+        Default depends on the ``figure_style`` configuration.
     line_width : int
-        Line width of the curve.
-        Default depends on the figure style configuration.
+        Line width of the :class:`~graphinglib.data_plotting_1d.Curve`.
+        Default depends on the ``figure_style`` configuration.
     line_style : str
-        Line style of the curve.
-        Default depends on the figure style configuration.
+        Line style of the :class:`~graphinglib.data_plotting_1d.Curve`.
+        Default depends on the ``figure_style`` configuration.
 
     Attributes
     ----------
@@ -330,27 +336,28 @@ class FitFromPolynomial(GeneralFit):
         line_style: int | Literal["default"] = "default",
     ) -> None:
         """
-        Creates a curve fit (continuous Curve) from an existing object using a polynomial fit.
+        Creates a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing curve object using a polynomial fit.
 
-        Fits a polynomial of the form :math:`f(x) = a_0 + a_1 x + a_2 x^2 + ... + a_n x^n` to the given curve. All standard Curve attributes and methods are available.
+        Fits a polynomial of the form :math:`f(x) = a_0 + a_1 x + a_2 x^2 + ... + a_n x^n` to the given curve. All standard Curve attributes
+        and methods are available.
 
         Parameters
         ----------
-        curve_to_be_fit : Curve | Scatter
+        curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
             The object to be fit.
         degree : int
             Degree of the polynomial fit.
         label : str, optional
             Label to be displayed in the legend.
         color : str
-            Color of the curve.
-            Default depends on the figure style configuration.
+            Color of the :class:`~graphinglib.data_plotting_1d.Curve`.
+            Default depends on the ``figure_style`` configuration.
         line_width : int
-            Line width of the curve.
-            Default depends on the figure style configuration.
+            Line width of the :class:`~graphinglib.data_plotting_1d.Curve`.
+            Default depends on the ``figure_style`` configuration.
         line_style : str
-            Line style of the curve.
-            Default depends on the figure style configuration.
+            Line style of the :class:`~graphinglib.data_plotting_1d.Curve`.
+            Default depends on the ``figure_style`` configuration.
 
         Attributes
         ----------
@@ -361,7 +368,7 @@ class FitFromPolynomial(GeneralFit):
         standard_deviation : np.ndarray
             Standard deviation of the coefficients of the polynomial fit (same order as coeffs).
         function : Callable
-            Polynomial function with the parameters of the fit.
+            Polynomial function with the parameters of the fit.s of the fit.
         """
         self.curve_to_be_fit = curve_to_be_fit
         inversed_coeffs, inversed_cov_matrix = np.polyfit(
@@ -443,11 +450,15 @@ class FitFromPolynomial(GeneralFit):
 
 class FitFromSine(GeneralFit):
     """
-    Create a curve fit (continuous Curve) from an existing curve object using a sinusoidal fit.
+    Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
+    :class:`~graphinglib.data_plotting_1d.Curve` object using a sinusoidal fit.
+
+    Fits a sine function of the form :math:`f(x) = a sin(bx + c) + d` to the given curve. All standard
+    :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
     Parameters
     ----------
-    curve_to_be_fit : Curve | Scatter
+    curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
         The object to be fit.
     label : str, optional
         Label to be displayed in the legend.
@@ -455,13 +466,13 @@ class FitFromSine(GeneralFit):
         Initial guesses for the parameters of the fit (order: amplitude (a), frequency (b), phase (c), vertical shift (d) as written above).
     color : str
         Color of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
 
     Attributes
     ----------
@@ -491,13 +502,15 @@ class FitFromSine(GeneralFit):
         line_style: str = "default",
     ) -> None:
         """
-        Create a curve fit (continuous Curve) from an existing curve object using a sinusoidal fit.
+        Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
+        :class:`~graphinglib.data_plotting_1d.Curve` object using a sinusoidal fit.
 
-        Fits a sine function of the form :math:`f(x) = a sin(bx + c) + d` to the given curve. All standard Curve attributes and methods are available.
+        Fits a sine function of the form :math:`f(x) = a sin(bx + c) + d` to the given curve. All standard
+        :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
         Parameters
         ----------
-        curve_to_be_fit : Curve | Scatter
+        curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
             The object to be fit.
         label : str, optional
             Label to be displayed in the legend.
@@ -505,13 +518,13 @@ class FitFromSine(GeneralFit):
             Initial guesses for the parameters of the fit (order: amplitude (a), frequency (b), phase (c), vertical shift (d) as written above).
         color : str
             Color of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Attributes
         ----------
@@ -584,7 +597,7 @@ class FitFromSine(GeneralFit):
         x: np.ndarray, a: float, b: float, c: float, d: float
     ) -> np.ndarray:
         """
-        Function to be passed to the curve_fit function.
+        Function to be passed to the ``curve_fit`` function.
         """
         return a * np.sin(b * x + c) + d
 
@@ -607,11 +620,12 @@ class FitFromSine(GeneralFit):
 
 class FitFromExponential(GeneralFit):
     """
-    Create a curve fit (continuous Curve) from an existing curve object using an exponential fit.
+    Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
+    :class:`~graphinglib.data_plotting_1d.Curve` object using an exponential fit.
 
     Parameters
     ----------
-    curve_to_be_fit : Curve | Scatter
+    curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
         The object to be fit.
     label : str, optional
         Label to be displayed in the legend.
@@ -619,13 +633,13 @@ class FitFromExponential(GeneralFit):
         Initial guesses for the parameters of the fit. Order is a, b, c as written above.
     color : str
         Color of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
 
     Attributes
     ----------
@@ -649,13 +663,12 @@ class FitFromExponential(GeneralFit):
         line_style: str = "default",
     ) -> None:
         """
-        Create a curve fit (continuous Curve) from an existing curve object using an exponential fit.
-
-        Fits an exponential function of the form :math:`f(x) = a e^{bx + c}` to the given curve. All standard Curve attributes and methods are available.
+        Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
+        :class:`~graphinglib.data_plotting_1d.Curve` object using an exponential fit.
 
         Parameters
         ----------
-        curve_to_be_fit : Curve | Scatter
+        curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
             The object to be fit.
         label : str, optional
             Label to be displayed in the legend.
@@ -663,13 +676,13 @@ class FitFromExponential(GeneralFit):
             Initial guesses for the parameters of the fit. Order is a, b, c as written above.
         color : str
             Color of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Attributes
         ----------
@@ -731,7 +744,7 @@ class FitFromExponential(GeneralFit):
     @staticmethod
     def _exp_func_template(x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
         """
-        Function to be passed to the curve_fit function.
+        Function to be passed to the ``curve_fit`` function.
         """
         return a * np.exp(b * x + c)
 
@@ -753,13 +766,15 @@ class FitFromExponential(GeneralFit):
 
 class FitFromGaussian(GeneralFit):
     """
-    Create a curve fit (continuous Curve) from an existing curve object using a gaussian fit.
+    Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
+    :class:`~graphinglib.data_plotting_1d.Curve` object using a gaussian fit.
 
-    Fits a gaussian function of the form :math:`f(x) = A e^{-\\frac{(x - \mu)^2}{2 \sigma^2}}` to the given curve. All standard Curve attributes and methods are available.
+    Fits a gaussian function of the form :math:`f(x) = A e^{-\\frac{(x - \mu)^2}{2 \sigma^2}}` to the given curve.
+    All standard :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
     Parameters
     ----------
-    curve_to_be_fit : Curve | Scatter
+    curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
         The object to be fit.
     label : str, optional
         Label to be displayed in the legend.
@@ -767,13 +782,13 @@ class FitFromGaussian(GeneralFit):
         Initial guesses for the parameters of the fit.
     color : str
         Color of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
 
     Attributes
     ----------
@@ -783,16 +798,17 @@ class FitFromGaussian(GeneralFit):
         Mean of the gaussian function.
     standard_deviation : float
         Standard deviation of the gaussian function.
+
+        .. warning::
+
+            The ``standard_deviation`` attribute doesn't represent the standard deviation of the fit parameters as it does in the other fit classes. Instead, it represents the standard deviation of the gaussian function (it is one of parameters of the fit). The standard deviation of the fit parameters can be found in the ``standard_deviation_of_fit_params`` attribute.
+
     cov_matrix : np.ndarray
         Covariance matrix of the parameters of the fit.
     standard_deviation_of_fit_params : np.ndarray
         Standard deviation of the parameters of the fit.
     function : Callable
         Gaussian function with the parameters of the fit.
-
-    Warning
-    -------
-    The `standard_deviation` attribute doesn't represent the standard deviation of the fit parameters as it does in the other fit classes. Instead, it represents the standard deviation of the gaussian function (it is one of parameters of the fit). The standard deviation of the fit parameters can be found in the `standard_deviation_of_fit_params` attribute.
     """
 
     def __init__(
@@ -805,13 +821,15 @@ class FitFromGaussian(GeneralFit):
         line_style: str = "default",
     ) -> None:
         """
-        Create a curve fit (continuous Curve) from an existing curve object using a gaussian fit.
+        Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
+        :class:`~graphinglib.data_plotting_1d.Curve` object using a gaussian fit.
 
-        Fits a gaussian function of the form :math:`f(x) = A e^{-\\frac{(x - \mu)^2}{2 \sigma^2}}` to the given curve. All standard Curve attributes and methods are available.
+        Fits a gaussian function of the form :math:`f(x) = A e^{-\\frac{(x - \mu)^2}{2 \sigma^2}}` to the given curve.
+        All standard :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
         Parameters
         ----------
-        curve_to_be_fit : Curve | Scatter
+        curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
             The object to be fit.
         label : str, optional
             Label to be displayed in the legend.
@@ -819,13 +837,13 @@ class FitFromGaussian(GeneralFit):
             Initial guesses for the parameters of the fit.
         color : str
             Color of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Attributes
         ----------
@@ -844,7 +862,7 @@ class FitFromGaussian(GeneralFit):
 
         Warning
         -------
-        The `standard_deviation` attribute doesn't represent the standard deviation of the fit parameters as it does in the other fit classes. Instead, it represents the standard deviation of the gaussian function (it is one of parameters of the fit). The standard deviation of the fit parameters can be found in the `standard_deviation_of_fit_params` attribute.
+        The ``standard_deviation`` attribute doesn't represent the standard deviation of the fit parameters as it does in the other fit classes. Instead, it represents the standard deviation of the gaussian function (it is one of parameters of the fit). The standard deviation of the fit parameters can be found in the ``standard_deviation_of_fit_params`` attribute.
         """
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
@@ -893,7 +911,7 @@ class FitFromGaussian(GeneralFit):
         x: np.ndarray, amplitude: float, mean: float, standard_deviation: float
     ) -> np.ndarray:
         """
-        Function to be passed to the curve_fit function.
+        Function to be passed to the ``curve_fit`` function.
         """
         return amplitude * np.exp(-(((x - mean) / standard_deviation) ** 2) / 2)
 
@@ -915,13 +933,15 @@ class FitFromGaussian(GeneralFit):
 
 class FitFromSquareRoot(GeneralFit):
     """
-    Create a curve fit (continuous Curve) from an existing curve object using a square root fit.
+    Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
+    :class:`~graphinglib.data_plotting_1d.Curve` object using a square root fit.
 
-    Fits a square root function of the form :math:`f(x) = a \sqrt{x + b} + c` to the given curve. All standard Curve attributes and methods are available.
+    Fits a square root function of the form :math:`f(x) = a \sqrt{x + b} + c` to the given curve. All standard
+    :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
     Parameters
     ----------
-    curve_to_be_fit : Curve | Scatter
+    curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
         The object to be fit.
     label : str, optional
         Label to be displayed in the legend.
@@ -929,13 +949,13 @@ class FitFromSquareRoot(GeneralFit):
         Initial guesses for the parameters of the fit. Order is a, b, c as written above.
     color : str
         Color of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
 
     Attributes
     ----------
@@ -959,13 +979,15 @@ class FitFromSquareRoot(GeneralFit):
         line_style: str = "default",
     ) -> None:
         """
-        Create a curve fit (continuous Curve) from an existing curve object using a square root fit.
+        Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
+        :class:`~graphinglib.data_plotting_1d.Curve` object using a square root fit.
 
-        Fits a square root function of the form :math:`f(x) = a \sqrt{x + b} + c` to the given curve. All standard Curve attributes and methods are available.
+        Fits a square root function of the form :math:`f(x) = a \sqrt{x + b} + c` to the given curve. All standard
+        :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
         Parameters
         ----------
-        curve_to_be_fit : Curve | Scatter
+        curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
             The object to be fit.
         label : str, optional
             Label to be displayed in the legend.
@@ -973,13 +995,13 @@ class FitFromSquareRoot(GeneralFit):
             Initial guesses for the parameters of the fit. Order is a, b, c as written above.
         color : str
             Color of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Attributes
         ----------
@@ -1037,7 +1059,7 @@ class FitFromSquareRoot(GeneralFit):
         x: np.ndarray, a: float, b: float, c: float
     ) -> np.ndarray:
         """
-        Function to be passed to the curve_fit function.
+        Function to be passed to the ``curve_fit`` function.
         """
         return a * np.sqrt(x + b) + c
 
@@ -1060,13 +1082,15 @@ class FitFromSquareRoot(GeneralFit):
 
 class FitFromLog(GeneralFit):
     """
-    Create a curve fit (continuous Curve) from an existing curve object using a logarithmic fit.
+    Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
+    :class:`~graphinglib.data_plotting_1d.Curve` object using a logarithmic fit.
 
-    Fits a logarithmic function of the form :math:`f(x) = a \log_{base}(x + b) + c` to the given curve. All standard Curve attributes and methods are available.
+    Fits a logarithmic function of the form :math:`f(x) = a \log_{base}(x + b) + c` to the given curve. All standard
+    :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
     Parameters
     ----------
-    curve_to_be_fit : Curve | Scatter
+    curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
         The object to be fit.
     label : str, optional
         Label to be displayed in the legend.
@@ -1077,13 +1101,13 @@ class FitFromLog(GeneralFit):
         Initial guesses for the parameters of the fit. Order is a, b, c as written above.
     color : str
         Color of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
 
     Attributes
     ----------
@@ -1108,13 +1132,15 @@ class FitFromLog(GeneralFit):
         line_style: str = "default",
     ) -> None:
         """
-        Create a curve fit (continuous Curve) from an existing curve object using a logarithmic fit.
+        Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
+        :class:`~graphinglib.data_plotting_1d.Curve` object using a logarithmic fit.
 
-        Fits a logarithmic function of the form :math:`f(x) = a \log_{base}(x + b) + c` to the given curve. All standard Curve attributes and methods are available.
+        Fits a logarithmic function of the form :math:`f(x) = a \log_{base}(x + b) + c` to the given curve. All standard
+        :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
         Parameters
         ----------
-        curve_to_be_fit : Curve | Scatter
+        curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
             The object to be fit.
         label : str, optional
             Label to be displayed in the legend.
@@ -1125,13 +1151,13 @@ class FitFromLog(GeneralFit):
             Initial guesses for the parameters of the fit. Order is a, b, c as written above.
         color : str
             Color of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Attributes
         ----------
@@ -1188,7 +1214,7 @@ class FitFromLog(GeneralFit):
         self,
     ) -> Callable[[float | np.ndarray, float, float, float], float | np.ndarray]:
         """
-        Function to be passed to the curve_fit function.
+        Function to be passed to the ``curve_fit`` function.
         """
         return lambda x, a, b, c: a * (np.log(x + b) / np.log(self.log_base)) + c
 
@@ -1212,15 +1238,17 @@ class FitFromLog(GeneralFit):
 
 class FitFromFunction(GeneralFit):
     """
-    Create a curve fit (continuous Curve) from a curve object using an arbitrary function passed as an argument.
+    Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from a
+    :class:`~graphinglib.data_plotting_1d.Curve` object using an arbitrary function passed as an argument.
 
-    Fits a function of the form :math:`f(x, a, b, c, ...)` to the given curve. All standard Curve attributes and methods are available.
+    Fits a function of the form :math:`f(x, a, b, c, ...)` to the given curve. All standard
+    :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
     Parameters
     ----------
     function : Callable
         Function to be passed to the curve_fit function.
-    curve_to_be_fit : Curve | Scatter
+    curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
         The object to be fit.
     label : str, optional
         Label to be displayed in the legend.
@@ -1228,13 +1256,13 @@ class FitFromFunction(GeneralFit):
         Initial guesses for the parameters of the fit. Order is a, b, c, ... as written above.
     color : str
         Color of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
 
     Attributes
     ----------
@@ -1259,15 +1287,17 @@ class FitFromFunction(GeneralFit):
         line_style: str = "default",
     ):
         """
-        Create a curve fit (continuous Curve) from a curve object using an arbitrary function passed as an argument.
+        Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from a
+        :class:`~graphinglib.data_plotting_1d.Curve` object using an arbitrary function passed as an argument.
 
-        Fits a function of the form :math:`f(x, a, b, c, ...)` to the given curve. All standard Curve attributes and methods are available.
+        Fits a function of the form :math:`f(x, a, b, c, ...)` to the given curve. All standard
+        :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
         Parameters
         ----------
         function : Callable
             Function to be passed to the curve_fit function.
-        curve_to_be_fit : Curve | Scatter
+        curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
             The object to be fit.
         label : str, optional
             Label to be displayed in the legend.
@@ -1275,13 +1305,13 @@ class FitFromFunction(GeneralFit):
             Initial guesses for the parameters of the fit. Order is a, b, c, ... as written above.
         color : str
             Color of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Attributes
         ----------

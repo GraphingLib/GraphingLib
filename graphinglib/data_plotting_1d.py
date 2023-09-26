@@ -48,13 +48,13 @@ class Curve:
         Label to be displayed in the legend.
     color : str
         Color of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_width : float
         Width of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_style : str
         Style of the curve.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     """
 
     x_data: ArrayLike
@@ -79,29 +79,29 @@ class Curve:
         number_of_points: int = 500,
     ) -> Self:
         """
-        Creates a curve from a function and a range of x values.
+        Creates a :class:`~graphinglib.data_plotting_1d.Curve` from a function and a range of x values.
 
         Parameters
         ----------
         func : Callable[[ArrayLike], ArrayLike]
             Function to be plotted. Works with regular functions and lambda functions.
         x_min, x_max : float
-            The curve will be plotted between these two values.
+            The :class:`~graphinglib.data_plotting_1d.Curve` will be plotted between these two values.
         label : str, optional
             Label to be displayed in the legend.
         color : str
             Color of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         number_of_points : int
             Number of points to be used to plot the curve (resolution).
-            Default is 500.
+            Defaults to 500.
 
         Returns
         -------
-        A Curve object created from the given function and x range.
+        A :class:`~graphinglib.data_plotting_1d.Curve` object created from the given function and x range.
         """
         x_data = np.linspace(x_min, x_max, number_of_points)
         y_data = func(x_data)
@@ -216,7 +216,7 @@ class Curve:
         cap_thickness: float | Literal["default"] = "default",
     ) -> None:
         """
-        Adds errorbars to the curve.
+        Adds errorbars to the :class:`~graphinglib.data_plotting_1d.Curve`.
 
         Parameters
         ----------
@@ -224,16 +224,16 @@ class Curve:
             Arrays of x and y errors. Use one or both.
         cap_width : float
             Width of the errorbar caps.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         errorbars_color : str
             Color of the errorbars.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         errorbars_line_width : float
             Width of the errorbars.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         cap_thickness : float
             Thickness of the errorbar caps.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         """
         self.errorbars = True
         self.x_error = np.array(x_error)
@@ -262,29 +262,32 @@ class Curve:
         x : float
             The x value of the point.
         interpolation_method : str,
-            The type of interpolation to be used, as defined in [scipy.interpolate.interp1d](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html).
-            Default is "linear".
+            The type of interpolation to be used, as defined in ``scipy.interpolate.interp1d``.
+
+            .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+            Defaults to "linear".
         label : str, optional
             Label to be displayed in the legend.
         color : str
             Face color of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the point edge.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        point: Point
+        point: :class:`~graphinglib.graph_elements.Point`
             The point on the curve at the given x value.
         """
         point = Point(
@@ -318,29 +321,32 @@ class Curve:
         y : float
             The y value of the desired points.
         interpolation_method : str
-            The type of interpolation to be used, as defined in [scipy.interpolate.interp1d](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html).
-            Default is "linear".
+            The type of interpolation to be used, as defined in ``scipy.interpolate.interp1d``.
+
+            .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+            Defaults to "linear".
         label : str, optional
             Label to be displayed in the legend.
         color : str
             Face color of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the point edge.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        points: list[Point]
+        points: list[:class:`~graphinglib.graph_elements.Point`]
             The points on the curve at the given y value.
         """
         xs = self.x_data
@@ -384,17 +390,17 @@ class Curve:
             Label of the new curve to be displayed in the legend.
         color : str
             Color of the new curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the new curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        A Curve object which is the derivative of the original curve.
+        A :class:`~graphinglib.data_plotting_1d.Curve` object which is the derivative of the original curve.
         """
         x_data = self.x_data
         y_data = np.gradient(self.y_data, x_data)
@@ -416,17 +422,17 @@ class Curve:
             Label of the new curve to be displayed in the legend.
         color : str
             Color of the new curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the new curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        A Curve object which is the integral of the original curve.
+        A :class:`~graphinglib.data_plotting_1d.Curve` object which is the integral of the original curve.
         """
         x_data = self.x_data
         y_data = np.cumsum(self.y_data) * np.diff(x_data)[0]
@@ -451,18 +457,18 @@ class Curve:
             Label of the new curve to be displayed in the legend.
         color : str
             Color of the new curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the new curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        tangent_curve: Curve
-            A Curve object which is the tangent to the original curve at a given x value.
+        tangent_curve: :class:`~graphinglib.data_plotting_1d.Curve`
+            A :class:`~graphinglib.data_plotting_1d.Curve` object which is the tangent to the original curve at a given x value.
         """
         point = self.get_point_at_x(x)
         gradient = self.get_derivative_curve().get_point_at_x(x).y
@@ -489,18 +495,18 @@ class Curve:
             Label of the new curve to be displayed in the legend.
         color : str
             Color of the new curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the new curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        normal_curve: Curve
-            A Curve object which is the normal to the original curve at a given x value.
+        normal_curve: :class:`~graphinglib.data_plotting_1d.Curve`
+            A :class:`~graphinglib.data_plotting_1d.Curve` object which is the normal to the original curve at a given x value.
         """
         point = self.get_point_at_x(x)
         gradient = self.get_derivative_curve().get_point_at_x(x).y
@@ -554,7 +560,7 @@ class Curve:
             The x values between which the area is to be calculated.
         fill_under : bool
             Whether to fill the specified area between the curve and the x axis when displaying.
-            Default is False.
+            Defaults to ``False``.
 
         Returns
         -------
@@ -584,7 +590,7 @@ class Curve:
 
         Parameters
         ----------
-        other : Curve
+        other : :class:`graphinglib.data_plotting_1d.Curve`
             The other curve to calculate the intersections with.
         labels : list[str] or str, optional
             Labels of the intersection points to be displayed in the legend.
@@ -592,28 +598,28 @@ class Curve:
         colors : list[str] or str
             Face colors of the intersection points.
             If a single string is passed, all intersection points will have the same color.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         edge_colors : list[str] or str
             Edge colors of the intersection points.
             If a single string is passed, all intersection points will have the same color.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_sizes : list[float] or float
             Sizes of the intersection points.
             If a single float is passed, all intersection points will have the same size.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_styles : list[str] or str
             Styles of the intersection points.
             If a single string is passed, all intersection points will have the same style.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         edge_widths : list[float] or float
             Widths of the intersection points.
             If a single float is passed, all intersection points will have the same width.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        points: list[Point]
-            A list of Point objects which are the intersection points between the two curves.
+        points: list[:class:`~graphinglib.graph_elements.Point`]
+            A list of :class:`~graphinglib.graph_elements.Point` objects which are the intersection points between the two curves.
         """
         y = self.y_data - other.y_data
         s = np.abs(np.diff(np.sign(y))).astype(bool)
@@ -722,19 +728,19 @@ class Scatter:
         Label to be displayed in the legend.
     face_color : str
         Face color of the points.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     edge_color : str
         Edge color of the points.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     marker_size : float
         Size of the points.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     marker_style : str
         Style of the points.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     errorbars : bool
         Whether or not to display errorbars.
-        Default is False.
+        Defaults to ``False``.
     """
 
     x_data: ArrayLike
@@ -772,23 +778,23 @@ class Scatter:
             Label to be displayed in the legend.
         face_color : str
             Face color of the points.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the points.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_size : int
             Size of the points.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the points.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         number_of_points : int
             Number of points to be plotted.
-            Default is 30.
+            Defaults to 30.
 
         Returns
         -------
-        A Scatter object created from a function and a range of x values.
+        A :class:`~graphinglib.data_plotting_1d.Scatter` object created from a function and a range of x values.
         """
         x_data = np.linspace(x_min, x_max, number_of_points)
         y_data = func(x_data)
@@ -904,16 +910,16 @@ class Scatter:
             Arrays of x and y errors. Use one or both.
         cap_width : float
             Width of the errorbar caps.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         errorbars_color : str
             Color of the errorbars.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         errorbars_line_width : float
             Width of the errorbars.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         cap_thickness : float
             Thickness of the errorbar caps.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         """
         self.errorbars = True
         self.x_error = np.array(x_error)
@@ -942,29 +948,32 @@ class Scatter:
         x : float
             The x value of the point.
         interpolation_method : str,
-            The type of interpolation to be used, as defined in [scipy.interpolate.interp1d](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html).
-            Default is "linear".
+            The type of interpolation to be used, as defined in ``scipy.interpolate.interp1d``.
+
+            .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+            Defaults to "linear".
         label : str, optional
             Label to be displayed in the legend.
         color : str
             Face color of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the point edge.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        point: Point
+        point: :class:`~graphinglib.graph_elements.Point`
             The point on the curve at the given x value.
         """
         point = Point(
@@ -998,29 +1007,32 @@ class Scatter:
         y : float
             The y value of the desired points.
         interpolation_method : str
-            The type of interpolation to be used, as defined in [scipy.interpolate.interp1d](https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html).
-            Default is "linear".
+            The type of interpolation to be used, as defined in ``scipy.interpolate.interp1d``.
+
+            .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+            Defaults to "linear".
         label : str, optional
             Label to be displayed in the legend.
         color : str
             Face color of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the point edge.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        points: list[Point]
+        points: list[:class:`~graphinglib.graph_elements.Point`]
             The points on the curve at the given y value.
         """
         xs = self.x_data
@@ -1093,29 +1105,29 @@ class Histogram:
         Label to be displayed in the legend.
     face_color : str
         Face color of the histogram.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     edge_color : str
         Edge color of the histogram.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     hist_type : str
         Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     alpha : float
         Transparency of the histogram.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     line_width : float
         Width of the histogram edge.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     normalize : bool
         Whether or not to normalize the histogram.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     show_pdf : str
         Whether or not to show the probability density function.
         Can be "normal" or "gaussian".
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     show_params : bool
         Whether or not to show the mean and standard deviation of the data.
-        Default depends on the figure style configuration.
+        Default depends on the ``figure_style`` configuration.
     """
 
     data: ArrayLike
@@ -1173,33 +1185,33 @@ class Histogram:
             Label to be displayed in the legend.
         face_color : str
             Face color of the histogram.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the histogram.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         hist_type : str
             Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         alpha : float
             Transparency of the histogram.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the histogram edge.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         normalize : bool
             Whether or not to normalize the histogram.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         show_pdf : str
             Whether or not to show the probability density function.
             Can be "normal" or "gaussian".
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
         show_params : bool
             Whether or not to show the mean and standard deviation of the data.
-            Default depends on the figure style configuration.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
-        A Histogram object created from the residuals of a fit.
+        A :class:`~graphinglib.data_plotting_1d.Histogram` object created from the residuals of a fit.
         """
         residuals = fit.calculate_residuals()
         return cls(
