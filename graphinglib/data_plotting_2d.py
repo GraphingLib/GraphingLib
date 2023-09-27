@@ -120,7 +120,7 @@ class Heatmap:
 
         Returns
         -------
-        A :class:`graphinglib.data_plotting_2d.Heatmap` object created from a function.
+        A :class:`~graphinglib.data_plotting_2d.Heatmap` object created from a function.
         """
         x = np.linspace(x_axis_range[0], x_axis_range[1], number_of_points[0])
         y = np.linspace(y_axis_range[0], y_axis_range[1], number_of_points[1])

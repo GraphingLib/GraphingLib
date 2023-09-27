@@ -590,7 +590,7 @@ class Curve:
 
         Parameters
         ----------
-        other : :class:`graphinglib.data_plotting_1d.Curve`
+        other : :class:`~graphinglib.data_plotting_1d.Curve`
             The other curve to calculate the intersections with.
         labels : list[str] or str, optional
             Labels of the intersection points to be displayed in the legend.
