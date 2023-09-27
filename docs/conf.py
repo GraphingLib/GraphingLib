@@ -51,3 +51,4 @@ intersphinx_mapping = {
     "Python": ("https://docs.python.org/", None),
     "Numpy typing": ("https://numpy.org/devdocs/", None),
 }
+pygments_dark_style = "github-dark"
