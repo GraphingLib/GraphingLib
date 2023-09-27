@@ -487,13 +487,13 @@ class MultiFigure:
         self._SubFigures.append(new_SubFigure)
         return new_SubFigure
 
-    def _prepare_MultiFigure(self, legend: bool = False) -> None:
+    def _prepare_MultiFigure(self, general_legend: bool = False) -> None:
         """
         Prepares the :class:`~graphinglib.multifigure.MultiFigure` to be displayed.
         """
         self._figure = plt.figure(layout="constrained", figsize=self.size)
         MultiFigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
-        SubFigures_legend = True if not legend else False
+        SubFigures_legend = True if not general_legend else False
         labels, handles = [], []
         for SubFigure in self._SubFigures:
             SubFigure_labels, SubFigure_handles = SubFigure._prepare_SubFigure(
@@ -501,7 +501,7 @@ class MultiFigure:
             )
             labels += SubFigure_labels
             handles += SubFigure_handles
-        if legend:
+        if general_legend:
             try:
                 self._figure.legend(
                     handles=handles,
@@ -529,22 +529,22 @@ class MultiFigure:
                 )
         self._figure.suptitle(self.title)
 
-    def display(self, legend: bool = False) -> None:
+    def display(self, general_legend: bool = False) -> None:
         """
         Displays the :class:`~graphinglib.multifigure.MultiFigure`.
 
         Parameters
         ----------
-        legend : bool
+        general_legend : bool
             Wheter or not to display a overall legend for the :class:`~graphinglib.multifigure.MultiFigure` containing
             the labels for every :class:`~graphinglib.multifigure.SubFigure` in it. Note that enabling this option will
             disable the individual legends for every :class:`~graphinglib.multifigure.SubFigure`.
             Defaults to ``False``.
         """
-        self._prepare_MultiFigure(legend=legend)
+        self._prepare_MultiFigure(general_legend=general_legend)
         plt.show()
 
-    def save_figure(self, file_name: str, legend: bool = True) -> None:
+    def save_figure(self, file_name: str, general_legend: bool = False) -> None:
         """
         Saves the :class:`~graphinglib.multifigure.MultiFigure`.
 
@@ -552,13 +552,13 @@ class MultiFigure:
         ----------
         file_name : str
             File name or path at which to save the figure.
-        legend : bool
+        general_legend : bool
             Wheter or not to display a overall legend for the :class:`~graphinglib.multifigure.MultiFigure` containing
             the labels for every :class:`~graphinglib.multifigure.SubFigure` in it. Note that enabling this option will
             disable the individual legends for every :class:`~graphinglib.multifigure.SubFigure`.
             Defaults to ``False``.
         """
-        self._prepare_MultiFigure(legend=legend)
+        self._prepare_MultiFigure(general_legend=general_legend)
         plt.savefig(file_name, bbox_inches="tight")
 
     def _fill_in_missing_params(self, element: Plottable) -> None:
