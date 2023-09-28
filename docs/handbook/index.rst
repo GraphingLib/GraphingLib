@@ -13,14 +13,12 @@ Sections in this handbook
    :maxdepth: 1
 
    overview
-   quick_reference
+   getting_started
    figure
-   multifigure
-   curve_scatter
+   curve
+   scatter_fitting
    histogram
    graph_elements
-   curve_fitting
-   heatmap
-   contour
-   vector_field
+   multifigure
+   2D_plotting
    figure_style_file

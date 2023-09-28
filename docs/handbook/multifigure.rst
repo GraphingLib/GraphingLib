@@ -1,3 +1,3 @@
 ========================================================
-The :class:`~graphinglib.multifigure.MultiFigure` Object
+Creating a :class:`~graphinglib.multifigure.MultiFigure`
 ========================================================

@@ -1,4 +1,4 @@
 ===============
-Quick Reference
+Getting started
 ===============
 
