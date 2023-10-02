@@ -22,6 +22,7 @@
 !docs/handbook/*
 !docs/reference/*
 !docs/release_notes/*
+!docs/images/*
 !examples/
 !examples/**
 
