@@ -25,6 +25,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
+    "sphinx.ext.intersphinx",
 ]
 
 templates_path = ["_templates"]
@@ -37,3 +38,17 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "furo"
 html_logo = "../images/GraphingLib-Logo-Bolder.svg"
 html_static_path = ["_static"]
+
+# -- Extension options -------------------------------------------------------
+
+intersphinx_mapping = {
+    "Matplotlib": (
+        "https://matplotlib.org/stable/",
+        None,
+    ),
+    "Numpy": ("https://numpy.org/doc/stable/", None),
+    "Scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "Python": ("https://docs.python.org/", None),
+    "Numpy typing": ("https://numpy.org/devdocs/", None),
+}
+pygments_dark_style = "github-dark"

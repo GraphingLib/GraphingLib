@@ -13,9 +13,11 @@ Sections in this handbook
    :maxdepth: 1
 
    overview
-   quick_reference
-   1D_plotting
-   curve_fitting
-   2D_plotting
+   figure
+   curve
+   scatter_fitting
+   histogram
+   graph_elements
    multifigure
-   curve_and_scatter
+   2D_plotting
+   figure_style_file
