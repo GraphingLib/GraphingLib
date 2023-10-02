@@ -13,7 +13,6 @@ Sections in this handbook
    :maxdepth: 1
 
    overview
-   getting_started
    figure
    curve
    scatter_fitting

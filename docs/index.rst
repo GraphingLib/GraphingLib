@@ -22,7 +22,7 @@ Contents
 .. toctree::
    :maxdepth: 3
    
-   installation
+   getting_started
    handbook/index
    reference/index
    release_notes/index
