@@ -15,7 +15,7 @@ Then, to add a set of axes to the MultiFigure, we create a new :class:`~graphing
 
     subfigure1 = multifigure.add_subfigure((0, 0, 1, 1))
 
-The tuple is arranged in the following order: `(start row, start column, rows spanned, columns spanned)`. It is important to note that **a single set of axes is not confined to a single square on the grid, it can span multiple squares.** This means it is possible to align the individual sets of axes however you want. For example, here is how you could insert 3 SubFigures in 2 rows with the one on the second row being centered: ::
+Once a SubFigure has been created, elements can be added to it by using the :py:meth:`~graphinglib.multifigure.SubFigure.add_element` method as in a :class:`~graphinglib.figure.Figure`. The tuple is arranged in the following order: `(start row, start column, rows spanned, columns spanned)`. It is important to note that **a single set of axes is not confined to a single square on the grid, it can span multiple squares.** This means it is possible to align the individual sets of axes however you want. For example, here is how you could insert 3 SubFigures in 2 rows with the one on the second row being centered: ::
 
     import numpy as np
     import graphinglib as gl
@@ -39,8 +39,6 @@ The tuple is arranged in the following order: `(start row, start column, rows sp
     multifigure.display()
 
 .. image:: ../images/multifigure.png
-
-Once a SubFigure has been created, elements can be added to it by using the :py:meth:`~graphinglib.multifigure.SubFigure.add_element` method as in a :class:`~graphinglib.figure.Figure`. 
 
 Legends in MultiFigures
 -----------------------
