@@ -509,7 +509,7 @@ class Text:
         self._arrow_pointing_to = points_to
         self.width = width
         self.shrink = shrink
-        self.arrow_properties = {"color": self.color}
+        self.arrow_properties = {}
         if width is not None:
             self.arrow_properties["width"] = width
         if shrink is not None:
@@ -536,6 +536,7 @@ class Text:
             zorder=z_order,
         )
         if self._arrow_pointing_to is not None:
+            self.arrow_properties["color"] = self.color
             axes.annotate(
                 self.text,
                 self._arrow_pointing_to,
