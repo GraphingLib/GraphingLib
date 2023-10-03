@@ -36,4 +36,6 @@ The Text object is used to display text on a figure. It also allows you to point
     text = gl.Text(4, 1, "There is nothing here!")
     text.attach_arrow((0.5, 1))
 
-There are many more parameters to be customized for the Text object, but those are all included in the figure style files and can therefore be left out most of the time. For the details on the other parameters, visit the :py:class:`Reference section on Text objects <graphinglib.graph_elements.Text>`.
+.. image:: ../images/text.png
+
+There are many more parameters to be customized for the Text object and its arrow, but those are all included in the figure style files and can therefore be left out most of the time. For the details on the other parameters, visit the :py:class:`Reference section on Text objects <graphinglib.graph_elements.Text>`.
