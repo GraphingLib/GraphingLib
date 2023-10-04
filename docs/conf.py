@@ -38,6 +38,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "furo"
 html_logo = "../images/GraphingLib-Logo-Bolder.svg"
 html_static_path = ["_static"]
+html_favicon = "../images/GraphingLib-favicon.ico"
 
 # -- Extension options -------------------------------------------------------
 
