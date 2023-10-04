@@ -1,4 +1,4 @@
-from os import path
+from os import path, remove
 
 import yaml
 from platformdirs import user_config_dir
@@ -53,3 +53,20 @@ class FileSaver:
         with open(self._save_location, "w") as file:
             yaml.dump(self._style_prefs, file)
         print(f"Style saved to {self._save_location}")
+
+
+class FileDeleter:
+    """
+    This class implements the file deleter for the user styles files.
+    """
+
+    def __init__(self, file_name: str) -> None:
+        self._config_dir = user_config_dir(appname="GraphingLib", roaming=True)
+        self._file_name = file_name
+        self._file_location = f"{self._config_dir}/{self._file_name}.yml"
+
+    def delete(self) -> None:
+        # delete the style from the user's config directory
+
+        remove(self._file_location)
+        print(f"Style deleted from {self._file_location}")
