@@ -23,4 +23,10 @@ On this example we can see that the legend includes the values of the distributi
     mu = histogram.mean
     sigma = histogram.standard_deviation
 
+It is also possible to overlay a normal fit of the distribution simply by setting the ``show_pdf`` parameter to ``"normal"``: ::
 
+    histogram = gl.Histogram(
+        values, number_of_bins=30, label="Distribution of values", show_pdf="normal"
+    )
+
+.. image:: ../images/histogrampdf.png
