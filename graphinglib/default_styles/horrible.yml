@@ -68,14 +68,6 @@ Subfigure:
   grid_color: "orange"
   grid_alpha: 0.3
 
-FitFromPolynomial:
-  color: "orange"
-  line_width: 4
-
-FitFromSine:
-  color: "khaki"
-  line_width: 6
-
 Point:
   color: "cyan"
   edge_color: "red"
