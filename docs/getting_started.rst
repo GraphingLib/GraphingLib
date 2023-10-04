@@ -5,15 +5,17 @@ Getting started
 Installation
 ------------
 
-Install Graphinglib with :command:`pip`::
+Install Graphinglib with :command:`pip`: ::
     
-    >>> pip install graphinglib
+    pip install graphinglib
 
-Install from **source** with::
+Install from **source**: ::
 
-    >>> pip install git+https://github.com/GraphingLib/GraphingLib.git
+    pip install git+https://github.com/GraphingLib/GraphingLib.git
 
-.. note:: As of now, Graphinglib is only available for installation with Pip.
+Install with **Poetry**: ::
+
+    poetry add graphinglib
 
 Usage
 -----
