@@ -1,3 +1,8 @@
+from os import listdir
+from os.path import dirname
+
+from platformdirs import user_config_dir
+
 from graphinglib.file_manager import FileLoader, FileSaver
 
 
@@ -33,14 +38,25 @@ def prompt_for_section(section_name, default_values):
 
 
 def create_new_style():
+    existing_style_names = get_style_names()
     filename = input(
-        "Enter a name for your custom style (e.g., my_style) or press Enter for default (user_preferences): "
+        "Enter a unique name for your custom style (e.g., big_bold_figure) or press Enter for default (style_1): "
     ).strip()
+
+    # check if the filename is already in use
+    while filename in existing_style_names:
+        filename = input(
+            f"The filename {filename} is already in use. Enter a unique name for your custom style (e.g., style_1): "
+        ).strip()
+
     if not filename:
-        filename = "user_preferences"
+        filename = "style_1"
+        while filename in existing_style_names:
+            filename = (
+                filename.split("_")[0] + "_" + str(int(filename.split("_")[-1]) + 1)
+            )
 
     # ask for style name to be used as a base
-    existing_style_names = get_style_names()
     print("Choose an existing style to base your new style on:")
     for i, name in enumerate(existing_style_names):
         print(f"{i+1}. {name}")
@@ -73,13 +89,64 @@ def get_style_names() -> list[str]:
     Get the names of all the styles in the graphinglib.
     """
     # get the names of all the styles in the default_styles folder
-    from os import listdir
-    from os.path import dirname
-
     default_styles_path = f"{dirname(__file__)}/default_styles"
     default_styles = listdir(default_styles_path)
-    default_styles = [style_name.replace(".yml", "") for style_name in default_styles]
-    return default_styles
+    default_styles = [
+        style_name.replace(".yml", "")
+        for style_name in default_styles
+        if ".yml" in style_name
+    ]
+
+    # add the names of all the styles in the user's config directory
+    config_dir = user_config_dir(appname="GraphingLib", roaming=True)
+    user_styles = listdir(config_dir)
+    user_styles = [
+        style_name.replace(".yml", "")
+        for style_name in user_styles
+        if ".yml" in style_name
+    ]
+
+    # combine the two lists and clean it up
+    all_styles = default_styles + user_styles
+    all_styles = list(dict.fromkeys(all_styles))
+    all_styles.sort()
+
+    return all_styles
 
 
-create_new_style()
+def main_cli():
+    """
+    The main function for the command line interface.
+    """
+    # Ask the user if they want to create a new style, edit an existing style, or delete an existing style
+    print("Welcome to GraphingLib's style editor!")
+    print("What would you like to do?")
+    print("1. Create a new style")
+    print("2. Edit an existing style")
+    print("3. Delete an existing style")
+    print("4. Exit")
+
+    # Ask the user for their choice and validate it (must be 1, 2, 3, or 4)
+
+    choice = input("Enter a number: ").strip()
+    while choice not in ["1", "2", "3", "4"]:
+        choice = input("You must enter 1, 2, 3, or 4. Enter a number: ").strip()
+
+    # If the user chose 1, create a new style
+    if choice == "1":
+        create_new_style()
+    # If the user chose 2, edit an existing style
+    if choice == "2":
+        # TODO: implement this
+        print("This feature is not yet implemented.")
+    # If the user chose 3, delete an existing style
+    if choice == "3":
+        # TODO: implement this
+        print("This feature is not yet implemented.")
+    # If the user chose 4, exit the program
+    if choice == "4":
+        print("Goodbye!")
+
+
+if __name__ == "__main__":
+    main_cli()
