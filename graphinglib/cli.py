@@ -3,7 +3,7 @@ from os.path import dirname
 
 from platformdirs import user_config_dir
 
-from graphinglib.file_manager import FileLoader, FileSaver
+from graphinglib.file_manager import FileDeleter, FileLoader, FileSaver
 
 
 def prompt_for_section(section_name, default_values):
@@ -13,26 +13,31 @@ def prompt_for_section(section_name, default_values):
     for key, default_value in default_values.items():
         user_input = input(f"{key} (default: {default_value}): ").strip()
 
-        if "same as" in str(default_value):
-            ref_key = default_value.split(" ")[-1]
-            default_value = user_values.get(ref_key, default_value)
-
-        if not user_input:
-            user_input = default_value
-
-        if isinstance(default_value, bool):
-            if not isinstance(user_input, bool):
-                user_input = user_input.lower() in ["true", "yes", "y", "1"]
-        elif isinstance(default_value, int):
-            user_input = int(user_input)
-        elif isinstance(default_value, float):
-            user_input = float(user_input)
-        elif isinstance(default_value, list):
-            user_input = [
-                float(i) if "." in i else int(i) for i in user_input.split(",")
-            ]
-
-        user_values[key] = user_input
+        # validate the user input and reask if type is wrong
+        validated = False
+        while not validated:
+            try:
+                if not user_input:
+                    user_input = default_value
+                else:
+                    if isinstance(default_value, bool):
+                        if not isinstance(user_input, bool):
+                            user_input = user_input.lower() in ["true", "yes", "y", "1"]
+                    elif isinstance(default_value, int):
+                        user_input = int(user_input)
+                    elif isinstance(default_value, float):
+                        user_input = float(user_input)
+                    elif isinstance(default_value, list):
+                        user_input = [
+                            float(i) if "." in i else int(i)
+                            for i in user_input.split(",")
+                        ]
+                user_values[key] = user_input
+                validated = True
+            except ValueError:
+                user_input = input(
+                    f"Invalid input for {key}. Please enter a {type(default_value).__name__} or use default value {default_value}: "
+                ).strip()
 
     return user_values
 
@@ -84,34 +89,64 @@ def create_new_style():
     file_saver.save()
 
 
-def get_style_names() -> list[str]:
+def get_style_names(user=True, default=True) -> list[str]:
     """
     Get the names of all the styles in the graphinglib.
     """
-    # get the names of all the styles in the default_styles folder
-    default_styles_path = f"{dirname(__file__)}/default_styles"
-    default_styles = listdir(default_styles_path)
-    default_styles = [
-        style_name.replace(".yml", "")
-        for style_name in default_styles
-        if ".yml" in style_name
-    ]
+    all_styles = []
+    if default:
+        # get the names of all the styles in the default_styles folder
+        default_styles_path = f"{dirname(__file__)}/default_styles"
+        default_styles = listdir(default_styles_path)
+        default_styles = [
+            style_name.replace(".yml", "")
+            for style_name in default_styles
+            if ".yml" in style_name
+        ]
+        all_styles += default_styles
 
-    # add the names of all the styles in the user's config directory
-    config_dir = user_config_dir(appname="GraphingLib", roaming=True)
-    user_styles = listdir(config_dir)
-    user_styles = [
-        style_name.replace(".yml", "")
-        for style_name in user_styles
-        if ".yml" in style_name
-    ]
+    if user:
+        # add the names of all the styles in the user's config directory
+        config_dir = user_config_dir(appname="GraphingLib", roaming=True)
+        user_styles = listdir(config_dir)
+        user_styles = [
+            style_name.replace(".yml", "")
+            for style_name in user_styles
+            if ".yml" in style_name
+        ]
+        all_styles += user_styles
 
     # combine the two lists and clean it up
-    all_styles = default_styles + user_styles
     all_styles = list(dict.fromkeys(all_styles))
     all_styles.sort()
 
     return all_styles
+
+
+def delete_style():
+    """
+    Delete an existing style.
+    """
+    # Get the names of all the styles
+    all_styles = get_style_names(default=False, user=True)
+
+    # Ask the user which style they want to delete
+    print("Which style do you want to delete?")
+    for i, style_name in enumerate(all_styles):
+        print(f"{i+1}. {style_name}")
+    choice = input("Enter a number: ").strip()
+
+    # Validate the user's choice
+    while not choice.isdigit() or int(choice) not in range(1, len(all_styles) + 1):
+        choice = input(
+            f"You must enter a number between 1 and {len(all_styles)}. Enter a number: "
+        ).strip()
+    choice = int(choice)
+
+    # Delete the style
+    style_name = all_styles[choice - 1]
+    file_saver = FileDeleter(style_name)
+    file_saver.delete()
 
 
 def main_cli():
@@ -141,8 +176,7 @@ def main_cli():
         print("This feature is not yet implemented.")
     # If the user chose 3, delete an existing style
     if choice == "3":
-        # TODO: implement this
-        print("This feature is not yet implemented.")
+        delete_style()
     # If the user chose 4, exit the program
     if choice == "4":
         print("Goodbye!")
