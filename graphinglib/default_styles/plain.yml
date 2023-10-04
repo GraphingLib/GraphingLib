@@ -63,14 +63,6 @@ Subfigure:
   grid_color: "grey"
   grid_alpha: 0.5
 
-FitFromPolynomial:
-  color: "k"
-  line_width: 1
-
-FitFromSine:
-  color: "k"
-  line_width: 1
-
 Point:
   color: "k"
   edge_color: "none"
