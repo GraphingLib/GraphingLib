@@ -22,6 +22,12 @@ From source with
 pip install git+https://github.com/GraphingLib/GraphingLib.git
 ```
 
+With Poetry with
+
+```text
+poetry add graphinglib
+```
+
 ## 3. Documentation
 
 As of v1.1.0, a documentation page has been created and is accessible [here](https://graphinglib.readthedocs.io/). Note however that it is still a work in progress and that it will be improving in the future.
