@@ -9,7 +9,7 @@ Install Graphinglib with :command:`pip`: ::
     
     pip install graphinglib
 
-Install from **source**: ::
+Install from `GitHub source code <https://github.com/GraphingLib/GraphingLib>`_: ::
 
     pip install git+https://github.com/GraphingLib/GraphingLib.git
 
