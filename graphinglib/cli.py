@@ -119,8 +119,13 @@ def create_new_style():
             user_preferences[section_name] = default_values
 
     # Save user preferences to the specified filename
+    print("\n")
     file_saver = FileSaver(filename, user_preferences)
     file_saver.save()
+
+    print(
+        f"You can now use your new style by calling gl.Figure(figure_style='{filename}')\n"
+    )
 
 
 def modify_style():
