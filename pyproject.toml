@@ -3,7 +3,10 @@ name = "graphinglib"
 version = "1.1.0"
 description = "An object oriented wrapper combining the functionalities of Matplotlib and Scipy"
 license = "MIT"
-authors = ["Gustave Coulombe <magikgus@gmail.com>", "Yannick Lapointe <yannicklapointe77@gmail.com>"]
+authors = [
+    "Gustave Coulombe <magikgus@gmail.com>",
+    "Yannick Lapointe <yannicklapointe77@gmail.com>",
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -12,10 +15,14 @@ numpy = "^1.24.2"
 scipy = "^1.10.1"
 matplotlib = "^3.7.1"
 PyYAML = "^6.0"
+platformdirs = "^3.11.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
 ipykernel = "^6.23.0"
+
+[tool.poetry.scripts]
+graphinglib = "graphinglib.cli:main_cli"
 
 [build-system]
 requires = ["poetry-core"]
