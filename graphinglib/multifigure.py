@@ -1,4 +1,5 @@
 from typing import Literal, Optional
+from warnings import warn
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParamsDefault
@@ -54,6 +55,9 @@ class SubFigure:
     ticks_are_in : bool
         Wheter or not to display the axis ticks inside the axis.
         Default depends on the ``figure_style`` configuration.
+    remove_axes : bool
+        Whether or not to show the axes. Useful for adding tables or text to
+        the subfigure. Defaults to ``False``.
     """
 
     def __init__(
@@ -69,6 +73,7 @@ class SubFigure:
         show_grid: bool | Literal["default"] = "default",
         legend_is_boxed: bool | Literal["default"] = "default",
         ticks_are_in: bool | Literal["default"] = "default",
+        remove_axes: bool = False,
     ):
         """
         This class implements the individual plots added inside the
@@ -105,6 +110,9 @@ class SubFigure:
         ticks_are_in : bool
             Wheter or not to display the axis ticks inside the axis.
             Default depends on the ``figure_style`` configuration.
+        remove_axes : bool
+            Whether or not to show the axes. Useful for adding tables or text to
+            the subfigure. Defaults to ``False``.
         """
         self.x_axis_name = x_label
         self.y_axis_name = y_label
@@ -142,6 +150,7 @@ class SubFigure:
         self.log_scale_y = log_scale_y
         self.legend_is_boxed = legend_is_boxed
         self.ticks_are_in = ticks_are_in
+        self.remove_axes = remove_axes
         self.grid_is_set = False
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
@@ -188,6 +197,13 @@ class SubFigure:
             self._axes.set_yscale("log")
         if self.ticks_are_in:
             self._axes.tick_params(axis="both", direction="in", which="both")
+        if self.remove_axes:
+            self._axes.axis("off")
+            warn(
+                "Axes on SubFigure placed at {} have been removed.".format(
+                    self.placement
+                )
+            )
         if self.grid_is_set:
             self._axes.grid(
                 which="major",
@@ -431,6 +447,7 @@ class MultiFigure:
         show_grid: bool | Literal["default"] = "default",
         legend_is_boxed: bool | Literal["default"] = "default",
         ticks_are_in: bool | Literal["default"] = "default",
+        remove_axes: bool = False,
     ) -> SubFigure:
         """
         Adds a :class:`~graphinglib.multifigure.SubFigure` to a :class:`~graphinglib.multifigure.MultiFigure`.
@@ -459,6 +476,9 @@ class MultiFigure:
         ticks_are_in : bool
             Wheter or not to display the axis ticks inside the axis.
             Default depends on the ``figure_style`` configuration.
+        remove_axes : bool
+            Whether or not to show the axes. Useful for adding tables or text to
+            the subfigure. Defaults to ``False``.
 
         Returns
         -------
@@ -483,6 +503,7 @@ class MultiFigure:
             show_grid,
             legend_is_boxed,
             ticks_are_in,
+            remove_axes,
         )
         self._SubFigures.append(new_SubFigure)
         return new_SubFigure
