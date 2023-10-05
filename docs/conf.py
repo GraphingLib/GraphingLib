@@ -26,6 +26,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
     "sphinx.ext.intersphinx",
+    "sphinx_favicon",
 ]
 
 templates_path = ["_templates"]
@@ -36,9 +37,12 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
-html_favicon = "favicon.ico"
-html_logo = "../images/GraphingLib-Logo-Bolder.svg"
 html_static_path = ["_static"]
+html_logo = "../images/GraphingLib-Logo-Bolder.svg"
+favicons = [
+    {"href": "images/favicon.svg"},
+    {"rel": "apple-touch-icon", "href": "images/GraphingLib-favicon_250x250.png"},
+]
 
 # -- Extension options -------------------------------------------------------
 
