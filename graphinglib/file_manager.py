@@ -1,4 +1,4 @@
-from os import path, remove
+from os import mkdir, path, remove
 
 import yaml
 from platformdirs import user_config_dir
@@ -18,6 +18,8 @@ class FileLoader:
         self._file_location_customs = f"{self._config_dir}/{self._file_name}.yml"
 
     def load(self) -> dict:
+        if not path.exists(self._config_dir):
+            mkdir(self._config_dir)
         try:
             with open(self._file_location_customs, "r") as file:
                 info = yaml.safe_load(file)
@@ -46,8 +48,6 @@ class FileSaver:
     def save(self) -> None:
         # create the config directory if it doesn't exist
         if not path.exists(self._config_dir):
-            from os import mkdir
-
             mkdir(self._config_dir)
         # save the style to the user's config directory
         with open(self._save_location, "w") as file:
@@ -67,6 +67,10 @@ class FileDeleter:
 
     def delete(self) -> None:
         # delete the style from the user's config directory
-
-        remove(self._file_location)
-        print(f"Style deleted from {self._file_location}")
+        if not path.exists(self._config_dir):
+            mkdir(self._config_dir)
+        try:
+            remove(self._file_location)
+            print(f"Style deleted from {self._file_location}")
+        except FileNotFoundError:
+            print(f"Could not find the file {self._file_name}.yml.")
