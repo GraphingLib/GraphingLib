@@ -33,7 +33,7 @@ html[data-theme=light] .sd-shadow-sm {
 }
 
 div.bd-sidebar {
-    overflow: hidden !important
+    overflow-x: hidden !important
 }
 
 .bd-page-width {
