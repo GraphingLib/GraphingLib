@@ -1,6 +1,6 @@
 
 ===================================
-Graphinglib |release| documentation
+GraphingLib |release| documentation
 ===================================
 
 An object oriented wrapper combining the functionalities of Matplotlib and Scipy.
