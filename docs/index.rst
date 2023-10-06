@@ -33,7 +33,7 @@ them to be used anytime you want.
     .. grid-item-card::
         :img-top: _static/icons/index_user_guide.svg
 
-        handbook
+        Handbook
         ^^^^^^^^
         Once GraphingLib is installed, visit this section to learn how to use its different features.
         ++++
