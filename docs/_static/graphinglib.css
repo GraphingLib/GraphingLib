@@ -32,6 +32,10 @@ html[data-theme=light] .sd-shadow-sm {
     max-width: 70rem;  /* default is 60em */
 }
 
+div.bd-sidebar {
+    overflow: hidden !important
+}
+
 .bd-page-width {
     max-width: 95rem;  /* default is 88rem */
 }
