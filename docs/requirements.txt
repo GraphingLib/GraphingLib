@@ -1,5 +1,5 @@
 sphinx-copybutton
-furo
+pydata-sphinx-theme
 numpy
 scipy
 matplotlib
