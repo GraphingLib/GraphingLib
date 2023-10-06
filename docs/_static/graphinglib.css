@@ -2,6 +2,9 @@
 
 :root {
     --pst-header-height: 80px;
+    --pst-color-primary: rgb(25, 142, 254);
+    /* --sd-color-primary-highlight: rgb(19, 107, 188); */
+    /* --sd-color-primary: rgb(19, 107, 188); */
 }
 
 body {
@@ -10,10 +13,8 @@ body {
 
 html[data-theme=dark] {
     --pst-color-primary: rgb(25, 142, 254);
-    --pst-color-primary-bg: rgb(19, 107, 188);
     --pst-color-secondary: rgb(225, 164, 0);
     --pst-color-inline-code-links: rgb(25, 142, 254);
-    background: var(--pst-color-background);
 }
 
 html[data-theme=dark] .sd-shadow-sm {
@@ -22,7 +23,6 @@ html[data-theme=dark] .sd-shadow-sm {
 
 html[data-theme=light] {
     --pst-color-primary: rgb(22, 118, 208);
-    --pst-color-primary-bg: rgb(19, 107, 188);
     --pst-color-secondary: rgb(203, 149, 0);
     --pst-color-inline-code-links: rgb(22, 118, 208);
 }
@@ -39,16 +39,16 @@ html[data-theme=light] .sd-shadow-sm {
     max-width: 95rem;  /* default is 88rem */
 }
 
-.sd-btn-primary {
-    color: rgb(19, 107, 188);
-}
-
 /* Dark theme tweaking */
 html[data-theme=dark] .sd-card img[src*='.svg'] {
     filter: invert(1) brightness(0.9) contrast(1.2);
 }
 
 /* Main page overview cards */
+
+.sd-btn:hover {
+    background-color: rgb(19, 107, 188) !important
+}
 
 .sd-card {
     border-radius: 3;
