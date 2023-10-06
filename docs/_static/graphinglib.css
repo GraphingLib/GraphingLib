@@ -2,9 +2,6 @@
 
 :root {
     --pst-header-height: 80px;
-    --pst-color-primary: rgb(25, 142, 254);
-    /* --sd-color-primary-highlight: rgb(19, 107, 188); */
-    /* --sd-color-primary: rgb(19, 107, 188); */
 }
 
 body {
@@ -41,7 +38,11 @@ html[data-theme=light] .sd-shadow-sm {
 
 /* Dark theme tweaking */
 html[data-theme=dark] .sd-card img[src*='.svg'] {
-    filter: invert(1) brightness(0.9) contrast(1.2);
+    filter: invert(1) brightness(1) contrast(1);
+}
+
+.bd-content img:not(.only-dark):not(.dark-light) {
+    background: transparent !important
 }
 
 /* Main page overview cards */
