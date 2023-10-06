@@ -28,12 +28,18 @@ html[data-theme=light] .sd-shadow-sm {
     box-shadow: 0 .1rem 1rem rgba(0, 0, 0, 0.2) !important
 }
 
-.bd-main .bd-content .bd-article-container {
-    max-width: 70rem;  /* default is 60em */
+.bd-header-announcement {
+    &:after {
+        background-color: rgb(19, 107, 188) !important
+    }
 }
 
 div.bd-sidebar {
     overflow-x: hidden !important
+}
+
+.bd-main .bd-content .bd-article-container {
+    max-width: 70rem;  /* default is 60em */
 }
 
 .bd-page-width {
