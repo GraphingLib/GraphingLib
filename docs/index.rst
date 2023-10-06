@@ -13,7 +13,7 @@ Provides one-line commands for:
 Also provides the ability to create multiple visual styles for your plots and save
 them to be used anytime you want.
 
-.. grid:: 1 1 3 3
+.. grid:: 1 3 3 3
 
     .. grid-item-card::
         :img-top: _static/icons//index_getting_started.svg
