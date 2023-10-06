@@ -6,3 +6,4 @@ matplotlib
 PyYAML
 platformdirs
 sphinx-favicon
+sphinx-design

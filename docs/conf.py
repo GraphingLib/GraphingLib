@@ -27,6 +27,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx.ext.intersphinx",
     "sphinx_favicon",
+    "sphinx_design",
 ]
 
 templates_path = ["_templates"]
@@ -36,12 +37,26 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "furo"
+html_theme = "pydata_sphinx_theme"
 html_static_path = ["_static"]
-html_logo = "../images/GraphingLib-Logo-Bolder.svg"
+html_css_files = ["graphinglib.css"]
+html_theme_options = {
+    "github_url": "https://github.com/GraphingLib/GraphingLib",
+    "logo": {
+        "text": "GraphingLib",
+        "image_dark": "_static/icons/GraphingLib-favicon_250x250.png",
+        "image_light": "_static/icons/GraphingLib-favicon_250x250.png",
+    },
+    "pygment_light_style": "tango",
+    "pygment_dark_style": "github-dark",
+    "show_toc_level": 2,
+    "show_prev_next": False,
+}
+html_context = {"default_mode": "dark"}
+html_show_sourcelink = False
 favicons = [
-    {"href": "images/favicon.svg"},
-    {"rel": "apple-touch-icon", "href": "images/GraphingLib-favicon_250x250.png"},
+    "icons/favicon.ico",
+    "icons/GraphingLib-favicon_250x250.png",
 ]
 
 # -- Extension options -------------------------------------------------------
@@ -56,4 +71,3 @@ intersphinx_mapping = {
     "Python": ("https://docs.python.org/", None),
     "Numpy typing": ("https://numpy.org/devdocs/", None),
 }
-pygments_dark_style = "github-dark"

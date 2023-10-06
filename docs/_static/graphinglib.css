@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=Open+Sans:ital,wght@0,400;0,600;1,400;1,600&display=swap');
+
+:root {
+    --pst-header-height: 80px;
+}
+
+body {
+    font-family: 'Open Sans', sans-serif;
+}
+
+html[data-theme=dark] {
+    --pst-color-primary: rgb(25, 142, 254);
+    --pst-color-secondary: rgb(225, 164, 0);
+    --pst-color-inline-code-links: rgb(25, 142, 254);
+}
+
+html[data-theme=dark] .sd-shadow-sm {
+    box-shadow: 0 .1rem 1rem rgba(0, 0, 0, .6) !important
+}
+
+html[data-theme=light] {
+    --pst-color-primary: rgb(22, 118, 208);
+    --pst-color-secondary: rgb(203, 149, 0);
+    --pst-color-inline-code-links: rgb(22, 118, 208);
+}
+
+html[data-theme=light] .sd-shadow-sm {
+    box-shadow: 0 .1rem 1rem rgba(0, 0, 0, 0.2) !important
+}
+
+.bd-main .bd-content .bd-article-container {
+    max-width: 70rem;  /* default is 60em */
+}
+
+div.bd-sidebar {
+    overflow: hidden !important
+}
+
+.bd-page-width {
+    max-width: 95rem;  /* default is 88rem */
+}
+
+/* Dark theme tweaking */
+html[data-theme=dark] .sd-card img[src*='.svg'] {
+    filter: invert(1) brightness(1) contrast(1);
+}
+
+.bd-content img:not(.only-dark):not(.dark-light) {
+    background: transparent !important
+}
+
+/* Main page overview cards */
+
+.sd-btn:hover {
+    background-color: rgb(19, 107, 188) !important
+}
+
+.sd-card {
+    border-radius: 3;
+    padding: 30px 10px 20px 10px;
+    margin: 10px 0px;
+}
+  
+.sd-card .sd-card-header {
+    text-align: center;
+}
+  
+.sd-card .sd-card-header .sd-card-text {
+    margin: 0px;
+}
+  
+.sd-card .sd-card-img-top {
+    height: 52px;
+    width: 52px;
+    margin-left: auto;
+    margin-right: auto;
+}
+  
+.sd-card .sd-card-header {
+    border: none;
+    font-size: var(--pst-font-size-h5);
+    font-weight: bold;
+    padding: 2.5rem 0rem 0.5rem 0rem;
+}
+  
+.sd-card .sd-card-footer {
+    border: none;
+}
+  
+.sd-card .sd-card-footer .sd-card-text {
+    max-width: 220px;
+    margin-left: auto;
+    margin-right: auto;
+}
