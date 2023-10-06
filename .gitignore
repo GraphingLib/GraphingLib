@@ -10,5 +10,6 @@ graphinglib/.vscode
 
 .vscode
 .github
+.venv
 
 docs/_build
