@@ -12,6 +12,12 @@ html[data-theme=dark] {
     --pst-color-primary: rgb(25, 142, 254);
     --pst-color-secondary: rgb(225, 164, 0);
     --pst-color-inline-code-links: rgb(25, 142, 254);
+    --pst-color-inline-code: rgb(228, 127, 215);
+    .bd-header-announcement {
+        &:after {
+            background-color: rgb(19, 107, 188);
+        }
+    }
 }
 
 html[data-theme=dark] .sd-shadow-sm {
@@ -22,16 +28,15 @@ html[data-theme=light] {
     --pst-color-primary: rgb(22, 118, 208);
     --pst-color-secondary: rgb(203, 149, 0);
     --pst-color-inline-code-links: rgb(22, 118, 208);
+    .bd-header-announcement {
+        &:after {
+            background-color: rgb(25, 142, 254);
+        }
+    }
 }
 
 html[data-theme=light] .sd-shadow-sm {
     box-shadow: 0 .1rem 1rem rgba(0, 0, 0, 0.2) !important
-}
-
-.bd-header-announcement {
-    &:after {
-        background-color: rgb(19, 107, 188) !important
-    }
 }
 
 div.bd-sidebar {
