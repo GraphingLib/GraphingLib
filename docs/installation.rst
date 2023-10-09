@@ -1,6 +1,9 @@
-============
+===============
+Getting started
+===============
+
 Installation
-============
+------------
 
 Install Graphinglib with :command:`pip`: ::
     

@@ -11,7 +11,6 @@ Sections in this handbook
    :maxdepth: 2
    :caption: Handbook
 
-   overview
    figure
    curve
    scatter_fitting
