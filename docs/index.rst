@@ -23,7 +23,7 @@ them to be used anytime you want.
         If you are new to GraphingLib, look out this section first to learn how to install and import GraphingLib.
         ++++
         
-        .. button-ref:: getting_started
+        .. button-ref:: getting_started/installation
             :expand:
             :color: primary
             :click-parent:
@@ -65,7 +65,7 @@ them to be used anytime you want.
    :maxdepth: 3
    :hidden:
    
-   getting_started
+   getting_started/index
    handbook/index
    reference/index
    release_notes/index

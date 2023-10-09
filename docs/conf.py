@@ -44,8 +44,8 @@ html_theme_options = {
     "github_url": "https://github.com/GraphingLib/GraphingLib",
     "logo": {
         "text": "GraphingLib",
-        "image_dark": "_static/icons/GraphingLib-favicon_250x250.png",
-        "image_light": "_static/icons/GraphingLib-favicon_250x250.png",
+        "image_dark": "../images/GraphingLib-Logo-Bolder.svg",
+        "image_light": "../images/GraphingLib-Logo-Bolder.svg",
     },
     "pygment_light_style": "tango",
     "pygment_dark_style": "github-dark",
@@ -55,10 +55,7 @@ html_theme_options = {
 }
 html_context = {"default_mode": "dark"}
 html_show_sourcelink = False
-favicons = [
-    "icons/favicon.ico",
-    "icons/GraphingLib-favicon_250x250.png",
-]
+favicons = ["icons/GraphingLib-favicon_250x250.png"]
 
 # -- Extension options -------------------------------------------------------
 
