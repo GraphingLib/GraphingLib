@@ -1,12 +1,14 @@
+:html_theme.sidebar_secondary.remove:
+
 =============
 API Reference
 =============
 
-Modules
--------
+Contents
+--------
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    data_plotting_1d
    data_plotting_2d
