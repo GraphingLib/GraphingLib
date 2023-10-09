@@ -3,15 +3,16 @@
 !graphinglib/*.py
 !unit_testing/*.py
 
-unit_testing/__pycache__
+**/__pycache__
 
 GraphingLib.egg-info
 
-graphinglib/__pycache__
 graphinglib/.vscode
 build
 
 .vscode
 .venv
+.github
+**/.DS_Store
 
 docs/_build
