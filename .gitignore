@@ -1,5 +1,7 @@
 *.py
 !setup.py
+!graphinglib/*.py
+!unit_testing/*.py
 
 unit_testing/__pycache__
 
@@ -7,9 +9,9 @@ GraphingLib.egg-info
 
 graphinglib/__pycache__
 graphinglib/.vscode
+build
 
 .vscode
-.github
 .venv
 
 docs/_build
