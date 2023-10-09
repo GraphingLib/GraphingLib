@@ -1,15 +1,23 @@
+:html_theme.sidebar_secondary.remove:
+
 ========
 Handbook
 ========
 
-Welcome to the Handbook section of the documentation! In here you will find tutorials and examples of uses of the Graphinglib library.
+Welcome to the Handbook section of the documentation! In this section, you will find examples and tutorials for the various objects and methods of the GraphingLib library. 
+
+.. note:: 
+
+    In every code snippets you will encounter, if the GraphingLib library is not explicitly imported, it is assumed to be imported the following way: ::
+
+        import graphinglib as gl
+
 
 Sections in this handbook
 -------------------------
 
 .. toctree::
    :maxdepth: 2
-   :caption: Handbook
 
    figure
    curve
