@@ -55,10 +55,7 @@ html_theme_options = {
 }
 html_context = {"default_mode": "dark"}
 html_show_sourcelink = False
-favicons = [
-    "icons/favicon.ico",
-    "icons/GraphingLib-favicon_250x250.png",
-]
+favicons = ["icons/GraphingLib-favicon.png"]
 
 # -- Extension options -------------------------------------------------------
 
