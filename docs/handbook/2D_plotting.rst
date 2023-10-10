@@ -12,7 +12,7 @@ The :class:`~graphinglib.data_plotting_2d.Heatmap` Object
 
 The Heatmap class allows to plot a 2-dimensional map of values. It also allows to display images inside a set of axes. Here is how you can create a heatmap: ::
 
-    x_grid, y_grid = np.mgrid[:50, :50]
+    x_grid, y_grid = np.meshgrid(np.arange(0, 50, 1), np.arange(0, 50, 1))
     data = np.cos(x_grid * 0.2) + np.sin(y_grid * 0.3)
 
     map = gl.Heatmap(data)
@@ -25,7 +25,7 @@ The Heatmap class allows to plot a 2-dimensional map of values. It also allows t
 As for the :class:`~graphinglib.data_plotting_1d.Curve` and :class:`~graphinglib.data_plotting_1d.Scatter` objects, it is possible to create a Heatmap from a function with the :py:meth:`~graphinglib.data_plotting_2d.Heatmap.from_function` method: ::
 
     map = gl.Heatmap.from_function(
-        lambda y, x: np.cos(x * 0.2) + np.sin(y * 0.3), (0, 49), (49, 0)
+        lambda x, y: np.cos(x * 0.2) + np.sin(y * 0.3), (0, 49), (49, 0)
     )
 
 To display an image instead, simply create a Heatmap with the path to an image as a string instead of actual data: ::
