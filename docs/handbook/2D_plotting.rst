@@ -41,6 +41,8 @@ The are again many parameters to control for the Heatmap objects but an importan
 
 .. image:: ../images/heatmap3.png
 
+.. note :: By default, there is no interpolation applied to the data.
+
 The :class:`~graphinglib.data_plotting_2d.Contour` Object
 ---------------------------------------------------------
 
