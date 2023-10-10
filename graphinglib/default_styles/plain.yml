@@ -146,8 +146,6 @@ VectorField:
   arrow_head_axis_length: 4.5
   color: "k"
   angle_in_data_coords: False
-  number_of_arrows_x: 10
-  number_of_arrows_y: 10
 
 Text:
   color: "k"
