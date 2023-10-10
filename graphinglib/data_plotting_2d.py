@@ -250,6 +250,8 @@ class VectorField:
             x and y coordinates of the vectors.
         u_data, v_data : ArrayLike
             Magnitudes in the x and y coordinates.
+        number_of_arrows_x, number_of_arrows_y : int
+            Number of arrows to plot in the x and y direction. Defaults to 10.
         arrow_length_multiplier : float, optional
             Arrow length scaling factor.
             Default depends on the ``figure_style`` configuration.
