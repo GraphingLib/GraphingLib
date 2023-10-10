@@ -2,15 +2,10 @@
 Plotting in 2D
 ==============
 
-The :class:`~graphinglib.data_plotting_2d.Contour` Object
----------------------------------------------------------
-
-
-
 The :class:`~graphinglib.data_plotting_2d.Heatmap` Object
 ---------------------------------------------------------
 
-The Heatmap class allows to plot a 2-dimensional map of values. It also allows to display images inside a set of axes. Here is how you can create a heatmap: ::
+The Heatmap class allows you to plot a 2-dimensional map of values or display images inside a set of axes. Here is how you can create a Heatmap: ::
 
     x_grid, y_grid = np.meshgrid(np.arange(0, 50, 1), np.arange(0, 50, 1))
     data = np.cos(x_grid * 0.2) + np.sin(y_grid * 0.3)
@@ -45,6 +40,28 @@ The are again many parameters to control for the Heatmap objects but an importan
     figure.display()
 
 .. image:: ../images/heatmap3.png
+
+The :class:`~graphinglib.data_plotting_2d.Contour` Object
+---------------------------------------------------------
+
+The Contour class allows you to display a contour plot of 2-dimensional data. Here is an example of how to create a Contour object from the same data used in the Heatmap examples: ::
+
+    x_grid, y_grid = np.meshgrid(np.arange(0, 50, 1), np.arange(0, 50, 1))
+    data = np.cos(x_grid * 0.2) + np.sin(y_grid * 0.3)
+
+    contour = gl.Contour(x_grid, y_grid, data)
+    figure = gl.Figure()
+    figure.add_element(map)
+    figure.display()
+
+.. image:: ../images/contour.png
+
+The contour class also has a :py:meth:`~graphinglib.data_plotting_2d.Contour.from_function` method: ::
+
+    x_grid, y_grid = np.meshgrid(np.arange(0, 50, 1), np.arange(0, 50, 1))
+    contour = gl.Contour(
+        lambda x, y: np.cos(x * 0.2) + np.sin(y * 0.3), x_grid, y_grid
+    )
 
 The :class:`~graphinglib.data_plotting_2d.VectorField` Object
 -------------------------------------------------------------
