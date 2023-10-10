@@ -65,5 +65,22 @@ The contour class also has a :py:meth:`~graphinglib.data_plotting_2d.Contour.fro
 
 The :class:`~graphinglib.data_plotting_2d.VectorField` Object
 -------------------------------------------------------------
+The VectorField class does as its name suggests, it allows you to plot a 2-dimensional vector field. Here is an example of its usage: ::
+
+    x_grid, y_grid = np.meshgrid(np.arange(0, 11, 1), np.arange(0, 11, 1))
+    u, v = (np.cos(x_grid * 0.2), np.sin(y_grid * 0.3))
+    
+    vector = gl.VectorField(x_grid, y_grid, u, v, arrow_length_multiplier=2)
+    figure = gl.Figure()
+    figure.add_element(vector)
+    figure.display()
+
+.. image:: ../images/vectorfield.png
+
+As both classes discussed prior, the VectorField object has a :py:meth:`~graphinglib.data_plotting_2d.VectorField.from_function` method: ::
+
+    vector = gl.VectorField.from_function(
+        lambda x, y: (np.cos(x * 0.2), np.sin(y * 0.3)), (0, 11), (0, 11)
+    )
 
 
