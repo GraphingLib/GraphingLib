@@ -50,10 +50,10 @@ Figure:
 
 Multifigure:
   size: [6.4, 4.8]
-  boxed_legend: False
+  legend_is_boxed: False
 
 Subfigure:
-  boxed_legend: False
+  legend_is_boxed: False
   ticks_are_in: True
   log_scale_x: False
   log_scale_y: False
