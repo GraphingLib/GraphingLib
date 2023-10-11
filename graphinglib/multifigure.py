@@ -1,5 +1,6 @@
 from typing import Literal, Optional
 from warnings import warn
+from string import ascii_lowercase
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParamsDefault
@@ -8,9 +9,10 @@ from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.gridspec import GridSpec
 from matplotlib.axes import Axes
+from matplotlib.transforms import ScaledTranslation
 
 from .file_manager import FileLoader
-from .graph_elements import GraphingException, Plottable
+from .graph_elements import GraphingException, Plottable, Text
 from .legend_artists import (
     HandlerMultipleLines,
     HandlerMultipleVerticalLines,
@@ -43,6 +45,9 @@ class SubFigure:
         The limits for the x-axis and y-axis.
     figure_style : str
         The figure style to use for the figure.
+    add_reference_label : bool
+        Whether or not to add a reference label to the SubFigure.
+        Defaults to ``True``.
     log_scale_x, log_scale_y : bool
         Whether or not to set the scale of the x- or y-axis to logaritmic scale.
         Default depends on the ``figure_style`` configuration.
@@ -68,6 +73,7 @@ class SubFigure:
         x_lim: Optional[tuple[float, float]] = None,
         y_lim: Optional[tuple[float, float]] = None,
         figure_style: str = "plain",
+        add_reference_label: bool = True,
         log_scale_x: bool | Literal["default"] = "default",
         log_scale_y: bool | Literal["default"] = "default",
         show_grid: bool | Literal["default"] = "default",
@@ -98,6 +104,9 @@ class SubFigure:
             The limits for the x-axis and y-axis.
         figure_style : str
             The figure style to use for the figure.
+        add_reference_label : bool
+            Whether or not to add a reference label to the SubFigure.
+            Defaults to ``True``.
         log_scale_x, log_scale_y : bool
             Whether or not to set the scale of the x- or y-axis to logaritmic scale.
             Default depends on the ``figure_style`` configuration.
@@ -146,6 +155,7 @@ class SubFigure:
             if show_grid != "default"
             else self.default_params["Figure"]["show_grid"]
         )
+        self.add_reference_label = add_reference_label
         self.log_scale_x = log_scale_x
         self.log_scale_y = log_scale_y
         self.legend_is_boxed = legend_is_boxed
@@ -174,7 +184,13 @@ class SubFigure:
             except AttributeError:
                 pass
 
-    def _prepare_SubFigure(self, grid: GridSpec, legend: bool = True) -> Axes:
+    def _prepare_SubFigure(
+        self,
+        grid: GridSpec,
+        transformation: ScaledTranslation,
+        reference_label: str,
+        legend: bool = True,
+    ) -> Axes:
         """
         Prepares the :class:`~graphinglib.multifigure.SubFigure` to be displayed.
         """
@@ -185,6 +201,13 @@ class SubFigure:
                 colspan=self.placement[3],
             )
         )
+        if self.add_reference_label:
+            self._axes.text(
+                0,
+                1,
+                reference_label,
+                transform=self._axes.transAxes + transformation,
+            )
         self._axes.set_xlabel(self.x_axis_name)
         self._axes.set_ylabel(self.y_axis_name)
         if self.x_lim:
@@ -347,6 +370,12 @@ class MultiFigure:
         Default depends on the ``figure_style`` configuration.
     title : str, optional
         General title of the figure.
+    reference_labels : bool
+        Wheter or not to add reference labels to the SubFigures.
+        Defaults to ``True``.
+    reflabel_loc : str
+        Location of the reference labels of the SubFigures. Either "inside" or "outside".
+        Defaults to "outside".
     figure_style : str
         The figure style to use for the figure.
     use_latex : bool
@@ -368,6 +397,8 @@ class MultiFigure:
         num_cols: int,
         size: tuple[float, float] | Literal["default"] = "default",
         title: Optional[str] = None,
+        reference_labels: bool = True,
+        reflabel_loc: str = "outside",
         figure_style: str = "plain",
         use_latex: bool = False,
         font_size: int = 12,
@@ -394,6 +425,12 @@ class MultiFigure:
             Default depends on the ``figure_style`` configuration.
         title : str, optional
             General title of the figure.
+        reference_labels : bool
+            Wheter or not to add reference labels to the SubFigures.
+            Defaults to ``True``.
+        reflabel_loc : str
+            Location of the reference labels of the SubFigures. Either "inside" or "outside".
+            Defaults to "outside".
         figure_style : str
             The figure style to use for the figure.
         use_latex : bool
@@ -411,6 +448,8 @@ class MultiFigure:
         self.num_rows = num_rows
         self.num_cols = num_cols
         self.title = title
+        self.reference_labels = reference_labels
+        self.reflabel_loc = reflabel_loc
         self.figure_style = figure_style
         file_loader = FileLoader(figure_style)
         self.default_params = file_loader.load()
@@ -498,6 +537,7 @@ class MultiFigure:
             x_lim,
             y_lim,
             self.figure_style,
+            self.reference_labels,
             log_scale_x,
             log_scale_y,
             show_grid,
@@ -514,11 +554,20 @@ class MultiFigure:
         """
         self._figure = plt.figure(layout="constrained", figsize=self.size)
         MultiFigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
+        if self.reflabel_loc == "outside":
+            trans = ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
+        elif self.reflabel_loc == "inside":
+            trans = ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
+        else:
+            raise ValueError("Invalid location parameter")
         SubFigures_legend = True if not general_legend else False
         labels, handles = [], []
-        for SubFigure in self._SubFigures:
+        for i, SubFigure in enumerate(self._SubFigures):
             SubFigure_labels, SubFigure_handles = SubFigure._prepare_SubFigure(
-                MultiFigure_grid, legend=SubFigures_legend
+                MultiFigure_grid,
+                transformation=trans,
+                reference_label=ascii_lowercase[i] + ")",
+                legend=SubFigures_legend,
             )
             labels += SubFigure_labels
             handles += SubFigure_handles
