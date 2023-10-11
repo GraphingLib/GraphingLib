@@ -31,6 +31,12 @@ class FileLoader:
                 raise FileNotFoundError(
                     f"Could not find the file {self._file_name}.yml."
                 )
+        try:
+            assert info is not None
+        except AssertionError:
+            raise TypeError(
+                f"Could not load the file {self._file_name}.yml. Please check that the file is in the correct format."
+            )
         return info
 
 
@@ -74,3 +80,37 @@ class FileDeleter:
             print(f"Style deleted from {self._file_location}")
         except FileNotFoundError:
             print(f"Could not find the file {self._file_name}.yml.")
+
+
+class FileUpdater:
+    """
+    This class implements the file updater for the user styles files (runs when a style is used after a GL update).
+    """
+
+    def __init__(self, file_name: str) -> None:
+        self._config_dir = user_config_dir(appname="GraphingLib", roaming=True)
+        self._file_name = file_name
+        self._file_location = f"{self._config_dir}/{self._file_name}.yml"
+        self._plain_style_location = (
+            f"{path.dirname(__file__)}/default_styles/plain.yml"
+        )
+
+    def update(self) -> None:
+        """
+        Checks every key and subkey in the plain style file. If it doesn't exist in the user's style file, this method adds it to the user's style file with the plain style's value.
+        """
+        if not path.exists(self._config_dir):
+            mkdir(self._config_dir)
+        with open(self._file_location, "r") as file:
+            user_info = yaml.safe_load(file)
+        with open(self._plain_style_location, "r") as file:
+            plain_info = yaml.safe_load(file)
+        for key in plain_info:
+            if key not in user_info:
+                user_info[key] = plain_info[key]
+            else:
+                for subkey in plain_info[key]:
+                    if subkey not in user_info[key]:
+                        user_info[key][subkey] = plain_info[key][subkey]
+        with open(self._file_location, "w") as file:
+            yaml.dump(user_info, file)
