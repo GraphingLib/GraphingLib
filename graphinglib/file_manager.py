@@ -31,6 +31,12 @@ class FileLoader:
                 raise FileNotFoundError(
                     f"Could not find the file {self._file_name}.yml."
                 )
+        try:
+            assert info is not None
+        except AssertionError:
+            raise TypeError(
+                f"Could not load the file {self._file_name}.yml. Please check that the file is in the correct format."
+            )
         return info
 
 
