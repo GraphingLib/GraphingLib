@@ -1,3 +1,4 @@
+from os import error
 from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
@@ -6,7 +7,7 @@ from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 
-from .file_manager import FileLoader
+from .file_manager import FileLoader, FileUpdater
 from .graph_elements import GraphingException, Plottable
 from .legend_artists import (
     HandlerMultipleLines,
@@ -120,33 +121,10 @@ class Figure:
             plt.rcParams.update(rcParamsDefault)
             plt.rcParams["font.size"] = font_size
         file_loader = FileLoader(figure_style)
+        self.figure_style = figure_style
         self.default_params = file_loader.load()
-        size = size if size != "default" else self.default_params["Figure"]["size"]
-        self.size = size
-        legend_is_boxed = (
-            legend_is_boxed
-            if legend_is_boxed != "default"
-            else self.default_params["Figure"]["boxed_legend"]
-        )
-        ticks_are_in = (
-            ticks_are_in
-            if ticks_are_in != "default"
-            else self.default_params["Figure"]["ticks_are_in"]
-        )
-        log_scale_x = (
-            log_scale_x
-            if log_scale_x != "default"
-            else self.default_params["Figure"]["log_scale_x"]
-        )
-        log_scale_y = (
-            log_scale_y
-            if log_scale_y != "default"
-            else self.default_params["Figure"]["log_scale_y"]
-        )
-        show_grid = (
-            show_grid
-            if show_grid != "default"
-            else self.default_params["Figure"]["show_grid"]
+        self._get_defaults_init(
+            size, legend_is_boxed, ticks_are_in, log_scale_x, log_scale_y, show_grid
         )
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
@@ -155,12 +133,58 @@ class Figure:
         self.y_axis_name = y_label
         self.x_lim = x_lim
         self.y_lim = y_lim
-        self.log_scale_x = log_scale_x
-        self.log_scale_y = log_scale_y
-        self.legend_is_boxed = legend_is_boxed
-        self.ticks_are_in = ticks_are_in
-        if show_grid:
+        if self.show_grid:
             self.set_grid()
+
+    def _get_defaults_init(
+        self, size, legend_is_boxed, ticks_are_in, log_scale_x, log_scale_y, show_grid
+    ) -> None:
+        error_raising_params = []
+        tries = 0
+        success = False
+        while tries < 2 and success == False:
+            try:
+                self.size = (
+                    size if size != "default" else self.default_params["Figure"]["size"]
+                )
+                self.legend_is_boxed = (
+                    legend_is_boxed
+                    if legend_is_boxed != "default"
+                    else self.default_params["Figure"]["boxed_legend"]
+                )
+                self.ticks_are_in = (
+                    ticks_are_in
+                    if ticks_are_in != "default"
+                    else self.default_params["Figure"]["ticks_are_in"]
+                )
+                self.log_scale_x = (
+                    log_scale_x
+                    if log_scale_x != "default"
+                    else self.default_params["Figure"]["log_scale_x"]
+                )
+                self.log_scale_y = (
+                    log_scale_y
+                    if log_scale_y != "default"
+                    else self.default_params["Figure"]["log_scale_y"]
+                )
+                self.show_grid = (
+                    show_grid
+                    if show_grid != "default"
+                    else self.default_params["Figure"]["show_grid"]
+                )
+                success = True
+            except KeyError as e:
+                tries += 1
+                file_updater = FileUpdater(self.figure_style)
+                file_updater.update()
+                file_loader = FileLoader(self.figure_style)
+                self.default_params = file_loader.load()
+                error_raising_params.append(f"{e.args[0]}")
+
+        if tries == 2:
+            raise GraphingException(
+                f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page."
+            )
 
     def add_element(self, *elements: Plottable) -> None:
         """
@@ -282,26 +306,50 @@ class Figure:
         Fills in the missing parameters from the specified ``figure_style``.
         """
         object_type = type(element).__name__
-        for property, value in vars(element).items():
-            if (type(value) == str) and (value == "default"):
-                if self.default_params[object_type][property] == "same as curve":
-                    element.__dict__["errorbars_color"] = self.default_params[
-                        object_type
-                    ]["color"]
-                    element.__dict__["errorbars_line_width"] = self.default_params[
-                        object_type
-                    ]["line_width"]
-                    element.__dict__["cap_thickness"] = self.default_params[
-                        object_type
-                    ]["line_width"]
-                elif self.default_params[object_type][property] == "same as scatter":
-                    element.__dict__["errorbars_color"] = self.default_params[
-                        object_type
-                    ]["face_color"]
-                else:
-                    element.__dict__[property] = self.default_params[object_type][
-                        property
-                    ]
+        error_raising_params = []
+        tries = 0
+        success = False
+        while tries < 2 and success == False:
+            try:
+                for property, value in vars(element).items():
+                    if (type(value) == str) and (value == "default"):
+                        if (
+                            self.default_params[object_type][property]
+                            == "same as curve"
+                        ):
+                            element.__dict__["errorbars_color"] = self.default_params[
+                                object_type
+                            ]["color"]
+                            element.__dict__[
+                                "errorbars_line_width"
+                            ] = self.default_params[object_type]["line_width"]
+                            element.__dict__["cap_thickness"] = self.default_params[
+                                object_type
+                            ]["line_width"]
+                        elif (
+                            self.default_params[object_type][property]
+                            == "same as scatter"
+                        ):
+                            element.__dict__["errorbars_color"] = self.default_params[
+                                object_type
+                            ]["face_color"]
+                        else:
+                            element.__dict__[property] = self.default_params[
+                                object_type
+                            ][property]
+                success = True
+            except KeyError as e:
+                tries += 1
+                file_updater = FileUpdater(self.figure_style)
+                file_updater.update()
+                file_loader = FileLoader(self.figure_style)
+                self.default_params = file_loader.load()
+                error_raising_params.append(f"{object_type}.{e.args[0]}")
+
+        if tries == 2:
+            raise GraphingException(
+                f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameters to your {self.figure_style} style file:\n {', '.join(error_raising_params)}"
+            )
 
     def set_grid(
         self,
@@ -328,19 +376,41 @@ class Figure:
             Opacity of the lines forming the grid.
             Default depends on the ``figure_style`` configuration.
         """
-        self.grid_line_style = (
-            line_style
-            if line_style != "default"
-            else self.default_params["Figure"]["grid_line_style"]
-        )
-        self.grid_line_width = (
-            line_width
-            if line_width != "default"
-            else self.default_params["Figure"]["grid_line_width"]
-        )
-        self.grid_color = (
-            color if color != "default" else self.default_params["Figure"]["grid_color"]
-        )
-        self.grid_alpha = (
-            alpha if alpha != "default" else self.default_params["Figure"]["grid_alpha"]
-        )
+        error_raising_params = []
+        tries = 0
+        success = False
+        while tries < 2 and success == False:
+            try:
+                self.grid_line_style = (
+                    line_style
+                    if line_style != "default"
+                    else self.default_params["Figure"]["grid_line_style"]
+                )
+                self.grid_line_width = (
+                    line_width
+                    if line_width != "default"
+                    else self.default_params["Figure"]["grid_line_width"]
+                )
+                self.grid_color = (
+                    color
+                    if color != "default"
+                    else self.default_params["Figure"]["grid_color"]
+                )
+                self.grid_alpha = (
+                    alpha
+                    if alpha != "default"
+                    else self.default_params["Figure"]["grid_alpha"]
+                )
+                success = True
+            except KeyError as e:
+                tries += 1
+                file_updater = FileUpdater(self.figure_style)
+                file_updater.update()
+                file_loader = FileLoader(self.figure_style)
+                self.default_params = file_loader.load()
+                error_raising_params.append(f"{e.args[0]}")
+
+        if tries == 2:
+            raise GraphingException(
+                f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameters to your {self.figure_style} style file:\n {', '.join(error_raising_params)}"
+            )
