@@ -33,4 +33,4 @@ from .fits import (
     FitFromSquareRoot,
     FitFromFunction,
 )
-from .graph_elements import GraphingException, Hlines, Point, Text, Vlines
+from .graph_elements import GraphingException, Hlines, Point, Text, Vlines, Table

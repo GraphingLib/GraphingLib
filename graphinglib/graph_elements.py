@@ -548,3 +548,85 @@ class Text:
                 verticalalignment=self.v_align,
                 zorder=z_order,
             )
+
+
+@dataclass
+class Table:
+    """
+    This class allows to plot a table inside a Figure or MultiFigure.
+
+    The Table object can be used to add raw data to a figure or add supplementary
+    information like output parameters for a fit or anyother operation.
+
+    Parameters
+    ----------
+    cell_text : list[str]
+        Text or data to be displayed in the table. The shape of the provided data
+        determines the number of columns and rows.
+    cell_colors : list, optional
+        Colors to apply to the cells' background. Must be a list of colors the same
+        shape as the cells. If none are specified, no color is applied.
+    cell_align : str
+        Alignment of the cells' text. Must be one of the following:
+        {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
+    col_labels : list[str], optional
+        List of labels for the rows of the table. If none are specified, no row labels are displayed.
+    col_widths : list[float], optional
+        Widths to apply to the columns. Must be a list the same length as the number of columns.
+    col_align : str
+        Alignment of the column labels' text. Must be one of the following:
+        {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
+    col_colors : list, optional
+        Colors to apply to the column labels' background. Must be a list of colors the same
+        length as the number of columns. If none are specified, no color is applied.
+    row_labels : list[str], optional
+        List of labels for the rows of the table. If none are specified, no row labels are displayed.
+    row_align : str
+        Alignment of the row labels' text. Must be one of the following:
+        {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
+    row_colors : list, optional
+        Colors to apply to the row labels' background. Must be a list of colors the same
+        length as the number of rows. If none are specified, no color is applied.
+    scaling : tuple[float], optional
+
+    location : str
+        Position of the table inside the axes. Must be one of the following:
+        {'best', 'bottom', 'bottom left', 'bottom right', 'center', 'center left', 'center right',
+        'left', 'lower center', 'lower left', 'lower right', 'right', 'top', 'top left', 'top right',
+        'upper center', 'upper left', 'upper right'}
+        Defaults to ``"best"``.
+    """
+
+    cell_text: list[str]
+    cell_colors: Optional[list] = None
+    cell_align: str = "default"
+    col_labels: Optional[list[str]] = None
+    col_widths: Optional[list[float]] = None
+    col_align: str = "default"
+    col_colors: Optional[list] = None
+    row_labels: Optional[list[str]] = None
+    row_align: str = "default"
+    row_colors: Optional[list] = None
+    scaling: tuple[float] = (1, 1.5)
+    location: str = "best"
+
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        """
+        Plots the element in the specified Axes
+        """
+        table = axes.table(
+            cellText=self.cell_text,
+            cellColours=self.cell_colors,
+            cellLoc=self.cell_align,
+            colLabels=self.col_labels,
+            colWidths=self.col_widths,
+            colLoc=self.col_align,
+            colColours=self.col_colors,
+            rowLabels=self.row_labels,
+            rowLoc=self.row_align,
+            rowColours=self.row_colors,
+            loc=self.location,
+            zorder=z_order,
+        )
+        table.auto_set_font_size(False)
+        table.scale(self.scaling[0], self.scaling[1])
