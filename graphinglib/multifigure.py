@@ -373,6 +373,11 @@ class MultiFigure:
     reference_labels : bool
         Wheter or not to add reference labels to the SubFigures.
         Defaults to ``True``.
+
+        .. note::
+            The reference labels are in the form of "a)", "b)", etc. and are used to refer
+            to a particular SubFigure in a caption accompanying the MultiFigure.
+
     reflabel_loc : str
         Location of the reference labels of the SubFigures. Either "inside" or "outside".
         Defaults to "outside".
@@ -428,6 +433,11 @@ class MultiFigure:
         reference_labels : bool
             Wheter or not to add reference labels to the SubFigures.
             Defaults to ``True``.
+
+            .. note::
+                The reference labels are in the form of "a)", "b)", etc. and are used to refer
+                to a particular SubFigure in a caption accompanying the MultiFigure.
+
         reflabel_loc : str
             Location of the reference labels of the SubFigures. Either "inside" or "outside".
             Defaults to "outside".
