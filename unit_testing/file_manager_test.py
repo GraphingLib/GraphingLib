@@ -1,6 +1,7 @@
 import unittest
+from unittest.mock import mock_open, patch
 
-from graphinglib.file_manager import FileDeleter, FileLoader, FileSaver
+from graphinglib.file_manager import FileDeleter, FileLoader, FileSaver, FileUpdater
 
 
 class TestFileLoader(unittest.TestCase):
@@ -28,3 +29,12 @@ class TestFileDeleter(unittest.TestCase):
 
         expected_path = f"{deleter._config_dir}/{filename}.yml"
         self.assertEqual(deleter._file_location, expected_path)
+
+
+class TestFileUpdater(unittest.TestCase):
+    def test_path(self):
+        filename = "a_certain_file"
+        updater = FileUpdater(filename)
+
+        expected_path = f"{updater._config_dir}/{filename}.yml"
+        self.assertEqual(updater._file_location, expected_path)

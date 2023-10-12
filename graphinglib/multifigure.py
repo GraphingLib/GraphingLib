@@ -4,14 +4,14 @@ from string import ascii_lowercase
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParamsDefault
+from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection
+from matplotlib.gridspec import GridSpec
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
-from matplotlib.gridspec import GridSpec
-from matplotlib.axes import Axes
 from matplotlib.transforms import ScaledTranslation
 
-from .file_manager import FileLoader
+from .file_manager import FileLoader, FileUpdater
 from .graph_elements import GraphingException, Plottable, Text
 from .legend_artists import (
     HandlerMultipleLines,
@@ -129,42 +129,50 @@ class SubFigure:
         self.y_lim = y_lim
         self.placement = placement
         file_loader = FileLoader(figure_style)
+        self.figure_style = figure_style
         self.default_params = file_loader.load()
-        legend_is_boxed = (
-            legend_is_boxed
-            if legend_is_boxed != "default"
-            else self.default_params["Figure"]["boxed_legend"]
-        )
-        ticks_are_in = (
-            ticks_are_in
-            if ticks_are_in != "default"
-            else self.default_params["Figure"]["ticks_are_in"]
-        )
-        log_scale_x = (
-            log_scale_x
-            if log_scale_x != "default"
-            else self.default_params["Figure"]["log_scale_x"]
-        )
-        log_scale_y = (
-            log_scale_y
-            if log_scale_y != "default"
-            else self.default_params["Figure"]["log_scale_y"]
-        )
-        show_grid = (
-            show_grid
-            if show_grid != "default"
-            else self.default_params["Figure"]["show_grid"]
+        self._get_defaults_init(
+            legend_is_boxed, ticks_are_in, log_scale_x, log_scale_y, show_grid
         )
         self.add_reference_label = add_reference_label
-        self.log_scale_x = log_scale_x
-        self.log_scale_y = log_scale_y
-        self.legend_is_boxed = legend_is_boxed
-        self.ticks_are_in = ticks_are_in
         self.remove_axes = remove_axes
         self.grid_is_set = False
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
         self._handles = []
+
+    def _get_defaults_init(
+        self, legend_is_boxed, ticks_are_in, log_scale_x, log_scale_y, show_grid
+    ) -> None:
+        params_values = {
+            "legend_is_boxed": legend_is_boxed,
+            "ticks_are_in": ticks_are_in,
+            "log_scale_x": log_scale_x,
+            "log_scale_y": log_scale_y,
+            "show_grid": show_grid,
+        }
+        tries = 0
+        while tries < 2:
+            try:
+                for attribute, value in params_values.items():
+                    setattr(
+                        self,
+                        attribute,
+                        value
+                        if value != "default"
+                        else self.default_params["Subfigure"][attribute],
+                    )
+                break  # Exit loop if successful
+            except KeyError as e:
+                tries += 1
+                if tries >= 2:
+                    raise GraphingException(
+                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n Figure.{e.args[0]}"
+                    )
+                file_updater = FileUpdater(self.figure_style)
+                file_updater.update()
+                file_loader = FileLoader(self.figure_style)
+                self.default_params = file_loader.load()
 
     def add_element(self, *elements: Plottable) -> None:
         """
@@ -240,7 +248,9 @@ class SubFigure:
         if self._elements:
             z_order = 0
             for element in self._elements:
+                print(f"color before: {element.color}")
                 self._fill_in_missing_params(element)
+                print(f"color after: {element.color}")
                 element._plot_element(self._axes, z_order)
                 try:
                     if element._label is not None:
@@ -283,26 +293,46 @@ class SubFigure:
         Fills in the missing parameters from the specified ``figure_style``.
         """
         object_type = type(element).__name__
-        for property, value in vars(element).items():
-            if (type(value) == str) and (value == "default"):
-                if self.default_params[object_type][property] == "same as curve":
-                    element.__dict__["errorbars_color"] = self.default_params[
-                        object_type
-                    ]["color"]
-                    element.__dict__["errorbars_line_width"] = self.default_params[
-                        object_type
-                    ]["line_width"]
-                    element.__dict__["cap_thickness"] = self.default_params[
-                        object_type
-                    ]["line_width"]
-                elif self.default_params[object_type][property] == "same as scatter":
-                    element.__dict__["errorbars_color"] = self.default_params[
-                        object_type
-                    ]["face_color"]
-                else:
-                    element.__dict__[property] = self.default_params[object_type][
-                        property
-                    ]
+        tries = 0
+
+        while tries < 2:
+            try:
+                for property, value in vars(element).items():
+                    if type(value) == str and value == "default":
+                        default_value = self.default_params[object_type][property]
+
+                        if default_value == "same as curve":
+                            curve_defaults = {
+                                "errorbars_color": "color",
+                                "errorbars_line_width": "line_width",
+                                "cap_thickness": "line_width",
+                            }
+                            for attr, default_key in curve_defaults.items():
+                                setattr(
+                                    element,
+                                    attr,
+                                    self.default_params[object_type][default_key],
+                                )
+                        elif default_value == "same as scatter":
+                            setattr(
+                                element,
+                                "errorbars_color",
+                                self.default_params[object_type]["face_color"],
+                            )
+                        else:
+                            setattr(element, property, default_value)
+
+                break  # Exit loop if successful
+            except KeyError as e:
+                tries += 1
+                if tries >= 2:
+                    raise GraphingException(
+                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n {object_type}.{e.args[0]}"
+                    )
+                file_updater = FileUpdater(self.figure_style)
+                file_updater.update()
+                file_loader = FileLoader(self.figure_style)
+                self.default_params = file_loader.load()
 
     def set_grid(
         self,
@@ -329,23 +359,36 @@ class SubFigure:
             Opacity of the lines forming the grid.
             Default depends on the ``figure_style`` configuration.
         """
-        self.grid_line_style = (
-            line_style
-            if line_style != "default"
-            else self.default_params["Figure"]["grid_line_style"]
-        )
-        self.grid_line_width = (
-            line_width
-            if line_width != "default"
-            else self.default_params["Figure"]["grid_line_width"]
-        )
-        self.grid_color = (
-            color if color != "default" else self.default_params["Figure"]["grid_color"]
-        )
-        self.grid_alpha = (
-            alpha if alpha != "default" else self.default_params["Figure"]["grid_alpha"]
-        )
-        self.grid_is_set = True
+        params = {
+            "grid_line_style": line_style,
+            "grid_line_width": line_width,
+            "grid_color": color,
+            "grid_alpha": alpha,
+        }
+        tries = 0
+
+        while tries < 2:
+            try:
+                for attribute, value in params.items():
+                    setattr(
+                        self,
+                        attribute,
+                        value
+                        if value != "default"
+                        else self.default_params["Subfigure"][attribute],
+                    )
+                self.grid_is_set = True
+                break  # Exit loop if successful
+            except KeyError as e:
+                tries += 1
+                if tries >= 2:
+                    raise GraphingException(
+                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n Figure.{e.args[0]}"
+                    )
+                file_updater = FileUpdater(self.figure_style)
+                file_updater.update()
+                file_loader = FileLoader(self.figure_style)
+                self.default_params = file_loader.load()
 
 
 class MultiFigure:
@@ -463,14 +506,7 @@ class MultiFigure:
         self.figure_style = figure_style
         file_loader = FileLoader(figure_style)
         self.default_params = file_loader.load()
-        size = size if size != "default" else self.default_params["Figure"]["size"]
-        self.size = size
-        legend_is_boxed = (
-            legend_is_boxed
-            if legend_is_boxed != "default"
-            else self.default_params["Figure"]["boxed_legend"]
-        )
-        self.legend_is_boxed = legend_is_boxed
+        self._get_defaults_init(legend_is_boxed, size)
         if use_latex:
             plt.rcParams.update(
                 {
@@ -483,6 +519,34 @@ class MultiFigure:
             plt.rcParams.update(rcParamsDefault)
             plt.rcParams["font.size"] = font_size
         self._SubFigures = []
+
+    def _get_defaults_init(self, legend_is_boxed, size) -> None:
+        params_values = {
+            "legend_is_boxed": legend_is_boxed,
+            "size": size,
+        }
+        tries = 0
+        while tries < 2:
+            try:
+                for attribute, value in params_values.items():
+                    setattr(
+                        self,
+                        attribute,
+                        value
+                        if value != "default"
+                        else self.default_params["Multifigure"][attribute],
+                    )
+                break  # Exit loop if successful
+            except KeyError as e:
+                tries += 1
+                if tries >= 2:
+                    raise GraphingException(
+                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n Figure.{e.args[0]}"
+                    )
+                file_updater = FileUpdater(self.figure_style)
+                file_updater.update()
+                file_loader = FileLoader(self.figure_style)
+                self.default_params = file_loader.load()
 
     def add_SubFigure(
         self,
