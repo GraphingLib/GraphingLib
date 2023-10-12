@@ -248,9 +248,7 @@ class SubFigure:
         if self._elements:
             z_order = 0
             for element in self._elements:
-                print(f"color before: {element.color}")
                 self._fill_in_missing_params(element)
-                print(f"color after: {element.color}")
                 element._plot_element(self._axes, z_order)
                 try:
                     if element._label is not None:
