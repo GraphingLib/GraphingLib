@@ -5,6 +5,5 @@ scipy
 matplotlib
 PyYAML
 platformdirs
-traitlets
 sphinx-favicon
 sphinx-design
