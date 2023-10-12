@@ -236,8 +236,8 @@ class Curve:
             Default depends on the ``figure_style`` configuration.
         """
         self.errorbars = True
-        self.x_error = np.array(x_error)
-        self.y_error = np.array(y_error)
+        self.x_error = np.array(x_error) if x_error is not None else x_error
+        self.y_error = np.array(y_error) if y_error is not None else y_error
         self.errorbars_color = errorbars_color
         self.errorbars_line_width = errorbars_line_width
         self.cap_thickness = cap_thickness
@@ -922,8 +922,8 @@ class Scatter:
             Default depends on the ``figure_style`` configuration.
         """
         self.errorbars = True
-        self.x_error = np.array(x_error)
-        self.y_error = np.array(y_error)
+        self.x_error = np.array(x_error) if x_error is not None else x_error
+        self.y_error = np.array(y_error) if y_error is not None else y_error
         self.errorbars_color = errorbars_color
         self.errorbars_line_width = errorbars_line_width
         self.cap_thickness = cap_thickness
