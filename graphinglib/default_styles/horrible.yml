@@ -156,3 +156,8 @@ Text:
   color: "orange"
   h_align: "right"
   v_align: "top"
+
+Table:
+  cell_align: "left"
+  row_align: "right"
+  col_align: "right"

@@ -151,3 +151,8 @@ Text:
   color: "k"
   h_align: "center"
   v_align: "baseline"
+
+Table:
+  cell_align: "right"
+  row_align: "left"
+  col_align: "center"
