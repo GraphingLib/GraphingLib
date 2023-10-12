@@ -3,6 +3,7 @@ Miscellaneous Objects
 =====================
 
 .. _point:
+
 The :class:`~graphinglib.graph_elements.Point` Object
 -----------------------------------------------------
 
@@ -55,6 +56,7 @@ The Hlines and Vlines objects serve a similar purpose to the Point object, which
 For both the Hlines and Vlines it is possible to specify as many colors and line styles as there are lines instead of applying the same for all lines as is the case in the example above.
 
 .. _text:
+
 The :class:`~graphinglib.graph_elements.Text` Object
 ----------------------------------------------------
 
