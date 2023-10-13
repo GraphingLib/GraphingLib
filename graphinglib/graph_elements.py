@@ -588,7 +588,8 @@ class Table:
         Colors to apply to the row labels' background. Must be a list of colors the same
         length as the number of rows. If none are specified, no color is applied.
     scaling : tuple[float], optional
-
+        Horizontal and vertical scaling factors to apply to the table.
+        Defaults to ``(1, 1.5)``.
     location : str
         Position of the table inside the axes. Must be one of the following:
         {'best', 'bottom', 'bottom left', 'bottom right', 'center', 'center left', 'center right',
