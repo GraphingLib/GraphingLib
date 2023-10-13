@@ -1,4 +1,3 @@
-from os import error
 from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
@@ -334,7 +333,7 @@ class Figure:
         self, element: Plottable, params_to_reset: list[str]
     ) -> None:
         """
-        Resets the parameters to the default values.
+        Resets the parameters that were set to default in the _fill_in_missing_params method.
         """
         for param in params_to_reset:
             setattr(
