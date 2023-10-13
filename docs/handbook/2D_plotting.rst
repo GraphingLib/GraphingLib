@@ -85,4 +85,26 @@ As both classes discussed prior, the VectorField object has a :py:meth:`~graphin
         lambda x, y: (np.cos(x * 0.2), np.sin(y * 0.3)), (0, 11), (0, 11)
     )
 
+The :class:`~graphinglib.data_plotting_2d.Stream` Object
+--------------------------------------------------------
 
+The Stream class allows you to create stream plots in GraphingLib. Here is an example of its usage: ::
+
+    import graphinglib as gl
+    import numpy as np
+
+    x_grid, y_grid = np.meshgrid(np.linspace(0, 11, 30), np.linspace(0, 11, 30))
+    u, v = (np.cos(x_grid * 0.2), np.sin(y_grid * 0.3))
+
+    stream = gl.Stream(x_grid, y_grid, u, v, density=1.5)
+    figure = gl.Figure()
+    figure.add_element(stream)
+    figure.display()
+
+.. image:: ../images/stream.png
+
+The density parameter used in the example above is the density of stream lines to display. The default density is set to 1, which means that the plotting domain is divided into a 30x30 grid in which each square can only be traversed by one stream line. Note that it is also possible to create a Stream from a function using its :py:meth:`~graphinglib.data_plotting_2d.Stream.from_function` method: ::
+
+    stream = gl.Stream.from_function(
+        lambda x, y: (np.cos(x * 0.2), np.sin(y * 0.3)), (0, 11), (0, 11), density=1.5
+    )
