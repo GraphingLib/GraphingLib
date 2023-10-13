@@ -1,4 +1,3 @@
-from os import error
 from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
@@ -219,8 +218,9 @@ class Figure:
         if self._elements:
             z_order = 0
             for element in self._elements:
-                self._fill_in_missing_params(element)
+                params_to_reset = self._fill_in_missing_params(element)
                 element._plot_element(self._axes, z_order)
+                self._reset_params_to_default(element, params_to_reset)
                 try:
                     if element._label is not None:
                         self._handles.append(element._handle)
@@ -285,16 +285,18 @@ class Figure:
         plt.tight_layout()
         plt.savefig(file_name, bbox_inches="tight")
 
-    def _fill_in_missing_params(self, element: Plottable) -> None:
+    def _fill_in_missing_params(self, element: Plottable) -> list[str]:
         """
         Fills in the missing parameters from the specified ``figure_style``.
         """
+        params_to_reset = []
         object_type = type(element).__name__
         tries = 0
         while tries < 2:
             try:
                 for property, value in vars(element).items():
                     if (type(value) == str) and (value == "default"):
+                        params_to_reset.append(property)
                         default_value = self.default_params[object_type][property]
                         if default_value == "same as curve":
                             curve_defaults = {
@@ -325,6 +327,20 @@ class Figure:
                 file_updater.update()
                 file_loader = FileLoader(self.figure_style)
                 self.default_params = file_loader.load()
+        return params_to_reset
+
+    def _reset_params_to_default(
+        self, element: Plottable, params_to_reset: list[str]
+    ) -> None:
+        """
+        Resets the parameters that were set to default in the _fill_in_missing_params method.
+        """
+        for param in params_to_reset:
+            setattr(
+                element,
+                param,
+                "default",
+            )
 
     def set_grid(
         self,
