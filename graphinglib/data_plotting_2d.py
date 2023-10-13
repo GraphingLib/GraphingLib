@@ -454,3 +454,113 @@ class Contour:
         if self.show_color_bar:
             fig = axes.get_figure()
             fig.colorbar(cont, ax=axes)
+
+
+@dataclass
+class Stream:
+    """
+    This class implements stream plots.
+
+    Parameters
+    ----------
+    x_data, y_data : ArrayLike
+        x and y coordinates of the vectors.
+    u_data, v_data : ArrayLike
+        Magnitudes in the x and y coordinates.
+    density : float or tuple[float, float]
+        Density of stream lines. Can be specified independently for the x and y coordinates
+        by specifying a density tuple instead. Defaults to 1.
+    line_width : float
+        Width of the stream lines. Default depends on the ``figure_style`` configuration.
+    color : str
+        Color of the stream lines. Default depends on the ``figure_style`` configuration.
+    color_map : str or Colormap
+        Color map of the stream lines. Default depends on the ``figure_style`` configuration.
+    arrow_size : float
+        Arrow size multiplier. Default depends on the ``figure_style`` configuration.
+    """
+
+    x_data: ArrayLike
+    y_data: ArrayLike
+    u_data: ArrayLike
+    v_data: ArrayLike
+    density: float | tuple[float, float] = 1
+    line_width: float | Literal["default"] = "default"
+    color: str | Literal["default"] = "default"
+    color_map: str | Colormap | Literal["default"] = "default"
+    arrow_size: float | Literal["default"] = "default"
+
+    def __post_init__(self) -> None:
+        self.x_data = np.array(self.x_data)
+        self.y_data = np.array(self.y_data)
+        self.u_data = np.array(self.u_data)
+        self.v_data = np.array(self.v_data)
+
+    @classmethod
+    def from_function(
+        cls,
+        func: Callable[[ArrayLike, ArrayLike], [ArrayLike, ArrayLike]],
+        x_axis_range: tuple[float, float],
+        y_axis_range: tuple[float, float],
+        number_of_points_x: int = 30,
+        number_of_points_y: int = 30,
+        density: float | tuple[float, float] = 1,
+        line_width: float | Literal["default"] = "default",
+        color: str | Literal["default"] = "default",
+        color_map: str | Colormap | Literal["default"] = "default",
+        arrow_size: float | Literal["default"] = "default",
+    ) -> Self:
+        """
+        Creates a :class:`~graphinglib.data_plotting_2d.Stream` from a function.
+
+        Parameters
+        ----------
+        func : Callable[[ArrayLike, ArrayLike], [ArrayLike, ArrayLike]]
+            Function to be plotted. Works with regular functions and lambda
+            functions.
+        x_axis_range : tuple[float, float]
+            Range of x values.
+        y_axis_range : tuple[float, float]
+            Range of y values.
+        number_of_points_x : int
+            Number of points to fill the x range. Defaults to 30.
+        number_of_points_y : int
+            Number of points to fill the y range. Defaults to 30.
+        density : float or tuple[float, float]
+            Density of stream lines. Can be specified independently for the x and y coordinates
+            by specifying a density tuple instead. Defaults to 1.
+        line_width : float
+            Width of the stream lines. Default depends on the ``figure_style`` configuration.
+        color : str
+            Color of the stream lines. Default depends on the ``figure_style`` configuration.
+        color_map : str or Colormap
+            Color map of the stream lines. Default depends on the ``figure_style`` configuration.
+        arrow_size : float
+            Arrow size multiplier. Default depends on the ``figure_style`` configuration.
+
+        Returns
+        -------
+        A :class:`~graphinglib.data_plotting_2d.Stream` object from a function.
+        """
+        x = np.linspace(x_axis_range[0], x_axis_range[1], number_of_points_x)
+        y = np.linspace(y_axis_range[0], y_axis_range[1], number_of_points_y)
+        x_grid, y_grid = np.meshgrid(x, y)
+        u, v = func(x_grid, y_grid)
+        return cls(x, y, u, v, density, line_width, color, color_map, arrow_size)
+
+    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+        """
+        Plots the element in the specified Axes.
+        """
+        axes.streamplot(
+            self.x_data,
+            self.y_data,
+            self.u_data,
+            self.v_data,
+            density=self.density,
+            linewidth=self.line_width,
+            color=self.color,
+            cmap=self.color_map,
+            arrowsize=self.arrow_size,
+            zorder=z_order,
+        )

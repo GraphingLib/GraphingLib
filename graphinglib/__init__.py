@@ -21,7 +21,7 @@ as Matplotlib. For further reference on those conventions, see the
 """
 
 from .data_plotting_1d import Curve, Histogram, Scatter
-from .data_plotting_2d import Heatmap, Contour, VectorField
+from .data_plotting_2d import Heatmap, Contour, VectorField, Stream
 from .figure import Figure
 from .multifigure import MultiFigure, SubFigure
 from .fits import (
