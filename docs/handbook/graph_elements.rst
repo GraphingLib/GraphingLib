@@ -68,3 +68,41 @@ The Text object is used to display text on a figure. It also allows you to point
 .. image:: ../images/text.png
 
 There are many more parameters to be customized for the Text object and its arrow, but those are all included in the figure style files and can therefore be left out most of the time. For the details on the other parameters, visit the :py:class:`Reference section on Text objects <graphinglib.graph_elements.Text>`.
+
+The :class:`~graphinglib.graph_elements.Table` Object
+-----------------------------------------------------
+
+The Table object is used to display a table of data or any relevant information in a Figure or Multifigure. Here is how to display a simple table of data: ::
+
+    import graphinglib as gl
+
+    data = [
+        [5, 223.9369, 0.0323, 0.0532, 0.1764],
+        [10, 223.9367, 0.0324, 0.0533, 0.1765],
+        [15, 223.9367, 0.0325, 0.0534, 0.1764],
+        [20, 223.9387, 0.0326, 0.0535, 0.1763],
+        [25, 223.9385, 0.0327, 0.0536, 0.1761],
+    ]
+    columns = ["Time (s)", "Voltage (V)", "Current 1 (A)", "Current 2 (A)", "Current 3 (A)"]
+    rows = ["Series 1", "Series 2", "Series 3", "Series 4", "Series 5"]
+    colors = ["#bfbfbf"] * 5
+
+    figure = gl.MultiFigure(
+        1, 1, title="Electrical data", reference_labels=False, size=(8, 2)
+    )
+    subfig = figure.add_SubFigure((0, 0, 1, 1), remove_axes=True)
+    table = gl.Table(
+        cell_text=data,
+        col_labels=columns,
+        row_labels=rows,
+        row_colors=colors,
+        col_colors=colors,
+        location="center",
+    )
+    subfig.add_element(table)
+    figure.display()
+
+.. image:: ../images/table.png
+
+The Table object has parameters to set the text alignment (``cell_align``, ``row_align`` and ``col_align``), parameters to set the column and row labels' background colors (``col_colors`` and ``row_colors``) and a parameter to set the location of the table with respect to the axes in which it is displayed. It also has a parameter to set the scaling factors of the table in the horizontal and vertical directions. This scaling can be used to leave more verttical or horizontal space for the text in the table's cells. It is set to ``(1, 1.5)`` by default to make the text easier to read than normal Matplotlib tables.
+
