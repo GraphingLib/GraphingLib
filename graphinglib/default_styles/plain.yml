@@ -156,3 +156,9 @@ Table:
   cell_align: "right"
   row_align: "left"
   col_align: "center"
+
+Stream:
+  line_width: 1
+  color: "k"
+  color_map: None
+  arrow_size: 1

@@ -161,3 +161,9 @@ Table:
   cell_align: "left"
   row_align: "right"
   col_align: "right"
+
+Stream:
+  line_width: 1
+  color: "purple"
+  color_map: None
+  arrow_size: 5
