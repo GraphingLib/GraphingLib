@@ -1,4 +1,4 @@
-from os import listdir, mkdir, path
+from os import listdir
 from os.path import dirname
 
 from platformdirs import user_config_dir
@@ -272,9 +272,9 @@ def get_style_names(user=True, default=True) -> list[str]:
 
     if user:
         # add the names of all the styles in the user's config directory
-        config_dir = user_config_dir(appname="GraphingLib", roaming=True)
-        if not path.exists(config_dir):
-            mkdir(config_dir)
+        config_dir = user_config_dir(
+            appname="GraphingLib", roaming=True, ensure_exists=True
+        )
         user_styles = listdir(config_dir)
         user_styles = [
             style_name.replace(".yml", "")
