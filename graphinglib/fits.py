@@ -5,7 +5,7 @@ from typing import Callable, Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 
@@ -498,7 +498,7 @@ class FitFromSine(GeneralFit):
         self,
         curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
-        guesses: Optional[npt.ArrayLike] = None,
+        guesses: Optional[ArrayLike] = None,
         color: str = "default",
         line_width: str = "default",
         line_style: str = "default",
@@ -659,7 +659,7 @@ class FitFromExponential(GeneralFit):
         self,
         curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
-        guesses: Optional[npt.ArrayLike] = None,
+        guesses: Optional[ArrayLike] = None,
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
@@ -817,7 +817,7 @@ class FitFromGaussian(GeneralFit):
         self,
         curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
-        guesses: Optional[npt.ArrayLike] = None,
+        guesses: Optional[ArrayLike] = None,
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
@@ -975,7 +975,7 @@ class FitFromSquareRoot(GeneralFit):
         self,
         curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
-        guesses: Optional[npt.ArrayLike] = None,
+        guesses: Optional[ArrayLike] = None,
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
@@ -1128,7 +1128,7 @@ class FitFromLog(GeneralFit):
         curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
         log_base: float = np.e,
-        guesses: Optional[npt.ArrayLike] = None,
+        guesses: Optional[ArrayLike] = None,
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
@@ -1283,7 +1283,7 @@ class FitFromFunction(GeneralFit):
         function: Callable,
         curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
-        guesses: Optional[npt.ArrayLike] = None,
+        guesses: Optional[ArrayLike] = None,
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
