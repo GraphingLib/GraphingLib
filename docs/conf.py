@@ -69,3 +69,8 @@ intersphinx_mapping = {
     "Python": ("https://docs.python.org/", None),
     "Numpy typing": ("https://numpy.org/devdocs/", None),
 }
+
+autodoc_type_aliases = {
+    "Iterable": "Iterable",
+    "ArrayLike": "ArrayLike",
+}
