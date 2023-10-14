@@ -1,5 +1,5 @@
 Curve:
-  color: "k"
+  color: 
   line_width: 1
   line_style: "-"
   cap_width: 3
@@ -8,7 +8,7 @@ Curve:
   cap_thickness: "same as curve"
 
 Scatter:
-  face_color: "k"
+  face_color: 
   edge_color: "none"
   marker_size: 30
   marker_style: "o"
@@ -25,7 +25,7 @@ Histogram:
   alpha: 1.0
   line_width: 2
   normalize: True
-  show_pdf: None
+  show_pdf: 
   show_params: True
 
 Hlines:
@@ -47,6 +47,7 @@ Figure:
   grid_line_width: 0.5
   grid_color: "grey"
   grid_alpha: 0.5
+  color_cycle: ["#3e82a0", "#eec76f", "#b9503b", "#a9d474", "#695178", "#f1a264", "#83d3c4", "#616161"]
 
 Multifigure:
   size: [6.4, 4.8]
@@ -62,6 +63,7 @@ Subfigure:
   grid_line_width: 0.5
   grid_color: "grey"
   grid_alpha: 0.5
+  color_cycle: ["#3e82a0", "#eec76f", "#b9503b", "#a9d474", "#695178", "#f1a264", "#83d3c4", "#616161"]
 
 Point:
   color: "k"
@@ -140,7 +142,7 @@ Contour:
 
 VectorField:
   arrow_width: 0.005
-  arrow_length_multiplier: None
+  arrow_length_multiplier: 
   arrow_head_width: 3
   arrow_head_length: 5
   arrow_head_axis_length: 4.5
@@ -159,6 +161,6 @@ Table:
 
 Stream:
   line_width: 1
-  color: "k"
-  color_map: None
+  color: 
+  color_map: 
   arrow_size: 1
