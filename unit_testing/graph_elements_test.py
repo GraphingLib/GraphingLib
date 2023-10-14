@@ -51,8 +51,44 @@ class TestVlines(unittest.TestCase):
 
 
 class TestPoint(unittest.TestCase):
-    # TODO: Write tests for Point
-    ...
+    def setUp(self):
+        self.testPoint = Point(x=0.0, y=0.0, label="Test Point")
+    
+    def test_x_is_float(self):
+        self.assertEqual(self.testPoint.x, 0.0)
+
+    def test_y_is_float(self):
+        self.assertEqual(self.testPoint.y, 0.0)
+
+    def test_label_is_str(self):
+        self.assertEqual(self.testPoint.label, "Test Point")
+
+    def test_colors_is_default(self):
+        self.assertEqual(self.testPoint.color, "default")
+
+    def test_edge_color_is_default(self):
+        self.assertEqual(self.testPoint.edge_color, "default")
+
+    def test_marker_size_is_default(self):
+        self.assertEqual(self.testPoint.marker_size, "default")
+
+    def test_marker_style_is_default(self):
+        self.assertEqual(self.testPoint.marker_style, "default")
+
+    def test_edge_width_is_default(self):
+        self.assertEqual(self.testPoint.edge_width, "default")
+
+    def test_font_size_is_same_as_figure(self):
+        self.assertEqual(self.testPoint.font_size, "same as figure")
+
+    def test_text_color_is_k(self):
+        self.assertEqual(self.testPoint.text_color, "k")
+
+    def test_h_align_is_left(self):
+        self.assertEqual(self.testPoint.h_align, "left")
+
+    def test_v_align_is_bottom(self):
+        self.assertEqual(self.testPoint.v_align, "bottom")
 
 
 class TestText(unittest.TestCase):
