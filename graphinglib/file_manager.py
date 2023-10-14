@@ -1,4 +1,4 @@
-from os import mkdir, path, remove
+from os import path, remove
 
 import yaml
 from platformdirs import user_config_dir
@@ -10,7 +10,9 @@ class FileLoader:
     """
 
     def __init__(self, file_name: str) -> None:
-        self._config_dir = user_config_dir(appname="GraphingLib", roaming=True)
+        self._config_dir = user_config_dir(
+            appname="GraphingLib", roaming=True, ensure_exists=True
+        )
         self._file_name = file_name
         self._file_location_defaults = (
             f"{path.dirname(__file__)}/default_styles/{self._file_name}.yml"
@@ -18,8 +20,6 @@ class FileLoader:
         self._file_location_customs = f"{self._config_dir}/{self._file_name}.yml"
 
     def load(self) -> dict:
-        if not path.exists(self._config_dir):
-            mkdir(self._config_dir)
         try:
             with open(self._file_location_customs, "r") as file:
                 info = yaml.safe_load(file)
@@ -46,16 +46,14 @@ class FileSaver:
     """
 
     def __init__(self, file_name: str, style_prefs: dict) -> None:
-        self._config_dir = user_config_dir(appname="GraphingLib", roaming=True)
+        self._config_dir = user_config_dir(
+            appname="GraphingLib", roaming=True, ensure_exists=True
+        )
         self._file_name = file_name
         self._style_prefs = style_prefs
         self._save_location = f"{self._config_dir}/{self._file_name}.yml"
 
     def save(self) -> None:
-        # create the config directory if it doesn't exist
-        if not path.exists(self._config_dir):
-            mkdir(self._config_dir)
-        # save the style to the user's config directory
         with open(self._save_location, "w") as file:
             yaml.dump(self._style_prefs, file)
         print(f"Style saved to {self._save_location}")
@@ -67,14 +65,13 @@ class FileDeleter:
     """
 
     def __init__(self, file_name: str) -> None:
-        self._config_dir = user_config_dir(appname="GraphingLib", roaming=True)
+        self._config_dir = user_config_dir(
+            appname="GraphingLib", roaming=True, ensure_exists=True
+        )
         self._file_name = file_name
         self._file_location = f"{self._config_dir}/{self._file_name}.yml"
 
     def delete(self) -> None:
-        # delete the style from the user's config directory
-        if not path.exists(self._config_dir):
-            mkdir(self._config_dir)
         try:
             remove(self._file_location)
             print(f"Style deleted from {self._file_location}")
@@ -88,7 +85,9 @@ class FileUpdater:
     """
 
     def __init__(self, file_name: str) -> None:
-        self._config_dir = user_config_dir(appname="GraphingLib", roaming=True)
+        self._config_dir = user_config_dir(
+            appname="GraphingLib", roaming=True, ensure_exists=True
+        )
         self._file_name = file_name
         self._file_location = f"{self._config_dir}/{self._file_name}.yml"
         self._plain_style_location = (
@@ -99,8 +98,6 @@ class FileUpdater:
         """
         Checks every key and subkey in the plain style file. If it doesn't exist in the user's style file, this method adds it to the user's style file with the plain style's value.
         """
-        if not path.exists(self._config_dir):
-            mkdir(self._config_dir)
         with open(self._file_location, "r") as file:
             user_info = yaml.safe_load(file)
         with open(self._plain_style_location, "r") as file:
