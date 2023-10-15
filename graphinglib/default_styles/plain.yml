@@ -1,6 +1,6 @@
 Curve:
   color: 
-  line_width: 1
+  line_width: 2
   line_style: "-"
   cap_width: 3
   errorbars_color: "same as curve"
@@ -19,10 +19,10 @@ Scatter:
 
 Histogram:
   number_of_bins: 30
-  face_color: "silver"
-  edge_color: "k"
+  face_color: "#3e82a0"
+  edge_color: "#3e82a0"
   hist_type: "stepfilled"
-  alpha: 1.0
+  alpha: 0.3
   line_width: 2
   normalize: True
   show_pdf: 
@@ -47,7 +47,7 @@ Figure:
   grid_line_width: 0.5
   grid_color: "grey"
   grid_alpha: 0.5
-  color_cycle: ["#3e82a0", "#eec76f", "#b9503b", "#a9d474", "#695178", "#f1a264", "#83d3c4", "#616161"]
+  color_cycle: ["#3e82a0", "#edb73b", "#b9503b", "#8aba4e", "#695178", "#ed893b", "#34a893", "#616161"]
 
 Multifigure:
   size: [6.4, 4.8]
@@ -63,7 +63,7 @@ Subfigure:
   grid_line_width: 0.5
   grid_color: "grey"
   grid_alpha: 0.5
-  color_cycle: ["#3e82a0", "#eec76f", "#b9503b", "#a9d474", "#695178", "#f1a264", "#83d3c4", "#616161"]
+  color_cycle: ["#3e82a0", "#edb73b", "#b9503b", "#8aba4e", "#695178", "#ed893b", "#34a893", "#616161"]
 
 Point:
   color: "k"
@@ -73,59 +73,59 @@ Point:
   edge_width: 1.5
 
 FitFromPolynomial:
-  color: "r"
+  color: "k"
   line_width: 2
   line_style: "-"
-  res_color: "r"
+  res_color: "k"
   res_line_width: 1
   res_line_style: "--"
 
 FitFromExponential:
-  color: "r"
+  color: "k"
   line_width: 2
   line_style: "-"
-  res_color: "r"
+  res_color: "k"
   res_line_width: 1
   res_line_style: "--"
 
 FitFromGaussian:
-  color: "r"
+  color: "k"
   line_width: 2
   line_style: "-"
-  res_color: "r"
+  res_color: "k"
   res_line_width: 1
   res_line_style: "--"
 
 FitFromSine:
-  color: "r"
+  color: "k"
   line_width: 2
   line_style: "-"
-  res_color: "r"
+  res_color: "k"
   res_line_width: 1
   res_line_style: "--"
 
 FitFromSquareRoot:
-  color: "r"
+  color: "k"
   line_width: 2
   line_style: "-"
-  res_color: "r"
+  res_color: "k"
   res_line_width: 1
   res_line_style: "--"
 
 FitFromLog:
-  res_color: "r"
-  res_line_width: 2
+  res_color: "k"
+  res_line_width: 1
   res_line_style: "--"
-  color: "r"
-  line_width: 1
+  color: "k"
+  line_width: 2
   line_style: "-"
 
 FitFromFunction:
-  res_color: "r"
-  res_line_width: 2
+  res_color: "k"
+  res_line_width: 1
   res_line_style: "--"
-  color: "r"
-  line_width: 1
+  color: "k"
+  line_width: 2
   line_style: "-"
 
 Heatmap:
