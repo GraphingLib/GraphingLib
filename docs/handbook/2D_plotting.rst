@@ -15,7 +15,7 @@ The Heatmap class allows you to plot a 2-dimensional map of values or display im
     figure.add_element(map)
     figure.display()
 
-.. image:: ../images/heatmap1.png
+.. image:: images/heatmap1.png
 
 As for the :class:`~graphinglib.data_plotting_1d.Curve` and :class:`~graphinglib.data_plotting_1d.Scatter` objects, it is possible to create a Heatmap from a function with the :py:meth:`~graphinglib.data_plotting_2d.Heatmap.from_function` method: ::
 
@@ -30,7 +30,7 @@ To display an image instead, simply create a Heatmap with the path to an image a
     figure.add_element(map)
     figure.display()
 
-.. image:: ../images/heatmap2.png
+.. image:: images/heatmap2.png
 
 The are again many parameters to control for the Heatmap objects but an important one to mention here is the ``interpolation`` parameter. This allows you to choose an interpolation method to apply to the Heatmap data (image or not). The possible values for this parameter are the `interpolation methods for imshow from Matplotlib <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_. Using the ``bicubic`` interpolation on the GraphingLib logo before: ::
 
@@ -39,7 +39,7 @@ The are again many parameters to control for the Heatmap objects but an importan
     figure.add_element(map)
     figure.display()
 
-.. image:: ../images/heatmap3.png
+.. image:: images/heatmap3.png
 
 .. note :: By default, there is no interpolation applied to the data.
 
@@ -56,7 +56,7 @@ The Contour class allows you to display a contour plot of 2-dimensional data. He
     figure.add_element(map)
     figure.display()
 
-.. image:: ../images/contour.png
+.. image:: images/contour.png
 
 The contour class also has a :py:meth:`~graphinglib.data_plotting_2d.Contour.from_function` method: ::
 
@@ -77,7 +77,7 @@ The VectorField class does as its name suggests, it allows you to plot a 2-dimen
     figure.add_element(vector)
     figure.display()
 
-.. image:: ../images/vectorfield.png
+.. image:: images/vectorfield.png
 
 As both classes discussed prior, the VectorField object has a :py:meth:`~graphinglib.data_plotting_2d.VectorField.from_function` method: ::
 
@@ -101,7 +101,7 @@ The Stream class allows you to create stream plots in GraphingLib. Here is an ex
     figure.add_element(stream)
     figure.display()
 
-.. image:: ../images/stream.png
+.. image:: images/stream.png
 
 The density parameter used in the example above is the density of stream lines to display. The default density is set to 1, which means that the plotting domain is divided into a 30x30 grid in which each square can only be traversed by one stream line. Note that it is also possible to create a Stream from a function using its :py:meth:`~graphinglib.data_plotting_2d.Stream.from_function` method: ::
 

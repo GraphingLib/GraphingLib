@@ -16,7 +16,7 @@ Lets start by creating a simple Histogram of a normal distribution. ::
     figure.add_element(histogram)
     figure.display()
 
-.. image:: ../images/simplehistogram.png
+.. image:: images/simplehistogram.png
 
 On this example we can see that the legend includes the values of the distribution's mean and standard deviation. Those values are also available from the Histogram object with these lines of code ::
 
@@ -29,7 +29,7 @@ It is also possible to overlay a normal fit of the distribution simply by settin
         values, number_of_bins=30, label="Distribution of values", show_pdf="normal"
     )
 
-.. image:: ../images/histogrampdf.png
+.. image:: images/histogrampdf.png
 
 Plotting fit residuals
 ----------------------
@@ -57,4 +57,4 @@ It is possible to create a Histogram from a fit previously created to display th
 
     multifigure.display()
 
-.. image:: ../images/residuals.png
+.. image:: images/residuals.png
