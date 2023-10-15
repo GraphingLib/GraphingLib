@@ -34,11 +34,14 @@ class SubFigure:
 
     Parameters
     ----------
-    placement : tuple[int, int, int, int]
-        The position occupied by the :class:`~graphinglib.multifigure.SubFigure` in the
-        grid of the :class:`~graphinglib.multifigure.MultiFigure`.
-        Specified as `(row, column, number of rows spanned, number of columns spanned)`.
-        The `row` and `column` refer to the upper-left corner of the :class:`~graphinglib.multifigure.SubFigure`.
+    row_start : int
+        The row where to set the upper-left corner of the SubFigure.
+    col_start : int
+        The column where to set the upper-left corner of the SubFigure.
+    row_span : int
+        The number of rows spanned by the SubFigure.
+    col_span : int
+        The number of columns spanned by the SubFigure.
     x_label, y_label : str
         The indentification for the x-axis and y-axis.
         Defaults to ``"x axis"`` and ``"y axis"``.
@@ -71,7 +74,10 @@ class SubFigure:
 
     def __init__(
         self,
-        placement: tuple[int, int, int, int],
+        row_start: int,
+        col_start: int,
+        row_span: int,
+        col_span: int,
         x_label: str = "x axis",
         y_label: str = "y axis",
         x_lim: Optional[tuple[float, float]] = None,
@@ -97,11 +103,14 @@ class SubFigure:
 
         Parameters
         ----------
-        placement : tuple[int, int, int, int]
-            The position occupied by the :class:`~graphinglib.multifigure.SubFigure` in the
-            grid of the :class:`~graphinglib.multifigure.MultiFigure`.
-            Specified as `(row, column, number of rows spanned, number of columns spanned)`.
-            The `row` and `column` refer to the upper-left corner of the :class:`~graphinglib.multifigure.SubFigure`.
+        row_start : int
+            The row where to set the upper-left corner of the SubFigure.
+        col_start : int
+            The column where to set the upper-left corner of the SubFigure.
+        row_span : int
+            The number of rows spanned by the SubFigure.
+        col_span : int
+            The number of columns spanned by the SubFigure.
         x_label, y_label : str
             The indentification for the x-axis and y-axis.
             Defaults to ``"x axis"`` and ``"y axis"``.
@@ -135,7 +144,8 @@ class SubFigure:
         self.y_axis_name = y_label
         self.x_lim = x_lim
         self.y_lim = y_lim
-        self.placement = placement
+        self.row_start, self.col_start = row_start, col_start
+        self.row_span, self.col_span = row_span, col_span
         file_loader = FileLoader(figure_style)
         self.figure_style = figure_style
         self.default_params = file_loader.load()
@@ -225,9 +235,9 @@ class SubFigure:
         """
         self._axes = plt.subplot(
             grid.new_subplotspec(
-                (self.placement[0], self.placement[1]),
-                rowspan=self.placement[2],
-                colspan=self.placement[3],
+                (self.row_start, self.col_start),
+                rowspan=self.row_span,
+                colspan=self.col_span,
             )
         )
         if self.add_reference_label:
@@ -581,7 +591,10 @@ class MultiFigure:
 
     def add_SubFigure(
         self,
-        placement: tuple[int, int, int, int],
+        row_start: int,
+        col_start: int,
+        row_span: int,
+        col_span: int,
         x_label: str = "x axis",
         y_label: str = "y axis",
         x_lim: Optional[tuple[float, float]] = None,
@@ -599,11 +612,14 @@ class MultiFigure:
 
         Parameters
         ----------
-        placement : tuple[int, int, int, int]
-            The position occupied by the :class:`~graphinglib.multifigure.SubFigure` in the
-            grid of the :class:`~graphinglib.multifigure.MultiFigure`.
-            Specified as `(row, column, number of rows spanned, number of columns spanned)`.
-            The `row` and `column` refer to the upper-left corner of the :class:`~graphinglib.multifigure.SubFigure`.
+        row_start : int
+            The row where to set the upper-left corner of the SubFigure.
+        col_start : int
+            The column where to set the upper-left corner of the SubFigure.
+        row_span : int
+            The number of rows spanned by the SubFigure.
+        col_span : int
+            The number of columns spanned by the SubFigure.
         x_label, y_label : str
             The indentification for the x-axis and y-axis.
             Defaults to ``"x axis"`` and ``"y axis"``.
@@ -633,14 +649,17 @@ class MultiFigure:
         new_SubFigure : :class:`~graphinglib.multifigure.SubFigure`
             :class:`~graphinglib.multifigure.SubFigure` to be added to the :class:`~graphinglib.multifigure.MultiFigure`.
         """
-        if placement[0] >= self.size[0] or placement[1] >= self.size[1]:
+        if row_start >= self.size[0] or col_start >= self.size[1]:
             raise GraphingException(
-                "The placement value must be inside the size of the MultiFigure."
+                "The placement values must be inside the size of the MultiFigure."
             )
-        if placement[0] < 0 or placement[1] < 0:
-            raise GraphingException("The placement value cannot be negative.")
+        if row_start < 0 or col_start < 0:
+            raise GraphingException("The placement values cannot be negative.")
         new_SubFigure = SubFigure(
-            placement,
+            row_start,
+            col_start,
+            row_span,
+            col_span,
             x_label,
             y_label,
             x_lim,
