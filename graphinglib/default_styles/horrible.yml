@@ -1,5 +1,5 @@
 Curve:
-  color: "purple"
+  color: 
   line_width: 10
   line_style: "-."
   cap_width: 10
@@ -8,19 +8,14 @@ Curve:
   cap_thickness: "same as curve"
 
 Scatter:
-  face_color: "cyan"
-  edge_color: "red"
+  face_color: 
+  edge_color: "none"
   marker_size: 60
   marker_style: "+"
   cap_width: 10
   errorbars_color: "same as scatter"
   errorbars_line_width: 3
   cap_thickness: 3
-
-Dashed:
-  color: "navy"
-  line_width: 1
-  line_style: "-."
 
 Histogram:
   number_of_bins: 30
@@ -30,7 +25,7 @@ Histogram:
   alpha: 1.0
   line_width: 2
   normalize: True
-  show_pdf: None
+  show_pdf: 
   show_params: True
 
 Hlines:
@@ -52,6 +47,7 @@ Figure:
   grid_line_width: 5
   grid_color: "orange"
   grid_alpha: 0.3
+  color_cycle: ["#a1d0ff", "#730127", "#789146", "#8800ff", "#00b3a7", "#dbc00f", "#8a8a8a", "#28301c"]
 
 Multifigure:
   size: [10, 7]
@@ -67,6 +63,7 @@ Subfigure:
   grid_line_width: 5
   grid_color: "orange"
   grid_alpha: 0.3
+  color_cycle: ["#a1d0ff", "#730127", "#789146", "#8800ff", "#00b3a7", "#dbc00f", "#8a8a8a", "#28301c"]
 
 Point:
   color: "cyan"
@@ -164,6 +161,6 @@ Table:
 
 Stream:
   line_width: 1
-  color: "purple"
-  color_map: None
+  color: 
+  color_map: 
   arrow_size: 5

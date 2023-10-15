@@ -5,6 +5,7 @@ from matplotlib import rcParamsDefault
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
+from cycler import cycler
 
 from .file_manager import FileLoader, FileUpdater
 from .graph_elements import GraphingException, Plottable
@@ -44,6 +45,9 @@ class Figure:
         Default depends on the ``figure_style`` configuration.
     figure_style : str
         The figure style to use for the figure.
+    color_cycle : list[str]
+        List of colors applied to the elements cyclically if none is provided.
+        Default depends on the ``figure_style`` configuration.
     use_latex : bool
         Wheter or not to use LaTeX to render text and math symbols in the figure.
         Defaults to ``False``.
@@ -68,6 +72,7 @@ class Figure:
         legend_is_boxed: bool | Literal["default"] = "default",
         ticks_are_in: bool | Literal["default"] = "default",
         figure_style: str = "plain",
+        color_cycle: list[str] | Literal["default"] = "default",
         use_latex: bool = False,
         font_size: int = 12,
     ) -> None:
@@ -98,6 +103,9 @@ class Figure:
             Default depends on the ``figure_style`` configuration.
         figure_style : str
             The figure style to use for the figure.
+        color_cycle : list[str]
+            List of colors applied to the elements cyclically if none is provided.
+            Default depends on the ``figure_style`` configuration.
         use_latex : bool
             Wheter or not to use LaTeX to render text and math symbols in the figure.
             Defaults to ``False``.
@@ -123,8 +131,15 @@ class Figure:
         self.figure_style = figure_style
         self.default_params = file_loader.load()
         self._get_defaults_init(
-            size, legend_is_boxed, ticks_are_in, log_scale_x, log_scale_y, show_grid
+            size,
+            legend_is_boxed,
+            ticks_are_in,
+            log_scale_x,
+            log_scale_y,
+            show_grid,
+            color_cycle,
         )
+        self.color_cycle = cycler(color=self.color_cycle)
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
         self._handles = []
@@ -136,7 +151,14 @@ class Figure:
             self.set_grid()
 
     def _get_defaults_init(
-        self, size, legend_is_boxed, ticks_are_in, log_scale_x, log_scale_y, show_grid
+        self,
+        size,
+        legend_is_boxed,
+        ticks_are_in,
+        log_scale_x,
+        log_scale_y,
+        show_grid,
+        color_cycle,
     ) -> None:
         params_values = {
             "size": size,
@@ -145,6 +167,7 @@ class Figure:
             "log_scale_x": log_scale_x,
             "log_scale_y": log_scale_y,
             "show_grid": show_grid,
+            "color_cycle": color_cycle,
         }
         tries = 0
         while tries < 2:
@@ -201,6 +224,7 @@ class Figure:
             )
         except:
             pass
+        self._axes.set_prop_cycle(self.color_cycle)
         self._axes.set_xlabel(self.x_axis_name)
         self._axes.set_ylabel(self.y_axis_name)
         if self.x_lim:
