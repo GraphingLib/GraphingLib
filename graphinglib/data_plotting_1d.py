@@ -714,6 +714,9 @@ class Curve:
                 zorder=z_order - 1,
             )
         if self._fill_curve_between:
+            kwargs = {}
+            if self.fill_under_color:
+                kwargs["color"] = self.fill_under_color
             axes.fill_between(
                 self.x_data,
                 self.y_data,
@@ -721,9 +724,9 @@ class Curve:
                     self.x_data >= self._fill_curve_between[0],
                     self.x_data <= self._fill_curve_between[1],
                 ),
-                color=self.fill_under_color,
                 alpha=0.2,
                 zorder=z_order - 2,
+                **kwargs,
             )
 
 
