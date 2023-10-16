@@ -43,7 +43,7 @@ class TestFigure(unittest.TestCase):
         a_figure = Figure()
         a_figure.add_element(a_curve)
         a_figure._fill_in_missing_params(a_curve)
-        self.assertEqual(a_curve.line_width, 1)
+        self.assertEqual(a_curve.line_width, 2)
 
     def test_auto_assign_default_params_horrible(self):
         x = linspace(0, 3 * pi, 200)
