@@ -316,6 +316,12 @@ class Figure:
         params_to_reset = []
         object_type = type(element).__name__
         tries = 0
+        curve_defaults = {
+            "errorbars_color": "color",
+            "errorbars_line_width": "line_width",
+            "cap_thickness": "line_width",
+            "fill_under_color": "color",
+        }
         while tries < 2:
             try:
                 for property, value in vars(element).items():
@@ -323,21 +329,13 @@ class Figure:
                         params_to_reset.append(property)
                         default_value = self.default_params[object_type][property]
                         if default_value == "same as curve":
-                            curve_defaults = {
-                                "errorbars_color": "color",
-                                "errorbars_line_width": "line_width",
-                                "cap_thickness": "line_width",
-                            }
-                            for attr, default_key in curve_defaults.items():
-                                setattr(
-                                    element,
-                                    attr,
-                                    self.default_params[object_type][default_key],
-                                )
+                            setattr(
+                                element,
+                                property,
+                                getattr(element, curve_defaults[property]),
+                            )
                         elif default_value == "same as scatter":
-                            element.errorbars_color = self.default_params[object_type][
-                                "face_color"
-                            ]
+                            element.errorbars_color = getattr(element, "face_color")
                         else:
                             setattr(element, property, default_value)
                 break

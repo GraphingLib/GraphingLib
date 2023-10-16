@@ -551,7 +551,13 @@ class Curve:
         y = f(x)
         return np.trapz(np.sqrt(1 + np.gradient(y, x) ** 2), x)
 
-    def area_between(self, x1: float, x2: float, fill_under: bool = False) -> float:
+    def area_between(
+        self,
+        x1: float,
+        x2: float,
+        fill_under: bool = False,
+        fill_color: str = "default",
+    ) -> float:
         """
         Calculates the area between the curve and the x axis between two x values.
         This is the definite integral of the curve between the two x values.
@@ -563,6 +569,9 @@ class Curve:
         fill_under : bool
             Whether to fill the specified area between the curve and the x axis when displaying.
             Defaults to ``False``.
+        fill_color : str
+            Color of the area between the curve and the x axis when ``fill_under`` is set to ``True``.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
@@ -570,6 +579,7 @@ class Curve:
         """
         if fill_under:
             self._fill_curve_between = (x1, x2)
+            self.fill_under_color = fill_color
         y_data = self.y_data
         x_data = self.x_data
         f = interp1d(x_data, y_data)
@@ -711,7 +721,7 @@ class Curve:
                     self.x_data >= self._fill_curve_between[0],
                     self.x_data <= self._fill_curve_between[1],
                 ),
-                # color=self.fill_color,
+                color=self.fill_under_color,
                 alpha=0.2,
                 zorder=z_order - 2,
             )
