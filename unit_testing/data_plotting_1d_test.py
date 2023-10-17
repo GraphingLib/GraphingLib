@@ -219,7 +219,7 @@ class TestScatter(unittest.TestCase):
         )
         _, self.testAxes = subplots()
         self.testScatter._plot_element(self.testAxes, 0)
-        self.assertEqual(len(self.testAxes.collections), 1)
+        self.assertEqual(len(self.testAxes.get_lines()), 1)
 
     def test_add_scatter(self):
         x = linspace(0, 3 * pi, 200)
