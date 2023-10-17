@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath(".."))
 project = "GraphingLib"
 copyright = "2023, Gustave Coulombe, Yannick Lapointe"
 author = "Gustave Coulombe and Yannick Lapointe"
-release = "v1.1.0"
+release = "v1.2.1"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
