@@ -11,7 +11,7 @@ Curve:
 Scatter:
   face_color: 
   edge_color: "none"
-  marker_size: 30
+  marker_size: 7
   marker_style: "o"
   cap_width: 3
   errorbars_color: "same as scatter"

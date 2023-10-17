@@ -691,27 +691,31 @@ class Curve:
         """
         Plots the element in the specified axes.
         """
-        (self.handle,) = axes.plot(
-            self.x_data,
-            self.y_data,
-            color=self.color,
-            linewidth=self.line_width,
-            linestyle=self.line_style,
-            label=self.label,
-            zorder=z_order,
-        )
         if self.errorbars:
-            axes.errorbar(
+            self.handle = axes.errorbar(
                 self.x_data,
                 self.y_data,
                 xerr=self.x_error,
                 yerr=self.y_error,
-                color=self.errorbars_color,
+                color=self.color,
+                linewidth=self.line_width,
+                linestyle=self.line_style,
+                label=self.label,
                 elinewidth=self.errorbars_line_width,
                 capsize=self.cap_width,
                 capthick=self.cap_thickness,
-                fmt="none",
-                zorder=z_order - 1,
+                ecolor=self.color,
+                zorder=z_order,
+            )
+        else:
+            self.handle = axes.errorbar(
+                self.x_data,
+                self.y_data,
+                color=self.color,
+                linewidth=self.line_width,
+                linestyle=self.line_style,
+                label=self.label,
+                zorder=z_order,
             )
         if self._fill_curve_between:
             kwargs = {}
@@ -1080,28 +1084,35 @@ class Scatter:
         """
         Plots the element in the specified axes.
         """
-        self.handle = axes.scatter(
-            self.x_data,
-            self.y_data,
-            color=self.face_color,
-            edgecolors=self.edge_color,
-            s=self.marker_size,
-            marker=self.marker_style,
-            label=self.label,
-            zorder=z_order,
-        )
         if self.errorbars:
-            axes.errorbar(
+            self.handle = axes.errorbar(
                 self.x_data,
                 self.y_data,
                 xerr=self.x_error,
                 yerr=self.y_error,
-                color=self.errorbars_color,
+                markerfacecolor=self.face_color,
+                markeredgecolor=self.edge_color,
+                markersize=self.marker_size,
+                marker=self.marker_style,
+                label=self.label,
                 elinewidth=self.errorbars_line_width,
                 capsize=self.cap_width,
                 capthick=self.cap_thickness,
-                fmt="none",
-                zorder=z_order - 1,
+                ecolor=self.face_color,
+                linestyle="none",
+                zorder=z_order,
+            )
+        else:
+            self.handle = axes.errorbar(
+                self.x_data,
+                self.y_data,
+                markerfacecolor=self.face_color,
+                markeredgecolor=self.edge_color,
+                markersize=self.marker_size,
+                marker=self.marker_style,
+                label=self.label,
+                linestyle="none",
+                zorder=z_order,
             )
 
 
