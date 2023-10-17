@@ -221,7 +221,6 @@ class GeneralFit(Curve):
             axes.plot(
                 self.x_data,
                 y_fit_minus_std,
-                label=self.label,
                 color=self.res_color,
                 linewidth=self.res_line_width,
                 linestyle=self.res_line_style,
@@ -230,7 +229,6 @@ class GeneralFit(Curve):
             axes.plot(
                 self.x_data,
                 y_fit_plus_std,
-                label=self.label,
                 color=self.res_color,
                 linewidth=self.res_line_width,
                 linestyle=self.res_line_style,
