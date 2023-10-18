@@ -7,7 +7,6 @@ Lets start by creating a simple Histogram of a normal distribution. ::
     import numpy as np
     import graphinglib as gl
 
-
     values = np.random.normal(loc=2, scale=5, size=500)
 
     histogram = gl.Histogram(values, number_of_bins=30, label="Distribution of values")
@@ -39,20 +38,19 @@ It is possible to create a Histogram from a fit previously created to display th
     import numpy as np
     import graphinglib as gl
 
-
     x_data = np.linspace(0, 10, 100)
     y_data = 3 * x_data**2 - 2 * x_data + np.random.normal(0, 10, 100)
     scatter = gl.Scatter(x_data, y_data, label="Data")
     fit = gl.FitFromPolynomial(scatter, degree=2, label="Fit", color="red")
 
-    multifigure = gl.MultiFigure(1, 2, size=(10, 5))
-    subfigure1 = multifigure.add_SubFigure((0, 0, 1, 1))
+    multifigure = gl.MultiFigure(1, 2, size=(10, 5), reference_labels=False)
+    subfigure1 = multifigure.add_SubFigure(0, 0, 1, 1)
     subfigure1.add_element(scatter, fit)
 
     residuals = gl.Histogram.plot_residuals_from_fit(
         fit, 15, label="Residual", show_pdf="normal"
     )
-    subfigure2 = multifigure.add_SubFigure((0, 1, 1, 1), y_lim=(0, 0.06))
+    subfigure2 = multifigure.add_SubFigure(0, 1, 1, 1, y_lim=(0, 0.06))
     subfigure2.add_element(residuals)
 
     multifigure.display()
