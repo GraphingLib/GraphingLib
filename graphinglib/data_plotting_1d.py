@@ -1335,7 +1335,7 @@ class Histogram:
             axes.plot(
                 x_data,
                 y_data,
-                color=self.edge_color,
+                color="k",
                 zorder=z_order,
             )
             curve_max_y = normal(self.mean)
