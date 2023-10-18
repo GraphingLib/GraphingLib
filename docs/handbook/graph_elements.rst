@@ -12,7 +12,7 @@ The Point object is usefull for highlighting a specific point in a graph. It all
     point = gl.Point(1, 2, label="Something interesting here!")
     point.add_coordinates()
 
-.. image:: ../images/point.png
+.. image:: images/point.png
 
 There are many more parameters to be customized for the Point object, but those are all included in the figure style files and can therefore be left out most of the time. For the details on the other parameters, visit the :py:class:`Reference section on Point objects <graphinglib.graph_elements.Point>`.
 
@@ -51,7 +51,7 @@ The Hlines and Vlines objects serve a similar purpose to the Point object, which
     figure.add_element(curve, hlines, vlines)
     figure.display()
 
-.. image:: ../images/lines.png
+.. image:: images/lines.png
 
 For both the Hlines and Vlines it is possible to specify as many colors and line styles as there are lines instead of applying the same for all lines as is the case in the example above.
 
@@ -65,7 +65,7 @@ The Text object is used to display text on a figure. It also allows you to point
     text = gl.Text(4, 1, "There is nothing here!")
     text.attach_arrow((0.5, 1))
 
-.. image:: ../images/text.png
+.. image:: images/text.png
 
 There are many more parameters to be customized for the Text object and its arrow, but those are all included in the figure style files and can therefore be left out most of the time. For the details on the other parameters, visit the :py:class:`Reference section on Text objects <graphinglib.graph_elements.Text>`.
 
@@ -102,7 +102,7 @@ The Table object is used to display a table of data or any relevant information 
     subfig.add_element(table)
     figure.display()
 
-.. image:: ../images/table.png
+.. image:: images/table.png
 
 The Table object has parameters to set the text alignment (``cell_align``, ``row_align`` and ``col_align``), parameters to set the column and row labels' background colors (``col_colors`` and ``row_colors``) and a parameter to set the location of the table with respect to the axes in which it is displayed. It also has a parameter to set the scaling factors of the table in the horizontal and vertical directions. This scaling can be used to leave more verttical or horizontal space for the text in the table's cells. It is set to ``(1, 1.5)`` by default to make the text easier to read than normal Matplotlib tables.
 

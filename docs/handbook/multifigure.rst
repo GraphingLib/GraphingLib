@@ -4,7 +4,7 @@ Creating a :class:`~graphinglib.multifigure.MultiFigure`
 
 To create a :class:`~graphinglib.multifigure.MultiFigure`, you first have to decide what size you want the canvas' grid to be. You control this by setting the values of ``num_rows`` and ``num_cols`` as shown in the figure below. This grid is then used to place each set of axes in the MultiFigure.
 
-.. image:: ../images/Canvas.png
+.. image:: images/Canvas.png
    :scale: 30%
 
 To create a MultiFigure, simply use the following line of code: ::
@@ -38,13 +38,13 @@ Once a SubFigure has been created, elements can be added to it by using the :py:
 
     multifigure.display()
 
-.. image:: ../images/multifigure.png
+.. image:: images/multifigure.png
 
 Legends in MultiFigures
 -----------------------
 
 The legends in a MultiFigure can be added separately for every SubFigure or as a single legend combining every plots. This option is controlled by the :py:meth:`~graphinglib.multifigure.MultiFigure.display` and :py:meth:`~graphinglib.multifigure.MultiFigure.save_figure` methods and the ``general_legend`` parameter. If it is set to ``True``, the individual legends of the SubFigures are automatically disabled. By default it is set to ``False`` so that each SubFigure controls its own legend. The two images below illustrate the different legend options.
 
-.. image:: ../images/individuallegend.png
-.. image:: ../images/generallegend.png
+.. image:: images/individuallegend.png
+.. image:: images/generallegend.png
 
