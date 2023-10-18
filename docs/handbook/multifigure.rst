@@ -13,13 +13,12 @@ To create a MultiFigure, simply use the following line of code: ::
 
 Then, to add a set of axes to the MultiFigure, we create a new :class:`~graphinglib.multifigure.SubFigure` with the following line of code: ::
 
-    subfigure1 = multifigure.add_subfigure((0, 0, 1, 1))
+    subfigure1 = multifigure.add_subfigure(0, 0, 1, 1)
 
-Once a SubFigure has been created, elements can be added to it by using the :py:meth:`~graphinglib.multifigure.SubFigure.add_element` method as in a :class:`~graphinglib.figure.Figure`. The tuple is arranged in the following order: `(start row, start column, rows spanned, columns spanned)`. It is important to note that **a single set of axes is not confined to a single square on the grid, it can span multiple squares.** This means it is possible to align the individual sets of axes however you want. For example, here is how you could insert 3 SubFigures in 2 rows with the one on the second row being centered: ::
+Once a SubFigure has been created, elements can be added to it by using the :py:meth:`~graphinglib.multifigure.SubFigure.add_element` method as in a :class:`~graphinglib.figure.Figure`. It is important to note that **a single set of axes is not confined to a single square on the grid, it can span multiple squares.** This means it is possible to align the individual sets of axes however you want. For example, here is how you could insert 3 SubFigures in 2 rows with the one on the second row being centered: ::
 
     import numpy as np
     import graphinglib as gl
-
 
     sine = gl.Curve.from_function(lambda x: np.sin(x), 0, 2 * np.pi, label="sine")
     cosine = gl.Curve.from_function(lambda x: np.cos(x), 0, 2 * np.pi, label="cosine")
@@ -29,16 +28,18 @@ Once a SubFigure has been created, elements can be added to it by using the :py:
 
     multifigure = gl.MultiFigure(2, 4, size=(11, 8))
 
-    subfigure1 = multifigure.add_SubFigure((0, 0, 1, 2))
+    subfigure1 = multifigure.add_SubFigure(0, 0, 1, 2)
     subfigure1.add_element(sine)
-    subfigure2 = multifigure.add_SubFigure((0, 2, 1, 2))
+    subfigure2 = multifigure.add_SubFigure(0, 2, 1, 2)
     subfigure2.add_element(cosine)
-    subfigure3 = multifigure.add_SubFigure((1, 1, 1, 2))
+    subfigure3 = multifigure.add_SubFigure(1, 1, 1, 2)
     subfigure3.add_element(tangent)
 
     multifigure.display()
 
 .. image:: images/multifigure.png
+
+As you can see in the above figure, there are labels (a), b), c)) next to each SubFigure. Those are the reference labels used to refer to each SubFigure un the caption of the figure when inserting it inside a document. They are controlled by the ``reference_labels`` parameter and can be turned off by setting it to ``False``.
 
 Legends in MultiFigures
 -----------------------

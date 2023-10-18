@@ -9,12 +9,10 @@ In GraphingLib, all curves are objects which are instances of the :class:`~graph
     # Create a curve from lists of x and y values
     x_values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     y_values = [0, 1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
-    curve_1 = gl.Curve(x_values, y_values, color="red", line_width=2)
+    curve_1 = gl.Curve(x_values, y_values, line_style="--")
 
     # Create a curve from a function
-    curve_2 = gl.Curve.from_function(
-        lambda x: -20 * (x - 5) ** 2 + 400, x_min=0, x_max=10, color="blue", line_style="--"
-    )
+    curve_2 = gl.Curve.from_function(lambda x: -20 * (x - 5) ** 2 + 400, x_min=0, x_max=10)
 
     fig = gl.Figure()
     fig.add_element(curve_1, curve_2)
@@ -28,14 +26,13 @@ Basic curve arithmetic
 The :class:`~graphinglib.data_plotting_1d.Curve` class has a number of methods which can be used to create new curves from basic mathematical operations on existing ones. For example, you can add two curves together, or multiply a curve by a constant. ::
 
     curve_1 = gl.Curve.from_function(
-        lambda x: np.sin(x) + 10, np.pi, 10 * np.pi, color="red", label="Curve 1", number_of_points=100,
+        lambda x: np.sin(x) + 10, np.pi, 10 * np.pi, label="Curve 1", number_of_points=100,
     )
     curve_2 = gl.Curve.from_function(
-        lambda x: x, np.pi, 10 * np.pi, color="blue", label="Curve 2", number_of_points=100,
+        lambda x: x, np.pi, 10 * np.pi, label="Curve 2", number_of_points=100,
     )
 
     curve_sum = curve_1 + curve_2
-    curve_sum.color = "green"
     curve_sum.label = "Sum"
 
     fig = gl.Figure()
@@ -90,22 +87,20 @@ Curve calculus
 
 There are a number of methods which can be used to perform calculus on a curve. The :meth:`~graphinglib.data_plotting_1d.Curve.get_derivative_curve` and :meth:`~graphinglib.data_plotting_1d.Curve.get_integral_curve` both return new :class:`~graphinglib.data_plotting_1d.Curve` objects. You can also use the :meth:`~graphinglib.data_plotting_1d.Curve.get_tangent_curve` and :meth:`~graphinglib.data_plotting_1d.Curve.get_normal_curve` methods to plot tangents and normals to other curves at a given x value. ::
 
-    curve_1 = gl.Curve.from_function(
-        lambda x: x**2 - 5, x_min=-5, x_max=5, line_width=2, color="red"
-    )
+    curve_1 = gl.Curve.from_function(lambda x: x**2 - 5, x_min=-5, x_max=5)
 
-    derivative_curve = curve_1.get_derivative_curve(color="blue", label="Derivative")
-    integral_curve = curve_1.get_integral_curve(color="green", label="Integral")
-    tangent_curve = curve_1.get_tangent_curve(2, color="blue", label="Tangent at x=2")
-    normal_curve = curve_1.get_normal_curve(2, color="green", label="Normal at x=2")
+    derivative_curve = curve_1.get_derivative_curve(label="Derivative")
+    integral_curve = curve_1.get_integral_curve(label="Integral")
+    normal_curve = curve_1.get_normal_curve(2, label="Normal at x=2")
+    tangent_curve = curve_1.get_tangent_curve(2, label="Tangent at x=2")
 
-    fig = gl.MultiFigure(num_rows=1, num_cols=2, size=(12, 6))
+    fig = gl.MultiFigure(num_rows=1, num_cols=2, size=(12, 6), reference_labels=False)
 
-    sub_1 = fig.add_SubFigure((0, 0, 1, 1), y_lim=(-6, 25))
+    sub_1 = fig.add_SubFigure(0, 0, 1, 1, y_lim=(-6, 25))
     sub_1.add_element(curve_1, derivative_curve, integral_curve)
 
-    sub_2 = fig.add_SubFigure((0, 1, 1, 1), x_lim=(-5, 5), y_lim=(-6, 4))
-    sub_2.add_element(curve_1, tangent_curve, normal_curve)
+    sub_2 = fig.add_SubFigure(0, 1, 1, 1, x_lim=(-5, 5), y_lim=(-6, 4))
+    sub_2.add_element(curve_1, normal_curve, tangent_curve)
 
     fig.display()
 
@@ -113,9 +108,7 @@ There are a number of methods which can be used to perform calculus on a curve. 
 
 The :meth:`~graphinglib.data_plotting_1d.Curve.area_between` method can be used to calculate the area under a curve between two x values (and shade it in if you want). The :meth:`~graphinglib.data_plotting_1d.Curve.slope_at` method can be used to calculate the slope of a curve at a given x value, and the :meth:`~graphinglib.data_plotting_1d.Curve.arc_length_between` method can be used to calculate the arc length of a curve between two x values. ::
 
-    curve_1 = gl.Curve.from_function(
-        lambda x: x**3 - 4 * x + 15, -3, 2, label="Curve 1", line_width=2
-    )
+    curve_1 = gl.Curve.from_function(lambda x: x**3 - 4 * x + 15, -3, 2, label="Curve 1")
 
     area = curve_1.area_between(
         -2, 1, fill_under=True

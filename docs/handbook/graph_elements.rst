@@ -28,7 +28,6 @@ The Hlines and Vlines objects serve a similar purpose to the Point object, which
     import numpy as np
     import graphinglib as gl
 
-
     curve = gl.Curve.from_function(
         lambda x: 0.1 * x**2 + np.sin(3 * x) - np.cos(2 * x) + 1, 0, 5
     )
