@@ -246,8 +246,8 @@ class Figure:
                 element._plot_element(self._axes, z_order)
                 self._reset_params_to_default(element, params_to_reset)
                 try:
-                    if element._label is not None:
-                        self._handles.append(element._handle)
+                    if element.label is not None:
+                        self._handles.append(element.handle)
                 except AttributeError:
                     continue
                 z_order += 2
