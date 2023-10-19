@@ -672,7 +672,12 @@ class MultiFigure:
         self._SubFigures.append(new_SubFigure)
         return new_SubFigure
 
-    def _prepare_MultiFigure(self, general_legend: bool = False) -> None:
+    def _prepare_MultiFigure(
+        self,
+        general_legend: bool = False,
+        legend_loc: str = "outside lower center",
+        legend_cols: int = 1,
+    ) -> None:
         """
         Prepares the :class:`~graphinglib.multifigure.MultiFigure` to be displayed.
         """
@@ -708,6 +713,8 @@ class MultiFigure:
                     },
                     frameon=self.legend_is_boxed,
                     draggable=True,
+                    loc=legend_loc,
+                    ncols=legend_cols,
                 )
             except:
                 self._figure.legend(
@@ -720,10 +727,17 @@ class MultiFigure:
                         VerticalLineCollection: HandlerMultipleVerticalLines(),
                     },
                     frameon=self.legend_is_boxed,
+                    loc=legend_loc,
+                    ncols=legend_cols,
                 )
         self._figure.suptitle(self.title)
 
-    def display(self, general_legend: bool = False) -> None:
+    def display(
+        self,
+        general_legend: bool = False,
+        legend_loc: str = "outside lower center",
+        legend_cols: int = 1,
+    ) -> None:
         """
         Displays the :class:`~graphinglib.multifigure.MultiFigure`.
 
@@ -734,11 +748,25 @@ class MultiFigure:
             the labels for every :class:`~graphinglib.multifigure.SubFigure` in it. Note that enabling this option will
             disable the individual legends for every :class:`~graphinglib.multifigure.SubFigure`.
             Defaults to ``False``.
+        legend_loc : str
+            The location of the legend in the MultiFigure. Possible placement keywords are: for vertical placement: ``{"upper", "center", "lower"}``, for horizontal placement: ``{"left", "center", "right"}``. The keyword ``"outside"`` can be added to put the legend outside of the axes. Defaults to ``"outside lower center"``.
+        legend_cols : int
+            Number of colums in which to arange the legend items. Defaults to 1.
         """
-        self._prepare_MultiFigure(general_legend=general_legend)
+        self._prepare_MultiFigure(
+            general_legend=general_legend,
+            legend_loc=legend_loc,
+            legend_cols=legend_cols,
+        )
         plt.show()
 
-    def save_figure(self, file_name: str, general_legend: bool = False) -> None:
+    def save_figure(
+        self,
+        file_name: str,
+        general_legend: bool = False,
+        legend_loc: str = "outside lower center",
+        legend_cols: int = 1,
+    ) -> None:
         """
         Saves the :class:`~graphinglib.multifigure.MultiFigure`.
 
@@ -751,8 +779,16 @@ class MultiFigure:
             the labels for every :class:`~graphinglib.multifigure.SubFigure` in it. Note that enabling this option will
             disable the individual legends for every :class:`~graphinglib.multifigure.SubFigure`.
             Defaults to ``False``.
+        legend_loc : str
+            The location of the legend in the MultiFigure. Possible placement keywords are: for vertical placement: ``{"upper", "center", "lower"}``, for horizontal placement: ``{"left", "center", "right"}``. The keyword ``"outside"`` can be added to put the legend outside of the axes. Defaults to ``"outside lower center"``.
+        legend_cols : int
+            Number of colums in which to arange the legend items. Defaults to 1.
         """
-        self._prepare_MultiFigure(general_legend=general_legend)
+        self._prepare_MultiFigure(
+            general_legend=general_legend,
+            legend_loc=legend_loc,
+            legend_cols=legend_cols,
+        )
         plt.savefig(file_name, bbox_inches="tight")
 
     def _fill_in_missing_params(self, element: Plottable) -> None:
