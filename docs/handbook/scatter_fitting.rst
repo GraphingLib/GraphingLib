@@ -9,23 +9,46 @@ In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plottin
 
 .. code-block:: python
 
-    # TODO: Add example of plotting existing data
+    import graphinglib as gl
+    import numpy as np
 
-    # TODO: Add example of plotting a function
+    # Create data
+    x_data = np.linspace(0, 10, 100)
+    y_data = 3 * x_data**2 - 2 * x_data + np.random.normal(0, 10, 100)
 
-    # TODO: Add image of the resulting plot
+    # Create scatter plot from data
+    scatter_1 = gl.Scatter(x_data, y_data, label="Data")
 
-image:: images/scatter_plot.png
+    # Create scatter plot from function
+    scatter_2 = gl.Scatter.from_function(
+        lambda x: -3 * x**2 - 2 * x + 350,
+        x_min=0,
+        x_max=10,
+        number_of_points=20,
+        label="Function",
+    )
 
-You can also add error bars for `x` and/or `y` or  by calling the :meth:`~graphinglib.data_plotting_1d.Scatter.add_errorbars` method like so:
+    # Create figure and display
+    fig = gl.Figure(x_label="x", y_label="y")
+    fig.add_element(scatter_1, scatter_2)
+    fig.display()
+
+
+.. image:: images/scatter_plot.png
+
+You can also add error bars for `x` and/or `y` by calling the :meth:`~graphinglib.data_plotting_1d.Scatter.add_errorbars` method like so:
 
 .. code-block:: python
 
-    # TODO: Add example of adding error bars
+    # Create data
+    x_data = np.linspace(0, 10, 10)
+    y_data = 3 * x_data**2 - 2 * x_data
 
-    # TODO: Add image of the resulting plot
+    # Add errorbars with float or array/list of floats
+    scatter = gl.Scatter(x_data, y_data)
+    scatter.add_errorbars(x_error=0.3, y_error=0.1 * y_data)
 
-image:: images/scatter_plot_with_errorbars.png
+.. image:: images/scatter_plot_with_errorbars.png
 
 Just like with the :class:`~graphinglib.data_plotting_1d.Curve` object, you can add, subtract, multiply, and divide two :class:`~graphinglib.data_plotting_1d.Scatter` objects. You can also add, subtract, multiply, and divide a :class:`~graphinglib.data_plotting_1d.Scatter` object by a float or int.
 
@@ -34,21 +57,43 @@ Just like with the :class:`~graphinglib.data_plotting_1d.Curve` object, you can 
 
 .. code-block:: python
 
-    # TODO: Add example of adding two Scatter objects
+    scatter_sine = gl.Scatter.from_function(
+        lambda x: np.sin(x), x_min=0, x_max=2 * np.pi, label="Sine"
+    )
 
-    # TODO: Add image of the resulting plot
+    scatter_line = gl.Scatter.from_function(
+        lambda x: x, x_min=0, x_max=2 * np.pi, label="Line"
+    )
 
-image:: images/scatter_plot_addition.png
+    scatter_addition = scatter_sine + scatter_line
+    scatter_addition.label = "Sine + Line"
+
+    scatter_plus_constant = scatter_sine + 3
+    scatter_plus_constant.label = "Sine + 3"
+
+.. image:: images/scatter_plot_addition.png
 
 Interpolation between data points is possible by calling the :meth:`~graphinglib.data_plotting_1d.Scatter.get_point_at_x` method and the :meth:`~graphinglib.data_plotting_1d.Scatter.get_points_at_y` method. The first returns a :class:`~graphinglib.data_plotting_1d.Point` object that represents the point on the curve at the specified x value. The second returns a list of :class:`~graphinglib.data_plotting_1d.Point` objects that represent the points on the curve at the specified y value.
 
 .. code-block:: python
 
-    # TODO: Add example of interpolation
+    scatter = gl.Scatter.from_function(
+        lambda x: np.sin(3 * x) * np.cos(x) ** 2,
+        x_min=0,
+        x_max=2 * np.pi,
+        number_of_points=70,
+        label="$\sin(3x)\cos^2(x)$",
+    )
 
-    # TODO: Add image of the resulting plot
+    point_at_4 = scatter.get_point_at_x(4, color="red")
+    points_at_y_one_half = scatter.get_points_at_y(0.5, color="orange")
 
-image:: images/scatter_plot_interpolation.png
+    fig = gl.Figure()
+    # Use the * operator to unpack the list of points
+    fig.add_element(scatter, point_at_4, *points_at_y_one_half)
+    fig.display()
+
+.. image:: images/scatter_plot_interpolation.png
 
 
 Curve fitting
@@ -58,11 +103,27 @@ There are a number of curve fit objects that can be used to fit data. The most v
 
 .. code-block:: python
 
-    # TODO: Add example of fitting a polynomial
+    # Create noisy data
+    x = np.linspace(0, 10, 100)
+    y = x**2 - 3 * x + 3 + np.random.normal(0, 7, 100)
 
-    # TODO: Add image of the resulting plot
+    scatter = gl.Scatter(x, y, "Data")
+    fit = gl.FitFromPolynomial(scatter, 2, "Fit")
 
-image:: images/scatter_plot_polynomial_fit.png
+    # Print the coefficients of the fit
+    coefficients = fit.coeffs
+    for i, c in enumerate(coefficients):
+        print(f"coefficient of x^{i}: {c}")
+
+    # Use the fit to predict value of y at x = 5
+    print(f"Value of fit at x = 5 is y = {fit.function(5)}")
+    predicted_point = fit.get_point_at_x(5, color="red")
+
+    fig = gl.Figure()
+    fig.add_element(scatter, fit, predicted_point)
+    fig.display()
+
+.. image:: images/scatter_plot_polynomial_fit.png
 
 Currently, the following fit objects are available:
 - :class:`~graphinglib.fits.FitFromPolynomial`
