@@ -123,6 +123,13 @@ There are a number of curve fit objects that can be used to fit data. The most v
     fig.add_element(scatter, fit, predicted_point)
     fig.display()
 
+.. code-block:: none
+    
+    coefficient of x^0: 4.9668661552059294
+    coefficient of x^1: -4.099977593163963
+    coefficient of x^2: 1.0770659002222067
+    Value of fit at x = 5 is y = 11.39362569494128
+
 .. image:: images/scatter_plot_polynomial_fit.png
 
 Currently, the following fit objects are available:
@@ -139,21 +146,69 @@ Here is an example of fitting a sine function to some data:
 
 .. code-block:: python
 
-    # TODO: Add example of fitting a sine function
+    import graphinglib as gl
+    import numpy as np
 
-    # TODO: Add image of the resulting plot
+    # Create noisy sine wave data
+    x = np.linspace(0, 10, 100)
+    y = 3 * np.sin(2 * x + 3) + 5 + np.random.normal(0, 0.5, 100)
 
-image:: images/scatter_plot_sine_fit.png
+    # Create scatter plot and fit with guesses (amplitude, frequency, phase, offset)
+    # Frequency is the most important parameter to get close to the actual value
+    scatter = gl.Scatter(x, y, label="Noisy sine")
+    fit = gl.FitFromSine(scatter, label="Fit", guesses=(1, 2.2, 1, 1))
+    print(f"Amplitude: {fit.amplitude:.3f}")
+    print(f"Frequency: {fit.frequency_rad:.3f}")
+    print(f"Phase: {fit.phase:.3f}")
+    print(f"Vertical shift: {fit.vertical_shift:.3f}")
 
-And here is an example of fitting a specific, user-defined function to some data:
+    fig = gl.Figure(y_lim=(0.5, 10.7))
+    fig.add_element(scatter, fit)
+    fig.display()
+
+.. code-block:: none
+
+    Amplitude: 2.943
+    Frequency: 2.004
+    Phase: 2.943
+    Vertical shift: 5.102
+
+.. image:: images/scatter_plot_sine_fit.png
+
+And here is an example of fitting a specific, user-defined function to some data. In this example, a laser of wavelength 532 nm is shone though a single slit of unknown width. The resulting diffraction pattern is recorded on a screen. You can use the Fraunhofer single-slit diffraction equation to fit the data and determine the width of the slit:
 
 .. code-block:: python
 
-    # TODO: Add example of fitting a user-defined function
+    import graphinglib as gl
+    import numpy as np
 
-    # TODO: Add image of the resulting plot
+    def single_slit(theta, a):
+        wavelength = 500e-9
+        beta = np.pi * a * np.sin(theta) / wavelength
+        return (np.sinc(beta / np.pi)) ** 2
 
-image:: images/scatter_plot_user_defined_fit.png
+    # Our fictional experimental data (with noise and slit width of 3.75 microns)
+    theta = np.linspace(-0.3, 0.3, 500)
+    a = 3.75e-6
+    I_exp = single_slit(theta, a) + np.random.normal(0, 0.02, 500)
+
+    # Create scatter and fit from single_slit function
+    scatter = gl.Curve(theta, I_exp, label="Experimental Data")
+    fit = gl.FitFromFunction(single_slit, scatter, label="Fit", guesses=(1e-6))
+
+    # Fitted parameters are stored in the Fit object
+    print(f"Slit width: {fit.parameters[0] * 1e6:.3f} microns")
+
+
+    fig = gl.Figure(x_label="Angle (rad)", y_label="Intensity (a.u.)")
+    fig.add_element(scatter, fit)
+    fig.display()
+
+.. code-block:: none
+
+    Slit width: 3.763 microns
+
+.. image:: images/single_slit.png
 
 
 
