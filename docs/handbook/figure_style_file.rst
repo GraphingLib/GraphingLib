@@ -1,3 +1,79 @@
 ==================================
 Writing your own figure style file
 ==================================
+
+In GraphingLib, all objects have defaults for most parameters which are governed by the style you choose to give your figure when creating it:
+
+.. code-block:: python
+
+    fig = Figure(style='plain')
+    fig2 = Figure(style='horrible')
+
+If no style is specified, the "plain" style is used. GraphingLib has a number of built-in styles which are showcased at the bottom of this page. These define **defaults**, which means you can always override them by specifying a parameter when creating an object:
+
+.. code-block:: python
+
+    fig = Figure() # uses the "plain" style
+    fig2 = Figure(ticks_are_in=False) # "plain", but ticks are now outside the figure
+
+You can also create your own styles or modify existing ones. To do this, you can use GraphingLib's style editor through the terminal.
+
+GraphingLib's Style Editor
+---------------------------
+
+If you have GraphingLib installed, you can run the following command in the terminal:
+
+.. code-block:: bash
+
+    graphinglib
+
+You will be greeted with a menu that looks like this:
+
+.. code-block:: text
+
+    ======================================
+    Welcome to GraphingLib's style editor!
+    ======================================
+
+    What would you like to do?
+    1. Create a new style
+    2. Edit an existing style
+    3. Delete an existing style
+    4. Exit
+
+
+    Enter a number:
+
+Let's go through each option.
+
+Create a new style
+~~~~~~~~~~~~~~~~~~
+
+Write 1 and press enter. You will be asked to enter a name for your new style. You can then choose an existing style to base your new style on. This accelerates the process of creating a new style, as you can skip the steps of defining parameters that you want to be the same as the style you are basing your new style on. For each GraphingLib object type, you will be asked whether you want to customize the defaults for that object type.
+
+.. code-block:: text
+
+    Do you want to customize Curve settings? (y/n):
+
+Pressing enter will default to "no". If you choose "no", the defaults for that object will be copied from the style you are basing your new style on. If you choose "yes", you will be asked to enter a value for each parameter (again, enter will default to the value of the base style which is displayed in parentheses). Once all objects have been customized or copied, the style will be saved and the style editor will exit. You can now use your new style by using the name you gave it.
+
+.. note::
+
+    Any styles you create will be saved to a platform-specific user configuration directory created by GraphingLib when your first custom style is generated. This means that if you uninstall GraphingLib or update it, your styles will not be deleted. There is also a built-in mechanism which updates your custom styles when new objects or parameters are added to GraphingLib with an update. This means that you can safely update GraphingLib without worrying about your custom styles breaking. Any new objects or parameters will be set to the same value as the "plain" style, but you can always edit your custom styles later.
+
+Edit an existing style
+~~~~~~~~~~~~~~~~~~~~~~
+
+Write 2 and press enter. You will be presented with a list of existing styles. Enter the number of the style you want to edit. You will then be asked whether you want to customize the default settings for each object type. Press enter to copy the defaults from the style you are editing, or enter a value to override the default. Once all objects have been customized or copied, the style will be saved and the style editor will exit.
+
+You will notice that you can also edit GraphingLib's built-in styles (GraphingLib will prioritize your edited versions if they exist). Don't worry, this will not break anything. If you want to revert to the original style, you can always delete your custom style and GraphingLib will use the built-in style again. It can be especially useful to edit the "plain" style, as this is the default style that is used when no style is specified.
+
+Delete an existing style
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Write 3 and press enter. You will be presented with a list of existing styles. Enter the number of the style you want to delete. You will be asked to confirm that you want to delete the style. Once you confirm, the style will be deleted and the style editor will exit. You will not be able to delete GraphingLib's built-in styles (but you can delete your edited versions of them).
+
+
+GraphingLib Styles Showcase
+---------------------------
+
