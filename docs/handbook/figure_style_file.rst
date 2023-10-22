@@ -76,4 +76,11 @@ Write 3 and press enter. You will be presented with a list of existing styles. E
 
 GraphingLib Styles Showcase
 ---------------------------
+Plain style:
 
+.. image:: images/plain_showcase.png
+
+
+Horrible style:
+
+.. image:: images/horrible_showcase.png
