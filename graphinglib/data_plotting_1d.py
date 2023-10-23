@@ -829,11 +829,13 @@ class Scatter:
         """
         Defines the addition of two scatter plots or a scatter plot and a number.
         """
-        try:
-            assert np.array_equal(self.x_data, other.x_data)
-        except AssertionError:
-            raise ValueError("Cannot add two scatter plots with different x values.")
         if isinstance(other, Scatter):
+            try:
+                assert np.array_equal(self.x_data, other.x_data)
+            except AssertionError:
+                raise ValueError(
+                    "Cannot add two scatter plots with different x values."
+                )
             new_y_data = self.y_data + other.y_data
             return Scatter(self.x_data, new_y_data)
         elif isinstance(other, (int, float)):
@@ -848,13 +850,13 @@ class Scatter:
         """
         Defines the subtraction of two scatter plots or a scatter plot and a number.
         """
-        try:
-            assert np.array_equal(self.x_data, other.x_data)
-        except AssertionError:
-            raise ValueError(
-                "Cannot subtract two scatter plots with different x values."
-            )
         if isinstance(other, Scatter):
+            try:
+                assert np.array_equal(self.x_data, other.x_data)
+            except AssertionError:
+                raise ValueError(
+                    "Cannot subtract two scatter plots with different x values."
+                )
             new_y_data = self.y_data - other.y_data
             return Scatter(self.x_data, new_y_data)
         elif isinstance(other, (int, float)):
@@ -869,13 +871,13 @@ class Scatter:
         """
         Defines the multiplication of two scatter plots or a scatter plot and a number.
         """
-        try:
-            assert np.array_equal(self.x_data, other.x_data)
-        except AssertionError:
-            raise ValueError(
-                "Cannot multiply two scatter plots with different x values."
-            )
         if isinstance(other, Scatter):
+            try:
+                assert np.array_equal(self.x_data, other.x_data)
+            except AssertionError:
+                raise ValueError(
+                    "Cannot multiply two scatter plots with different x values."
+                )
             new_y_data = self.y_data * other.y_data
             return Scatter(self.x_data, new_y_data)
         elif isinstance(other, (int, float)):
@@ -890,11 +892,13 @@ class Scatter:
         """
         Defines the division of two scatter plots or a scatter plot and a number.
         """
-        try:
-            assert np.array_equal(self.x_data, other.x_data)
-        except AssertionError:
-            raise ValueError("Cannot divide two scatter plots with different x values.")
         if isinstance(other, Scatter):
+            try:
+                assert np.array_equal(self.x_data, other.x_data)
+            except AssertionError:
+                raise ValueError(
+                    "Cannot divide two scatter plots with different x values."
+                )
             new_y_data = self.y_data / other.y_data
             return Scatter(self.x_data, new_y_data)
         elif isinstance(other, (int, float)):
