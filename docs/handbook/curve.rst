@@ -2,7 +2,7 @@
 The :class:`~graphinglib.data_plotting_1d.Curve` and its operations
 ===================================================================
 
-In GraphingLib, all curves are objects which are instances of the :class:`~graphinglib.data_plotting_1d.Curve` class. You can create a curve in two ways. The first is to create a curve from lists of x and y values, and the second is to create a curve from a function. ::
+In GraphingLib, all curves are objects which are instances of the :class:`~graphinglib.data_plotting_1d.Curve` class. You can create a curve in two ways. The first is to create a curve from lists (or numpy arrays) of x and y values, and the second is to create a curve from a function. ::
 
     import graphinglib as gl
 
@@ -41,7 +41,7 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class has a number of methods w
 
 .. image:: images/curve_addition.png
 
-Addition, subtraction, multiplication and division is generally supported between any two curves, as long as they are plotted using the same number of points. These four operations are also supported between a curve and a constant, as long as the constant is on the right hand side of the operation. When creating new curves this way, you can still access and change the curve properties such as the color and label through the new curve object.
+Addition, subtraction, multiplication and division is generally supported between any two curves, as long as they are plotted using the same number of points. These four operations are also supported between a curve and a constant, as long as the constant is on the right hand side of the operation. When creating new curves with +, -, \*, or /, you can still access and change the curve properties such as the color and label through the new curve object using dot notation.
 
 You can also find the the maximum and minimum values of a curve (maximum or minimum y value) using the standard Python functions :func:`max` and :func:`min`. ::
 
@@ -68,7 +68,8 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class has two interpolation met
     cross_x_axis_points = curve_1.get_points_at_y(0, color="blue")
 
     # Print coordinates of first intersection point
-    print(f"First intersection point: {(intersection_points[0].x, intersection_points[0].y)}")
+    first_int = intersection_points[0]
+    print(f"First intersection point: {(first_int.x, first_int.y)}")
 
     fig = gl.Figure()
     fig.add_element(curve_1, curve_2)
@@ -110,9 +111,8 @@ The :meth:`~graphinglib.data_plotting_1d.Curve.area_between` method can be used 
 
     curve_1 = gl.Curve.from_function(lambda x: x**3 - 4 * x + 15, -3, 2, label="Curve 1")
 
-    area = curve_1.area_between(
-        -2, 1, fill_under=True
-    )  # fill_under shades in the area under the curve
+    # fill_under shades in the area under the curve
+    area = curve_1.area_between(-2, 1, fill_under=True)
 
     slope = curve_1.slope_at(0)
 

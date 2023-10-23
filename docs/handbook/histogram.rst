@@ -17,7 +17,7 @@ Lets start by creating a simple Histogram of a normal distribution. ::
 
 .. image:: images/simplehistogram.png
 
-On this example we can see that the legend includes the values of the distribution's mean and standard deviation. Those values are also available from the Histogram object with these lines of code ::
+In this example we can see that the legend includes the values of the distribution's mean and standard deviation. These values are also available through the :class:`~graphinglib.data_plotting_1d.Histogram` object using dot notation::
 
     mu = histogram.mean
     sigma = histogram.standard_deviation
@@ -33,7 +33,7 @@ It is also possible to overlay a normal fit of the distribution simply by settin
 Plotting fit residuals
 ----------------------
 
-It is possible to create a Histogram from a fit previously created to display the residuals of said fit. Here is an example of how to do such a Histogram using the :py:meth:`~graphinglib.data_plotting_1d.Histogram.plot_residuals_from_fit` method: ::
+You can create a Histogram from a previously created fit to display the residuals of said fit. Here is an example of how to create such a Histogram using the :py:meth:`~graphinglib.data_plotting_1d.Histogram.plot_residuals_from_fit` method: ::
 
     import numpy as np
     import graphinglib as gl

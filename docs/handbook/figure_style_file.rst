@@ -76,6 +76,8 @@ Write 3 and press enter. You will be presented with a list of existing styles. E
 
 GraphingLib Styles Showcase
 ---------------------------
+Here are the currently available styles in GraphingLib.
+
 Plain style:
 
 .. image:: images/plain_showcase.png

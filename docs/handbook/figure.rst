@@ -2,7 +2,7 @@
 Creating a simple :class:`~graphinglib.figure.Figure`
 =====================================================
 
-Creating a simple figure using the :class:`~graphinglib.figure.Figure` object is simple. Here is an example of what plotting a sine function can look like. ::
+Creating a basic figure using the :class:`~graphinglib.figure.Figure` object is easy. Here is an example of what plotting a sine function can look like. ::
 
     import numpy as np
     import graphinglib as gl
@@ -21,7 +21,7 @@ The :py:meth:`~graphinglib.figure.Figure.display` method is used to show the fig
 
 .. seealso:: 
     
-    For the documentation on the ``from_function`` method, see the :py:meth:`Reference section on the Curve object <graphinglib.data_plotting_1d.Curve.from_function>`.
+    For the documentation on the ``from_function`` method, see the :py:meth:`Reference section on the Curve object <graphinglib.data_plotting_1d.Curve.from_function>` or the :doc:`handbook section on curves </handbook/curve>`.
 
 We can specify the axis labels by using the ``x_label`` and ``y_label`` parameters of the figure. ::
 
