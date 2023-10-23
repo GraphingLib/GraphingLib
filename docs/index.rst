@@ -21,7 +21,7 @@ them to be used anytime you want.
 
         Getting started
         ^^^^^^^^^^^^^^^
-        If you are new to GraphingLib, look out this section first to learn how to install and import GraphingLib.
+        If you are new to GraphingLib, check out this section first to learn how to install and import GraphingLib.
         ++++
         
         .. button-ref:: installation

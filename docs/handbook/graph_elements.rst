@@ -7,14 +7,14 @@ Miscellaneous Objects
 The :class:`~graphinglib.graph_elements.Point` Object
 -----------------------------------------------------
 
-The Point object is usefull for highlighting a specific point in a graph. It allows you to attach a label to it in addition to its coordinates. Here is how to declare a Point object and add its coordinates: ::
+The Point object is useful for highlighting a specific point on a graph. You can attach a label to it, or its coordinates, or both. Here is how to create a labeled Point object and add its coordinates: ::
 
     point = gl.Point(1, 2, label="Something interesting here!")
     point.add_coordinates()
 
 .. image:: images/point.png
 
-There are many more parameters to be customized for the Point object, but those are all included in the figure style files and can therefore be left out most of the time. For the details on the other parameters, visit the :py:class:`Reference section on Point objects <graphinglib.graph_elements.Point>`.
+There are many more parameters to be customized for the Point object, but those are all included in the figure style files and can therefore be left out most of the time. For details on the other parameters, visit the :py:class:`Reference section on Point objects <graphinglib.graph_elements.Point>`.
 
 .. seealso::
 
@@ -23,7 +23,7 @@ There are many more parameters to be customized for the Point object, but those 
 The :class:`~graphinglib.graph_elements.Hlines` and :class:`~graphinglib.graph_elements.Vlines` Object
 ------------------------------------------------------------------------------------------------------
 
-The Hlines and Vlines objects serve a similar purpose to the Point object, which is as markers for specific values in `x` or `y`. Here is an example of the use of Hlines and Vlines: ::
+The Hlines and Vlines objects serve a similar purpose to the Point object; they are markers for specific values in `x` or `y`. Here is an example which shows you how to use them::
 
     import numpy as np
     import graphinglib as gl
@@ -32,16 +32,16 @@ The Hlines and Vlines objects serve a similar purpose to the Point object, which
         lambda x: 0.1 * x**2 + np.sin(3 * x) - np.cos(2 * x) + 1, 0, 5
     )
     hlines = gl.Vlines(
-        [curve.x_data[20], curve.x_data[250]],
-        [0, 0],
-        [curve.y_data[20], curve.y_data[250]],
+        x=[curve.x_data[20], curve.x_data[250]],
+        y_min=[0, 0],
+        y_max=[curve.y_data[20], curve.y_data[250]],
         line_styles="--",
         colors="gray",
     )
     vlines = gl.Hlines(
-        [curve.y_data[20], curve.y_data[250]],
-        [0, 0],
-        [curve.x_data[20], curve.x_data[250]],
+        y=[curve.y_data[20], curve.y_data[250]],
+        x_min=[0, 0],
+        x_max=[curve.x_data[20], curve.x_data[250]],
         line_styles="--",
         colors="gray",
     )
@@ -52,26 +52,26 @@ The Hlines and Vlines objects serve a similar purpose to the Point object, which
 
 .. image:: images/lines.png
 
-For both the Hlines and Vlines it is possible to specify as many colors and line styles as there are lines instead of applying the same for all lines as is the case in the example above.
+For both Hlines and Vlines, it is possible to pass lists of colors and line_styles instead of applying the same for all lines as is the case in the example above.
 
 .. _text:
 
 The :class:`~graphinglib.graph_elements.Text` Object
 ----------------------------------------------------
 
-The Text object is used to display text on a figure. It also allows you to point from the text to a specified point using an arrow. Here is how to declare a text object and attach an arrow to it: ::
+The Text object is used to display text on a figure. It also allows you to point from the text to a specified point using an arrow. Here is how to create a text object and attach an arrow to it: ::
 
     text = gl.Text(4, 1, "There is nothing here!")
     text.attach_arrow((0.5, 1))
 
 .. image:: images/text.png
 
-There are many more parameters to be customized for the Text object and its arrow, but those are all included in the figure style files and can therefore be left out most of the time. For the details on the other parameters, visit the :py:class:`Reference section on Text objects <graphinglib.graph_elements.Text>`.
+There are many more parameters to be customized for the Text object and its arrow, but those are all included in the figure style files and can therefore be left out most of the time. For details on the other parameters, visit the :py:class:`Reference section on Text objects <graphinglib.graph_elements.Text>`.
 
 The :class:`~graphinglib.graph_elements.Table` Object
 -----------------------------------------------------
 
-The Table object is used to display a table of data or any relevant information in a Figure or Multifigure. Here is how to display a simple table of data: ::
+The Table object is used to display a table of data or any relevant information in a Figure or Multifigure. Here is how to display a simple table of data::
 
     import graphinglib as gl
 

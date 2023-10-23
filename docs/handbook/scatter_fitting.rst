@@ -5,7 +5,7 @@ Scatter plots and fitting experimental data
 The :class:`~graphinglib.data_plotting_1d.Scatter` Object
 ---------------------------------------------------------
 
-In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plotting_1d.Scatter` object. If you want to plot existing data, you can use the normal constructor by passing in the x and y data as lists or numpy arrays. If you want to plot a function, you can use the :meth:`~graphinglib.data_plotting_1d.Scatter.from_function` method. This method takes in a function and a range of x values to evaluate the function at. In the latter case, you can also specify the number of points to evaluate the function at. Both of these alternatives are shown below.
+In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plotting_1d.Scatter` object. If you want to plot existing data, you can use the standard constructor by passing in the x and y data as lists or numpy arrays. If you want to plot a function, you can use the :meth:`~graphinglib.data_plotting_1d.Scatter.from_function` method. This method takes in a function and a range of x values to evaluate the function at. In the latter case, you can also specify the number of points to evaluate the function at. Both of these alternatives are shown below.
 
 .. code-block:: python
 
@@ -29,7 +29,7 @@ In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plottin
     )
 
     # Create figure and display
-    fig = gl.Figure(x_label="x", y_label="y")
+    fig = gl.Figure()
     fig.add_element(scatter_1, scatter_2)
     fig.display()
 
@@ -99,7 +99,7 @@ Interpolation between data points is possible by calling the :meth:`~graphinglib
 Curve fitting
 -------------
 
-There are a number of curve fit objects that can be used to fit data. The most versatile is the :class:`~graphinglib.fits.FitFromFunction` object. This object takes in a function and a :class:`~graphinglib.data_plotting_1d.Scatter` object and fits the data to the function. However, the most common functions have their own dedicated fit objects to accelerate the fitting process. The most powerful of these is the :class:`~graphinglib.fits.FitFromPolynomial` object. All you need to do is pass in a :class:`~graphinglib.data_plotting_1d.Scatter` object and the degree of the polynomial you want to fit to the data:
+There are a number of curve fit objects that can be used to fit data. The most versatile is the :class:`~graphinglib.fits.FitFromFunction` object. This object takes in a function and a :class:`~graphinglib.data_plotting_1d.Scatter` or :class:`~graphinglib.data_plotting_1d.Curve` object and fits the data to the function. However, the most common functions have their own dedicated fit objects to accelerate the fitting process. The most powerful of these is the :class:`~graphinglib.fits.FitFromPolynomial` object. All you need to do is pass in a :class:`~graphinglib.data_plotting_1d.Scatter` object and the degree of the polynomial you want to fit to the data:
 
 .. code-block:: python
 
@@ -113,7 +113,7 @@ There are a number of curve fit objects that can be used to fit data. The most v
     # Print the coefficients of the fit
     coefficients = fit.coeffs
     for i, c in enumerate(coefficients):
-        print(f"coefficient of x^{i}: {c}")
+        print(f"Coefficient of x^{i}: {c}")
 
     # Use the fit to predict value of y at x = 5
     print(f"Value of fit at x = 5 is y = {fit.function(5)}")
@@ -125,9 +125,9 @@ There are a number of curve fit objects that can be used to fit data. The most v
 
 .. code-block:: none
     
-    coefficient of x^0: 4.9668661552059294
-    coefficient of x^1: -4.099977593163963
-    coefficient of x^2: 1.0770659002222067
+    Coefficient of x^0: 4.9668661552059294
+    Coefficient of x^1: -4.099977593163963
+    Coefficient of x^2: 1.0770659002222067
     Value of fit at x = 5 is y = 11.39362569494128
 
 .. image:: images/scatter_plot_polynomial_fit.png

@@ -11,11 +11,13 @@ To create a MultiFigure, simply use the following line of code: ::
 
     multifigure = gl.MultiFigure(2, 2)
 
-Then, to add a set of axes to the MultiFigure, we create a new :class:`~graphinglib.multifigure.SubFigure` with the following line of code: ::
+Then, to add a set of axes to the MultiFigure, we create a new :class:`~graphinglib.multifigure.SubFigure` with the following line of code::
 
+    # (row start, column start, rows spanned, columns spanned)
+    # This will create a 1x1 SubFigure in the top left corner of the grid
     subfigure1 = multifigure.add_subfigure(0, 0, 1, 1)
 
-Once a SubFigure has been created, elements can be added to it by using the :py:meth:`~graphinglib.multifigure.SubFigure.add_element` method as in a :class:`~graphinglib.figure.Figure`. It is important to note that **a single set of axes is not confined to a single square on the grid, it can span multiple squares.** This means it is possible to align the individual sets of axes however you want. For example, here is how you could insert 3 SubFigures in 2 rows with the one on the second row being centered: ::
+Once a SubFigure has been created, elements can be added to it by using the :py:meth:`~graphinglib.multifigure.SubFigure.add_element` method just like with a normal :class:`~graphinglib.figure.Figure`. It is important to note that **a single set of axes is not confined to a single square on the grid; it can span multiple squares.** This means it is possible to align the individual sets of axes however you want. For example, here is how you could insert 3 SubFigures in 2 rows with the one on the second row being centered: ::
 
     import numpy as np
     import graphinglib as gl
@@ -28,10 +30,13 @@ Once a SubFigure has been created, elements can be added to it by using the :py:
 
     multifigure = gl.MultiFigure(2, 4, size=(11, 8))
 
+    # This SubFigure will span the two left columns of the first row
     subfigure1 = multifigure.add_SubFigure(0, 0, 1, 2)
     subfigure1.add_element(sine)
+    # This SubFigure will span the two right columns of the first row
     subfigure2 = multifigure.add_SubFigure(0, 2, 1, 2)
     subfigure2.add_element(cosine)
+    # This SubFigure will span the two middle columns of the second row
     subfigure3 = multifigure.add_SubFigure(1, 1, 1, 2)
     subfigure3.add_element(tangent)
 
@@ -39,12 +44,12 @@ Once a SubFigure has been created, elements can be added to it by using the :py:
 
 .. image:: images/multifigure.png
 
-As you can see in the above figure, there are labels (a), b), c)) next to each SubFigure. Those are the reference labels used to refer to each SubFigure un the caption of the figure when inserting it inside a document. They are controlled by the ``reference_labels`` parameter and can be turned off by setting it to ``False``.
+As you can see in the above figure, there are labels (a), b), c)) next to each SubFigure. These are the reference labels used to refer to each SubFigure in the caption of the figure when inserting it in a document. The boolean parameter ``reference_labels`` (in the :class:`~graphinglib.multifigure.MultiFigure` constructor) can turn these on or off.
 
 Legends in MultiFigures
 -----------------------
 
-The legends in a MultiFigure can be added separately for every SubFigure or as a single legend combining every plots. This option is controlled by the :py:meth:`~graphinglib.multifigure.MultiFigure.display` and :py:meth:`~graphinglib.multifigure.MultiFigure.save_figure` methods and the ``general_legend`` parameter. If it is set to ``True``, the individual legends of the SubFigures are automatically disabled. By default it is set to ``False`` so that each SubFigure controls its own legend. The two images below illustrate the different legend options.
+The legends in a MultiFigure can be added separately for every SubFigure or as a single legend combining every plot. This option is controlled by the ``general_legend`` parameter in the :py:meth:`~graphinglib.multifigure.MultiFigure.display` and :py:meth:`~graphinglib.multifigure.MultiFigure.save_figure` methods. By default, it is set to ``False`` so that each SubFigure controls its own legend. The two images below illustrate the different legend options.
 
 .. image:: images/individuallegend.png
 .. image:: images/generallegend.png

@@ -32,7 +32,7 @@ To display an image instead, simply create a Heatmap with the path to an image a
 
 .. image:: images/heatmap2.png
 
-The are again many parameters to control for the Heatmap objects but an important one to mention here is the ``interpolation`` parameter. This allows you to choose an interpolation method to apply to the Heatmap data (image or not). The possible values for this parameter are the `interpolation methods for imshow from Matplotlib <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_. Using the ``bicubic`` interpolation on the GraphingLib logo before: ::
+There are again many parameters to control for the Heatmap objects but an important one to mention here is the ``interpolation`` parameter. This allows you to choose an interpolation method to apply to the Heatmap data (image or not). The possible values for this parameter are the `interpolation methods for imshow from Matplotlib <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_. Using the ``bicubic`` interpolation on the GraphingLib logo before: ::
 
     map = gl.Heatmap("images/GraphingLib-logo.png", interpolation="bicubic")
     figure = gl.Figure()
@@ -61,13 +61,13 @@ The Contour class allows you to display a contour plot of 2-dimensional data. He
 The contour class also has a :py:meth:`~graphinglib.data_plotting_2d.Contour.from_function` method: ::
 
     x_grid, y_grid = np.meshgrid(np.arange(0, 50, 1), np.arange(0, 50, 1))
-    contour = gl.Contour(
+    contour = gl.Contour.from_function(
         lambda x, y: np.cos(x * 0.2) + np.sin(y * 0.3), x_grid, y_grid
     )
 
 The :class:`~graphinglib.data_plotting_2d.VectorField` Object
 -------------------------------------------------------------
-The VectorField class does as its name suggests, it allows you to plot a 2-dimensional vector field. Here is an example of its usage: ::
+As its name suggests, the VectorField class allows you to plot a 2-dimensional vector field. Here is an example of its usage: ::
 
     x_grid, y_grid = np.meshgrid(np.arange(0, 11, 1), np.arange(0, 11, 1))
     u, v = (np.cos(x_grid * 0.2), np.sin(y_grid * 0.3))
