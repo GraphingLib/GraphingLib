@@ -50,6 +50,18 @@ class TestCurve(unittest.TestCase):
         self.testCurve.add_errorbars([0.2, 0.3] * 100, 0.1)
         self.testCurve.add_errorbars(0.3, None)
         self.testCurve.add_errorbars(None, 0.3)
+        self.testCurve.add_errorbars(
+            0.1,
+            0.1,
+            errorbars_color="red",
+            errorbars_line_width=10,
+            cap_thickness=10,
+            cap_width=10,
+        )
+        self.assertEqual(self.testCurve.errorbars_color, "red")
+        self.assertEqual(self.testCurve.errorbars_line_width, 10)
+        self.assertEqual(self.testCurve.cap_thickness, 10)
+        self.assertEqual(self.testCurve.cap_width, 10)
 
     def test_get_point_at_x(self):
         point = self.testCurve.get_point_at_x(0.5)
@@ -194,6 +206,18 @@ class TestScatter(unittest.TestCase):
         self.testScatter.add_errorbars([0.2, 0.3] * 100, 0.1)
         self.testScatter.add_errorbars(0.3, None)
         self.testScatter.add_errorbars(None, 0.3)
+        self.testScatter.add_errorbars(
+            0.1,
+            0.1,
+            errorbars_color="red",
+            cap_width=10,
+            cap_thickness=10,
+            errorbars_line_width=10,
+        )
+        self.assertEqual(self.testScatter.errorbars_color, "red")
+        self.assertEqual(self.testScatter.errorbars_line_width, 10)
+        self.assertEqual(self.testScatter.cap_thickness, 10)
+        self.assertEqual(self.testScatter.cap_width, 10)
 
     def test_get_point_at_x(self):
         point = self.testScatter.get_point_at_x(0.5)

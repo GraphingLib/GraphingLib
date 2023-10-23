@@ -704,7 +704,7 @@ class Curve:
                 elinewidth=self.errorbars_line_width,
                 capsize=self.cap_width,
                 capthick=self.cap_thickness,
-                ecolor=self.color,
+                ecolor=self.errorbars_color,
                 zorder=z_order,
             )
         else:
@@ -1098,7 +1098,7 @@ class Scatter:
                 elinewidth=self.errorbars_line_width,
                 capsize=self.cap_width,
                 capthick=self.cap_thickness,
-                ecolor=self.face_color,
+                ecolor=self.errorbars_color,
                 linestyle="none",
                 zorder=z_order,
             )
