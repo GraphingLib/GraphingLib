@@ -288,6 +288,24 @@ class GeneralFit(Curve):
         residuals = y_data - self.curve_to_be_fit.y_data
         return residuals
 
+    def calculate_Rsquared(self) -> float:
+        """
+        Calculates the :math:`R^2` value of the fit curve.
+
+        Returns
+        -------
+        Rsquared : float
+            :math:`R^2` value
+        """
+        Rsquared = 1 - (
+            np.sum(self.calculate_residuals() ** 2)
+            / np.sum(
+                (self.curve_to_be_fit.y_data - np.mean(self.curve_to_be_fit.y_data))
+                ** 2
+            )
+        )
+        return Rsquared
+
 
 class FitFromPolynomial(GeneralFit):
     """
