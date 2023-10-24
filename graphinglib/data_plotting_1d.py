@@ -1266,10 +1266,10 @@ class Histogram:
         if lab and self.show_params:
             lab += (
                 " :\n"
-                + f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
+                + f"$\mu$ = {0 if abs(self.mean) < 1e-3 else self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
             )
         elif self.show_params:
-            lab = f"$\mu$ = {self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
+            lab = f"$\mu$ = {0 if abs(self.mean) < 1e-3 else self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
         self.label = lab
 
     def _normal_normalized(self, x: ArrayLike) -> ArrayLike:
