@@ -3,6 +3,7 @@ from typing import Literal, Optional
 from warnings import warn
 
 import matplotlib.pyplot as plt
+from cycler import cycler
 from matplotlib import rcParamsDefault
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection
@@ -10,7 +11,6 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.transforms import ScaledTranslation
-from cycler import cycler
 
 from .file_manager import FileLoader, FileUpdater
 from .graph_elements import GraphingException, Plottable, Text
@@ -790,6 +790,7 @@ class MultiFigure:
             legend_cols=legend_cols,
         )
         plt.savefig(file_name, bbox_inches="tight")
+        plt.close()
 
     def _fill_in_missing_params(self, element: Plottable) -> None:
         """

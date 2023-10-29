@@ -1,11 +1,11 @@
 from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
+from cycler import cycler
 from matplotlib import rcParamsDefault
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
-from cycler import cycler
 
 from .file_manager import FileLoader, FileUpdater
 from .graph_elements import GraphingException, Plottable
@@ -308,6 +308,7 @@ class Figure:
         self._prepare_figure(legend=legend)
         plt.tight_layout()
         plt.savefig(file_name, bbox_inches="tight")
+        plt.close()
 
     def _fill_in_missing_params(self, element: Plottable) -> list[str]:
         """
