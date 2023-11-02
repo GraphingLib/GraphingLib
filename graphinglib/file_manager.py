@@ -111,3 +111,49 @@ class FileUpdater:
                         user_info[key][subkey] = plain_info[key][subkey]
         with open(self._file_location, "w") as file:
             yaml.dump(user_info, file)
+
+
+def get_colors(figure_style: str = "plain") -> list[str]:
+    """
+    Returns a list of colors from the specified style file.
+
+    Parameters
+    ----------
+    figure_style : str
+        The name of the style to use.
+
+    Returns
+    -------
+    list[str]
+        A list of colors.
+    """
+    file_loader = FileLoader(figure_style)
+    style_info = file_loader.load()
+    colors = style_info["Figure"]["color_cycle"]
+    return colors
+
+
+def get_color(figure_style: str = "plain", color_number: int = 0) -> str:
+    """
+    Returns a color from the specified style file.
+
+    Parameters
+    ----------
+    figure_style : str
+        The name of the style to use.
+    color_number : int
+        The color cycle index of the color to return.
+
+    Returns
+    -------
+    str
+        A color.
+    """
+    colors = get_colors(figure_style)
+    try:
+        color = colors[color_number]
+    except IndexError:
+        raise IndexError(
+            f"There are only {len(colors)} colors in the {figure_style} style (use index 0 to {len(colors) - 1})."
+        )
+    return color

@@ -21,16 +21,17 @@ as Matplotlib. For further reference on those conventions, see the
 """
 
 from .data_plotting_1d import Curve, Histogram, Scatter
-from .data_plotting_2d import Heatmap, Contour, VectorField, Stream
+from .data_plotting_2d import Contour, Heatmap, Stream, VectorField
 from .figure import Figure
-from .multifigure import MultiFigure, SubFigure
+from .file_manager import get_color, get_colors
 from .fits import (
     FitFromExponential,
+    FitFromFunction,
     FitFromGaussian,
     FitFromLog,
     FitFromPolynomial,
     FitFromSine,
     FitFromSquareRoot,
-    FitFromFunction,
 )
-from .graph_elements import GraphingException, Hlines, Point, Text, Vlines, Table
+from .graph_elements import GraphingException, Hlines, Point, Table, Text, Vlines
+from .multifigure import MultiFigure, SubFigure
