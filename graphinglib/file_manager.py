@@ -142,7 +142,7 @@ def get_color(figure_style: str = "plain", color_number: int = 0) -> str:
     figure_style : str
         The name of the style to use.
     color_number : int
-        The index of the color to return.
+        The color cycle index of the color to return.
 
     Returns
     -------
