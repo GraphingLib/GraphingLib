@@ -70,3 +70,11 @@ class TestFigure(unittest.TestCase):
     def test_assign_figure_params_not_boxed(self):
         a_figure = Figure(figure_style="horrible", legend_is_boxed=False)
         self.assertFalse(a_figure.legend_is_boxed)
+
+    def test_element_defaults_are_reset(self):
+        self.testCurve.line_width = "default"
+        self.testFigure.add_element(self.testCurve)
+        self.testFigure._prepare_figure()
+        self.assertEqual(self.testCurve.line_width, "default")
+        self.testFigure._fill_in_missing_params(self.testCurve)
+        self.assertEqual(self.testCurve.line_width, 2)
