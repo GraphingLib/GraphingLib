@@ -155,7 +155,6 @@ class SubFigure:
         self.log_scale_y = log_scale_y
         self.show_grid = show_grid
         self.color_cycle = color_cycle
-        self.color_cycle = cycler(color=self.color_cycle)
         self.add_reference_label = add_reference_label
         self.remove_axes = remove_axes
         self.grid_is_set = False
@@ -192,6 +191,7 @@ class SubFigure:
         Prepares the :class:`~graphinglib.multifigure.SubFigure` to be displayed.
         """
         self._fill_in_missing_params(self)
+        self.color_cycle = cycler(color=self.color_cycle)
         self._axes = plt.subplot(
             grid.new_subplotspec(
                 (self.row_start, self.col_start),
@@ -576,7 +576,7 @@ class MultiFigure:
         new_SubFigure : :class:`~graphinglib.multifigure.SubFigure`
             :class:`~graphinglib.multifigure.SubFigure` to be added to the :class:`~graphinglib.multifigure.MultiFigure`.
         """
-        if row_start >= self.size[0] or col_start >= self.size[1]:
+        if row_start >= self.num_rows or col_start >= self.num_cols:
             raise GraphingException(
                 "The placement values must be inside the size of the MultiFigure."
             )
