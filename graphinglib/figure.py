@@ -130,16 +130,13 @@ class Figure:
         file_loader = FileLoader(figure_style)
         self.figure_style = figure_style
         self.default_params = file_loader.load()
-        self._get_defaults_init(
-            size,
-            legend_is_boxed,
-            ticks_are_in,
-            log_scale_x,
-            log_scale_y,
-            show_grid,
-            color_cycle,
-        )
-        self.color_cycle = cycler(color=self.color_cycle)
+        self.size = size
+        self.legend_is_boxed = legend_is_boxed
+        self.ticks_are_in = ticks_are_in
+        self.log_scale_x = log_scale_x
+        self.log_scale_y = log_scale_y
+        self.show_grid = show_grid
+        self.color_cycle = color_cycle
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
         self._handles = []
@@ -147,50 +144,6 @@ class Figure:
         self.y_axis_name = y_label
         self.x_lim = x_lim
         self.y_lim = y_lim
-        if self.show_grid:
-            self.set_grid()
-
-    def _get_defaults_init(
-        self,
-        size,
-        legend_is_boxed,
-        ticks_are_in,
-        log_scale_x,
-        log_scale_y,
-        show_grid,
-        color_cycle,
-    ) -> None:
-        params_values = {
-            "size": size,
-            "legend_is_boxed": legend_is_boxed,
-            "ticks_are_in": ticks_are_in,
-            "log_scale_x": log_scale_x,
-            "log_scale_y": log_scale_y,
-            "show_grid": show_grid,
-            "color_cycle": color_cycle,
-        }
-        tries = 0
-        while tries < 2:
-            try:
-                for attribute, value in params_values.items():
-                    setattr(
-                        self,
-                        attribute,
-                        value
-                        if value != "default"
-                        else self.default_params["Figure"][attribute],
-                    )
-                break  # Exit loop if successful
-            except KeyError as e:
-                tries += 1
-                if tries >= 2:
-                    raise GraphingException(
-                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n Figure.{e.args[0]}"
-                    )
-                file_updater = FileUpdater(self.figure_style)
-                file_updater.update()
-                file_loader = FileLoader(self.figure_style)
-                self.default_params = file_loader.load()
 
     def add_element(self, *elements: Plottable) -> None:
         """
@@ -213,6 +166,11 @@ class Figure:
         """
         Prepares the :class:`~graphinglib.figure.Figure` to be displayed.
         """
+        self._fill_in_missing_params(self)
+        self.color_cycle = cycler(color=self.color_cycle)
+        if self.show_grid:
+            self.set_grid()
+
         self._figure, self._axes = plt.subplots(figsize=self.size)
         try:
             self._axes.grid(

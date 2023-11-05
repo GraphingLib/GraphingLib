@@ -149,14 +149,12 @@ class SubFigure:
         file_loader = FileLoader(figure_style)
         self.figure_style = figure_style
         self.default_params = file_loader.load()
-        self._get_defaults_init(
-            legend_is_boxed,
-            ticks_are_in,
-            log_scale_x,
-            log_scale_y,
-            show_grid,
-            color_cycle,
-        )
+        self.legend_is_boxed = legend_is_boxed
+        self.ticks_are_in = ticks_are_in
+        self.log_scale_x = log_scale_x
+        self.log_scale_y = log_scale_y
+        self.show_grid = show_grid
+        self.color_cycle = color_cycle
         self.color_cycle = cycler(color=self.color_cycle)
         self.add_reference_label = add_reference_label
         self.remove_axes = remove_axes
@@ -164,46 +162,6 @@ class SubFigure:
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
         self._handles = []
-
-    def _get_defaults_init(
-        self,
-        legend_is_boxed,
-        ticks_are_in,
-        log_scale_x,
-        log_scale_y,
-        show_grid,
-        color_cycle,
-    ) -> None:
-        params_values = {
-            "legend_is_boxed": legend_is_boxed,
-            "ticks_are_in": ticks_are_in,
-            "log_scale_x": log_scale_x,
-            "log_scale_y": log_scale_y,
-            "show_grid": show_grid,
-            "color_cycle": color_cycle,
-        }
-        tries = 0
-        while tries < 2:
-            try:
-                for attribute, value in params_values.items():
-                    setattr(
-                        self,
-                        attribute,
-                        value
-                        if value != "default"
-                        else self.default_params["Subfigure"][attribute],
-                    )
-                break  # Exit loop if successful
-            except KeyError as e:
-                tries += 1
-                if tries >= 2:
-                    raise GraphingException(
-                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n Figure.{e.args[0]}"
-                    )
-                file_updater = FileUpdater(self.figure_style)
-                file_updater.update()
-                file_loader = FileLoader(self.figure_style)
-                self.default_params = file_loader.load()
 
     def add_element(self, *elements: Plottable) -> None:
         """
@@ -233,6 +191,7 @@ class SubFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.SubFigure` to be displayed.
         """
+        self._fill_in_missing_params(self)
         self._axes = plt.subplot(
             grid.new_subplotspec(
                 (self.row_start, self.col_start),
@@ -542,7 +501,8 @@ class MultiFigure:
         self.figure_style = figure_style
         file_loader = FileLoader(figure_style)
         self.default_params = file_loader.load()
-        self._get_defaults_init(legend_is_boxed, size)
+        self.legend_is_boxed = legend_is_boxed
+        self.size = size
         if use_latex:
             plt.rcParams.update(
                 {
@@ -555,34 +515,6 @@ class MultiFigure:
             plt.rcParams.update(rcParamsDefault)
             plt.rcParams["font.size"] = font_size
         self._SubFigures = []
-
-    def _get_defaults_init(self, legend_is_boxed, size) -> None:
-        params_values = {
-            "legend_is_boxed": legend_is_boxed,
-            "size": size,
-        }
-        tries = 0
-        while tries < 2:
-            try:
-                for attribute, value in params_values.items():
-                    setattr(
-                        self,
-                        attribute,
-                        value
-                        if value != "default"
-                        else self.default_params["Multifigure"][attribute],
-                    )
-                break  # Exit loop if successful
-            except KeyError as e:
-                tries += 1
-                if tries >= 2:
-                    raise GraphingException(
-                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n Figure.{e.args[0]}"
-                    )
-                file_updater = FileUpdater(self.figure_style)
-                file_updater.update()
-                file_loader = FileLoader(self.figure_style)
-                self.default_params = file_loader.load()
 
     def add_SubFigure(
         self,
@@ -681,6 +613,7 @@ class MultiFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.MultiFigure` to be displayed.
         """
+        self._fill_in_missing_params(self)
         self._figure = plt.figure(layout="constrained", figsize=self.size)
         MultiFigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
         if self.reflabel_loc == "outside":

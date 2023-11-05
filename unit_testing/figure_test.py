@@ -63,6 +63,8 @@ class TestFigure(unittest.TestCase):
 
     def test_assign_figure_params_horrible(self):
         a_figure = Figure(figure_style="horrible")
+        a_figure.add_element(self.testCurve)
+        a_figure._prepare_figure()
         self.assertListEqual(list(a_figure.size), [10, 7])
 
     def test_assign_figure_params_not_boxed(self):
