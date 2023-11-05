@@ -1,6 +1,5 @@
 import unittest
 
-from matplotlib.pyplot import Axes
 from numpy import linspace, pi, sin
 
 from graphinglib.data_plotting_1d import Curve
