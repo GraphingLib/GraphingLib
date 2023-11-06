@@ -6,6 +6,7 @@ Curve:
   errorbars_color: "same as curve"
   errorbars_line_width: "same as curve"
   cap_thickness: "same as curve"
+  fill_under_color: "same as curve"
 
 Scatter:
   face_color: 
