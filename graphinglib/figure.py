@@ -127,9 +127,7 @@ class Figure:
         else:
             plt.rcParams.update(rcParamsDefault)
             plt.rcParams["font.size"] = font_size
-        file_loader = FileLoader(figure_style)
         self.figure_style = figure_style
-        self.default_params = file_loader.load()
         self.size = size
         self.legend_is_boxed = legend_is_boxed
         self.ticks_are_in = ticks_are_in
@@ -144,6 +142,10 @@ class Figure:
         self.y_axis_name = y_label
         self.x_lim = x_lim
         self.y_lim = y_lim
+        self.grid_line_style = "default"
+        self.grid_line_width = "default"
+        self.grid_color = "default"
+        self.grid_alpha = "default"
 
     def add_element(self, *elements: Plottable) -> None:
         """
@@ -156,23 +158,18 @@ class Figure:
         """
         for element in elements:
             self._elements.append(element)
-            try:
-                if element.label is not None:
-                    self._labels.append(element.label)
-            except AttributeError:
-                pass
 
     def _prepare_figure(self, legend: bool = True) -> None:
         """
         Prepares the :class:`~graphinglib.figure.Figure` to be displayed.
         """
-        self._fill_in_missing_params(self)
-        self.color_cycle = cycler(color=self.color_cycle)
-        if self.show_grid:
-            self.set_grid()
+        file_loader = FileLoader(self.figure_style)
+        self.default_params = file_loader.load()
+        figure_params_to_reset = self._fill_in_missing_params(self)
 
         self._figure, self._axes = plt.subplots(figsize=self.size)
-        try:
+
+        if self.show_grid:
             self._axes.grid(
                 which="major",
                 linestyle=self.grid_line_style,
@@ -180,8 +177,8 @@ class Figure:
                 color=self.grid_color,
                 alpha=self.grid_alpha,
             )
-        except:
-            pass
+            self.set_grid()
+        self.color_cycle = cycler(color=self.color_cycle)
         self._axes.set_prop_cycle(self.color_cycle)
         self._axes.set_xlabel(self.x_axis_name)
         self._axes.set_ylabel(self.y_axis_name)
@@ -195,8 +192,6 @@ class Figure:
             self._axes.set_yscale("log")
         if self.ticks_are_in:
             self._axes.tick_params(axis="both", direction="in", which="both")
-        if not self._labels:
-            legend = False
         if self._elements:
             z_order = 0
             for element in self._elements:
@@ -206,9 +201,12 @@ class Figure:
                 try:
                     if element.label is not None:
                         self._handles.append(element.handle)
+                        self._labels.append(element.label)
                 except AttributeError:
                     continue
                 z_order += 2
+            if not self._labels:
+                legend = False
             if legend:
                 try:
                     self._axes.legend(
@@ -237,6 +235,9 @@ class Figure:
                     )
         else:
             raise GraphingException("No curves to be plotted!")
+        self._reset_params_to_default(self, figure_params_to_reset)
+        self._handles = []
+        self._labels = []
 
     def display(self, legend: bool = True) -> None:
         """
