@@ -496,6 +496,10 @@ class MultiFigure:
             Wheter or not to display the legend inside a box.
             Default depends on the ``figure_style`` configuration.
         """
+        if type(num_rows) != int or type(num_cols) != int:
+            raise TypeError("The number of rows and columns must be integers.")
+        if num_rows < 1 or num_cols < 1:
+            raise ValueError("The number of rows and columns must be greater than 0.")
         self.num_rows = num_rows
         self.num_cols = num_cols
         self.title = title
@@ -577,12 +581,19 @@ class MultiFigure:
         new_SubFigure : :class:`~graphinglib.multifigure.SubFigure`
             :class:`~graphinglib.multifigure.SubFigure` to be added to the :class:`~graphinglib.multifigure.MultiFigure`.
         """
-        if row_start >= self.num_rows or col_start >= self.num_cols:
-            raise GraphingException(
-                "The placement values must be inside the size of the MultiFigure."
-            )
+
+        if type(row_start) != int or type(col_start) != int:
+            raise TypeError("The placement values must be integers.")
         if row_start < 0 or col_start < 0:
-            raise GraphingException("The placement values cannot be negative.")
+            raise ValueError("The placement values cannot be negative.")
+        if type(row_span) != int or type(col_span) != int:
+            raise TypeError("The span values must be integers.")
+        if row_span < 1 or col_span < 1:
+            raise ValueError("The span values must be greater than 0.")
+        if row_start + row_span > self.num_rows or col_start + col_span > self.num_cols:
+            raise ValueError(
+                "The placement values and span values must be inside the size of the MultiFigure."
+            )
         new_SubFigure = SubFigure(
             row_start,
             col_start,
