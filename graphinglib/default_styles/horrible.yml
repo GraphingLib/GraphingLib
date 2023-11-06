@@ -6,6 +6,7 @@ Curve:
   errorbars_color: "same as curve"
   errorbars_line_width: "same as curve"
   cap_thickness: "same as curve"
+  fill_under_color: "same as curve"
 
 Scatter:
   face_color: 
@@ -49,11 +50,11 @@ Figure:
   grid_alpha: 0.3
   color_cycle: ["#a1d0ff", "#730127", "#789146", "#8800ff", "#00b3a7", "#dbc00f", "#8a8a8a", "#28301c"]
 
-Multifigure:
+MultiFigure:
   size: [10, 7]
   legend_is_boxed: True
 
-Subfigure:
+SubFigure:
   legend_is_boxed: True
   ticks_are_in: True
   log_scale_x: False

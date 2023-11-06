@@ -146,64 +146,22 @@ class SubFigure:
         self.y_lim = y_lim
         self.row_start, self.col_start = row_start, col_start
         self.row_span, self.col_span = row_span, col_span
-        file_loader = FileLoader(figure_style)
         self.figure_style = figure_style
-        self.default_params = file_loader.load()
-        self._get_defaults_init(
-            legend_is_boxed,
-            ticks_are_in,
-            log_scale_x,
-            log_scale_y,
-            show_grid,
-            color_cycle,
-        )
-        self.color_cycle = cycler(color=self.color_cycle)
+        self.legend_is_boxed = legend_is_boxed
+        self.ticks_are_in = ticks_are_in
+        self.log_scale_x = log_scale_x
+        self.log_scale_y = log_scale_y
+        self.show_grid = show_grid
+        self.color_cycle = color_cycle
         self.add_reference_label = add_reference_label
         self.remove_axes = remove_axes
-        self.grid_is_set = False
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
         self._handles = []
-
-    def _get_defaults_init(
-        self,
-        legend_is_boxed,
-        ticks_are_in,
-        log_scale_x,
-        log_scale_y,
-        show_grid,
-        color_cycle,
-    ) -> None:
-        params_values = {
-            "legend_is_boxed": legend_is_boxed,
-            "ticks_are_in": ticks_are_in,
-            "log_scale_x": log_scale_x,
-            "log_scale_y": log_scale_y,
-            "show_grid": show_grid,
-            "color_cycle": color_cycle,
-        }
-        tries = 0
-        while tries < 2:
-            try:
-                for attribute, value in params_values.items():
-                    setattr(
-                        self,
-                        attribute,
-                        value
-                        if value != "default"
-                        else self.default_params["Subfigure"][attribute],
-                    )
-                break  # Exit loop if successful
-            except KeyError as e:
-                tries += 1
-                if tries >= 2:
-                    raise GraphingException(
-                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n Figure.{e.args[0]}"
-                    )
-                file_updater = FileUpdater(self.figure_style)
-                file_updater.update()
-                file_loader = FileLoader(self.figure_style)
-                self.default_params = file_loader.load()
+        self.grid_line_style = "default"
+        self.grid_line_width = "default"
+        self.grid_color = "default"
+        self.grid_alpha = "default"
 
     def add_element(self, *elements: Plottable) -> None:
         """
@@ -217,11 +175,6 @@ class SubFigure:
         """
         for element in elements:
             self._elements.append(element)
-            try:
-                if element.label is not None:
-                    self._labels.append(element.label)
-            except AttributeError:
-                pass
 
     def _prepare_SubFigure(
         self,
@@ -233,6 +186,9 @@ class SubFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.SubFigure` to be displayed.
         """
+        file_loader = FileLoader(self.figure_style)
+        self.default_params = file_loader.load()
+        figure_params_to_reset = self._fill_in_missing_params(self)
         self._axes = plt.subplot(
             grid.new_subplotspec(
                 (self.row_start, self.col_start),
@@ -247,6 +203,15 @@ class SubFigure:
                 reference_label,
                 transform=self._axes.transAxes + transformation,
             )
+        if self.show_grid:
+            self._axes.grid(
+                which="major",
+                linestyle=self.grid_line_style,
+                linewidth=self.grid_line_width,
+                color=self.grid_color,
+                alpha=self.grid_alpha,
+            )
+        self.color_cycle = cycler(color=self.color_cycle)
         self._axes.set_prop_cycle(self.color_cycle)
         self._axes.set_xlabel(self.x_axis_name)
         self._axes.set_ylabel(self.y_axis_name)
@@ -267,16 +232,6 @@ class SubFigure:
                     self.placement
                 )
             )
-        if self.grid_is_set:
-            self._axes.grid(
-                which="major",
-                linestyle=self.grid_line_style,
-                linewidth=self.grid_line_width,
-                color=self.grid_color,
-                alpha=self.grid_alpha,
-            )
-        if not self._labels:
-            legend = False
         if self._elements:
             z_order = 0
             for element in self._elements:
@@ -286,9 +241,12 @@ class SubFigure:
                 try:
                     if element.label is not None:
                         self._handles.append(element.handle)
+                        self._labels.append(element.label)
                 except AttributeError:
                     continue
                 z_order += 2
+            if not self._labels:
+                legend = False
             if legend:
                 try:
                     self._axes.legend(
@@ -317,7 +275,10 @@ class SubFigure:
                     )
         else:
             raise GraphingException("No curves to be plotted!")
-        return self._labels, self._handles
+        self._reset_params_to_default(self, figure_params_to_reset)
+        temp_labels, temp_handles = self._labels, self._handles
+        self._labels, self._handles = [], []
+        return temp_labels, temp_handles
 
     def _fill_in_missing_params(self, element: Plottable) -> list[str]:
         """
@@ -356,6 +317,7 @@ class SubFigure:
                         f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n {object_type}.{e.args[0]}"
                     )
                 file_updater = FileUpdater(self.figure_style)
+                print(object_type, e.args[0])
                 file_updater.update()
                 file_loader = FileLoader(self.figure_style)
                 self.default_params = file_loader.load()
@@ -534,15 +496,18 @@ class MultiFigure:
             Wheter or not to display the legend inside a box.
             Default depends on the ``figure_style`` configuration.
         """
+        if type(num_rows) != int or type(num_cols) != int:
+            raise TypeError("The number of rows and columns must be integers.")
+        if num_rows < 1 or num_cols < 1:
+            raise ValueError("The number of rows and columns must be greater than 0.")
         self.num_rows = num_rows
         self.num_cols = num_cols
         self.title = title
         self.reference_labels = reference_labels
         self.reflabel_loc = reflabel_loc
         self.figure_style = figure_style
-        file_loader = FileLoader(figure_style)
-        self.default_params = file_loader.load()
-        self._get_defaults_init(legend_is_boxed, size)
+        self.legend_is_boxed = legend_is_boxed
+        self.size = size
         if use_latex:
             plt.rcParams.update(
                 {
@@ -555,34 +520,6 @@ class MultiFigure:
             plt.rcParams.update(rcParamsDefault)
             plt.rcParams["font.size"] = font_size
         self._SubFigures = []
-
-    def _get_defaults_init(self, legend_is_boxed, size) -> None:
-        params_values = {
-            "legend_is_boxed": legend_is_boxed,
-            "size": size,
-        }
-        tries = 0
-        while tries < 2:
-            try:
-                for attribute, value in params_values.items():
-                    setattr(
-                        self,
-                        attribute,
-                        value
-                        if value != "default"
-                        else self.default_params["Multifigure"][attribute],
-                    )
-                break  # Exit loop if successful
-            except KeyError as e:
-                tries += 1
-                if tries >= 2:
-                    raise GraphingException(
-                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n Figure.{e.args[0]}"
-                    )
-                file_updater = FileUpdater(self.figure_style)
-                file_updater.update()
-                file_loader = FileLoader(self.figure_style)
-                self.default_params = file_loader.load()
 
     def add_SubFigure(
         self,
@@ -644,12 +581,19 @@ class MultiFigure:
         new_SubFigure : :class:`~graphinglib.multifigure.SubFigure`
             :class:`~graphinglib.multifigure.SubFigure` to be added to the :class:`~graphinglib.multifigure.MultiFigure`.
         """
-        if row_start >= self.size[0] or col_start >= self.size[1]:
-            raise GraphingException(
-                "The placement values must be inside the size of the MultiFigure."
-            )
+
+        if type(row_start) != int or type(col_start) != int:
+            raise TypeError("The placement values must be integers.")
         if row_start < 0 or col_start < 0:
-            raise GraphingException("The placement values cannot be negative.")
+            raise ValueError("The placement values cannot be negative.")
+        if type(row_span) != int or type(col_span) != int:
+            raise TypeError("The span values must be integers.")
+        if row_span < 1 or col_span < 1:
+            raise ValueError("The span values must be greater than 0.")
+        if row_start + row_span > self.num_rows or col_start + col_span > self.num_cols:
+            raise ValueError(
+                "The placement values and span values must be inside the size of the MultiFigure."
+            )
         new_SubFigure = SubFigure(
             row_start,
             col_start,
@@ -681,6 +625,9 @@ class MultiFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.MultiFigure` to be displayed.
         """
+        file_loader = FileLoader(self.figure_style)
+        self.default_params = file_loader.load()
+        multi_figure_params_to_reset = self._fill_in_missing_params(self)
         self._figure = plt.figure(layout="constrained", figsize=self.size)
         MultiFigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
         if self.reflabel_loc == "outside":
@@ -692,6 +639,7 @@ class MultiFigure:
         SubFigures_legend = True if not general_legend else False
         labels, handles = [], []
         for i, SubFigure in enumerate(self._SubFigures):
+            SubFigure.figure_style = self.figure_style
             SubFigure_labels, SubFigure_handles = SubFigure._prepare_SubFigure(
                 MultiFigure_grid,
                 transformation=trans,
@@ -731,6 +679,7 @@ class MultiFigure:
                     ncols=legend_cols,
                 )
         self._figure.suptitle(self.title)
+        self._reset_params_to_default(self, multi_figure_params_to_reset)
 
     def display(
         self,
@@ -792,13 +741,15 @@ class MultiFigure:
         plt.savefig(file_name, bbox_inches="tight")
         plt.close()
 
-    def _fill_in_missing_params(self, element: Plottable) -> None:
+    def _fill_in_missing_params(self, element: Plottable) -> list[str]:
         """
         Fills in the missing parameters from the specified ``figure_style``.
         """
+        params_to_reset = []
         object_type = type(element).__name__
         for property, value in vars(element).items():
             if (type(value) == str) and (value == "default"):
+                params_to_reset.append(property)
                 if self.default_params[object_type][property] == "same as curve":
                     element.__dict__["errorbars_color"] = self.default_params[
                         object_type
@@ -817,3 +768,13 @@ class MultiFigure:
                     element.__dict__[property] = self.default_params[object_type][
                         property
                     ]
+        return params_to_reset
+
+    def _reset_params_to_default(
+        self, element: Plottable, params_to_reset: list[str]
+    ) -> None:
+        """
+        Resets the parameters that were set to default in the _fill_in_missing_params method.
+        """
+        for param in params_to_reset:
+            setattr(element, param, "default")

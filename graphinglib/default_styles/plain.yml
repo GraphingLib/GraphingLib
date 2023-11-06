@@ -50,11 +50,11 @@ Figure:
   grid_alpha: 0.5
   color_cycle: ["#3e82a0", "#edb73b", "#b9503b", "#8aba4e", "#695178", "#ed893b", "#34a893", "#616161"]
 
-Multifigure:
+MultiFigure:
   size: [6.4, 4.8]
   legend_is_boxed: False
 
-Subfigure:
+SubFigure:
   legend_is_boxed: False
   ticks_are_in: True
   log_scale_x: False
