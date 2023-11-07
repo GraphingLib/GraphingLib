@@ -39,7 +39,6 @@ Vlines:
 
 Figure:
   size: [10, 7]
-  legend_is_boxed: True
   log_scale_x: False
   log_scale_y: False
   show_grid: True
@@ -47,18 +46,11 @@ Figure:
 
 MultiFigure:
   size: [10, 7]
-  legend_is_boxed: True
 
 SubFigure:
-  legend_is_boxed: True
-  ticks_are_in: True
   log_scale_x: False
   log_scale_y: False
   show_grid: True
-  grid_line_style: "-."
-  grid_line_width: 5
-  grid_color: "orange"
-  grid_alpha: 0.3
   color_cycle: ["#a1d0ff", "#730127", "#789146", "#8800ff", "#00b3a7", "#dbc00f", "#8a8a8a", "#28301c"]
 
 Point:
@@ -179,3 +171,7 @@ rc_params:
   text.color: "black"
   text.usetex: False
   lines.solid_capstyle: "round"
+  grid.linestyle: "-."
+  grid.linewidth: 5
+  grid.color: "orange"
+  grid.alpha: 0.3

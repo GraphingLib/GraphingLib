@@ -61,12 +61,6 @@ class SubFigure:
     show_grid : bool
         Wheter or not to show the grid.
         Default depends on the ``figure_style`` configuration.
-    legend_is_boxed : bool
-        Wheter or not to display the legend inside a box.
-        Default depends on the ``figure_style`` configuration.
-    ticks_are_in : bool
-        Wheter or not to display the axis ticks inside the axis.
-        Default depends on the ``figure_style`` configuration.
     remove_axes : bool
         Whether or not to show the axes. Useful for adding tables or text to
         the subfigure. Defaults to ``False``.
@@ -88,8 +82,6 @@ class SubFigure:
         log_scale_x: bool | Literal["default"] = "default",
         log_scale_y: bool | Literal["default"] = "default",
         show_grid: bool | Literal["default"] = "default",
-        legend_is_boxed: bool | Literal["default"] = "default",
-        ticks_are_in: bool | Literal["default"] = "default",
         remove_axes: bool = False,
     ):
         """
@@ -130,12 +122,6 @@ class SubFigure:
         show_grid : bool
             Wheter or not to show the grid.
             Default depends on the ``figure_style`` configuration.
-        legend_is_boxed : bool
-            Wheter or not to display the legend inside a box.
-            Default depends on the ``figure_style`` configuration.
-        ticks_are_in : bool
-            Wheter or not to display the axis ticks inside the axis.
-            Default depends on the ``figure_style`` configuration.
         remove_axes : bool
             Whether or not to show the axes. Useful for adding tables or text to
             the subfigure. Defaults to ``False``.
@@ -147,8 +133,6 @@ class SubFigure:
         self.row_start, self.col_start = row_start, col_start
         self.row_span, self.col_span = row_span, col_span
         self.figure_style = figure_style
-        self.legend_is_boxed = legend_is_boxed
-        self.ticks_are_in = ticks_are_in
         self.log_scale_x = log_scale_x
         self.log_scale_y = log_scale_y
         self.show_grid = show_grid
@@ -158,10 +142,6 @@ class SubFigure:
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
         self._handles = []
-        self.grid_line_style = "default"
-        self.grid_line_width = "default"
-        self.grid_color = "default"
-        self.grid_alpha = "default"
 
     def add_element(self, *elements: Plottable) -> None:
         """
@@ -204,13 +184,9 @@ class SubFigure:
                 transform=self._axes.transAxes + transformation,
             )
         if self.show_grid:
-            self._axes.grid(
-                which="major",
-                linestyle=self.grid_line_style,
-                linewidth=self.grid_line_width,
-                color=self.grid_color,
-                alpha=self.grid_alpha,
-            )
+            self._axes.grid(True)
+        else:
+            self._axes.grid(False)
         self.color_cycle = cycler(color=self.color_cycle)
         self._axes.set_prop_cycle(self.color_cycle)
         self._axes.set_xlabel(self.x_axis_name)
@@ -223,8 +199,6 @@ class SubFigure:
             self._axes.set_xscale("log")
         if self.log_scale_y:
             self._axes.set_yscale("log")
-        if self.ticks_are_in:
-            self._axes.tick_params(axis="both", direction="in", which="both")
         if self.remove_axes:
             self._axes.axis("off")
             warn(
@@ -258,7 +232,6 @@ class SubFigure:
                             LineCollection: HandlerMultipleLines(),
                             VerticalLineCollection: HandlerMultipleVerticalLines(),
                         },
-                        frameon=self.legend_is_boxed,
                         draggable=True,
                     )
                 except:
@@ -271,7 +244,6 @@ class SubFigure:
                             LineCollection: HandlerMultipleLines(),
                             VerticalLineCollection: HandlerMultipleVerticalLines(),
                         },
-                        frameon=self.legend_is_boxed,
                     )
         else:
             raise GraphingException("No curves to be plotted!")
@@ -332,62 +304,6 @@ class SubFigure:
         for param in params_to_reset:
             setattr(element, param, "default")
 
-    def set_grid(
-        self,
-        line_width: float | Literal["default"] = "default",
-        line_style: str = "default",
-        color: str = "default",
-        alpha: float | Literal["default"] = "default",
-    ) -> None:
-        """
-        Sets the grid in the :class:`~graphinglib.multifigure.SubFigure`.
-
-        Parameters
-        ----------
-        line_width : float
-            Width of the lines forming the grid.
-            Default depends on the ``figure_style`` configuration.
-        line_style : str
-            Line style of the lines forming the grid.
-            Default depends on the ``figure_style`` configuration.
-        color : str
-            Color of the lines forming the grid.
-            Default depends on the ``figure_style`` configuration.
-        alpha : float
-            Opacity of the lines forming the grid.
-            Default depends on the ``figure_style`` configuration.
-        """
-        params = {
-            "grid_line_style": line_style,
-            "grid_line_width": line_width,
-            "grid_color": color,
-            "grid_alpha": alpha,
-        }
-        tries = 0
-
-        while tries < 2:
-            try:
-                for attribute, value in params.items():
-                    setattr(
-                        self,
-                        attribute,
-                        value
-                        if value != "default"
-                        else self.default_params["Subfigure"][attribute],
-                    )
-                self.grid_is_set = True
-                break  # Exit loop if successful
-            except KeyError as e:
-                tries += 1
-                if tries >= 2:
-                    raise GraphingException(
-                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n Figure.{e.args[0]}"
-                    )
-                file_updater = FileUpdater(self.figure_style)
-                file_updater.update()
-                file_loader = FileLoader(self.figure_style)
-                self.default_params = file_loader.load()
-
 
 class MultiFigure:
     """
@@ -424,17 +340,7 @@ class MultiFigure:
         Defaults to "outside".
     figure_style : str
         The figure style to use for the figure.
-    use_latex : bool
-        Wheter or not to use LaTeX to render text and math symbols in the figure.
-
-        .. warning:: Requires a LaTeX distribution.
-
-    font_size : int
-        Font size used to render the text and math symbols in the figure.
-        Defaults to 12.
-    legend_is_boxed : bool
-        Wheter or not to display the legend inside a box.
-        Default depends on the ``figure_style`` configuration.
+        Defaults to "plain".
     """
 
     def __init__(
@@ -446,9 +352,6 @@ class MultiFigure:
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
         figure_style: str = "plain",
-        use_latex: bool = False,
-        font_size: int = 12,
-        legend_is_boxed: bool | Literal["default"] = "default",
     ) -> None:
         """
         This class implements the "canvas" on which multiple plots are displayed.
@@ -484,17 +387,7 @@ class MultiFigure:
             Defaults to "outside".
         figure_style : str
             The figure style to use for the figure.
-        use_latex : bool
-            Wheter or not to use LaTeX to render text and math symbols in the figure.
-
-            .. warning:: Requires a LaTeX distribution.
-
-        font_size : int
-            Font size used to render the text and math symbols in the figure.
-            Defaults to 12.
-        legend_is_boxed : bool
-            Wheter or not to display the legend inside a box.
-            Default depends on the ``figure_style`` configuration.
+            Defaults to "plain".
         """
         if type(num_rows) != int or type(num_cols) != int:
             raise TypeError("The number of rows and columns must be integers.")
@@ -506,20 +399,9 @@ class MultiFigure:
         self.reference_labels = reference_labels
         self.reflabel_loc = reflabel_loc
         self.figure_style = figure_style
-        self.legend_is_boxed = legend_is_boxed
         self.size = size
-        if use_latex:
-            plt.rcParams.update(
-                {
-                    "text.usetex": True,
-                    "font.family": "serif",
-                    "font.size": font_size + 3,
-                }
-            )
-        else:
-            plt.rcParams.update(rcParamsDefault)
-            plt.rcParams["font.size"] = font_size
         self._SubFigures = []
+        self._rc_dict = {}
 
     def add_SubFigure(
         self,
@@ -535,8 +417,6 @@ class MultiFigure:
         log_scale_y: bool | Literal["default"] = "default",
         color_cycle: list[str] | Literal["default"] = "default",
         show_grid: bool | Literal["default"] = "default",
-        legend_is_boxed: bool | Literal["default"] = "default",
-        ticks_are_in: bool | Literal["default"] = "default",
         remove_axes: bool = False,
     ) -> SubFigure:
         """
@@ -565,12 +445,6 @@ class MultiFigure:
             Default depends on the ``figure_style`` configuration.
         show_grid : bool
             Wheter or not to show the grid.
-            Default depends on the ``figure_style`` configuration.
-        legend_is_boxed : bool
-            Wheter or not to display the legend inside a box.
-            Default depends on the ``figure_style`` configuration.
-        ticks_are_in : bool
-            Wheter or not to display the axis ticks inside the axis.
             Default depends on the ``figure_style`` configuration.
         remove_axes : bool
             Whether or not to show the axes. Useful for adding tables or text to
@@ -609,8 +483,6 @@ class MultiFigure:
             log_scale_x,
             log_scale_y,
             show_grid,
-            legend_is_boxed,
-            ticks_are_in,
             remove_axes,
         )
         self._SubFigures.append(new_SubFigure)
@@ -628,15 +500,20 @@ class MultiFigure:
         file_loader = FileLoader(self.figure_style)
         self.default_params = file_loader.load()
         multi_figure_params_to_reset = self._fill_in_missing_params(self)
+
+        self._fill_in_rc_params()
         self._figure = plt.figure(layout="constrained", figsize=self.size)
         MultiFigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
+
         if self.reflabel_loc == "outside":
             trans = ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
         elif self.reflabel_loc == "inside":
             trans = ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
         else:
             raise ValueError("Invalid location parameter")
+
         SubFigures_legend = True if not general_legend else False
+
         labels, handles = [], []
         for i, SubFigure in enumerate(self._SubFigures):
             SubFigure.figure_style = self.figure_style
@@ -659,7 +536,6 @@ class MultiFigure:
                         LineCollection: HandlerMultipleLines(),
                         VerticalLineCollection: HandlerMultipleVerticalLines(),
                     },
-                    frameon=self.legend_is_boxed,
                     draggable=True,
                     loc=legend_loc,
                     ncols=legend_cols,
@@ -674,7 +550,6 @@ class MultiFigure:
                         LineCollection: HandlerMultipleLines(),
                         VerticalLineCollection: HandlerMultipleVerticalLines(),
                     },
-                    frameon=self.legend_is_boxed,
                     loc=legend_loc,
                     ncols=legend_cols,
                 )
@@ -778,3 +653,31 @@ class MultiFigure:
         """
         for param in params_to_reset:
             setattr(element, param, "default")
+
+    def customize_visual_style(
+        self,
+        rc_params_dict: dict[str, str | float] | Literal["default"] = "default",
+    ):
+        """
+        Customize the visual style of the :class:`~graphinglib.figure.Figure`.
+
+        Any rc parameter that is not specified in the dictionary will be set to the default value for the specified ``figure_style``.
+
+        Parameters
+        ----------
+        rc_params_dict : dict[str, str | float]
+            Dictionary of rc parameters to update.
+            Defaults depends on the ``figure_style`` configuration.
+        """
+        self._rc_dict = rc_params_dict
+
+    def _fill_in_rc_params(self):
+        """
+        Fills in the missing rc parameters from the specified ``figure_style``.
+        """
+        params = self.default_params["rc_params"]
+        for property, value in params.items():
+            # add to rc_dict if not already in there
+            if property not in self._rc_dict:
+                self._rc_dict[property] = value
+        plt.rcParams.update(self._rc_dict)
