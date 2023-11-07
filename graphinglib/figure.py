@@ -6,6 +6,7 @@ from matplotlib import rcParamsDefault
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
+from matplotlib.pylab import f
 
 from .file_manager import FileLoader, FileUpdater
 from .graph_elements import GraphingException, Plottable
@@ -142,10 +143,8 @@ class Figure:
         self.y_axis_name = y_label
         self.x_lim = x_lim
         self.y_lim = y_lim
-        self.grid_line_style = "default"
-        self.grid_line_width = "default"
-        self.grid_color = "default"
-        self.grid_alpha = "default"
+        self.customize_visual_style_called = False
+        self._rc_dict = {}
 
     def add_element(self, *elements: Plottable) -> None:
         """
@@ -167,17 +166,11 @@ class Figure:
         self.default_params = file_loader.load()
         figure_params_to_reset = self._fill_in_missing_params(self)
 
+        if not self.customize_visual_style_called:
+            self.customize_visual_style()
+        plt.rcParams.update(self._rc_dict)
         self._figure, self._axes = plt.subplots(figsize=self.size)
 
-        if self.show_grid:
-            self._axes.grid(
-                which="major",
-                linestyle=self.grid_line_style,
-                linewidth=self.grid_line_width,
-                color=self.grid_color,
-                alpha=self.grid_alpha,
-            )
-            self.set_grid()
         self.color_cycle = cycler(color=self.color_cycle)
         self._axes.set_prop_cycle(self.color_cycle)
         self._axes.set_xlabel(self.x_axis_name)
@@ -324,47 +317,96 @@ class Figure:
                 "default",
             )
 
-    def set_grid(
+    def customize_visual_style(
         self,
-        line_width: float | Literal["default"] = "default",
-        line_style: str = "default",
-        color: str = "default",
-        alpha: float | Literal["default"] = "default",
-    ) -> None:
+        figure_face_color: str = "default",
+        axes_face_color: str = "default",
+        axes_edge_color: str = "default",
+        axes_label_color: str = "default",
+        axes_line_width: float | Literal["default"] = "default",
+        xtick_color: str = "default",
+        ytick_color: str = "default",
+        legend_face_color: str = "default",
+        legend_edge_color: str = "default",
+        legend_text_color: str = "default",
+        grid_line_width: float | Literal["default"] = "default",
+        grid_line_style: str = "default",
+        grid_color: str = "default",
+        grid_alpha: float | Literal["default"] = "default",
+    ):
         """
-        Sets the grid in the :class:`~graphinglib.figure.Figure`.
+        Sets the colors of the elements in the :class:`~graphinglib.figure.Figure`.
 
         Parameters
         ----------
-        line_width : float
+        figure_face_color : str
+            Color of the figure face.
+            Default depends on the ``figure_style`` configuration.
+        axes_face_color : str
+            Color of the axes face.
+            Default depends on the ``figure_style`` configuration.
+        axes_edge_color : str
+            Color of the axes edge.
+            Default depends on the ``figure_style`` configuration.
+        axes_label_color : str
+            Color of the axes labels.
+            Default depends on the ``figure_style`` configuration.
+        axes_line_width : float
+            Width of the axes lines.
+            Default depends on the ``figure_style`` configuration.
+        xtick_color : str
+            Color of the x-axis ticks.
+            Default depends on the ``figure_style`` configuration.
+        ytick_color : str
+            Color of the y-axis ticks.
+            Default depends on the ``figure_style`` configuration.
+        legend_face_color : str
+            Color of the legend face.
+            Default depends on the ``figure_style`` configuration.
+        legend_edge_color : str
+            Color of the legend edge.
+            Default depends on the ``figure_style`` configuration.
+        legend_text_color : str
+            Color of the legend text.
+            Default depends on the ``figure_style`` configuration.
+        grid_line_width : float
             Width of the lines forming the grid.
             Default depends on the ``figure_style`` configuration.
-        line_style : str
+        grid_line_style : str
             Line style of the lines forming the grid.
             Default depends on the ``figure_style`` configuration.
-        color : str
+        grid_color : str
             Color of the lines forming the grid.
             Default depends on the ``figure_style`` configuration.
-        alpha : float
+        grid_alpha : float
             Opacity of the lines forming the grid.
             Default depends on the ``figure_style`` configuration.
         """
-        grid_params = {
-            "grid_line_width": line_width,
-            "grid_line_style": line_style,
-            "grid_color": color,
-            "grid_alpha": alpha,
+        figure_params = {
+            "figure_face_color": figure_face_color,
+            "axes_face_color": axes_face_color,
+            "axes_edge_color": axes_edge_color,
+            "axes_label_color": axes_label_color,
+            "axes_line_width": axes_line_width,
+            "xtick_color": xtick_color,
+            "ytick_color": ytick_color,
+            "legend_face_color": legend_face_color,
+            "legend_edge_color": legend_edge_color,
+            "legend_text_color": legend_text_color,
+            "grid_line_width": grid_line_width,
+            "grid_line_style": grid_line_style,
+            "grid_color": grid_color,
+            "grid_alpha": grid_alpha,
         }
         tries = 0
         while tries < 2:
             try:
-                for param, value in grid_params.items():
-                    setattr(
-                        self,
-                        param,
+                for param, value in figure_params.items():
+                    # Get the default value if the user did not specify one
+                    figure_params[param] = (
                         value
                         if value != "default"
-                        else self.default_params["Figure"][param],
+                        else self.default_params["Figure"][param]
                     )
                 break  # Exit loop if successful
 
@@ -378,3 +420,22 @@ class Figure:
                 file_updater.update()
                 file_loader = FileLoader(self.figure_style)
                 self.default_params = file_loader.load()
+        # convert keys to matplotlib rc keys
+        figure_params = {
+            "figure.facecolor": figure_params["figure_face_color"],
+            "axes.facecolor": figure_params["axes_face_color"],
+            "axes.edgecolor": figure_params["axes_edge_color"],
+            "axes.labelcolor": figure_params["axes_label_color"],
+            "axes.linewidth": figure_params["axes_line_width"],
+            "xtick.color": figure_params["xtick_color"],
+            "ytick.color": figure_params["ytick_color"],
+            "legend.edgecolor": figure_params["legend_edge_color"],
+            "legend.facecolor": figure_params["legend_face_color"],
+            "text.color": figure_params["legend_text_color"],
+            "grid.linewidth": figure_params["grid_line_width"],
+            "grid.linestyle": figure_params["grid_line_style"],
+            "grid.color": figure_params["grid_color"],
+            "grid.alpha": figure_params["grid_alpha"],
+        }
+        self.customize_visual_style_called = True
+        self._rc_dict = figure_params

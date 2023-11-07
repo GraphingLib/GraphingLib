@@ -49,6 +49,17 @@ Figure:
   grid_color: "grey"
   grid_alpha: 0.5
   color_cycle: ["#3e82a0", "#edb73b", "#b9503b", "#8aba4e", "#695178", "#ed893b", "#34a893", "#616161"]
+  figure_face_color: "white"
+  axes_face_color: "white"
+  axes_edge_color: "black"
+  axes_label_color: "black"
+  axes_line_width: 1
+  xtick_color: "black"
+  ytick_color: "black"
+  legend_face_color: "white"
+  legend_edge_color: "black"
+  legend_text_color: "black"
+
 
 MultiFigure:
   size: [6.4, 4.8]
