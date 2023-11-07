@@ -73,9 +73,9 @@ class TestFigure(unittest.TestCase):
         a_figure._fill_in_missing_params(a_figure)
         self.assertListEqual(list(a_figure.size), [10, 7])
 
-    def test_assign_figure_params_not_boxed(self):
-        a_figure = Figure(figure_style="horrible", legend_is_boxed=False)
-        self.assertFalse(a_figure.legend_is_boxed)
+    def test_assign_figure_params_no_grid(self):
+        a_figure = Figure(figure_style="horrible", show_grid=False)
+        self.assertFalse(a_figure.show_grid)
 
     def test_element_defaults_are_reset(self):
         self.testCurve.line_width = "default"

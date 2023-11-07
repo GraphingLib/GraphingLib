@@ -73,7 +73,7 @@ class TestMultiFigure(unittest.TestCase):
         )
         self.small_multifigure.default_params = FileLoader("plain").load()
         self.small_multifigure._fill_in_missing_params(self.small_multifigure)
-        self.assertEqual(self.small_multifigure.legend_is_boxed, False)
+        self.assertListEqual(self.small_multifigure.size, [6.4, 4.8])
 
     def test_fill_in_missing_params_horrible(self):
         # Fill in values for horrible style
@@ -82,7 +82,7 @@ class TestMultiFigure(unittest.TestCase):
         )
         self.small_multifigure.default_params = FileLoader("horrible").load()
         self.small_multifigure._fill_in_missing_params(self.small_multifigure)
-        self.assertEqual(self.small_multifigure.legend_is_boxed, True)
+        self.assertEqual(self.small_multifigure.size, [10, 7])
 
     def test_reset_params_to_default(self):
         self.small_multifigure.add_SubFigure(
@@ -91,7 +91,7 @@ class TestMultiFigure(unittest.TestCase):
         self.small_multifigure.default_params = FileLoader("plain").load()
         params = self.small_multifigure._fill_in_missing_params(self.small_multifigure)
         self.small_multifigure._reset_params_to_default(self.small_multifigure, params)
-        self.assertEqual(self.small_multifigure.legend_is_boxed, "default")
+        self.assertEqual(self.small_multifigure.size, "default")
 
 
 class TestSubFigure(unittest.TestCase):
@@ -114,7 +114,7 @@ class TestSubFigure(unittest.TestCase):
     def test_fill_in_missing_params_plain(self):
         self.subfigure.default_params = FileLoader("plain").load()
         self.subfigure._fill_in_missing_params(self.subfigure)
-        self.assertEqual(self.subfigure.legend_is_boxed, False)
+        self.assertEqual(self.subfigure.show_grid, False)
 
     def test_fill_in_missing_params_curve(self):
         self.subfigure.add_element(self.test_curve)
@@ -126,13 +126,13 @@ class TestSubFigure(unittest.TestCase):
     def test_fill_in_missing_params_horrible(self):
         self.subfigure.default_params = FileLoader("horrible").load()
         self.subfigure._fill_in_missing_params(self.subfigure)
-        self.assertEqual(self.subfigure.legend_is_boxed, True)
+        self.assertEqual(self.subfigure.show_grid, True)
 
     def test_dont_overwrite_specified_params(self):
-        self.subfigure.legend_is_boxed = False
+        self.subfigure.show_grid = False
         self.subfigure.default_params = FileLoader("horrible").load()
         self.subfigure._fill_in_missing_params(self.subfigure)
-        self.assertEqual(self.subfigure.legend_is_boxed, False)
+        self.assertEqual(self.subfigure.show_grid, False)
 
     def test_dont_overwrite_specified_params_curve(self):
         self.test_curve.line_style = "--"
@@ -147,7 +147,7 @@ class TestSubFigure(unittest.TestCase):
         self.subfigure.default_params = FileLoader("plain").load()
         params = self.subfigure._fill_in_missing_params(self.subfigure)
         self.subfigure._reset_params_to_default(self.subfigure, params)
-        self.assertEqual(self.subfigure.legend_is_boxed, "default")
+        self.assertEqual(self.subfigure.show_grid, "default")
 
     def test_raise_exception_if_no_element_added(self):
         multifig = MultiFigure(1, 1)

@@ -36,9 +36,6 @@ class Figure:
     show_grid : bool
         Whether or not to show the grid.
         Default depends on the ``figure_style`` configuration.
-    legend_is_boxed : bool
-        Whether or not to display the legend inside a box.
-        Default depends on the ``figure_style`` configuration.
     figure_style : str
         The figure style to use for the figure.
     color_cycle : list[str]
@@ -56,7 +53,6 @@ class Figure:
         log_scale_x: bool | Literal["default"] = "default",
         log_scale_y: bool | Literal["default"] = "default",
         show_grid: bool | Literal["default"] = "default",
-        legend_is_boxed: bool | Literal["default"] = "default",
         figure_style: str = "plain",
         color_cycle: list[str] | Literal["default"] = "default",
     ) -> None:
@@ -79,9 +75,6 @@ class Figure:
         show_grid : bool
             Whether or not to show the grid.
             Default depends on the ``figure_style`` configuration.
-        legend_is_boxed : bool
-            Whether or not to display the legend inside a box.
-            Default depends on the ``figure_style`` configuration.
         figure_style : str
             The figure style to use for the figure.
         color_cycle : list[str]
@@ -90,7 +83,6 @@ class Figure:
         """
         self.figure_style = figure_style
         self.size = size
-        self.legend_is_boxed = legend_is_boxed
         self.log_scale_x = log_scale_x
         self.log_scale_y = log_scale_y
         self.show_grid = show_grid
@@ -102,7 +94,6 @@ class Figure:
         self.y_axis_name = y_label
         self.x_lim = x_lim
         self.y_lim = y_lim
-        self.customize_visual_style_called = False
         self._rc_dict = {}
 
     def add_element(self, *elements: Plottable) -> None:
@@ -127,6 +118,11 @@ class Figure:
 
         self._fill_in_rc_params()
         self._figure, self._axes = plt.subplots(figsize=self.size)
+
+        if self.show_grid:
+            self._axes.grid(True)
+        else:
+            self._axes.grid(False)
 
         self.color_cycle = cycler(color=self.color_cycle)
         self._axes.set_prop_cycle(self.color_cycle)
@@ -166,7 +162,6 @@ class Figure:
                             LineCollection: HandlerMultipleLines(),
                             VerticalLineCollection: HandlerMultipleVerticalLines(),
                         },
-                        frameon=self.legend_is_boxed,
                         draggable=True,
                     )
                 except:
@@ -179,7 +174,6 @@ class Figure:
                             LineCollection: HandlerMultipleLines(),
                             VerticalLineCollection: HandlerMultipleVerticalLines(),
                         },
-                        frameon=self.legend_is_boxed,
                     )
         else:
             raise GraphingException("No curves to be plotted!")
