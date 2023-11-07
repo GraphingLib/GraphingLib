@@ -298,5 +298,4 @@ class Figure:
             # add to rc_dict if not already in there
             if property not in self._rc_dict:
                 self._rc_dict[property] = value
-        print(self._rc_dict)
         plt.rcParams.update(self._rc_dict)
