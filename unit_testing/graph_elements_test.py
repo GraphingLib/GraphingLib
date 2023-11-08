@@ -1,7 +1,8 @@
 import unittest
+
 from numpy import ndarray
 
-from graphinglib.graph_elements import Hlines, Point, Vlines, Text
+from graphinglib.graph_elements import Hlines, Point, Text, Vlines
 
 
 class TestHlines(unittest.TestCase):
@@ -53,7 +54,7 @@ class TestVlines(unittest.TestCase):
 class TestPoint(unittest.TestCase):
     def setUp(self):
         self.testPoint = Point(x=0.0, y=0.0, label="Test Point")
-    
+
     def test_x_is_float(self):
         self.assertEqual(self.testPoint.x, 0.0)
 
