@@ -52,6 +52,10 @@ class Hlines:
         Colors to use for the lines. One color for every line or a color
         per line can be specified.
         Default depends on the ``figure_style`` configuration.
+    line_widths : list[float]
+        Line widths to use for the lines. One width for every line or a width
+        per line can be specified.
+        Default depends on the ``figure_style`` configuration.
     line_styles : list[str]
         Line styles to use for the lines. One style for every line or a style
         per line can be specified.
@@ -65,6 +69,7 @@ class Hlines:
         x_max: ArrayLike,
         label: Optional[str] = None,
         colors: list[str] | str = "default",
+        line_widths: list[float] | float = "default",
         line_styles: list[str] | str = "default",
     ) -> None:
         """
@@ -81,6 +86,10 @@ class Hlines:
             Label to be displayed in the legend.
         colors : list[str]
             Colors to use for the lines. One color for every line or a color
+            per line can be specified.
+            Default depends on the ``figure_style`` configuration.
+        line_widths : list[float]
+            Line widths to use for the lines. One width for every line or a width
             per line can be specified.
             Default depends on the ``figure_style`` configuration.
         line_styles : list[str]
@@ -102,6 +111,7 @@ class Hlines:
             self.x_max = np.array(x_max)
         self.label = label
         self.colors = colors
+        self.line_widths = line_widths
         self.line_styles = line_styles
         if isinstance(self.y, (int, float)) and isinstance(
             self.colors, (list, np.ndarray)
@@ -111,17 +121,28 @@ class Hlines:
             self.line_styles, (list, np.ndarray)
         ):
             raise GraphingException(
-                "There can't be multiple linestyles for a single line!"
+                "There can't be multiple line styles for a single line!"
+            )
+        if isinstance(self.y, (int, float)) and isinstance(
+            self.line_widths, (list, np.ndarray)
+        ):
+            raise GraphingException(
+                "There can't be multiple line widths for a single line!"
             )
         if (
             isinstance(self.y, (list, np.ndarray))
             and isinstance(self.colors, list)
             and isinstance(self.line_styles, list)
+            and isinstance(self.line_widths, list)
         ):
-            if len(self.y) != len(self.colors) or len(self.y) != len(self.line_styles):
+            if (
+                len(self.y) != len(self.colors)
+                or len(self.y) != len(self.line_styles)
+                or len(self.y) != len(self.line_widths)
+            ):
                 raise GraphingException(
                     "There must be the same number of colors, "
-                    + "linestyles and lines!"
+                    + "line styles, line widths and lines!"
                 )
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
@@ -136,6 +157,7 @@ class Hlines:
                 self.x_max,
                 colors=self.colors,
                 linestyles=self.line_styles,
+                linewidths=self.line_widths,
                 zorder=z_order,
             )
             self.handle = LineCollection(
@@ -150,6 +172,7 @@ class Hlines:
                 self.x_max,
                 colors=self.colors,
                 linestyles=self.line_styles,
+                linewidths=self.line_widths,
                 zorder=z_order,
             )
 
@@ -171,6 +194,10 @@ class Vlines:
         Colors to use for the lines. One color for every line or a color
         per line can be specified.
         Default depends on the ``figure_style`` configuration.
+    line_widths : list[float]
+        Line widths to use for the lines. One width for every line or a width
+        per line can be specified.
+        Default depends on the ``figure_style`` configuration.
     line_styles : list[str]
         Line styles to use for the lines. One style for every line or a style
         per line can be specified.
@@ -184,6 +211,7 @@ class Vlines:
         y_max: ArrayLike,
         label: Optional[str] = None,
         colors: list[str] | str = "default",
+        line_widths: list[float] | float = "default",
         line_styles: list[str] | str = "default",
     ) -> None:
         """
@@ -200,6 +228,10 @@ class Vlines:
             Label to be displayed in the legend.
         colors : list[str]
             Colors to use for the lines. One color for every line or a color
+            per line can be specified.
+            Default depends on the ``figure_style`` configuration.
+        line_widths : list[float]
+            Line widths to use for the lines. One width for every line or a width
             per line can be specified.
             Default depends on the ``figure_style`` configuration.
         line_styles : list[str]
@@ -222,6 +254,7 @@ class Vlines:
         self.label = label
         self.colors = colors
         self.line_styles = line_styles
+        self.line_widths = line_widths
         if isinstance(self.x, (int, float)) and isinstance(
             self.colors, (list, np.ndarray)
         ):
@@ -230,17 +263,28 @@ class Vlines:
             self.line_styles, (list, np.ndarray)
         ):
             raise GraphingException(
-                "There can't be multiple linestyles for a single line!"
+                "There can't be multiple line styles for a single line!"
+            )
+        if isinstance(self.x, (int, float)) and isinstance(
+            self.line_widths, (list, np.ndarray)
+        ):
+            raise GraphingException(
+                "There can't be multiple line widths for a single line!"
             )
         if (
             isinstance(self.x, (list, np.ndarray))
             and isinstance(self.colors, list)
             and isinstance(self.line_styles, list)
+            and isinstance(self.line_widths, list)
         ):
-            if len(self.x) != len(self.colors) or len(self.x) != len(self.line_styles):
+            if (
+                len(self.x) != len(self.colors)
+                or len(self.x) != len(self.line_styles)
+                or len(self.x) != len(self.line_widths)
+            ):
                 raise GraphingException(
                     "There must be the same number of colors, "
-                    + "linestyles and lines!"
+                    + "line styles, line widths and lines!"
                 )
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
@@ -255,6 +299,7 @@ class Vlines:
                 self.y_max,
                 colors=self.colors,
                 linestyles=self.line_styles,
+                linewidths=self.line_widths,
                 zorder=z_order,
             )
             self.handle = VerticalLineCollection(
@@ -269,6 +314,7 @@ class Vlines:
                 self.y_max,
                 colors=self.colors,
                 linestyles=self.line_styles,
+                linewidths=self.line_widths,
                 zorder=z_order,
             )
 

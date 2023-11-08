@@ -32,10 +32,12 @@ Histogram:
 Hlines:
   colors: "k"
   line_styles: "-"
+  line_widths: 2
 
 Vlines:
   colors: "k"
   line_styles: "solid"
+  line_widths: 2
 
 Figure:
   size: [6.4, 4.8]
