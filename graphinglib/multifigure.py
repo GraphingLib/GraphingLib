@@ -402,6 +402,7 @@ class MultiFigure:
         self.size = size
         self._SubFigures = []
         self._rc_dict = {}
+        self._user_rc_dict = {}
 
     def add_SubFigure(
         self,
@@ -555,6 +556,8 @@ class MultiFigure:
                 )
         self._figure.suptitle(self.title)
         self._reset_params_to_default(self, multi_figure_params_to_reset)
+        self._rc_dict = {}
+        plt.rcParams.update(rcParamsDefault)
 
     def display(
         self,
@@ -669,7 +672,7 @@ class MultiFigure:
             Dictionary of rc parameters to update.
             Defaults depends on the ``figure_style`` configuration.
         """
-        self._rc_dict = rc_params_dict
+        self._user_rc_dict = rc_params_dict
 
     def _fill_in_rc_params(self):
         """
@@ -680,4 +683,5 @@ class MultiFigure:
             # add to rc_dict if not already in there
             if property not in self._rc_dict:
                 self._rc_dict[property] = value
-        plt.rcParams.update(self._rc_dict)
+        all_rc_params = {**self._rc_dict, **self._user_rc_dict}
+        plt.rcParams.update(all_rc_params)
