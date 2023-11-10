@@ -113,11 +113,23 @@ class Figure:
         """
         Prepares the :class:`~graphinglib.figure.Figure` to be displayed.
         """
-        file_loader = FileLoader(self.figure_style)
-        self.default_params = file_loader.load()
+        try:
+            file_loader = FileLoader(self.figure_style)
+            self.default_params = file_loader.load()
+            self._fill_in_rc_params()
+        except FileNotFoundError:
+            # set the style use matplotlib style
+            try:
+                plt.style.use(self.figure_style)
+                file_loader = FileLoader("plain")
+                self.default_params = file_loader.load()
+            except OSError:
+                raise GraphingException(
+                    f"The figure style {self.figure_style} was not found. Please choose a different style."
+                )
+
         figure_params_to_reset = self._fill_in_missing_params(self)
 
-        self._fill_in_rc_params()
         self._figure, self._axes = plt.subplots(figsize=self.size)
 
         if self.show_grid:
@@ -138,7 +150,7 @@ class Figure:
         if self.log_scale_y:
             self._axes.set_yscale("log")
         if self._elements:
-            z_order = 0
+            z_order = 1
             for element in self._elements:
                 params_to_reset = self._fill_in_missing_params(element)
                 element._plot_element(self._axes, z_order)

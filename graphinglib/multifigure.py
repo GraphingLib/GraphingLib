@@ -166,8 +166,18 @@ class SubFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.SubFigure` to be displayed.
         """
-        file_loader = FileLoader(self.figure_style)
-        self.default_params = file_loader.load()
+        try:
+            file_loader = FileLoader(self.figure_style)
+            self.default_params = file_loader.load()
+        except FileNotFoundError:
+            try:
+                plt.style.use(self.figure_style)
+                file_loader = FileLoader("plain")
+                self.default_params = file_loader.load()
+            except OSError:
+                raise GraphingException(
+                    f"The figure style {self.figure_style} was not found. Please choose a different style."
+                )
         figure_params_to_reset = self._fill_in_missing_params(self)
         self._axes = plt.subplot(
             grid.new_subplotspec(
@@ -207,7 +217,7 @@ class SubFigure:
                 )
             )
         if self._elements:
-            z_order = 0
+            z_order = 1
             for element in self._elements:
                 params_to_reset = self._fill_in_missing_params(element)
                 element._plot_element(self._axes, z_order)
@@ -498,11 +508,22 @@ class MultiFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.MultiFigure` to be displayed.
         """
-        file_loader = FileLoader(self.figure_style)
-        self.default_params = file_loader.load()
+        try:
+            file_loader = FileLoader(self.figure_style)
+            self.default_params = file_loader.load()
+            self._fill_in_rc_params()
+        except FileNotFoundError:
+            try:
+                plt.style.use(self.figure_style)
+                file_loader = FileLoader("plain")
+                self.default_params = file_loader.load()
+            except OSError:
+                raise GraphingException(
+                    f"The figure style {self.figure_style} was not found. Please choose a different style."
+                )
+
         multi_figure_params_to_reset = self._fill_in_missing_params(self)
 
-        self._fill_in_rc_params()
         self._figure = plt.figure(layout="constrained", figsize=self.size)
         MultiFigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
 
