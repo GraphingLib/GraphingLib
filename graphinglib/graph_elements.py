@@ -151,29 +151,37 @@ class Hlines:
         Axes
         """
         if isinstance(self.y, list) and len(self.y) > 1:
+            params = {
+                "colors": self.colors,
+                "linestyles": self.line_styles,
+                "linewidths": self.line_widths,
+            }
+            params = {k: v for k, v in params.items() if v != "default"}
             axes.hlines(
                 self.y,
                 self.x_min,
                 self.x_max,
-                colors=self.colors,
-                linestyles=self.line_styles,
-                linewidths=self.line_widths,
                 zorder=z_order,
+                **params,
             )
+            params.pop("linewidths")
             self.handle = LineCollection(
                 [[(0, 0)]] * (len(self.y) if len(self.y) <= 3 else 3),
-                color=self.colors,
-                linestyle="solid",
+                **params,
             )
         else:
+            params = {
+                "colors": self.colors,
+                "linestyles": self.line_styles,
+                "linewidths": self.line_widths,
+            }
+            params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.hlines(
                 self.y,
                 self.x_min,
                 self.x_max,
-                colors=self.colors,
-                linestyles=self.line_styles,
-                linewidths=self.line_widths,
                 zorder=z_order,
+                **params,
             )
 
 
@@ -293,29 +301,37 @@ class Vlines:
         Axes
         """
         if isinstance(self.x, list) and len(self.x) > 1:
+            params = {
+                "colors": self.colors,
+                "linestyles": self.line_styles,
+                "linewidths": self.line_widths,
+            }
+            params = {k: v for k, v in params.items() if v != "default"}
             axes.vlines(
                 self.x,
                 self.y_min,
                 self.y_max,
-                colors=self.colors,
-                linestyles=self.line_styles,
-                linewidths=self.line_widths,
                 zorder=z_order,
+                **params,
             )
+            params.pop("linewidths")
             self.handle = VerticalLineCollection(
                 [[(0, 0)]] * (len(self.x) if len(self.x) <= 4 else 4),
-                color=self.colors,
-                linestyle="solid",
+                **params,
             )
         else:
+            params = {
+                "colors": self.colors,
+                "linestyles": self.line_styles,
+                "linewidths": self.line_widths,
+            }
+            params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.vlines(
                 self.x,
                 self.y_min,
                 self.y_max,
-                colors=self.colors,
-                linestyles=self.line_styles,
-                linewidths=self.line_widths,
                 zorder=z_order,
+                **params,
             )
 
 
@@ -450,24 +466,32 @@ class Point:
             point_label = prefix + self.label + postfix
         else:
             point_label = None
+        params = {
+            "c": self.color,
+            "edgecolors": self.edge_color,
+            "s": self.marker_size,
+            "marker": self.marker_style,
+            "linewidths": self.edge_width,
+        }
+        params = {k: v for k, v in params.items() if v != "default"}
         axes.scatter(
             self.x,
             self.y,
-            c=self.color,
-            edgecolors=self.edge_color,
-            s=self.marker_size,
-            marker=self.marker_style,
-            linewidths=self.edge_width,
             zorder=z_order,
+            **params,
         )
+        params = {
+            "color": self.text_color,
+            "fontsize": size,
+            "horizontalalignment": self.h_align,
+            "verticalalignment": self.v_align,
+        }
+        params = {k: v for k, v in params.items() if v != "default"}
         axes.annotate(
             point_label,
             (self.x, self.y),
-            color=self.text_color,
-            fontsize=size,
-            horizontalalignment=self.h_align,
-            verticalalignment=self.v_align,
             zorder=z_order,
+            **params,
         )
         if self._show_coordinates:
             prefix = " " if self.h_align == "left" else ""
@@ -482,14 +506,18 @@ class Point:
                 )
             else:
                 point_label = prefix + f"({self.x:.3f}, {self.y:.3f})" + postfix
+            params = {
+                "color": self.text_color,
+                "fontsize": size,
+                "horizontalalignment": self.h_align,
+                "verticalalignment": self.v_align,
+            }
+            params = {k: v for k, v in params.items() if v != "default"}
             axes.annotate(
                 point_label,
                 (self.x, self.y),
-                color=self.text_color,
-                fontsize=size,
-                horizontalalignment=self.h_align,
-                verticalalignment=self.v_align,
                 zorder=z_order,
+                **params,
             )
 
 
@@ -573,28 +601,38 @@ class Text:
         Axes
         """
         size = self.font_size if self.font_size != "same as figure" else None
+        params = {
+            "color": self.color,
+            "fontsize": size,
+            "horizontalalignment": self.h_align,
+            "verticalalignment": self.v_align,
+        }
+        params = {k: v for k, v in params.items() if v != "default"}
         axes.text(
             self.x,
             self.y,
             self.text,
-            horizontalalignment=self.h_align,
-            verticalalignment=self.v_align,
-            color=self.color,
-            fontsize=size,
             zorder=z_order,
+            **params,
         )
         if self._arrow_pointing_to is not None:
             self.arrow_properties["color"] = self.color
+            params = {
+                "color": self.color,
+                "fontsize": size,
+                "horizontalalignment": self.h_align,
+                "verticalalignment": self.v_align,
+            }
+            params = {k: v for k, v in params.items() if v != "default"}
+            if self.color != "default":
+                self.arrow_properties["color"] = self.color
+                params["arrowprops"] = self.arrow_properties
             axes.annotate(
                 self.text,
                 self._arrow_pointing_to,
                 xytext=(self.x, self.y),
-                color=self.color,
-                arrowprops=self.arrow_properties,
-                fontsize=size,
-                horizontalalignment=self.h_align,
-                verticalalignment=self.v_align,
                 zorder=z_order,
+                **params,
             )
 
 
@@ -663,19 +701,23 @@ class Table:
         """
         Plots the element in the specified Axes
         """
+        params = {
+            "cellLoc": self.cell_align,
+            "colLoc": self.col_align,
+            "rowLoc": self.row_align,
+        }
+        params = {k: v for k, v in params.items() if v != "default"}
         table = axes.table(
             cellText=self.cell_text,
             cellColours=self.cell_colors,
-            cellLoc=self.cell_align,
             colLabels=self.col_labels,
             colWidths=self.col_widths,
-            colLoc=self.col_align,
             colColours=self.col_colors,
             rowLabels=self.row_labels,
-            rowLoc=self.row_align,
             rowColours=self.row_colors,
             loc=self.location,
             zorder=z_order,
+            **params,
         )
         table.auto_set_font_size(False)
         table.scale(self.scaling[0], self.scaling[1])

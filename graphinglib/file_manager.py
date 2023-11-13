@@ -129,7 +129,9 @@ def get_colors(figure_style: str = "plain") -> list[str]:
     """
     file_loader = FileLoader(figure_style)
     style_info = file_loader.load()
-    colors = style_info["Figure"]["color_cycle"]
+    colors = style_info["rc_params"]["axes.prop_cycle"]
+    colors = colors[colors.find("[") + 1 : colors.find("]")].split(", ")
+    colors = [color[1:-1] for color in colors]
     return colors
 
 

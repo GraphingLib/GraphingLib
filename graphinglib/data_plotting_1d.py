@@ -65,7 +65,7 @@ class Curve:
     color: str = "default"
     line_width: float | Literal["default"] = "default"
     line_style: str = "default"
-    errorbars: bool = field(default=False, init=False)
+    show_errorbars: bool = field(default=False, init=False)
     _fill_curve_between: Optional[tuple[float, float]] = field(init=False, default=None)
 
     @classmethod
@@ -237,7 +237,7 @@ class Curve:
             Thickness of the errorbar caps.
             Default depends on the ``figure_style`` configuration.
         """
-        self.errorbars = True
+        self.show_errorbars = True
         self.x_error = np.array(x_error) if x_error is not None else x_error
         self.y_error = np.array(y_error) if y_error is not None else y_error
         self.errorbars_color = errorbars_color
@@ -691,36 +691,45 @@ class Curve:
         """
         Plots the element in the specified axes.
         """
-        if self.errorbars:
+        if self.show_errorbars:
+            params = {
+                "color": self.color,
+                "linewidth": self.line_width,
+                "linestyle": self.line_style,
+                "elinewidth": self.errorbars_line_width,
+                "capsize": self.cap_width,
+                "capthick": self.cap_thickness,
+                "ecolor": self.errorbars_color,
+            }
+            params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
                 self.x_data,
                 self.y_data,
                 xerr=self.x_error,
                 yerr=self.y_error,
-                color=self.color,
-                linewidth=self.line_width,
-                linestyle=self.line_style,
                 label=self.label,
-                elinewidth=self.errorbars_line_width,
-                capsize=self.cap_width,
-                capthick=self.cap_thickness,
-                ecolor=self.errorbars_color,
                 zorder=z_order,
+                **params,
             )
         else:
+            params = {
+                "color": self.color,
+                "linewidth": self.line_width,
+                "linestyle": self.line_style,
+            }
+            params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
                 self.x_data,
                 self.y_data,
-                color=self.color,
-                linewidth=self.line_width,
-                linestyle=self.line_style,
                 label=self.label,
                 zorder=z_order,
+                **params,
             )
         if self._fill_curve_between:
-            kwargs = {}
+            kwargs = {"alpha": 0.2}
             if self.fill_under_color:
                 kwargs["color"] = self.fill_under_color
+            kwargs = {k: v for k, v in kwargs.items() if v != "default"}
             axes.fill_between(
                 self.x_data,
                 self.y_data,
@@ -728,7 +737,6 @@ class Curve:
                     self.x_data >= self._fill_curve_between[0],
                     self.x_data <= self._fill_curve_between[1],
                 ),
-                alpha=0.2,
                 zorder=z_order - 2,
                 **kwargs,
             )
@@ -1089,34 +1097,46 @@ class Scatter:
         Plots the element in the specified axes.
         """
         if self.errorbars:
+            params = {
+                "markerfacecolor": self.face_color,
+                "markeredgecolor": self.edge_color,
+                "markersize": self.marker_size,
+                "marker": self.marker_style,
+                "elinewidth": self.errorbars_line_width,
+                "capsize": self.cap_width,
+                "capthick": self.cap_thickness,
+                "ecolor": self.errorbars_color,
+                "linestyle": "none",
+            }
+            if params["marker"] == "default":
+                params["marker"] = "o"
+            params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
                 self.x_data,
                 self.y_data,
                 xerr=self.x_error,
                 yerr=self.y_error,
-                markerfacecolor=self.face_color,
-                markeredgecolor=self.edge_color,
-                markersize=self.marker_size,
-                marker=self.marker_style,
                 label=self.label,
-                elinewidth=self.errorbars_line_width,
-                capsize=self.cap_width,
-                capthick=self.cap_thickness,
-                ecolor=self.errorbars_color,
-                linestyle="none",
                 zorder=z_order,
+                **params,
             )
         else:
+            params = {
+                "markerfacecolor": self.face_color,
+                "markeredgecolor": self.edge_color,
+                "markersize": self.marker_size,
+                "marker": self.marker_style,
+                "linestyle": "none",
+            }
+            if params["marker"] == "default":
+                params["marker"] = "o"
+            params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
                 self.x_data,
                 self.y_data,
-                markerfacecolor=self.face_color,
-                markeredgecolor=self.edge_color,
-                markersize=self.marker_size,
-                marker=self.marker_style,
                 label=self.label,
-                linestyle="none",
                 zorder=z_order,
+                **params,
             )
 
 
@@ -1310,22 +1330,38 @@ class Histogram:
         """
         Plots the element in the specified axes.
         """
+        params = {
+            "facecolor": to_rgba(self.face_color, self.alpha)
+            if self.face_color != "default" and self.alpha != "default"
+            else "default",
+            "edgecolor": to_rgba(self.edge_color, 1)
+            if self.edge_color != "default"
+            else self.edge_color,
+            "linewidth": self.line_width,
+        }
+        params = {k: v for k, v in params.items() if v != "default"}
         self.handle = Polygon(
             np.array([[0, 2, 2, 3, 3, 1, 1, 0, 0], [0, 0, 1, 1, 2, 2, 3, 3, 0]]).T,
-            facecolor=to_rgba(self.face_color, self.alpha),
-            edgecolor=to_rgba(self.edge_color, 1),
-            linewidth=1,
+            **params,
         )
+        params = {
+            "facecolor": to_rgba(self.face_color, self.alpha)
+            if self.face_color != "default" and self.alpha != "default"
+            else "default",
+            "edgecolor": to_rgba(self.edge_color, 1)
+            if self.edge_color != "default"
+            else self.edge_color,
+            "histtype": self.hist_type,
+            "linewidth": self.line_width,
+            "density": self.normalize,
+        }
+        params = {k: v for k, v in params.items() if v != "default"}
         axes.hist(
             self.data,
             bins=self.number_of_bins,
-            facecolor=to_rgba(self.face_color, self.alpha),
-            edgecolor=to_rgba(self.edge_color, 1),
             label=self.label,
-            histtype=self.hist_type,
-            linewidth=self.line_width,
-            density=self.normalize,
             zorder=z_order - 1,
+            **params,
         )
         if self.show_pdf in ["normal", "gaussian"]:
             normal = (

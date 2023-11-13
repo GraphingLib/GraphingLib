@@ -202,39 +202,49 @@ class GeneralFit(Curve):
         Plots the element in the specified
         Axes
         """
+        params = {
+            "color": self.color,
+            "linewidth": self.line_width,
+            "linestyle": self.line_style,
+        }
+        params = {key: value for key, value in params.items() if value != "default"}
         (self.handle,) = axes.plot(
             self.x_data,
             self.y_data,
             label=self.label,
-            color=self.color,
-            linewidth=self.line_width,
-            linestyle=self.line_style,
             zorder=z_order,
+            **params,
         )
         if self._res_curves_to_be_plotted:
-            x_data = self.x_data
             y_fit = self.y_data
             residuals = self.calculate_residuals()
             std = np.std(residuals)
             y_fit_plus_std = y_fit + (self.res_sigma_multiplier * std)
             y_fit_minus_std = y_fit - (self.res_sigma_multiplier * std)
+            params = {
+                "color": self.res_color,
+                "linewidth": self.res_line_width,
+                "linestyle": self.res_line_style,
+            }
+            params = {key: value for key, value in params.items() if value != "default"}
             axes.plot(
                 self.x_data,
                 y_fit_minus_std,
-                color=self.res_color,
-                linewidth=self.res_line_width,
-                linestyle=self.res_line_style,
                 zorder=z_order,
+                **params,
             )
             axes.plot(
                 self.x_data,
                 y_fit_plus_std,
-                color=self.res_color,
-                linewidth=self.res_line_width,
-                linestyle=self.res_line_style,
                 zorder=z_order,
+                **params,
             )
         if self._fill_curve_between:
+            params = {
+                "alpha": 0.2,
+                "color": self.fill_color,
+            }
+            params = {key: value for key, value in params.items() if value != "default"}
             axes.fill_between(
                 self.x_data,
                 self.y_data,
@@ -242,9 +252,8 @@ class GeneralFit(Curve):
                     self.x_data >= self._fill_curve_between[0],
                     self.x_data <= self._fill_curve_between[1],
                 ),
-                # color=self.fill_color,
-                alpha=0.2,
                 zorder=z_order - 2,
+                **params,
             )
 
     def show_residual_curves(

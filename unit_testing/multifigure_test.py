@@ -114,7 +114,7 @@ class TestSubFigure(unittest.TestCase):
     def test_fill_in_missing_params_plain(self):
         self.subfigure.default_params = FileLoader("plain").load()
         self.subfigure._fill_in_missing_params(self.subfigure)
-        self.assertEqual(self.subfigure.show_grid, False)
+        self.assertEqual(self.subfigure.log_scale_x, False)
 
     def test_fill_in_missing_params_curve(self):
         self.subfigure.add_element(self.test_curve)
@@ -126,7 +126,7 @@ class TestSubFigure(unittest.TestCase):
     def test_fill_in_missing_params_horrible(self):
         self.subfigure.default_params = FileLoader("horrible").load()
         self.subfigure._fill_in_missing_params(self.subfigure)
-        self.assertEqual(self.subfigure.show_grid, True)
+        self.assertEqual(self.subfigure.log_scale_x, False)
 
     def test_dont_overwrite_specified_params(self):
         self.subfigure.show_grid = False
@@ -147,7 +147,7 @@ class TestSubFigure(unittest.TestCase):
         self.subfigure.default_params = FileLoader("plain").load()
         params = self.subfigure._fill_in_missing_params(self.subfigure)
         self.subfigure._reset_params_to_default(self.subfigure, params)
-        self.assertEqual(self.subfigure.show_grid, "default")
+        self.assertEqual(self.subfigure.log_scale_x, "default")
 
     def test_raise_exception_if_no_element_added(self):
         multifig = MultiFigure(1, 1)

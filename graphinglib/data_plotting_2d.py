@@ -146,25 +146,33 @@ class Heatmap:
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         if self.x_axis_range is not None and self.y_axis_range is not None:
+            params = {
+                "cmap": self.color_map,
+                "alpha": self.alpha_value,
+                "aspect": self.aspect_ratio,
+                "origin": self.origin_position,
+                "interpolation": self.interpolation,
+                "extent": self._xy_range,
+            }
+            params = {k: v for k, v in params.items() if v != "default"}
             image = axes.imshow(
                 self.image,
-                cmap=self.color_map,
-                alpha=self.alpha_value,
-                aspect=self.aspect_ratio,
-                origin=self.origin_position,
-                interpolation=self.interpolation,
-                extent=self._xy_range,
                 zorder=z_order,
+                **params,
             )
         else:
+            params = {
+                "cmap": self.color_map,
+                "alpha": self.alpha_value,
+                "aspect": self.aspect_ratio,
+                "origin": self.origin_position,
+                "interpolation": self.interpolation,
+            }
+            params = {k: v for k, v in params.items() if v != "default"}
             image = axes.imshow(
                 self.image,
-                cmap=self.color_map,
-                alpha=self.alpha_value,
-                aspect=self.aspect_ratio,
-                origin=self.origin_position,
-                interpolation=self.interpolation,
                 zorder=z_order,
+                **params,
             )
         fig = axes.get_figure()
         if self.show_color_bar:
@@ -182,9 +190,6 @@ class VectorField:
         x and y coordinates of the vectors.
     u_data, v_data : ArrayLike
         Magnitudes in the x and y coordinates.
-    arrow_length_multiplier : float, optional
-        Arrow length scaling factor.
-        Default depends on the ``figure_style`` configuration.
     arrow_width : float
         Arrow width.
         Default depends on the ``figure_style`` configuration.
@@ -210,7 +215,6 @@ class VectorField:
     y_data: ArrayLike
     u_data: ArrayLike
     v_data: ArrayLike
-    arrow_length_multiplier: Optional[float | Literal["default"]] = "default"
     arrow_width: float | Literal["default"] = "default"
     arrow_head_width: float | Literal["default"] = "default"
     arrow_head_length: float | Literal["default"] = "default"
@@ -227,12 +231,11 @@ class VectorField:
     @classmethod
     def from_function(
         cls,
-        func: Callable[[ArrayLike, ArrayLike], [ArrayLike, ArrayLike]],
+        func: Callable[[ArrayLike, ArrayLike], tuple[ArrayLike, ArrayLike]],
         x_axis_range: tuple[float, float],
         y_axis_range: tuple[float, float],
         number_of_arrows_x: int = 10,
         number_of_arrows_y: int = 10,
-        arrow_length_multiplier: Optional[float | Literal["default"]] = "default",
         arrow_width: float | Literal["default"] = "default",
         arrow_head_width: float | Literal["default"] = "default",
         arrow_head_length: float | Literal["default"] = "default",
@@ -245,7 +248,7 @@ class VectorField:
 
         Parameters
         ----------
-        func : Callable[[ArrayLike, ArrayLike], [ArrayLike, ArrayLike]]
+        func : Callable[[ArrayLike, ArrayLike], tuple[ArrayLike, ArrayLike]]
             Function to be plotted. Works with regular functions and lambda
             functions.
         x_data, y_data : ArrayLike
@@ -254,9 +257,6 @@ class VectorField:
             Magnitudes in the x and y coordinates.
         number_of_arrows_x, number_of_arrows_y : int
             Number of arrows to plot in the x and y direction. Defaults to 10.
-        arrow_length_multiplier : float, optional
-            Arrow length scaling factor.
-            Default depends on the ``figure_style`` configuration.
         arrow_width : float
             Arrow width.
             Default depends on the ``figure_style`` configuration.
@@ -290,7 +290,6 @@ class VectorField:
             y_grid,
             u,
             v,
-            arrow_length_multiplier,
             arrow_width,
             arrow_head_width,
             arrow_head_length,
@@ -308,19 +307,23 @@ class VectorField:
             angle = "xy"
         else:
             angle = "uv"
+        params = {
+            "angles": angle,
+            "width": self.arrow_width,
+            "headwidth": self.arrow_head_width,
+            "headlength": self.arrow_head_length,
+            "headaxislength": self.arrow_head_axis_length,
+            "color": self.color,
+        }
+        params = {k: v for k, v in params.items() if v != "default"}
         axes.quiver(
             self.x_data,
             self.y_data,
             self.u_data,
             self.v_data,
-            color=self.color,
-            zorder=z_order,
-            angles=angle,
             # scale=self.arrow_length_multiplier,
-            width=self.arrow_width,
-            headwidth=self.arrow_head_width,
-            headlength=self.arrow_head_length,
-            headaxislength=self.arrow_head_axis_length,
+            zorder=z_order,
+            **params,
         )
 
 
@@ -433,25 +436,27 @@ class Contour:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
+        params = {
+            "levels": self.number_of_levels,
+            "cmap": self.color_map,
+            "alpha": self.alpha,
+        }
+        params = {k: v for k, v in params.items() if v != "default"}
         if self.filled:
             cont = axes.contourf(
                 self.x_mesh,
                 self.y_mesh,
                 self.z_data,
-                levels=self.number_of_levels,
-                cmap=self.color_map,
-                alpha=self.alpha,
                 zorder=z_order,
+                **params,
             )
         else:
             cont = axes.contour(
                 self.x_mesh,
                 self.y_mesh,
                 self.z_data,
-                levels=self.number_of_levels,
-                cmap=self.color_map,
-                alpha=self.alpha,
                 zorder=z_order,
+                **params,
             )
         if self.show_color_bar:
             fig = axes.get_figure()
@@ -501,7 +506,7 @@ class Stream:
     @classmethod
     def from_function(
         cls,
-        func: Callable[[ArrayLike, ArrayLike], [ArrayLike, ArrayLike]],
+        func: Callable[[ArrayLike, ArrayLike], tuple[ArrayLike, ArrayLike]],
         x_axis_range: tuple[float, float],
         y_axis_range: tuple[float, float],
         number_of_points_x: int = 30,
@@ -554,15 +559,19 @@ class Stream:
         """
         Plots the element in the specified Axes.
         """
+        params = {
+            "density": self.density,
+            "linewidth": self.line_width,
+            "color": self.color,
+            "cmap": self.color_map,
+            "arrowsize": self.arrow_size,
+        }
+        params = {k: v for k, v in params.items() if v != "default"}
         axes.streamplot(
             self.x_data,
             self.y_data,
             self.u_data,
             self.v_data,
-            density=self.density,
-            linewidth=self.line_width,
-            color=self.color,
-            cmap=self.color_map,
-            arrowsize=self.arrow_size,
             zorder=z_order,
+            **params,
         )
