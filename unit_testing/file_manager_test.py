@@ -53,7 +53,9 @@ class TestGetColors(unittest.TestCase):
         mock_file_loader_instance = MagicMock()
         mock_file_loader.return_value = mock_file_loader_instance
         mock_file_loader_instance.load.return_value = {
-            "Figure": {"color_cycle": ["red", "green", "blue"]}
+            "rc_params": {
+                "axes.prop_cycle": "cycler('cycler', ['red', 'green', 'blue'])"
+            }
         }
         colors = get_colors("plain")
         self.assertEqual(colors, ["red", "green", "blue"])
@@ -67,7 +69,9 @@ class TestGetColor(unittest.TestCase):
         mock_file_loader_instance = MagicMock()
         mock_file_loader.return_value = mock_file_loader_instance
         mock_file_loader_instance.load.return_value = {
-            "Figure": {"color_cycle": ["red", "green", "blue"]}
+            "rc_params": {
+                "axes.prop_cycle": "cycler('color', ['red', 'green', 'blue'])"
+            }
         }
         color = get_color("plain", 1)
         self.assertEqual(color, "green")
