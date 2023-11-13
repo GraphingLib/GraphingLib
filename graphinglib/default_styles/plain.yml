@@ -43,8 +43,6 @@ Figure:
   size: [6.4, 4.8]
   log_scale_x: False
   log_scale_y: False
-  show_grid: False
-  color_cycle: ["#3e82a0", "#edb73b", "#b9503b", "#8aba4e", "#695178", "#ed893b", "#34a893", "#616161"]
 
 MultiFigure:
   size: [6.4, 4.8]
@@ -52,8 +50,6 @@ MultiFigure:
 SubFigure:
   log_scale_x: False
   log_scale_y: False
-  show_grid: False
-  color_cycle: ["#3e82a0", "#edb73b", "#b9503b", "#8aba4e", "#695178", "#ed893b", "#34a893", "#616161"]
 
 Point:
   color: "k"
@@ -132,7 +128,6 @@ Contour:
 
 VectorField:
   arrow_width: 0.005
-  arrow_length_multiplier: 
   arrow_head_width: 3
   arrow_head_length: 5
   arrow_head_axis_length: 4.5
@@ -161,6 +156,7 @@ rc_params:
   axes.edgecolor: "black"
   axes.labelcolor: "black"
   axes.linewidth: 1
+  axes.prop_cycle: cycler('color', ['#3e82a0', '#edb73b', '#b9503b', '#8aba4e', '#695178', '#ed893b', '#34a893', '#616161'])
   xtick.color: "black"
   ytick.color: "black"
   xtick.direction: "in"
@@ -177,3 +173,5 @@ rc_params:
   grid.linewidth: 0.5
   grid.color: "grey"
   grid.alpha: 0.5
+  axes.grid: False
+  

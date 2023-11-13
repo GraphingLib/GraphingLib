@@ -1,7 +1,6 @@
 from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
-from cycler import cycler
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
@@ -38,9 +37,6 @@ class Figure:
         Default depends on the ``figure_style`` configuration.
     figure_style : str
         The figure style to use for the figure.
-    color_cycle : list[str]
-        List of colors applied to the elements cyclically if none is provided.
-        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -54,7 +50,6 @@ class Figure:
         log_scale_y: bool | Literal["default"] = "default",
         show_grid: bool | Literal["default"] = "default",
         figure_style: str = "plain",
-        color_cycle: list[str] | Literal["default"] = "default",
     ) -> None:
         """
         This class implements a general figure object.
@@ -77,16 +72,15 @@ class Figure:
             Default depends on the ``figure_style`` configuration.
         figure_style : str
             The figure style to use for the figure.
-        color_cycle : list[str]
-            List of colors applied to the elements cyclically if none is provided.
-            Default depends on the ``figure_style`` configuration.
         """
         self.figure_style = figure_style
         self.size = size
         self.log_scale_x = log_scale_x
         self.log_scale_y = log_scale_y
-        self.show_grid = show_grid
-        self.color_cycle = color_cycle
+        if show_grid == "default":
+            self.show_grid = "unchanged"
+        else:
+            self.show_grid = show_grid
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
         self._handles = []
@@ -113,20 +107,33 @@ class Figure:
         """
         Prepares the :class:`~graphinglib.figure.Figure` to be displayed.
         """
-        file_loader = FileLoader(self.figure_style)
-        self.default_params = file_loader.load()
+        is_matplotlib_style = self.figure_style in plt.style.available
+        try:
+            file_loader = FileLoader(self.figure_style)
+            self.default_params = file_loader.load()
+            self._fill_in_rc_params()
+        except FileNotFoundError:
+            # set the style use matplotlib style
+            try:
+                plt.style.use(self.figure_style)
+                file_loader = FileLoader("plain")
+                self.default_params = file_loader.load()
+            except OSError:
+                raise GraphingException(
+                    f"The figure style {self.figure_style} was not found. Please choose a different style."
+                )
+
         figure_params_to_reset = self._fill_in_missing_params(self)
 
-        self._fill_in_rc_params()
         self._figure, self._axes = plt.subplots(figsize=self.size)
 
-        if self.show_grid:
+        if self.show_grid == "unchanged":
+            pass
+        elif self.show_grid:
             self._axes.grid(True)
         else:
             self._axes.grid(False)
 
-        self.color_cycle = cycler(color=self.color_cycle)
-        self._axes.set_prop_cycle(self.color_cycle)
         self._axes.set_xlabel(self.x_axis_name)
         self._axes.set_ylabel(self.y_axis_name)
         if self.x_lim:
@@ -138,11 +145,14 @@ class Figure:
         if self.log_scale_y:
             self._axes.set_yscale("log")
         if self._elements:
-            z_order = 0
+            z_order = 1
             for element in self._elements:
-                params_to_reset = self._fill_in_missing_params(element)
+                params_to_reset = []
+                if not is_matplotlib_style:
+                    params_to_reset = self._fill_in_missing_params(element)
                 element._plot_element(self._axes, z_order)
-                self._reset_params_to_default(element, params_to_reset)
+                if not is_matplotlib_style:
+                    self._reset_params_to_default(element, params_to_reset)
                 try:
                     if element.label is not None:
                         self._handles.append(element.handle)

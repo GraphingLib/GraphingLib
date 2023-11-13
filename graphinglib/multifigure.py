@@ -3,7 +3,6 @@ from typing import Literal, Optional
 from warnings import warn
 
 import matplotlib.pyplot as plt
-from cycler import cycler
 from matplotlib import rcParamsDefault
 from matplotlib.axes import Axes
 from matplotlib.collections import LineCollection
@@ -49,9 +48,6 @@ class SubFigure:
         The limits for the x-axis and y-axis.
     figure_style : str
         The figure style to use for the figure.
-    color_cycle : list[str]
-        List of colors applied to the elements cyclically if none is provided.
-        Default depends on the ``figure_style`` configuration.
     add_reference_label : bool
         Whether or not to add a reference label to the SubFigure.
         Defaults to ``True``.
@@ -77,7 +73,6 @@ class SubFigure:
         x_lim: Optional[tuple[float, float]] = None,
         y_lim: Optional[tuple[float, float]] = None,
         figure_style: str = "plain",
-        color_cycle: list[str] | Literal["default"] = "default",
         add_reference_label: bool = True,
         log_scale_x: bool | Literal["default"] = "default",
         log_scale_y: bool | Literal["default"] = "default",
@@ -110,9 +105,6 @@ class SubFigure:
             The limits for the x-axis and y-axis.
         figure_style : str
             The figure style to use for the figure.
-        color_cycle : list[str]
-            List of colors applied to the elements cyclically if none is provided.
-            Default depends on the ``figure_style`` configuration.
         add_reference_label : bool
             Whether or not to add a reference label to the SubFigure.
             Defaults to ``True``.
@@ -135,8 +127,10 @@ class SubFigure:
         self.figure_style = figure_style
         self.log_scale_x = log_scale_x
         self.log_scale_y = log_scale_y
-        self.show_grid = show_grid
-        self.color_cycle = color_cycle
+        if show_grid == "default":
+            self.show_grid = "unchanged"
+        else:
+            self.show_grid = show_grid
         self.add_reference_label = add_reference_label
         self.remove_axes = remove_axes
         self._elements: list[Plottable] = []
@@ -166,9 +160,21 @@ class SubFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.SubFigure` to be displayed.
         """
-        file_loader = FileLoader(self.figure_style)
-        self.default_params = file_loader.load()
+        is_matplotlib_style = self.figure_style in plt.style.available
+        try:
+            file_loader = FileLoader(self.figure_style)
+            self.default_params = file_loader.load()
+        except FileNotFoundError:
+            try:
+                plt.style.use(self.figure_style)
+                file_loader = FileLoader("plain")
+                self.default_params = file_loader.load()
+            except OSError:
+                raise GraphingException(
+                    f"The figure style {self.figure_style} was not found. Please choose a different style."
+                )
         figure_params_to_reset = self._fill_in_missing_params(self)
+
         self._axes = plt.subplot(
             grid.new_subplotspec(
                 (self.row_start, self.col_start),
@@ -183,12 +189,12 @@ class SubFigure:
                 reference_label,
                 transform=self._axes.transAxes + transformation,
             )
-        if self.show_grid:
+        if self.show_grid == "unchanged":
+            pass
+        elif self.show_grid:
             self._axes.grid(True)
         else:
             self._axes.grid(False)
-        self.color_cycle = cycler(color=self.color_cycle)
-        self._axes.set_prop_cycle(self.color_cycle)
         self._axes.set_xlabel(self.x_axis_name)
         self._axes.set_ylabel(self.y_axis_name)
         if self.x_lim:
@@ -207,11 +213,13 @@ class SubFigure:
                 )
             )
         if self._elements:
-            z_order = 0
+            z_order = 12
             for element in self._elements:
-                params_to_reset = self._fill_in_missing_params(element)
+                if not is_matplotlib_style:
+                    params_to_reset = self._fill_in_missing_params(element)
                 element._plot_element(self._axes, z_order)
-                self._reset_params_to_default(element, params_to_reset)
+                if not is_matplotlib_style:
+                    self._reset_params_to_default(element, params_to_reset)
                 try:
                     if element.label is not None:
                         self._handles.append(element.handle)
@@ -416,7 +424,6 @@ class MultiFigure:
         y_lim: Optional[tuple[float, float]] = None,
         log_scale_x: bool | Literal["default"] = "default",
         log_scale_y: bool | Literal["default"] = "default",
-        color_cycle: list[str] | Literal["default"] = "default",
         show_grid: bool | Literal["default"] = "default",
         remove_axes: bool = False,
     ) -> SubFigure:
@@ -440,9 +447,6 @@ class MultiFigure:
             The limits for the x-axis and y-axis.
         log_scale_x, log_scale_y : bool
             Whether or not to set the scale of the x- or y-axis to logaritmic scale.
-            Default depends on the ``figure_style`` configuration.
-        color_cycle : list[str]
-            List of colors applied to the elements cyclically if none is provided.
             Default depends on the ``figure_style`` configuration.
         show_grid : bool
             Wheter or not to show the grid.
@@ -479,7 +483,6 @@ class MultiFigure:
             x_lim,
             y_lim,
             self.figure_style,
-            color_cycle,
             self.reference_labels,
             log_scale_x,
             log_scale_y,
@@ -498,11 +501,22 @@ class MultiFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.MultiFigure` to be displayed.
         """
-        file_loader = FileLoader(self.figure_style)
-        self.default_params = file_loader.load()
+        try:
+            file_loader = FileLoader(self.figure_style)
+            self.default_params = file_loader.load()
+            self._fill_in_rc_params()
+        except FileNotFoundError:
+            try:
+                plt.style.use(self.figure_style)
+                file_loader = FileLoader("plain")
+                self.default_params = file_loader.load()
+            except OSError:
+                raise GraphingException(
+                    f"The figure style {self.figure_style} was not found. Please choose a different style."
+                )
+
         multi_figure_params_to_reset = self._fill_in_missing_params(self)
 
-        self._fill_in_rc_params()
         self._figure = plt.figure(layout="constrained", figsize=self.size)
         MultiFigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
 
