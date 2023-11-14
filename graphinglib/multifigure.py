@@ -671,9 +671,10 @@ class MultiFigure:
         for param in params_to_reset:
             setattr(element, param, "default")
 
-    def customize_visual_style(
+    def update_rc_params(
         self,
-        rc_params_dict: dict[str, str | float] | Literal["default"] = "default",
+        rc_params_dict: dict[str, str | float] = {},
+        reset: bool = False,
     ):
         """
         Customize the visual style of the :class:`~graphinglib.figure.Figure`.
@@ -684,9 +685,135 @@ class MultiFigure:
         ----------
         rc_params_dict : dict[str, str | float]
             Dictionary of rc parameters to update.
-            Defaults depends on the ``figure_style`` configuration.
+            Defaults to empty dictionary.
+        reset : bool
+            Whether or not to reset the rc parameters to the default values for the specified ``figure_style``.
+            Defaults to ``False``.
         """
-        self._user_rc_dict = rc_params_dict
+        if reset:
+            self._user_rc_dict = {}
+        for property, value in rc_params_dict.items():
+            self._user_rc_dict[property] = value
+
+    def customize_visual_style(
+        self,
+        reset: bool = False,
+        figure_face_color: str | None = None,
+        axes_face_color: str | None = None,
+        axes_edge_color: str | None = None,
+        axes_label_color: str | None = None,
+        axes_line_width: float | None = None,
+        color_cycle: list[str] | None = None,
+        x_tick_color: str | None = None,
+        y_tick_color: str | None = None,
+        legend_face_color: str | None = None,
+        legend_edge_color: str | None = None,
+        font_family: str | None = None,
+        font_size: float | None = None,
+        font_weight: str | None = None,
+        text_color: str | None = None,
+        use_latex: bool | None = None,
+        grid_line_style: str | None = None,
+        grid_line_width: float | None = None,
+        grid_color: str | None = None,
+        grid_alpha: float | None = None,
+    ):
+        """
+        Customize the visual style of the :class:`~graphinglib.figure.Figure`.
+
+        Any parameter that is not specified (None) will be set to the default value for the specified ``figure_style``.
+
+        Parameters
+        ----------
+        reset : bool
+            Whether or not to reset the rc parameters to the default values for the specified ``figure_style``.
+            Defaults to ``False``.
+        figure_face_color : str
+            The color of the figure face.
+            Defaults to ``None``.
+        axes_face_color : str
+            The color of the axes face.
+            Defaults to ``None``.
+        axes_edge_color : str
+            The color of the axes edge.
+            Defaults to ``None``.
+        axes_label_color : str
+            The color of the axes labels.
+            Defaults to ``None``.
+        axes_line_width : float
+            The width of the axes lines.
+            Defaults to ``None``.
+        color_cycle : list[str]
+            A list of colors to use for the color cycle.
+            Defaults to ``None``.
+        x_tick_color : str
+            The color of the x-axis ticks.
+            Defaults to ``None``.
+        y_tick_color : str
+            The color of the y-axis ticks.
+            Defaults to ``None``.
+        legend_face_color : str
+            The color of the legend face.
+            Defaults to ``None``.
+        legend_edge_color : str
+            The color of the legend edge.
+            Defaults to ``None``.
+        font_family : str
+            The font family to use.
+            Defaults to ``None``.
+        font_size : float
+            The font size to use.
+            Defaults to ``None``.
+        font_weight : str
+            The font weight to use.
+            Defaults to ``None``.
+        text_color : str
+            The color of the text.
+            Defaults to ``None``.
+        use_latex : bool
+            Whether or not to use latex.
+            Defaults to ``None``.
+        grid_line_style : str
+            The style of the grid lines.
+            Defaults to ``None``.
+        grid_line_width : float
+            The width of the grid lines.
+            Defaults to ``None``.
+        grid_color : str
+            The color of the grid lines.
+            Defaults to ``None``.
+        grid_alpha : float
+            The alpha of the grid lines.
+            Defaults to ``None``.
+        """
+        if color_cycle is not None:
+            color_cycle = plt.cycler(color=color_cycle)
+
+        rc_params_dict = {
+            "figure.facecolor": figure_face_color,
+            "axes.facecolor": axes_face_color,
+            "axes.edgecolor": axes_edge_color,
+            "axes.labelcolor": axes_label_color,
+            "axes.linewidth": axes_line_width,
+            "axes.prop_cycle": color_cycle,
+            "xtick.color": x_tick_color,
+            "ytick.color": y_tick_color,
+            "legend.facecolor": legend_face_color,
+            "legend.edgecolor": legend_edge_color,
+            "font.family": font_family,
+            "font.size": font_size,
+            "font.weight": font_weight,
+            "text.color": text_color,
+            "text.usetex": use_latex,
+            "grid.linestyle": grid_line_style,
+            "grid.linewidth": grid_line_width,
+            "grid.color": grid_color,
+            "grid.alpha": grid_alpha,
+        }
+        rc_params_dict = {
+            key: value for key, value in rc_params_dict.items() if value is not None
+        }
+        self.update_rc_params(rc_params_dict, reset=reset)
 
     def _fill_in_rc_params(self):
         """
