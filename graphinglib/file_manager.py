@@ -1,6 +1,7 @@
 from os import path, remove
 
 import yaml
+from matplotlib import pyplot as plt
 from platformdirs import user_config_dir
 
 
@@ -115,7 +116,7 @@ class FileUpdater:
 
 def get_colors(figure_style: str = "plain") -> list[str]:
     """
-    Returns a list of colors from the specified style file.
+    Returns a list of colors from the specified style (user created, GL, or Matplotlib style).
 
     Parameters
     ----------
@@ -127,17 +128,26 @@ def get_colors(figure_style: str = "plain") -> list[str]:
     list[str]
         A list of colors.
     """
-    file_loader = FileLoader(figure_style)
-    style_info = file_loader.load()
-    colors = style_info["rc_params"]["axes.prop_cycle"]
-    colors = colors[colors.find("[") + 1 : colors.find("]")].split(", ")
-    colors = [color[1:-1] for color in colors]
+    try:
+        file_loader = FileLoader(figure_style)
+        style_info = file_loader.load()
+        colors = style_info["rc_params"]["axes.prop_cycle"]
+        colors = colors[colors.find("[") + 1 : colors.find("]")].split(", ")
+        colors = [color[1:-1] for color in colors]
+    except FileNotFoundError:
+        if figure_style in plt.style.available:
+            with plt.style.context(figure_style):
+                colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        else:
+            raise FileNotFoundError(
+                f"Could not find the file {figure_style}.yml or the matplotlib style {figure_style}."
+            )
     return colors
 
 
 def get_color(figure_style: str = "plain", color_number: int = 0) -> str:
     """
-    Returns a color from the specified style file.
+    Returns a color from the specified style (user created, GL, or Matplotlib style).
 
     Parameters
     ----------
