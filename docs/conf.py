@@ -51,7 +51,6 @@ html_theme_options = {
     "pygment_dark_style": "github-dark",
     "show_toc_level": 2,
     "show_prev_next": False,
-    "announcement": "This documentation site is still in development so please be patient while we add every relevant information to it.",
 }
 html_context = {"default_mode": "dark"}
 html_show_sourcelink = False
