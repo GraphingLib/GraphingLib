@@ -130,6 +130,8 @@ def get_colors(figure_style: str = "plain") -> list[str]:
     list[str]
         A list of colors.
     """
+    if figure_style == "matplotlib":
+        figure_style = "default"
     try:
         file_loader = FileLoader(figure_style)
         style_info = file_loader.load()
@@ -137,7 +139,7 @@ def get_colors(figure_style: str = "plain") -> list[str]:
         colors = colors[colors.find("[") + 1 : colors.find("]")].split(", ")
         colors = [color[1:-1] for color in colors]
     except FileNotFoundError:
-        if figure_style in plt.style.available:
+        if figure_style in plt.style.available or figure_style == "default":
             with plt.style.context(figure_style):
                 colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
         else:

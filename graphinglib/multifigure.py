@@ -13,12 +13,9 @@ from matplotlib.transforms import ScaledTranslation
 
 from .file_manager import FileLoader, FileUpdater
 from .graph_elements import GraphingException, Plottable, Text
-from .legend_artists import (
-    HandlerMultipleLines,
-    HandlerMultipleVerticalLines,
-    VerticalLineCollection,
-    histogram_legend_artist,
-)
+from .legend_artists import (HandlerMultipleLines,
+                             HandlerMultipleVerticalLines,
+                             VerticalLineCollection, histogram_legend_artist)
 
 
 class SubFigure:
@@ -160,15 +157,19 @@ class SubFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.SubFigure` to be displayed.
         """
-        is_matplotlib_style = self.figure_style in plt.style.available
         try:
             file_loader = FileLoader(self.figure_style)
             self.default_params = file_loader.load()
+            is_matplotlib_style = False
         except FileNotFoundError:
             try:
-                plt.style.use(self.figure_style)
+                if self.figure_style == "matplotlib":
+                    plt.style.use("default")
+                else:
+                    plt.style.use(self.figure_style)
                 file_loader = FileLoader("plain")
                 self.default_params = file_loader.load()
+                is_matplotlib_style = True
             except OSError:
                 raise GraphingException(
                     f"The figure style {self.figure_style} was not found. Please choose a different style."
@@ -507,7 +508,10 @@ class MultiFigure:
             self._fill_in_rc_params()
         except FileNotFoundError:
             try:
-                plt.style.use(self.figure_style)
+                if self.figure_style == "matplotlib":
+                    plt.style.use("default")
+                else:
+                    plt.style.use(self.figure_style)
                 file_loader = FileLoader("plain")
                 self.default_params = file_loader.load()
             except OSError:

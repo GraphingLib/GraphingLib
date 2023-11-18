@@ -107,15 +107,20 @@ class Figure:
         """
         Prepares the :class:`~graphinglib.figure.Figure` to be displayed.
         """
-        is_matplotlib_style = self.figure_style in plt.style.available
         try:
             file_loader = FileLoader(self.figure_style)
             self.default_params = file_loader.load()
             self._fill_in_rc_params()
+            is_matplotlib_style = False
         except FileNotFoundError:
             # set the style use matplotlib style
             try:
-                plt.style.use(self.figure_style)
+                is_matplotlib_style = True
+                if self.figure_style == "matplotlib":
+                    # set the style to default
+                    plt.style.use("default")
+                else:
+                    plt.style.use(self.figure_style)
                 file_loader = FileLoader("plain")
                 self.default_params = file_loader.load()
             except OSError:
