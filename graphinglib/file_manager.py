@@ -104,7 +104,9 @@ class FileUpdater:
         with open(self._plain_style_location, "r") as file:
             plain_info = yaml.safe_load(file)
         for key in plain_info:
-            if key not in user_info:
+            if key == "rc_params":
+                pass
+            elif key not in user_info:
                 user_info[key] = plain_info[key]
             else:
                 for subkey in plain_info[key]:
