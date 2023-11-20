@@ -197,7 +197,6 @@ class Figure:
         self._handles = []
         self._labels = []
         self._rc_dict = {}
-        plt.rcParams.update(plt.rcParamsDefault)
 
     def display(self, legend: bool = True) -> None:
         """
@@ -213,6 +212,7 @@ class Figure:
         self._prepare_figure(legend=legend)
         plt.tight_layout()
         plt.show()
+        plt.rcParams.update(plt.rcParamsDefault)
 
     def save_figure(self, file_name: str, legend: bool = True) -> None:
         """
@@ -228,6 +228,7 @@ class Figure:
         plt.tight_layout()
         plt.savefig(file_name, bbox_inches="tight")
         plt.close()
+        plt.rcParams.update(plt.rcParamsDefault)
 
     def _fill_in_missing_params(self, element: Plottable) -> list[str]:
         """
