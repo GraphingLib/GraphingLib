@@ -575,7 +575,6 @@ class MultiFigure:
         self._figure.suptitle(self.title)
         self._reset_params_to_default(self, multi_figure_params_to_reset)
         self._rc_dict = {}
-        plt.rcParams.update(rcParamsDefault)
 
     def display(
         self,
@@ -604,6 +603,7 @@ class MultiFigure:
             legend_cols=legend_cols,
         )
         plt.show()
+        plt.rcParams.update(rcParamsDefault)
 
     def save_figure(
         self,
@@ -636,6 +636,7 @@ class MultiFigure:
         )
         plt.savefig(file_name, bbox_inches="tight")
         plt.close()
+        plt.rcParams.update(rcParamsDefault)
 
     def _fill_in_missing_params(self, element: Plottable) -> list[str]:
         """
