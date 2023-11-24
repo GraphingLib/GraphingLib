@@ -26,8 +26,12 @@ Histogram:
   alpha: 1.0
   line_width: 2
   normalize: True
-  show_pdf: 
   show_params: True
+  pdf_show_mean: True
+  pdf_show_std: True
+  pdf_curve_color: "k"
+  pdf_mean_color: "r"
+  pdf_std_color: "k"
 
 Hlines:
   colors: "k"

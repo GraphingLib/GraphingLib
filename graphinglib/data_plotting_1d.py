@@ -1373,12 +1373,12 @@ class Histogram:
             axes.plot(
                 x_data,
                 y_data,
-                color=self._pdf_curve_color,
+                color=self.pdf_curve_color,
                 zorder=z_order,
             )
             curve_max_y = normal(self.mean)
             curve_std_y = normal(self.mean + self.standard_deviation)
-            if self._pdf_show_std:
+            if self.pdf_show_std:
                 plt.vlines(
                     [
                         self.mean - self.standard_deviation,
@@ -1387,16 +1387,16 @@ class Histogram:
                     [0, 0],
                     [curve_std_y, curve_std_y],
                     linestyles=["dashed"],
-                    colors=[self._pdf_std_color, self._pdf_std_color],
+                    colors=[self.pdf_std_color, self.pdf_std_color],
                     zorder=z_order - 1,
                 )
-            if self._pdf_show_mean:
+            if self.pdf_show_mean:
                 plt.vlines(
                     self.mean,
                     0,
                     curve_max_y,
                     linestyles=["dashed"],
-                    colors=[self._pdf_mean_color],
+                    colors=[self.pdf_mean_color],
                     zorder=z_order - 1,
                 )
 
@@ -1438,8 +1438,8 @@ class Histogram:
             raise ValueError("Currently only normal distribution is supported.")
         self._show_pdf = True
         self._pdf_type = type
-        self._pdf_show_mean = show_mean
-        self._pdf_show_std = show_std
-        self._pdf_curve_color = curve_color
-        self._pdf_mean_color = mean_color
-        self._pdf_std_color = std_color
+        self.pdf_show_mean = show_mean
+        self.pdf_show_std = show_std
+        self.pdf_curve_color = curve_color
+        self.pdf_mean_color = mean_color
+        self.pdf_std_color = std_color
