@@ -82,6 +82,13 @@ Plain style:
 
 .. image:: images/plain_showcase.png
 
+Dim style:
+
+.. image:: images/dim_showcase.png
+
+Dark style:
+
+.. image:: images/dark_showcase.png
 
 Horrible style:
 
