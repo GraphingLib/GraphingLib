@@ -1189,7 +1189,6 @@ class Histogram:
     alpha: float | Literal["default"] = "default"
     line_width: float | Literal["default"] = "default"
     normalize: bool | Literal["default"] = "default"
-    show_pdf: str = "default"
     show_params: bool | Literal["default"] = "default"
 
     def __post_init__(self) -> None:
@@ -1206,6 +1205,7 @@ class Histogram:
         self._bin_centers = bin_centers
         self._bin_edges = bin_edges
         self._create_label()
+        self._show_pdf = False
 
     @classmethod
     def plot_residuals_from_fit(
@@ -1219,7 +1219,6 @@ class Histogram:
         alpha: int | Literal["default"] = "default",
         line_width: int | Literal["default"] = "default",
         normalize: bool | Literal["default"] = "default",
-        show_pdf: str | Literal["default"] = "default",
         show_params: bool | Literal["default"] = "default",
     ) -> Self:
         """
@@ -1274,7 +1273,6 @@ class Histogram:
             alpha,
             line_width,
             normalize,
-            show_pdf,
             show_params,
         )
 
@@ -1363,7 +1361,7 @@ class Histogram:
             zorder=z_order - 1,
             **params,
         )
-        if self.show_pdf in ["normal", "gaussian"]:
+        if self._show_pdf:
             normal = (
                 self._normal_normalized
                 if self.normalize
@@ -1375,20 +1373,73 @@ class Histogram:
             axes.plot(
                 x_data,
                 y_data,
-                color="k",
+                color=self._pdf_curve_color,
                 zorder=z_order,
             )
             curve_max_y = normal(self.mean)
             curve_std_y = normal(self.mean + self.standard_deviation)
-            plt.vlines(
-                [
-                    self.mean - self.standard_deviation,
+            if self._pdf_show_std:
+                plt.vlines(
+                    [
+                        self.mean - self.standard_deviation,
+                        self.mean + self.standard_deviation,
+                    ],
+                    [0, 0],
+                    [curve_std_y, curve_std_y],
+                    linestyles=["dashed"],
+                    colors=[self._pdf_std_color, self._pdf_std_color],
+                    zorder=z_order - 1,
+                )
+            if self._pdf_show_mean:
+                plt.vlines(
                     self.mean,
-                    self.mean + self.standard_deviation,
-                ],
-                [0, 0, 0],
-                [curve_std_y, curve_max_y, curve_std_y],
-                linestyles=["dashed"],
-                colors=["k", "r", "k"],
-                zorder=z_order - 1,
-            )
+                    0,
+                    curve_max_y,
+                    linestyles=["dashed"],
+                    colors=[self._pdf_mean_color],
+                    zorder=z_order - 1,
+                )
+
+    def show_pdf(
+        self,
+        type: str = "normal",
+        show_mean: bool | Literal["default"] = "default",
+        show_std: bool | Literal["default"] = "default",
+        curve_color: str | Literal["default"] = "default",
+        mean_color: str | Literal["default"] = "default",
+        std_color: str | Literal["default"] = "default",
+    ) -> None:
+        """
+        Shows the probability density function of the histogram.
+
+        Parameters
+        ----------
+        type : str
+            The type of probability density function to be shown.
+            Currently only "normal" is supported.
+            Defaults to "normal".
+        show_mean : bool
+            Whether or not to show the mean of the data.
+            Default depends on the ``figure_style`` configuration.
+        show_std : bool
+            Whether or not to show the standard deviation of the data.
+            Default depends on the ``figure_style`` configuration.
+        curve_color : str
+            Color of the probability density function curve.
+            Default depends on the ``figure_style`` configuration.
+        mean_color : str
+            Color of the mean line.
+            Default depends on the ``figure_style`` configuration.
+        std_color : str
+            Color of the standard deviation lines.
+            Default depends on the ``figure_style`` configuration.
+        """
+        if type != "normal":
+            raise ValueError("Currently only normal distribution is supported.")
+        self._show_pdf = True
+        self._pdf_type = type
+        self._pdf_show_mean = show_mean
+        self._pdf_show_std = show_std
+        self._pdf_curve_color = curve_color
+        self._pdf_mean_color = mean_color
+        self._pdf_std_color = std_color
