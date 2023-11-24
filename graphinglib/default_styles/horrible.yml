@@ -29,9 +29,9 @@ Histogram:
   show_params: True
   pdf_show_mean: True
   pdf_show_std: True
-  pdf_curve_color: "k"
-  pdf_mean_color: "r"
-  pdf_std_color: "k"
+  pdf_curve_color: "y"
+  pdf_mean_color: "g"
+  pdf_std_color: "b"
 
 Hlines:
   colors: "k"
