@@ -173,6 +173,8 @@ rc_params:
   text.color: "black"
   text.usetex: False
   lines.solid_capstyle: "round"
+  lines.dash_joinstyle: "round"
+  lines.dash_capstyle: "round"
   grid.linestyle: "-."
   grid.linewidth: 5
   grid.color: "orange"
