@@ -23,6 +23,35 @@ As for the :class:`~graphinglib.data_plotting_1d.Curve` and :class:`~graphinglib
         lambda x, y: np.cos(x * 0.2) + np.sin(y * 0.3), (0, 49), (49, 0)
     )
 
+It is also possible to create a Heatmap from a list or array of values at unevenly distributed points. Take for example the data displayed below:
+
+.. image:: images/data_uneven.png
+
+The :py:meth:`~graphinglib.data_plotting_2d.Heatmap.from_points` method used below will interpolate the data on a grid and create a Heatmap from this interpolated data: ::
+
+    def func(x, y):
+        return x * (1 - x) * np.cos(4 * np.pi * x) * np.sin(4 * np.pi * y**2) ** 2
+
+
+    rng = np.random.default_rng()
+    points = rng.random((1000, 2))
+    values = func(points[:, 0], points[:, 1])
+
+    fig = gl.Figure()
+    hm = gl.Heatmap.from_points(
+        points,
+        values,
+        (0, 1),
+        (0, 1),
+        grid_interpolation="cubic",
+        number_of_points=(100, 100),
+        origin_position="lower",
+    )
+    fig.add_element(hm)
+    fig.display()
+
+.. image:: images/data_even.png
+
 To display an image instead, simply create a Heatmap with the path to an image as a string instead of actual data: ::
 
     map = gl.Heatmap("images/GraphingLib-logo.png")
