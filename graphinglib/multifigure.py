@@ -13,9 +13,12 @@ from matplotlib.transforms import ScaledTranslation
 
 from .file_manager import FileLoader, FileUpdater
 from .graph_elements import GraphingException, Plottable, Text
-from .legend_artists import (HandlerMultipleLines,
-                             HandlerMultipleVerticalLines,
-                             VerticalLineCollection, histogram_legend_artist)
+from .legend_artists import (
+    HandlerMultipleLines,
+    HandlerMultipleVerticalLines,
+    VerticalLineCollection,
+    histogram_legend_artist,
+)
 
 
 class SubFigure:
@@ -209,8 +212,8 @@ class SubFigure:
         if self.remove_axes:
             self._axes.axis("off")
             warn(
-                "Axes on SubFigure placed at {} have been removed.".format(
-                    self.placement
+                "Axes on SubFigure placed at ({},{},{},{}) have been removed.".format(
+                    self.row_start, self.col_start, self.row_span, self.col_span
                 )
             )
         if self._elements:
