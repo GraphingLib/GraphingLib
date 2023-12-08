@@ -8,6 +8,7 @@ import numpy as np
 from matplotlib.colors import Colormap
 from matplotlib.image import imread
 from numpy.typing import ArrayLike
+from scipy.interpolate import griddata
 
 
 @dataclass
@@ -130,6 +131,92 @@ class Heatmap:
         z = func(x_grid, y_grid)
         return cls(
             z,
+            x_axis_range,
+            y_axis_range,
+            color_map,
+            show_color_bar,
+            alpha_value,
+            aspect_ratio,
+            origin_position,
+            interpolation,
+        )
+
+    @classmethod
+    def from_points(
+        cls,
+        points: ArrayLike,
+        values: ArrayLike,
+        x_axis_range: tuple[float, float],
+        y_axis_range: tuple[float, float],
+        grid_interpolation: str = "nearest",
+        fill_value: float = np.nan,
+        color_map: str | Colormap = "default",
+        show_color_bar: bool = True,
+        alpha_value: float = 1.0,
+        aspect_ratio: str | float = "default",
+        origin_position: str = "default",
+        interpolation: str = "none",
+        number_of_points: tuple[int, int] = (50, 50),
+    ):
+        """
+        Creates a heatmap by interpolating unevenly distributed data points on a grid.
+
+        Parameters
+        ----------
+        points : ArrayLike
+            The list or array of points at which values are known.
+        values : ArrayLike
+            The list or array of values at given points.
+        x_axis_range, y_axis_range : tuple[float, float], optional
+            The range of x and y values used for the axes as tuples containing the
+            start and end of the range.
+        grid_interpolation : str
+            Interpolation method to be used when interpolating the uneavenly distributed data on a grid.
+            Must be one of {"nearest", "linear", "cubic"}.
+        color_map : str, Colormap
+            The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
+            string (named colormap from Matplotlib) or a Colormap object.
+            Default depends on the ``figure_style`` configuration.
+        show_color_bar : bool
+            Whether or not to display the color bar next to the plot.
+            Defaults to ``True``.
+        alpha_value : float
+            Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
+            Defaults to 1.0.
+        aspect_ratio : str or float
+            Aspect ratio of the axes.
+            Default depends on the ``figure_style`` configuration.
+        origin_position : str
+            Position of the origin of the axes (upper left or lower left corner).
+            Default depends on the ``figure_style`` configuration.
+        interpolation : str
+            Interpolation method to be applied to the image.
+            Defaults to ``"none"``.
+
+            .. seealso::
+                For other interpolation methods, refer to
+                `Interpolations for imshow <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_.
+
+        number_of_points : tuple[int, int]
+            Number of points in the x and y coordinates.
+            Defaults to ``(50, 50)``.
+
+        Returns
+        -------
+        A :class:`~graphinglib.data_plotting_2d.Heatmap` object created from data points.
+        """
+        x = np.linspace(x_axis_range[0], x_axis_range[1], number_of_points[0])
+        y = np.linspace(y_axis_range[0], y_axis_range[1], number_of_points[1])
+        x_grid, y_grid = np.meshgrid(x, y)
+        grid = griddata(
+            points,
+            values,
+            (x_grid, y_grid),
+            method=grid_interpolation,
+            fill_value=fill_value,
+        )
+        return cls(
+            grid,
             x_axis_range,
             y_axis_range,
             color_map,
