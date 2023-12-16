@@ -44,6 +44,8 @@ class SubFigure:
     x_label, y_label : str
         The indentification for the x-axis and y-axis.
         Defaults to ``"x axis"`` and ``"y axis"``.
+    title : str, optional
+        Title of the SubFigure.
     x_lim, y_lim : tuple[float, float], optional
         The limits for the x-axis and y-axis.
     figure_style : str
@@ -70,6 +72,7 @@ class SubFigure:
         col_span: int,
         x_label: str = "x axis",
         y_label: str = "y axis",
+        title: Optional[str] = None,
         x_lim: Optional[tuple[float, float]] = None,
         y_lim: Optional[tuple[float, float]] = None,
         figure_style: str = "plain",
@@ -101,6 +104,8 @@ class SubFigure:
         x_label, y_label : str
             The indentification for the x-axis and y-axis.
             Defaults to ``"x axis"`` and ``"y axis"``.
+        title : str, optional
+            Title of the SubFigure.
         x_lim, y_lim : tuple[float, float], optional
             The limits for the x-axis and y-axis.
         figure_style : str
@@ -120,6 +125,7 @@ class SubFigure:
         """
         self.x_axis_name = x_label
         self.y_axis_name = y_label
+        self.title = title
         self.x_lim = x_lim
         self.y_lim = y_lim
         self.row_start, self.col_start = row_start, col_start
@@ -201,6 +207,8 @@ class SubFigure:
             self._axes.grid(False)
         self._axes.set_xlabel(self.x_axis_name)
         self._axes.set_ylabel(self.y_axis_name)
+        if self.title:
+            self._axes.set_title(self.title)
         if self.x_lim:
             self._axes.set_xlim(*self.x_lim)
         if self.y_lim:
@@ -424,6 +432,7 @@ class MultiFigure:
         col_span: int,
         x_label: str = "x axis",
         y_label: str = "y axis",
+        title: Optional[str] = None,
         x_lim: Optional[tuple[float, float]] = None,
         y_lim: Optional[tuple[float, float]] = None,
         log_scale_x: bool | Literal["default"] = "default",
@@ -447,6 +456,8 @@ class MultiFigure:
         x_label, y_label : str
             The indentification for the x-axis and y-axis.
             Defaults to ``"x axis"`` and ``"y axis"``.
+        title : str, optional
+            Title of the SubFigure.
         x_lim, y_lim : tuple[float, float], optional
             The limits for the x-axis and y-axis.
         log_scale_x, log_scale_y : bool
@@ -484,6 +495,7 @@ class MultiFigure:
             col_span,
             x_label,
             y_label,
+            title,
             x_lim,
             y_lim,
             self.figure_style,
