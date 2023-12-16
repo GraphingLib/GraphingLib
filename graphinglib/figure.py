@@ -90,6 +90,7 @@ class Figure:
         self.y_lim = y_lim
         self._rc_dict = {}
         self._user_rc_dict = {}
+        self._custom_ticks = False
 
     def add_element(self, *elements: Plottable) -> None:
         """
@@ -141,6 +142,11 @@ class Figure:
 
         self._axes.set_xlabel(self.x_axis_name)
         self._axes.set_ylabel(self.y_axis_name)
+        if self._custom_ticks:
+            if self._xticks:
+                self._axes.set_xticks(self._xticks, self._xticklabels)
+            if self._yticks:
+                self._axes.set_yticks(self._yticks, self._yticklabels)
         if self.x_lim:
             self._axes.set_xlim(*self.x_lim)
         if self.y_lim:
@@ -440,3 +446,43 @@ class Figure:
                 self._rc_dict[property] = value
         all_rc_params = {**self._rc_dict, **self._user_rc_dict}
         plt.rcParams.update(all_rc_params)
+
+    def set_ticks(
+        self,
+        xticks: Optional[list[float]] = None,
+        xticklabels: Optional[list[str]] = None,
+        yticks: Optional[list[float]] = None,
+        yticklabels: Optional[list[str]] = None,
+    ):
+        """
+        Sets custom [x/y]ticks and [x/y]ticks' labels.
+
+        ..note::
+            [x/y]ticks and [x/y]ticks' labels can be omited as long as labels are provided for
+            specified ticks.
+
+        Parameters
+        ----------
+        xticks : list[float], optional
+            Tick positions for the x axis.
+        xticklabels : list[str], optional
+            Tick labels for the x axis.
+        yticks : list[float], optional
+            Tick positions for the y axis.
+        yticklabels : list[str], optional
+            Tick labels for the y axis.
+        """
+        self._custom_ticks = True
+        self._xticks = xticks
+        self._xticklabels = xticklabels
+        self._yticks = yticks
+        self._yticklabels = yticklabels
+        if self._xticks or self._yticks:
+            if self._yticks and not self._yticklabels:
+                raise GraphingException(
+                    "Ticks position and corresponding labels must both be specified for the y axis."
+                )
+            if self._xticks and not self._xticklabels:
+                raise GraphingException(
+                    "Ticks position and corresponding labels must both be specified for the x axis."
+                )
