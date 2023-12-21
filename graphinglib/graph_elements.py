@@ -149,6 +149,8 @@ class Hlines:
         """
         Plots the element in the specified
         Axes
+        Plots the element in the specified
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         if isinstance(self.y, list) and len(self.y) > 1:
             params = {
@@ -298,7 +300,7 @@ class Vlines:
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
         Plots the element in the specified
-        Axes
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         if isinstance(self.x, list) and len(self.x) > 1:
             params = {
@@ -457,7 +459,7 @@ class Point:
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
         Plots the element in the specified
-        Axes
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         size = self.font_size if self.font_size != "same as figure" else None
         prefix = " " if self.h_align == "left" else ""
@@ -597,8 +599,7 @@ class Text:
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
-        Plots the element in the specified
-        Axes
+        Plots the element in the specified Axes
         """
         size = self.font_size if self.font_size != "same as figure" else None
         params = {
@@ -699,7 +700,8 @@ class Table:
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
-        Plots the element in the specified Axes
+        Plots the element in the specified
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         params = {
             "cellLoc": self.cell_align,
