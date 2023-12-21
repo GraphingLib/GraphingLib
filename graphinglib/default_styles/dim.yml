@@ -143,6 +143,12 @@ Circle:
   color:
   line_width: 1
   line_style: "-"
+Rectangle:
+  fill: True
+  fill_alpha: 0.2
+  color:
+  line_width: 1
+  line_style: "-"
 rc_params:
   axes.edgecolor: white
   axes.facecolor: dimgrey
