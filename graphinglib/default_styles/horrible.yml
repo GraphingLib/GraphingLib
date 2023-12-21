@@ -153,6 +153,20 @@ Stream:
   color: 
   color_map: 
   arrow_size: 5
+  
+Circle:
+  fill: True
+  fill_alpha: 0.2
+  color:
+  line_width: 1
+  line_style: "-"
+
+Rectangle:
+  fill: True
+  fill_alpha: 0.2
+  color:
+  line_width: 1
+  line_style: "-"
 
 rc_params:
   figure.facecolor: "white"

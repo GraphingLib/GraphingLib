@@ -35,3 +35,4 @@ from .fits import (
 )
 from .graph_elements import GraphingException, Hlines, Point, Table, Text, Vlines
 from .multifigure import MultiFigure, SubFigure
+from .shapes import Circle, Rectangle
