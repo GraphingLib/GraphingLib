@@ -1,4 +1,5 @@
 from typing import Literal, Optional
+from warnings import warn
 
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
@@ -35,6 +36,9 @@ class Figure:
     show_grid : bool
         Whether or not to show the grid.
         Default depends on the ``figure_style`` configuration.
+    remove_axes : bool
+        Whether or not to show the axes. Useful for adding tables or text to
+        the subfigure. Defaults to ``False``.
     figure_style : str
         The figure style to use for the figure.
     """
@@ -49,6 +53,7 @@ class Figure:
         log_scale_x: bool | Literal["default"] = "default",
         log_scale_y: bool | Literal["default"] = "default",
         show_grid: bool | Literal["default"] = "default",
+        remove_axes: bool = False,
         figure_style: str = "plain",
     ) -> None:
         """
@@ -70,6 +75,9 @@ class Figure:
         show_grid : bool
             Whether or not to show the grid.
             Default depends on the ``figure_style`` configuration.
+        remove_axes : bool
+            Whether or not to show the axes. Useful for adding tables or text to
+            the subfigure. Defaults to ``False``.
         figure_style : str
             The figure style to use for the figure.
         """
@@ -91,6 +99,7 @@ class Figure:
         self._rc_dict = {}
         self._user_rc_dict = {}
         self._custom_ticks = False
+        self.remove_axes = remove_axes
 
     def add_element(self, *elements: Plottable) -> None:
         """
@@ -155,6 +164,9 @@ class Figure:
             self._axes.set_xscale("log")
         if self.log_scale_y:
             self._axes.set_yscale("log")
+        if self.remove_axes:
+            self._axes.axis("off")
+            warn("Axes on this figure have been removed.")
         if self._elements:
             z_order = 1
             for element in self._elements:
