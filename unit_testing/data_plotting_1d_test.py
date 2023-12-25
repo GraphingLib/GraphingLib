@@ -65,11 +65,18 @@ class TestCurve(unittest.TestCase):
 
     def test_get_point_at_x(self):
         point = self.testCurve.get_point_at_x(0.5)
+        self.assertEqual(point[0], 0.5)
+        self.assertAlmostEqual(point[1], sin(0.5), places=3)
+        point = self.testCurve.get_point_at_x(0.5, as_point_object=True)
         self.assertEqual(point.x, 0.5)
         self.assertAlmostEqual(point.y, sin(0.5), places=3)
 
     def test_get_points_at_y(self):
         points = self.testCurve.get_points_at_y(0)
+        for i, point in enumerate(points):
+            self.assertEqual(point[1], 0)
+            self.assertAlmostEqual(point[0], i * pi, places=3)
+        points = self.testCurve.get_points_at_y(0, as_point_objects=True)
         for i, point in enumerate(points):
             self.assertEqual(point.y, 0)
             self.assertAlmostEqual(point.x, i * pi, places=3)
@@ -109,7 +116,7 @@ class TestCurve(unittest.TestCase):
     def test_intersection(self):
         x = linspace(0, 3 * pi, 200)
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
-        points = self.testCurve.intersection(other_curve)
+        points = self.testCurve.intersection(other_curve, as_point_objects=True)
         points_x = [0.1, 2.9962, 6.6072, 8.9052]
         points_y = [0.1, 0.14489, 0.3183, 0.4965]
         self.assertEqual(len(points), 4)
@@ -123,32 +130,32 @@ class TestCurve(unittest.TestCase):
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
         curve_sum = self.testCurve + other_curve
         self.assertIsInstance(curve_sum, Curve)
-        self.assertAlmostEqual(curve_sum.get_point_at_x(0).y, 0.1, places=3)
-        self.assertAlmostEqual(curve_sum.get_point_at_x(2).y, 1.029, places=3)
+        self.assertAlmostEqual(curve_sum.get_point_at_x(0)[1], 0.1, places=3)
+        self.assertAlmostEqual(curve_sum.get_point_at_x(2)[1], 1.029, places=3)
 
     def test_subtract_curves(self):
         x = linspace(0, 3 * pi, 200)
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
         curve_sub = self.testCurve - other_curve
         self.assertIsInstance(curve_sub, Curve)
-        self.assertAlmostEqual(curve_sub.get_point_at_x(0).y, -0.1, places=3)
-        self.assertAlmostEqual(curve_sub.get_point_at_x(2).y, 0.789, places=3)
+        self.assertAlmostEqual(curve_sub.get_point_at_x(0)[1], -0.1, places=3)
+        self.assertAlmostEqual(curve_sub.get_point_at_x(2)[1], 0.789, places=3)
 
     def test_multiply_curves(self):
         x = linspace(0, 3 * pi, 200)
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
         curve_mult = self.testCurve * other_curve
         self.assertIsInstance(curve_mult, Curve)
-        self.assertAlmostEqual(curve_mult.get_point_at_x(0).y, 0, places=3)
-        self.assertAlmostEqual(curve_mult.get_point_at_x(2).y, 0.109, places=3)
+        self.assertAlmostEqual(curve_mult.get_point_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(curve_mult.get_point_at_x(2)[1], 0.109, places=3)
 
     def test_divide_curves(self):
         x = linspace(0, 3 * pi, 200)
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
         curve_div = self.testCurve / other_curve
         self.assertIsInstance(curve_div, Curve)
-        self.assertAlmostEqual(curve_div.get_point_at_x(0).y, 0, places=3)
-        self.assertAlmostEqual(curve_div.get_point_at_x(2).y, 7.57748, places=2)
+        self.assertAlmostEqual(curve_div.get_point_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(curve_div.get_point_at_x(2)[1], 7.57748, places=2)
 
     def test_max_curves(self):
         curve_max = max(self.testCurve)
@@ -163,7 +170,7 @@ class TestCurve(unittest.TestCase):
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
         curve_sum = self.testCurve + other_curve
         self.assertIsInstance(curve_sum, Curve)
-        self.assertAlmostEqual(curve_sum.get_point_at_x(0).y, 0.1, places=3)
+        self.assertAlmostEqual(curve_sum.get_point_at_x(0)[1], 0.1, places=3)
 
 
 class TestScatter(unittest.TestCase):

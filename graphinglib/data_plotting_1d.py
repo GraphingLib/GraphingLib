@@ -249,15 +249,18 @@ class Curve:
         self,
         x: float,
         interpolation_method: str = "linear",
+        as_point_object: bool = False,
         label: Optional[str] = None,
         color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
-    ) -> Point:
+    ) -> Point | tuple[float, float]:
         """
         Gets the point on the curve at a given x value.
+
+        Returns a tuple of coordinates by default, but can return a :class:`~graphinglib.graph_elements.Point` object if ``as_point_object`` is set to ``True``. In this case, the other parameters are used to define the properties of the point. If ``as_point_object`` is set to ``False``, the other parameters are ignored.
 
         Parameters
         ----------
@@ -269,6 +272,9 @@ class Curve:
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
 
             Defaults to "linear".
+        as_point_object : bool
+            Whether to return a :class:`~graphinglib.graph_elements.Point` object (True) or a tuple of coordinates (False).
+            Defaults to False.
         label : str, optional
             Label to be displayed in the legend.
         color : str
@@ -289,32 +295,39 @@ class Curve:
 
         Returns
         -------
-        point: :class:`~graphinglib.graph_elements.Point`
+        point: :class:`~graphinglib.graph_elements.Point` or tuple[float, float]
             The point on the curve at the given x value.
         """
-        point = Point(
-            x,
-            float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
-            label=label,
-            color=color,
-            edge_color=edge_color,
-            marker_size=marker_size,
-            marker_style=marker_style,
-            edge_width=line_width,
-        )
-        return point
+        if as_point_object:
+            point = Point(
+                x,
+                float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
+                label=label,
+                color=color,
+                edge_color=edge_color,
+                marker_size=marker_size,
+                marker_style=marker_style,
+                edge_width=line_width,
+            )
+            return point
+        else:
+            return (
+                x,
+                float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
+            )
 
     def get_points_at_y(
         self,
         y: float,
         interpolation_method: str = "linear",
+        as_point_objects: bool = False,
         label: str | None = None,
         color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
-    ) -> list[Point]:
+    ) -> list[Point] | list[tuple[float, float]]:
         """
         Gets the points on the curve at a given y value.
 
@@ -328,6 +341,9 @@ class Curve:
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
 
             Defaults to "linear".
+        as_point_objects : bool
+            Whether to return a list of :class:`~graphinglib.graph_elements.Point` objects (True) or a list of tuples of coordinates (False).
+            Defaults to False.
         label : str, optional
             Label to be displayed in the legend.
         color : str
@@ -348,7 +364,7 @@ class Curve:
 
         Returns
         -------
-        points: list[:class:`~graphinglib.graph_elements.Point`]
+        points: list[:class:`~graphinglib.graph_elements.Point`] or list[tuple[float, float]]
             The points on the curve at the given y value.
         """
         xs = self.x_data
@@ -361,19 +377,22 @@ class Curve:
             f = interp1d([y1, y2], [x1, x2], kind=interpolation_method)
             x_val = f(y)
             x_vals.append(float(x_val))
-        points = [
-            Point(
-                x_val,
-                y,
-                label=label,
-                color=color,
-                edge_color=edge_color,
-                marker_size=marker_size,
-                marker_style=marker_style,
-                edge_width=line_width,
-            )
-            for x_val in x_vals
-        ]
+        if as_point_objects:
+            points = [
+                Point(
+                    x_val,
+                    y,
+                    label=label,
+                    color=color,
+                    edge_color=edge_color,
+                    marker_size=marker_size,
+                    marker_style=marker_style,
+                    edge_width=line_width,
+                )
+                for x_val in x_vals
+            ]
+        else:
+            points = [(x_val, y) for x_val in x_vals]
         return points
 
     def get_derivative_curve(
@@ -473,8 +492,8 @@ class Curve:
             A :class:`~graphinglib.data_plotting_1d.Curve` object which is the tangent to the original curve at a given x value.
         """
         point = self.get_point_at_x(x)
-        gradient = self.get_derivative_curve().get_point_at_x(x).y
-        y_data = gradient * (self.x_data - x) + point.y
+        gradient = self.get_derivative_curve().get_point_at_x(x)[1]
+        y_data = gradient * (self.x_data - x) + point[1]
         tangent_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
         return tangent_curve
 
@@ -511,8 +530,8 @@ class Curve:
             A :class:`~graphinglib.data_plotting_1d.Curve` object which is the normal to the original curve at a given x value.
         """
         point = self.get_point_at_x(x)
-        gradient = self.get_derivative_curve().get_point_at_x(x).y
-        y_data = -1 / gradient * (self.x_data - x) + point.y
+        gradient = self.get_derivative_curve().get_point_at_x(x)[1]
+        y_data = -1 / gradient * (self.x_data - x) + point[1]
         normal_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
         return normal_curve
 
@@ -529,7 +548,7 @@ class Curve:
         -------
         The slope of the curve (float) at the given x value.
         """
-        return self.get_derivative_curve().get_point_at_x(x).y
+        return self.get_derivative_curve().get_point_at_x(x)[1]
 
     def arc_length_between(self, x1: float, x2: float) -> float:
         """
@@ -590,13 +609,14 @@ class Curve:
     def intersection(
         self,
         other: Self,
+        as_point_objects: bool = False,
         labels: Optional[list[str] | str] = None,
         colors: list[str] | str = "default",
         edge_colors: list[str] | str = "default",
         marker_sizes: list[float] | float | Literal["default"] = "default",
         marker_styles: list[str] | str = "default",
         edge_widths: list[float] | float | Literal["default"] = "default",
-    ) -> list[Point]:
+    ) -> list[Point] | list[tuple[float, float]]:
         """
         Calculates the intersection points between two curves.
 
@@ -604,6 +624,9 @@ class Curve:
         ----------
         other : :class:`~graphinglib.data_plotting_1d.Curve`
             The other curve to calculate the intersections with.
+        as_point_objects : bool
+            Whether to return a list of :class:`~graphinglib.graph_elements.Point` objects (True) or a list of tuples of coordinates (False).
+            Defaults to False.
         labels : list[str] or str, optional
             Labels of the intersection points to be displayed in the legend.
             If a single string is passed, all intersection points will have the same label.
@@ -630,7 +653,7 @@ class Curve:
 
         Returns
         -------
-        points: list[:class:`~graphinglib.graph_elements.Point`]
+        points: list[:class:`~graphinglib.graph_elements.Point`] or list[tuple[float, float]]
             A list of :class:`~graphinglib.graph_elements.Point` objects which are the intersection points between the two curves.
         """
         y = self.y_data - other.y_data
@@ -673,18 +696,21 @@ class Curve:
                 edge_width = edge_widths[i]
             except (IndexError, TypeError, AssertionError):
                 edge_width = edge_widths
-            points.append(
-                Point(
-                    x_val,
-                    y_val,
-                    label=label,
-                    color=color,
-                    edge_color=edge_color,
-                    marker_size=marker_size,
-                    marker_style=marker_style,
-                    edge_width=edge_width,
+            if as_point_objects:
+                points.append(
+                    Point(
+                        x_val,
+                        y_val,
+                        label=label,
+                        color=color,
+                        edge_color=edge_color,
+                        marker_size=marker_size,
+                        marker_style=marker_style,
+                        edge_width=edge_width,
+                    )
                 )
-            )
+            else:
+                points.append((x_val, y_val))
         return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
