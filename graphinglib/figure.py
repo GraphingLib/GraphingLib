@@ -113,34 +113,42 @@ class Figure:
         for element in elements:
             self._elements.append(element)
 
-    def _prepare_figure(self, legend: bool = True) -> None:
+    def _prepare_figure(
+        self,
+        legend: bool = True,
+        axes: plt.Axes = None,
+        default_params: dict = None,
+        is_matplotlib_style: bool = False,
+    ):
         """
         Prepares the :class:`~graphinglib.figure.Figure` to be displayed.
         """
-        try:
-            file_loader = FileLoader(self.figure_style)
-            self.default_params = file_loader.load()
-            self._fill_in_rc_params()
-            is_matplotlib_style = False
-        except FileNotFoundError:
-            # set the style use matplotlib style
+        if axes is not None:
+            self._axes = axes
+            self.default_params = default_params
+            figure_params_to_reset = self._fill_in_missing_params(self)
+        else:
             try:
-                is_matplotlib_style = True
-                if self.figure_style == "matplotlib":
-                    # set the style to default
-                    plt.style.use("default")
-                else:
-                    plt.style.use(self.figure_style)
-                file_loader = FileLoader("plain")
+                file_loader = FileLoader(self.figure_style)
                 self.default_params = file_loader.load()
-            except OSError:
-                raise GraphingException(
-                    f"The figure style {self.figure_style} was not found. Please choose a different style."
-                )
-
-        figure_params_to_reset = self._fill_in_missing_params(self)
-
-        self._figure, self._axes = plt.subplots(figsize=self.size)
+                self._fill_in_rc_params()
+            except FileNotFoundError:
+                # set the style use matplotlib style
+                try:
+                    is_matplotlib_style = True
+                    if self.figure_style == "matplotlib":
+                        # set the style to default
+                        plt.style.use("default")
+                    else:
+                        plt.style.use(self.figure_style)
+                    file_loader = FileLoader("plain")
+                    self.default_params = file_loader.load()
+                except OSError:
+                    raise GraphingException(
+                        f"The figure style {self.figure_style} was not found. Please choose a different style."
+                    )
+            figure_params_to_reset = self._fill_in_missing_params(self)
+            self._figure, self._axes = plt.subplots(figsize=self.size)
 
         if self.show_grid == "unchanged":
             pass
@@ -212,9 +220,12 @@ class Figure:
         else:
             raise GraphingException("No curves to be plotted!")
         self._reset_params_to_default(self, figure_params_to_reset)
+        temp_handles = self._handles
+        temp_labels = self._labels
         self._handles = []
         self._labels = []
         self._rc_dict = {}
+        return temp_labels, temp_handles
 
     def display(self, legend: bool = True) -> None:
         """
@@ -454,7 +465,7 @@ class Figure:
         params = self.default_params["rc_params"]
         for property, value in params.items():
             # add to rc_dict if not already in there
-            if property not in self._rc_dict:
+            if (property not in self._rc_dict) and (property not in self._user_rc_dict):
                 self._rc_dict[property] = value
         all_rc_params = {**self._rc_dict, **self._user_rc_dict}
         plt.rcParams.update(all_rc_params)

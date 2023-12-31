@@ -105,3 +105,7 @@ class TestFigure(unittest.TestCase):
         handles, labels = self.testFigure._axes.get_legend_handles_labels()
         self.assertEqual(len(handles), 2)
         self.assertListEqual(labels, ["Test Curve", "Other Curve"])
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,8 +1,8 @@
 import unittest
-from matplotlib import contour
+
 import numpy as np
 
-from graphinglib.data_plotting_2d import Heatmap, Contour
+from graphinglib.data_plotting_2d import Contour, Heatmap
 from graphinglib.figure import Figure
 
 

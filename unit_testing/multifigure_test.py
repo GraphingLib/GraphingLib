@@ -2,7 +2,7 @@ import unittest
 
 from graphinglib.data_plotting_1d import Curve
 from graphinglib.file_manager import FileLoader
-from graphinglib.multifigure import MultiFigure, SubFigure
+from graphinglib.multifigure import MultiFigure
 
 
 class TestMultiFigure(unittest.TestCase):
