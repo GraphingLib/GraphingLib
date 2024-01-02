@@ -11,10 +11,12 @@ from matplotlib.transforms import ScaledTranslation
 
 from graphinglib.file_manager import FileLoader
 from graphinglib.graph_elements import GraphingException, Plottable
-from graphinglib.legend_artists import (HandlerMultipleLines,
-                                        HandlerMultipleVerticalLines,
-                                        VerticalLineCollection,
-                                        histogram_legend_artist)
+from graphinglib.legend_artists import (
+    HandlerMultipleLines,
+    HandlerMultipleVerticalLines,
+    VerticalLineCollection,
+    histogram_legend_artist,
+)
 
 from .figure import Figure
 
@@ -70,8 +72,8 @@ class MultiFigure:
         """
         This class implements the "canvas" on which multiple plots are displayed.
 
-        The canvas consists of a grid of a specified size on which the
-        :class:`~graphinglib.multifigure.SubFigure` objects are displayed.
+        The canvas consists of a grid of a specified size on which the individual
+        :class:`~graphinglib.figure.Figure` objects are displayed.
 
         Parameters
         ----------
@@ -127,7 +129,33 @@ class MultiFigure:
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
         figure_style: str = "plain",
-    ):
+    ) -> None:
+        """Creates a MultiFigure with the specified :class:`~graphinglib.figure.Figure` objects in a horizontal configuration.
+
+        Parameters
+        ----------
+        figures : list[Figure]
+            The :class:`~graphinglib.figure.Figure` objects to add to the MultiFigure, from left to right.
+        size : tuple[float, float]
+            Overall size of the figure.
+            Default depends on the ``figure_style`` configuration.
+        title : str, optional
+            Title of the MultiFigure.
+            Defaults to ``None``.
+        reference_labels : bool
+            Whether or not to add reference labels to the SubFigures.
+            Defaults to ``True``.
+        reflabel_loc : str
+            Location of the reference labels of the SubFigures. Either "inside" or "outside".
+            Defaults to "outside".
+        figure_style : str
+            The figure style to use for the figure.
+            Defaults to "plain".
+
+        Returns
+        -------
+        A new MultiFigure object.
+        """
         multi_fig = cls(
             num_rows=1,
             num_cols=len(figures),
@@ -150,7 +178,33 @@ class MultiFigure:
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
         figure_style: str = "plain",
-    ):
+    ) -> None:
+        """Creates a MultiFigure with the specified :class:`~graphinglib.figure.Figure` objects in a vertical configuration.
+
+        Parameters
+        ----------
+        figures : list[Figure]
+            The :class:`~graphinglib.figure.Figure` objects to add to the MultiFigure, from top to bottom.
+        size : tuple[float, float]
+            Overall size of the figure.
+            Default depends on the ``figure_style`` configuration.
+        title : str, optional
+            Title of the MultiFigure.
+            Defaults to ``None``.
+        reference_labels : bool
+            Whether or not to add reference labels to the SubFigures.
+            Defaults to ``True``.
+        reflabel_loc : str
+            Location of the reference labels of the SubFigures. Either "inside" or "outside".
+            Defaults to "outside".
+        figure_style : str
+            The figure style to use for the figure.
+            Defaults to "plain".
+
+        Returns
+        -------
+        A new MultiFigure object.
+        """
         multi_fig = cls(
             num_rows=len(figures),
             num_cols=1,
@@ -171,9 +225,9 @@ class MultiFigure:
         col_start: int,
         row_span: int,
         col_span: int,
-    ):
+    ) -> None:
         """
-        Adds a :class:`~graphinglib.multifigure.SubFigure` to a :class:`~graphinglib.multifigure.MultiFigure`.
+        Adds a :class:`~graphinglib.figure.Figure` to a :class:`~graphinglib.multifigure.MultiFigure`.
 
         Parameters
         ----------
@@ -220,14 +274,14 @@ class MultiFigure:
         Parameters
         ----------
         general_legend : bool
-            Wheter or not to display a overall legend for the :class:`~graphinglib.multifigure.MultiFigure` containing
-            the labels for every :class:`~graphinglib.multifigure.SubFigure` in it. Note that enabling this option will
+            Whether or not to display an overall legend for the :class:`~graphinglib.multifigure.MultiFigure` containing
+            the labels of every :class:`~graphinglib.Figure.Figure` inside it. Note that enabling this option will
             disable the individual legends for every :class:`~graphinglib.multifigure.SubFigure`.
             Defaults to ``False``.
         legend_loc : str
             The location of the legend in the MultiFigure. Possible placement keywords are: for vertical placement: ``{"upper", "center", "lower"}``, for horizontal placement: ``{"left", "center", "right"}``. The keyword ``"outside"`` can be added to put the legend outside of the axes. Defaults to ``"outside lower center"``.
         legend_cols : int
-            Number of colums in which to arange the legend items. Defaults to 1.
+            Number of colums in which to arrange the legend items. Defaults to 1.
         """
         self._prepare_multi_figure(
             general_legend=general_legend,
@@ -245,21 +299,21 @@ class MultiFigure:
         legend_cols: int = 1,
     ) -> None:
         """
-        Saves the :class:`~graphinglib.multifigure.MultiFigure`.
+        Saves the :class:`~graphinglib.multifigure.MultiFigure` to a file.
 
         Parameters
         ----------
         file_name : str
             File name or path at which to save the figure.
         general_legend : bool
-            Wheter or not to display a overall legend for the :class:`~graphinglib.multifigure.MultiFigure` containing
-            the labels for every :class:`~graphinglib.multifigure.SubFigure` in it. Note that enabling this option will
-            disable the individual legends for every :class:`~graphinglib.multifigure.SubFigure`.
+            Whether or not to display an overall legend for the :class:`~graphinglib.multifigure.MultiFigure` containing
+            the labels of every :class:`~graphinglib.figure.Figure` inside it. Note that enabling this option will
+            disable the individual legends for every :class:`~graphinglib.figure.Figure`.
             Defaults to ``False``.
         legend_loc : str
             The location of the legend in the MultiFigure. Possible placement keywords are: for vertical placement: ``{"upper", "center", "lower"}``, for horizontal placement: ``{"left", "center", "right"}``. The keyword ``"outside"`` can be added to put the legend outside of the axes. Defaults to ``"outside lower center"``.
         legend_cols : int
-            Number of colums in which to arange the legend items. Defaults to 1.
+            Number of colums in which to arrange the legend items. Defaults to 1.
         """
         self._prepare_multi_figure(
             general_legend=general_legend,
@@ -369,7 +423,9 @@ class MultiFigure:
         legend: bool,
         is_matplotlib_style: bool,
     ):
-        # Set rc for subfigure
+        """
+        Prepares a single subfigure.
+        """
         sub_rcs = sub_figure._user_rc_dict
         plt.rcParams.update(sub_rcs)
         axes = plt.subplot(
@@ -434,7 +490,10 @@ class MultiFigure:
 
     def _fill_in_rc_params(self, is_matplotlib_style: bool = False) -> None:
         """
-        Fills in the missing rc parameters from the specified ``figure_style``.
+        Fills in and sets the missing rc parameters from the specified ``figure_style``.
+        If ``is_matplotlib_style`` is ``True``, the rc parameters are reset to the default values for the specified ``figure_style``.
+        If ``is_matplotlib_style`` is ``False``, the rc parameters are updated with the missing parameters from the specified ``figure_style``.
+        In both cases, the rc parameters are then updated with the user-specified parameters.
         """
         if is_matplotlib_style:
             if self.figure_style == "matplotlib":
@@ -459,7 +518,7 @@ class MultiFigure:
         reset: bool = False,
     ) -> None:
         """
-        Customize the visual style of the :class:`~graphinglib.figure.Figure`.
+        Customize the visual style of the :class:`~graphinglib.multifigure.MultiFigure`.
 
         Any rc parameter that is not specified in the dictionary will be set to the default value for the specified ``figure_style``.
 

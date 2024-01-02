@@ -234,7 +234,7 @@ class Figure:
         Parameters
         ----------
         legend : bool
-            Wheter or not to display the legend. The legend is always set to be
+            Whether or not to display the legend. The legend is always set to be
             draggable.
             Defaults to ``True``.
         """
@@ -249,6 +249,8 @@ class Figure:
 
         Parameters
         ----------
+        file_name : str
+            The name of the file to save the figure to.
         legend : bool
             Wheter or not to display the legend.
             Defaults to ``True``.
