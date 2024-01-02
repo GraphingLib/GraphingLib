@@ -120,6 +120,52 @@ class MultiFigure:
         self._rc_dict = {}
         self._user_rc_dict = {}
 
+    @classmethod
+    def row(
+        cls,
+        figures: list[Figure],
+        size: tuple[float, float] | Literal["default"] = "default",
+        title: Optional[str] = None,
+        reference_labels: bool = True,
+        reflabel_loc: str = "outside",
+        figure_style: str = "plain",
+    ):
+        multi_fig = cls(
+            num_rows=1,
+            num_cols=len(figures),
+            size=size,
+            title=title,
+            reference_labels=reference_labels,
+            reflabel_loc=reflabel_loc,
+            figure_style=figure_style,
+        )
+        for i, figure in enumerate(figures):
+            multi_fig.add_sub_figure(figure, 0, i, 1, 1)
+        return multi_fig
+
+    @classmethod
+    def stack(
+        cls,
+        figures: list[Figure],
+        size: tuple[float, float] | Literal["default"] = "default",
+        title: Optional[str] = None,
+        reference_labels: bool = True,
+        reflabel_loc: str = "outside",
+        figure_style: str = "plain",
+    ):
+        multi_fig = cls(
+            num_rows=len(figures),
+            num_cols=1,
+            size=size,
+            title=title,
+            reference_labels=reference_labels,
+            reflabel_loc=reflabel_loc,
+            figure_style=figure_style,
+        )
+        for i, figure in enumerate(figures):
+            multi_fig.add_sub_figure(figure, i, 0, 1, 1)
+        return multi_fig
+
     def add_sub_figure(
         self,
         sub_figure: Figure,
