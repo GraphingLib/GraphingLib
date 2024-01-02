@@ -11,12 +11,10 @@ from matplotlib.transforms import ScaledTranslation
 
 from graphinglib.file_manager import FileLoader
 from graphinglib.graph_elements import GraphingException, Plottable
-from graphinglib.legend_artists import (
-    HandlerMultipleLines,
-    HandlerMultipleVerticalLines,
-    VerticalLineCollection,
-    histogram_legend_artist,
-)
+from graphinglib.legend_artists import (HandlerMultipleLines,
+                                        HandlerMultipleVerticalLines,
+                                        VerticalLineCollection,
+                                        histogram_legend_artist)
 
 from .figure import Figure
 
@@ -439,7 +437,10 @@ class MultiFigure:
         Fills in the missing rc parameters from the specified ``figure_style``.
         """
         if is_matplotlib_style:
-            plt.style.use(self.figure_style)
+            if self.figure_style == "matplotlib":
+                plt.style.use("default")
+            else:
+                plt.style.use(self.figure_style)
             plt.rcParams.update(self._user_rc_dict)
         else:
             params = self.default_params["rc_params"]
