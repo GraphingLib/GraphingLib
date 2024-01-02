@@ -1,5 +1,5 @@
 from string import ascii_lowercase
-from typing import Literal, Optional
+from typing import Literal, Optional, Self
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParamsDefault
@@ -129,7 +129,7 @@ class MultiFigure:
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
         figure_style: str = "plain",
-    ) -> None:
+    ) -> Self:
         """Creates a MultiFigure with the specified :class:`~graphinglib.figure.Figure` objects in a horizontal configuration.
 
         Parameters
@@ -178,7 +178,7 @@ class MultiFigure:
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
         figure_style: str = "plain",
-    ) -> None:
+    ) -> Self:
         """Creates a MultiFigure with the specified :class:`~graphinglib.figure.Figure` objects in a vertical configuration.
 
         Parameters
