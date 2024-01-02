@@ -1,9 +1,13 @@
 import unittest
 
+from matplotlib import pyplot as plt
+
 from graphinglib.data_plotting_1d import Curve
 from graphinglib.figure import Figure
-from graphinglib.file_manager import FileLoader
+from graphinglib.graph_elements import GraphingException
 from graphinglib.multifigure import MultiFigure
+
+# Import mocking
 
 
 class TestMultiFigure(unittest.TestCase):
@@ -116,25 +120,73 @@ class TestMultiFigure(unittest.TestCase):
         self.assertEqual(another_figure.col_start, 1)
         self.assertEqual(another_figure.col_span, 1)
 
-    def test_prepare_multifigure(self):
-        # TODO: Test this
-        pass
+    def test_prepare_multifigure_raises(self):
+        a_multifig = MultiFigure(num_rows=2, num_cols=2, figure_style="Burrrd")
+        with self.assertRaises(GraphingException):
+            a_multifig._prepare_multi_figure()
 
-    def test_prepare_sub_figure(self):
-        # TODO: Test this
-        pass
+    def test_prepare_multifigure_resets_rc(self):
+        a_multifig = MultiFigure(num_rows=2, num_cols=2)
+        a_multifig._prepare_multi_figure()
+        self.assertDictEqual(a_multifig._rc_dict, {})
+
+    def test_prepare_multifigure_prepares_figures(self):
+        a_figure = Figure()
+        curve = Curve([1, 2, 3], [1, 2, 3])
+        curve2 = Curve([1, 2, 3], [1, 2, 3], line_width=5)
+        a_figure.add_element(curve)
+        another_figure = Figure()
+        another_figure.add_element(curve2)
+        a_multifig = MultiFigure.stack([a_figure, another_figure])
+        a_multifig._prepare_multi_figure()
+        self.assertEqual(len(a_figure._axes.get_lines()), 1)
+        self.assertEqual(len(another_figure._axes.get_lines()), 1)
+        self.assertEqual(a_figure._axes.get_lines()[0].get_linewidth(), 2)
+        self.assertEqual(another_figure._axes.get_lines()[0].get_linewidth(), 5)
+        self.assertFalse(a_figure._axes.get_legend())
+        self.assertFalse(another_figure._axes.get_legend())
 
     def test_fill_in_missing_params(self):
-        # TODO: Test this
-        pass
+        a_multifig = MultiFigure(num_rows=2, num_cols=2)
+        a_multifig.default_params = {"MultiFigure": {"size": (8, 8)}}
+        a_multifig._fill_in_missing_params(a_multifig)
+        self.assertEqual(a_multifig.size, (8, 8))
 
     def test_reset_params_to_default(self):
-        # TODO: Test this
-        pass
+        a_multifig = MultiFigure(num_rows=2, num_cols=2, size=(8, 8))
+        params_to_reset = ["size"]
+        a_multifig._reset_params_to_default(a_multifig, params_to_reset)
 
-    def test_fill_in_rc_params(self):
-        # TODO: Test this
-        pass
+    def test_fill_in_rc_params_matplotlib(self):
+        a_multifig = MultiFigure(num_rows=2, num_cols=2, figure_style="bmh")
+        a_multifig._fill_in_rc_params(is_matplotlib_style=True)
+        # Check plt.rcParams is updated (show grid is True)
+        self.assertTrue(plt.rcParams["axes.grid"])
+        # Check axes fill color is updated
+        self.assertEqual(plt.rcParams["axes.facecolor"], "#eeeeee")
+
+        a = MultiFigure(num_rows=2, num_cols=2, figure_style="Solarize_Light2")
+        a._fill_in_rc_params(is_matplotlib_style=True)
+        self.assertEqual(plt.rcParams["axes.grid"], True)
+        self.assertEqual(plt.rcParams["axes.facecolor"], "#eee8d5")
+
+    def test_fill_in_rc_params_gl(self):
+        a_multifig = MultiFigure(num_rows=2, num_cols=2)
+        a_multifig.customize_visual_style(legend_edge_color="red")
+        # Get default params for dim style
+        a_multifig.default_params = {
+            "rc_params": {
+                "axes.grid": False,
+                "axes.facecolor": "dimgrey",
+                "legend.edgecolor": "blue",
+            }
+        }
+        # Fill in rc params
+        a_multifig._fill_in_rc_params(is_matplotlib_style=False)
+        # Check axes fill color is updated
+        self.assertEqual(plt.rcParams["axes.grid"], False)
+        self.assertEqual(plt.rcParams["axes.facecolor"], "dimgrey")
+        self.assertEqual(plt.rcParams["legend.edgecolor"], "red")  # Overridden by user
 
     def test_update_rc_params(self):
         a_multifigure = MultiFigure(num_rows=2, num_cols=2)
