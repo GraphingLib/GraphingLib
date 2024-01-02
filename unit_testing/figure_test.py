@@ -202,6 +202,11 @@ class TestFigure(unittest.TestCase):
         a_figure.customize_visual_style(reset=True)
         self.assertDictEqual(a_figure._user_rc_dict, {})
 
+    def test_matplotlib_style_functional(self):
+        a_figure = Figure(figure_style="matplotlib")
+        a_figure.add_element(self.testCurve)
+        a_figure._prepare_figure()
+
 
 if __name__ == "__main__":
     unittest.main()

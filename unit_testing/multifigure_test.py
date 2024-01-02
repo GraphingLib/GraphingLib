@@ -258,6 +258,18 @@ class TestMultiFigure(unittest.TestCase):
         a_multifigure.customize_visual_style(reset=True)
         self.assertDictEqual(a_multifigure._user_rc_dict, {})
 
+    def test_matplotlib_style_functional(self):
+        a_figure = Figure()
+        curve = Curve([1, 2, 3], [1, 2, 3])
+        curve2 = Curve([1, 2, 3], [1, 2, 3], line_width=5)
+        a_figure.add_element(curve)
+        another_figure = Figure()
+        another_figure.add_element(curve2)
+        a_multifig = MultiFigure.stack(
+            [a_figure, another_figure], figure_style="matplotlib"
+        )
+        a_multifig._prepare_multi_figure()
+
 
 if __name__ == "__main__":
     unittest.main()
