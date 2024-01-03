@@ -136,6 +136,9 @@ class Curve:
         else:
             raise TypeError("Can only add a curve to another curve or a number.")
 
+    def __radd__(self, other: Self | float) -> Self:
+        return self.__add__(other)
+
     def __sub__(self, other: Self | float) -> Self:
         """
         Defines the subtraction of two curves or a curve and a number.
@@ -157,6 +160,10 @@ class Curve:
             return Curve(self.x_data, new_y_data)
         else:
             raise TypeError("Can only subtract a curve from another curve or a number.")
+
+    def __rsub__(self, other: Self | float) -> Self:
+        # 2 - curve => -curve + 2
+        return (self * -1) + other
 
     def __mul__(self, other: Self | float) -> Self:
         """
@@ -180,6 +187,9 @@ class Curve:
         else:
             raise TypeError("Can only multiply a curve by another curve or a number.")
 
+    def __rmul__(self, other: Self | float) -> Self:
+        return self.__mul__(other)
+
     def __truediv__(self, other: Self | float) -> Self:
         """
         Defines the division of two curves or a curve and a number.
@@ -201,6 +211,22 @@ class Curve:
             return Curve(self.x_data, new_y_data)
         else:
             raise TypeError("Can only divide a curve by another curve or a number.")
+
+    def __rtruediv__(self, other: Self | float) -> Self:
+        try:
+            return (self**-1) * other
+        except ZeroDivisionError:
+            raise ZeroDivisionError("Cannot divide by zero.")
+
+    def __pow__(self, other: float) -> Self:
+        """
+        Defines the power of a curve to a number.
+        """
+        if isinstance(other, (int, float)):
+            new_y_data = self.y_data**other
+            return Curve(self.x_data, new_y_data)
+        else:
+            raise TypeError("Can only raise a curve to another curve or a number.")
 
     def __iter__(self):
         """

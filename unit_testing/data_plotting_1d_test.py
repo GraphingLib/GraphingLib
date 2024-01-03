@@ -1,4 +1,5 @@
 import unittest
+from hmac import new
 from random import random
 
 from matplotlib.pyplot import subplots
@@ -156,6 +157,67 @@ class TestCurve(unittest.TestCase):
         self.assertIsInstance(curve_div, Curve)
         self.assertAlmostEqual(curve_div.get_point_at_x(0)[1], 0, places=3)
         self.assertAlmostEqual(curve_div.get_point_at_x(2)[1], 7.57748, places=2)
+
+    def test_add_with_int(self):
+        curve_sum = self.testCurve + 2
+        self.assertIsInstance(curve_sum, Curve)
+        self.assertAlmostEqual(curve_sum.get_point_at_x(0)[1], 2, places=3)
+        self.assertAlmostEqual(curve_sum.get_point_at_x(2)[1], 2.909118, places=3)
+        # Test with int on the left
+        curve_sum = 2 + self.testCurve
+        self.assertIsInstance(curve_sum, Curve)
+        self.assertAlmostEqual(curve_sum.get_point_at_x(0)[1], 2, places=3)
+        self.assertAlmostEqual(curve_sum.get_point_at_x(2)[1], 2.909118, places=3)
+
+    def test_subtract_with_int(self):
+        curve_sub = self.testCurve - 2
+        self.assertIsInstance(curve_sub, Curve)
+        self.assertAlmostEqual(curve_sub.get_point_at_x(0)[1], -2, places=3)
+        self.assertAlmostEqual(curve_sub.get_point_at_x(2)[1], -1.09088, places=3)
+        # Test with int on the left
+        curve_sub = 2 - self.testCurve
+        self.assertIsInstance(curve_sub, Curve)
+        self.assertAlmostEqual(
+            curve_sub.get_point_at_x(0)[1],
+            2 - self.testCurve.get_point_at_x(0)[1],
+            places=3,
+        )
+        self.assertAlmostEqual(
+            curve_sub.get_point_at_x(2)[1],
+            2 - self.testCurve.get_point_at_x(2)[1],
+            places=3,
+        )
+
+    def test_multiply_with_int(self):
+        curve_mult = self.testCurve * 2
+        self.assertIsInstance(curve_mult, Curve)
+        self.assertAlmostEqual(curve_mult.get_point_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(curve_mult.get_point_at_x(2)[1], 1.8182, places=3)
+        # Test with int on the left
+        curve_mult = 2 * self.testCurve
+        self.assertIsInstance(curve_mult, Curve)
+        self.assertAlmostEqual(curve_mult.get_point_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(curve_mult.get_point_at_x(2)[1], 1.8182, places=3)
+
+    def test_divide_with_int(self):
+        curve_div = self.testCurve / 2
+        self.assertIsInstance(curve_div, Curve)
+        self.assertAlmostEqual(curve_div.get_point_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(curve_div.get_point_at_x(2)[1], 0.45455, places=3)
+        # Test with int on the left
+        new_curve = 5 + self.testCurve
+        curve_div = 2 / new_curve
+        self.assertIsInstance(curve_div, Curve)
+        self.assertAlmostEqual(
+            curve_div.get_point_at_x(0)[1],
+            2 / new_curve.get_point_at_x(0)[1],
+            places=3,
+        )
+        self.assertAlmostEqual(
+            curve_div.get_point_at_x(2)[1],
+            2 / new_curve.get_point_at_x(2)[1],
+            places=3,
+        )
 
     def test_max_curves(self):
         curve_max = max(self.testCurve)
@@ -359,3 +421,7 @@ class TestHistogram(unittest.TestCase):
         fit = FitFromPolynomial(curve, degree=2)
         histo = self.testHist.plot_residuals_from_fit(fit, 30)
         self.assertIsInstance(histo, Histogram)
+
+
+if __name__ == "__main__":
+    unittest.main()
