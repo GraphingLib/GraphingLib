@@ -1,4 +1,5 @@
 import unittest
+from cgi import test
 from hmac import new
 from random import random
 
@@ -219,6 +220,16 @@ class TestCurve(unittest.TestCase):
             places=3,
         )
 
+    def test_power_with_int(self):
+        curve_pow = self.testCurve**2
+        self.assertIsInstance(curve_pow, Curve)
+        self.assertAlmostEqual(curve_pow.get_point_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(
+            curve_pow.get_point_at_x(2)[1],
+            self.testCurve.get_point_at_x(2)[1] ** 2,
+            places=3,
+        )
+
     def test_max_curves(self):
         curve_max = max(self.testCurve)
         self.assertAlmostEqual(curve_max, 1, places=3)
@@ -322,6 +333,17 @@ class TestScatter(unittest.TestCase):
         self.assertAlmostEqual(scatter_sum.get_point_at_x(0).y, 0.1, places=3)
         self.assertAlmostEqual(scatter_sum.get_point_at_x(2).y, 1.029, places=3)
 
+    def test_add_scatter_with_int(self):
+        scatter_sum = self.testScatter + 2
+        self.assertIsInstance(scatter_sum, Scatter)
+        self.assertAlmostEqual(scatter_sum.get_point_at_x(0).y, 2, places=3)
+        self.assertAlmostEqual(scatter_sum.get_point_at_x(2).y, 2.909118, places=3)
+
+        scatter_sum = 2 + self.testScatter
+        self.assertIsInstance(scatter_sum, Scatter)
+        self.assertAlmostEqual(scatter_sum.get_point_at_x(0).y, 2, places=3)
+        self.assertAlmostEqual(scatter_sum.get_point_at_x(2).y, 2.909118, places=3)
+
     def test_subtract_scatter(self):
         x = linspace(0, 3 * pi, 200)
         other_scatter = Scatter(x, 0.005 * x**2 + 0.1, "Other Scatter")
@@ -329,6 +351,25 @@ class TestScatter(unittest.TestCase):
         self.assertIsInstance(scatter_sub, Scatter)
         self.assertAlmostEqual(scatter_sub.get_point_at_x(0).y, -0.1, places=3)
         self.assertAlmostEqual(scatter_sub.get_point_at_x(2).y, 0.789, places=3)
+
+    def test_subtract_scatter_with_int(self):
+        scatter_sub = self.testScatter - 2
+        self.assertIsInstance(scatter_sub, Scatter)
+        self.assertAlmostEqual(scatter_sub.get_point_at_x(0).y, -2, places=3)
+        self.assertAlmostEqual(scatter_sub.get_point_at_x(2).y, -1.09088, places=3)
+
+        scatter_sub = 2 - self.testScatter
+        self.assertIsInstance(scatter_sub, Scatter)
+        self.assertAlmostEqual(
+            scatter_sub.get_point_at_x(0).y,
+            2 - self.testScatter.get_point_at_x(0).y,
+            places=3,
+        )
+        self.assertAlmostEqual(
+            scatter_sub.get_point_at_x(2).y,
+            2 - self.testScatter.get_point_at_x(2).y,
+            places=3,
+        )
 
     def test_multiply_scatter(self):
         x = linspace(0, 3 * pi, 200)
@@ -338,6 +379,17 @@ class TestScatter(unittest.TestCase):
         self.assertAlmostEqual(scatter_mult.get_point_at_x(0).y, 0, places=3)
         self.assertAlmostEqual(scatter_mult.get_point_at_x(2).y, 0.109, places=3)
 
+    def test_multiply_scatter_with_int(self):
+        scatter_mult = self.testScatter * 2
+        self.assertIsInstance(scatter_mult, Scatter)
+        self.assertAlmostEqual(scatter_mult.get_point_at_x(0).y, 0, places=3)
+        self.assertAlmostEqual(scatter_mult.get_point_at_x(2).y, 1.8182, places=3)
+
+        scatter_mult = 2 * self.testScatter
+        self.assertIsInstance(scatter_mult, Scatter)
+        self.assertAlmostEqual(scatter_mult.get_point_at_x(0).y, 0, places=3)
+        self.assertAlmostEqual(scatter_mult.get_point_at_x(2).y, 1.8182, places=3)
+
     def test_divide_scatter(self):
         x = linspace(0, 3 * pi, 200)
         other_scatter = Scatter(x, 0.005 * x**2 + 0.1, "Other Scatter")
@@ -345,6 +397,21 @@ class TestScatter(unittest.TestCase):
         self.assertIsInstance(scatter_div, Scatter)
         self.assertAlmostEqual(scatter_div.get_point_at_x(0).y, 0, places=3)
         self.assertAlmostEqual(scatter_div.get_point_at_x(2).y, 7.57748, places=2)
+
+    def test_divide_scatter_with_int(self):
+        scatter_div = self.testScatter / 2
+        self.assertIsInstance(scatter_div, Scatter)
+        self.assertAlmostEqual(scatter_div.get_point_at_x(0).y, 0, places=3)
+        self.assertAlmostEqual(scatter_div.get_point_at_x(2).y, 0.45455, places=3)
+
+        new_scatter = 5 + self.testScatter
+        scatter_div = 2 / new_scatter
+        self.assertIsInstance(scatter_div, Scatter)
+        self.assertAlmostEqual(
+            scatter_div.get_point_at_x(0).y,
+            2 / new_scatter.get_point_at_x(0).y,
+            places=3,
+        )
 
     def test_add_with_int(self):
         scatter_sum = self.testScatter + 2
@@ -369,6 +436,16 @@ class TestScatter(unittest.TestCase):
         self.assertIsInstance(scatter_div, Scatter)
         self.assertAlmostEqual(scatter_div.get_point_at_x(0).y, 0, places=3)
         self.assertAlmostEqual(scatter_div.get_point_at_x(2).y, 0.45455, places=3)
+
+    def test_power_with_int(self):
+        scatter_pow = self.testScatter**2
+        self.assertIsInstance(scatter_pow, Scatter)
+        self.assertAlmostEqual(scatter_pow.get_point_at_x(0).y, 0, places=3)
+        self.assertAlmostEqual(
+            scatter_pow.get_point_at_x(2).y,
+            self.testScatter.get_point_at_x(2).y ** 2,
+            places=3,
+        )
 
     def test_max_scatter(self):
         scatter_max = max(self.testScatter)

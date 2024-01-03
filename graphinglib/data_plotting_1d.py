@@ -906,6 +906,12 @@ class Scatter:
                 "Can only add a scatter plot to another scatter plot or a number."
             )
 
+    def __radd__(self, other: Self | float) -> Self:
+        """
+        Defines the reverse addition of a scatter plot and a number.
+        """
+        return self.__add__(other)
+
     def __sub__(self, other: Self | float) -> Self:
         """
         Defines the subtraction of two scatter plots or a scatter plot and a number.
@@ -926,6 +932,12 @@ class Scatter:
             raise TypeError(
                 "Can only subtract a scatter plot from another scatter plot or a number."
             )
+
+    def __rsub__(self, other: Self | float) -> Self:
+        """
+        Defines the reverse subtraction of a scatter plot and a number.
+        """
+        return (self * -1) + other
 
     def __mul__(self, other: Self | float) -> Self:
         """
@@ -948,6 +960,12 @@ class Scatter:
                 "Can only multiply a scatter plot by another scatter plot or a number."
             )
 
+    def __rmul__(self, other: Self | float) -> Self:
+        """
+        Defines the reverse multiplication of a scatter plot and a number.
+        """
+        return self.__mul__(other)
+
     def __truediv__(self, other: Self | float) -> Self:
         """
         Defines the division of two scatter plots or a scatter plot and a number.
@@ -967,6 +985,27 @@ class Scatter:
         else:
             raise TypeError(
                 "Can only divide a scatter plot by another scatter plot or a number."
+            )
+
+    def __rtruediv__(self, other: Self | float) -> Self:
+        """
+        Defines the division of two scatter plots or a scatter plot and a number.
+        """
+        try:
+            return (self**-1) * other
+        except ZeroDivisionError:
+            raise ZeroDivisionError("Cannot divide by zero.")
+
+    def __pow__(self, other: float) -> Self:
+        """
+        Defines the power of a scatter plot to a number.
+        """
+        if isinstance(other, (int, float)):
+            new_y_data = self.y_data**other
+            return Scatter(self.x_data, new_y_data)
+        else:
+            raise TypeError(
+                "Can only raise a scatter plot to another scatter plot or a number."
             )
 
     def __iter__(self):
