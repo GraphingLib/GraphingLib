@@ -82,7 +82,7 @@ The Contour class allows you to display a contour plot of 2-dimensional data. He
 
     contour = gl.Contour(x_grid, y_grid, data)
     figure = gl.Figure()
-    figure.add_element(map)
+    figure.add_element(contour)
     figure.display()
 
 .. image:: images/contour.png
@@ -101,7 +101,7 @@ As its name suggests, the VectorField class allows you to plot a 2-dimensional v
     x_grid, y_grid = np.meshgrid(np.arange(0, 11, 1), np.arange(0, 11, 1))
     u, v = (np.cos(x_grid * 0.2), np.sin(y_grid * 0.3))
     
-    vector = gl.VectorField(x_grid, y_grid, u, v, arrow_length_multiplier=2)
+    vector = gl.VectorField(x_grid, y_grid, u, v)
     figure = gl.Figure()
     figure.add_element(vector)
     figure.display()

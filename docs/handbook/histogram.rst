@@ -42,17 +42,16 @@ You can create a Histogram from a previously created fit to display the residual
     y_data = 3 * x_data**2 - 2 * x_data + np.random.normal(0, 10, 100)
     scatter = gl.Scatter(x_data, y_data, label="Data")
     fit = gl.FitFromPolynomial(scatter, degree=2, label="Fit", color="red")
+    residuals = gl.Histogram.plot_residuals_from_fit(fit, 15, label="Residual")
+    residuals.show_pdf()
 
-    multifigure = gl.MultiFigure(1, 2, size=(10, 5), reference_labels=False)
-    subfigure1 = multifigure.add_SubFigure(0, 0, 1, 1)
-    subfigure1.add_element(scatter, fit)
+    fig1 = gl.Figure()
+    fig1.add_element(scatter, fit)
 
-    residuals = gl.Histogram.plot_residuals_from_fit(
-        fit, 15, label="Residual", show_pdf="normal"
-    )
-    subfigure2 = multifigure.add_SubFigure(0, 1, 1, 1, y_lim=(0, 0.06))
-    subfigure2.add_element(residuals)
+    fig2 = gl.Figure(y_lim=(0, 0.06))
+    fig2.add_element(residuals)
 
+    multifigure = gl.MultiFigure.row([fig1, fig2], size=(10, 5), reference_labels=False)
     multifigure.display()
 
 .. image:: images/residuals.png
