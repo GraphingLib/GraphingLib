@@ -41,7 +41,7 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class has a number of methods w
 
 .. image:: images/curve_addition.png
 
-Addition, subtraction, multiplication and division is generally supported between any two curves, as long as they are plotted using the same number of points. These four operations are also supported between a curve and a constant, as long as the constant is on the right hand side of the operation. When creating new curves with +, -, \*, or /, you can still access and change the curve properties such as the color and label through the new curve object using dot notation.
+Addition, subtraction, multiplication and division is generally supported between any two curves, as long as they are plotted using the same number of points. These four operations are also supported between a curve and a constant. When creating new curves with +, -, \*, or /, you can still access and change the curve properties such as the color and label through the new curve object using dot notation.
 
 You can also find the the maximum and minimum values of a curve (maximum or minimum y value) using the standard Python functions :func:`max` and :func:`min`. ::
 
@@ -51,7 +51,7 @@ You can also find the the maximum and minimum values of a curve (maximum or mini
 Identifying points on a curve
 -----------------------------
 
-The :class:`~graphinglib.data_plotting_1d.Curve` class has two interpolation methods which can be used to create :class:`~graphinglib.graph_elements.Point` objects on the curve at a given x or y value. The :meth:`~graphinglib.data_plotting_1d.Curve.get_point_at_x` method returns a :class:`~graphinglib.graph_elements.Point` on the curve at a given x value, and the :meth:`~graphinglib.data_plotting_1d.Curve.get_points_at_y` method returns a list of all points on the curve at a given y value. Another really useful method is the :meth:`~graphinglib.data_plotting_1d.Curve.intersection` method, which returns a list of all the points of intersection between two curves. ::
+The :class:`~graphinglib.data_plotting_1d.Curve` class includes two interpolation methods for creating coordinates on a curve at a specific x or y value. The :meth:`~graphinglib.data_plotting_1d.Curve.get_point_at_x` method, by default, returns a tuple of coordinates (x, y) representing a point on the curve at a given x value. Similarly, the :meth:`~graphinglib.data_plotting_1d.Curve.get_points_at_y` method returns a list of tuples, each representing the coordinates of a point on the curve at the given y value. Both methods include an optional argument ``as_point_object``. When set to True, these methods return a :class:`~graphinglib.graph_elements.Point` object or a list of such objects, instead of tuples. Additionally, the :meth:`~graphinglib.data_plotting_1d.Curve.intersection` method, which identifies the points of intersection between two curves, also follows this behavior. By default, it returns a list of tuples representing the intersection points, with the as_point_object argument available to return :class:`~graphinglib.graph_elements.Point` objects instead. ::
 
     import graphinglib as gl
     import numpy as np
@@ -63,9 +63,9 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class has two interpolation met
     )
 
     # Get the points of intersection between the two curves
-    intersection_points = curve_1.intersection(curve_2, marker_styles="P", colors="red")
+    intersection_points = curve_1.intersection(curve_2, marker_styles="P", colors="red", as_point_objects=True)
     # Get points where curve 1 crosses the x axis (where y = 0)
-    cross_x_axis_points = curve_1.get_points_at_y(0, color="blue")
+    cross_x_axis_points = curve_1.get_points_at_y(0, color="blue", as_point_objects=True)
 
     # Print coordinates of first intersection point
     first_int = intersection_points[0]
@@ -95,15 +95,14 @@ There are a number of methods which can be used to perform calculus on a curve. 
     normal_curve = curve_1.get_normal_curve(2, label="Normal at x=2")
     tangent_curve = curve_1.get_tangent_curve(2, label="Tangent at x=2")
 
-    fig = gl.MultiFigure(num_rows=1, num_cols=2, size=(12, 6), reference_labels=False)
+    fig1 = gl.Figure(y_lim=(-6, 25))
+    fig1.add_element(curve_1, derivative_curve, integral_curve)
 
-    sub_1 = fig.add_SubFigure(0, 0, 1, 1, y_lim=(-6, 25))
-    sub_1.add_element(curve_1, derivative_curve, integral_curve)
+    fig2 = gl.Figure(x_lim=(-5, 5), y_lim=(-6, 4))
+    fig2.add_element(curve_1, normal_curve, tangent_curve)
 
-    sub_2 = fig.add_SubFigure(0, 1, 1, 1, x_lim=(-5, 5), y_lim=(-6, 4))
-    sub_2.add_element(curve_1, normal_curve, tangent_curve)
-
-    fig.display()
+    multifig = gl.MultiFigure.row([fig1, fig2], size=(12, 6), reference_labels=False)
+    multifig.display()
 
 .. image:: images/curve_calculus.png
 
