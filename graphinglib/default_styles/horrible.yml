@@ -168,6 +168,11 @@ Rectangle:
   line_width: 1
   line_style: "-"
 
+Arrow:
+  color: "tab:olive"
+  head_size: 5
+  width: 10
+
 rc_params:
   figure.facecolor: "white"
   axes.facecolor: "white"

@@ -585,8 +585,6 @@ class Text:
             Length of the head of the arrow.
         """
         self._arrow_pointing_to = points_to
-        self.width = width
-        self.shrink = shrink
         self.arrow_properties = {}
         if width is not None:
             self.arrow_properties["width"] = width
