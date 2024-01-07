@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Self
+from typing import Literal, Self, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -536,4 +536,84 @@ class Rectangle:
                 ],
                 zorder=z_order,
                 **params,
+            )
+
+
+@dataclass
+class Arrow:
+    """This class implements an arrow object.
+
+    Parameters
+    ----------
+    pointA : tuple[float, float]
+        Point A of the arrow. If the arrow is single-sided, refers to the tail.
+    pointB : tuple[float, float]
+        Point B of the arrow. If the arrow is douple-sided, refers to the head.
+    color : str
+        Color of the arrow. Default depends on the ``figure_style``configuration.
+    width : float, optional
+        Arrow width.
+    shrink : float
+        Fraction of the total length of the arrow to shrink from both ends.
+        A value of 0.5 means the arrow is no longer visible.
+        Defaults to 0.
+    head_width : float, optional
+        Width of the head of the arrow.
+    head_length : float, optional
+        Length of the head of the arrow.
+    two_sided : bool
+        If ``True``, the arrow is double-sided. Defaults to ``False``
+    """
+
+    pointA: tuple[float, float]
+    pointB: tuple[float, float]
+    color: str = "default"
+    width: float | Literal["default"] = "default"
+    head_size: float | Literal["default"] = "default"
+    shrink: float = 0
+    two_sided: bool = False
+
+    def _shrink_points(self):
+        x_length, y_length = (
+            self.pointA[0] - self.pointB[0],
+            self.pointA[1] - self.pointB[1],
+        )
+        newA = (
+            self.pointB[0] + (1 - self.shrink) * x_length,
+            self.pointB[1] + (1 - self.shrink) * y_length,
+        )
+        newB = (
+            self.pointA[0] - (1 - self.shrink) * x_length,
+            self.pointA[1] - (1 - self.shrink) * y_length,
+        )
+        return newA, newB
+
+    def _plot_element(self, axes: plt.Axes, z_order: int):
+        if self.two_sided:
+            self._style = "<|-|>"
+        else:
+            self._style = "-|>"
+        head_length, head_width = self.head_size * 0.4, self.head_size * 0.2
+        props = {
+            "arrowstyle": f"{self._style}, head_width={head_width}, head_length={head_length}",
+            "color": self.color,
+            "linewidth": self.width,
+        }
+        if self.shrink != 0:
+            shrinkPointA, shrinkPointB = self._shrink_points()
+            print(shrinkPointA, shrinkPointB)
+            axes.annotate(
+                "",
+                shrinkPointB,
+                shrinkPointA,
+                zorder=z_order,
+                arrowprops=props,
+            )
+        else:
+            axes.annotate(
+                "",
+                self.pointB,
+                self.pointA,
+                zorder=z_order,
+                arrowprops=props,
             )
