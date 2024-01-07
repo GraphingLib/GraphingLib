@@ -22,7 +22,7 @@ as Matplotlib. For further reference on those conventions, see the
 
 from .data_plotting_1d import Curve, Histogram, Scatter
 from .data_plotting_2d import Contour, Heatmap, Stream, VectorField
-from .figure import Figure, TwinAxis
+from .figure import Figure
 from .file_manager import get_color, get_colors
 from .fits import (
     FitFromExponential,
