@@ -217,7 +217,7 @@ class Circle:
                 "alpha": self.fill_alpha,
                 "facecolor": self.color,
             }
-            params = {k: v for k, v in params.items() if v != None}
+            params = {k: v for k, v in params.items() if v != "default"}
             axes.fill_between(x, y, self.y_center, zorder=z_order, **params)
 
 
