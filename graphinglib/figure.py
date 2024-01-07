@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 from warnings import warn
 
 import matplotlib.pyplot as plt
@@ -100,6 +100,8 @@ class Figure:
         self._user_rc_dict = {}
         self._custom_ticks = False
         self.remove_axes = remove_axes
+        self._twin_x_axis = None
+        self._twin_y_axis = None
 
     def add_element(self, *elements: Plottable) -> None:
         """
@@ -175,6 +177,18 @@ class Figure:
         if self.remove_axes:
             self._axes.axis("off")
             warn("Axes on this figure have been removed.")
+        if self._twin_x_axis:
+            labels, handles = self._twin_x_axis._prepare_twin_axis(
+                self._axes, is_matplotlib_style, self.default_params, self.figure_style
+            )
+            self._handles += handles
+            self._labels += labels
+        if self._twin_y_axis:
+            labels, handles = self._twin_y_axis._prepare_twin_axis(
+                self._axes, is_matplotlib_style, self.default_params, self.figure_style
+            )
+            self._handles += handles
+            self._labels += labels
         if self._elements:
             z_order = 1
             for element in self._elements:
@@ -511,3 +525,228 @@ class Figure:
                 raise GraphingException(
                     "Ticks position and corresponding labels must both be specified for the x axis."
                 )
+
+    def create_twin_axis(
+        self,
+        is_y: bool = True,
+        label: str = None,
+        log_scale: bool = False,
+    ) -> "TwinAxis":
+        if self.remove_axes:
+            raise GraphingException(
+                "Axis in this figure were removed, therefore twin-axis can't be added."
+            )
+        twin = TwinAxis(is_y, label, log_scale)
+        if is_y:
+            self._twin_y_axis = twin
+        else:
+            self._twin_x_axis = twin
+        return twin
+
+
+class TwinAxis:
+    def __init__(
+        self,
+        is_y: bool,
+        label: str,
+        log_scale: bool = False,
+    ):
+        self.is_y = is_y
+        self.label = label
+        self.log_scale = log_scale
+        self._elements: list[Plottable] = []
+        self._custom_ticks = False
+        self._labels: list[str | None] = []
+        self._handles = []
+        self.figure_style = None
+        self.default_params = None
+        self.tick_color = None
+        self.axes_label_color = None
+        self.axes_edge_color = None
+
+    def _prepare_twin_axis(
+        self,
+        fig_axes: plt.Axes,
+        is_matplotlib_style: bool = False,
+        default_params: dict = None,
+        figure_style: str = "plain",
+    ):
+        self.default_params = default_params
+        self.figure_style = figure_style
+        if self.is_y:
+            self._axes = fig_axes.twinx()
+            self._axes.set_ylabel(self.label)
+        else:
+            self._axes = fig_axes.twiny()
+            self._axes.set_xlabel(self.label)
+        if self.is_y:
+            if self.tick_color:
+                self._axes.tick_params(axis="y", colors=self.tick_color)
+            if self.axes_label_color:
+                self._axes.yaxis.label.set_color(self.axes_label_color)
+            if self.axes_edge_color:
+                self._axes.spines["right"].set_color(self.axes_edge_color)
+        else:
+            if self.tick_color:
+                self._axes.tick_params(axis="x", colors=self.tick_color)
+            if self.axes_label_color:
+                self._axes.xaxis.label.set_color(self.axes_label_color)
+            if self.axes_edge_color:
+                self._axes.spines["top"].set_color(self.axes_edge_color)
+        if self._custom_ticks:
+            if self._ticks:
+                if self.is_y:
+                    self._axes.set_yticks(self._ticks, self._ticklabels)
+                else:
+                    self._axes.set_xticks(self._ticks, self._ticklabels)
+        if self.log_scale:
+            if self.is_y:
+                self._axes.set_yscale("log")
+            else:
+                self._axes.set_xscale("log")
+        if self._elements:
+            z_order = 1
+            for element in self._elements:
+                params_to_reset = []
+                if not is_matplotlib_style:
+                    params_to_reset = self._fill_in_missing_params(element)
+                element._plot_element(self._axes, z_order)
+                if not is_matplotlib_style:
+                    self._reset_params_to_default(element, params_to_reset)
+                try:
+                    if element.label is not None:
+                        self._handles.append(element.handle)
+                        self._labels.append(element.label)
+                except AttributeError:
+                    continue
+                z_order += 2
+        else:
+            raise GraphingException("No elements to be plotted!")
+        temp_handles = self._handles
+        temp_labels = self._labels
+        self._handles = []
+        self._labels = []
+        self._rc_dict = {}
+        return temp_labels, temp_handles
+
+    def set_ticks(
+        self,
+        ticks: Optional[list[float]] = None,
+        ticklabels: Optional[list[str]] = None,
+    ):
+        """
+        Sets custom [x/y]ticks and [x/y]ticks' labels.
+
+        ..note::
+            [x/y]ticks and [x/y]ticks' labels can be omited as long as labels are provided for
+            specified ticks.
+
+        Parameters
+        ----------
+        ticks : list[float], optional
+            Tick positions for the axis.
+        ticklabels : list[str], optional
+            Tick labels for the axis.
+        """
+        self._custom_ticks = True
+        self._ticks = ticks
+        self._ticklabels = ticklabels
+        if self._ticks:
+            if self._ticks and not self._ticklabels:
+                raise GraphingException(
+                    "Ticks position and corresponding labels must both be specified for the axis."
+                )
+
+    def add_element(self, *elements: Plottable) -> None:
+        """
+        Adds a :class:`~graphinglib.graph_elements.Plottable` element to the :class:`~graphinglib.figure.Figure`.
+
+        Parameters
+        ----------
+        elements : :class:`~graphinglib.graph_elements.Plottable`
+            Elements to plot in the :class:`~graphinglib.figure.Figure`.
+        """
+        for element in elements:
+            self._elements.append(element)
+
+    def customize_visual_style(
+        self,
+        axes_label_color: str | None = None,
+        tick_color: str | None = None,
+        axes_edge_color: str | None = None,
+    ):
+        """
+        Customize the visual style of the :class:`~graphinglib.figure.Figure`.
+
+        Any parameter that is not specified (None) will be set to the default value for the specified ``figure_style``.
+
+        Parameters
+        ----------
+        axes_edge_color : str
+            The color of the axes edge.
+            Defaults to ``None``.
+        axes_label_color : str
+            The color of the axes labels.
+            Defaults to ``None``.
+        tick_color : str
+            The color of the axis ticks.
+            Defaults to ``None``.
+        """
+        self.axes_label_color = axes_label_color
+        self.tick_color = tick_color
+        self.axes_edge_color = axes_edge_color
+
+    def _fill_in_missing_params(self, element: Plottable) -> list[str]:
+        """
+        Fills in the missing parameters from the specified ``figure_style``.
+        """
+        params_to_reset = []
+        object_type = type(element).__name__
+        tries = 0
+        curve_defaults = {
+            "errorbars_color": "color",
+            "errorbars_line_width": "line_width",
+            "cap_thickness": "line_width",
+            "fill_under_color": "color",
+        }
+        while tries < 2:
+            try:
+                for property, value in vars(element).items():
+                    if (type(value) == str) and (value == "default"):
+                        params_to_reset.append(property)
+                        default_value = self.default_params[object_type][property]
+                        if default_value == "same as curve":
+                            setattr(
+                                element,
+                                property,
+                                getattr(element, curve_defaults[property]),
+                            )
+                        elif default_value == "same as scatter":
+                            element.errorbars_color = getattr(element, "face_color")
+                        else:
+                            setattr(element, property, default_value)
+                break
+            except KeyError as e:
+                tries += 1
+                if tries >= 2:
+                    raise GraphingException(
+                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n {e.args[0]}"
+                    )
+                file_updater = FileUpdater(self.figure_style)
+                file_updater.update()
+                file_loader = FileLoader(self.figure_style)
+                self.default_params = file_loader.load()
+        return params_to_reset
+
+    def _reset_params_to_default(
+        self, element: Plottable, params_to_reset: list[str]
+    ) -> None:
+        """
+        Resets the parameters that were set to default in the _fill_in_missing_params method.
+        """
+        for param in params_to_reset:
+            setattr(
+                element,
+                param,
+                "default",
+            )
