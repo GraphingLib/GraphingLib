@@ -218,6 +218,65 @@ class MultiFigure:
             multi_fig.add_sub_figure(figure, i, 0, 1, 1)
         return multi_fig
 
+    @classmethod
+    def grid(
+        cls,
+        figures: list[Figure],
+        dimensions: tuple[int, int],
+        size: tuple[float, float] | Literal["default"] = "default",
+        title: Optional[str] = None,
+        reference_labels: bool = True,
+        reflabel_loc: str = "outside",
+        figure_style: str = "plain",
+    ) -> Self:
+        """Creates a MultiFigure with the specified :class:`~graphinglib.figure.Figure` objects in a grid configuration.
+
+        Parameters
+        ----------
+        figures : list[Figure]
+            The :class:`~graphinglib.figure.Figure` objects to add to the MultiFigure, from top-left to bottom-right.
+        dimensions : tuple[int, int]
+            The number of rows and columns of the grid (product should equal the number of figures).
+        size : tuple[float, float]
+            Overall size of the figure.
+            Default depends on the ``figure_style`` configuration.
+        title : str, optional
+            Title of the MultiFigure.
+            Defaults to ``None``.
+        reference_labels : bool
+            Whether or not to add reference labels to the SubFigures.
+            Defaults to ``True``.
+        reflabel_loc : str
+            Location of the reference labels of the SubFigures. Either "inside" or "outside".
+            Defaults to "outside".
+        figure_style : str
+            The figure style to use for the figure.
+            Defaults to "plain".
+
+        Returns
+        -------
+        A new MultiFigure object.
+        """
+        num_rows, num_cols = dimensions
+        if num_rows * num_cols < len(figures):
+            raise ValueError(
+                f"The product of the dimensions ({num_rows} x {num_cols}) must be greater than or equal to the number of figures ({len(figures)})."
+            )
+        multi_fig = cls(
+            num_rows=num_rows,
+            num_cols=num_cols,
+            size=size,
+            title=title,
+            reference_labels=reference_labels,
+            reflabel_loc=reflabel_loc,
+            figure_style=figure_style,
+        )
+        for i, figure in enumerate(figures):
+            row = i // num_cols
+            col = i % num_cols
+            multi_fig.add_sub_figure(figure, row, col, 1, 1)
+        return multi_fig
+
     def add_sub_figure(
         self,
         sub_figure: Figure,
