@@ -1479,15 +1479,22 @@ class Histogram:
             num_of_points = 500
             x_data = np.linspace(self._bin_edges[0], self._bin_edges[-1], num_of_points)
             y_data = normal(x_data)
+            params = {
+                "color": self.pdf_curve_color,
+            }
+            params = {k: v for k, v in params.items() if v != "default"}
             axes.plot(
                 x_data,
                 y_data,
-                color=self.pdf_curve_color,
                 zorder=z_order,
+                **params,
             )
             curve_max_y = normal(self.mean)
             curve_std_y = normal(self.mean + self.standard_deviation)
             if self.pdf_show_std:
+                params = {}
+                if self.pdf_std_color != "default":
+                    params["colors"] = [self.pdf_std_color, self.pdf_std_color]
                 plt.vlines(
                     [
                         self.mean - self.standard_deviation,
@@ -1496,17 +1503,20 @@ class Histogram:
                     [0, 0],
                     [curve_std_y, curve_std_y],
                     linestyles=["dashed"],
-                    colors=[self.pdf_std_color, self.pdf_std_color],
                     zorder=z_order - 1,
+                    **params,
                 )
             if self.pdf_show_mean:
+                params = {}
+                if self.pdf_mean_color != "default":
+                    params["colors"] = [self.pdf_mean_color]
                 plt.vlines(
                     self.mean,
                     0,
                     curve_max_y,
                     linestyles=["dashed"],
-                    colors=[self.pdf_mean_color],
                     zorder=z_order - 1,
+                    **params,
                 )
 
     def show_pdf(
