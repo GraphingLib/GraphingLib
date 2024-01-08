@@ -70,8 +70,6 @@ For most data science applications, GraphingLib can provide a much more concise 
     import graphinglib as gl
     import numpy as np
 
-    canvas = gl.MultiFigure(2, 2, (10, 10), title="Complex Example", use_latex=True)
-
     # Figure 1 - Polynomial curve fit of noisy data
 
     x_data = np.linspace(0, 10, 100)
@@ -79,29 +77,30 @@ For most data science applications, GraphingLib can provide a much more concise 
     scatter = gl.Scatter(x_data, y_data, label="Data")
     fit = gl.FitFromPolynomial(scatter, degree=2, label="Fit", color="red")
 
-    fig1 = canvas.add_SubFigure(0, 0, 1, 1, y_lim=(-30, 360))
+    fig1 = gl.Figure(y_lim=(-30, 360))
     fig1.add_element(scatter, fit)
 
     # Figure 2 - Histogram of random data
 
     data = np.random.normal(0, 1, 1000)
-    hist = gl.Histogram(data, number_of_bins=20, label="Residuals", show_pdf="normal")
+    hist = gl.Histogram(data, number_of_bins=20, label="Residuals")
+    hist.show_pdf()
 
-    fig2 = canvas.add_SubFigure(0, 1, 1, 1, y_lim=(0, 0.5))
+    fig2 = gl.Figure(y_lim=(0, 0.5))
     fig2.add_element(hist)
 
     # Figure 3 - Intersection of two curves
 
     curve1 = gl.Curve.from_function(lambda x: x**2, x_min=-2, x_max=2, label="Curve 1")
     curve2 = gl.Curve.from_function(lambda x: np.sin(x), x_min=-2, x_max=2, label="Curve 2")
-    intersection_points = curve1.intersection(curve2, colors="red")
+    intersection_points = curve1.intersection(curve2, colors="red", as_point_objects=True)
 
     for point in intersection_points:
         point.add_coordinates()
         point.h_align = "left"
         point.v_align = "top"
 
-    fig3 = canvas.add_SubFigure(1, 0, 1, 1)
+    fig3 = gl.Figure()
     fig3.add_element(curve1, curve2, *intersection_points)
 
     # Figure 4 - Integral of a curve between two points and tangent line
@@ -111,8 +110,16 @@ For most data science applications, GraphingLib can provide a much more concise 
     tangent = curve.get_tangent_curve(1, label="Tangent", line_style="--")
     area_text = gl.Text(3, 5, "A = {:.2f}".format(area))
 
-    fig4 = canvas.add_SubFigure(1, 1, 1, 1)
+    fig4 = gl.Figure()
     fig4.add_element(curve, tangent, area_text)
+
+    # Creating the MultiFigure and displaying/saving it
+    canvas = gl.MultiFigure(2, 2, (10, 10), title="Complex Example")
+    canvas.customize_visual_style(use_latex=True)
+    canvas.add_sub_figure(fig1, 0, 0, 1, 1)
+    canvas.add_sub_figure(fig2, 0, 1, 1, 1)
+    canvas.add_sub_figure(fig3, 1, 0, 1, 1)
+    canvas.add_sub_figure(fig4, 1, 1, 1, 1)
 
     # canvas.save_figure("complex_example.png", general_legend=False)
     canvas.display(general_legend=False)
