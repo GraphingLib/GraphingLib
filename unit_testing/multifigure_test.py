@@ -120,6 +120,89 @@ class TestMultiFigure(unittest.TestCase):
         self.assertEqual(another_figure.col_start, 1)
         self.assertEqual(another_figure.col_span, 1)
 
+    def test_grid(self):
+        fig1 = Figure()
+        fig2 = Figure()
+        fig3 = Figure()
+        fig4 = Figure()
+        fig5 = Figure()
+        fig6 = Figure()
+        a_multifig = MultiFigure.grid(
+            figures=[fig1, fig2, fig3, fig4, fig5, fig6],
+            dimensions=(2, 3),
+            size=(12, 8),
+            title="Complex Example",
+        )
+        self.assertEqual(a_multifig.num_rows, 2)
+        self.assertEqual(a_multifig.num_cols, 3)
+        self.assertEqual(a_multifig._sub_figures[0], fig1)
+        self.assertEqual(a_multifig._sub_figures[1], fig2)
+        self.assertEqual(a_multifig._sub_figures[2], fig3)
+        self.assertEqual(a_multifig._sub_figures[3], fig4)
+        self.assertEqual(a_multifig._sub_figures[4], fig5)
+        self.assertEqual(a_multifig._sub_figures[5], fig6)
+
+        self.assertEqual(fig1.row_start, 0)
+        self.assertEqual(fig1.row_span, 1)
+        self.assertEqual(fig1.col_start, 0)
+        self.assertEqual(fig1.col_span, 1)
+
+        self.assertEqual(fig2.row_start, 0)
+        self.assertEqual(fig2.row_span, 1)
+        self.assertEqual(fig2.col_start, 1)
+        self.assertEqual(fig2.col_span, 1)
+
+        self.assertEqual(fig3.row_start, 0)
+        self.assertEqual(fig3.row_span, 1)
+        self.assertEqual(fig3.col_start, 2)
+        self.assertEqual(fig3.col_span, 1)
+
+        self.assertEqual(fig4.row_start, 1)
+        self.assertEqual(fig4.row_span, 1)
+        self.assertEqual(fig4.col_start, 0)
+        self.assertEqual(fig4.col_span, 1)
+
+        self.assertEqual(fig5.row_start, 1)
+        self.assertEqual(fig5.row_span, 1)
+        self.assertEqual(fig5.col_start, 1)
+        self.assertEqual(fig5.col_span, 1)
+
+        self.assertEqual(fig6.row_start, 1)
+        self.assertEqual(fig6.row_span, 1)
+        self.assertEqual(fig6.col_start, 2)
+        self.assertEqual(fig6.col_span, 1)
+
+    def test_grid_raises(self):
+        # Grid too small
+        fig1 = Figure()
+        fig2 = Figure()
+        fig3 = Figure()
+        fig4 = Figure()
+        fig5 = Figure()
+        fig6 = Figure()
+        with self.assertRaises(ValueError):
+            MultiFigure.grid(
+                figures=[fig1, fig2, fig3, fig4, fig5, fig6],
+                dimensions=(2, 2),
+                size=(12, 8),
+                title="Complex Example",
+            )
+        with self.assertRaises(ValueError):
+            MultiFigure.grid(
+                figures=[fig1, fig2, fig3, fig4, fig5],
+                dimensions=(2, 1),
+                size=(12, 8),
+                title="Complex Example",
+            )
+        # Not integer dimensions
+        with self.assertRaises(TypeError):
+            MultiFigure.grid(
+                figures=[fig1, fig2, fig3, fig4, fig5],
+                dimensions=(2.5, 10),
+                size=(12, 8),
+                title="Complex Example",
+            )
+
     def test_prepare_multifigure_raises(self):
         a_multifig = MultiFigure(num_rows=2, num_cols=2, figure_style="Burrrd")
         with self.assertRaises(GraphingException):
