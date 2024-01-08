@@ -2,9 +2,11 @@ import unittest
 
 from matplotlib import pyplot as plt
 from numpy import linspace, pi, sin
+from pyparsing import line
+from traitlets import default
 
 from graphinglib.data_plotting_1d import Curve
-from graphinglib.figure import Figure
+from graphinglib.figure import Figure, TwinAxis
 from graphinglib.file_manager import FileLoader
 from graphinglib.graph_elements import GraphingException
 
@@ -206,6 +208,91 @@ class TestFigure(unittest.TestCase):
         a_figure = Figure(figure_style="matplotlib")
         a_figure.add_element(self.testCurve)
         a_figure._prepare_figure()
+
+    def test_create_twin_axis(self):
+        a_figure = Figure()
+        a_figure.add_element(self.testCurve)
+        twin_axis = a_figure.create_twin_axis()
+        self.assertEqual(twin_axis.is_y, True)
+        self.assertEqual(twin_axis.label, None)
+        self.assertEqual(twin_axis.log_scale, False)
+        self.assertEqual(twin_axis, a_figure._twin_y_axis)
+
+
+class TestTwinAxis(unittest.TestCase):
+    def test_init(self):
+        twin = TwinAxis()
+        self.assertEqual(twin.is_y, True)
+        self.assertEqual(twin.label, None)
+        self.assertEqual(twin.log_scale, False)
+        self.assertEqual(twin._elements, [])
+        self.assertEqual(twin._labels, [])
+        self.assertEqual(twin._handles, [])
+        self.assertEqual(twin._custom_ticks, False)
+        self.assertEqual(twin.figure_style, None)
+        self.assertEqual(twin.default_params, None)
+        self.assertEqual(twin.tick_color, None)
+        self.assertEqual(twin.axes_edge_color, None)
+        self.assertEqual(twin.axes_label_color, None)
+
+        twin = TwinAxis(is_y=False, label="Test", log_scale=True)
+        self.assertEqual(twin.is_y, False)
+        self.assertEqual(twin.label, "Test")
+        self.assertEqual(twin.log_scale, True)
+
+    def test_add_element(self):
+        twin = TwinAxis()
+        curve = Curve([1, 2, 3], [1, 2, 3])
+        twin.add_element(curve)
+        self.assertEqual(twin._elements[0], curve)
+
+    def test_customized_visual_style(self):
+        twin = TwinAxis()
+        twin.customize_visual_style(tick_color="red", axes_edge_color="blue")
+        self.assertEqual(twin.tick_color, "red")
+        self.assertEqual(twin.axes_edge_color, "blue")
+
+    def test_set_ticks(self):
+        twin = TwinAxis()
+        twin.set_ticks([1, 2, 3], ["a", "b", "c"])
+        self.assertEqual(twin._custom_ticks, True)
+        self.assertEqual(twin._ticks, [1, 2, 3])
+        self.assertEqual(twin._ticklabels, ["a", "b", "c"])
+
+    def test_prepare_twin_axes(self):
+        twin = TwinAxis()
+        axes = plt.axes()
+        with self.assertRaises(GraphingException):
+            twin._prepare_twin_axis(axes, True, {}, "plain")
+        twin.add_element(Curve([1, 2, 3], [1, 2, 3], label="Test"))
+        labels, handles = twin._prepare_twin_axis(axes, True, {}, "plain")
+        self.assertEqual(len(labels), 1)
+        self.assertEqual(len(handles), 1)
+
+    def test_fill_in_missing_params(self):
+        default_params = {
+            "Curve": {
+                "line_width": 2,
+                "color": "k",
+                "line_style": "-",
+            }
+        }
+        twin = TwinAxis()
+        twin.default_params = default_params
+
+        curve = Curve([1, 2, 3], [1, 2, 3], label="Test")
+        twin._fill_in_missing_params(curve)
+        self.assertEqual(curve.line_width, 2)
+        self.assertEqual(curve.color, "k")
+        self.assertEqual(curve.line_style, "-")
+
+    def test_reset_params_to_default(self):
+        curve = Curve(
+            [1, 2, 3], [1, 2, 3], label="Test", line_width=3, color="r", line_style="--"
+        )
+        params_to_reset = ["line_width", "color", "line_style"]
+        twin = TwinAxis()
+        twin._reset_params_to_default(curve, params_to_reset)
 
 
 if __name__ == "__main__":
