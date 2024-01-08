@@ -532,6 +532,24 @@ class Figure:
         label: str = None,
         log_scale: bool = False,
     ) -> "TwinAxis":
+        """
+        Creates a twin axis for the :class:`~graphinglib.figure.Figure` object.
+
+        Parameters
+        ----------
+        is_y : bool
+            If ``True``, the twin axis will be a y-axis, otherwise it will be an x-axis.
+        label : str
+            The identification label for the twin axis.
+        log_scale : bool
+            Whether or not to set the scale of the twin axis to logaritmic scale.
+            Defaults to ``False``.
+
+        Returns
+        -------
+        :class:`~graphinglib.figure.TwinAxis`
+            The created twin axis.
+        """
         if self.remove_axes:
             raise GraphingException(
                 "Axis in this figure were removed, therefore twin-axis can't be added."
@@ -545,12 +563,49 @@ class Figure:
 
 
 class TwinAxis:
+    """
+    This class implements a twin axis for the :class:`~graphinglib.figure.Figure` class.
+
+    Behaves like a :class:`~graphinglib.figure.Figure` object, but is not meant to be used on its own.
+    Elements can be added to the twin axis using the :meth:`~graphinglib.figure.TwinAxis.add_element` method,
+    the visual style can be customized using the :meth:`~graphinglib.figure.TwinAxis.customize_visual_style` method,
+    and tick labels can be customized using the :meth:`~graphinglib.figure.TwinAxis.set_ticks` method.
+
+    Parameters
+    ----------
+    is_y : bool
+        If ``True``, the twin axis will be a y-axis, otherwise it will be an x-axis.
+    label : str
+        The identification for the twin axis.
+    log_scale : bool
+        Whether or not to set the scale of the twin axis to logaritmic scale.
+        Defaults to ``False``.
+    """
+
     def __init__(
         self,
-        is_y: bool,
-        label: str,
+        is_y: bool = True,
+        label: str = None,
         log_scale: bool = False,
     ):
+        """
+        This class implements a twin axis for the :class:`~graphinglib.figure.Figure` class.
+
+        Behaves like a :class:`~graphinglib.figure.Figure` object, but is not meant to be used on its own.
+        Elements can be added to the twin axis using the :meth:`~graphinglib.figure.TwinAxis.add_element` method,
+        the visual style can be customized using the :meth:`~graphinglib.figure.TwinAxis.customize_visual_style` method,
+        and tick labels can be customized using the :meth:`~graphinglib.figure.TwinAxis.set_ticks` method.
+
+        Parameters
+        ----------
+        is_y : bool
+            If ``True``, the twin axis will be a y-axis, otherwise it will be an x-axis.
+        label : str
+            The identification for the twin axis.
+        log_scale : bool
+            Whether or not to set the scale of the twin axis to logaritmic scale.
+            Defaults to ``False``.
+        """
         self.is_y = is_y
         self.label = label
         self.log_scale = log_scale
@@ -571,6 +626,9 @@ class TwinAxis:
         default_params: dict = None,
         figure_style: str = "plain",
     ):
+        """
+        Prepares the :class:`~graphinglib.figure.TwinAxis` to be displayed.
+        """
         self.default_params = default_params
         self.figure_style = figure_style
         if self.is_y:
@@ -631,15 +689,11 @@ class TwinAxis:
 
     def set_ticks(
         self,
-        ticks: Optional[list[float]] = None,
-        ticklabels: Optional[list[str]] = None,
+        ticks: list[float],
+        ticklabels: list[str],
     ):
         """
-        Sets custom [x/y]ticks and [x/y]ticks' labels.
-
-        ..note::
-            [x/y]ticks and [x/y]ticks' labels can be omited as long as labels are provided for
-            specified ticks.
+        Sets custom ticks and labels for the twin axis.
 
         Parameters
         ----------
@@ -648,14 +702,17 @@ class TwinAxis:
         ticklabels : list[str], optional
             Tick labels for the axis.
         """
+        if not ticks or not ticklabels:
+            raise GraphingException(
+                "Ticks position and corresponding labels must both be specified for the twin axis."
+            )
+        if len(ticks) != len(ticklabels):
+            raise GraphingException(
+                f"Number of ticks ({len(ticks)}) and number of tick labels ({len(ticklabels)}) must be the same."
+            )
         self._custom_ticks = True
         self._ticks = ticks
         self._ticklabels = ticklabels
-        if self._ticks:
-            if self._ticks and not self._ticklabels:
-                raise GraphingException(
-                    "Ticks position and corresponding labels must both be specified for the axis."
-                )
 
     def add_element(self, *elements: Plottable) -> None:
         """
