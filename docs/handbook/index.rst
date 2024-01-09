@@ -24,6 +24,7 @@ Sections in this handbook
    scatter_fitting
    histogram
    graph_elements
+   shapes
    multifigure
    2D_plotting
    figure_style_file
