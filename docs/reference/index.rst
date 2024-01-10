@@ -18,3 +18,4 @@ Contents
    graph_elements
    legend_artists
    multifigure
+   shapes
