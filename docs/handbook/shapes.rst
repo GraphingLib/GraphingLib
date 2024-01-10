@@ -63,6 +63,8 @@ You can customize the appearance of Rectangles by specifying the following optio
     figure.add_element(rect1, rect2, rect3)
     figure.display()
 
+.. image:: images/rectangle.png
+
 There are many useful methods which can be used with Rectangles. For example, you can check if a point is inside a Rectangle: ::
 
     import graphinglib as gl
@@ -136,9 +138,12 @@ You can customize the appearance of Circles by specifying the following optional
         fill=False,
     )
 
-    figure = gl.Figure()
+    # Figure size and axis limits are set to make the circles look round
+    figure = gl.Figure(x_lim=(-19, 19), y_lim=(-19, 19), size=(8, 8))
     figure.add_element(circle1, circle2, circle3)
     figure.display()
+
+.. image:: images/circle.png
 
 As with Rectangles, there are also many useful methods which can be used with Circles. Here are some examples: ::
 
@@ -218,3 +223,4 @@ You can customize the appearance of Arrows by specifying the following optional 
     fig.add_element(point4, point5, point6)
     fig.display()
 
+.. image:: images/arrow.png
