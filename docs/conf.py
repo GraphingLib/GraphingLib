@@ -12,9 +12,9 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 
 project = "GraphingLib"
-copyright = "2023, Gustave Coulombe, Yannick Lapointe"
+copyright = "2024, Gustave Coulombe, Yannick Lapointe"
 author = "Gustave Coulombe and Yannick Lapointe"
-release = "v1.2.2"
+release = "v1.3.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
