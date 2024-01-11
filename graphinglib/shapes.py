@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Self, Optional
+from typing import Literal, Optional, Self
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -552,15 +552,14 @@ class Arrow:
     color : str
         Color of the arrow. Default depends on the ``figure_style``configuration.
     width : float, optional
-        Arrow width.
+        Arrow line width. Default depends on the ``figure_style`` configuration.
+    head_size : float, optional
+        Scales the size of the arrow head.
+        Default depends on the ``figure_style`` configuration.
     shrink : float
         Fraction of the total length of the arrow to shrink from both ends.
         A value of 0.5 means the arrow is no longer visible.
         Defaults to 0.
-    head_width : float, optional
-        Width of the head of the arrow.
-    head_length : float, optional
-        Length of the head of the arrow.
     two_sided : bool
         If ``True``, the arrow is double-sided. Defaults to ``False``
     """
