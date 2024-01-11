@@ -91,6 +91,9 @@ class TestPoint(unittest.TestCase):
     def test_v_align_is_bottom(self):
         self.assertEqual(self.testPoint.v_align, "bottom")
 
+    def test_coordinates_property(self):
+        self.assertEqual(self.testPoint.coordinates, (0.0, 0.0))
+
 
 class TestText(unittest.TestCase):
     # TODO: Write tests for Text

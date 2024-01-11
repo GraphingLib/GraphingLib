@@ -450,6 +450,13 @@ class Point:
         self.v_align = v_align
         self._show_coordinates: bool = False
 
+    @property
+    def coordinates(self) -> tuple[float, float]:
+        """
+        Returns the coordinates of the :class:`~graphinglib.graph_elements.Point`.
+        """
+        return self.x, self.y
+
     def add_coordinates(self) -> None:
         """
         Displays the coordinates of the :class:`~graphinglib.graph_elements.Point` next to it.
