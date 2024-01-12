@@ -224,3 +224,35 @@ You can customize the appearance of Arrows by specifying the following optional 
     fig.display()
 
 .. image:: images/arrow.png
+
+The :class:`~graphinglib.shapes.Line` object
+--------------------------------------------
+
+It is possible to add lines to figures. Similarly to the :class:`~graphinglib.shapes.Arrow` object, simply specify the two end points::
+
+    import graphinglib as gl
+
+    line = gl.Line((0, 0), (1, 1))
+
+It is possible to change the width of the line with the ``width`` parameter. The ``capped_line`` parameter allows you to add perpendicular caps to both ends of the line. The width of those caps can be controlled with the ``cap_width`` parameter::
+
+    import graphinglib as gl
+
+    # Creating a circle and finding a point at 45 degrees on the circumference
+    circle = gl.Circle(0, 0, 1, line_width=2)
+    center = gl.Point(0, 0, marker_size=50)
+    point = circle.get_point_at_angle(45, True, True)
+    point.marker_size = 50
+    
+    # Adding a line to display the radius of the circle
+    line = gl.Line(
+        (-0.07, 0.07), (point.x - 0.07, point.y + 0.07), capped_line=True, cap_width=1
+    )
+    text = gl.Text(0.25, 0.5, r"$R$", font_size=15)
+
+    # Display the elements
+    fig = gl.Figure(size=(5.5, 5))
+    fig.add_element(circle, point, line, center, text)
+    fig.display()
+
+.. image:: images/capped_line.png
