@@ -156,6 +156,7 @@ Arrow:
 Line:
   color: "white"
   width: 2
+  cap_width: 1
 rc_params:
   axes.edgecolor: white
   axes.facecolor: black

@@ -632,16 +632,26 @@ class Line:
         Color of the line. Default depends on the ``figure_style``configuration.
     width : float, optional
         Line width. Default depends on the ``figure_style`` configuration.
+    capped_line : bool
+        If ``True``, the line is capped on both ends. Defaults to ``False``.
+    cap_width : float
+        Width of the caps. Default depends on the ``figure_style`` configuration.
     """
 
     pointA: tuple[float, float]
     pointB: tuple[float, float]
     color: str = "default"
     width: float | Literal["default"] = "default"
+    capped_line: bool = False
+    cap_width: float | Literal["default"] = "default"
 
     def _plot_element(self, axes: plt.axes, z_order: int):
+        if self.capped_line:
+            style = f"|-|, widthA={self.cap_width/2}, widthB={self.cap_width/2}"
+        else:
+            style = "-"
         props = {
-            "arrowstyle": "-",
+            "arrowstyle": style,
             "color": self.color,
             "linewidth": self.width,
         }
