@@ -173,6 +173,9 @@ Arrow:
   head_size: 5
   width: 10
 
+Line:
+  color: "tab:olive"
+  width: 10
 rc_params:
   figure.facecolor: "white"
   axes.facecolor: "white"

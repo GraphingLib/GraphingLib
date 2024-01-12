@@ -616,3 +616,39 @@ class Arrow:
                 zorder=z_order,
                 arrowprops=props,
             )
+
+
+@dataclass
+class Line:
+    """This class implements a line object.
+
+    Parameters
+    ----------
+    pointA : tuple[float, float]
+        Point A of the line.
+    pointB : tuple[float, float]
+        Point B of the line.
+    color : str
+        Color of the line. Default depends on the ``figure_style``configuration.
+    width : float, optional
+        Line width. Default depends on the ``figure_style`` configuration.
+    """
+
+    pointA: tuple[float, float]
+    pointB: tuple[float, float]
+    color: str = "default"
+    width: float | Literal["default"] = "default"
+
+    def _plot_element(self, axes: plt.axes, z_order: int):
+        props = {
+            "arrowstyle": "-",
+            "color": self.color,
+            "linewidth": self.width,
+        }
+        axes.annotate(
+            "",
+            self.pointA,
+            self.pointB,
+            zorder=z_order,
+            arrowprops=props,
+        )
