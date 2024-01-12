@@ -173,6 +173,11 @@ Arrow:
   head_size: 1
   width: 2
 
+Line:
+  color: "black"
+  width: 2
+  cap_width: 1
+
 rc_params:
   figure.facecolor: "white"
   axes.facecolor: "white"
