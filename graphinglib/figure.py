@@ -531,6 +531,7 @@ class Figure:
         is_y: bool = True,
         label: str = None,
         log_scale: bool = False,
+        axis_lim: Optional[tuple[float, float]] = None,
     ) -> "TwinAxis":
         """
         Creates a twin axis for the :class:`~graphinglib.figure.Figure` object.
@@ -544,6 +545,8 @@ class Figure:
         log_scale : bool
             Whether or not to set the scale of the twin axis to logaritmic scale.
             Defaults to ``False``.
+        axis_lim : tuple[float, float], optional
+            The limits for the axis.
 
         Returns
         -------
@@ -554,7 +557,7 @@ class Figure:
             raise GraphingException(
                 "Axis in this figure were removed, therefore twin-axis can't be added."
             )
-        twin = TwinAxis(is_y, label, log_scale)
+        twin = TwinAxis(is_y, label, log_scale, axis_lim)
         if is_y:
             self._twin_y_axis = twin
         else:
@@ -580,6 +583,8 @@ class TwinAxis:
     log_scale : bool
         Whether or not to set the scale of the twin axis to logaritmic scale.
         Defaults to ``False``.
+    axis_lim : tuple[float, float], optional
+            The limits for the axis.
     """
 
     def __init__(
@@ -587,6 +592,7 @@ class TwinAxis:
         is_y: bool = True,
         label: str = None,
         log_scale: bool = False,
+        axis_lim: Optional[tuple[float, float]] = None,
     ):
         """
         This class implements a twin axis for the :class:`~graphinglib.figure.Figure` class.
@@ -605,6 +611,8 @@ class TwinAxis:
         log_scale : bool
             Whether or not to set the scale of the twin axis to logaritmic scale.
             Defaults to ``False``.
+        axis_lim : tuple[float, float], optional
+            The limits for the axis.
         """
         self.is_y = is_y
         self.label = label
@@ -618,6 +626,7 @@ class TwinAxis:
         self.tick_color = None
         self.axes_label_color = None
         self.axes_edge_color = None
+        self.axis_lim = axis_lim
 
     def _prepare_twin_axis(
         self,
@@ -634,9 +643,13 @@ class TwinAxis:
         if self.is_y:
             self._axes = fig_axes.twinx()
             self._axes.set_ylabel(self.label)
+            if self.axis_lim:
+                self._axes.set_ylim(*self.axis_lim)
         else:
             self._axes = fig_axes.twiny()
             self._axes.set_xlabel(self.label)
+            if self.axis_lim:
+                self._axes.set_xlim(*self.axis_lim)
         if self.is_y:
             if self.tick_color:
                 self._axes.tick_params(axis="y", colors=self.tick_color)
