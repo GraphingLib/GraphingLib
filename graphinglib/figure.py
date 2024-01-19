@@ -695,24 +695,21 @@ class TwinAxis:
                 self._axes.set_yscale("log")
             else:
                 self._axes.set_xscale("log")
-        if self._elements:
-            z_order = 1
-            for element in self._elements:
-                params_to_reset = []
-                if not is_matplotlib_style:
-                    params_to_reset = self._fill_in_missing_params(element)
-                element._plot_element(self._axes, z_order)
-                if not is_matplotlib_style:
-                    self._reset_params_to_default(element, params_to_reset)
-                try:
-                    if element.label is not None:
-                        self._handles.append(element.handle)
-                        self._labels.append(element.label)
-                except AttributeError:
-                    continue
-                z_order += 2
-        else:
-            raise GraphingException("No elements to be plotted!")
+        z_order = 1
+        for element in self._elements:
+            params_to_reset = []
+            if not is_matplotlib_style:
+                params_to_reset = self._fill_in_missing_params(element)
+            element._plot_element(self._axes, z_order)
+            if not is_matplotlib_style:
+                self._reset_params_to_default(element, params_to_reset)
+            try:
+                if element.label is not None:
+                    self._handles.append(element.handle)
+                    self._labels.append(element.label)
+            except AttributeError:
+                continue
+            z_order += 2
         temp_handles = self._handles
         temp_labels = self._labels
         self._handles = []
