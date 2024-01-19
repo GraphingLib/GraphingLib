@@ -164,8 +164,12 @@ class Figure:
         if self._custom_ticks:
             if self._xticks:
                 self._axes.set_xticks(self._xticks, self._xticklabels)
+            if self._xticklabels_rotation:
+                self._axes.tick_params("x", labelrotation=self._xticklabels_rotation)
             if self._yticks:
                 self._axes.set_yticks(self._yticks, self._yticklabels)
+            if self._yticklabels_rotation:
+                self._axes.tick_params("y", labelrotation=self._yticklabels_rotation)
         if self.x_lim:
             self._axes.set_xlim(*self.x_lim)
         if self.y_lim:
@@ -490,8 +494,10 @@ class Figure:
         self,
         xticks: Optional[list[float]] = None,
         xticklabels: Optional[list[str]] = None,
+        xticklabels_rotation: Optional[float] = None,
         yticks: Optional[list[float]] = None,
         yticklabels: Optional[list[str]] = None,
+        yticklabels_rotation: Optional[float] = None,
     ):
         """
         Sets custom [x/y]ticks and [x/y]ticks' labels.
@@ -506,16 +512,22 @@ class Figure:
             Tick positions for the x axis.
         xticklabels : list[str], optional
             Tick labels for the x axis.
+        xticklabels_rotation : float, optional
+            Rotation value for xtick labels.
         yticks : list[float], optional
             Tick positions for the y axis.
         yticklabels : list[str], optional
             Tick labels for the y axis.
+        yticklabels_rotation : float, optional
+            Rotation value for ytick labels.
         """
         self._custom_ticks = True
         self._xticks = xticks
         self._xticklabels = xticklabels
+        self._xticklabels_rotation = xticklabels_rotation
         self._yticks = yticks
         self._yticklabels = yticklabels
+        self._yticklabels_rotation = yticklabels_rotation
         if self._xticks or self._yticks:
             if self._yticks and not self._yticklabels:
                 raise GraphingException(
@@ -668,8 +680,16 @@ class TwinAxis:
             if self._ticks:
                 if self.is_y:
                     self._axes.set_yticks(self._ticks, self._ticklabels)
+                    if self._ticklabels_rotation:
+                        self._axes.tick_params(
+                            "y", labelrotation=self._ticklabels_rotation
+                        )
                 else:
                     self._axes.set_xticks(self._ticks, self._ticklabels)
+                    if self._ticklabels_rotation:
+                        self._axes.tick_params(
+                            "x", labelrotation=self._ticklabels_rotation
+                        )
         if self.log_scale:
             if self.is_y:
                 self._axes.set_yscale("log")
@@ -704,6 +724,7 @@ class TwinAxis:
         self,
         ticks: list[float],
         ticklabels: list[str],
+        ticklabels_rotation: Optional[float] = None,
     ):
         """
         Sets custom ticks and labels for the twin axis.
@@ -714,6 +735,8 @@ class TwinAxis:
             Tick positions for the axis.
         ticklabels : list[str], optional
             Tick labels for the axis.
+        ticklabels_rotation : float, optional
+            Rotation value for the tick labels.
         """
         if not ticks or not ticklabels:
             raise GraphingException(
@@ -726,6 +749,7 @@ class TwinAxis:
         self._custom_ticks = True
         self._ticks = ticks
         self._ticklabels = ticklabels
+        self._ticklabels_rotation = ticklabels_rotation
 
     def add_element(self, *elements: Plottable) -> None:
         """
