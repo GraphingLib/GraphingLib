@@ -1,0 +1,12 @@
+[
+    {
+        "name": "v1.3.0 (stable)",
+        "version": "stable",
+        "url": "https://graphinglib.readthedocs.io/en/stable/"
+    },
+    {
+        "name" : "dev",
+        "version": "latest",
+        "url": "https://graphinglib.readthedocs.io/en/latest/"
+    }
+]

@@ -51,6 +51,11 @@ html_theme_options = {
     "pygment_dark_style": "github-dark",
     "show_toc_level": 2,
     "show_prev_next": False,
+    "switcher": {
+        "json_url": "https://graphinglib.readthedocs.io/en/latest/_static/switcher.json",
+        "version_match": release,
+    },
+    "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
 }
 html_context = {"default_mode": "dark"}
 html_show_sourcelink = False
