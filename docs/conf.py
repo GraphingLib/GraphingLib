@@ -14,7 +14,8 @@ sys.path.insert(0, os.path.abspath(".."))
 project = "GraphingLib"
 copyright = "2024, Gustave Coulombe, Yannick Lapointe"
 author = "Gustave Coulombe and Yannick Lapointe"
-release = "v1.3.0"
+version = "v1.3.0"
+release = version
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -52,7 +53,7 @@ html_theme_options = {
     "show_toc_level": 2,
     "show_prev_next": False,
     "switcher": {
-        "json_url": "https://graphinglib.readthedocs.io/en/latest/_static/switcher.json",
+        "json_url": "https://graphinglib.readthedocs.io/_static/switcher.json",
         "version_match": release,
     },
     "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],

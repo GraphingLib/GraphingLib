@@ -29,5 +29,5 @@ pydata-sphinx-theme = "^0.14.1"
 graphinglib = "graphinglib.cli:main_cli"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core", "setuptools>=64", "setuptools_scm>=8"]
 build-backend = "poetry.core.masonry.api"
