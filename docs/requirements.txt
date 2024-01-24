@@ -7,3 +7,4 @@ PyYAML
 platformdirs
 sphinx-favicon
 sphinx-design
+setuptools_scm

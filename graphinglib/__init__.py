@@ -36,3 +36,4 @@ from .fits import (
 from .graph_elements import GraphingException, Hlines, Point, Table, Text, Vlines
 from .multifigure import MultiFigure
 from .shapes import Circle, Rectangle, Arrow, Line
+from ._version import __version__
