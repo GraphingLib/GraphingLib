@@ -7,6 +7,7 @@
     {
         "name": "v1.3.0 (stable)",
         "version": "stable",
-        "url": "https://graphinglib.readthedocs.io/en/stable/"
+        "url": "https://graphinglib.readthedocs.io/en/stable/",
+        "preferred": true
     }
 ]

@@ -9,13 +9,26 @@
 import os
 import sys
 
+from graphinglib import __version__
+
 sys.path.insert(0, os.path.abspath(".."))
 
 project = "GraphingLib"
 copyright = "2024, Gustave Coulombe, Yannick Lapointe"
 author = "Gustave Coulombe and Yannick Lapointe"
-version = "v1.3.0"
-release = version
+release = __version__
+
+json_url = "https://graphinglib.readthedocs.io/en/latest/_static/switcher.json"
+
+version_match = os.environ.get("READTHEDOCS_VERSION")
+if not version_match or version_match.isdigit() or version_match == "latest":
+    if "dev" in release or "rc" in release:
+        version_match = "dev"
+        json_url = "_static/switcher.json"
+    else:
+        version_match = release
+elif version_match == "stable":
+    version_match = release
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -53,10 +66,11 @@ html_theme_options = {
     "show_toc_level": 2,
     "show_prev_next": False,
     "switcher": {
-        "json_url": "https://graphinglib.readthedocs.io/_static/switcher.json",
-        "version_match": release,
+        "json_url": json_url,
+        "version_match": version_match,
     },
     "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
+    "show_version_warning_banner": True,
 }
 html_context = {"default_mode": "dark"}
 html_show_sourcelink = False
