@@ -8,4 +8,4 @@ platformdirs
 sphinx-favicon
 sphinx-design
 setuptools_scm
-graphinglib
+git+https://github.com/GraphingLib/GraphingLib.git
