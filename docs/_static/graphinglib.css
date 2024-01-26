@@ -13,6 +13,7 @@ html[data-theme=dark] {
     --pst-color-secondary: rgb(225, 164, 0);
     --pst-color-inline-code-links: rgb(25, 142, 254);
     --pst-color-inline-code: rgb(228, 127, 215);
+    --pst-color-primary-highlight: rgb(19, 107, 188) !important;
     .bd-header-announcement {
         &:after {
             background-color: rgb(19, 107, 188);
@@ -28,6 +29,7 @@ html[data-theme=light] {
     --pst-color-primary: rgb(22, 118, 208);
     --pst-color-secondary: rgb(203, 149, 0);
     --pst-color-inline-code-links: rgb(22, 118, 208);
+    --pst-color-primary-highlight: rgb(19, 107, 188) !important;
     .bd-header-announcement {
         &:after {
             background-color: rgb(25, 142, 254);
@@ -61,10 +63,6 @@ html[data-theme=dark] .sd-card img[src*='.svg'] {
 }
 
 /* Main page overview cards */
-
-.sd-btn:hover {
-    background-color: rgb(19, 107, 188) !important
-}
 
 .sd-card {
     border-radius: 3;
