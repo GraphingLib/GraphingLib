@@ -1,0 +1,28 @@
+===============================
+GraphingLib 1.1.0 Release Notes
+===============================
+
+Curve operations, 2D plotting and Multifigures
+----------------------------------------------
+
+New plottable objects in this version
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Heatmap
+- VectorField
+- Multifigure (and Subfigure)
+
+New features in this version
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Curve arithmetics
+- Curve integration and differenciation
+- Curve intersection
+- Many other curve utilities
+
+Minor bug fixes and improvements
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Possibility to create multiple figures and display them one at a time
+- Improved behaviour in Jupyter Notebooks
+- Many other bug fixes and improvements

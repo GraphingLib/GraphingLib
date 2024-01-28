@@ -1,0 +1,18 @@
+===============================
+GraphingLib 1.0.0 Release Notes
+===============================
+
+GraphingLib's first release!
+----------------------------
+
+This is the first release. Available classes are:
+
+- Curve
+- Scatter
+- Histogram
+- Heatmap
+- Figure
+- FitFromExponential, FitFromGaussian, FitFromLog, FitFromPolynomial, FitFromSine, FitFromSquareRoot, FitFromFunction
+- Hlines, Vlines
+- Point
+- Text

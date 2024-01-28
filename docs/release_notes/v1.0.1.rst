@@ -1,0 +1,13 @@
+===============================
+GraphingLib 1.0.1 Release Notes
+===============================
+
+Minor enhancements and bug fixes
+--------------------------------
+
+What's Changed
+^^^^^^^^^^^^^^
+
+- Removed the obligation to specify error on x and y axis to add error bars on curves and scatters
+- Added possibility to write a label to a point while still displaying the coordinates
+- Correcting bug caused by Text entry absent in default styles
