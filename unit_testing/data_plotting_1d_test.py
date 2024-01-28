@@ -119,10 +119,21 @@ class TestCurve(unittest.TestCase):
             self.testCurve.arc_length_between(0, pi), 3.820, places=3
         )
 
+    def test_get_intersection_coordinates(self):
+        x = linspace(0, 3 * pi, 200)
+        other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
+        points = self.testCurve.get_intersection_coordinates(other_curve)
+        points_x = [0.1, 2.9962, 6.6072, 8.9052]
+        points_y = [0.1, 0.14489, 0.3183, 0.4965]
+        self.assertEqual(len(points), 4)
+        for i, point in enumerate(points):
+            self.assertAlmostEqual(point[0], points_x[i], places=3)
+            self.assertAlmostEqual(point[1], points_y[i], places=3)
+
     def test_intersection(self):
         x = linspace(0, 3 * pi, 200)
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
-        points = self.testCurve.intersection(other_curve, as_point_objects=True)
+        points = self.testCurve.create_intersection_points(other_curve)
         points_x = [0.1, 2.9962, 6.6072, 8.9052]
         points_y = [0.1, 0.14489, 0.3183, 0.4965]
         self.assertEqual(len(points), 4)

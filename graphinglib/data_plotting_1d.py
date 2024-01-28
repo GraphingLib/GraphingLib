@@ -670,17 +670,46 @@ class Curve:
         y = f(x)
         return np.trapz(y, x)
 
-    def intersection(
+    def get_intersection_coordinates(
         self,
         other: Self,
-        as_point_objects: bool = False,
+    ) -> list[tuple[float, float]]:
+        """
+        Calculates the coordinates of the intersection points between two curves.
+
+        Parameters
+        ----------
+        other : :class:`~graphinglib.data_plotting_1d.Curve`
+            The other curve to calculate the intersections with.
+
+        Returns
+        -------
+        points: list[tuple[float, float]]
+            A list of tuples of coordinates which are the intersection points between the two curves.
+        """
+        y = self.y_data - other.y_data
+        s = np.abs(np.diff(np.sign(y))).astype(bool)
+        intersections_x = self.x_data[:-1][s] + np.diff(self.x_data)[s] / (
+            np.abs(y[1:][s] / y[:-1][s]) + 1
+        )
+        intersections_y = np.interp(intersections_x, self.x_data, self.y_data)
+        points = []
+        for i in range(len(intersections_x)):
+            x_val = intersections_x[i]
+            y_val = intersections_y[i]
+            points.append((x_val, y_val))
+        return points
+
+    def create_intersection_points(
+        self,
+        other: Self,
         labels: Optional[list[str] | str] = None,
         colors: list[str] | str = "default",
         edge_colors: list[str] | str = "default",
         marker_sizes: list[float] | float | Literal["default"] = "default",
         marker_styles: list[str] | str = "default",
         edge_widths: list[float] | float | Literal["default"] = "default",
-    ) -> list[Point] | list[tuple[float, float]]:
+    ) -> list[Point]:
         """
         Calculates the intersection points between two curves.
 
@@ -726,10 +755,9 @@ class Curve:
             np.abs(y[1:][s] / y[:-1][s]) + 1
         )
         intersections_y = np.interp(intersections_x, self.x_data, self.y_data)
-        points = []
+        point_coords = self.get_intersection_coordinates(other)
+        point_objects = []
         for i in range(len(intersections_x)):
-            x_val = intersections_x[i]
-            y_val = intersections_y[i]
             try:
                 assert isinstance(labels, list)
                 label = labels[i]
@@ -760,22 +788,20 @@ class Curve:
                 edge_width = edge_widths[i]
             except (IndexError, TypeError, AssertionError):
                 edge_width = edge_widths
-            if as_point_objects:
-                points.append(
-                    Point(
-                        x_val,
-                        y_val,
-                        label=label,
-                        color=color,
-                        edge_color=edge_color,
-                        marker_size=marker_size,
-                        marker_style=marker_style,
-                        edge_width=edge_width,
-                    )
+            point = point_coords[i]
+            point_objects.append(
+                Point(
+                    point[0],
+                    point[1],
+                    label=label,
+                    color=color,
+                    edge_color=edge_color,
+                    marker_size=marker_size,
+                    marker_style=marker_style,
+                    edge_width=edge_width,
                 )
-            else:
-                points.append((x_val, y_val))
-        return points
+            )
+        return point_objects
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
