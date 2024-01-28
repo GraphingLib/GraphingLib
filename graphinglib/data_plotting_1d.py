@@ -293,7 +293,7 @@ class Curve:
 
         Returns
         -------
-        coordinates: tuple[float, float]
+        tuple[float, float]
             The coordinates of the curve at the given x value.
         """
         return (
@@ -345,7 +345,7 @@ class Curve:
 
         Returns
         -------
-        point: :class:`~graphinglib.graph_elements.Point`
+        :class:`~graphinglib.graph_elements.Point`
             The point on the curve at the given x value.
         """
         point = Point(
@@ -366,7 +366,7 @@ class Curve:
         interpolation_method: str = "linear",
     ) -> list[tuple[float, float]]:
         """
-        Gets the coordinates of the curve at a given y value. Can return multiple coordinates if the curve crosses the y value multiple times.
+        Gets the coordinates of the curve at a given y value. Can return multiple coordinate pairs if the curve crosses the y value multiple times.
 
         Parameters
         ----------
@@ -381,7 +381,7 @@ class Curve:
 
         Returns
         -------
-        coordinates: list[tuple[float, float]]
+        list[tuple[float, float]]
             The coordinates of the points on the curve at the given y value.
         """
         xs = self.x_data
@@ -409,7 +409,7 @@ class Curve:
         line_width: float | Literal["default"] = "default",
     ) -> list[Point]:
         """
-        Gets the points on the curve at a given y value.
+        Gets the points on the curve at a given y value. Can return multiple Point objects if the curve crosses the y value multiple times.
 
         Parameters
         ----------
@@ -441,8 +441,8 @@ class Curve:
 
         Returns
         -------
-        points: list[:class:`~graphinglib.graph_elements.Point`]
-            The points on the curve at the given y value.
+        list[:class:`~graphinglib.graph_elements.Point`]
+            The Point objects on the curve at the given y value.
         """
         pairs = self.get_coordinates_at_y(y, interpolation_method)
         points = [
@@ -553,7 +553,7 @@ class Curve:
 
         Returns
         -------
-        tangent_curve: :class:`~graphinglib.data_plotting_1d.Curve`
+        :class:`~graphinglib.data_plotting_1d.Curve`
             A :class:`~graphinglib.data_plotting_1d.Curve` object which is the tangent to the original curve at a given x value.
         """
         point = self.get_coordinates_at_x(x)
@@ -591,7 +591,7 @@ class Curve:
 
         Returns
         -------
-        normal_curve: :class:`~graphinglib.data_plotting_1d.Curve`
+        :class:`~graphinglib.data_plotting_1d.Curve`
             A :class:`~graphinglib.data_plotting_1d.Curve` object which is the normal to the original curve at a given x value.
         """
         point = self.get_coordinates_at_x(x)
@@ -685,7 +685,7 @@ class Curve:
 
         Returns
         -------
-        points: list[tuple[float, float]]
+        list[tuple[float, float]]
             A list of tuples of coordinates which are the intersection points between the two curves.
         """
         y = self.y_data - other.y_data
@@ -712,7 +712,7 @@ class Curve:
         edge_widths: list[float] | float | Literal["default"] = "default",
     ) -> list[Point]:
         """
-        Calculates the intersection points between two curves.
+        Creates the intersection Points between two curves.
 
         Parameters
         ----------
@@ -747,7 +747,7 @@ class Curve:
 
         Returns
         -------
-        points: list[:class:`~graphinglib.graph_elements.Point`] or list[tuple[float, float]]
+        list[:class:`~graphinglib.graph_elements.Point`] or list[tuple[float, float]]
             A list of :class:`~graphinglib.graph_elements.Point` objects which are the intersection points between the two curves.
         """
         y = self.y_data - other.y_data
@@ -1157,7 +1157,7 @@ class Scatter:
         line_width: float | Literal["default"] = "default",
     ) -> Point | tuple[float, float]:
         """
-        Creates a point on the curve at a given x value.
+        Creates a Point on the curve at a given x value.
 
         Parameters
         ----------
@@ -1190,7 +1190,7 @@ class Scatter:
         Returns
         -------
         :class:`~graphinglib.graph_elements.Point`
-            The point on the curve at the given x value.
+            The Point on the curve at the given x value.
         """
         point = Point(
             x,
@@ -1210,7 +1210,7 @@ class Scatter:
         interpolation_method: str = "linear",
     ) -> list[tuple[float, float]]:
         """
-        Gets the coordinates the curve at a given y value.
+        Gets the coordinates the curve at a given y value. Can return multiple coordinate pairs if the curve crosses the y value multiple times.
 
         Parameters
         ----------
@@ -1226,7 +1226,7 @@ class Scatter:
         Returns
         -------
         list[tuple[float, float]]
-            The coordinates of the point on the curve at the given y value.
+            The coordinates of the points on the curve at the given y value.
         """
         xs = self.x_data
         ys = self.y_data
@@ -1254,7 +1254,7 @@ class Scatter:
         line_width: float | Literal["default"] = "default",
     ) -> list[Point] | list[tuple[float, float]]:
         """
-        Gets the points on the curve at a given y value.
+        Creates the Points on the curve at a given y value. Can return multiple Points if the curve crosses the y value multiple times.
 
         Parameters
         ----------
@@ -1287,7 +1287,7 @@ class Scatter:
         Returns
         -------
         list[:class:`~graphinglib.graph_elements.Point`]
-            The point objects on the curve at the given y value.
+            The Point objects on the curve at the given y value.
         """
         coords = self.get_coordinates_at_y(y, interpolation_method)
         points = [
