@@ -271,11 +271,39 @@ class Curve:
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
 
-    def get_point_at_x(
+    def get_coordinates_at_x(
         self,
         x: float,
         interpolation_method: str = "linear",
-        as_point_object: bool = False,
+    ) -> tuple[float, float]:
+        """
+        Gets the coordinates of the curve at a given x value.
+
+        Parameters
+        ----------
+        x : float
+            The x value of the desired coordinates.
+        interpolation_method : str,
+            The type of interpolation to be used, as defined in ``scipy.interpolate.interp1d``.
+
+            .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+            Defaults to "linear".
+
+        Returns
+        -------
+        coordinates: tuple[float, float]
+            The coordinates of the curve at the given x value.
+        """
+        return (
+            x,
+            float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
+        )
+
+    def create_point_at_x(
+        self,
+        x: float,
+        interpolation_method: str = "linear",
         label: Optional[str] = None,
         color: str = "default",
         edge_color: str = "default",
@@ -284,9 +312,7 @@ class Curve:
         line_width: float | Literal["default"] = "default",
     ) -> Point | tuple[float, float]:
         """
-        Gets the point on the curve at a given x value.
-
-        Returns a tuple of coordinates by default, but can return a :class:`~graphinglib.graph_elements.Point` object if ``as_point_object`` is set to ``True``. In this case, the other parameters are used to define the properties of the point. If ``as_point_object`` is set to ``False``, the other parameters are ignored.
+        Creates a point on the curve at a given x value.
 
         Parameters
         ----------
@@ -298,11 +324,8 @@ class Curve:
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
 
             Defaults to "linear".
-        as_point_object : bool
-            Whether to return a :class:`~graphinglib.graph_elements.Point` object (True) or a tuple of coordinates (False).
-            Defaults to False.
         label : str, optional
-            Label to be displayed in the legend.
+            Point's label to be displayed in the legend.
         color : str
             Face color of the point.
             Default depends on the ``figure_style`` configuration.
@@ -321,39 +344,69 @@ class Curve:
 
         Returns
         -------
-        point: :class:`~graphinglib.graph_elements.Point` or tuple[float, float]
+        point: :class:`~graphinglib.graph_elements.Point`
             The point on the curve at the given x value.
         """
-        if as_point_object:
-            point = Point(
-                x,
-                float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
-                label=label,
-                color=color,
-                edge_color=edge_color,
-                marker_size=marker_size,
-                marker_style=marker_style,
-                edge_width=line_width,
-            )
-            return point
-        else:
-            return (
-                x,
-                float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
-            )
+        point = Point(
+            x,
+            self.get_coordinates_at_x(x, interpolation_method)[1],
+            label=label,
+            color=color,
+            edge_color=edge_color,
+            marker_size=marker_size,
+            marker_style=marker_style,
+            edge_width=line_width,
+        )
+        return point
 
-    def get_points_at_y(
+    def get_coordinates_at_y(
         self,
         y: float,
         interpolation_method: str = "linear",
-        as_point_objects: bool = False,
+    ) -> list[tuple[float, float]]:
+        """
+        Gets the coordinates of the curve at a given y value. Can return multiple coordinates if the curve crosses the y value multiple times.
+
+        Parameters
+        ----------
+        y : float
+            The y value of the desired coordinates.
+        interpolation_method : str,
+            The type of interpolation to be used, as defined in ``scipy.interpolate.interp1d``.
+
+            .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+            Defaults to "linear".
+
+        Returns
+        -------
+        coordinates: list[tuple[float, float]]
+            The coordinates of the points on the curve at the given y value.
+        """
+        xs = self.x_data
+        ys = self.y_data
+        crossings = np.where(np.diff(np.sign(ys - y)))[0]
+        x_vals: list[float] = []
+        for cross in crossings:
+            x1, x2 = xs[cross], xs[cross + 1]
+            y1, y2 = ys[cross], ys[cross + 1]
+            f = interp1d([y1, y2], [x1, x2], kind=interpolation_method)
+            x_val = f(y)
+            x_vals.append(float(x_val))
+        points = [(x_val, y) for x_val in x_vals]
+        return points
+
+    def create_points_at_y(
+        self,
+        y: float,
+        interpolation_method: str = "linear",
         label: str | None = None,
         color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
-    ) -> list[Point] | list[tuple[float, float]]:
+    ) -> list[Point]:
         """
         Gets the points on the curve at a given y value.
 
@@ -367,11 +420,8 @@ class Curve:
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
 
             Defaults to "linear".
-        as_point_objects : bool
-            Whether to return a list of :class:`~graphinglib.graph_elements.Point` objects (True) or a list of tuples of coordinates (False).
-            Defaults to False.
         label : str, optional
-            Label to be displayed in the legend.
+            Point label to be displayed in the legend.
         color : str
             Face color of the point.
             Default depends on the ``figure_style`` configuration.
@@ -390,35 +440,23 @@ class Curve:
 
         Returns
         -------
-        points: list[:class:`~graphinglib.graph_elements.Point`] or list[tuple[float, float]]
+        points: list[:class:`~graphinglib.graph_elements.Point`]
             The points on the curve at the given y value.
         """
-        xs = self.x_data
-        ys = self.y_data
-        crossings = np.where(np.diff(np.sign(ys - y)))[0]
-        x_vals: list[float] = []
-        for cross in crossings:
-            x1, x2 = xs[cross], xs[cross + 1]
-            y1, y2 = ys[cross], ys[cross + 1]
-            f = interp1d([y1, y2], [x1, x2], kind=interpolation_method)
-            x_val = f(y)
-            x_vals.append(float(x_val))
-        if as_point_objects:
-            points = [
-                Point(
-                    x_val,
-                    y,
-                    label=label,
-                    color=color,
-                    edge_color=edge_color,
-                    marker_size=marker_size,
-                    marker_style=marker_style,
-                    edge_width=line_width,
-                )
-                for x_val in x_vals
-            ]
-        else:
-            points = [(x_val, y) for x_val in x_vals]
+        pairs = self.get_coordinates_at_y(y, interpolation_method)
+        points = [
+            Point(
+                pair[0],
+                pair[1],
+                label=label,
+                color=color,
+                edge_color=edge_color,
+                marker_size=marker_size,
+                marker_style=marker_style,
+                edge_width=line_width,
+            )
+            for pair in pairs
+        ]
         return points
 
     def get_derivative_curve(
@@ -517,8 +555,8 @@ class Curve:
         tangent_curve: :class:`~graphinglib.data_plotting_1d.Curve`
             A :class:`~graphinglib.data_plotting_1d.Curve` object which is the tangent to the original curve at a given x value.
         """
-        point = self.get_point_at_x(x)
-        gradient = self.get_derivative_curve().get_point_at_x(x)[1]
+        point = self.get_coordinates_at_x(x)
+        gradient = self.get_derivative_curve().get_coordinates_at_x(x)[1]
         y_data = gradient * (self.x_data - x) + point[1]
         tangent_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
         return tangent_curve
@@ -555,8 +593,8 @@ class Curve:
         normal_curve: :class:`~graphinglib.data_plotting_1d.Curve`
             A :class:`~graphinglib.data_plotting_1d.Curve` object which is the normal to the original curve at a given x value.
         """
-        point = self.get_point_at_x(x)
-        gradient = self.get_derivative_curve().get_point_at_x(x)[1]
+        point = self.get_coordinates_at_x(x)
+        gradient = self.get_derivative_curve().get_coordinates_at_x(x)[1]
         y_data = -1 / gradient * (self.x_data - x) + point[1]
         normal_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
         return normal_curve
@@ -574,7 +612,7 @@ class Curve:
         -------
         The slope of the curve (float) at the given x value.
         """
-        return self.get_derivative_curve().get_point_at_x(x)[1]
+        return self.get_derivative_curve().get_coordinates_at_x(x)[1]
 
     def arc_length_between(self, x1: float, x2: float) -> float:
         """

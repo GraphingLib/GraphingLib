@@ -78,7 +78,7 @@ class GeneralFit(Curve):
         """
         raise NotImplementedError()
 
-    def get_point_at_x(
+    def create_point_at_x(
         self,
         x: float,
         as_point_object: bool = False,
@@ -135,7 +135,7 @@ class GeneralFit(Curve):
         else:
             return x, self.function(x)
 
-    def get_points_at_y(
+    def create_points_at_y(
         self,
         y: float,
         as_point_objects: bool = False,

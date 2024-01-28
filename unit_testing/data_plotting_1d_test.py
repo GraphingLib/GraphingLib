@@ -65,20 +65,24 @@ class TestCurve(unittest.TestCase):
         self.assertEqual(self.testCurve.cap_thickness, 10)
         self.assertEqual(self.testCurve.cap_width, 10)
 
-    def test_get_point_at_x(self):
-        point = self.testCurve.get_point_at_x(0.5)
-        self.assertEqual(point[0], 0.5)
-        self.assertAlmostEqual(point[1], sin(0.5), places=3)
-        point = self.testCurve.get_point_at_x(0.5, as_point_object=True)
+    def test_create_point_at_x(self):
+        point = self.testCurve.create_point_at_x(0.5)
         self.assertEqual(point.x, 0.5)
         self.assertAlmostEqual(point.y, sin(0.5), places=3)
 
+    def test_get_coordinates_at_x(self):
+        point = self.testCurve.get_coordinates_at_x(0.5)
+        self.assertEqual(point[0], 0.5)
+        self.assertAlmostEqual(point[1], sin(0.5), places=3)
+
     def test_get_points_at_y(self):
-        points = self.testCurve.get_points_at_y(0)
+        points = self.testCurve.get_coordinates_at_y(0)
         for i, point in enumerate(points):
             self.assertEqual(point[1], 0)
             self.assertAlmostEqual(point[0], i * pi, places=3)
-        points = self.testCurve.get_points_at_y(0, as_point_objects=True)
+
+    def test_create_points_at_y(self):
+        points = self.testCurve.create_points_at_y(0)
         for i, point in enumerate(points):
             self.assertEqual(point.y, 0)
             self.assertAlmostEqual(point.x, i * pi, places=3)
@@ -132,101 +136,101 @@ class TestCurve(unittest.TestCase):
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
         curve_sum = self.testCurve + other_curve
         self.assertIsInstance(curve_sum, Curve)
-        self.assertAlmostEqual(curve_sum.get_point_at_x(0)[1], 0.1, places=3)
-        self.assertAlmostEqual(curve_sum.get_point_at_x(2)[1], 1.029, places=3)
+        self.assertAlmostEqual(curve_sum.get_coordinates_at_x(0)[1], 0.1, places=3)
+        self.assertAlmostEqual(curve_sum.get_coordinates_at_x(2)[1], 1.029, places=3)
 
     def test_subtract_curves(self):
         x = linspace(0, 3 * pi, 200)
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
         curve_sub = self.testCurve - other_curve
         self.assertIsInstance(curve_sub, Curve)
-        self.assertAlmostEqual(curve_sub.get_point_at_x(0)[1], -0.1, places=3)
-        self.assertAlmostEqual(curve_sub.get_point_at_x(2)[1], 0.789, places=3)
+        self.assertAlmostEqual(curve_sub.get_coordinates_at_x(0)[1], -0.1, places=3)
+        self.assertAlmostEqual(curve_sub.get_coordinates_at_x(2)[1], 0.789, places=3)
 
     def test_multiply_curves(self):
         x = linspace(0, 3 * pi, 200)
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
         curve_mult = self.testCurve * other_curve
         self.assertIsInstance(curve_mult, Curve)
-        self.assertAlmostEqual(curve_mult.get_point_at_x(0)[1], 0, places=3)
-        self.assertAlmostEqual(curve_mult.get_point_at_x(2)[1], 0.109, places=3)
+        self.assertAlmostEqual(curve_mult.get_coordinates_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(curve_mult.get_coordinates_at_x(2)[1], 0.109, places=3)
 
     def test_divide_curves(self):
         x = linspace(0, 3 * pi, 200)
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
         curve_div = self.testCurve / other_curve
         self.assertIsInstance(curve_div, Curve)
-        self.assertAlmostEqual(curve_div.get_point_at_x(0)[1], 0, places=3)
-        self.assertAlmostEqual(curve_div.get_point_at_x(2)[1], 7.57748, places=2)
+        self.assertAlmostEqual(curve_div.get_coordinates_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(curve_div.get_coordinates_at_x(2)[1], 7.57748, places=2)
 
     def test_add_with_int(self):
         curve_sum = self.testCurve + 2
         self.assertIsInstance(curve_sum, Curve)
-        self.assertAlmostEqual(curve_sum.get_point_at_x(0)[1], 2, places=3)
-        self.assertAlmostEqual(curve_sum.get_point_at_x(2)[1], 2.909118, places=3)
+        self.assertAlmostEqual(curve_sum.get_coordinates_at_x(0)[1], 2, places=3)
+        self.assertAlmostEqual(curve_sum.get_coordinates_at_x(2)[1], 2.909118, places=3)
         # Test with int on the left
         curve_sum = 2 + self.testCurve
         self.assertIsInstance(curve_sum, Curve)
-        self.assertAlmostEqual(curve_sum.get_point_at_x(0)[1], 2, places=3)
-        self.assertAlmostEqual(curve_sum.get_point_at_x(2)[1], 2.909118, places=3)
+        self.assertAlmostEqual(curve_sum.get_coordinates_at_x(0)[1], 2, places=3)
+        self.assertAlmostEqual(curve_sum.get_coordinates_at_x(2)[1], 2.909118, places=3)
 
     def test_subtract_with_int(self):
         curve_sub = self.testCurve - 2
         self.assertIsInstance(curve_sub, Curve)
-        self.assertAlmostEqual(curve_sub.get_point_at_x(0)[1], -2, places=3)
-        self.assertAlmostEqual(curve_sub.get_point_at_x(2)[1], -1.09088, places=3)
+        self.assertAlmostEqual(curve_sub.get_coordinates_at_x(0)[1], -2, places=3)
+        self.assertAlmostEqual(curve_sub.get_coordinates_at_x(2)[1], -1.09088, places=3)
         # Test with int on the left
         curve_sub = 2 - self.testCurve
         self.assertIsInstance(curve_sub, Curve)
         self.assertAlmostEqual(
-            curve_sub.get_point_at_x(0)[1],
-            2 - self.testCurve.get_point_at_x(0)[1],
+            curve_sub.get_coordinates_at_x(0)[1],
+            2 - self.testCurve.get_coordinates_at_x(0)[1],
             places=3,
         )
         self.assertAlmostEqual(
-            curve_sub.get_point_at_x(2)[1],
-            2 - self.testCurve.get_point_at_x(2)[1],
+            curve_sub.get_coordinates_at_x(2)[1],
+            2 - self.testCurve.get_coordinates_at_x(2)[1],
             places=3,
         )
 
     def test_multiply_with_int(self):
         curve_mult = self.testCurve * 2
         self.assertIsInstance(curve_mult, Curve)
-        self.assertAlmostEqual(curve_mult.get_point_at_x(0)[1], 0, places=3)
-        self.assertAlmostEqual(curve_mult.get_point_at_x(2)[1], 1.8182, places=3)
+        self.assertAlmostEqual(curve_mult.get_coordinates_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(curve_mult.get_coordinates_at_x(2)[1], 1.8182, places=3)
         # Test with int on the left
         curve_mult = 2 * self.testCurve
         self.assertIsInstance(curve_mult, Curve)
-        self.assertAlmostEqual(curve_mult.get_point_at_x(0)[1], 0, places=3)
-        self.assertAlmostEqual(curve_mult.get_point_at_x(2)[1], 1.8182, places=3)
+        self.assertAlmostEqual(curve_mult.get_coordinates_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(curve_mult.get_coordinates_at_x(2)[1], 1.8182, places=3)
 
     def test_divide_with_int(self):
         curve_div = self.testCurve / 2
         self.assertIsInstance(curve_div, Curve)
-        self.assertAlmostEqual(curve_div.get_point_at_x(0)[1], 0, places=3)
-        self.assertAlmostEqual(curve_div.get_point_at_x(2)[1], 0.45455, places=3)
+        self.assertAlmostEqual(curve_div.get_coordinates_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(curve_div.get_coordinates_at_x(2)[1], 0.45455, places=3)
         # Test with int on the left
         new_curve = 5 + self.testCurve
         curve_div = 2 / new_curve
         self.assertIsInstance(curve_div, Curve)
         self.assertAlmostEqual(
-            curve_div.get_point_at_x(0)[1],
-            2 / new_curve.get_point_at_x(0)[1],
+            curve_div.get_coordinates_at_x(0)[1],
+            2 / new_curve.get_coordinates_at_x(0)[1],
             places=3,
         )
         self.assertAlmostEqual(
-            curve_div.get_point_at_x(2)[1],
-            2 / new_curve.get_point_at_x(2)[1],
+            curve_div.get_coordinates_at_x(2)[1],
+            2 / new_curve.get_coordinates_at_x(2)[1],
             places=3,
         )
 
     def test_power_with_int(self):
         curve_pow = self.testCurve**2
         self.assertIsInstance(curve_pow, Curve)
-        self.assertAlmostEqual(curve_pow.get_point_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(curve_pow.get_coordinates_at_x(0)[1], 0, places=3)
         self.assertAlmostEqual(
-            curve_pow.get_point_at_x(2)[1],
-            self.testCurve.get_point_at_x(2)[1] ** 2,
+            curve_pow.get_coordinates_at_x(2)[1],
+            self.testCurve.get_coordinates_at_x(2)[1] ** 2,
             places=3,
         )
 
@@ -243,7 +247,7 @@ class TestCurve(unittest.TestCase):
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
         curve_sum = self.testCurve + other_curve
         self.assertIsInstance(curve_sum, Curve)
-        self.assertAlmostEqual(curve_sum.get_point_at_x(0)[1], 0.1, places=3)
+        self.assertAlmostEqual(curve_sum.get_coordinates_at_x(0)[1], 0.1, places=3)
 
 
 class TestScatter(unittest.TestCase):
