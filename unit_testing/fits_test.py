@@ -67,10 +67,10 @@ class TestFitFromPolynomial(unittest.TestCase):
         self.assertAlmostEqual(round(self.fit_second_degree.function(5), 5), 83)
 
     def test_get_point_at_x(self):
-        self.assertAlmostEqual(self.fit_second_degree.get_point_at_x(5)[1], 83)
+        self.assertAlmostEqual(self.fit_second_degree.create_point_at_x(5)[1], 83)
 
     def test_get_points_at_y(self):
-        points = self.fit_second_degree.get_points_at_y(83)
+        points = self.fit_second_degree.create_points_at_y(83)
         self.assertAlmostEqual(points[0][0], 5, places=3)
 
     def test_get_derivative_curve(self):
@@ -142,10 +142,10 @@ class TestFitFromSine(unittest.TestCase):
         self.assertAlmostEqual(self.fit.function(17), 3.00048965)
 
     def test_get_point_at_x(self):
-        self.assertAlmostEqual(self.fit.get_point_at_x(17)[1], 3.00048965)
+        self.assertAlmostEqual(self.fit.create_point_at_x(17)[1], 3.00048965)
 
     def test_get_points_at_y(self):
-        points = self.fit.get_points_at_y(4)
+        points = self.fit.create_points_at_y(4)
         self.assertAlmostEqual(points[0][0], 0.586, places=3)
         self.assertAlmostEqual(points[1][0], 1.983, places=3)
         self.assertAlmostEqual(points[2][0], 2.680, places=3)
@@ -199,10 +199,10 @@ class TestFitFromExponential(unittest.TestCase):
         self.assertAlmostEqual(self.fit.function(0.001), 109.524, places=3)
 
     def test_get_point_at_x(self):
-        self.assertAlmostEqual(self.fit.get_point_at_x(0.001)[1], 109.524, places=3)
+        self.assertAlmostEqual(self.fit.create_point_at_x(0.001)[1], 109.524, places=3)
 
     def test_get_points_at_y(self):
-        points = self.fit.get_points_at_y(109.524)
+        points = self.fit.create_points_at_y(109.524)
         self.assertAlmostEqual(points[0][0], 0.001, places=3)
 
     def test_get_derivative_curve(self):
@@ -257,10 +257,10 @@ class TestFitFromGaussian(unittest.TestCase):
         self.assertAlmostEqual(self.fit.function(3), 0.676515, places=3)
 
     def test_get_point_at_x(self):
-        self.assertAlmostEqual(self.fit.get_point_at_x(3)[1], 0.676515, places=3)
+        self.assertAlmostEqual(self.fit.create_point_at_x(3)[1], 0.676515, places=3)
 
     def test_get_points_at_y(self):
-        points = self.fit.get_points_at_y(0.676515)
+        points = self.fit.create_points_at_y(0.676515)
         self.assertAlmostEqual(points[0][0], -1, places=3)
         self.assertAlmostEqual(points[1][0], 3, places=3)
 
@@ -315,10 +315,10 @@ class TestFitFromSquareRoot(unittest.TestCase):
         self.assertAlmostEqual(self.fit.function(3), 12.937, places=3)
 
     def test_get_point_at_x(self):
-        self.assertAlmostEqual(self.fit.get_point_at_x(3)[1], 12.937, places=3)
+        self.assertAlmostEqual(self.fit.create_point_at_x(3)[1], 12.937, places=3)
 
     def test_get_points_at_y(self):
-        points = self.fit.get_points_at_y(12.937)
+        points = self.fit.create_points_at_y(12.937)
         self.assertAlmostEqual(points[0][0], 3, places=3)
 
     def test_get_derivative_curve(self):
@@ -372,10 +372,10 @@ class TestFitFromLog(unittest.TestCase):
         self.assertAlmostEqual(self.fit.function(0.001), 6.19789, places=3)
 
     def test_get_point_at_x(self):
-        self.assertAlmostEqual(self.fit.get_point_at_x(0.001)[1], 6.19789, places=3)
+        self.assertAlmostEqual(self.fit.create_point_at_x(0.001)[1], 6.19789, places=3)
 
     def test_get_points_at_y(self):
-        points = self.fit.get_points_at_y(6.19789)
+        points = self.fit.create_points_at_y(6.19789)
         self.assertAlmostEqual(points[0][0], 0.001, places=3)
 
     def test_get_derivative_curve(self):
@@ -426,10 +426,10 @@ class TestFitFromFunction(unittest.TestCase):
         self.assertAlmostEqual(self.fit.function(1), 4, places=3)
 
     def test_get_point_at_x(self):
-        self.assertAlmostEqual(self.fit.get_point_at_x(1)[1], 4, places=3)
+        self.assertAlmostEqual(self.fit.create_point_at_x(1)[1], 4, places=3)
 
     def test_get_points_at_y(self):
-        points = self.fit.get_points_at_y(4)
+        points = self.fit.create_points_at_y(4)
         self.assertAlmostEqual(points[0][0], 1, places=3)
 
     def test_get_derivative_curve(self):

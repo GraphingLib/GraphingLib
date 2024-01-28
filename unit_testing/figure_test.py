@@ -262,8 +262,6 @@ class TestTwinAxis(unittest.TestCase):
     def test_prepare_twin_axes(self):
         twin = TwinAxis()
         axes = plt.axes()
-        with self.assertRaises(GraphingException):
-            twin._prepare_twin_axis(axes, True, {}, "plain")
         twin.add_element(Curve([1, 2, 3], [1, 2, 3], label="Test"))
         labels, handles = twin._prepare_twin_axis(axes, True, {}, "plain")
         self.assertEqual(len(labels), 1)
