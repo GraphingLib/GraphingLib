@@ -8,6 +8,7 @@ import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
+from requests import get
 from scipy.interpolate import interp1d
 
 from .graph_elements import Point
@@ -1115,22 +1116,13 @@ class Scatter:
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
 
-    def get_point_at_x(
+    def get_coordinates_at_x(
         self,
         x: float,
         interpolation_method: str = "linear",
-        as_point_object: bool = False,
-        label: Optional[str] = None,
-        color: str = "default",
-        edge_color: str = "default",
-        marker_size: float | Literal["default"] = "default",
-        marker_style: str = "default",
-        line_width: float | Literal["default"] = "default",
-    ) -> Point | tuple[float, float]:
+    ) -> tuple[float, float]:
         """
-        Gets the point on the curve at a given x value.
-
-        Returns a tuple of coordinates by default, but can return a :class:`~graphinglib.graph_elements.Point` object if ``as_point_object`` is set to ``True``. In this case, the other parameters are used to define the properties of the point. If ``as_point_object`` is set to ``False``, the other parameters are ignored.
+        Gets the coordinates of the point on the curve at a given x value.
 
         Parameters
         ----------
@@ -1142,9 +1134,41 @@ class Scatter:
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
 
             Defaults to "linear".
-        as_point_object : bool
-            Whether to return a :class:`~graphinglib.graph_elements.Point` object (True) or a tuple of coordinates (False).
-            Defaults to False.
+
+        Returns
+        -------
+        tuple[float, float]
+            The coordinates of the point on the curve at the given x value.
+        """
+        return (
+            x,
+            float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
+        )
+
+    def create_point_at_x(
+        self,
+        x: float,
+        interpolation_method: str = "linear",
+        label: Optional[str] = None,
+        color: str = "default",
+        edge_color: str = "default",
+        marker_size: float | Literal["default"] = "default",
+        marker_style: str = "default",
+        line_width: float | Literal["default"] = "default",
+    ) -> Point | tuple[float, float]:
+        """
+        Creates a point on the curve at a given x value.
+
+        Parameters
+        ----------
+        x : float
+            The x value of the point.
+        interpolation_method : str,
+            The type of interpolation to be used, as defined in ``scipy.interpolate.interp1d``.
+
+            .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+            Defaults to "linear".
         label : str, optional
             Label to be displayed in the legend.
         color : str
@@ -1165,32 +1189,63 @@ class Scatter:
 
         Returns
         -------
-        point: :class:`~graphinglib.graph_elements.Point` or tuple[float, float]
+        :class:`~graphinglib.graph_elements.Point`
             The point on the curve at the given x value.
         """
-        if as_point_object:
-            point = Point(
-                x,
-                float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
-                label=label,
-                color=color,
-                edge_color=edge_color,
-                marker_size=marker_size,
-                marker_style=marker_style,
-                edge_width=line_width,
-            )
-            return point
-        else:
-            return (
-                x,
-                float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
-            )
+        point = Point(
+            x,
+            self.get_coordinates_at_x(x, interpolation_method)[1],
+            label=label,
+            color=color,
+            edge_color=edge_color,
+            marker_size=marker_size,
+            marker_style=marker_style,
+            edge_width=line_width,
+        )
+        return point
 
-    def get_points_at_y(
+    def get_coordinates_at_y(
         self,
         y: float,
         interpolation_method: str = "linear",
-        as_point_objects: bool = False,
+    ) -> list[tuple[float, float]]:
+        """
+        Gets the coordinates the curve at a given y value.
+
+        Parameters
+        ----------
+        y : float
+            The y value of the point.
+        interpolation_method : str,
+            The type of interpolation to be used, as defined in ``scipy.interpolate.interp1d``.
+
+            .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+            Defaults to "linear".
+
+        Returns
+        -------
+        list[tuple[float, float]]
+            The coordinates of the point on the curve at the given y value.
+        """
+        xs = self.x_data
+        ys = self.y_data
+        assert isinstance(xs, np.ndarray) and isinstance(ys, np.ndarray)
+        crossings = np.where(np.diff(np.sign(ys - y)))[0]
+        x_vals: list[float] = []
+        for cross in crossings:
+            x1, x2 = xs[cross], xs[cross + 1]
+            y1, y2 = ys[cross], ys[cross + 1]
+            f = interp1d([y1, y2], [x1, x2], kind=interpolation_method)
+            x_val = f(y)
+            x_vals.append(float(x_val))
+        points = [(x_val, y) for x_val in x_vals]
+        return points
+
+    def create_points_at_y(
+        self,
+        y: float,
+        interpolation_method: str = "linear",
         label: Optional[str] = None,
         color: str = "default",
         edge_color: str = "default",
@@ -1200,8 +1255,6 @@ class Scatter:
     ) -> list[Point] | list[tuple[float, float]]:
         """
         Gets the points on the curve at a given y value.
-
-        Returns a tuple of coordinates by default, but can return a :class:`~graphinglib.graph_elements.Point` object if ``as_point_object`` is set to ``True``. In this case, the other parameters are used to define the properties of the point. If ``as_point_object`` is set to ``False``, the other parameters are ignored.
 
         Parameters
         ----------
@@ -1233,36 +1286,23 @@ class Scatter:
 
         Returns
         -------
-        points: list[:class:`~graphinglib.graph_elements.Point`] or list[tuple[float, float]]
-            The points on the curve at the given y value.
+        list[:class:`~graphinglib.graph_elements.Point`]
+            The point objects on the curve at the given y value.
         """
-        xs = self.x_data
-        ys = self.y_data
-        assert isinstance(xs, np.ndarray) and isinstance(ys, np.ndarray)
-        crossings = np.where(np.diff(np.sign(ys - y)))[0]
-        x_vals: list[float] = []
-        for cross in crossings:
-            x1, x2 = xs[cross], xs[cross + 1]
-            y1, y2 = ys[cross], ys[cross + 1]
-            f = interp1d([y1, y2], [x1, x2], kind=interpolation_method)
-            x_val = f(y)
-            x_vals.append(float(x_val))
-        if as_point_objects:
-            points = [
-                Point(
-                    x_val,
-                    y,
-                    label=label,
-                    color=color,
-                    edge_color=edge_color,
-                    marker_size=marker_size,
-                    marker_style=marker_style,
-                    edge_width=line_width,
-                )
-                for x_val in x_vals
-            ]
-        else:
-            points = [(x_val, y) for x_val in x_vals]
+        coords = self.get_coordinates_at_y(y, interpolation_method)
+        points = [
+            Point(
+                coord[0],
+                coord[1],
+                label=label,
+                color=color,
+                edge_color=edge_color,
+                marker_size=marker_size,
+                marker_style=marker_style,
+                edge_width=line_width,
+            )
+            for coord in coords
+        ]
         return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
