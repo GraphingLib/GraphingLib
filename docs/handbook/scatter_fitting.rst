@@ -85,8 +85,8 @@ Interpolation between data points is possible by calling the :meth:`~graphinglib
         label="$\sin(3x)\cos^2(x)$",
     )
 
-    point_at_4 = scatter.get_point_at_x(4, color="red", as_point_object=True)
-    points_at_y_one_half = scatter.get_points_at_y(0.5, color="orange", as_point_objects=True)
+    point_at_4 = scatter.create_point_at_x(4, color="red")
+    points_at_y_one_half = scatter.create_points_at_y(0.5, color="orange")
 
     fig = gl.Figure()
     # Use the * operator to unpack the list of points
@@ -117,7 +117,7 @@ There are a number of curve fit objects that can be used to fit data. The most v
 
     # Use the fit to predict value of y at x = 5
     print(f"Value of fit at x = 5 is y = {fit.function(5)}")
-    predicted_point = fit.get_point_at_x(5, color="red", as_point_object=True)
+    predicted_point = fit.create_point_at_x(5, color="red")
 
     fig = gl.Figure()
     fig.add_element(scatter, fit, predicted_point)
