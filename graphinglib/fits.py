@@ -78,10 +78,12 @@ class GeneralFit(Curve):
         """
         raise NotImplementedError()
 
+    def get_coordinates_at_x(self, x: float) -> tuple[float, float]:
+        return (x, self.function(x))
+
     def create_point_at_x(
         self,
         x: float,
-        as_point_object: bool = False,
         label: str | None = None,
         color: str = "default",
         edge_color: str = "default",
@@ -96,9 +98,6 @@ class GeneralFit(Curve):
         ----------
         x : float
             x value of the point.
-        as_point_object : bool
-            Whether to return a :class:`~graphinglib.graph_elements.Point` object or a tuple of x and y values.
-            Default is False.
         label : str, optional
             Label to be displayed in the legend.
         color : str
@@ -121,24 +120,25 @@ class GeneralFit(Curve):
         -------
         :class:`~graphinglib.graph_elements.Point` object on the curve at the given x value.
         """
-        if as_point_object:
-            return Point(
-                x,
-                self.function(x),
-                label=label,
-                color=color,
-                edge_color=edge_color,
-                marker_size=marker_size,
-                marker_style=marker_style,
-                edge_width=line_width,
-            )
-        else:
-            return x, self.function(x)
+        return Point(
+            x,
+            self.function(x),
+            label=label,
+            color=color,
+            edge_color=edge_color,
+            marker_size=marker_size,
+            marker_style=marker_style,
+            edge_width=line_width,
+        )
+
+    def get_coordinates_at_y(
+        self, y: float, interpolation_method: str = "linear"
+    ) -> list[tuple[float, float]]:
+        return super().get_coordinates_at_y(y, interpolation_method)
 
     def create_points_at_y(
         self,
         y: float,
-        as_point_objects: bool = False,
         interpolation_kind: str = "linear",
         label: str | None = None,
         color: str = "default",
@@ -148,15 +148,12 @@ class GeneralFit(Curve):
         line_width: float | Literal["default"] = "default",
     ) -> list[Point]:
         """
-        Gets the points on the curve at a given y value.
+        Creates the Points on the curve at a given y value.
 
         Parameters
         ----------
         y : float
             y value of the point.
-        as_point_objects : bool
-            Whether to return a list of :class:`~graphinglib.graph_elements.Point` objects or a list of tuples of x and y values.
-            Default is False.
         interpolation_kind : str
             Kind of interpolation to be used.
             Default is "linear".
@@ -180,35 +177,23 @@ class GeneralFit(Curve):
 
         Returns
         -------
-        points : list[:class:`~graphinglib.graph_elements.Point`]
+        list[:class:`~graphinglib.graph_elements.Point`]
             List of :class:`~graphinglib.graph_elements.Point` objects on the curve at the given y value.
         """
-        xs = self.curve_to_be_fit.x_data
-        ys = self.function(xs)
-        crossings = np.where(np.diff(np.sign(ys - y)))[0]
-        x_vals: list[float] = []
-        for cross in crossings:
-            x1, x2 = xs[cross], xs[cross + 1]
-            y1, y2 = ys[cross], ys[cross + 1]
-            f = interp1d([y1, y2], [x1, x2], kind=interpolation_kind)
-            x_val = f(y)
-            x_vals.append(float(x_val))
-        if as_point_objects:
-            points = [
-                Point(
-                    x_val,
-                    y,
-                    label=label,
-                    color=color,
-                    edge_color=edge_color,
-                    marker_size=marker_size,
-                    marker_style=marker_style,
-                    edge_width=line_width,
-                )
-                for x_val in x_vals
-            ]
-        else:
-            points = [(x_val, y) for x_val in x_vals]
+        coord_pairs = self.get_coordinates_at_y(y, interpolation_kind)
+        points = [
+            Point(
+                coord[0],
+                coord[1],
+                label=label,
+                color=color,
+                edge_color=edge_color,
+                marker_size=marker_size,
+                marker_style=marker_style,
+                edge_width=line_width,
+            )
+            for coord in coord_pairs
+        ]
         return points
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
