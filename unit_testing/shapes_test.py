@@ -1,4 +1,5 @@
 import unittest
+from cgi import test
 
 import numpy as np
 
@@ -44,16 +45,6 @@ class TestCircle(unittest.TestCase):
         self.assertFalse(Point(-1, 1) in Circle(0, 0, 1))
         self.assertFalse(Point(-1, -1) in Circle(0, 0, 1))
 
-    def test_get_center_point(self):
-        self.assertEqual(Circle(0, 0, 1).get_center_point(), (0, 0))
-        self.assertEqual(Circle(1, 1, 1).get_center_point(), (1, 1))
-        self.assertEqual(Circle(2, 3, 1).get_center_point(), (2, 3))
-        self.assertEqual(Circle(2.5, 3.5, 1).get_center_point(), (2.5, 3.5))
-        the_circle = Circle(2.5, 3.5, 1)
-        center_point = the_circle.get_center_point(as_point_object=True)
-        self.assertEqual(center_point.x, 2.5)
-        self.assertEqual(center_point.y, 3.5)
-
     def test_get_equation(self):
         self.assertEqual(Circle(0, 0, 1).get_equation(), "(x - 0)^2 + (y - 0)^2 = 1^2")
         self.assertEqual(Circle(1, 1, 1).get_equation(), "(x - 1)^2 + (y - 1)^2 = 1^2")
@@ -62,60 +53,92 @@ class TestCircle(unittest.TestCase):
             Circle(2.5, 3.5, 1).get_equation(), "(x - 2.5)^2 + (y - 3.5)^2 = 1^2"
         )
 
-    def test_get_points_at_x(self):
-        self.assertListEqual(Circle(0, 0, 1).get_points_at_x(0), [(0, 1), (0, -1)])
-        self.assertListEqual(Circle(0, 0, 1).get_points_at_x(1), [(1, 0)])
-        self.assertListEqual(Circle(0, 0, 1).get_points_at_x(-1), [(-1, 0)])
+    def test_get_coordinates_at_x(self):
+        self.assertListEqual(Circle(0, 0, 1).get_coordinates_at_x(0), [(0, 1), (0, -1)])
+        self.assertListEqual(Circle(0, 0, 1).get_coordinates_at_x(1), [(1, 0)])
+        self.assertListEqual(Circle(0, 0, 1).get_coordinates_at_x(-1), [(-1, 0)])
         self.assertListEqual(
-            Circle(0, 0, 1).get_points_at_x(0.5),
+            Circle(0, 0, 1).get_coordinates_at_x(0.5),
             [(0.5, 0.8660254037844386), (0.5, -0.8660254037844386)],
         )
         with self.assertRaises(ValueError):
-            Circle(0, 0, 1).get_points_at_x(2)
+            Circle(0, 0, 1).get_coordinates_at_x(2)
 
-    def test_get_points_at_y(self):
-        self.assertListEqual(Circle(0, 0, 1).get_points_at_y(0), [(1, 0), (-1, 0)])
-        self.assertListEqual(Circle(0, 0, 1).get_points_at_y(1), [(0, 1)])
-        self.assertListEqual(Circle(0, 0, 1).get_points_at_y(-1), [(0, -1)])
+    def test_create_points_at_x(self):
+        circle = Circle(0, 0, 1)
+        self.assertEqual(circle.create_points_at_x(0)[0].y, 1)
+        self.assertEqual(circle.create_points_at_x(1)[0].y, 0)
+        self.assertEqual(circle.create_points_at_x(-1)[0].y, 0)
+        self.assertEqual(circle.create_points_at_x(0.5)[0].y, 0.8660254037844386)
+        with self.assertRaises(ValueError):
+            circle.create_points_at_x(2)
+
+    def test_get_coordinates_at_y(self):
+        self.assertListEqual(Circle(0, 0, 1).get_coordinates_at_y(0), [(1, 0), (-1, 0)])
+        self.assertListEqual(Circle(0, 0, 1).get_coordinates_at_y(1), [(0, 1)])
+        self.assertListEqual(Circle(0, 0, 1).get_coordinates_at_y(-1), [(0, -1)])
         self.assertListEqual(
-            Circle(0, 0, 1).get_points_at_y(0.5),
+            Circle(0, 0, 1).get_coordinates_at_y(0.5),
             [(0.8660254037844386, 0.5), (-0.8660254037844386, 0.5)],
         )
         with self.assertRaises(ValueError):
-            Circle(0, 0, 1).get_points_at_y(2)
+            Circle(0, 0, 1).get_coordinates_at_y(2)
 
-    def test_get_point_at_angle(self):
-        self.assertEqual(Circle(0, 0, 1).get_point_at_angle(0, degrees=True), (1, 0))
-        self.assertAlmostEqual(
-            Circle(0, 0, 1).get_point_at_angle(90, degrees=True)[0], 0, places=15
+    def test_create_points_at_y(self):
+        circle = Circle(0, 0, 1)
+        self.assertEqual(circle.create_points_at_y(0)[0].x, 1)
+        self.assertEqual(circle.create_points_at_y(1)[0].x, 0)
+        self.assertEqual(circle.create_points_at_y(-1)[0].x, 0)
+        self.assertEqual(circle.create_points_at_y(0.5)[0].x, 0.8660254037844386)
+        with self.assertRaises(ValueError):
+            circle.create_points_at_y(2)
+
+    def test_get_coordinates_at_angle(self):
+        self.assertEqual(
+            Circle(0, 0, 1).get_coordinates_at_angle(0, degrees=True), (1, 0)
         )
         self.assertAlmostEqual(
-            Circle(0, 0, 1).get_point_at_angle(90, degrees=True)[1], 1, places=15
+            Circle(0, 0, 1).get_coordinates_at_angle(90, degrees=True)[0], 0, places=15
         )
-        self.assertEqual(Circle(0, 0, 1).get_point_at_angle(180, degrees=True)[0], -1)
-        self.assertEqual(Circle(0, 0, 1).get_point_at_angle(270, degrees=True)[1], -1)
-        self.assertEqual(Circle(0, 0, 1).get_point_at_angle(360, degrees=True)[0], 1)
+        self.assertAlmostEqual(
+            Circle(0, 0, 1).get_coordinates_at_angle(90, degrees=True)[1], 1, places=15
+        )
+        self.assertEqual(
+            Circle(0, 0, 1).get_coordinates_at_angle(180, degrees=True)[0], -1
+        )
+        self.assertEqual(
+            Circle(0, 0, 1).get_coordinates_at_angle(270, degrees=True)[1], -1
+        )
+        self.assertEqual(
+            Circle(0, 0, 1).get_coordinates_at_angle(360, degrees=True)[0], 1
+        )
         # Test with degrees=False
-        self.assertEqual(Circle(0, 0, 1).get_point_at_angle(0), (1, 0))
-        self.assertEqual(Circle(0, 0, 1).get_point_at_angle(np.pi / 2)[1], 1)
-        self.assertEqual(Circle(0, 0, 1).get_point_at_angle(np.pi)[0], -1)
-        # Test with as_point_object=True
-        point = Circle(0, 0, 1).get_point_at_angle(0, as_point_object=True)
+        self.assertEqual(Circle(0, 0, 1).get_coordinates_at_angle(0), (1, 0))
+        self.assertEqual(Circle(0, 0, 1).get_coordinates_at_angle(np.pi / 2)[1], 1)
+        self.assertEqual(Circle(0, 0, 1).get_coordinates_at_angle(np.pi)[0], -1)
+
+        # Test with other angle and radius and center
+        self.assertEqual(
+            Circle(1, 1, 2).get_coordinates_at_angle(0, degrees=True), (3, 1)
+        )
+
+    def test_create_point_at_angle(self):
+        point = Circle(0, 0, 1).create_point_at_angle(0)
         self.assertEqual(point.x, 1)
         self.assertEqual(point.y, 0)
-        point = Circle(0, 0, 1).get_point_at_angle(np.pi / 2, as_point_object=True)
+        point = Circle(0, 0, 1).create_point_at_angle(np.pi / 2)
         self.assertAlmostEqual(point.x, 0, places=15)
         self.assertAlmostEqual(point.y, 1, places=15)
-        # Test with other angle and radius and center
-        self.assertEqual(Circle(1, 1, 2).get_point_at_angle(0, degrees=True), (3, 1))
 
-    def test_get_center_point(self):
-        self.assertEqual(Circle(0, 0, 1).get_center_point(), (0, 0))
-        self.assertEqual(Circle(1, 1, 1).get_center_point(), (1, 1))
-        self.assertEqual(Circle(2, 3, 1).get_center_point(), (2, 3))
-        self.assertEqual(Circle(2.5, 3.5, 1).get_center_point(), (2.5, 3.5))
+    def test_get_center_coordinates(self):
+        self.assertEqual(Circle(0, 0, 1).get_center_coordinates(), (0, 0))
+        self.assertEqual(Circle(1, 1, 1).get_center_coordinates(), (1, 1))
+        self.assertEqual(Circle(2, 3, 1).get_center_coordinates(), (2, 3))
+        self.assertEqual(Circle(2.5, 3.5, 1).get_center_coordinates(), (2.5, 3.5))
+
+    def test_create_center_point(self):
         the_circle = Circle(2.5, 3.5, 8)
-        center_point = the_circle.get_center_point(as_point_object=True)
+        center_point = the_circle.create_center_point()
         self.assertEqual(center_point.x, 2.5)
         self.assertEqual(center_point.y, 3.5)
 
@@ -192,24 +215,25 @@ class TestRectangle(unittest.TestCase):
         self.assertEqual(Rectangle(0, 0, 3, 4).area(), 12)
         self.assertEqual(Rectangle(0, 0, 4, 4).area(), 16)
 
-    def test_get_center_point(self):
-        self.assertEqual(Rectangle(0, 0, 1, 1).get_center_point(), (0.5, 0.5))
-        self.assertEqual(Rectangle(0, 0, 2, 1).get_center_point(), (1, 0.5))
-        self.assertEqual(Rectangle(0, 0, 1, 2).get_center_point(), (0.5, 1))
-        self.assertEqual(Rectangle(0, 0, 2, 2).get_center_point(), (1, 1))
-        self.assertEqual(Rectangle(0, 0, 3, 2).get_center_point(), (1.5, 1))
-        self.assertEqual(Rectangle(0, 0, 2, 3).get_center_point(), (1, 1.5))
-        self.assertEqual(Rectangle(0, 0, 3, 3).get_center_point(), (1.5, 1.5))
-        self.assertEqual(Rectangle(0, 0, 4, 3).get_center_point(), (2, 1.5))
-        self.assertEqual(Rectangle(0, 0, 3, 4).get_center_point(), (1.5, 2))
-        self.assertEqual(Rectangle(0, 0, 4, 4).get_center_point(), (2, 2))
-        # Test with as_point_object=True
+    def test_get_center_coordinates(self):
+        self.assertEqual(Rectangle(0, 0, 1, 1).get_center_coordinates(), (0.5, 0.5))
+        self.assertEqual(Rectangle(0, 0, 2, 1).get_center_coordinates(), (1, 0.5))
+        self.assertEqual(Rectangle(0, 0, 1, 2).get_center_coordinates(), (0.5, 1))
+        self.assertEqual(Rectangle(0, 0, 2, 2).get_center_coordinates(), (1, 1))
+        self.assertEqual(Rectangle(0, 0, 3, 2).get_center_coordinates(), (1.5, 1))
+        self.assertEqual(Rectangle(0, 0, 2, 3).get_center_coordinates(), (1, 1.5))
+        self.assertEqual(Rectangle(0, 0, 3, 3).get_center_coordinates(), (1.5, 1.5))
+        self.assertEqual(Rectangle(0, 0, 4, 3).get_center_coordinates(), (2, 1.5))
+        self.assertEqual(Rectangle(0, 0, 3, 4).get_center_coordinates(), (1.5, 2))
+        self.assertEqual(Rectangle(0, 0, 4, 4).get_center_coordinates(), (2, 2))
+
+    def test_create_center_point(self):
         rect = Rectangle(0, 0, 1, 1)
-        center_point = rect.get_center_point(as_point_object=True)
+        center_point = rect.create_center_point()
         self.assertEqual(center_point.x, 0.5)
         self.assertEqual(center_point.y, 0.5)
         rect = Rectangle(0, 0, 2, 1)
-        center_point = rect.get_center_point(as_point_object=True)
+        center_point = rect.create_center_point()
         self.assertEqual(center_point.x, 1)
         self.assertEqual(center_point.y, 0.5)
 
@@ -228,43 +252,45 @@ class TestRectangle(unittest.TestCase):
             "2.5 <= x <= 3.5 and 3.5 <= y <= 4.5",
         )
 
-    def test_get_points_at_x(self):
+    def test_get_coordinates_at_x(self):
         self.assertListEqual(
-            Rectangle(0, 0, 1, 1).get_points_at_x(0.5), [(0.5, 0), (0.5, 1)]
+            Rectangle(0, 0, 1, 1).get_coordinates_at_x(0.5), [(0.5, 0), (0.5, 1)]
         )
         self.assertListEqual(
-            Rectangle(2, 3, 5, 5).get_points_at_x(2.3), [(2.3, 3), (2.3, 8)]
+            Rectangle(2, 3, 5, 5).get_coordinates_at_x(2.3), [(2.3, 3), (2.3, 8)]
         )
-        # Test with as_point_object=True
+
+    def test_create_points_at_x(self):
         rect = Rectangle(0, 0, 1, 1)
-        points = rect.get_points_at_x(0.5, as_point_object=True)
+        points = rect.create_points_at_x(0.5)
         self.assertEqual(points[0].x, 0.5)
         self.assertEqual(points[0].y, 0)
         self.assertEqual(points[1].x, 0.5)
         self.assertEqual(points[1].y, 1)
         rect = Rectangle(2, 3, 5, 5)
-        points = rect.get_points_at_x(2.3, as_point_object=True)
+        points = rect.create_points_at_x(2.3)
         self.assertEqual(points[0].x, 2.3)
         self.assertEqual(points[0].y, 3)
         self.assertEqual(points[1].x, 2.3)
         self.assertEqual(points[1].y, 8)
 
-    def test_get_points_at_y(self):
+    def test_get_coordintes_at_y(self):
         self.assertListEqual(
-            Rectangle(0, 0, 1, 1).get_points_at_y(0.5), [(0, 0.5), (1, 0.5)]
+            Rectangle(0, 0, 1, 1).get_coordinates_at_y(0.5), [(0, 0.5), (1, 0.5)]
         )
         self.assertListEqual(
-            Rectangle(2, 3, 5, 5).get_points_at_y(4.3), [(2, 4.3), (7, 4.3)]
+            Rectangle(2, 3, 5, 5).get_coordinates_at_y(4.3), [(2, 4.3), (7, 4.3)]
         )
-        # Test with as_point_object=True
+
+    def test_create_points_at_y(self):
         rect = Rectangle(0, 0, 1, 1)
-        points = rect.get_points_at_y(0.5, as_point_object=True)
+        points = rect.create_points_at_y(0.5)
         self.assertEqual(points[0].x, 0)
         self.assertEqual(points[0].y, 0.5)
         self.assertEqual(points[1].x, 1)
         self.assertEqual(points[1].y, 0.5)
         rect = Rectangle(2, 3, 5, 5)
-        points = rect.get_points_at_y(4.3, as_point_object=True)
+        points = rect.create_points_at_y(4.3)
         self.assertEqual(points[0].x, 2)
         self.assertEqual(points[0].y, 4.3)
         self.assertEqual(points[1].x, 7)
