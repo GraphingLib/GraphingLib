@@ -97,16 +97,16 @@ class TestCurve(unittest.TestCase):
         self.assertEqual(len(self.testAxes.get_lines()), 1)
 
     def test_get_derivative_curve(self):
-        self.assertIsInstance(self.testCurve.get_derivative_curve(), Curve)
+        self.assertIsInstance(self.testCurve.create_derivative_curve(), Curve)
 
     def test_get_integral_curve(self):
-        self.assertIsInstance(self.testCurve.get_integral_curve(), Curve)
+        self.assertIsInstance(self.testCurve.create_integral_curve(), Curve)
 
     def test_get_tangent_curve(self):
-        self.assertIsInstance(self.testCurve.get_tangent_curve(0), Curve)
+        self.assertIsInstance(self.testCurve.create_tangent_curve(0), Curve)
 
     def test_get_normal_curve(self):
-        self.assertIsInstance(self.testCurve.get_normal_curve(0), Curve)
+        self.assertIsInstance(self.testCurve.create_normal_curve(0), Curve)
 
     def test_area_between(self):
         self.assertAlmostEqual(self.testCurve.area_between(0, pi), 2, places=3)

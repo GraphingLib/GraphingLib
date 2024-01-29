@@ -460,7 +460,7 @@ class Curve:
         ]
         return points
 
-    def get_derivative_curve(
+    def create_derivative_curve(
         self,
         label: Optional[str] = None,
         color: str = "default",
@@ -492,7 +492,7 @@ class Curve:
         y_data = np.gradient(self.y_data, x_data)
         return Curve(x_data, y_data, label, color, line_width, line_style)
 
-    def get_integral_curve(
+    def create_integral_curve(
         self,
         label: Optional[str] = None,
         color: str = "default",
@@ -524,7 +524,7 @@ class Curve:
         y_data = np.cumsum(self.y_data) * np.diff(x_data)[0]
         return Curve(x_data, y_data, label, color, line_width, line_style)
 
-    def get_tangent_curve(
+    def create_tangent_curve(
         self,
         x: float,
         label: Optional[str] = None,
@@ -557,12 +557,12 @@ class Curve:
             A :class:`~graphinglib.data_plotting_1d.Curve` object which is the tangent to the original curve at a given x value.
         """
         point = self.get_coordinates_at_x(x)
-        gradient = self.get_derivative_curve().get_coordinates_at_x(x)[1]
+        gradient = self.create_derivative_curve().get_coordinates_at_x(x)[1]
         y_data = gradient * (self.x_data - x) + point[1]
         tangent_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
         return tangent_curve
 
-    def get_normal_curve(
+    def create_normal_curve(
         self,
         x: float,
         label: Optional[str] = None,
@@ -595,7 +595,7 @@ class Curve:
             A :class:`~graphinglib.data_plotting_1d.Curve` object which is the normal to the original curve at a given x value.
         """
         point = self.get_coordinates_at_x(x)
-        gradient = self.get_derivative_curve().get_coordinates_at_x(x)[1]
+        gradient = self.create_derivative_curve().get_coordinates_at_x(x)[1]
         y_data = -1 / gradient * (self.x_data - x) + point[1]
         normal_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
         return normal_curve
@@ -613,7 +613,7 @@ class Curve:
         -------
         The slope of the curve (float) at the given x value.
         """
-        return self.get_derivative_curve().get_coordinates_at_x(x)[1]
+        return self.create_derivative_curve().get_coordinates_at_x(x)[1]
 
     def arc_length_between(self, x1: float, x2: float) -> float:
         """
@@ -755,7 +755,6 @@ class Curve:
         intersections_x = self.x_data[:-1][s] + np.diff(self.x_data)[s] / (
             np.abs(y[1:][s] / y[:-1][s]) + 1
         )
-        intersections_y = np.interp(intersections_x, self.x_data, self.y_data)
         point_coords = self.get_intersection_coordinates(other)
         point_objects = []
         for i in range(len(intersections_x)):
@@ -1155,7 +1154,7 @@ class Scatter:
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
-    ) -> Point | tuple[float, float]:
+    ) -> Point:
         """
         Creates a Point on the curve at a given x value.
 
@@ -1252,7 +1251,7 @@ class Scatter:
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
-    ) -> list[Point] | list[tuple[float, float]]:
+    ) -> list[Point]:
         """
         Creates the Points on the curve at a given y value. Can return multiple Points if the curve crosses the y value multiple times.
 
