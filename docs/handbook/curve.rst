@@ -86,14 +86,14 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class includes interpolation me
 Curve calculus
 --------------
 
-There are a number of methods which can be used to perform calculus on a curve. The :meth:`~graphinglib.data_plotting_1d.Curve.get_derivative_curve` and :meth:`~graphinglib.data_plotting_1d.Curve.get_integral_curve` both return new :class:`~graphinglib.data_plotting_1d.Curve` objects. You can also use the :meth:`~graphinglib.data_plotting_1d.Curve.get_tangent_curve` and :meth:`~graphinglib.data_plotting_1d.Curve.get_normal_curve` methods to plot tangents and normals to other curves at a given x value. ::
+There are a number of methods which can be used to perform calculus on a curve. The :meth:`~graphinglib.data_plotting_1d.Curve.create_derivative_curve` and :meth:`~graphinglib.data_plotting_1d.Curve.create_integral_curve` both return new :class:`~graphinglib.data_plotting_1d.Curve` objects. You can also use the :meth:`~graphinglib.data_plotting_1d.Curve.create_tangent_curve` and :meth:`~graphinglib.data_plotting_1d.Curve.create_normal_curve` methods to plot tangents and normals to other curves at a given x value. ::
 
     curve_1 = gl.Curve.from_function(lambda x: x**2 - 5, x_min=-5, x_max=5)
 
-    derivative_curve = curve_1.get_derivative_curve(label="Derivative")
-    integral_curve = curve_1.get_integral_curve(label="Integral")
-    normal_curve = curve_1.get_normal_curve(2, label="Normal at x=2")
-    tangent_curve = curve_1.get_tangent_curve(2, label="Tangent at x=2")
+    derivative_curve = curve_1.create_derivative_curve(label="Derivative")
+    integral_curve = curve_1.create_integral_curve(label="Integral")
+    normal_curve = curve_1.create_normal_curve(2, label="Normal at x=2")
+    tangent_curve = curve_1.create_tangent_curve(2, label="Tangent at x=2")
 
     fig1 = gl.Figure(y_lim=(-6, 25))
     fig1.add_element(curve_1, derivative_curve, integral_curve)
