@@ -74,23 +74,25 @@ class Circle:
         """
         return 2 * np.pi * self.radius
 
-    def get_center_point(self, as_point_object=False) -> tuple[float, float] | Point:
-        """Returns the center point of the circle.
+    def get_center_coordinates(self) -> tuple[float, float]:
+        """Returns the coordinates of the center of the circle.
 
-        Parameters
-        ----------
-        as_point_object : bool, optional
-            Whether the center point should be returned as a :class:`~graphinglib.graph_elements.Point` object or not.
-            Default is ``False`` (returns a tuple of floats).
+        Returns
+        -------
+        tuple of floats
+            The coordinates of the center of the circle.
+        """
+        return (self.x_center, self.y_center)
+
+    def create_center_point(self) -> Point:
+        """Returns the center point of the circle.
 
         Returns
         -------
         tuple of floats or :class:`~graphinglib.graph_elements.Point`
             The center point of the circle.
         """
-        if as_point_object:
-            return Point(self.x_center, self.y_center)
-        return (self.x_center, self.y_center)
+        return Point(self.x_center, self.y_center)
 
     def get_equation(self) -> str:
         """Returns the equation of the circle.
@@ -102,22 +104,39 @@ class Circle:
         """
         return f"(x - {self.x_center})^2 + (y - {self.y_center})^2 = {self.radius}^2"
 
-    def get_points_at_x(
-        self, x: float, as_point_object=False
-    ) -> list[tuple[float, float]] | list[Point]:
+    def get_coordinates_at_x(self, x: float) -> list[tuple[float, float]]:
+        """Returns the coordinates on the circle at the specified x coordinate.
+
+        Parameters
+        ----------
+        x : float
+            The x coordinate of the points.
+
+        Returns
+        -------
+        list[tuple[float, float]]
+            The coordinates on the circle at the specified x coordinate.
+        """
+        if x < self.x_center - self.radius or x > self.x_center + self.radius:
+            raise ValueError(
+                f"x must be between {self.x_center - self.radius} and {self.x_center + self.radius}"
+            )
+        y = np.sqrt(self.radius**2 - (x - self.x_center) ** 2)
+        if y == 0:
+            return [(x, y)]
+        return [(x, y), (x, -y)]
+
+    def create_points_at_x(self, x: float) -> list[Point]:
         """Returns the points on the circle at the specified x coordinate.
 
         Parameters
         ----------
         x : float
             The x coordinate of the points.
-        as_point_object : bool, optional
-            Whether the points should be returned as :class:`~graphinglib.graph_elements.Point` objects or not.
-            Default is ``False`` (returns a list of tuples of floats).
 
         Returns
         -------
-        list of tuples of floats or list of :class:`~graphinglib.graph_elements.Point`
+        list[:class:`~graphinglib.graph_elements.Point`]
             The points on the circle at the specified x coordinate.
         """
         if x < self.x_center - self.radius or x > self.x_center + self.radius:
@@ -126,29 +145,42 @@ class Circle:
             )
         y = np.sqrt(self.radius**2 - (x - self.x_center) ** 2)
         if y == 0:
-            if as_point_object:
-                return [Point(x, y)]
-            return [(x, y)]
-        if as_point_object:
-            return [Point(x, y), Point(x, -y)]
-        return [(x, y), (x, -y)]
+            return [Point(x, y)]
+        return [Point(x, y), Point(x, -y)]
 
-    def get_points_at_y(
-        self, y: float, as_point_object=False
-    ) -> list[tuple[float, float]] | list[Point]:
+    def get_coordinates_at_y(self, y: float) -> list[tuple[float, float]]:
+        """Returns the coordinates on the circle at the specified y coordinate.
+
+        Parameters
+        ----------
+        y : float
+            The y coordinate of the points.
+
+        Returns
+        -------
+        list[tuple[float, float]]
+            The coordinates on the circle at the specified y coordinate.
+        """
+        if y < self.y_center - self.radius or y > self.y_center + self.radius:
+            raise ValueError(
+                f"y must be between {self.y_center - self.radius} and {self.y_center + self.radius}"
+            )
+        x = np.sqrt(self.radius**2 - (y - self.y_center) ** 2)
+        if x == 0:
+            return [(x, y)]
+        return [(x, y), (-x, y)]
+
+    def create_points_at_y(self, y: float) -> list[Point]:
         """Returns the points on the circle at the specified y coordinate.
 
         Parameters
         ----------
         y : float
             The y coordinate of the points.
-        as_point_object : bool, optional
-            Whether the points should be returned as :class:`~graphinglib.graph_elements.Point` objects or not.
-            Default is ``False`` (returns a list of tuples of floats).
 
         Returns
         -------
-        list of tuples of floats or list of :class:`~graphinglib.graph_elements.Point`
+        list[]:class:`~graphinglib.graph_elements.Point`]
             The points on the circle at the specified y coordinate.
         """
         if y < self.y_center - self.radius or y > self.y_center + self.radius:
@@ -157,16 +189,34 @@ class Circle:
             )
         x = np.sqrt(self.radius**2 - (y - self.y_center) ** 2)
         if x == 0:
-            if as_point_object:
-                return [Point(x, y)]
-            return [(x, y)]
-        if as_point_object:
-            return [Point(x, y), Point(-x, y)]
-        return [(x, y), (-x, y)]
+            return [Point(x, y)]
+        return [Point(x, y), Point(-x, y)]
 
-    def get_point_at_angle(
-        self, angle: float, degrees=False, as_point_object=False
-    ) -> tuple[float, float] | Point:
+    def get_coordinates_at_angle(
+        self, angle: float, degrees=False
+    ) -> tuple[float, float]:
+        """Returns the coordinates on the circle at the specified angle.
+
+        Parameters
+        ----------
+        angle : float
+            The angle of the point.
+        degrees : bool, optional
+            Whether the angle is in degrees or radians.
+            Default is ``False`` (angle is in radians).
+
+        Returns
+        -------
+        tuple of floats
+            The coordinates on the circle at the specified angle.
+        """
+        if degrees:
+            angle = np.radians(angle)
+        x = self.x_center + self.radius * np.cos(angle)
+        y = self.y_center + self.radius * np.sin(angle)
+        return (x, y)
+
+    def create_point_at_angle(self, angle: float, degrees=False) -> Point:
         """Returns the point on the circle at the specified angle.
 
         Parameters
@@ -176,22 +226,17 @@ class Circle:
         degrees : bool, optional
             Whether the angle is in degrees or radians.
             Default is ``False`` (angle is in radians).
-        as_point_object : bool, optional
-            Whether the point should be returned as a :class:`~graphinglib.graph_elements.Point` object or not.
-            Default is ``False`` (returns a tuple of floats).
 
         Returns
         -------
-        tuple of floats or :class:`~graphinglib.graph_elements.Point`
+        :class:`~graphinglib.graph_elements.Point`
             The point on the circle at the specified angle.
         """
         if degrees:
             angle = np.radians(angle)
         x = self.x_center + self.radius * np.cos(angle)
         y = self.y_center + self.radius * np.sin(angle)
-        if as_point_object:
-            return Point(x, y)
-        return (x, y)
+        return Point(x, y)
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
@@ -385,26 +430,28 @@ class Rectangle:
         """
         return self.width * self.height
 
-    def get_center_point(self, as_point_object=False) -> tuple[float, float] | Point:
-        """Returns the center point of the rectangle.
-
-        Parameters
-        ----------
-        as_point_object : bool, optional
-            Whether the center point should be returned as a :class:`~graphinglib.graph_elements.Point` object or not.
-            Default is ``False`` (returns a tuple of floats).
+    def get_center_coordinates(self) -> tuple[float, float] | Point:
+        """Returns the center coordinates of the rectangle.
 
         Returns
         -------
-        tuple of floats or :class:`~graphinglib.graph_elements.Point`
+        tuple[float, float]
             The center point of the rectangle.
         """
-        if as_point_object:
-            return Point(
-                self.x_bottom_left + self.width / 2,
-                self.y_bottom_left + self.height / 2,
-            )
         return (
+            self.x_bottom_left + self.width / 2,
+            self.y_bottom_left + self.height / 2,
+        )
+
+    def create_center_point(self) -> Point:
+        """Returns the center point of the rectangle.
+
+        Returns
+        -------
+        :class:`~graphinglib.graph_elements.Point`
+            The center point of the rectangle.
+        """
+        return Point(
             self.x_bottom_left + self.width / 2,
             self.y_bottom_left + self.height / 2,
         )
@@ -419,68 +466,92 @@ class Rectangle:
         """
         return f"{self.x_bottom_left} <= x <= {self.x_bottom_left + self.width} and {self.y_bottom_left} <= y <= {self.y_bottom_left + self.height}"
 
-    def get_points_at_x(
-        self, x: float, as_point_object=False
-    ) -> list[tuple[float, float]] | list[Point]:
+    def get_coordinates_at_x(self, x: float) -> list[tuple[float, float]]:
+        """Returns the coordinates on the rectangle at the specified x coordinate.
+
+        Parameters
+        ----------
+        x : float
+            The x coordinate of the points.
+
+        Returns
+        -------
+        list[tuple[float, float]]
+            The coordinates on the rectangle at the specified x coordinate.
+        """
+        if x <= self.x_bottom_left or x >= self.x_bottom_left + self.width:
+            raise ValueError(
+                f"x must be between {self.x_bottom_left} and {self.x_bottom_left + self.width}"
+            )
+        return [
+            (x, self.y_bottom_left),
+            (x, self.y_bottom_left + self.height),
+        ]
+
+    def create_points_at_x(self, x: float) -> list[Point]:
         """Returns the points on the rectangle at the specified x coordinate.
 
         Parameters
         ----------
         x : float
             The x coordinate of the points.
-        as_point_object : bool, optional
-            Whether the points should be returned as :class:`~graphinglib.graph_elements.Point` objects or not.
-            Default is ``False`` (returns a list of tuples of floats).
 
         Returns
         -------
-        list of tuples of floats or list of :class:`~graphinglib.graph_elements.Point`
+        list[:class:`~graphinglib.graph_elements.Point`]
             The points on the rectangle at the specified x coordinate.
         """
         if x <= self.x_bottom_left or x >= self.x_bottom_left + self.width:
             raise ValueError(
                 f"x must be between {self.x_bottom_left} and {self.x_bottom_left + self.width}"
             )
-        if as_point_object:
-            return [
-                Point(x, self.y_bottom_left),
-                Point(x, self.y_bottom_left + self.height),
-            ]
         return [
-            (x, self.y_bottom_left),
-            (x, self.y_bottom_left + self.height),
+            Point(x, self.y_bottom_left),
+            Point(x, self.y_bottom_left + self.height),
         ]
 
-    def get_points_at_y(
-        self, y: float, as_point_object=False
-    ) -> list[tuple[float, float]] | list[Point]:
+    def get_coordinates_at_y(self, y: float) -> list[tuple[float, float]]:
+        """Returns the coordinates on the rectangle at the specified y coordinate.
+
+        Parameters
+        ----------
+        y : float
+            The y coordinate of the points.
+
+        Returns
+        -------
+        list[tuple[float, float]]
+            The coordinates on the rectangle at the specified y coordinate.
+        """
+        if y <= self.y_bottom_left or y >= self.y_bottom_left + self.height:
+            raise ValueError(
+                f"y must be between {self.y_bottom_left} and {self.y_bottom_left + self.height}"
+            )
+        return [
+            (self.x_bottom_left, y),
+            (self.x_bottom_left + self.width, y),
+        ]
+
+    def create_points_at_y(self, y: float) -> list[Point]:
         """Returns the points on the rectangle at the specified y coordinate.
 
         Parameters
         ----------
         y : float
             The y coordinate of the points.
-        as_point_object : bool, optional
-            Whether the points should be returned as :class:`~graphinglib.graph_elements.Point` objects or not.
-            Default is ``False`` (returns a list of tuples of floats).
 
         Returns
         -------
-        list of tuples of floats or list of :class:`~graphinglib.graph_elements.Point`
+        list[:class:`~graphinglib.graph_elements.Point`]
             The points on the rectangle at the specified y coordinate.
         """
         if y <= self.y_bottom_left or y >= self.y_bottom_left + self.height:
             raise ValueError(
                 f"y must be between {self.y_bottom_left} and {self.y_bottom_left + self.height}"
             )
-        if as_point_object:
-            return [
-                Point(self.x_bottom_left, y),
-                Point(self.x_bottom_left + self.width, y),
-            ]
         return [
-            (self.x_bottom_left, y),
-            (self.x_bottom_left + self.width, y),
+            Point(self.x_bottom_left, y),
+            Point(self.x_bottom_left + self.width, y),
         ]
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:

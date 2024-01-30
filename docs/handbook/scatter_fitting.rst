@@ -73,7 +73,7 @@ Just like with the :class:`~graphinglib.data_plotting_1d.Curve` object, you can 
 
 .. image:: images/scatter_plot_addition.png
 
-Interpolation between data points is possible by calling the :meth:`~graphinglib.data_plotting_1d.Scatter.get_point_at_x` method and the :meth:`~graphinglib.data_plotting_1d.Scatter.get_points_at_y` method. The first returns a :class:`~graphinglib.data_plotting_1d.Point` object or a tuple of coordinates that represent the point on the curve at the specified x value, depending on whether the ``as_point_object`` parameter is set to True or False (it returns a tuple by default). The second works the same way, but returns a list of :class:`~graphinglib.data_plotting_1d.Point` objects or a list of tuples.
+Interpolation between data points is possible by calling the :meth:`~graphinglib.data_plotting_1d.Scatter.get_coordinates_at_x` and :meth:`~graphinglib.data_plotting_1d.Scatter.get_coordinates_at_y` methods. The first returns a tuple of coordinates that represent the point on the curve at the specified x value. The second works the same way, but returns a list of tuples, one for each point on the curve that has the specified y value. The :meth:`~graphinglib.data_plotting_1d.Scatter.create_point_at_x` and :meth:`~graphinglib.data_plotting_1d.Scatter.create_points_at_y` methods work the same way, but return :class:`~graphinglib.graph_elements.Point` objects instead of tuples.
 
 .. code-block:: python
 
@@ -85,8 +85,8 @@ Interpolation between data points is possible by calling the :meth:`~graphinglib
         label="$\sin(3x)\cos^2(x)$",
     )
 
-    point_at_4 = scatter.get_point_at_x(4, color="red", as_point_object=True)
-    points_at_y_one_half = scatter.get_points_at_y(0.5, color="orange", as_point_objects=True)
+    point_at_4 = scatter.create_point_at_x(4, color="red")
+    points_at_y_one_half = scatter.create_points_at_y(0.5, color="orange")
 
     fig = gl.Figure()
     # Use the * operator to unpack the list of points
@@ -117,7 +117,7 @@ There are a number of curve fit objects that can be used to fit data. The most v
 
     # Use the fit to predict value of y at x = 5
     print(f"Value of fit at x = 5 is y = {fit.function(5)}")
-    predicted_point = fit.get_point_at_x(5, color="red", as_point_object=True)
+    predicted_point = fit.create_point_at_x(5, color="red")
 
     fig = gl.Figure()
     fig.add_element(scatter, fit, predicted_point)

@@ -24,7 +24,6 @@ version_match = os.environ.get("READTHEDOCS_VERSION")
 if not version_match or version_match.isdigit() or version_match == "latest":
     if "dev" in release or "rc" in release:
         version_match = "dev"
-        json_url = "_static/switcher.json"
     else:
         version_match = release
 elif version_match == "stable":

@@ -83,15 +83,17 @@ You can get the area of a Rectangle and a string representation of its equation:
     print(rect.area)  # 100
     print(rect.equation)  # 0 <= x <= 10 and 0 <= y <= 10
 
-You can also get Point objects out of a Rectangle, like the center point, or the two points at a given x or y value. You can get these points as tuples or Point objects: ::
+You can also get Point objects or coordinates out of a Rectangle, like the center point, or the two points at a given x or y value: ::
 
     import graphinglib as gl
 
     rect = gl.Rectangle(x_bottom_left=0, y_bottom_left=0, width=10, height=10)
 
-    point_center = rect.get_center_point(as_point_object=False) # tuple (5, 5)
+    point_center = rect.create_center_point()
+    coordinates_center = rect.get_center_coordinates()
 
-    point1, point2 = rect.get_points_at_x(5, as_point_object=True) # Point objects
+    point1, point2 = rect.get_points_at_x(5)
+    coords1, coords2 = rect.get_coordinates_at_x(5)
 
 The :class:`~graphinglib.shapes.Circle` Object
 -----------------------------------------------
@@ -158,20 +160,20 @@ As with Rectangles, there are also many useful methods which can be used with Ci
     point = gl.Point(5, 5)
     print(point in circle)  # False
 
-You can also get Point objects out of a Circle like so: ::
+You can also get Point objects and coordinates out of a Circle like so: ::
 
     import graphinglib as gl
 
     circle = gl.Circle(x_center=0, y_center=0, radius=1)
 
     # Get the center point
-    point_center = circle.get_center_point(as_point_object=True) # Point(0, 0)
+    point_center = circle.create_center_point()
 
-    # Get the two points at a given x value
-    point1, point2 = circle.get_points_at_x(0, as_point_object=False) # tuples (0, 1) and (0, -1)
+    # Get the coordinates at a certain x value
+    point1, point2 = circle.get_coordinates_at_x(0)
 
     # Get the point on the circle at a given angle
-    point = circle.get_point_at_angle(45, degrees=True, as_point_object=True) # Point(0.7071067811865476, 0.7071067811865476)
+    point = circle.create_point_at_angle(45, degrees=True)
 
 The :class:`~graphinglib.shapes.Arrow` Object
 ----------------------------------------------

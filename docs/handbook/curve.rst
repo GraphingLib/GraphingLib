@@ -51,7 +51,7 @@ You can also find the the maximum and minimum values of a curve (maximum or mini
 Identifying points on a curve
 -----------------------------
 
-The :class:`~graphinglib.data_plotting_1d.Curve` class includes two interpolation methods for creating coordinates on a curve at a specific x or y value. The :meth:`~graphinglib.data_plotting_1d.Curve.get_point_at_x` method, by default, returns a tuple of coordinates (x, y) representing a point on the curve at a given x value. Similarly, the :meth:`~graphinglib.data_plotting_1d.Curve.get_points_at_y` method returns a list of tuples, each representing the coordinates of a point on the curve at the given y value. Both methods include an optional argument ``as_point_object``. When set to True, these methods return a :class:`~graphinglib.graph_elements.Point` object or a list of such objects, instead of tuples. Additionally, the :meth:`~graphinglib.data_plotting_1d.Curve.intersection` method, which identifies the points of intersection between two curves, also follows this behavior. By default, it returns a list of tuples representing the intersection points, with the as_point_object argument available to return :class:`~graphinglib.graph_elements.Point` objects instead. ::
+The :class:`~graphinglib.data_plotting_1d.Curve` class includes interpolation methods for creating coordinates and points on a curve at a specific x or y value. The :meth:`~graphinglib.data_plotting_1d.Curve.get_coordinates_at_x` method returns a tuple of coordinates (x, y) representing a point on the curve at a given x value. Similarly, the :meth:`~graphinglib.data_plotting_1d.Curve.get_coordinates_at_y` method returns a list of tuples (since a function can cross a y value at multiple points), each representing the coordinates of a point on the curve at the given y value. Alternatively, the :meth:`~graphinglib.data_plotting_1d.Curve.create_point_at_x` and :meth:`~graphinglib.data_plotting_1d.Curve.create_points_at_y` methods create a :class:`~graphinglib.graph_elements.Point` object or a list of such objects which can then be added to a Figure. Additionally, the :meth:`~graphinglib.data_plotting_1d.Curve.get_intersection_coordinates` and :meth:`~graphinglib.data_plotting_1d.Curve.create_intersection_points` methods, which identify the points of intersection between two curves, also follow this logic. ::
 
     import graphinglib as gl
     import numpy as np
@@ -63,13 +63,13 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class includes two interpolatio
     )
 
     # Get the points of intersection between the two curves
-    intersection_points = curve_1.intersection(curve_2, marker_styles="P", colors="red", as_point_objects=True)
+    intersection_points = curve_1.create_intersection_points(curve_2, marker_styles="P", colors="red")
     # Get points where curve 1 crosses the x axis (where y = 0)
-    cross_x_axis_points = curve_1.get_points_at_y(0, color="blue", as_point_objects=True)
+    cross_x_axis_points = curve_1.create_points_at_y(0, color="blue")
 
     # Print coordinates of first intersection point
-    first_int = intersection_points[0]
-    print(f"First intersection point: {(first_int.x, first_int.y)}")
+    first_int = curve_1.get_intersection_coordinates(curve_2)[0]
+    print(f"First intersection point: {first_int}")
 
     fig = gl.Figure()
     fig.add_element(curve_1, curve_2)
@@ -86,14 +86,14 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class includes two interpolatio
 Curve calculus
 --------------
 
-There are a number of methods which can be used to perform calculus on a curve. The :meth:`~graphinglib.data_plotting_1d.Curve.get_derivative_curve` and :meth:`~graphinglib.data_plotting_1d.Curve.get_integral_curve` both return new :class:`~graphinglib.data_plotting_1d.Curve` objects. You can also use the :meth:`~graphinglib.data_plotting_1d.Curve.get_tangent_curve` and :meth:`~graphinglib.data_plotting_1d.Curve.get_normal_curve` methods to plot tangents and normals to other curves at a given x value. ::
+There are a number of methods which can be used to perform calculus on a curve. The :meth:`~graphinglib.data_plotting_1d.Curve.create_derivative_curve` and :meth:`~graphinglib.data_plotting_1d.Curve.create_integral_curve` both return new :class:`~graphinglib.data_plotting_1d.Curve` objects. You can also use the :meth:`~graphinglib.data_plotting_1d.Curve.create_tangent_curve` and :meth:`~graphinglib.data_plotting_1d.Curve.create_normal_curve` methods to plot tangents and normals to other curves at a given x value. ::
 
     curve_1 = gl.Curve.from_function(lambda x: x**2 - 5, x_min=-5, x_max=5)
 
-    derivative_curve = curve_1.get_derivative_curve(label="Derivative")
-    integral_curve = curve_1.get_integral_curve(label="Integral")
-    normal_curve = curve_1.get_normal_curve(2, label="Normal at x=2")
-    tangent_curve = curve_1.get_tangent_curve(2, label="Tangent at x=2")
+    derivative_curve = curve_1.create_derivative_curve(label="Derivative")
+    integral_curve = curve_1.create_integral_curve(label="Integral")
+    normal_curve = curve_1.create_normal_curve(2, label="Normal at x=2")
+    tangent_curve = curve_1.create_tangent_curve(2, label="Tangent at x=2")
 
     fig1 = gl.Figure(y_lim=(-6, 25))
     fig1.add_element(curve_1, derivative_curve, integral_curve)
