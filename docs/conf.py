@@ -18,7 +18,7 @@ copyright = "2024, Gustave Coulombe, Yannick Lapointe"
 author = "Gustave Coulombe and Yannick Lapointe"
 release = __version__
 
-json_url = "https://graphinglib.readthedocs.io/en/348-release-notes-on-documentation-and-dev-version/_static/switcher.json"
+json_url = "https://graphinglib.readthedocs.io/en/latest/_static/switcher.json"
 
 version_match = os.environ.get("READTHEDOCS_VERSION_NAME")
 if not version_match or version_match.isdigit() or version_match == "latest":
