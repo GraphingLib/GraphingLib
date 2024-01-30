@@ -5,6 +5,11 @@
         "url": "https://graphinglib.readthedocs.io/en/latest/"
     },
     {
+        "name" : "dev (348)",
+        "version": "348-release-notes-on-documentation-and-dev-version",
+        "url": "https://graphinglib.readthedocs.io/en/348-release-notes-on-documentation-and-dev-version/"
+    },
+    {
         "name": "v1.3.0 (stable)",
         "version": "stable",
         "url": "https://graphinglib.readthedocs.io/en/stable/",
