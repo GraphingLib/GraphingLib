@@ -1,17 +1,12 @@
 [
     {
-        "name" : "dev (latest)",
-        "version": "latest",
+        "name" : "dev",
+        "version": "dev",
         "url": "https://graphinglib.readthedocs.io/en/latest/"
     },
     {
-        "name": "dev (367)",
-        "version": "dev",
-        "url": "https://graphinglib.readthedocs.io/en/367-version-switcher-active-version-name/"
-    },
-    {
-        "name": "1.3.0 (stable)",
-        "version": "stable",
+        "name": "1.3.0",
+        "version": "1.3.0",
         "url": "https://graphinglib.readthedocs.io/en/stable/",
         "preferred": true
     }
