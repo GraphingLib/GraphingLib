@@ -1,0 +1,28 @@
+===============================
+GraphingLib 1.2.0 Release Notes
+===============================
+
+Figure style editor, stream plots, colour cycles and bug corrections
+--------------------------------------------------------------------
+
+New documentation available at https://graphinglib.readthedocs.io/.
+
+Whats changed
+^^^^^^^^^^^^^
+
+- New command-line interface to create and modify figure styles
+- Stream class allows the user to display stream plots
+- Table class allows the user to display data tables in Figures and SubFigures
+- Default colours for curves and scatters now using colour cycles
+- New option to remove axes in SubFigures
+- New option to add reference labels ("a)", "b)", "c)", etc.) next to SubFigures
+
+Corrected bugs
+^^^^^^^^^^^^^^
+
+- Legends in MultiFigures are now separated in their respective SubFigures by default, and are outside all SubFigures if combined
+- Custom figure styles are automatically updated after a new GL version (to add info for new parameters or new classes)
+- Specifying only one of x_error or y_error is now possible in Curves and Scatters
+- Can now use the same object in two Figures/MultiFigures using different styles (only one style would show up previously)
+
+**Full Changelog**: https://github.com/GraphingLib/GraphingLib/compare/v1.1.0...v1.2.0

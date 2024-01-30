@@ -20,7 +20,7 @@ release = __version__
 
 json_url = "https://graphinglib.readthedocs.io/en/latest/_static/switcher.json"
 
-version_match = os.environ.get("READTHEDOCS_VERSION")
+version_match = os.environ.get("READTHEDOCS_VERSION_NAME")
 if not version_match or version_match.isdigit() or version_match == "latest":
     if "dev" in release or "rc" in release:
         version_match = "dev"

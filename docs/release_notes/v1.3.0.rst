@@ -1,0 +1,34 @@
+===============================
+GraphingLib 1.3.0 Release Notes
+===============================
+
+Matplotlib style support, new objects and styles, and advanced customization
+----------------------------------------------------------------------------
+
+What's Changed
+^^^^^^^^^^^^^^
+
+**Highlights**
+
+* Matplotlib styles are now supported (use "matplotlib" for the matplotlib default style)
+* New TwinAxis class to create 2 different x or y axes in the same Figure
+* New update_rc_params method on Figures and MultiFigures for full control of visual appearance
+* New customize_visual_style function for parameter specification of most common rc params
+* New shape objects: Rectangle, Circle, Arrow
+* Two new GL figure styles: "dark" and "dim"
+* New gl.get_color and gl.get_colors functions to access color cycle colors in figure_styles
+
+**More changes**
+
+* Added calculate_Rsquared method to Fit objects
+* Dynamic figure_style specification now possible (can change style and re display the same Figure)
+* Hlines and Vlines now have a line_width parameter
+* Histogram: show_pdf is now its own method with more customization options
+* MultiFigures are now created from Figure objects. SubFigure class no longer exists
+* Heatmaps can now be created from points
+* Figure ticks can be changed to text with the set_ticks method
+* Can now remove axes in Figure
+* as_point_object option in get_point_at_x/y, intersection, etc. Returns tuple if False, Point object if True
+* Mirrored dunder method for operations on curves and scatter objects
+* Helper class methods for creating MultiFigures as rows, stacks, or grids
+* Many bug fixes

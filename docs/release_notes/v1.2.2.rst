@@ -1,0 +1,15 @@
+===============================
+GraphingLib 1.2.2 Release Notes
+===============================
+
+Python 3.12 compatibility and more
+----------------------------------
+
+What's Changed
+^^^^^^^^^^^^^^
+
+- Compatible with Python 3.12
+- Fixed the z_order that was not the same as the order the elements were added to the Figure/SubFigure in some cases
+- Added location and number of columns parameters for the general legend in MultiFigure
+
+**Full Changelog**: https://github.com/GraphingLib/GraphingLib/compare/v1.2.1...v1.2.2

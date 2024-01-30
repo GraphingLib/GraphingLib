@@ -1,0 +1,17 @@
+===============================
+GraphingLib 1.2.1 Release Notes
+===============================
+
+Minor bug corrections
+---------------------
+
+Corrected bugs
+^^^^^^^^^^^^^^
+
+- SubFigure placement is now separated into 4 parameters: start row, start column, number of rows spanned, number of columns spanned
+- Colors in the plain figure style's cycle are tweaked to be more visible on white background
+- The color of the fill_under in Curve.area_between can be set by fill_color
+- Plotting method for Curve and Scatter changed to errorbar so that managing cycling colors of Scatter and Curve and their errorbars
+- Labels removed for the residual curves of the Fit objects
+
+**Full Changelog**: https://github.com/GraphingLib/GraphingLib/compare/v1.2.0...v1.2.1
