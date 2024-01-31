@@ -125,8 +125,7 @@ class Figure:
         """
         Prepares the :class:`~graphinglib.figure.Figure` to be displayed.
         """
-        if axes is not None:
-            self._axes = axes
+        if default_params is not None:
             self.default_params = default_params
             figure_params_to_reset = self._fill_in_missing_params(self)
         else:
@@ -150,6 +149,10 @@ class Figure:
                         f"The figure style {self.figure_style} was not found. Please choose a different style."
                     )
             figure_params_to_reset = self._fill_in_missing_params(self)
+
+        if axes is not None:
+            self._axes = axes
+        else:
             self._figure, self._axes = plt.subplots(figsize=self.size)
 
         if self.show_grid == "unchanged":
