@@ -127,6 +127,7 @@ class Figure:
         """
         if default_params is not None:
             self.default_params = default_params
+            self._fill_in_rc_params()
             figure_params_to_reset = self._fill_in_missing_params(self)
         else:
             try:
