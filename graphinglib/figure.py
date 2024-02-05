@@ -265,7 +265,7 @@ class Figure:
         plt.show()
         plt.rcParams.update(plt.rcParamsDefault)
 
-    def save_figure(self, file_name: str, legend: bool = True) -> None:
+    def save(self, file_name: str, legend: bool = True) -> None:
         """
         Saves the :class:`~graphinglib.figure.Figure`.
 

@@ -1419,7 +1419,7 @@ class Histogram:
         self._show_pdf = False
 
     @classmethod
-    def plot_residuals_from_fit(
+    def from_fit_residuals(
         cls,
         fit: Fit,
         number_of_bins: int,
@@ -1629,7 +1629,7 @@ class Histogram:
                     **params,
                 )
 
-    def show_pdf(
+    def add_pdf(
         self,
         type: str = "normal",
         show_mean: bool | Literal["default"] = "default",

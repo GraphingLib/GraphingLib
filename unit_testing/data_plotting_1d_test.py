@@ -544,7 +544,7 @@ class TestHistogram(unittest.TestCase):
     def test_plot_residuals_from_fit(self):
         curve = Curve.from_function(lambda x: x**2, 0, 1)
         fit = FitFromPolynomial(curve, degree=2)
-        histo = self.testHist.plot_residuals_from_fit(fit, 30)
+        histo = self.testHist.from_fit_residuals(fit, 30)
         self.assertIsInstance(histo, Histogram)
 
 

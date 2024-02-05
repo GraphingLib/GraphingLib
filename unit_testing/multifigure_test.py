@@ -46,7 +46,7 @@ class TestMultiFigure(unittest.TestCase):
     def test_add_sub_figure(self):
         a_figure = Figure()
         a_multifig = MultiFigure(num_rows=2, num_cols=2)
-        a_multifig.add_sub_figure(a_figure, 0, 0, 1, 1)
+        a_multifig.add_figure(a_figure, 0, 0, 1, 1)
         self.assertEqual(a_multifig._sub_figures[0], a_figure)
         self.assertEqual(a_figure.row_start, 0)
         self.assertEqual(a_figure.row_span, 1)
@@ -54,7 +54,7 @@ class TestMultiFigure(unittest.TestCase):
         self.assertEqual(a_figure.col_span, 1)
 
         another_figure = Figure()
-        a_multifig.add_sub_figure(another_figure, 1, 1, 1, 1)
+        a_multifig.add_figure(another_figure, 1, 1, 1, 1)
         self.assertEqual(a_multifig._sub_figures[1], another_figure)
         self.assertEqual(another_figure.row_start, 1)
         self.assertEqual(another_figure.row_span, 1)
@@ -65,27 +65,27 @@ class TestMultiFigure(unittest.TestCase):
         a_figure = Figure()
         a_multifig = MultiFigure(num_rows=2, num_cols=2)
         with self.assertRaises(TypeError):
-            a_multifig.add_sub_figure(a_figure, 0.5, 0, 1, 1)
+            a_multifig.add_figure(a_figure, 0.5, 0, 1, 1)
 
         with self.assertRaises(ValueError):
-            a_multifig.add_sub_figure(a_figure, 0, 2, 1, 1)
+            a_multifig.add_figure(a_figure, 0, 2, 1, 1)
 
         with self.assertRaises(ValueError):
-            a_multifig.add_sub_figure(a_figure, 0, 0, 0, 1)
+            a_multifig.add_figure(a_figure, 0, 0, 0, 1)
 
         with self.assertRaises(ValueError):
-            a_multifig.add_sub_figure(a_figure, 0, 0, 1, 0)
+            a_multifig.add_figure(a_figure, 0, 0, 1, 0)
 
         with self.assertRaises(ValueError):
-            a_multifig.add_sub_figure(a_figure, 0, 0, 3, 1)
+            a_multifig.add_figure(a_figure, 0, 0, 3, 1)
 
         with self.assertRaises(ValueError):
-            a_multifig.add_sub_figure(a_figure, 0, 0, 1, 3)
+            a_multifig.add_figure(a_figure, 0, 0, 1, 3)
 
     def test_stack(self):
         a_figure = Figure()
         another_figure = Figure()
-        a_multifig = MultiFigure.stack([a_figure, another_figure])
+        a_multifig = MultiFigure.from_stack([a_figure, another_figure])
         self.assertEqual(a_multifig.num_rows, 2)
         self.assertEqual(a_multifig.num_cols, 1)
         self.assertEqual(a_multifig._sub_figures[0], a_figure)
@@ -104,7 +104,7 @@ class TestMultiFigure(unittest.TestCase):
     def test_row(self):
         a_figure = Figure()
         another_figure = Figure()
-        a_multifig = MultiFigure.row([a_figure, another_figure])
+        a_multifig = MultiFigure.from_row([a_figure, another_figure])
         self.assertEqual(a_multifig.num_rows, 1)
         self.assertEqual(a_multifig.num_cols, 2)
         self.assertEqual(a_multifig._sub_figures[0], a_figure)
@@ -127,7 +127,7 @@ class TestMultiFigure(unittest.TestCase):
         fig4 = Figure()
         fig5 = Figure()
         fig6 = Figure()
-        a_multifig = MultiFigure.grid(
+        a_multifig = MultiFigure.from_grid(
             figures=[fig1, fig2, fig3, fig4, fig5, fig6],
             dimensions=(2, 3),
             size=(12, 8),
@@ -181,14 +181,14 @@ class TestMultiFigure(unittest.TestCase):
         fig5 = Figure()
         fig6 = Figure()
         with self.assertRaises(ValueError):
-            MultiFigure.grid(
+            MultiFigure.from_grid(
                 figures=[fig1, fig2, fig3, fig4, fig5, fig6],
                 dimensions=(2, 2),
                 size=(12, 8),
                 title="Complex Example",
             )
         with self.assertRaises(ValueError):
-            MultiFigure.grid(
+            MultiFigure.from_grid(
                 figures=[fig1, fig2, fig3, fig4, fig5],
                 dimensions=(2, 1),
                 size=(12, 8),
@@ -196,7 +196,7 @@ class TestMultiFigure(unittest.TestCase):
             )
         # Not integer dimensions
         with self.assertRaises(TypeError):
-            MultiFigure.grid(
+            MultiFigure.from_grid(
                 figures=[fig1, fig2, fig3, fig4, fig5],
                 dimensions=(2.5, 10),
                 size=(12, 8),
@@ -220,7 +220,7 @@ class TestMultiFigure(unittest.TestCase):
         a_figure.add_element(curve)
         another_figure = Figure()
         another_figure.add_element(curve2)
-        a_multifig = MultiFigure.stack([a_figure, another_figure])
+        a_multifig = MultiFigure.from_stack([a_figure, another_figure])
         a_multifig._prepare_multi_figure()
         self.assertEqual(len(a_figure._axes.get_lines()), 1)
         self.assertEqual(len(another_figure._axes.get_lines()), 1)
@@ -348,7 +348,7 @@ class TestMultiFigure(unittest.TestCase):
         a_figure.add_element(curve)
         another_figure = Figure()
         another_figure.add_element(curve2)
-        a_multifig = MultiFigure.stack(
+        a_multifig = MultiFigure.from_stack(
             [a_figure, another_figure], figure_style="matplotlib"
         )
         a_multifig._prepare_multi_figure()
