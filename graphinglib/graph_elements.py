@@ -450,8 +450,7 @@ class Point:
         self.v_align = v_align
         self._show_coordinates: bool = False
 
-    @property
-    def coordinates(self) -> tuple[float, float]:
+    def get_coordinates(self) -> tuple[float, float]:
         """
         Returns the coordinates of the :class:`~graphinglib.graph_elements.Point`.
         """
@@ -565,7 +564,7 @@ class Text:
     v_align: str = "default"
     _arrow_pointing_to: Optional[tuple[float]] = field(default=None, init=False)
 
-    def attach_arrow(
+    def add_arrow(
         self,
         points_to: tuple[float, float],
         width: Optional[float] = None,

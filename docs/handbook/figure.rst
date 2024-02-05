@@ -17,7 +17,7 @@ Creating a basic figure using the :class:`~graphinglib.figure.Figure` object is 
 
 .. image:: images/sine.png
 
-The :py:meth:`~graphinglib.figure.Figure.display` method is used to show the figure on screen. It is also possible to use the :py:meth:`~graphinglib.figure.Figure.save_figure` method to save the figure to a specified path.
+The :py:meth:`~graphinglib.figure.Figure.display` method is used to show the figure on screen. It is also possible to use the :py:meth:`~graphinglib.figure.Figure.save` method to save the figure to a specified path.
 
 .. seealso:: 
     

@@ -121,7 +121,7 @@ class MultiFigure:
         self._user_rc_dict = {}
 
     @classmethod
-    def row(
+    def from_row(
         cls,
         figures: list[Figure],
         size: tuple[float, float] | Literal["default"] = "default",
@@ -166,11 +166,11 @@ class MultiFigure:
             figure_style=figure_style,
         )
         for i, figure in enumerate(figures):
-            multi_fig.add_sub_figure(figure, 0, i, 1, 1)
+            multi_fig.add_figure(figure, 0, i, 1, 1)
         return multi_fig
 
     @classmethod
-    def stack(
+    def from_stack(
         cls,
         figures: list[Figure],
         size: tuple[float, float] | Literal["default"] = "default",
@@ -215,11 +215,11 @@ class MultiFigure:
             figure_style=figure_style,
         )
         for i, figure in enumerate(figures):
-            multi_fig.add_sub_figure(figure, i, 0, 1, 1)
+            multi_fig.add_figure(figure, i, 0, 1, 1)
         return multi_fig
 
     @classmethod
-    def grid(
+    def from_grid(
         cls,
         figures: list[Figure],
         dimensions: tuple[int, int],
@@ -274,12 +274,12 @@ class MultiFigure:
         for i, figure in enumerate(figures):
             row = i // num_cols
             col = i % num_cols
-            multi_fig.add_sub_figure(figure, row, col, 1, 1)
+            multi_fig.add_figure(figure, row, col, 1, 1)
         return multi_fig
 
-    def add_sub_figure(
+    def add_figure(
         self,
-        sub_figure: Figure,
+        figure: Figure,
         row_start: int,
         col_start: int,
         row_span: int,
@@ -290,7 +290,7 @@ class MultiFigure:
 
         Parameters
         ----------
-        sub_figure : Figure
+        figure : Figure
             The :class:`~graphinglib.figure.Figure` to add to the MultiFigure.
         row_start : int
             The row where to set the upper-left corner of the SubFigure.
@@ -315,11 +315,11 @@ class MultiFigure:
                 "The placement values and span values must be inside the size of the MultiFigure."
             )
         # Add location and span to the SubFigure (create new attributes)
-        sub_figure.row_start = row_start
-        sub_figure.col_start = col_start
-        sub_figure.row_span = row_span
-        sub_figure.col_span = col_span
-        self._sub_figures.append(sub_figure)
+        figure.row_start = row_start
+        figure.col_start = col_start
+        figure.row_span = row_span
+        figure.col_span = col_span
+        self._sub_figures.append(figure)
 
     def display(
         self,
@@ -350,7 +350,7 @@ class MultiFigure:
         plt.show()
         plt.rcParams.update(rcParamsDefault)
 
-    def save_figure(
+    def save(
         self,
         file_name: str,
         general_legend: bool = False,

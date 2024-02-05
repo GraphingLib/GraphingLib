@@ -62,7 +62,7 @@ The :class:`~graphinglib.graph_elements.Text` Object
 The Text object is used to display text on a figure. It also allows you to point from the text to a specified point using an arrow. Here is how to create a text object and attach an arrow to it: ::
 
     text = gl.Text(4, 1, "There is nothing here!")
-    text.attach_arrow((0.5, 1))
+    text.add_arrow((0.5, 1))
 
 .. image:: images/text.png
 

@@ -22,10 +22,10 @@ In this example we can see that the legend includes the values of the distributi
     mu = histogram.mean
     sigma = histogram.standard_deviation
 
-It is also possible to overlay a normal fit of the distribution simply by setting the ``show_pdf`` parameter to ``"normal"``: ::
+It is also possible to overlay a normal fit of the distribution simply by setting the ``add_pdf`` parameter to ``"normal"``: ::
 
     histogram = gl.Histogram(
-        values, number_of_bins=30, label="Distribution of values", show_pdf="normal"
+        values, number_of_bins=30, label="Distribution of values", add_pdf="normal"
     )
 
 .. image:: images/histogrampdf.png
@@ -42,8 +42,8 @@ You can create a Histogram from a previously created fit to display the residual
     y_data = 3 * x_data**2 - 2 * x_data + np.random.normal(0, 10, 100)
     scatter = gl.Scatter(x_data, y_data, label="Data")
     fit = gl.FitFromPolynomial(scatter, degree=2, label="Fit", color="red")
-    residuals = gl.Histogram.plot_residuals_from_fit(fit, 15, label="Residual")
-    residuals.show_pdf()
+    residuals = gl.Histogram.from_fit_residuals(fit, 15, label="Residual")
+    residuals.add_pdf()
 
     fig1 = gl.Figure()
     fig1.add_element(scatter, fit)
@@ -51,7 +51,7 @@ You can create a Histogram from a previously created fit to display the residual
     fig2 = gl.Figure(y_lim=(0, 0.06))
     fig2.add_element(residuals)
 
-    multifigure = gl.MultiFigure.row([fig1, fig2], size=(10, 5), reference_labels=False)
+    multifigure = gl.MultiFigure.from_row([fig1, fig2], size=(10, 5), reference_labels=False)
     multifigure.display()
 
 .. image:: images/residuals.png

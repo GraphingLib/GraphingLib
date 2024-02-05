@@ -19,9 +19,9 @@ You can add create :class:`~graphinglib.figure.Figure` objects and add them to t
 
     # (row start, column start, rows spanned, columns spanned)
     # This will create a 1x1 SubFigure in the top left corner of the grid
-    multifigure.add_sub_figure(figure1, 0, 0, 1, 1)
+    multifigure.add_figure(figure1, 0, 0, 1, 1)
     # Now we create a SubFigure covering the right column of the grid
-    multifigure.add_sub_figure(figure2, 0, 1, 2, 1) # Spans 2 rows, 1 column
+    multifigure.add_figure(figure2, 0, 1, 2, 1) # Spans 2 rows, 1 column
     # Bottom left stays empty
 
 Elements can be added to :class:`~graphinglib.figure.Figure` objects as usual using the :py:meth:`~graphinglib.figure.Figure.add_element` method. It is important to note that **a single set of axes is not confined to a single square on the grid; it can span multiple squares.** This means it is possible to align the individual sets of axes however you want. For example, here is how you could insert 3 subfigures in 2 rows with the one on the second row being centered: ::
@@ -47,9 +47,9 @@ Elements can be added to :class:`~graphinglib.figure.Figure` objects as usual us
     # Create the MultiFigure and add the figures to it
     multifigure = gl.MultiFigure(2, 4, size=(11, 8)) # 2 rows, 4 columns
 
-    multifigure.add_sub_figure(figure1, 0, 0, 1, 2) # Spans the first 2 columns of the top row
-    multifigure.add_sub_figure(figure2, 0, 2, 1, 2) # Spans the last 2 columns of the top row
-    multifigure.add_sub_figure(figure3, 1, 1, 1, 2) # Spans the middle 2 columns of the bottom row
+    multifigure.add_figure(figure1, 0, 0, 1, 2) # Spans the first 2 columns of the top row
+    multifigure.add_figure(figure2, 0, 2, 1, 2) # Spans the last 2 columns of the top row
+    multifigure.add_figure(figure3, 1, 1, 1, 2) # Spans the middle 2 columns of the bottom row
 
     multifigure.display()
 
@@ -57,16 +57,19 @@ Elements can be added to :class:`~graphinglib.figure.Figure` objects as usual us
 
 As you can see in the above figure, there are labels (a), b), c)) next to each subfigure. These reference labels can be helpful to refer to a specific subfigure when inserting in a document. The boolean parameter ``reference_labels`` (in the :class:`~graphinglib.multifigure.MultiFigure` constructor) can turn these on or off.
 
-Some simple MultiFigure layouts have helper methods to make it easier to create them. For example, you can create a horizontal row or vertical stack of figures using the :py:meth:`~graphinglib.multifigure.MultiFigure.row` or :py:meth:`~graphinglib.multifigure.MultiFigure.stack` classmethods respectively: ::
+Some simple MultiFigure layouts have helper methods to make it easier to create them. For example, you can create a horizontal row or vertical stack of figures using the :py:meth:`~graphinglib.multifigure.MultiFigure.from_row` or :py:meth:`~graphinglib.multifigure.MultiFigure.from_stack` classmethods respectively: ::
 
-    multifigure_row = gl.MultiFigure.row([figure1, figure2, figure3], size=(10, 5))
-    multifigure_stack = gl.MultiFigure.stack([figure1, figure2, figure3], size=(5, 10))
+    multifigure_row = gl.MultiFigure.from_row([figure1, figure2, figure3], size=(10, 5))
+    multifigure_stack = gl.MultiFigure.from_stack([figure1, figure2, figure3], size=(5, 10))
 
+The :py:meth:`~graphinglib.multifigure.MultiFigure.from_grid` classmethod can be used to create a MultiFigure from a list of figures and given dimensions. For example, the following code creates a 2x2 MultiFigure from a list of 4 figures: ::
+
+    multifigure_grid = gl.MultiFigure.from_grid([figure1, figure2, figure3, figure4], (2, 2), size=(10, 10), title="My MultiFigure") 
 
 Legends in MultiFigures
 -----------------------
 
-The legends in a MultiFigure can be added separately for every subfigure or as a single legend combining the labels of every plot. This option is controlled by the ``general_legend`` parameter in the :py:meth:`~graphinglib.multifigure.MultiFigure.display` and :py:meth:`~graphinglib.multifigure.MultiFigure.save_figure` methods. By default, it is set to ``False`` so that each subfigure controls its own legend. The two images below illustrate the different legend options.
+The legends in a MultiFigure can be added separately for every subfigure or as a single legend combining the labels of every plot. This option is controlled by the ``general_legend`` parameter in the :py:meth:`~graphinglib.multifigure.MultiFigure.display` and :py:meth:`~graphinglib.multifigure.MultiFigure.save` methods. By default, it is set to ``False`` so that each subfigure controls its own legend. The two images below illustrate the different legend options.
 
 .. image:: images/individuallegend.png
 .. image:: images/generallegend.png
@@ -77,7 +80,7 @@ Styles and Customization in MultiFigures
 
 Figure style and customizations can get a bit confusing when working with :class:`~graphinglib.multifigure.MultiFigure` objects. Here is a brief overview:
 
-- The ``figure_style`` chosen in the :class:`~graphinglib.multifigure.MultiFigure` constructor is applied to every :class:`~graphinglib.figure.Figure` in the MultiFigure. Any ``figure_style`` specified in the individual :class:`~graphinglib.figure.Figure` objects is ignored (when displaying or saving the MultiFigure).
+- The ``figure_style`` chosen in the :class:`~graphinglib.multifigure.MultiFigure` constructor is applied to every :class:`~graphinglib.figure.Figure` in the MultiFigure. Any ``figure_style`` specified in the individual :class:`~graphinglib.figure.Figure` objects is ignored when displaying or saving the MultiFigure.
 - On the other hand, though applying style customizations to the :class:`~graphinglib.multifigure.MultiFigure` object will apply them to every :class:`~graphinglib.figure.Figure` in the MultiFigure, customizations specified in the individual :class:`~graphinglib.figure.Figure` objects is prioritized over the MultiFigure's customizations. This means that turning the grid on in the MultiFigure will turn it on for every :class:`~graphinglib.figure.Figure` in the MultiFigure, but turning it off in an individual :class:`~graphinglib.figure.Figure` will override the MultiFigure's setting and turn it off for that :class:`~graphinglib.figure.Figure` only.
 
 In short, the ``figure_style`` chosen in the :class:`~graphinglib.multifigure.MultiFigure` constructor sets a base style for the MultiFigure as a whole. Calling the :py:meth:`~graphinglib.multifigure.MultiFigure.customize_visual_style` or the :py:meth:`~graphinglib.multifigure.MultiFigure.update_rc_params` methods on the MultiFigure will personalize the chosen ``figure_style`` for the MultiFigure. And calling these methods on the individual :class:`~graphinglib.figure.Figure` objects will alter the MultiFigure's style for that :class:`~graphinglib.figure.Figure` only. Here is an example with customization of the axes edge colors: ::
@@ -99,7 +102,7 @@ In short, the ``figure_style`` chosen in the :class:`~graphinglib.multifigure.Mu
 
     # Create the MultiFigure and add the figures to it
     # Use the "plain" style which has a black axes edge color
-    multifigure = gl.MultiFigure.row([figure1, figure2], size=(10, 4), figure_style="plain")
+    multifigure = gl.MultiFigure.from_row([figure1, figure2], size=(10, 4), figure_style="plain")
 
     # Customize the axes edge color for all figures (but will be overridden for figure2)
     # Note: order of these calls does not matter, figure2 will always override the MultiFigure
