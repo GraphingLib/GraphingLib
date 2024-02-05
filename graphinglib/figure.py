@@ -45,8 +45,8 @@ class Figure:
 
     def __init__(
         self,
-        x_label: str = "x axis",
-        y_label: str = "y axis",
+        x_label: Optional[str] = None,
+        y_label: Optional[str] = None,
         size: tuple[float, float] | Literal["default"] = "default",
         x_lim: Optional[tuple[float, float]] = None,
         y_lim: Optional[tuple[float, float]] = None,
@@ -61,7 +61,7 @@ class Figure:
 
         Parameters
         ----------
-        x_label, y_label : str
+        x_label, y_label : str, optional
             The indentification for the x-axis and y-axis.
             Defaults to ``"x axis"`` and ``"y axis"``.
         x_lim, y_lim : tuple[float, float], optional
@@ -606,7 +606,7 @@ class TwinAxis:
     def __init__(
         self,
         is_y: bool = True,
-        label: str = None,
+        label: Optional[str] = None,
         log_scale: bool = False,
         axis_lim: Optional[tuple[float, float]] = None,
     ):
@@ -622,7 +622,7 @@ class TwinAxis:
         ----------
         is_y : bool
             If ``True``, the twin axis will be a y-axis, otherwise it will be an x-axis.
-        label : str
+        label : str, optional
             The identification for the twin axis.
         log_scale : bool
             Whether or not to set the scale of the twin axis to logaritmic scale.
