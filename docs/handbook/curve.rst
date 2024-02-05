@@ -106,16 +106,16 @@ There are a number of methods which can be used to perform calculus on a curve. 
 
 .. image:: images/curve_calculus.png
 
-The :meth:`~graphinglib.data_plotting_1d.Curve.area_between` method can be used to calculate the area under a curve between two x values (and shade it in if you want). The :meth:`~graphinglib.data_plotting_1d.Curve.slope_at` method can be used to calculate the slope of a curve at a given x value, and the :meth:`~graphinglib.data_plotting_1d.Curve.arc_length_between` method can be used to calculate the arc length of a curve between two x values. ::
+The :meth:`~graphinglib.data_plotting_1d.Curve.get_area_between` method can be used to calculate the area under a curve between two x values (and shade it in if you want). The :meth:`~graphinglib.data_plotting_1d.Curve.get_slope_at` method can be used to calculate the slope of a curve at a given x value, and the :meth:`~graphinglib.data_plotting_1d.Curve.get_arc_length_between` method can be used to calculate the arc length of a curve between two x values. ::
 
     curve_1 = gl.Curve.from_function(lambda x: x**3 - 4 * x + 15, -3, 2, label="Curve 1")
 
     # fill_under shades in the area under the curve
-    area = curve_1.area_between(-2, 1, fill_under=True)
+    area = curve_1.get_area_between(-2, 1, fill_under=True)
 
-    slope = curve_1.slope_at(0)
+    slope = curve_1.get_slope_at(0)
 
-    arc_length = curve_1.arc_length_between(0, 2)
+    arc_length = curve_1.get_arc_length_between(0, 2)
 
     print(f"Area under the curve between x = -2 and x = 1: {area}")
     print(f"Slope of the curve at x = 0: {slope}")
