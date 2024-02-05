@@ -599,7 +599,7 @@ class Curve:
         normal_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
         return normal_curve
 
-    def slope_at(self, x: float) -> float:
+    def get_slope_at(self, x: float) -> float:
         """
         Calculates the slope of the curve at a given x value.
 
@@ -614,7 +614,7 @@ class Curve:
         """
         return self.create_derivative_curve().get_coordinates_at_x(x)[1]
 
-    def arc_length_between(self, x1: float, x2: float) -> float:
+    def get_arc_length_between(self, x1: float, x2: float) -> float:
         """
         Calculates the arc length of the curve between two x values.
 
@@ -634,7 +634,7 @@ class Curve:
         y = f(x)
         return np.trapz(np.sqrt(1 + np.gradient(y, x) ** 2), x)
 
-    def area_between(
+    def get_area_between(
         self,
         x1: float,
         x2: float,

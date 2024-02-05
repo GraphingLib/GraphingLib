@@ -54,7 +54,7 @@ class Circle:
             point.y - self.y_center
         ) ** 2 <= self.radius**2
 
-    def area(self) -> float:
+    def get_area(self) -> float:
         """Returns the area of the circle.
 
         Returns
@@ -64,7 +64,7 @@ class Circle:
         """
         return np.pi * self.radius**2
 
-    def circumference(self) -> float:
+    def get_circumference(self) -> float:
         """Returns the circumference of the circle.
 
         Returns
@@ -93,16 +93,6 @@ class Circle:
             The center point of the circle.
         """
         return Point(self.x_center, self.y_center)
-
-    def get_equation(self) -> str:
-        """Returns the equation of the circle.
-
-        Returns
-        -------
-        str
-            The equation of the circle.
-        """
-        return f"(x - {self.x_center})^2 + (y - {self.y_center})^2 = {self.radius}^2"
 
     def get_coordinates_at_x(self, x: float) -> list[tuple[float, float]]:
         """Returns the coordinates on the circle at the specified x coordinate.
@@ -420,7 +410,7 @@ class Rectangle:
             self.y_bottom_left <= point.y <= self.y_bottom_left + self.height
         )
 
-    def area(self) -> float:
+    def get_area(self) -> float:
         """Returns the area of the rectangle.
 
         Returns
@@ -429,6 +419,16 @@ class Rectangle:
             The area of the rectangle.
         """
         return self.width * self.height
+
+    def get_perimeter(self) -> float:
+        """Returns the perimeter of the rectangle.
+
+        Returns
+        -------
+        float
+            The perimeter of the rectangle.
+        """
+        return 2 * (self.width + self.height)
 
     def get_center_coordinates(self) -> tuple[float, float] | Point:
         """Returns the center coordinates of the rectangle.
@@ -455,16 +455,6 @@ class Rectangle:
             self.x_bottom_left + self.width / 2,
             self.y_bottom_left + self.height / 2,
         )
-
-    def get_equation(self) -> str:
-        """Returns the equation of the rectangle.
-
-        Returns
-        -------
-        str
-            The equation of the rectangle.
-        """
-        return f"{self.x_bottom_left} <= x <= {self.x_bottom_left + self.width} and {self.y_bottom_left} <= y <= {self.y_bottom_left + self.height}"
 
     def get_coordinates_at_x(self, x: float) -> list[tuple[float, float]]:
         """Returns the coordinates on the rectangle at the specified x coordinate.

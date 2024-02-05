@@ -109,14 +109,14 @@ class TestCurve(unittest.TestCase):
         self.assertIsInstance(self.testCurve.create_normal_curve(0), Curve)
 
     def test_area_between(self):
-        self.assertAlmostEqual(self.testCurve.area_between(0, pi), 2, places=3)
+        self.assertAlmostEqual(self.testCurve.get_area_between(0, pi), 2, places=3)
 
     def test_slope_at(self):
-        self.assertAlmostEqual(self.testCurve.slope_at(pi / 2), 0, places=5)
+        self.assertAlmostEqual(self.testCurve.get_slope_at(pi / 2), 0, places=5)
 
     def test_arc_length_between(self):
         self.assertAlmostEqual(
-            self.testCurve.arc_length_between(0, pi), 3.820, places=3
+            self.testCurve.get_arc_length_between(0, pi), 3.820, places=3
         )
 
     def test_get_intersection_coordinates(self):

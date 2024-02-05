@@ -17,22 +17,22 @@ class TestCircle(unittest.TestCase):
             Circle(5, -8, -2)
 
     def test_circumference(self):
-        self.assertEqual(Circle(0, 0, 1).circumference(), 2 * 3.141592653589793)
-        self.assertEqual(Circle(0, 0, 2).circumference(), 4 * 3.141592653589793)
-        self.assertEqual(Circle(0, 0, 3).circumference(), 6 * 3.141592653589793)
+        self.assertEqual(Circle(0, 0, 1).get_circumference(), 2 * 3.141592653589793)
+        self.assertEqual(Circle(0, 0, 2).get_circumference(), 4 * 3.141592653589793)
+        self.assertEqual(Circle(0, 0, 3).get_circumference(), 6 * 3.141592653589793)
         # If circle is not centered at origin
-        self.assertEqual(Circle(1, 1, 1).circumference(), 2 * 3.141592653589793)
-        self.assertEqual(Circle(1, 1, 2).circumference(), 4 * 3.141592653589793)
-        self.assertEqual(Circle(1, 1, 3).circumference(), 6 * 3.141592653589793)
+        self.assertEqual(Circle(1, 1, 1).get_circumference(), 2 * 3.141592653589793)
+        self.assertEqual(Circle(1, 1, 2).get_circumference(), 4 * 3.141592653589793)
+        self.assertEqual(Circle(1, 1, 3).get_circumference(), 6 * 3.141592653589793)
 
     def test_area(self):
-        self.assertEqual(Circle(0, 0, 1).area(), 3.141592653589793)
-        self.assertEqual(Circle(0, 0, 2).area(), 4 * 3.141592653589793)
-        self.assertEqual(Circle(0, 0, 3).area(), 9 * 3.141592653589793)
+        self.assertEqual(Circle(0, 0, 1).get_area(), 3.141592653589793)
+        self.assertEqual(Circle(0, 0, 2).get_area(), 4 * 3.141592653589793)
+        self.assertEqual(Circle(0, 0, 3).get_area(), 9 * 3.141592653589793)
         # If circle is not centered at origin
-        self.assertEqual(Circle(1, 1, 1).area(), 3.141592653589793)
-        self.assertEqual(Circle(1, 1, 2).area(), 4 * 3.141592653589793)
-        self.assertEqual(Circle(1, 1, 3).area(), 9 * 3.141592653589793)
+        self.assertEqual(Circle(1, 1, 1).get_area(), 3.141592653589793)
+        self.assertEqual(Circle(1, 1, 2).get_area(), 4 * 3.141592653589793)
+        self.assertEqual(Circle(1, 1, 3).get_area(), 9 * 3.141592653589793)
 
     def test_contains(self):
         self.assertTrue(Point(0, 0) in Circle(0, 0, 1))
@@ -44,14 +44,6 @@ class TestCircle(unittest.TestCase):
         self.assertFalse(Point(1, -1) in Circle(0, 0, 1))
         self.assertFalse(Point(-1, 1) in Circle(0, 0, 1))
         self.assertFalse(Point(-1, -1) in Circle(0, 0, 1))
-
-    def test_get_equation(self):
-        self.assertEqual(Circle(0, 0, 1).get_equation(), "(x - 0)^2 + (y - 0)^2 = 1^2")
-        self.assertEqual(Circle(1, 1, 1).get_equation(), "(x - 1)^2 + (y - 1)^2 = 1^2")
-        self.assertEqual(Circle(2, 3, 1).get_equation(), "(x - 2)^2 + (y - 3)^2 = 1^2")
-        self.assertEqual(
-            Circle(2.5, 3.5, 1).get_equation(), "(x - 2.5)^2 + (y - 3.5)^2 = 1^2"
-        )
 
     def test_get_coordinates_at_x(self):
         self.assertListEqual(Circle(0, 0, 1).get_coordinates_at_x(0), [(0, 1), (0, -1)])
@@ -204,16 +196,16 @@ class TestRectangle(unittest.TestCase):
         self.assertFalse(Point(2, 2) in Rectangle(0, 0, 1, 1))
 
     def test_area(self):
-        self.assertEqual(Rectangle(0, 0, 1, 1).area(), 1)
-        self.assertEqual(Rectangle(0, 0, 2, 1).area(), 2)
-        self.assertEqual(Rectangle(0, 0, 1, 2).area(), 2)
-        self.assertEqual(Rectangle(0, 0, 2, 2).area(), 4)
-        self.assertEqual(Rectangle(0, 0, 3, 2).area(), 6)
-        self.assertEqual(Rectangle(0, 0, 2, 3).area(), 6)
-        self.assertEqual(Rectangle(0, 0, 3, 3).area(), 9)
-        self.assertEqual(Rectangle(0, 0, 4, 3).area(), 12)
-        self.assertEqual(Rectangle(0, 0, 3, 4).area(), 12)
-        self.assertEqual(Rectangle(0, 0, 4, 4).area(), 16)
+        self.assertEqual(Rectangle(0, 0, 1, 1).get_area(), 1)
+        self.assertEqual(Rectangle(0, 0, 2, 1).get_area(), 2)
+        self.assertEqual(Rectangle(0, 0, 1, 2).get_area(), 2)
+        self.assertEqual(Rectangle(0, 0, 2, 2).get_area(), 4)
+        self.assertEqual(Rectangle(0, 0, 3, 2).get_area(), 6)
+        self.assertEqual(Rectangle(0, 0, 2, 3).get_area(), 6)
+        self.assertEqual(Rectangle(0, 0, 3, 3).get_area(), 9)
+        self.assertEqual(Rectangle(0, 0, 4, 3).get_area(), 12)
+        self.assertEqual(Rectangle(0, 0, 3, 4).get_area(), 12)
+        self.assertEqual(Rectangle(0, 0, 4, 4).get_area(), 16)
 
     def test_get_center_coordinates(self):
         self.assertEqual(Rectangle(0, 0, 1, 1).get_center_coordinates(), (0.5, 0.5))
@@ -236,21 +228,6 @@ class TestRectangle(unittest.TestCase):
         center_point = rect.create_center_point()
         self.assertEqual(center_point.x, 1)
         self.assertEqual(center_point.y, 0.5)
-
-    def test_get_equation(self):
-        self.assertEqual(
-            Rectangle(0, 0, 1, 1).get_equation(), "0 <= x <= 1 and 0 <= y <= 1"
-        )
-        self.assertEqual(
-            Rectangle(1, 1, 1, 1).get_equation(), "1 <= x <= 2 and 1 <= y <= 2"
-        )
-        self.assertEqual(
-            Rectangle(2, 3, 1, 1).get_equation(), "2 <= x <= 3 and 3 <= y <= 4"
-        )
-        self.assertEqual(
-            Rectangle(2.5, 3.5, 1, 1).get_equation(),
-            "2.5 <= x <= 3.5 and 3.5 <= y <= 4.5",
-        )
 
     def test_get_coordinates_at_x(self):
         self.assertListEqual(

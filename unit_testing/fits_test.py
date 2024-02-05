@@ -20,9 +20,7 @@ class TestFitFromPolynomial(unittest.TestCase):
     def setUp(self):
         x = linspace(-3, 3 * pi, 200)
         self.scatter_first_degree = Scatter(x, 3 * x + 2, "k", "Test Curve")
-        self.scatter_second_degree = Scatter(
-            x, 4 * x**2 - 3 * x - 2, "k", "Test Curve"
-        )
+        self.scatter_second_degree = Scatter(x, 4 * x**2 - 3 * x - 2, "k", "Test Curve")
         self.fit_first_degree = FitFromPolynomial(
             self.scatter_first_degree, 1, "k", "First degree fit"
         )
@@ -113,21 +111,23 @@ class TestFitFromPolynomial(unittest.TestCase):
         self.assertIsInstance(self.fit_second_degree.create_normal_curve(0), Curve)
 
     def test_area_between(self):
-        self.assertAlmostEqual(self.fit_first_degree.area_between(0, 1), 3.5, places=3)
         self.assertAlmostEqual(
-            self.fit_second_degree.area_between(0, 1), -13 / 6, places=3
+            self.fit_first_degree.get_area_between(0, 1), 3.5, places=3
+        )
+        self.assertAlmostEqual(
+            self.fit_second_degree.get_area_between(0, 1), -13 / 6, places=3
         )
 
     def test_slope_at(self):
-        self.assertAlmostEqual(self.fit_first_degree.slope_at(0), 3, places=5)
-        self.assertAlmostEqual(self.fit_second_degree.slope_at(0), -3, places=5)
+        self.assertAlmostEqual(self.fit_first_degree.get_slope_at(0), 3, places=5)
+        self.assertAlmostEqual(self.fit_second_degree.get_slope_at(0), -3, places=5)
 
     def test_arc_length_between(self):
         self.assertAlmostEqual(
-            self.fit_first_degree.arc_length_between(0, 1), np.sqrt(10), places=3
+            self.fit_first_degree.get_arc_length_between(0, 1), np.sqrt(10), places=3
         )
         self.assertAlmostEqual(
-            self.fit_second_degree.arc_length_between(0, 1), 2.44455, places=2
+            self.fit_second_degree.get_arc_length_between(0, 1), 2.44455, places=2
         )
 
 
@@ -197,14 +197,16 @@ class TestFitFromSine(unittest.TestCase):
         self.assertIsInstance(self.fit.create_normal_curve(0), Curve)
 
     def test_area_between(self):
-        self.assertAlmostEqual(self.fit.area_between(0, np.pi / 2), 7.9228, places=3)
+        self.assertAlmostEqual(
+            self.fit.get_area_between(0, np.pi / 2), 7.9228, places=3
+        )
 
     def test_slope_at(self):
-        self.assertAlmostEqual(self.fit.slope_at(np.pi), -6 * np.cos(4), places=2)
+        self.assertAlmostEqual(self.fit.get_slope_at(np.pi), -6 * np.cos(4), places=2)
 
     def test_arc_length_between(self):
         self.assertAlmostEqual(
-            self.fit.arc_length_between(0, np.pi / 2), 5.538, places=2
+            self.fit.get_arc_length_between(0, np.pi / 2), 5.538, places=2
         )
 
 
@@ -260,17 +262,17 @@ class TestFitFromExponential(unittest.TestCase):
         self.assertIsInstance(self.fit.create_normal_curve(0), Curve)
 
     def test_area_between(self):
-        self.assertAlmostEqual(self.fit.area_between(0, 1), 694.69, places=0)
+        self.assertAlmostEqual(self.fit.get_area_between(0, 1), 694.69, places=0)
 
     def test_slope_at(self):
         self.assertAlmostEqual(
-            self.fit.slope_at(0.5),
+            self.fit.get_slope_at(0.5),
             1468.15,
             places=-1,
         )
 
     def test_arc_length_between(self):
-        self.assertAlmostEqual(self.fit.arc_length_between(0, 1), 2084.07, places=0)
+        self.assertAlmostEqual(self.fit.get_arc_length_between(0, 1), 2084.07, places=0)
 
 
 class TestFitFromGaussian(unittest.TestCase):
@@ -327,17 +329,17 @@ class TestFitFromGaussian(unittest.TestCase):
         self.assertIsInstance(self.fit.create_normal_curve(0), Curve)
 
     def test_area_between(self):
-        self.assertAlmostEqual(self.fit.area_between(0, 1), 4.27812, places=3)
+        self.assertAlmostEqual(self.fit.get_area_between(0, 1), 4.27812, places=3)
 
     def test_slope_at(self):
         self.assertAlmostEqual(
-            self.fit.slope_at(0),
+            self.fit.get_slope_at(0),
             5 / np.sqrt(np.e),
             places=2,
         )
 
     def test_arc_length_between(self):
-        self.assertAlmostEqual(self.fit.arc_length_between(0, 1), 2.27338, places=3)
+        self.assertAlmostEqual(self.fit.get_arc_length_between(0, 1), 2.27338, places=3)
 
 
 class TestFitFromSquareRoot(unittest.TestCase):
@@ -391,17 +393,17 @@ class TestFitFromSquareRoot(unittest.TestCase):
         self.assertIsInstance(self.fit.create_normal_curve(0), Curve)
 
     def test_area_between(self):
-        self.assertAlmostEqual(self.fit.area_between(0, 1), 11.361, places=3)
+        self.assertAlmostEqual(self.fit.get_area_between(0, 1), 11.361, places=3)
 
     def test_slope_at(self):
         self.assertAlmostEqual(
-            self.fit.slope_at(0),
+            self.fit.get_slope_at(0),
             3 / 4,
             places=4,
         )
 
     def test_arc_length_between(self):
-        self.assertAlmostEqual(self.fit.arc_length_between(0, 1), 1.2255, places=4)
+        self.assertAlmostEqual(self.fit.get_arc_length_between(0, 1), 1.2255, places=4)
 
 
 class TestFitFromLog(unittest.TestCase):
@@ -457,17 +459,17 @@ class TestFitFromLog(unittest.TestCase):
         self.assertIsInstance(self.fit.create_normal_curve(0), Curve)
 
     def test_area_between(self):
-        self.assertAlmostEqual(self.fit.area_between(1, 2), 7.004, places=4)
+        self.assertAlmostEqual(self.fit.get_area_between(1, 2), 7.004, places=4)
 
     def test_slope_at(self):
         self.assertAlmostEqual(
-            self.fit.slope_at(1),
+            self.fit.get_slope_at(1),
             0.5,
             places=4,
         )
 
     def test_arc_length_between(self):
-        self.assertAlmostEqual(self.fit.arc_length_between(1, 2), 1.0954, places=4)
+        self.assertAlmostEqual(self.fit.get_arc_length_between(1, 2), 1.0954, places=4)
 
 
 class TestFitFromFunction(unittest.TestCase):
@@ -511,14 +513,14 @@ class TestFitFromFunction(unittest.TestCase):
         self.assertIsInstance(self.fit.create_normal_curve(2), Curve)
 
     def test_area_between(self):
-        self.assertAlmostEqual(self.fit.area_between(1, 2), 5.1931, places=3)
+        self.assertAlmostEqual(self.fit.get_area_between(1, 2), 5.1931, places=3)
 
     def test_slope_at(self):
         self.assertAlmostEqual(
-            self.fit.slope_at(1),
+            self.fit.get_slope_at(1),
             2,
             places=1,
         )
 
     def test_arc_length_between(self):
-        self.assertAlmostEqual(self.fit.arc_length_between(1, 2), 2.6937, places=3)
+        self.assertAlmostEqual(self.fit.get_arc_length_between(1, 2), 2.6937, places=3)
