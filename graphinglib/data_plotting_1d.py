@@ -33,7 +33,7 @@ class Fit(Protocol):
     ) -> None:
         pass
 
-    def calculate_residuals(self) -> np.ndarray:
+    def get_residuals(self) -> np.ndarray:
         pass
 
 
@@ -1473,7 +1473,7 @@ class Histogram:
         -------
         A :class:`~graphinglib.data_plotting_1d.Histogram` object created from the residuals of a fit.
         """
-        residuals = fit.calculate_residuals()
+        residuals = fit.get_residuals()
         return cls(
             residuals,
             number_of_bins,

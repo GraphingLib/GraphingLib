@@ -216,7 +216,7 @@ class GeneralFit(Curve):
         )
         if self._res_curves_to_be_plotted:
             y_fit = self.y_data
-            residuals = self.calculate_residuals()
+            residuals = self.get_residuals()
             std = np.std(residuals)
             y_fit_plus_std = y_fit + (self.res_sigma_multiplier * std)
             y_fit_minus_std = y_fit - (self.res_sigma_multiplier * std)
@@ -283,7 +283,7 @@ class GeneralFit(Curve):
         self.res_line_width = line_width
         self.res_line_style = line_style
 
-    def calculate_residuals(self) -> np.ndarray:
+    def get_residuals(self) -> np.ndarray:
         """
         Calculates the residuals of the fit curve.
 
@@ -296,7 +296,7 @@ class GeneralFit(Curve):
         residuals = y_data - self.curve_to_be_fit.y_data
         return residuals
 
-    def calculate_Rsquared(self) -> float:
+    def get_Rsquared(self) -> float:
         """
         Calculates the :math:`R^2` value of the fit curve.
 
@@ -306,7 +306,7 @@ class GeneralFit(Curve):
             :math:`R^2` value
         """
         Rsquared = 1 - (
-            np.sum(self.calculate_residuals() ** 2)
+            np.sum(self.get_residuals() ** 2)
             / np.sum(
                 (self.curve_to_be_fit.y_data - np.mean(self.curve_to_be_fit.y_data))
                 ** 2
@@ -394,7 +394,7 @@ class FitFromPolynomial(GeneralFit):
         standard_deviation : np.ndarray
             Standard deviation of the coefficients of the polynomial fit (same order as coeffs).
         function : Callable
-            Polynomial function with the parameters of the fit.s of the fit.
+            Polynomial function with the parameters of the fit.
         """
         self.curve_to_be_fit = curve_to_be_fit
         inversed_coeffs, inversed_cov_matrix = np.polyfit(
@@ -472,6 +472,50 @@ class FitFromPolynomial(GeneralFit):
         return lambda x: sum(
             coeff * x**exponent for exponent, coeff in enumerate(self.coeffs)
         )
+
+    def get_coeffs(self) -> np.ndarray:
+        """
+        Returns the coefficients of the polynomial fit.
+
+        Returns
+        -------
+        coeffs : np.ndarray
+            Coefficients of the polynomial fit. The first element is the coefficient of the lowest order term (constant term).
+        """
+        return self.coeffs
+
+    def get_cov_matrix(self) -> np.ndarray:
+        """
+        Returns the covariance matrix of the polynomial fit.
+
+        Returns
+        -------
+        cov_matrix : np.ndarray
+            Covariance matrix of the polynomial fit (using the same order as the coeffs attribute).
+        """
+        return self.cov_matrix
+
+    def get_standard_deviation(self) -> np.ndarray:
+        """
+        Returns the standard deviation of the coefficients of the polynomial fit.
+
+        Returns
+        -------
+        standard_deviation : np.ndarray
+            Standard deviation of the coefficients of the polynomial fit (same order as coeffs).
+        """
+        return self.standard_deviation
+
+    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
+        """
+        Returns the polynomial function with the parameters of the fit.
+
+        Returns
+        -------
+        function : Callable
+            Polynomial function with the parameters of the fit.
+        """
+        return self.function
 
 
 class FitFromSine(GeneralFit):
@@ -596,7 +640,9 @@ class FitFromSine(GeneralFit):
         """
         part1 = f"{self.amplitude:.3f} \sin({self.frequency_rad:.3f}x"
         part2 = (
-            f" + {self.phase:.3f})" if self.phase >= 0 else f" - {abs(self.phase):.3f})"
+            f" + {self.phase_rad:.3f})"
+            if self.phase_rad >= 0
+            else f" - {abs(self.phase_rad):.3f})"
         )
         part3 = (
             f" + {self.vertical_shift:.3f}"
@@ -615,7 +661,9 @@ class FitFromSine(GeneralFit):
             self.curve_to_be_fit.y_data,
             p0=self.guesses,
         )
-        self.amplitude, self.frequency_rad, self.phase, self.vertical_shift = parameters
+        self.amplitude, self.frequency_rad, self.phase_rad, self.vertical_shift = (
+            parameters
+        )
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
 
     @staticmethod
@@ -635,13 +683,113 @@ class FitFromSine(GeneralFit):
 
         Returns
         -------
-        function : Callable
+        Callable
             Sine function with the parameters of the fit.
         """
         return (
-            lambda x: self.amplitude * np.sin(self.frequency_rad * x + self.phase)
+            lambda x: self.amplitude * np.sin(self.frequency_rad * x + self.phase_rad)
             + self.vertical_shift
         )
+
+    def get_amplitude(self) -> float:
+        """
+        Returns the amplitude of the sine function.
+
+        Returns
+        -------
+        float
+            Amplitude of the sine function.
+        """
+        return self.amplitude
+
+    def get_frequency(self, in_rad: bool = True) -> float:
+        """
+        Returns the frequency of the sine function.
+
+        Parameters
+        ----------
+        in_rad : bool, optional
+            If True, returns the frequency in radians. If False, returns the frequency in Hz.
+            Default is True.
+
+        Returns
+        -------
+        float
+            Frequency of the sine function in radians.
+        """
+        return self.frequency_rad if in_rad else np.degrees(self.frequency_rad)
+
+    def get_phase(self, in_rad: bool = True) -> float:
+        """
+        Returns the phase of the sine function.
+
+        Parameters
+        ----------
+        in_rad : bool, optional
+            If True, returns the phase in radians. If False, returns the phase in degrees.
+            Default is True.
+
+        Returns
+        -------
+        float
+            Phase of the sine function.
+        """
+        return self.phase_rad if in_rad else np.degrees(self.phase_rad)
+
+    def get_vertical_shift(self) -> float:
+        """
+        Returns the vertical shift of the sine function.
+
+        Returns
+        -------
+        float
+            Vertical shift of the sine function.
+        """
+        return self.vertical_shift
+
+    def get_cov_matrix(self) -> np.ndarray:
+        """
+        Returns the covariance matrix of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Covariance matrix of the parameters of the fit.
+        """
+        return self.cov_matrix
+
+    def get_standard_deviation(self) -> np.ndarray:
+        """
+        Returns the standard deviation of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Standard deviation of the parameters of the fit.
+        """
+        return self.standard_deviation
+
+    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
+        """
+        Returns the sine function with the parameters of the fit.
+
+        Returns
+        -------
+        Callable
+            Sine function with the parameters of the fit.
+        """
+        return self.function
+
+    def get_parameters(self) -> list[float]:
+        """
+        Returns the parameters of the fit.
+
+        Returns
+        -------
+        list[float]
+            Parameters of the fit (amplitude, frequency (rad), phase, vertical shift)
+        """
+        return [self.amplitude, self.frequency_rad, self.phase_rad, self.vertical_shift]
 
 
 class FitFromExponential(GeneralFit):
@@ -788,6 +936,50 @@ class FitFromExponential(GeneralFit):
         return lambda x: self.parameters[0] * np.exp(
             self.parameters[1] * x + self.parameters[2]
         )
+
+    def get_parameters(self) -> np.ndarray:
+        """
+        Returns the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Parameters of the fit (same order as guesses).
+        """
+        return self.parameters
+
+    def get_cov_matrix(self) -> np.ndarray:
+        """
+        Returns the covariance matrix of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Covariance matrix of the parameters of the fit.
+        """
+        return self.cov_matrix
+
+    def get_standard_deviation(self) -> np.ndarray:
+        """
+        Returns the standard deviation of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Standard deviation of the parameters of the fit.
+        """
+        return self.standard_deviation
+
+    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
+        """
+        Returns the exponential function with the parameters of the fit.
+
+        Returns
+        -------
+        function : Callable
+            Exponential function with the parameters of the fit.
+        """
+        return self.function
 
 
 class FitFromGaussian(GeneralFit):
@@ -956,6 +1148,83 @@ class FitFromGaussian(GeneralFit):
             -(((x - self.mean) / self.standard_deviation) ** 2) / 2
         )
 
+    def get_amplitude(self) -> float:
+        """
+        Returns the amplitude of the gaussian function.
+
+        Returns
+        -------
+        float
+            Amplitude of the gaussian function.
+        """
+        return self.amplitude
+
+    def get_mean(self) -> float:
+        """
+        Returns the mean of the gaussian function.
+
+        Returns
+        -------
+        float
+            Mean of the gaussian function.
+        """
+        return self.mean
+
+    def get_standard_deviation(self) -> float:
+        """
+        Returns the standard deviation of the gaussian function.
+
+        Returns
+        -------
+        float
+            Standard deviation of the gaussian function.
+        """
+        return self.standard_deviation
+
+    def get_cov_matrix(self) -> np.ndarray:
+        """
+        Returns the covariance matrix of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Covariance matrix of the parameters of the fit.
+        """
+        return self.cov_matrix
+
+    def get_standard_deviation_of_fit_params(self) -> np.ndarray:
+        """
+        Returns the standard deviation of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Standard deviation of the parameters of the fit.
+        """
+        return self.standard_deviation_of_fit_params
+
+    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
+        """
+        Returns the gaussian function with the parameters of the fit.
+
+        Returns
+        -------
+        function : Callable
+            Gaussian function with the parameters of the fit.
+        """
+        return self.function
+
+    def get_parameters(self) -> list[float]:
+        """
+        Returns the parameters of the fit.
+
+        Returns
+        -------
+        list[float]
+            Parameters of the fit (amplitude, mean, standard deviation)
+        """
+        return [self.amplitude, self.mean, self.standard_deviation]
+
 
 class FitFromSquareRoot(GeneralFit):
     """
@@ -1104,6 +1373,50 @@ class FitFromSquareRoot(GeneralFit):
             lambda x: self.parameters[0] * np.sqrt(x + self.parameters[1])
             + self.parameters[2]
         )
+
+    def get_parameters(self) -> np.ndarray:
+        """
+        Returns the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Parameters of the fit (same order as guesses).
+        """
+        return self.parameters
+
+    def get_cov_matrix(self) -> np.ndarray:
+        """
+        Returns the covariance matrix of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Covariance matrix of the parameters of the fit.
+        """
+        return self.cov_matrix
+
+    def get_standard_deviation(self) -> np.ndarray:
+        """
+        Returns the standard deviation of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Standard deviation of the parameters of the fit.
+        """
+        return self.standard_deviation
+
+    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
+        """
+        Returns the square root function with the parameters of the fit.
+
+        Returns
+        -------
+        function : Callable
+            Square root function with the parameters of the fit.
+        """
+        return self.function
 
 
 class FitFromLog(GeneralFit):
@@ -1261,6 +1574,50 @@ class FitFromLog(GeneralFit):
             + self.parameters[2]
         )
 
+    def get_parameters(self) -> np.ndarray:
+        """
+        Returns the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Parameters of the fit (same order as guesses).
+        """
+        return self.parameters
+
+    def get_cov_matrix(self) -> np.ndarray:
+        """
+        Returns the covariance matrix of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Covariance matrix of the parameters of the fit.
+        """
+        return self.cov_matrix
+
+    def get_standard_deviation(self) -> np.ndarray:
+        """
+        Returns the standard deviation of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Standard deviation of the parameters of the fit.
+        """
+        return self.standard_deviation
+
+    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
+        """
+        Returns the logarithmic function with the parameters of the fit.
+
+        Returns
+        -------
+        function : Callable
+            Logarithmic function with the parameters of the fit.
+        """
+        return self.function
+
 
 class FitFromFunction(GeneralFit):
     """
@@ -1398,3 +1755,49 @@ class FitFromFunction(GeneralFit):
             argument_names[i]: self.parameters[i] for i in range(len(argument_names))
         }
         return partial(self._function_template, **args_dict)
+
+    def get_parameters(self) -> np.ndarray:
+        """
+        Returns the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Parameters of the fit (same order as guesses).
+        """
+        return self.parameters
+    
+    def get_cov_matrix(self) -> np.ndarray:
+        """
+        Returns the covariance matrix of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Covariance matrix of the parameters of the fit.
+        """
+        return self.cov_matrix
+    
+    def get_standard_deviation(self) -> np.ndarray:
+        """
+        Returns the standard deviation of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Standard deviation of the parameters of the fit.
+        """
+        return self.standard_deviation
+    
+    def get_function(self) -> Callable:
+        """
+        Returns the function with the parameters of the fit.
+
+        Returns
+        -------
+        function : Callable
+            Function
+        """
+        return self.function
+    
+    

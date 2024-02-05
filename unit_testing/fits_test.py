@@ -144,7 +144,7 @@ class TestFitFromSine(unittest.TestCase):
             [
                 self.fit.amplitude,
                 self.fit.frequency_rad,
-                self.fit.phase,
+                self.fit.phase_rad,
                 self.fit.vertical_shift,
             ],
             [2, 3, 4, 5],
