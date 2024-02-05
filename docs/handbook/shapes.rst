@@ -74,14 +74,14 @@ There are many useful methods which can be used with Rectangles. For example, yo
 
     print(point in rect)  # True
 
-You can get the area of a Rectangle and a string representation of its equation: ::
+You can get the area and perimeter of a Rectangle: ::
 
     import graphinglib as gl
 
     rect = gl.Rectangle(x_bottom_left=0, y_bottom_left=0, width=10, height=10)
 
-    print(rect.area)  # 100
-    print(rect.equation)  # 0 <= x <= 10 and 0 <= y <= 10
+    print(rect.get_area())  # 100
+    print(rect.get_perimeter())  # 40
 
 You can also get Point objects or coordinates out of a Rectangle, like the center point, or the two points at a given x or y value: ::
 
@@ -153,9 +153,8 @@ As with Rectangles, there are also many useful methods which can be used with Ci
 
     circle = gl.Circle(x_center=0, y_center=0, radius=1)
 
-    print(circle.area()) # 3.141592653589793
-    print(circle.circumference()) # 6.283185307179586
-    print(circle.get_equation())  # (x - 0)^2 + (y - 0)^2 = 1^2
+    print(circle.get_area()) # 3.141592653589793
+    print(circle.get_circumference()) # 6.283185307179586
 
     point = gl.Point(5, 5)
     print(point in circle)  # False

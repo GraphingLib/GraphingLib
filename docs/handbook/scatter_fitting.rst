@@ -157,9 +157,10 @@ Here is an example of fitting a sine function to some data:
     # Frequency is the most important parameter to get close to the actual value
     scatter = gl.Scatter(x, y, label="Noisy sine")
     fit = gl.FitFromSine(scatter, label="Fit", guesses=(1, 2.2, 1, 1))
+    all_params = fit.get_parameters()
     print(f"Amplitude: {fit.amplitude:.3f}")
     print(f"Frequency: {fit.frequency_rad:.3f}")
-    print(f"Phase: {fit.phase:.3f}")
+    print(f"Phase: {fit.phase_rad:.3f}")
     print(f"Vertical shift: {fit.vertical_shift:.3f}")
 
     fig = gl.Figure(y_lim=(0.5, 10.7))
