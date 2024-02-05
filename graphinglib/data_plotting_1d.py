@@ -8,7 +8,6 @@ import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
-from requests import get
 from scipy.interpolate import interp1d
 
 from .graph_elements import Point
@@ -1541,12 +1540,16 @@ class Histogram:
         Plots the element in the specified axes.
         """
         params = {
-            "facecolor": to_rgba(self.face_color, self.alpha)
-            if self.face_color != "default" and self.alpha != "default"
-            else "default",
-            "edgecolor": to_rgba(self.edge_color, 1)
-            if self.edge_color != "default"
-            else self.edge_color,
+            "facecolor": (
+                to_rgba(self.face_color, self.alpha)
+                if self.face_color != "default" and self.alpha != "default"
+                else "default"
+            ),
+            "edgecolor": (
+                to_rgba(self.edge_color, 1)
+                if self.edge_color != "default"
+                else self.edge_color
+            ),
             "linewidth": self.line_width,
         }
         params = {k: v for k, v in params.items() if v != "default"}
@@ -1555,12 +1558,16 @@ class Histogram:
             **params,
         )
         params = {
-            "facecolor": to_rgba(self.face_color, self.alpha)
-            if self.face_color != "default" and self.alpha != "default"
-            else "default",
-            "edgecolor": to_rgba(self.edge_color, 1)
-            if self.edge_color != "default"
-            else self.edge_color,
+            "facecolor": (
+                to_rgba(self.face_color, self.alpha)
+                if self.face_color != "default" and self.alpha != "default"
+                else "default"
+            ),
+            "edgecolor": (
+                to_rgba(self.edge_color, 1)
+                if self.edge_color != "default"
+                else self.edge_color
+            ),
             "histtype": self.hist_type,
             "linewidth": self.line_width,
             "density": self.normalize,
