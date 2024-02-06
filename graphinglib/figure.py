@@ -1,6 +1,6 @@
+from shutil import which
 from typing import Any, Literal, Optional
 from warnings import warn
-from shutil import which
 
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
@@ -104,9 +104,9 @@ class Figure:
         self._twin_x_axis = None
         self._twin_y_axis = None
 
-    def add_element(self, *elements: Plottable) -> None:
+    def add_elements(self, *elements: Plottable) -> None:
         """
-        Adds a :class:`~graphinglib.graph_elements.Plottable` element to the :class:`~graphinglib.figure.Figure`.
+        Adds one or more :class:`~graphinglib.graph_elements.Plottable` elements to the :class:`~graphinglib.figure.Figure`.
 
         Parameters
         ----------
@@ -250,7 +250,7 @@ class Figure:
         self._rc_dict = {}
         return temp_labels, temp_handles
 
-    def display(self, legend: bool = True) -> None:
+    def show(self, legend: bool = True) -> None:
         """
         Displays the :class:`~graphinglib.figure.Figure`.
 
@@ -339,7 +339,7 @@ class Figure:
                 "default",
             )
 
-    def update_rc_params(
+    def set_rc_params(
         self,
         rc_params_dict: dict[str, str | float] = {},
         reset: bool = False,
@@ -363,7 +363,7 @@ class Figure:
         for property, value in rc_params_dict.items():
             self._user_rc_dict[property] = value
 
-    def customize_visual_style(
+    def set_visual_params(
         self,
         reset: bool = False,
         figure_face_color: str | None = None,
@@ -481,7 +481,7 @@ class Figure:
         rc_params_dict = {
             key: value for key, value in rc_params_dict.items() if value is not None
         }
-        self.update_rc_params(rc_params_dict, reset=reset)
+        self.set_rc_params(rc_params_dict, reset=reset)
 
     def _fill_in_rc_params(self):
         """
@@ -758,9 +758,9 @@ class TwinAxis:
         self._ticklabels = ticklabels
         self._ticklabels_rotation = ticklabels_rotation
 
-    def add_element(self, *elements: Plottable) -> None:
+    def add_elements(self, *elements: Plottable) -> None:
         """
-        Adds a :class:`~graphinglib.graph_elements.Plottable` element to the :class:`~graphinglib.figure.Figure`.
+        Adds one or more :class:`~graphinglib.graph_elements.Plottable` elements to the :class:`~graphinglib.figure.Figure`.
 
         Parameters
         ----------
@@ -770,7 +770,7 @@ class TwinAxis:
         for element in elements:
             self._elements.append(element)
 
-    def customize_visual_style(
+    def set_visual_params(
         self,
         axes_label_color: str | None = None,
         tick_color: str | None = None,

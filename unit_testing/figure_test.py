@@ -27,31 +27,31 @@ class TestFigure(unittest.TestCase):
         self.assertIsInstance(self.testFigure._handles, list)
 
     def test_add_element(self):
-        self.testFigure.add_element(self.testCurve)
+        self.testFigure.add_elements(self.testCurve)
         self.assertIs(self.testFigure._elements[0], self.testCurve)
         # Test if adding multiple elements works
         other_curve = Curve(self.testCurve.x_data, self.testCurve.y_data, "Other Curve")
         other_other_curve = Curve(
             self.testCurve.x_data, self.testCurve.y_data, "Other Other Curve"
         )
-        self.testFigure.add_element(other_curve, other_other_curve)
+        self.testFigure.add_elements(other_curve, other_other_curve)
         self.assertTrue(len(self.testFigure._elements), 3)
 
     def test_all_curves_plotted(self):
-        self.testFigure.add_element(self.testCurve)
+        self.testFigure.add_elements(self.testCurve)
         self.testFigure._prepare_figure()
         self.assertEqual(
             len(self.testFigure._axes.get_lines()), len(self.testFigure._elements)
         )
 
     def test_raise_exception_if_no_curve_added(self):
-        self.assertRaises(GraphingException, self.testFigure.display)
+        self.assertRaises(GraphingException, self.testFigure.show)
 
     def test_auto_assign_default_params(self):
         x = linspace(0, 3 * pi, 200)
         a_curve = Curve(x, sin(x), label="Test Curve")
         a_figure = Figure()
-        a_figure.add_element(a_curve)
+        a_figure.add_elements(a_curve)
         a_figure.default_params = self.plainDefaults
         a_figure._fill_in_missing_params(a_curve)
         self.assertEqual(a_curve.line_width, 2)
@@ -60,7 +60,7 @@ class TestFigure(unittest.TestCase):
         x = linspace(0, 3 * pi, 200)
         a_curve = Curve(x, sin(x), label="Test Curve")
         a_figure = Figure(figure_style="horrible")
-        a_figure.add_element(a_curve)
+        a_figure.add_elements(a_curve)
         a_figure.default_params = self.horribleDefaults
         a_figure._fill_in_missing_params(a_curve)
         self.assertEqual(a_curve.line_width, 10)
@@ -69,14 +69,14 @@ class TestFigure(unittest.TestCase):
         x = linspace(0, 3 * pi, 200)
         a_curve = Curve(x, sin(x), label="Test Curve", line_width=3)
         a_figure = Figure()
-        a_figure.add_element(a_curve)
+        a_figure.add_elements(a_curve)
         a_figure.default_params = self.plainDefaults
         a_figure._fill_in_missing_params(a_curve)
         self.assertEqual(a_curve.line_width, 3)
 
     def test_assign_figure_params_horrible(self):
         a_figure = Figure(figure_style="horrible")
-        a_figure.add_element(self.testCurve)
+        a_figure.add_elements(self.testCurve)
         a_figure.default_params = self.horribleDefaults
         a_figure._fill_in_missing_params(a_figure)
         self.assertListEqual(list(a_figure.size), [10, 7])
@@ -87,22 +87,22 @@ class TestFigure(unittest.TestCase):
 
     def test_element_defaults_are_reset(self):
         self.testCurve.line_width = "default"
-        self.testFigure.add_element(self.testCurve)
+        self.testFigure.add_elements(self.testCurve)
         self.testFigure._prepare_figure()
         self.assertEqual(self.testCurve.line_width, "default")
         self.testFigure._fill_in_missing_params(self.testCurve)
         self.assertEqual(self.testCurve.line_width, 2)
 
     def test_handles_and_labels_cleared(self):
-        self.testFigure.add_element(self.testCurve)
+        self.testFigure.add_elements(self.testCurve)
         self.testFigure._prepare_figure()
         self.assertEqual(len(self.testFigure._handles), 0)
         self.assertEqual(len(self.testFigure._labels), 0)
 
     def test_handles_and_labels_added(self):
-        self.testFigure.add_element(self.testCurve)
+        self.testFigure.add_elements(self.testCurve)
         other_curve = Curve(self.testCurve.x_data, self.testCurve.y_data, "Other Curve")
-        self.testFigure.add_element(other_curve)
+        self.testFigure.add_elements(other_curve)
         self.testFigure._prepare_figure()
         handles, labels = self.testFigure._axes.get_legend_handles_labels()
         self.assertEqual(len(handles), 2)
@@ -116,7 +116,7 @@ class TestFigure(unittest.TestCase):
 
     def test_fill_in_rc_params_gl(self):
         a_figure = Figure()
-        a_figure.customize_visual_style(legend_edge_color="red")
+        a_figure.set_visual_params(legend_edge_color="red")
         # Get default params for dim style
         a_figure.default_params = {
             "rc_params": {
@@ -139,13 +139,13 @@ class TestFigure(unittest.TestCase):
             "axes.labelsize": 10,
             "axes.titlesize": 10,
         }
-        a_figure.update_rc_params(params)
+        a_figure.set_rc_params(params)
         self.assertDictEqual(a_figure._user_rc_dict, params)
         more_params = {
             "lines.linewidth": 3,
             "axes.grid": True,
         }
-        a_figure.update_rc_params(more_params)
+        a_figure.set_rc_params(more_params)
         resulting_params = {
             "lines.linewidth": 3,
             "axes.labelsize": 10,
@@ -161,13 +161,13 @@ class TestFigure(unittest.TestCase):
             "axes.labelsize": 10,
             "axes.titlesize": 10,
         }
-        a_figure.update_rc_params(params)
-        a_figure.update_rc_params({"lines.linewidth": 3}, reset=True)
+        a_figure.set_rc_params(params)
+        a_figure.set_rc_params({"lines.linewidth": 3}, reset=True)
         self.assertDictEqual(a_figure._user_rc_dict, {"lines.linewidth": 3})
 
     def test_customize_visual_style(self):
         a_figure = Figure()
-        a_figure.customize_visual_style(
+        a_figure.set_visual_params(
             figure_face_color="red", axes_face_color="blue", grid_line_style="dashed"
         )
         self.assertDictEqual(
@@ -178,7 +178,7 @@ class TestFigure(unittest.TestCase):
                 "grid.linestyle": "dashed",
             },
         )
-        a_figure.customize_visual_style(
+        a_figure.set_visual_params(
             axes_face_color="yellow", grid_line_style="dotted", x_tick_color="green"
         )
         self.assertDictEqual(
@@ -193,23 +193,23 @@ class TestFigure(unittest.TestCase):
 
     def test_customize_visual_style_reset(self):
         a_figure = Figure()
-        a_figure.customize_visual_style(
+        a_figure.set_visual_params(
             figure_face_color="red", axes_face_color="blue", grid_line_style="dashed"
         )
-        a_figure.customize_visual_style(
+        a_figure.set_visual_params(
             axes_face_color="yellow", grid_line_style="dotted", x_tick_color="green"
         )
-        a_figure.customize_visual_style(reset=True)
+        a_figure.set_visual_params(reset=True)
         self.assertDictEqual(a_figure._user_rc_dict, {})
 
     def test_matplotlib_style_functional(self):
         a_figure = Figure(figure_style="matplotlib")
-        a_figure.add_element(self.testCurve)
+        a_figure.add_elements(self.testCurve)
         a_figure._prepare_figure()
 
     def test_create_twin_axis(self):
         a_figure = Figure()
-        a_figure.add_element(self.testCurve)
+        a_figure.add_elements(self.testCurve)
         twin_axis = a_figure.create_twin_axis()
         self.assertEqual(twin_axis.is_y, True)
         self.assertEqual(twin_axis.label, None)
@@ -241,12 +241,12 @@ class TestTwinAxis(unittest.TestCase):
     def test_add_element(self):
         twin = TwinAxis()
         curve = Curve([1, 2, 3], [1, 2, 3])
-        twin.add_element(curve)
+        twin.add_elements(curve)
         self.assertEqual(twin._elements[0], curve)
 
     def test_customized_visual_style(self):
         twin = TwinAxis()
-        twin.customize_visual_style(tick_color="red", axes_edge_color="blue")
+        twin.set_visual_params(tick_color="red", axes_edge_color="blue")
         self.assertEqual(twin.tick_color, "red")
         self.assertEqual(twin.axes_edge_color, "blue")
 
@@ -260,7 +260,7 @@ class TestTwinAxis(unittest.TestCase):
     def test_prepare_twin_axes(self):
         twin = TwinAxis()
         axes = plt.axes()
-        twin.add_element(Curve([1, 2, 3], [1, 2, 3], label="Test"))
+        twin.add_elements(Curve([1, 2, 3], [1, 2, 3], label="Test"))
         labels, handles = twin._prepare_twin_axis(axes, True, {}, "plain")
         self.assertEqual(len(labels), 1)
         self.assertEqual(len(handles), 1)

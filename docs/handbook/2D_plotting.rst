@@ -12,8 +12,8 @@ The Heatmap class allows you to plot a 2-dimensional map of values or display im
 
     map = gl.Heatmap(data)
     figure = gl.Figure()
-    figure.add_element(map)
-    figure.display()
+    figure.add_elements(map)
+    figure.show()
 
 .. image:: images/heatmap1.png
 
@@ -47,8 +47,8 @@ The :py:meth:`~graphinglib.data_plotting_2d.Heatmap.from_points` method used bel
         number_of_points=(100, 100),
         origin_position="lower",
     )
-    fig.add_element(hm)
-    fig.display()
+    fig.add_elements(hm)
+    fig.show()
 
 .. image:: images/data_even.png
 
@@ -56,8 +56,8 @@ To display an image instead, simply create a Heatmap with the path to an image a
 
     map = gl.Heatmap("images/GraphingLib-logo.png")
     figure = gl.Figure()
-    figure.add_element(map)
-    figure.display()
+    figure.add_elements(map)
+    figure.show()
 
 .. image:: images/heatmap2.png
 
@@ -65,8 +65,8 @@ There are again many parameters to control for the Heatmap objects but an import
 
     map = gl.Heatmap("images/GraphingLib-logo.png", interpolation="bicubic")
     figure = gl.Figure()
-    figure.add_element(map)
-    figure.display()
+    figure.add_elements(map)
+    figure.show()
 
 .. image:: images/heatmap3.png
 
@@ -82,8 +82,8 @@ The Contour class allows you to display a contour plot of 2-dimensional data. He
 
     contour = gl.Contour(x_grid, y_grid, data)
     figure = gl.Figure()
-    figure.add_element(contour)
-    figure.display()
+    figure.add_elements(contour)
+    figure.show()
 
 .. image:: images/contour.png
 
@@ -103,8 +103,8 @@ As its name suggests, the VectorField class allows you to plot a 2-dimensional v
     
     vector = gl.VectorField(x_grid, y_grid, u, v)
     figure = gl.Figure()
-    figure.add_element(vector)
-    figure.display()
+    figure.add_elements(vector)
+    figure.show()
 
 .. image:: images/vectorfield.png
 
@@ -127,8 +127,8 @@ The Stream class allows you to create stream plots in GraphingLib. Here is an ex
 
     stream = gl.Stream(x_grid, y_grid, u, v, density=1.5)
     figure = gl.Figure()
-    figure.add_element(stream)
-    figure.display()
+    figure.add_elements(stream)
+    figure.show()
 
 .. image:: images/stream.png
 

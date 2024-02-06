@@ -12,8 +12,8 @@ Lets start by creating a simple Histogram of a normal distribution. ::
     histogram = gl.Histogram(values, number_of_bins=30, label="Distribution of values")
 
     figure = gl.Figure(x_label="Values", y_label="Counts")
-    figure.add_element(histogram)
-    figure.display()
+    figure.add_elements(histogram)
+    figure.show()
 
 .. image:: images/simplehistogram.png
 
@@ -46,12 +46,12 @@ You can create a Histogram from a previously created fit to display the residual
     residuals.add_pdf()
 
     fig1 = gl.Figure()
-    fig1.add_element(scatter, fit)
+    fig1.add_elements(scatter, fit)
 
     fig2 = gl.Figure(y_lim=(0, 0.06))
-    fig2.add_element(residuals)
+    fig2.add_elements(residuals)
 
     multifigure = gl.MultiFigure.from_row([fig1, fig2], size=(10, 5), reference_labels=False)
-    multifigure.display()
+    multifigure.show()
 
 .. image:: images/residuals.png

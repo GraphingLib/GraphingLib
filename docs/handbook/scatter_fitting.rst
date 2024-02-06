@@ -30,8 +30,8 @@ In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plottin
 
     # Create figure and display
     fig = gl.Figure()
-    fig.add_element(scatter_1, scatter_2)
-    fig.display()
+    fig.add_elements(scatter_1, scatter_2)
+    fig.show()
 
 
 .. image:: images/scatter_plot.png
@@ -90,8 +90,8 @@ Interpolation between data points is possible by calling the :meth:`~graphinglib
 
     fig = gl.Figure()
     # Use the * operator to unpack the list of points
-    fig.add_element(scatter, point_at_4, *points_at_y_one_half)
-    fig.display()
+    fig.add_elements(scatter, point_at_4, *points_at_y_one_half)
+    fig.show()
 
 .. image:: images/scatter_plot_interpolation.png
 
@@ -120,8 +120,8 @@ There are a number of curve fit objects that can be used to fit data. The most v
     predicted_point = fit.create_point_at_x(5, color="red")
 
     fig = gl.Figure()
-    fig.add_element(scatter, fit, predicted_point)
-    fig.display()
+    fig.add_elements(scatter, fit, predicted_point)
+    fig.show()
 
 .. code-block:: none
     
@@ -164,8 +164,8 @@ Here is an example of fitting a sine function to some data:
     print(f"Vertical shift: {fit.vertical_shift:.3f}")
 
     fig = gl.Figure(y_lim=(0.5, 10.7))
-    fig.add_element(scatter, fit)
-    fig.display()
+    fig.add_elements(scatter, fit)
+    fig.show()
 
 .. code-block:: none
 
@@ -202,8 +202,8 @@ And here is an example of fitting a specific, user-defined function to some data
 
 
     fig = gl.Figure(x_label="Angle (rad)", y_label="Intensity (a.u.)")
-    fig.add_element(scatter, fit)
-    fig.display()
+    fig.add_elements(scatter, fit)
+    fig.show()
 
 .. code-block:: none
 

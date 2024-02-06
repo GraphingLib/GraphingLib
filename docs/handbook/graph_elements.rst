@@ -47,8 +47,8 @@ The Hlines and Vlines objects serve a similar purpose to the Point object; they 
     )
 
     figure = gl.Figure(x_lim=(0, 5), y_lim=(0, 6))
-    figure.add_element(curve, hlines, vlines)
-    figure.display()
+    figure.add_elements(curve, hlines, vlines)
+    figure.show()
 
 .. image:: images/lines.png
 
@@ -98,8 +98,8 @@ The Table object is used to display a table of data or any relevant information 
         col_colors=colors,
         location="center",
     )
-    subfig.add_element(table)
-    figure.display()
+    subfig.add_elements(table)
+    figure.show()
 
 .. image:: images/table.png
 

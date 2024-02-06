@@ -1,6 +1,6 @@
+from shutil import which
 from string import ascii_lowercase
 from typing import Literal, Optional, Self
-from shutil import which
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParamsDefault
@@ -322,7 +322,7 @@ class MultiFigure:
         figure.col_span = col_span
         self._sub_figures.append(figure)
 
-    def display(
+    def show(
         self,
         general_legend: bool = False,
         legend_loc: str = "outside lower center",
@@ -577,7 +577,7 @@ class MultiFigure:
                 pass
             plt.rcParams.update(all_rc_params)
 
-    def update_rc_params(
+    def set_rc_params(
         self,
         rc_params_dict: dict[str, str | float] = {},
         reset: bool = False,
@@ -601,7 +601,7 @@ class MultiFigure:
         for property, value in rc_params_dict.items():
             self._user_rc_dict[property] = value
 
-    def customize_visual_style(
+    def set_visual_params(
         self,
         reset: bool = False,
         figure_face_color: str | None = None,
@@ -719,4 +719,4 @@ class MultiFigure:
         rc_params_dict = {
             key: value for key, value in rc_params_dict.items() if value is not None
         }
-        self.update_rc_params(rc_params_dict, reset=reset)
+        self.set_rc_params(rc_params_dict, reset=reset)
