@@ -2,8 +2,6 @@ import unittest
 
 from matplotlib import pyplot as plt
 from numpy import linspace, pi, sin
-from pyparsing import line
-from traitlets import default
 
 from graphinglib.data_plotting_1d import Curve
 from graphinglib.figure import Figure, TwinAxis
