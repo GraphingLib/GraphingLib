@@ -570,8 +570,11 @@ class MultiFigure:
                 ):
                     self._rc_dict[property] = value
             all_rc_params = {**self._rc_dict, **self._user_rc_dict}
-            if all_rc_params["text.usetex"] and which("latex") is None:
-                all_rc_params["text.usetex"] = False
+            try:
+                if all_rc_params["text.usetex"] and which("latex") is None:
+                    all_rc_params["text.usetex"] = False
+            except KeyError:
+                pass
             plt.rcParams.update(all_rc_params)
 
     def update_rc_params(
