@@ -1,5 +1,6 @@
 from typing import Any, Literal, Optional
 from warnings import warn
+from shutil import which
 
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
@@ -492,6 +493,8 @@ class Figure:
             if (property not in self._rc_dict) and (property not in self._user_rc_dict):
                 self._rc_dict[property] = value
         all_rc_params = {**self._rc_dict, **self._user_rc_dict}
+        if all_rc_params["text.usetex"] and which("latex") is None:
+            all_rc_params["text.usetex"] = False
         plt.rcParams.update(all_rc_params)
 
     def set_ticks(

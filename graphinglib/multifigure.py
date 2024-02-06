@@ -1,5 +1,6 @@
 from string import ascii_lowercase
 from typing import Literal, Optional, Self
+from shutil import which
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParamsDefault
@@ -569,6 +570,8 @@ class MultiFigure:
                 ):
                     self._rc_dict[property] = value
             all_rc_params = {**self._rc_dict, **self._user_rc_dict}
+            if all_rc_params["text.usetex"] and which("latex") is None:
+                all_rc_params["text.usetex"] = False
             plt.rcParams.update(all_rc_params)
 
     def update_rc_params(
