@@ -217,9 +217,9 @@ class TestMultiFigure(unittest.TestCase):
         a_figure = Figure()
         curve = Curve([1, 2, 3], [1, 2, 3])
         curve2 = Curve([1, 2, 3], [1, 2, 3], line_width=5)
-        a_figure.add_element(curve)
+        a_figure.add_elements(curve)
         another_figure = Figure()
-        another_figure.add_element(curve2)
+        another_figure.add_elements(curve2)
         a_multifig = MultiFigure.from_stack([a_figure, another_figure])
         a_multifig._prepare_multi_figure()
         self.assertEqual(len(a_figure._axes.get_lines()), 1)
@@ -255,7 +255,7 @@ class TestMultiFigure(unittest.TestCase):
 
     def test_fill_in_rc_params_gl(self):
         a_multifig = MultiFigure(num_rows=2, num_cols=2)
-        a_multifig.customize_visual_style(legend_edge_color="red")
+        a_multifig.set_visual_params(legend_edge_color="red")
         # Get default params for dim style
         a_multifig.default_params = {
             "rc_params": {
@@ -278,13 +278,13 @@ class TestMultiFigure(unittest.TestCase):
             "axes.labelsize": 10,
             "axes.titlesize": 10,
         }
-        a_multifigure.update_rc_params(params)
+        a_multifigure.set_rc_params(params)
         self.assertDictEqual(a_multifigure._user_rc_dict, params)
         more_params = {
             "lines.linewidth": 3,
             "axes.grid": True,
         }
-        a_multifigure.update_rc_params(more_params)
+        a_multifigure.set_rc_params(more_params)
         resulting_params = {
             "lines.linewidth": 3,
             "axes.labelsize": 10,
@@ -300,13 +300,13 @@ class TestMultiFigure(unittest.TestCase):
             "axes.labelsize": 10,
             "axes.titlesize": 10,
         }
-        a_multifigure.update_rc_params(params)
-        a_multifigure.update_rc_params({"lines.linewidth": 3}, reset=True)
+        a_multifigure.set_rc_params(params)
+        a_multifigure.set_rc_params({"lines.linewidth": 3}, reset=True)
         self.assertDictEqual(a_multifigure._user_rc_dict, {"lines.linewidth": 3})
 
     def test_customize_visual_style(self):
         a_multifigure = MultiFigure(num_rows=2, num_cols=2)
-        a_multifigure.customize_visual_style(
+        a_multifigure.set_visual_params(
             figure_face_color="red", axes_face_color="blue", grid_line_style="dashed"
         )
         self.assertDictEqual(
@@ -317,7 +317,7 @@ class TestMultiFigure(unittest.TestCase):
                 "grid.linestyle": "dashed",
             },
         )
-        a_multifigure.customize_visual_style(
+        a_multifigure.set_visual_params(
             axes_face_color="yellow", grid_line_style="dotted", x_tick_color="green"
         )
         self.assertDictEqual(
@@ -332,22 +332,22 @@ class TestMultiFigure(unittest.TestCase):
 
     def test_customize_visual_style_reset(self):
         a_multifigure = MultiFigure(num_rows=2, num_cols=2)
-        a_multifigure.customize_visual_style(
+        a_multifigure.set_visual_params(
             figure_face_color="red", axes_face_color="blue", grid_line_style="dashed"
         )
-        a_multifigure.customize_visual_style(
+        a_multifigure.set_visual_params(
             axes_face_color="yellow", grid_line_style="dotted", x_tick_color="green"
         )
-        a_multifigure.customize_visual_style(reset=True)
+        a_multifigure.set_visual_params(reset=True)
         self.assertDictEqual(a_multifigure._user_rc_dict, {})
 
     def test_matplotlib_style_functional(self):
         a_figure = Figure()
         curve = Curve([1, 2, 3], [1, 2, 3])
         curve2 = Curve([1, 2, 3], [1, 2, 3], line_width=5)
-        a_figure.add_element(curve)
+        a_figure.add_elements(curve)
         another_figure = Figure()
-        another_figure.add_element(curve2)
+        another_figure.add_elements(curve2)
         a_multifig = MultiFigure.from_stack(
             [a_figure, another_figure], figure_style="matplotlib"
         )

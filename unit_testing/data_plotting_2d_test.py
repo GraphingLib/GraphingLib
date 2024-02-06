@@ -42,9 +42,9 @@ class TestContour(unittest.TestCase):
             y_axis_range=(0, 3 * np.pi),
         )
         fig = Figure(figure_style="plain")
-        fig.add_element(contour)
+        fig.add_elements(contour)
         fig._prepare_figure()
 
         fig_2 = Figure(figure_style="horrible")
-        fig_2.add_element(contour)
+        fig_2.add_elements(contour)
         fig_2._prepare_figure()
