@@ -12,12 +12,12 @@ Creating a basic figure using the :class:`~graphinglib.figure.Figure` object is 
 
     sine = gl.Curve.from_function(lambda x: np.sin(x), 0, 2 * np.pi)
 
-    figure.add_element(sine)
-    figure.display()
+    figure.add_elements(sine)
+    figure.show()
 
 .. image:: images/sine.png
 
-The :py:meth:`~graphinglib.figure.Figure.display` method is used to show the figure on screen. It is also possible to use the :py:meth:`~graphinglib.figure.Figure.save` method to save the figure to a specified path.
+The :py:meth:`~graphinglib.figure.Figure.show` method is used to show the figure on screen. It is also possible to use the :py:meth:`~graphinglib.figure.Figure.save` method to save the figure to a specified path.
 
 .. seealso:: 
     
@@ -49,10 +49,10 @@ It is important to note that the parameters controlled by the specified style ca
 Style customization
 -------------------
 
-After you've created a Figure and set its ``figure_style``, it is possible to customize its appearance further by using the :py:meth:`~graphinglib.figure.Figure.customize_visual_style` or the :py:meth:`~graphinglib.figure.Figure.update_rc_params` methods. The first method allows you to specify the options directly, while the second method allows you to specify the options using a dictionary of matplotlib rc parameters. Only the most common options are available using the first method, while the second method allows you to specify any matplotlib rc parameter. Here is an example using the first method: ::
+After you've created a Figure and set its ``figure_style``, it is possible to customize its appearance further by using the :py:meth:`~graphinglib.figure.Figure.set_visual_params` or the :py:meth:`~graphinglib.figure.Figure.set_rc_params` methods. The first method allows you to specify the options directly, while the second method allows you to specify the options using a dictionary of matplotlib rc parameters. Only the most common options are available using the first method, while the second method allows you to specify any matplotlib rc parameter. Here is an example using the first method: ::
 
     figure = gl.Figure(x_label="Time (s)", y_label="Potential (V)", figure_style="plain")
-    figure.customize_visual_style(
+    figure.set_visual_params(
         use_latex=True,
         font_size=12,
         axes_edge_color="red",
@@ -61,7 +61,7 @@ After you've created a Figure and set its ``figure_style``, it is possible to cu
 And here is an example using the second method: ::
 
     figure = gl.Figure(x_label="Time (s)", y_label="Potential (V)", figure_style="plain")
-    figure.update_rc_params(
+    figure.set_rc_params(
         {
             "font.size": 12,
             "axes.edgecolor": "red",

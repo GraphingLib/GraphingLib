@@ -15,8 +15,8 @@ In GraphingLib, all curves are objects which are instances of the :class:`~graph
     curve_2 = gl.Curve.from_function(lambda x: -20 * (x - 5) ** 2 + 400, x_min=0, x_max=10)
 
     fig = gl.Figure()
-    fig.add_element(curve_1, curve_2)
-    fig.display()
+    fig.add_elements(curve_1, curve_2)
+    fig.show()
 
 .. image:: images/curve.png
 
@@ -36,8 +36,8 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class has a number of methods w
     curve_sum.label = "Sum"
 
     fig = gl.Figure()
-    fig.add_element(curve_1, curve_2, curve_sum)
-    fig.display()
+    fig.add_elements(curve_1, curve_2, curve_sum)
+    fig.show()
 
 .. image:: images/curve_addition.png
 
@@ -72,10 +72,10 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class includes interpolation me
     print(f"First intersection point: {first_int}")
 
     fig = gl.Figure()
-    fig.add_element(curve_1, curve_2)
+    fig.add_elements(curve_1, curve_2)
     # Use the * operator to add a list of elements to the figure all at once
-    fig.add_element(*intersection_points, *cross_x_axis_points)
-    fig.display()
+    fig.add_elements(*intersection_points, *cross_x_axis_points)
+    fig.show()
 
 .. code-block:: none
     
@@ -96,13 +96,13 @@ There are a number of methods which can be used to perform calculus on a curve. 
     tangent_curve = curve_1.create_tangent_curve(2, label="Tangent at x=2")
 
     fig1 = gl.Figure(y_lim=(-6, 25))
-    fig1.add_element(curve_1, derivative_curve, integral_curve)
+    fig1.add_elements(curve_1, derivative_curve, integral_curve)
 
     fig2 = gl.Figure(x_lim=(-5, 5), y_lim=(-6, 4))
-    fig2.add_element(curve_1, normal_curve, tangent_curve)
+    fig2.add_elements(curve_1, normal_curve, tangent_curve)
 
     multifig = gl.MultiFigure.row([fig1, fig2], size=(12, 6), reference_labels=False)
-    multifig.display()
+    multifig.show()
 
 .. image:: images/curve_calculus.png
 
@@ -122,8 +122,8 @@ The :meth:`~graphinglib.data_plotting_1d.Curve.get_area_between` method can be u
     print(f"Arc length of the curve between x = 0 and x = 2: {arc_length}")
 
     fig = gl.Figure()
-    fig.add_element(curve_1)
-    fig.display()
+    fig.add_elements(curve_1)
+    fig.show()
 
 .. code-block:: none
 

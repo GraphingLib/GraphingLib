@@ -60,8 +60,8 @@ You can customize the appearance of Rectangles by specifying the following optio
     )
 
     figure = gl.Figure()
-    figure.add_element(rect1, rect2, rect3)
-    figure.display()
+    figure.add_elements(rect1, rect2, rect3)
+    figure.show()
 
 .. image:: images/rectangle.png
 
@@ -142,8 +142,8 @@ You can customize the appearance of Circles by specifying the following optional
 
     # Figure size and axis limits are set to make the circles look round
     figure = gl.Figure(x_lim=(-19, 19), y_lim=(-19, 19), size=(8, 8))
-    figure.add_element(circle1, circle2, circle3)
-    figure.display()
+    figure.add_elements(circle1, circle2, circle3)
+    figure.show()
 
 .. image:: images/circle.png
 
@@ -219,10 +219,10 @@ You can customize the appearance of Arrows by specifying the following optional 
     point6 = gl.Point(3, 1, color="green")
 
     fig = gl.Figure(y_lim=(-0.5, 1.5), x_lim=(-0.5, 3.5))
-    fig.add_element(arrow1, arrow2, arrow3)
-    fig.add_element(point1, point2, point3)
-    fig.add_element(point4, point5, point6)
-    fig.display()
+    fig.add_elements(arrow1, arrow2, arrow3)
+    fig.add_elements(point1, point2, point3)
+    fig.add_elements(point4, point5, point6)
+    fig.show()
 
 .. image:: images/arrow.png
 
@@ -253,7 +253,7 @@ It is possible to change the width of the line with the ``width`` parameter. The
 
     # Display the elements
     fig = gl.Figure(size=(5.5, 5))
-    fig.add_element(circle, point, line, center, text)
-    fig.display()
+    fig.add_elements(circle, point, line, center, text)
+    fig.show()
 
 .. image:: images/capped_line.png

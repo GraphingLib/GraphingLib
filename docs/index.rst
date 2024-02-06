@@ -78,22 +78,22 @@ For most data science applications, GraphingLib can provide a much more concise 
     fit = gl.FitFromPolynomial(scatter, degree=2, label="Fit", color="red")
 
     fig1 = gl.Figure(y_lim=(-30, 360))
-    fig1.add_element(scatter, fit)
+    fig1.add_elements(scatter, fit)
 
     # Figure 2 - Histogram of random data
 
     data = np.random.normal(0, 1, 1000)
     hist = gl.Histogram(data, number_of_bins=20, label="Residuals")
-    hist.show_pdf()
+    hist.add_pdf()
 
     fig2 = gl.Figure(y_lim=(0, 0.5))
-    fig2.add_element(hist)
+    fig2.add_elements(hist)
 
     # Figure 3 - Intersection of two curves
 
     curve1 = gl.Curve.from_function(lambda x: x**2, x_min=-2, x_max=2, label="Curve 1")
     curve2 = gl.Curve.from_function(lambda x: np.sin(x), x_min=-2, x_max=2, label="Curve 2")
-    intersection_points = curve1.intersection(curve2, colors="red", as_point_objects=True)
+    intersection_points = curve1.get_intersection_points(curve2, colors="red")
 
     for point in intersection_points:
         point.add_coordinates()
@@ -101,28 +101,28 @@ For most data science applications, GraphingLib can provide a much more concise 
         point.v_align = "top"
 
     fig3 = gl.Figure()
-    fig3.add_element(curve1, curve2, *intersection_points)
+    fig3.add_elements(curve1, curve2, *intersection_points)
 
     # Figure 4 - Integral of a curve between two points and tangent line
 
     curve = gl.Curve.from_function(lambda x: x**2 + 7, x_min=0, x_max=5, label="Curve")
-    area = curve.area_between(2, 4, fill_under=True)
+    area = curve.get_area_between(2, 4, fill_under=True)
     tangent = curve.get_tangent_curve(1, label="Tangent", line_style="--")
     area_text = gl.Text(3, 5, "A = {:.2f}".format(area))
 
     fig4 = gl.Figure()
-    fig4.add_element(curve, tangent, area_text)
+    fig4.add_elements(curve, tangent, area_text)
 
     # Creating the MultiFigure and displaying/saving it
     canvas = gl.MultiFigure(2, 2, (10, 10), title="Complex Example")
-    canvas.customize_visual_style(use_latex=True)
-    canvas.add_sub_figure(fig1, 0, 0, 1, 1)
-    canvas.add_sub_figure(fig2, 0, 1, 1, 1)
-    canvas.add_sub_figure(fig3, 1, 0, 1, 1)
-    canvas.add_sub_figure(fig4, 1, 1, 1, 1)
+    canvas.set_visual_params(use_latex=True)
+    canvas.add_figure(fig1, 0, 0, 1, 1)
+    canvas.add_figure(fig2, 0, 1, 1, 1)
+    canvas.add_figure(fig3, 1, 0, 1, 1)
+    canvas.add_figure(fig4, 1, 1, 1, 1)
 
-    # canvas.save_figure("complex_example.png", general_legend=False)
-    canvas.display(general_legend=False)
+    # canvas.save("complex_example.png", general_legend=False)
+    canvas.show(general_legend=False)
 
 .. image:: ../images/complex_example.png
 
