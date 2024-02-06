@@ -22,11 +22,12 @@ In this example we can see that the legend includes the values of the distributi
     mu = histogram.mean
     sigma = histogram.standard_deviation
 
-It is also possible to overlay a normal fit of the distribution simply by setting the ``add_pdf`` parameter to ``"normal"``: ::
+It is also possible to overlay a normal fit of the distribution simply by calling the :py:meth:`~graphinglib.data_plotting_1d.Histogram.add_pdf` (probability density function; currently, only normal is available): ::
 
     histogram = gl.Histogram(
-        values, number_of_bins=30, label="Distribution of values", add_pdf="normal"
+        values, number_of_bins=30, label="Distribution of values"
     )
+    histogram.add_pdf()
 
 .. image:: images/histogrampdf.png
 

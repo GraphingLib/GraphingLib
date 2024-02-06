@@ -101,7 +101,7 @@ There are a number of methods which can be used to perform calculus on a curve. 
     fig2 = gl.Figure(x_lim=(-5, 5), y_lim=(-6, 4))
     fig2.add_elements(curve_1, normal_curve, tangent_curve)
 
-    multifig = gl.MultiFigure.row([fig1, fig2], size=(12, 6), reference_labels=False)
+    multifig = gl.MultiFigure.from_row([fig1, fig2], size=(12, 6), reference_labels=False)
     multifig.show()
 
 .. image:: images/curve_calculus.png

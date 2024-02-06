@@ -86,10 +86,6 @@ The Table object is used to display a table of data or any relevant information 
     rows = ["Series 1", "Series 2", "Series 3", "Series 4", "Series 5"]
     colors = ["#bfbfbf"] * 5
 
-    figure = gl.MultiFigure(
-        1, 1, title="Electrical data", reference_labels=False, size=(8, 2)
-    )
-    subfig = figure.add_SubFigure((0, 0, 1, 1), remove_axes=True)
     table = gl.Table(
         cell_text=data,
         col_labels=columns,
@@ -98,7 +94,9 @@ The Table object is used to display a table of data or any relevant information 
         col_colors=colors,
         location="center",
     )
-    subfig.add_elements(table)
+
+    figure = gl.Figure(size=(8, 2), remove_axes=True)
+    figure.add_elements(table)
     figure.show()
 
 .. image:: images/table.png

@@ -93,7 +93,7 @@ For most data science applications, GraphingLib can provide a much more concise 
 
     curve1 = gl.Curve.from_function(lambda x: x**2, x_min=-2, x_max=2, label="Curve 1")
     curve2 = gl.Curve.from_function(lambda x: np.sin(x), x_min=-2, x_max=2, label="Curve 2")
-    intersection_points = curve1.get_intersection_points(curve2, colors="red")
+    intersection_points = curve1.create_intersection_points(curve2, colors="red")
 
     for point in intersection_points:
         point.add_coordinates()
@@ -107,7 +107,7 @@ For most data science applications, GraphingLib can provide a much more concise 
 
     curve = gl.Curve.from_function(lambda x: x**2 + 7, x_min=0, x_max=5, label="Curve")
     area = curve.get_area_between(2, 4, fill_under=True)
-    tangent = curve.get_tangent_curve(1, label="Tangent", line_style="--")
+    tangent = curve.create_tangent_curve(1, label="Tangent", line_style="--")
     area_text = gl.Text(3, 5, "A = {:.2f}".format(area))
 
     fig4 = gl.Figure()
