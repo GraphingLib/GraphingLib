@@ -92,7 +92,7 @@ You can also get Point objects or coordinates out of a Rectangle, like the cente
     point_center = rect.create_center_point()
     coordinates_center = rect.get_center_coordinates()
 
-    point1, point2 = rect.get_points_at_x(5)
+    point1, point2 = rect.create_points_at_x(5)
     coords1, coords2 = rect.get_coordinates_at_x(5)
 
 The :class:`~graphinglib.shapes.Circle` Object
@@ -242,7 +242,7 @@ It is possible to change the width of the line with the ``width`` parameter. The
     # Creating a circle and finding a point at 45 degrees on the circumference
     circle = gl.Circle(0, 0, 1, line_width=2)
     center = gl.Point(0, 0, marker_size=50)
-    point = circle.get_point_at_angle(45, True, True)
+    point = circle.create_point_at_angle(45, degrees=True)
     point.marker_size = 50
     
     # Adding a line to display the radius of the circle

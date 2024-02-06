@@ -13,8 +13,10 @@ If no style is specified, the "plain" style is used. GraphingLib has a number of
 
 .. code-block:: python
 
-    fig = Figure() # uses the "plain" style
-    fig2 = Figure(ticks_are_in=False) # "plain", but ticks are now outside the figure
+    fig = Figure(figure_style="dark") # uses the "dark" style
+
+    fig2 = Figure(figure_style="dark") # "dark" style, but axes lines are red
+    fig2.set_visual_params(axes_edge_color="red")
 
 You can also create your own styles or modify existing ones. To do this, you can use GraphingLib's style editor through the terminal.
 
