@@ -1,12 +1,12 @@
 import unittest
-from cgi import test
-from hmac import new
 from random import random
 
-from matplotlib.pyplot import subplots
+from matplotlib.colors import to_hex
+from matplotlib.pyplot import close, subplots
 from numpy import linspace, ndarray, pi, sin
 
 from graphinglib.data_plotting_1d import Curve, Histogram, Scatter
+from graphinglib.figure import Figure
 from graphinglib.fits import FitFromPolynomial
 from graphinglib.graph_elements import Point
 
@@ -110,6 +110,18 @@ class TestCurve(unittest.TestCase):
 
     def test_area_between(self):
         self.assertAlmostEqual(self.testCurve.get_area_between(0, pi), 2, places=3)
+
+    def test_area_between_fill_under(self):
+        curve = Curve.from_function(lambda x: x**2, 0, 1)
+        curve2 = Curve.from_function(lambda x: x**3, 0, 1)
+        curve2.get_area_between(0, 1, fill_under=True)
+        fig = Figure()
+        fig.add_elements(curve, curve2)
+        fig._prepare_figure()
+        fill_under_color = to_hex(fig._axes.collections[0].get_facecolor()[0])
+        curve2_color = fig._axes.get_lines()[1].get_color()
+        self.assertEqual(fill_under_color, curve2_color)
+        close("all")
 
     def test_slope_at(self):
         self.assertAlmostEqual(self.testCurve.get_slope_at(pi / 2), 0, places=5)

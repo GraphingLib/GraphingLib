@@ -849,6 +849,8 @@ class Curve:
             kwargs = {"alpha": 0.2}
             if self.fill_under_color:
                 kwargs["color"] = self.fill_under_color
+            else:
+                kwargs["color"] = self.handle[0].get_color()
             kwargs = {k: v for k, v in kwargs.items() if v != "default"}
             axes.fill_between(
                 self.x_data,
