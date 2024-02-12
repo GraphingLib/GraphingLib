@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Literal, Optional, Self
+from typing import Callable, Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,6 +9,11 @@ from matplotlib.colors import Colormap
 from matplotlib.image import imread
 from numpy.typing import ArrayLike
 from scipy.interpolate import griddata
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 
 @dataclass
