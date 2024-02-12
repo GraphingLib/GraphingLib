@@ -1,10 +1,15 @@
 from dataclasses import dataclass
-from typing import Literal, Optional, Self
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from .graph_elements import Point
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 
 @dataclass

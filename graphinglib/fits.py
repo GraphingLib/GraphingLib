@@ -6,7 +6,6 @@ from typing import Callable, Literal, Optional
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import ArrayLike
-from scipy.interpolate import interp1d
 from scipy.optimize import curve_fit
 
 from .data_plotting_1d import Curve, Scatter
@@ -1766,7 +1765,7 @@ class FitFromFunction(GeneralFit):
             Parameters of the fit (same order as guesses).
         """
         return self.parameters
-    
+
     def get_cov_matrix(self) -> np.ndarray:
         """
         Returns the covariance matrix of the parameters of the fit.
@@ -1777,7 +1776,7 @@ class FitFromFunction(GeneralFit):
             Covariance matrix of the parameters of the fit.
         """
         return self.cov_matrix
-    
+
     def get_standard_deviation(self) -> np.ndarray:
         """
         Returns the standard deviation of the parameters of the fit.
@@ -1788,7 +1787,7 @@ class FitFromFunction(GeneralFit):
             Standard deviation of the parameters of the fit.
         """
         return self.standard_deviation
-    
+
     def get_function(self) -> Callable:
         """
         Returns the function with the parameters of the fit.
@@ -1799,5 +1798,3 @@ class FitFromFunction(GeneralFit):
             Function
         """
         return self.function
-    
-    

@@ -1,6 +1,6 @@
 from shutil import which
 from string import ascii_lowercase
-from typing import Literal, Optional, Self
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParamsDefault
@@ -20,6 +20,11 @@ from graphinglib.legend_artists import (
 )
 
 from .figure import Figure
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 
 class MultiFigure:

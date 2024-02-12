@@ -1,5 +1,5 @@
 from shutil import which
-from typing import Any, Literal, Optional
+from typing import Literal, Optional
 from warnings import warn
 
 import matplotlib.pyplot as plt

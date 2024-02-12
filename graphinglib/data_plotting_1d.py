@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable, Literal, Optional, Protocol, Self
+from typing import Callable, Literal, Optional, Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,6 +11,11 @@ from numpy.typing import ArrayLike
 from scipy.interpolate import interp1d
 
 from .graph_elements import Point
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 
 class Fit(Protocol):
