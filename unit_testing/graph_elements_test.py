@@ -1,5 +1,7 @@
 import unittest
+from cgi import test
 
+from matplotlib import pyplot as plt
 from numpy import ndarray
 
 from graphinglib.graph_elements import Hlines, Point, Text, Vlines
@@ -96,5 +98,73 @@ class TestPoint(unittest.TestCase):
 
 
 class TestText(unittest.TestCase):
-    # TODO: Write tests for Text
-    ...
+    def test_init(self):
+        testText = Text(
+            x=0.0,
+            y=0.0,
+            text="Test Text",
+            color="red",
+            font_size=12,
+            h_align="center",
+            v_align="center",
+        )
+        self.assertEqual(testText.x, 0.0)
+        self.assertEqual(testText.y, 0.0)
+        self.assertEqual(testText.text, "Test Text")
+        self.assertEqual(testText.color, "red")
+        self.assertEqual(testText.font_size, 12)
+        self.assertEqual(testText.h_align, "center")
+        self.assertEqual(testText.v_align, "center")
+
+    def test_add_arrow(self):
+        testText = Text(
+            x=0.0,
+            y=0.0,
+            text="Test Text",
+            color="red",
+            font_size=12,
+            h_align="center",
+            v_align="center",
+        )
+        testText.add_arrow(
+            points_to=(1, 1), width=0.1, head_width=0.3, head_length=0.2, shrink=0.05
+        )
+        self.assertEqual(testText._arrow_pointing_to, (1, 1))
+        self.assertDictEqual(
+            testText.arrow_properties,
+            {"width": 0.1, "headwidth": 0.3, "headlength": 0.2, "shrink": 0.05},
+        )
+
+    def test_plotting(self):
+        testText = Text(
+            x=0.0,
+            y=0.0,
+            text="Test Text",
+            color="red",
+            font_size=12,
+            h_align="center",
+            v_align="center",
+        )
+        testText.add_arrow(
+            points_to=(1, 1), width=0.1, head_width=0.3, head_length=0.2, shrink=0.05
+        )
+        fig, ax = plt.subplots()
+        testText._plot_element(ax, 0)
+        # Check if the text is plotted correctly
+        self.assertEqual(ax.texts[0].get_text(), "Test Text")
+        self.assertEqual(ax.texts[0].get_color(), "red")
+        self.assertEqual(ax.texts[0].get_fontsize(), 12)
+        self.assertEqual(ax.texts[0].get_horizontalalignment(), "center")
+        self.assertEqual(ax.texts[0].get_verticalalignment(), "center")
+        # Check if the arrow is plotted correctly
+        for child in ax.get_children():
+            if isinstance(child, plt.Arrow):
+                self.assertEqual(child.get_xy(), (0, 0))
+                self.assertEqual(child.get_dx(), 1)
+                self.assertEqual(child.get_dy(), 1)
+                self.assertEqual(child.get_width(), 0.1)
+                self.assertEqual(child.get_head_width(), 0.3)
+                self.assertEqual(child.get_head_length(), 0.2)
+                self.assertEqual(child.get_shrink(), 0.05)
+
+        plt.close(fig)
