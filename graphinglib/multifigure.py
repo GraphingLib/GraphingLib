@@ -507,10 +507,12 @@ class MultiFigure:
                 reference_label,
                 transform=axes.transAxes + transformation,
             )
+        default_params_copy = self.default_params.copy()
+        default_params_copy.update(is_a_subfigure=True)
         labels, handles = sub_figure._prepare_figure(
             legend=legend,
             axes=axes,
-            default_params=self.default_params,
+            default_params=default_params_copy,
             is_matplotlib_style=is_matplotlib_style,
         )
         return labels, handles

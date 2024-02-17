@@ -128,7 +128,9 @@ class Figure:
         """
         if default_params is not None:
             self.default_params = default_params
-            self._fill_in_rc_params()
+            is_a_subfigure = default_params.get("is_a_subfigure", False)
+            if not is_a_subfigure:
+                self._fill_in_rc_params()
             figure_params_to_reset = self._fill_in_missing_params(self)
         else:
             try:
