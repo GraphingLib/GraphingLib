@@ -362,7 +362,7 @@ class VectorField:
             Arrow head axis length.
             Default depends on the ``figure_style`` configuration.
         angle_in_data_coords : bool
-            Wheter to use the screen coordinates or the data coordinates to
+            Whether to use the screen coordinates or the data coordinates to
             determine the vector directions.
             Defaults to ``True``.
         color : str
