@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
-from graphinglib.data_plotting_2d import Contour, Heatmap
+from graphinglib.data_plotting_2d import Contour, Heatmap, VectorField
 from graphinglib.figure import Figure
 
 
@@ -87,6 +87,96 @@ class TestHeatmap(unittest.TestCase):
         self.assertTrue(ax.images[0].get_visible())
         self.assertEqual(len(fig.axes), 2)
         self.assertEqual(fig.axes[1].get_ylim(), (min(z), max(z)))
+
+
+class TestVectorField(unittest.TestCase):
+    def test_init(self):
+        x = np.linspace(0, 3 * np.pi, 20)
+        y = np.linspace(0, 3 * np.pi, 20)
+        xx, yy = np.meshgrid(x, y)
+        u = np.sin(xx) * np.cos(yy)
+        v = -np.cos(xx) * np.sin(yy)
+
+        # Create a VectorField object
+        vector_field = VectorField(
+            x_data=xx,
+            y_data=yy,
+            u_data=u,
+            v_data=v,
+            arrow_width=0.1,
+            arrow_head_width=0.3,
+            arrow_head_length=0.3,
+            arrow_head_axis_length=0.3,
+            angle_in_data_coords=True,
+            color="black",
+        )
+
+        self.assertIsInstance(vector_field, VectorField)
+        self.assertListEqual(vector_field.x_data.tolist(), xx.tolist())
+        self.assertListEqual(vector_field.y_data.tolist(), yy.tolist())
+        self.assertListEqual(vector_field.u_data.tolist(), u.tolist())
+        self.assertListEqual(vector_field.v_data.tolist(), v.tolist())
+        self.assertEqual(vector_field.arrow_width, 0.1)
+        self.assertEqual(vector_field.arrow_head_width, 0.3)
+        self.assertEqual(vector_field.arrow_head_length, 0.3)
+        self.assertEqual(vector_field.arrow_head_axis_length, 0.3)
+        self.assertEqual(vector_field.angle_in_data_coords, True)
+        self.assertEqual(vector_field.color, "black")
+
+    def test_from_function(self):
+        vector_field = VectorField.from_function(
+            func=lambda x, y: (np.sin(x), np.cos(y)),
+            x_axis_range=(0, 3 * np.pi),
+            y_axis_range=(0, 3 * np.pi),
+            number_of_arrows_x=20,
+            number_of_arrows_y=20,
+            arrow_width=0.1,
+            arrow_head_width=0.3,
+            arrow_head_length=0.3,
+            arrow_head_axis_length=0.3,
+            angle_in_data_coords=True,
+            color="black",
+        )
+
+        self.assertIsInstance(vector_field, VectorField)
+        self.assertEqual(vector_field.arrow_width, 0.1)
+        self.assertEqual(vector_field.arrow_head_width, 0.3)
+        self.assertEqual(vector_field.arrow_head_length, 0.3)
+        self.assertEqual(vector_field.arrow_head_axis_length, 0.3)
+        self.assertEqual(vector_field.angle_in_data_coords, True)
+
+    def test_plot_element(self):
+        x = np.linspace(0, 3 * np.pi, 20)
+        y = np.linspace(0, 3 * np.pi, 20)
+        xx, yy = np.meshgrid(x, y)
+        u = np.sin(xx) * np.cos(yy)
+        v = -np.cos(xx) * np.sin(yy)
+
+        # Create a VectorField object
+        vector_field = VectorField(
+            x_data=xx,
+            y_data=yy,
+            u_data=u,
+            v_data=v,
+            arrow_width=0.1,
+            arrow_head_width=0.3,
+            arrow_head_length=0.3,
+            arrow_head_axis_length=0.3,
+            angle_in_data_coords=True,
+            color="black",
+        )
+
+        fig, ax = plt.subplots()
+        vector_field._plot_element(ax, 0)
+        self.assertEqual(len(ax.collections), 1)
+        self.assertListEqual(
+            ax.collections[0].get_facecolors()[0].tolist(), [0, 0, 0, 1]
+        )
+        self.assertEqual(ax.collections[0].width, 0.1)
+        self.assertEqual(ax.collections[0].headwidth, 0.3)
+        self.assertEqual(ax.collections[0].headlength, 0.3)
+        self.assertEqual(ax.collections[0].headaxislength, 0.3)
+        self.assertEqual(ax.collections[0].angles, "xy")
 
 
 class TestContour(unittest.TestCase):
