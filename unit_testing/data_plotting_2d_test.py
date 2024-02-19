@@ -2,8 +2,9 @@ import unittest
 
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib.colors import to_rgba
 
-from graphinglib.data_plotting_2d import Contour, Heatmap, VectorField
+from graphinglib.data_plotting_2d import Contour, Heatmap, Stream, VectorField
 from graphinglib.figure import Figure
 
 
@@ -166,7 +167,7 @@ class TestVectorField(unittest.TestCase):
             color="black",
         )
 
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
         vector_field._plot_element(ax, 0)
         self.assertEqual(len(ax.collections), 1)
         self.assertListEqual(
@@ -216,6 +217,87 @@ class TestContour(unittest.TestCase):
         fig_2 = Figure(figure_style="horrible")
         fig_2.add_elements(contour)
         fig_2._prepare_figure()
+
+
+class TestStream(unittest.TestCase):
+    def test_init(self):
+        x_grid, y_grid = np.meshgrid(np.linspace(0, 11, 30), np.linspace(0, 11, 30))
+        u, v = (np.cos(x_grid * 0.2), np.sin(y_grid * 0.3))
+
+        stream = Stream(
+            x_data=x_grid,
+            y_data=y_grid,
+            u_data=u,
+            v_data=v,
+            density=0.7,
+            line_width=2,
+            color="black",
+            color_map="viridis",
+            arrow_size=2,
+        )
+
+        self.assertIsInstance(stream, Stream)
+        self.assertListEqual(stream.x_data.tolist(), x_grid.tolist())
+        self.assertListEqual(stream.y_data.tolist(), y_grid.tolist())
+        self.assertListEqual(stream.u_data.tolist(), u.tolist())
+        self.assertListEqual(stream.v_data.tolist(), v.tolist())
+        self.assertEqual(stream.density, 0.7)
+        self.assertEqual(stream.line_width, 2)
+        self.assertEqual(stream.color, "black")
+        self.assertEqual(stream.color_map, "viridis")
+        self.assertEqual(stream.arrow_size, 2)
+
+    def test_from_function(self):
+        stream = Stream.from_function(
+            func=lambda x, y: (np.sin(x), np.cos(y)),
+            x_axis_range=(0, 3 * np.pi),
+            y_axis_range=(0, 3 * np.pi),
+            number_of_points_x=20,
+            number_of_points_y=20,
+            density=0.7,
+            line_width=2,
+            color="black",
+            color_map="viridis",
+            arrow_size=2,
+        )
+
+        self.assertIsInstance(stream, Stream)
+        self.assertListEqual(
+            stream.x_data.tolist(), np.linspace(0, 3 * np.pi, 20).tolist()
+        )
+        self.assertListEqual(
+            stream.y_data.tolist(), np.linspace(0, 3 * np.pi, 20).tolist()
+        )
+        self.assertEqual(stream.density, 0.7)
+        self.assertEqual(stream.line_width, 2)
+        self.assertEqual(stream.color, "black")
+        self.assertEqual(stream.color_map, "viridis")
+        self.assertEqual(stream.arrow_size, 2)
+
+    def test_plot_element(self):
+        x_grid, y_grid = np.meshgrid(np.linspace(0, 11, 30), np.linspace(0, 11, 30))
+        u, v = (np.cos(x_grid * 0.2), np.sin(y_grid * 0.3))
+
+        stream = Stream(
+            x_data=x_grid,
+            y_data=y_grid,
+            u_data=u,
+            v_data=v,
+            density=0.7,
+            line_width=2,
+            color="black",
+            color_map="viridis",
+            arrow_size=2,
+        )
+
+        _, ax = plt.subplots()
+        stream._plot_element(ax, 0)
+        self.assertEqual(len(ax.collections), 1)
+        self.assertEqual(ax.collections[0].get_linewidth(), 2)
+        self.assertListEqual(
+            ax.collections[0].get_color().tolist()[0], [i for i in to_rgba("k")]
+        )
+        self.assertEqual(ax.collections[0].get_cmap().name, "viridis")
 
 
 if __name__ == "__main__":
