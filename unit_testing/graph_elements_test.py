@@ -1,10 +1,10 @@
 import unittest
-from cgi import test
 
 from matplotlib import pyplot as plt
+from matplotlib.colors import to_rgba
 from numpy import ndarray
 
-from graphinglib.graph_elements import Hlines, Point, Text, Vlines
+from graphinglib.graph_elements import Hlines, Point, Table, Text, Vlines
 
 
 class TestHlines(unittest.TestCase):
@@ -168,3 +168,151 @@ class TestText(unittest.TestCase):
                 self.assertEqual(child.get_shrink(), 0.05)
 
         plt.close(fig)
+
+
+class TestTable(unittest.TestCase):
+    def test_init(self):
+        data = [
+            [5, 223.9369, 0.0323, 0.0532, 0.1764],
+            [10, 223.9367, 0.0324, 0.0533, 0.1765],
+            [15, 223.9367, 0.0325, 0.0534, 0.1764],
+            [20, 223.9387, 0.0326, 0.0535, 0.1763],
+            [25, 223.9385, 0.0327, 0.0536, 0.1761],
+        ]
+        columns = [
+            "Time (s)",
+            "Voltage (V)",
+            "Current 1 (A)",
+            "Current 2 (A)",
+            "Current 3 (A)",
+        ]
+        rows = ["Series 1", "Series 2", "Series 3", "Series 4", "Series 5"]
+        colors = [["#bfbfbf"] * 5] * 5
+
+        table = Table(
+            cell_text=data,
+            cell_colors=colors,
+            cell_align="center",
+            col_labels=columns,
+            col_widths=[0.1, 0.1, 0.1, 0.1, 0.1],
+            col_align="center",
+            col_colors=["#bfbfbf"] * 5,
+            row_labels=rows,
+            row_align="center",
+            row_colors=["#bfbfbf"] * 5,
+            scaling=(1.1, 1.1),
+            location="bottom",
+        )
+
+        self.assertListEqual(table.cell_text, data)
+        self.assertListEqual(table.cell_colors, colors)
+        self.assertEqual(table.cell_align, "center")
+        self.assertListEqual(table.col_labels, columns)
+        self.assertListEqual(table.col_widths, [0.1, 0.1, 0.1, 0.1, 0.1])
+        self.assertEqual(table.col_align, "center")
+        self.assertListEqual(table.col_colors, ["#bfbfbf"] * 5)
+        self.assertListEqual(table.row_labels, rows)
+        self.assertEqual(table.row_align, "center")
+        self.assertListEqual(table.row_colors, ["#bfbfbf"] * 5)
+        self.assertEqual(table.scaling, (1.1, 1.1))
+        self.assertEqual(table.location, "bottom")
+
+    def test_plotting(self):
+        data = [
+            [5, 223.9369, 0.0323, 0.0532, 0.1764],
+            [10, 223.9367, 0.0324, 0.0533, 0.1765],
+            [15, 223.9367, 0.0325, 0.0534, 0.1764],
+            [20, 223.9387, 0.0326, 0.0535, 0.1763],
+            [25, 223.9385, 0.0327, 0.0536, 0.1761],
+        ]
+        columns = [
+            "Time (s)",
+            "Voltage (V)",
+            "Current 1 (A)",
+            "Current 2 (A)",
+            "Current 3 (A)",
+        ]
+        rows = ["Series 1", "Series 2", "Series 3", "Series 4", "Series 5"]
+        colors = [["#bfbfbf"] * 5] * 5
+
+        table = Table(
+            cell_text=data,
+            cell_colors=colors,
+            cell_align="center",
+            col_labels=columns,
+            col_widths=[0.1, 0.1, 0.1, 0.1, 0.1],
+            col_align="center",
+            col_colors=["#bfbfbf"] * 5,
+            row_labels=rows,
+            row_align="center",
+            row_colors=["#bfbfbf"] * 5,
+            scaling=(1.1, 1.1),
+            location="bottom",
+        )
+
+        fig, ax = plt.subplots()
+        table._plot_element(ax, 0)
+        #
+        # Check text in the table
+        self.assertEqual(
+            ax.tables[0].get_celld()[(0, 0)].get_text().get_text(), "Time (s)"
+        )
+        # Check text color
+        self.assertEqual(
+            ax.tables[0].get_celld()[(0, 0)].get_text().get_color(), "black"
+        )
+        # Check text alignment
+        self.assertEqual(
+            ax.tables[0].get_celld()[(0, 0)].get_text().get_horizontalalignment(),
+            "center",
+        )
+        self.assertEqual(
+            ax.tables[0].get_celld()[(0, 0)].get_text().get_verticalalignment(),
+            "center",
+        )
+        # Check cell color
+        self.assertEqual(
+            ax.tables[0].get_celld()[(0, 0)].get_facecolor(),
+            to_rgba("#bfbfbf"),
+        )
+        # Check cell width
+        self.assertAlmostEqual(ax.tables[0].get_celld()[(0, 0)].get_width(), 0.1 * 1.1)
+        # Now same as above for a row label cell
+        self.assertEqual(
+            ax.tables[0].get_celld()[(1, -1)].get_text().get_text(), "Series 1"
+        )
+        self.assertEqual(
+            ax.tables[0].get_celld()[(1, -1)].get_text().get_color(), "black"
+        )
+        self.assertEqual(
+            ax.tables[0].get_celld()[(1, -1)].get_text().get_horizontalalignment(),
+            "center",
+        )
+        self.assertEqual(
+            ax.tables[0].get_celld()[(1, -1)].get_text().get_verticalalignment(),
+            "center",
+        )
+        self.assertEqual(
+            ax.tables[0].get_celld()[(1, -1)].get_facecolor(),
+            to_rgba("#bfbfbf"),
+        )
+        # Now same as above for a cell in the table
+        self.assertEqual(
+            ax.tables[0].get_celld()[(1, 1)].get_text().get_text(), "223.9369"
+        )
+        self.assertEqual(
+            ax.tables[0].get_celld()[(1, 1)].get_text().get_color(), "black"
+        )
+        self.assertEqual(
+            ax.tables[0].get_celld()[(1, 1)].get_text().get_horizontalalignment(),
+            "center",
+        )
+        self.assertEqual(
+            ax.tables[0].get_celld()[(1, 1)].get_text().get_verticalalignment(),
+            "center",
+        )
+        self.assertEqual(
+            ax.tables[0].get_celld()[(1, 1)].get_facecolor(),
+            to_rgba("#bfbfbf"),
+        )
+        self.assertEqual(ax.tables[0].get_celld()[(1, 1)].get_width(), 0.1 * 1.1)
