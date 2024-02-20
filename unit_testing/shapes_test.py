@@ -1,10 +1,11 @@
 import unittest
-from cgi import test
 
 import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.colors import to_rgba
 
 from graphinglib.graph_elements import Point
-from graphinglib.shapes import Circle, Rectangle
+from graphinglib.shapes import Arrow, Circle, Line, Rectangle
 
 
 class TestCircle(unittest.TestCase):
@@ -272,3 +273,49 @@ class TestRectangle(unittest.TestCase):
         self.assertEqual(points[0].y, 4.3)
         self.assertEqual(points[1].x, 7)
         self.assertEqual(points[1].y, 4.3)
+
+
+class TestLine(unittest.TestCase):
+    def test_init(self):
+        line = Line(
+            pointA=(3, 3),
+            pointB=(4, 4),
+            color="blue",
+            width=2,
+            capped_line=True,
+            cap_width=3,
+        )
+
+        self.assertEqual(line.pointA[0], 3)
+        self.assertEqual(line.pointA[1], 3)
+        self.assertEqual(line.pointB[0], 4)
+        self.assertEqual(line.pointB[1], 4)
+        self.assertEqual(line.color, "blue")
+        self.assertEqual(line.width, 2)
+        self.assertEqual(line.capped_line, True)
+        self.assertEqual(line.cap_width, 3)
+
+    def test_plotting(self):
+        line = Line(
+            pointA=(3, 3),
+            pointB=(4, 4),
+            color="blue",
+            width=2,
+            capped_line=True,
+            cap_width=3,
+        )
+
+        _, ax = plt.subplots()
+        line._plot_element(ax, 0)
+
+        for child in ax.get_children():
+            if isinstance(child, plt.Annotation):
+                self.assertEqual(child.xy, (3, 3))
+                self.assertEqual(child.xyann, (4, 4))
+                self.assertEqual(child.arrow_patch.get_edgecolor(), to_rgba("blue"))
+                self.assertEqual(child.arrow_patch.get_linewidth(), 2)
+        plt.close()
+
+
+if __name__ == "__main__":
+    unittest.main()
