@@ -158,15 +158,13 @@ class TestText(unittest.TestCase):
         self.assertEqual(ax.texts[0].get_verticalalignment(), "center")
         # Check if the arrow is plotted correctly
         for child in ax.get_children():
-            if isinstance(child, plt.Arrow):
-                self.assertEqual(child.get_xy(), (0, 0))
-                self.assertEqual(child.get_dx(), 1)
-                self.assertEqual(child.get_dy(), 1)
-                self.assertEqual(child.get_width(), 0.1)
-                self.assertEqual(child.get_head_width(), 0.3)
-                self.assertEqual(child.get_head_length(), 0.2)
-                self.assertEqual(child.get_shrink(), 0.05)
-
+            if isinstance(child, plt.Annotation):
+                self.assertEqual(child.xy, (1, 1))
+                self.assertEqual(child.xyann, (0, 0))
+                self.assertEqual(child.arrowprops["width"], 0.1)
+                self.assertEqual(child.arrowprops["headwidth"], 0.3)
+                self.assertEqual(child.arrowprops["headlength"], 0.2)
+                self.assertEqual(child.arrowprops["shrink"], 0.05)
         plt.close(fig)
 
 
@@ -316,3 +314,7 @@ class TestTable(unittest.TestCase):
             to_rgba("#bfbfbf"),
         )
         self.assertEqual(ax.tables[0].get_celld()[(1, 1)].get_width(), 0.1 * 1.1)
+
+
+if __name__ == "__main__":
+    unittest.main()
