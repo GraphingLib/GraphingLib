@@ -207,11 +207,13 @@ class TestMultiFigure(unittest.TestCase):
         a_multifig = MultiFigure(num_rows=2, num_cols=2, figure_style="Burrrd")
         with self.assertRaises(GraphingException):
             a_multifig._prepare_multi_figure()
+        plt.close("all")
 
     def test_prepare_multifigure_resets_rc(self):
         a_multifig = MultiFigure(num_rows=2, num_cols=2)
         a_multifig._prepare_multi_figure()
         self.assertDictEqual(a_multifig._rc_dict, {})
+        plt.close("all")
 
     def test_prepare_multifigure_prepares_figures(self):
         a_figure = Figure()
@@ -228,6 +230,7 @@ class TestMultiFigure(unittest.TestCase):
         self.assertEqual(another_figure._axes.get_lines()[0].get_linewidth(), 5)
         self.assertFalse(a_figure._axes.get_legend())
         self.assertFalse(another_figure._axes.get_legend())
+        plt.close("all")
 
     def test_fill_in_missing_params(self):
         a_multifig = MultiFigure(num_rows=2, num_cols=2)
@@ -352,6 +355,7 @@ class TestMultiFigure(unittest.TestCase):
             [a_figure, another_figure], figure_style="matplotlib"
         )
         a_multifig._prepare_multi_figure()
+        plt.close("all")
 
 
 if __name__ == "__main__":

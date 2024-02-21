@@ -43,6 +43,7 @@ class TestFigure(unittest.TestCase):
         self.assertEqual(
             len(self.testFigure._axes.get_lines()), len(self.testFigure._elements)
         )
+        plt.close("all")
 
     def test_raise_exception_if_no_curve_added(self):
         self.assertRaises(GraphingException, self.testFigure.show)
@@ -92,12 +93,14 @@ class TestFigure(unittest.TestCase):
         self.assertEqual(self.testCurve.line_width, "default")
         self.testFigure._fill_in_missing_params(self.testCurve)
         self.assertEqual(self.testCurve.line_width, 2)
+        plt.close("all")
 
     def test_handles_and_labels_cleared(self):
         self.testFigure.add_elements(self.testCurve)
         self.testFigure._prepare_figure()
         self.assertEqual(len(self.testFigure._handles), 0)
         self.assertEqual(len(self.testFigure._labels), 0)
+        plt.close("all")
 
     def test_handles_and_labels_added(self):
         self.testFigure.add_elements(self.testCurve)
@@ -113,6 +116,7 @@ class TestFigure(unittest.TestCase):
         handles, labels = self.testFigure._axes.get_legend_handles_labels()
         self.assertEqual(len(handles), 2)
         self.assertListEqual(labels, ["Test Curve", "Other Curve"])
+        plt.close("all")
 
     def test_fill_in_rc_params_gl(self):
         a_figure = Figure()
@@ -206,6 +210,7 @@ class TestFigure(unittest.TestCase):
         a_figure = Figure(figure_style="matplotlib")
         a_figure.add_elements(self.testCurve)
         a_figure._prepare_figure()
+        plt.close("all")
 
     def test_create_twin_axis(self):
         a_figure = Figure()
@@ -264,6 +269,7 @@ class TestTwinAxis(unittest.TestCase):
         labels, handles = twin._prepare_twin_axis(axes, True, {}, "plain")
         self.assertEqual(len(labels), 1)
         self.assertEqual(len(handles), 1)
+        plt.close("all")
 
     def test_fill_in_missing_params(self):
         default_params = {
