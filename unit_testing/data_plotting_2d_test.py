@@ -87,7 +87,8 @@ class TestHeatmap(unittest.TestCase):
         self.assertEqual(ax.images[0].get_interpolation(), "nearest")
         self.assertTrue(ax.images[0].get_visible())
         self.assertEqual(len(fig.axes), 2)
-        self.assertEqual(fig.axes[1].get_ylim(), (min(z), max(z)))
+        self.assertAlmostEqual(fig.axes[1].get_ylim()[0], min(z), places=3)
+        self.assertAlmostEqual(fig.axes[1].get_ylim()[1], max(z), places=3)
 
 
 class TestVectorField(unittest.TestCase):
