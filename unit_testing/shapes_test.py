@@ -275,6 +275,96 @@ class TestRectangle(unittest.TestCase):
         self.assertEqual(points[1].y, 4.3)
 
 
+class TestArrow(unittest.TestCase):
+    def test_init(self):
+        arrow = Arrow(
+            pointA=(3, 3),
+            pointB=(4, 4),
+            color="blue",
+            width=2,
+            head_size=3,
+            shrink=0.1,
+            two_sided=True,
+        )
+
+        self.assertEqual(arrow.pointA[0], 3)
+        self.assertEqual(arrow.pointA[1], 3)
+        self.assertEqual(arrow.pointB[0], 4)
+        self.assertEqual(arrow.pointB[1], 4)
+        self.assertEqual(arrow.color, "blue")
+        self.assertEqual(arrow.width, 2)
+        self.assertEqual(arrow.head_size, 3)
+        self.assertEqual(arrow.shrink, 0.1)
+        self.assertEqual(arrow.two_sided, True)
+
+    def test_shrink_points(self):
+        arrow = Arrow(
+            pointA=(3, 3),
+            pointB=(4, 4),
+            shrink=0.1,
+        )
+        shrinkedA, shrinkedB = arrow._shrink_points()
+        self.assertEqual(shrinkedA[0], 3.1)
+        self.assertEqual(shrinkedA[1], 3.1)
+        self.assertEqual(shrinkedB[0], 3.9)
+        self.assertEqual(shrinkedB[1], 3.9)
+
+        arrow2 = Arrow(
+            pointA=(3, 4),
+            pointB=(4, 3),
+            shrink=0.2,
+        )
+        shrinkedA, shrinkedB = arrow2._shrink_points()
+        self.assertEqual(shrinkedA[0], 3.2)
+        self.assertEqual(shrinkedA[1], 3.8)
+        self.assertEqual(shrinkedB[0], 3.8)
+        self.assertEqual(shrinkedB[1], 3.2)
+
+        arrow3 = Arrow(
+            pointA=(4, 3),
+            pointB=(3, 4),
+            shrink=0.3,
+        )
+        shrinkedA, shrinkedB = arrow3._shrink_points()
+        self.assertEqual(shrinkedA[0], 3.7)
+        self.assertEqual(shrinkedA[1], 3.3)
+        self.assertEqual(shrinkedB[0], 3.3)
+        self.assertEqual(shrinkedB[1], 3.7)
+
+        arrow4 = Arrow(
+            pointA=(4, 4),
+            pointB=(3, 3),
+            shrink=0.4,
+        )
+        shrinkedA, shrinkedB = arrow4._shrink_points()
+        self.assertEqual(shrinkedA[0], 3.6)
+        self.assertEqual(shrinkedA[1], 3.6)
+        self.assertEqual(shrinkedB[0], 3.4)
+        self.assertEqual(shrinkedB[1], 3.4)
+
+    def test_plotting(self):
+        arrow = Arrow(
+            pointA=(3, 3),
+            pointB=(4, 4),
+            color="blue",
+            width=2,
+            head_size=3,
+            shrink=0.1,
+            two_sided=True,
+        )
+
+        _, ax = plt.subplots()
+        arrow._plot_element(ax, 0)
+
+        for child in ax.get_children():
+            if isinstance(child, plt.Annotation):
+                self.assertEqual(child.xy, (3.9, 3.9))
+                self.assertEqual(child.xyann, (3.1, 3.1))
+                self.assertEqual(child.arrow_patch.get_edgecolor(), to_rgba("blue"))
+                self.assertEqual(child.arrow_patch.get_linewidth(), 2)
+        plt.close()
+
+
 class TestLine(unittest.TestCase):
     def test_init(self):
         line = Line(
