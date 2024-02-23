@@ -1,0 +1,37 @@
+===============================
+GraphingLib 1.4.0 Release Notes
+===============================
+
+API changes for more coherent coding
+------------------------------------
+
+What's Changed
+^^^^^^^^^^^^^^
+
+**Highlights**
+
+* New :class:`~graphinglib.shapes.Line` object
+* Various changes in the API :
+    - Methods that return a GraphingLib object or a list of GraphingLib objects start with ``create_``
+    - Methods that return information on an object start with ``get_``
+    - To display a :class:`~graphinglib.figure.Figure` or :class:`~graphinglib.multifigure.MultiFigure` use ``show()``
+    - To save a :class:`~graphinglib.figure.Figure` or :class:`~graphinglib.multifigure.MultiFigure` use ``save()``
+    - Methods that add visual information to objects (histogram PDF, etc.) start with ``add_``
+    - Methods used to set properties not set in the object constructor start with ``set_``
+    - ``add_element()`` is now ``add_elements()``
+    - :class:`~graphinglib.multifigure.MultiFigure`'s ``add_sub_figure()`` is now ``add_figure()``
+
+**More changes**
+
+* A rotation can be applied to custom ticks
+* By default a :class:`~graphinglib.figure.Figure` has no axis labels
+* Getting coordinates on a :class:`~graphinglib.data_plotting_1d.Curve` is now separated from creating points on it
+* Axis limits can be specified for :class:`~graphinglib.figure.TwinAxis`
+* Coordinates can be obtained from a :class:`~graphinglib.graph_elements.Point` with :py:meth:`~graphinglib.graph_elements.Point.get_coordinates`
+
+**Bug fixes**
+
+* Fixed bug where ``rcParams`` in :class:`~graphinglib.multifigure.MultiFigure` were not carried over to subfigures
+* The :py:meth:`~graphinglib.data_plotting_1d.Curve.get_area_between` ``fill_under_color`` is the same as the :class:`~graphinglib.data_plotting_1d.Curve` color and not cycling independently
+* ``Self`` imports now working with Python 3.10
+* Fixed bug where ``rcParams`` were not set when passed to :py:meth:`~graphinglib.figure.Figure._prepare_figure`
