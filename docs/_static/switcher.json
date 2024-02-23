@@ -9,5 +9,10 @@
         "version": "1.4.0",
         "url": "https://graphinglib.readthedocs.io/en/stable/",
         "preferred": true
+    },
+    {
+        "name": "1.3.0",
+        "version": "1.3.0",
+        "url": "https://graphinglib.readthedocs.io/en/v1.3.0/",
     }
 ]
