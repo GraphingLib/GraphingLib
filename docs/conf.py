@@ -70,6 +70,9 @@ html_theme_options = {
 html_context = {"default_mode": "dark"}
 html_show_sourcelink = False
 favicons = ["icons/GraphingLib-favicon_250x250.png"]
+html_sidebars = {
+    "handbook/index": [],
+}
 
 # -- Extension options -------------------------------------------------------
 
