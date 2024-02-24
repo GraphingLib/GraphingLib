@@ -27,7 +27,7 @@ Sections in this handbook
         Everything about simple Figures.
         ++++
 
-        .. button-ref:: figure
+        .. button-ref:: ./figure
             :expand:
             :color: primary
             :click-parent:
@@ -91,7 +91,7 @@ Sections in this handbook
         Point, Hlines/Vlines, Text and Table.
         ++++
 
-        .. button-ref:: graph_elements
+        .. button-ref:: ./graph_elements
             :expand:
             :color: primary
             :click-parent:
@@ -107,7 +107,7 @@ Sections in this handbook
         Rectangle, Circle, Arrow and Line.
         ++++
 
-        .. button-ref:: shapes
+        .. button-ref:: ./shapes
             :expand:
             :color: primary
             :click-parent:
@@ -123,7 +123,7 @@ Sections in this handbook
         Everything about MultiFigures.
         ++++
 
-        .. button-ref:: multifigure
+        .. button-ref:: ./multifigure
             :expand:
             :color: primary
             :click-parent:
