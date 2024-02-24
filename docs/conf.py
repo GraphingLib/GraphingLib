@@ -72,6 +72,7 @@ html_show_sourcelink = False
 favicons = ["icons/GraphingLib-favicon_250x250.png"]
 html_sidebars = {
     "handbook/index": [],
+    "installation": [],
 }
 
 # -- Extension options -------------------------------------------------------
