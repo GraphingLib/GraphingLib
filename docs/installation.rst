@@ -34,4 +34,58 @@ To use Graphinglib in one of your projects, you need to import it with the follo
 
     import graphinglib as gl
 
-Once this is done you can :doc:`create a new Figure </handbook/figure>` or :doc:`Multifigure </handbook/multifigure>` and begin adding elements to it! See our :doc:`handbook </handbook/index>` for beginner friendly examples on how to use GraphingLib.
+What next?
+----------
+
+Once this is done you can visit one of the links below to learn how to create your first Figure and then how to work with Curves, Scatters and Fits.
+
+.. grid:: 1 1 3 3
+
+    .. grid-item-card::
+        :img-top: _static/icons/Figure.svg
+
+        Creating a simple figure
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+
+        Everything about simple Figures.
+        ++++
+
+        .. button-ref:: handbook/figure
+            :expand:
+            :color: primary
+            :click-parent:
+
+            Visit this section
+    
+    .. grid-item-card::
+        :img-top: _static/icons/Curve.svg
+
+        The Curve and its operations
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        The Curve, Curve arithmetics and Curve calculus.
+        ++++
+
+        .. button-ref:: handbook/curve
+            :expand:
+            :color: primary
+            :click-parent:
+
+            Visit this section
+    
+    .. grid-item-card::
+        :img-top: _static/icons/Scatter.svg
+
+        Scatter plots and fitting experimental data
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        The Scatter plots and data fitting methods.
+        ++++
+
+        .. button-ref:: handbook/scatter_fitting
+            :expand:
+            :color: primary
+            :click-parent:
+
+            Visit this section
+
