@@ -3,6 +3,7 @@
 !graphinglib/*.py
 !unit_testing/*.py
 !examples/*.py
+!docs/sphinxext/*.py
 
 **/__pycache__
 
