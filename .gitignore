@@ -2,6 +2,7 @@
 !setup.py
 !graphinglib/*.py
 !unit_testing/*.py
+!examples/*.py
 
 **/__pycache__
 
@@ -17,3 +18,5 @@ build
 **/*.lock
 
 docs/_build
+docs/example_thumbs
+docs/examples
