@@ -15,6 +15,7 @@ import shutil
 import warnings
 
 import matplotlib
+import numpy as np
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -69,6 +70,16 @@ INDEX_TEMPLATE = """
     }}
 
     .thumb:hover img {{
+        -webkit-filter: blur(3px);
+        -moz-filter: blur(3px);
+        -o-filter: blur(3px);
+        -ms-filter: blur(3px);
+        filter: blur(3px);
+        opacity:1.0;
+        filter:alpha(opacity=100); /* For IE8 and earlier */
+    }}
+    
+    html[data-theme=dark] .thumb:hover img {{
         -webkit-filter: blur(3px);
         -moz-filter: blur(3px);
         -o-filter: blur(3px);
@@ -139,8 +150,12 @@ def create_thumbnail(
     xslice = slice(x0, x0 + width)
     yslice = slice(y0, y0 + height)
     thumb = im[yslice, xslice]
-    thumb[:border, :, :3] = thumb[-border:, :, :3] = 0
-    thumb[:, :border, :3] = thumb[:, -border:, :3] = 0
+    thumb[:border, :, :3] = thumb[-border:, :, :3] = np.array(
+        [105 / 255, 123 / 255, 150 / 255]
+    )
+    thumb[:, :border, :3] = thumb[:, -border:, :3] = np.array(
+        [105 / 255, 123 / 255, 150 / 255]
+    )
 
     dpi = 100
     fig = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
@@ -223,19 +238,6 @@ class ExampleGenerator:
         return self.docstring.strip().split("\n")[0].strip()
 
     @property
-    def plotfunc(self):
-        match = re.search(r"sns\.(.+plot)\(", self.filetext)
-        if match:
-            return match.group(1)
-        match = re.search(r"sns\.(.+map)\(", self.filetext)
-        if match:
-            return match.group(1)
-        match = re.search(r"sns\.(.+Grid)\(", self.filetext)
-        if match:
-            return match.group(1)
-        return ""
-
-    @property
     def components(self):
 
         objects = re.findall(r"gl\.(\w+)\(", self.filetext)
@@ -243,7 +245,7 @@ class ExampleGenerator:
         refs = []
         for obj in objects:
             if obj[0].isupper():
-                refs.append(f":class:`~graphinglib.data_plotting_1d.{obj}`")
+                refs.append(f":class:`{obj}`")
             else:
                 refs.append(f":func:`{obj}`")
         return ", ".join(refs)
@@ -323,7 +325,7 @@ class ExampleGenerator:
             "    </a>\n"
             "    </div>\n\n"
             "\n\n"
-            "".format(self.htmlfilename, self.thumbfilename, self.plotfunc)
+            "".format(self.htmlfilename, self.thumbfilename, self.pagetitle)
         )
 
 
@@ -332,7 +334,6 @@ def main(app):
     target_dir = op.join(app.builder.srcdir, "examples")
     image_dir = op.join(app.builder.srcdir, "examples/_images")
     thumb_dir = op.join(app.builder.srcdir, "example_thumbs")
-    print(thumb_dir)
     source_dir = op.abspath(op.join(app.builder.srcdir, "..", "examples"))
     if not op.exists(static_dir):
         os.makedirs(static_dir)
