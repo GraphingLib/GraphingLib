@@ -138,19 +138,26 @@ Example gallery
 """
 
 
-def create_thumbnail(
-    infile, thumbfile, width=275, height=275, cx=0.5, cy=0.5, border=4
-):
+def create_thumbnail(infile, thumbfile):
     baseout, extout = op.splitext(thumbfile)
 
     im = matplotlib.image.imread(infile)
-    rows, cols = im.shape[:2]
-    x0 = int(cx * cols - 0.5 * width)
-    y0 = int(cy * rows - 0.5 * height)
-    xslice = slice(x0, x0 + width)
-    yslice = slice(y0, y0 + height)
-    thumb = im[yslice, xslice]
-    thumb[:border, :, :3] = thumb[-border:, :, :3] = np.array(
+    height, width, _ = im.shape
+    if height <= width:
+        to_cut = (width - height) / 2
+        if int(to_cut) != to_cut:
+            thumb = im[:, int(to_cut) : width - int(to_cut + 1), :]
+        else:
+            thumb = im[:, int(to_cut) : width - int(to_cut), :]
+    else:
+        to_cut = (height - width) / 2
+        if int(to_cut) != to_cut:
+            thumb = im[int(to_cut) : height - int(to_cut + 1), :, :]
+        else:
+            thumb = im[int(to_cut) : height - int(to_cut), :, :]
+
+    border = int(np.ceil(0.02 * thumb.shape[0]))
+    thumb[-border:, :, :3] = thumb[:border, :, :3] = np.array(
         [105 / 255, 123 / 255, 150 / 255]
     )
     thumb[:, :border, :3] = thumb[:, -border:, :3] = np.array(
@@ -307,8 +314,7 @@ class ExampleGenerator:
         self.html = f"<img src=../{self.pngfilename}>"
         fig.savefig(pngfile, dpi=75, bbox_inches="tight")
 
-        cx, cy = self.thumbloc
-        create_thumbnail(pngfile, thumbfile, cx=cx, cy=cy)
+        create_thumbnail(pngfile, thumbfile)
 
     def toctree_entry(self):
         return f"   ./{op.splitext(self.htmlfilename)[0]}\n\n"
