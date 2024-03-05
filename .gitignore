@@ -2,6 +2,8 @@
 !setup.py
 !graphinglib/*.py
 !unit_testing/*.py
+!examples/*.py
+!docs/sphinxext/*.py
 
 **/__pycache__
 
@@ -17,3 +19,5 @@ build
 **/*.lock
 
 docs/_build
+docs/example_thumbs/*.png
+docs/examples

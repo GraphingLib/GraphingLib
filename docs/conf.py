@@ -11,7 +11,7 @@ import sys
 
 from graphinglib import __version__
 
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("sphinxext"))
 
 project = "GraphingLib"
 copyright = "2024, Gustave Coulombe, Yannick Lapointe"
@@ -37,6 +37,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx_favicon",
     "sphinx_design",
+    "gallery_generator",
 ]
 
 templates_path = ["_templates"]
@@ -47,7 +48,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "pydata_sphinx_theme"
-html_static_path = ["_static"]
+html_static_path = ["_static", "example_thumbs"]
 html_css_files = ["graphinglib.css"]
 html_theme_options = {
     "github_url": "https://github.com/GraphingLib/GraphingLib",
@@ -73,6 +74,7 @@ favicons = ["icons/GraphingLib-favicon_250x250.png"]
 html_sidebars = {
     "handbook/index": [],
     "installation": [],
+    "examples/index": [],
 }
 
 # -- Extension options -------------------------------------------------------
