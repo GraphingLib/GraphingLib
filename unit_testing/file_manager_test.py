@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
+from matplotlib import pyplot as plt
+
 from graphinglib.file_manager import (
     FileDeleter,
     FileLoader,
@@ -8,6 +10,7 @@ from graphinglib.file_manager import (
     FileUpdater,
     get_color,
     get_colors,
+    get_styles,
 )
 
 
@@ -77,3 +80,15 @@ class TestGetColor(unittest.TestCase):
         self.assertEqual(color, "green")
         mock_file_loader.assert_called_once_with("plain")
         mock_file_loader_instance.load.assert_called_once()
+
+
+class TestGetStyles(unittest.TestCase):
+    def test_get_styles(self):
+        styles = get_styles(matplotlib=True, gl=False, customs=False)
+        self.assertListEqual(styles, plt.style.available)
+
+        # Test with dictionary
+        styles = get_styles(matplotlib=True, gl=True, customs=True, as_dict=True)
+        self.assertIsInstance(styles, dict)
+        self.assertIn("plain", styles["gl"])
+        self.assertListEqual(styles["matplotlib"], plt.style.available)

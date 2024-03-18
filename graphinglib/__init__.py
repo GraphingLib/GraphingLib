@@ -20,10 +20,11 @@ as Matplotlib. For further reference on those conventions, see the
 [Matplotlib documentation](https://matplotlib.org/stable/index.html).
 """
 
+from ._version import __version__
 from .data_plotting_1d import Curve, Histogram, Scatter
 from .data_plotting_2d import Contour, Heatmap, Stream, VectorField
 from .figure import Figure
-from .file_manager import get_color, get_colors
+from .file_manager import get_color, get_colors, get_styles
 from .fits import (
     FitFromExponential,
     FitFromFunction,
@@ -35,5 +36,4 @@ from .fits import (
 )
 from .graph_elements import GraphingException, Hlines, Point, Table, Text, Vlines
 from .multifigure import MultiFigure
-from .shapes import Circle, Rectangle, Arrow, Line
-from ._version import __version__
+from .shapes import Arrow, Circle, Line, Rectangle
