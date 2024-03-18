@@ -31,6 +31,8 @@ class Figure:
     size : tuple[float, float]
         Overall size of the figure.
         Default depends on the ``figure_style`` configuration.
+    title: str, optional
+        The title of the figure.
     log_scale_x, log_scale_y : bool
         Whether or not to set the scale of the x- or y-axis to logaritmic scale.
         Default depends on the ``figure_style`` configuration.
@@ -49,6 +51,7 @@ class Figure:
         x_label: Optional[str] = None,
         y_label: Optional[str] = None,
         size: tuple[float, float] | Literal["default"] = "default",
+        title: Optional[str] = None,
         x_lim: Optional[tuple[float, float]] = None,
         y_lim: Optional[tuple[float, float]] = None,
         log_scale_x: bool | Literal["default"] = "default",
@@ -70,6 +73,8 @@ class Figure:
         size : tuple[float, float]
             Overall size of the figure.
             Default depends on the ``figure_style`` configuration.
+        title: str, optional
+            The title of the figure.
         log_scale_x, log_scale_y : bool
             Whether or not to set the scale of the x- or y-axis to logaritmic scale.
             Default depends on the ``figure_style`` configuration.
@@ -84,6 +89,7 @@ class Figure:
         """
         self.figure_style = figure_style
         self.size = size
+        self.title = title
         self.log_scale_x = log_scale_x
         self.log_scale_y = log_scale_y
         if show_grid == "default":
@@ -156,8 +162,12 @@ class Figure:
 
         if axes is not None:
             self._axes = axes
+            if self.title is not None:
+                self._axes.set_title(self.title, fontdict={"fontsize": "medium"})
         else:
             self._figure, self._axes = plt.subplots(figsize=self.size)
+            if self.title is not None:
+                self._axes.set_title(self.title)
 
         if self.show_grid == "unchanged":
             pass
