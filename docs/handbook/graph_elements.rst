@@ -31,17 +31,17 @@ The Hlines and Vlines objects serve a similar purpose to the Point object; they 
     curve = gl.Curve.from_function(
         lambda x: 0.1 * x**2 + np.sin(3 * x) - np.cos(2 * x) + 1, 0, 5
     )
-    hlines = gl.Vlines(
-        x=[curve.x_data[20], curve.x_data[250]],
-        y_min=[0, 0],
-        y_max=[curve.y_data[20], curve.y_data[250]],
-        line_styles="--",
-        colors="gray",
-    )
-    vlines = gl.Hlines(
+    hlines = gl.Hlines(
         y=[curve.y_data[20], curve.y_data[250]],
         x_min=[0, 0],
         x_max=[curve.x_data[20], curve.x_data[250]],
+        line_styles="--",
+        colors="gray",
+    )
+    vlines = gl.Vlines(
+        x=[curve.x_data[20], curve.x_data[250]],
+        y_min=[0, 0],
+        y_max=[curve.y_data[20], curve.y_data[250]],
         line_styles="--",
         colors="gray",
     )
