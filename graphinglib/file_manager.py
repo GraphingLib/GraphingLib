@@ -1,4 +1,4 @@
-from os import path, remove
+from os import listdir, path, remove
 
 import yaml
 from matplotlib import pyplot as plt
@@ -173,3 +173,57 @@ def get_color(figure_style: str = "plain", color_number: int = 0) -> str:
             f"There are only {len(colors)} colors in the {figure_style} style (use index 0 to {len(colors) - 1})."
         )
     return color
+
+
+def get_styles(
+    customs: bool = True,
+    gl: bool = True,
+    matplotlib: bool = False,
+    as_dict: bool = False,
+) -> list[str]:
+    """
+    Returns a list or dict of available styles.
+
+    If as_dict is True, dictionary is returned with keys "customs", "gl", and "matplotlib" (if applicable).
+
+    Parameters
+    ----------
+    customs : bool
+        Whether to include user created styles.
+        Default is True.
+    gl : bool
+        Whether to include GL styles.
+        Default is True.
+    matplotlib : bool
+        Whether to include Matplotlib styles.
+        Default is False.
+
+    Returns
+    -------
+    list[str] or dict[str, str]
+        A list or dict of available styles.
+    """
+    customs_list = []
+    gl_list = []
+    matplotlib_list = []
+    if customs:
+        customs_list = [
+            file.split(".")[0] for file in listdir(user_config_dir("GraphingLib"))
+        ]
+    if gl:
+        gl_list = [
+            file.split(".")[0]
+            for file in listdir(f"{path.dirname(__file__)}/default_styles")
+        ]
+    if matplotlib:
+        matplotlib_list = plt.style.available
+    if as_dict:
+        style_dict = {
+            "customs": customs_list,
+            "gl": gl_list,
+            "matplotlib": matplotlib_list,
+        }
+        # Remove empty lists
+        style_dict = {k: v for k, v in style_dict.items() if v}
+        return style_dict
+    return customs_list + gl_list + matplotlib_list
