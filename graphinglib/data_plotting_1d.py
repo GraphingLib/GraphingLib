@@ -72,6 +72,8 @@ class Curve:
     line_style: str = "default"
     show_errorbars: bool = field(default=False, init=False)
     _fill_curve_between: Optional[tuple[float, float]] = field(init=False, default=None)
+    _fill_under_other_curve: Optional[Self] = field(init=False, default=None)
+    _fill_under_color: Optional[str] = field(init=False, default=None)
 
     @classmethod
     def from_function(
@@ -645,6 +647,7 @@ class Curve:
         x2: float,
         fill_under: bool = False,
         fill_color: str = "default",
+        other_curve: Optional[Self] = None,
     ) -> float:
         """
         Calculates the area between the curve and the x axis between two x values.
@@ -660,20 +663,42 @@ class Curve:
         fill_color : str
             Color of the area between the curve and the x axis when ``fill_under`` is set to ``True``.
             Default depends on the ``figure_style`` configuration.
+        other_curve : :class:`~graphinglib.data_plotting_1d.Curve`, optional
+            If specified, the area between the two curves will be calculated instead of the area between the curve and the x axis.
 
         Returns
         -------
         The area (float) between the curve and the x axis between the two given x values.
         """
-        if fill_under:
-            self._fill_curve_between = (x1, x2)
-            self.fill_under_color = fill_color
-        y_data = self.y_data
-        x_data = self.x_data
-        f = interp1d(x_data, y_data)
-        x = np.linspace(x1, x2, 1000)
-        y = f(x)
-        return np.trapz(y, x)
+        if other_curve is None:
+            if fill_under:
+                self._fill_curve_between = (x1, x2)
+                if fill_color != "default":
+                    self._fill_under_color = fill_color
+            y_data = self.y_data
+            x_data = self.x_data
+            y = y_data[(x_data >= x1) & (x_data <= x2)]
+            x = x_data[(x_data >= x1) & (x_data <= x2)]
+            return np.trapz(y, x)
+        else:
+            if fill_under:
+                self._fill_curve_between = (x1, x2)
+                if fill_color != "default":
+                    self._fill_under_color = fill_color
+                self._fill_under_other_curve = other_curve
+            if not np.array_equal(self.x_data, other_curve.x_data):
+                num_of_values = max(len(self.x_data), len(other_curve.x_data))
+                x_data = np.linspace(x1, x2, num_of_values)
+                y_data_self = interp1d(self.x_data, self.y_data)(x_data)
+                y_data_other = interp1d(other_curve.x_data, other_curve.y_data)(x_data)
+                y_data_diff = y_data_self - y_data_other
+                return np.trapz(y_data_diff, x_data)
+
+            y_data = self.y_data - other_curve.y_data
+            x_data = self.x_data
+            y_data = y_data[(x_data >= x1) & (x_data <= x2)]
+            x_data = x_data[(x_data >= x1) & (x_data <= x2)]
+            return np.trapz(y_data, x_data)
 
     def get_intersection_coordinates(
         self,
@@ -847,17 +872,36 @@ class Curve:
             )
         if self._fill_curve_between:
             kwargs = {"alpha": 0.2}
-            if self.fill_under_color:
-                kwargs["color"] = self.fill_under_color
+            if self._fill_under_color is not None:
+                kwargs["color"] = self._fill_under_color
             else:
                 kwargs["color"] = self.handle[0].get_color()
             kwargs = {k: v for k, v in kwargs.items() if v != "default"}
+            if self._fill_under_other_curve:
+                self_y_data = self.y_data
+                self_x_data = self.x_data
+                other_y_data = self._fill_under_other_curve.y_data
+                other_x_data = self._fill_under_other_curve.x_data
+                x_data = np.linspace(
+                    self._fill_curve_between[0],
+                    self._fill_curve_between[1],
+                    max(len(self_x_data), len(other_x_data)),
+                )
+                self_y_data = interp1d(self_x_data, self_y_data)(x_data)
+                other_y_data = interp1d(other_x_data, other_y_data)(x_data)
+                kwargs["x"] = x_data
+                kwargs["y1"] = self_y_data
+                kwargs["y2"] = other_y_data
+                where_x_data = x_data
+            else:
+                kwargs["x"] = self.x_data
+                kwargs["y1"] = self.y_data
+                where_x_data = self.x_data
+
             axes.fill_between(
-                self.x_data,
-                self.y_data,
                 where=np.logical_and(
-                    self.x_data >= self._fill_curve_between[0],
-                    self.x_data <= self._fill_curve_between[1],
+                    where_x_data >= self._fill_curve_between[0],
+                    where_x_data <= self._fill_curve_between[1],
                 ),
                 zorder=z_order - 2,
                 **kwargs,
