@@ -123,6 +123,19 @@ class TestCurve(unittest.TestCase):
         self.assertEqual(fill_under_color, curve2_color)
         close("all")
 
+    def test_area_between_fill_under_two_curves(self):
+        curve = Curve.from_function(lambda x: x**2, 0, 1)
+        curve2 = Curve.from_function(lambda x: x**3, 0, 1)
+        area = curve.get_area_between(0, 1, fill_under=True, other_curve=curve2)
+        self.assertAlmostEqual(area, 1 / 12, places=3)
+        fig = Figure()
+        fig.add_elements(curve, curve2)
+        fig._prepare_figure()
+        fill_under_color = to_hex(fig._axes.collections[0].get_facecolor()[0])
+        curve_color = fig._axes.get_lines()[0].get_color()
+        self.assertEqual(fill_under_color, curve_color)
+        close("all")
+
     def test_slope_at(self):
         self.assertAlmostEqual(self.testCurve.get_slope_at(pi / 2), 0, places=5)
 

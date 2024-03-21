@@ -238,11 +238,12 @@ class GeneralFit(Curve):
                 **params,
             )
         if self._fill_curve_between:
-            params = {
-                "alpha": 0.2,
-                "color": self.fill_color,
-            }
-            params = {key: value for key, value in params.items() if value != "default"}
+            kwargs = {"alpha": 0.2}
+            if self._fill_under_color:
+                kwargs["color"] = self._fill_under_color
+            else:
+                kwargs["color"] = self.handle[0].get_color()
+            params = {key: value for key, value in kwargs.items() if value != "default"}
             axes.fill_between(
                 self.x_data,
                 self.y_data,
