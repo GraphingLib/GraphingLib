@@ -636,9 +636,11 @@ class Curve:
         """
         y_data = self.y_data
         x_data = self.x_data
-        f = interp1d(x_data, y_data)
-        x = np.linspace(x1, x2, 1000)
-        y = f(x)
+        # f = interp1d(x_data, y_data)
+        # x = np.linspace(x1, x2, 1000)
+        # y = f(x)
+        x = x_data[(x_data >= x1) & (x_data <= x2)]
+        y = y_data[(x_data >= x1) & (x_data <= x2)]
         return np.trapz(np.sqrt(1 + np.gradient(y, x) ** 2), x)
 
     def get_area_between(
@@ -677,8 +679,9 @@ class Curve:
                     self._fill_under_color = fill_color
             y_data = self.y_data
             x_data = self.x_data
-            y = y_data[(x_data >= x1) & (x_data <= x2)]
-            x = x_data[(x_data >= x1) & (x_data <= x2)]
+            mask = (x_data >= x1) & (x_data <= x2)
+            y = y_data[mask]
+            x = x_data[mask]
             return np.trapz(y, x)
         else:
             if fill_under:
@@ -686,19 +689,27 @@ class Curve:
                 if fill_color != "default":
                     self._fill_under_color = fill_color
                 self._fill_under_other_curve = other_curve
-            if not np.array_equal(self.x_data, other_curve.x_data):
-                num_of_values = max(len(self.x_data), len(other_curve.x_data))
-                x_data = np.linspace(x1, x2, num_of_values)
-                y_data_self = interp1d(self.x_data, self.y_data)(x_data)
-                y_data_other = interp1d(other_curve.x_data, other_curve.y_data)(x_data)
-                y_data_diff = y_data_self - y_data_other
-                return np.trapz(y_data_diff, x_data)
+            if np.array_equal(self.x_data, other_curve.x_data):
+                # No need to interpolate
+                mask = (self.x_data >= x1) & (self.x_data <= x2)
+                common_x = self.x_data[mask]
+                y1 = self.y_data[mask]
+                y2 = other_curve.y_data[mask]
+            else:
+                # Interpolate to get common x values
+                density_x1 = len(self.x_data) / (self.x_data[-1] - self.x_data[0])
+                density_x2 = len(other_curve.x_data) / (
+                    other_curve.x_data[-1] - other_curve.x_data[0]
+                )
+                higher_density = max(density_x1, density_x2)
+                num_of_values = int(np.ceil(higher_density * (x2 - x1)))
+                common_x = np.linspace(x1, x2, num_of_values)
+                y1 = np.interp(common_x, self.x_data, self.y_data)
+                y2 = np.interp(common_x, other_curve.x_data, other_curve.y_data)
 
-            y_data = self.y_data - other_curve.y_data
-            x_data = self.x_data
-            y_data = y_data[(x_data >= x1) & (x_data <= x2)]
-            x_data = x_data[(x_data >= x1) & (x_data <= x2)]
-            return np.trapz(y_data, x_data)
+            difference = y1 - y2
+            area = np.trapz(difference, common_x)
+            return area
 
     def get_intersection_coordinates(
         self,
