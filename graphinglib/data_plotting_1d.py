@@ -71,6 +71,7 @@ class Curve:
     line_width: float | Literal["default"] = "default"
     line_style: str = "default"
     show_errorbars: bool = field(default=False, init=False)
+    show_error_curves: bool = field(default=False, init=False)
     _fill_curve_between: Optional[tuple[float, float]] = field(init=False, default=None)
     _fill_under_other_curve: Optional[Self] = field(init=False, default=None)
     _fill_under_color: Optional[str] = field(init=False, default=None)
@@ -277,6 +278,45 @@ class Curve:
         self.errorbars_line_width = errorbars_line_width
         self.cap_thickness = cap_thickness
         self.cap_width = cap_width
+
+    def add_error_curves(
+        self,
+        x_error: Optional[ArrayLike] = None,
+        y_error: Optional[ArrayLike] = None,
+        error_curves_color: str = "default",
+        error_curves_line_style: str = "default",
+        error_curves_line_width: float | Literal["default"] = "default",
+        error_curves_fill_between: bool | Literal["default"] = "default",
+    ) -> None:
+        """
+        Adds error curves to the :class:`~graphinglib.data_plotting_1d.Curve`.
+
+        Parameters
+        ----------
+        x_error : ArrayLike, optional
+            Array of x errors.
+        y_error : ArrayLike, optional
+            Array of y errors.
+        error_curves_color : str
+            Color of the error curves.
+            Default depends on the ``figure_style`` configuration.
+        error_curves_line_style : str
+            Line style of the error curves.
+            Default depends on the ``figure_style`` configuration.
+        error_curves_line_width : float
+            Line width of the error curves.
+            Default depends on the ``figure_style`` configuration.ç
+        error_curves_fill_between : bool
+            Whether or not to fill the area between the two error curves.
+            Default depends on the ``figure_style`` configuration.
+        """
+        self.show_error_curves = True
+        self.x_error = np.array(x_error) if x_error is not None else x_error
+        self.y_error = np.array(y_error) if y_error is not None else y_error
+        self.error_curves_color = error_curves_color
+        self.error_curves_line_style = error_curves_line_style
+        self.error_curves_line_width = error_curves_line_width
+        self.error_curves_fill_between = error_curves_fill_between
 
     def get_coordinates_at_x(
         self,
@@ -881,6 +921,31 @@ class Curve:
                 zorder=z_order,
                 **params,
             )
+        if self.show_error_curves:
+            max_y = (
+                self.y_data + self.y_error if self.y_error is not None else self.y_data
+            )
+            min_y = (
+                self.y_data - self.y_error if self.y_error is not None else self.y_data
+            )
+            axes.plot(
+                self.x_data,
+                min_y,
+                linestyle=self.error_curves_line_style,
+                linewidth=self.error_curves_line_width,
+                color=self.handle[0].get_color(),
+            )
+            axes.plot(
+                self.x_data,
+                max_y,
+                linestyle=self.error_curves_line_style,
+                linewidth=self.error_curves_line_width,
+                color=self.handle[0].get_color(),
+            )
+            if self.error_curves_fill_between:
+                axes.fill_between(
+                    self.x_data, max_y, min_y, color=self.error_curves_color, alpha=0.2
+                )
         if self._fill_curve_between:
             kwargs = {"alpha": 0.2}
             if self._fill_under_color is not None:

@@ -308,6 +308,8 @@ class Figure:
             "errorbars_line_width": "line_width",
             "cap_thickness": "line_width",
             "fill_under_color": "color",
+            "error_curves_line_width": "line_width",
+            "error_curves_color": "color",
         }
         while tries < 2:
             try:
