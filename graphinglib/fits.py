@@ -412,7 +412,11 @@ class FitFromPolynomial(GeneralFit):
             self.label = "$f(x) = $" + str(self)
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
-        number_of_points = 500
+        number_of_points = (
+            len(self.curve_to_be_fit.x_data)
+            if len(self.curve_to_be_fit.x_data) > 500
+            else 500
+        )
         self.x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
@@ -625,7 +629,11 @@ class FitFromSine(GeneralFit):
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
-        number_of_points = 500
+        number_of_points = (
+            len(self.curve_to_be_fit.x_data)
+            if len(self.curve_to_be_fit.x_data) > 500
+            else 500
+        )
         self.x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
@@ -881,7 +889,11 @@ class FitFromExponential(GeneralFit):
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
-        number_of_points = 500
+        number_of_points = (
+            len(self.curve_to_be_fit.x_data)
+            if len(self.curve_to_be_fit.x_data) > 500
+            else 500
+        )
         self.x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
@@ -1094,7 +1106,11 @@ class FitFromGaussian(GeneralFit):
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
-        number_of_points = 500
+        number_of_points = (
+            len(self.curve_to_be_fit.x_data)
+            if len(self.curve_to_be_fit.x_data) > 500
+            else 500
+        )
         self.x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
@@ -1321,7 +1337,11 @@ class FitFromSquareRoot(GeneralFit):
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
-        number_of_points = 500
+        number_of_points = (
+            len(self.curve_to_be_fit.x_data)
+            if len(self.curve_to_be_fit.x_data) > 500
+            else 500
+        )
         self.x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
@@ -1522,7 +1542,11 @@ class FitFromLog(GeneralFit):
         self.line_width = line_width
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
-        number_of_points = 500
+        number_of_points = (
+            len(self.curve_to_be_fit.x_data)
+            if len(self.curve_to_be_fit.x_data) > 500
+            else 500
+        )
         self.x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
@@ -1718,7 +1742,11 @@ class FitFromFunction(GeneralFit):
         self.function = self._get_function_with_params()
         self.label = label
         self._res_curves_to_be_plotted = False
-        number_of_points = 500
+        number_of_points = (
+            len(self.curve_to_be_fit.x_data)
+            if len(self.curve_to_be_fit.x_data) > 500
+            else 500
+        )
         self.x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],

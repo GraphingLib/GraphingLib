@@ -13,7 +13,7 @@ from graphinglib.graph_elements import Point
 
 class TestCurve(unittest.TestCase):
     def setUp(self):
-        x = linspace(0, 3 * pi, 200)
+        x = linspace(0, 3 * pi, 1000)
         self.testCurve = Curve(x, sin(x), "Test Curve", color="k")
 
     def test_xdata_is_list_or_ndarray(self):
@@ -145,7 +145,7 @@ class TestCurve(unittest.TestCase):
         )
 
     def test_get_intersection_coordinates(self):
-        x = linspace(0, 3 * pi, 200)
+        x = linspace(0, 3 * pi, 1000)
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
         points = self.testCurve.get_intersection_coordinates(other_curve)
         points_x = [0.1, 2.9962, 6.6072, 8.9052]
@@ -156,7 +156,7 @@ class TestCurve(unittest.TestCase):
             self.assertAlmostEqual(point[1], points_y[i], places=3)
 
     def test_intersection(self):
-        x = linspace(0, 3 * pi, 200)
+        x = linspace(0, 3 * pi, 1000)
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
         points = self.testCurve.create_intersection_points(other_curve)
         points_x = [0.1, 2.9962, 6.6072, 8.9052]
