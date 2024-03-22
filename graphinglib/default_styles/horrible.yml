@@ -5,6 +5,10 @@ Curve:
   cap_width: 10
   errorbars_color: "same as curve"
   errorbars_line_width: "same as curve"
+  error_curves_color: same as curve
+  error_curves_fill_between: Flase
+  error_curves_line_style: ':'
+  error_curves_line_width: 0.5
   cap_thickness: "same as curve"
   fill_under_color: "same as curve"
 
