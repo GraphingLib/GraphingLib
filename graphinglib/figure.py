@@ -42,6 +42,9 @@ class Figure:
     remove_axes : bool
         Whether or not to show the axes. Useful for adding tables or text to
         the subfigure. Defaults to ``False``.
+    aspect_ratio : float, str
+        The aspect ratio of the axis scaling. Can be either "equal", "auto" or a float.
+        Defaults to "auto".
     figure_style : str
         The figure style to use for the figure.
     """
@@ -58,6 +61,7 @@ class Figure:
         log_scale_y: bool | Literal["default"] = "default",
         show_grid: bool | Literal["default"] = "default",
         remove_axes: bool = False,
+        aspect_ratio: float | str = "auto",
         figure_style: str = "plain",
     ) -> None:
         """
@@ -84,6 +88,9 @@ class Figure:
         remove_axes : bool
             Whether or not to show the axes. Useful for adding tables or text to
             the subfigure. Defaults to ``False``.
+        aspect_ratio : float, str
+            The aspect ratio of the axis scaling. Can be either "equal", "auto" or a float.
+            Defaults to "auto".
         figure_style : str
             The figure style to use for the figure.
         """
@@ -109,6 +116,16 @@ class Figure:
         self.remove_axes = remove_axes
         self._twin_x_axis = None
         self._twin_y_axis = None
+
+        if isinstance(aspect_ratio, str):
+            if aspect_ratio not in ["equal", "auto"]:
+                raise GraphingException(
+                    "Aspect ratio must be either 'equal', 'auto' or a float."
+                )
+        elif isinstance(aspect_ratio, float):
+            if aspect_ratio <= 0:
+                raise GraphingException("Aspect ratio must be a positive float.")
+        self.aspect_ratio = aspect_ratio
 
     def add_elements(self, *elements: Plottable) -> None:
         """
@@ -178,6 +195,7 @@ class Figure:
 
         self._axes.set_xlabel(self.x_axis_name)
         self._axes.set_ylabel(self.y_axis_name)
+        self._axes.set_aspect(self.aspect_ratio)
         if self._custom_ticks:
             if self._xticks:
                 self._axes.set_xticks(self._xticks, self._xticklabels)
