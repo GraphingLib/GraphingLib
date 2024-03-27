@@ -221,6 +221,19 @@ class TestFigure(unittest.TestCase):
         self.assertEqual(twin_axis.log_scale, False)
         self.assertEqual(twin_axis, a_figure._twin_y_axis)
 
+    def test_aspect_ratio(self):
+        a_figure = Figure(aspect_ratio=1.5)
+        self.assertEqual(a_figure.aspect_ratio, 1.5)
+        a_figure.add_elements(self.testCurve)
+        a_figure._prepare_figure()
+        self.assertEqual(a_figure._axes.get_aspect(), 1.5)
+
+        a_figure = Figure(aspect_ratio="equal")
+        self.assertEqual(a_figure.aspect_ratio, "equal")
+        a_figure.add_elements(self.testCurve)
+        a_figure._prepare_figure()
+        self.assertEqual(a_figure._axes.get_aspect(), 1)
+
 
 class TestTwinAxis(unittest.TestCase):
     def test_init(self):
