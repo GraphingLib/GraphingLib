@@ -242,6 +242,12 @@ class Curve:
         """
         return iter(self.y_data)
 
+    def __abs__(self) -> Self:
+        """
+        Returns the absolute value of the curve.
+        """
+        return Curve(self.x_data, np.abs(self.y_data))
+
     def add_errorbars(
         self,
         x_error: Optional[ArrayLike] = None,
@@ -1203,6 +1209,13 @@ class Scatter:
         Defines the iteration of a scatter plot. Returns the y values.
         """
         return iter(self.y_data)
+
+    def __abs__(self) -> Self:
+        """
+        Defines the absolute value of a scatter plot.
+        """
+        new_y_data = np.abs(self.y_data)
+        return Scatter(self.x_data, new_y_data)
 
     def add_errorbars(
         self,
