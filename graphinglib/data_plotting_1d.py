@@ -8,6 +8,7 @@ import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
+from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 
 from .graph_elements import Point
@@ -546,6 +547,7 @@ class Curve:
 
     def create_integral_curve(
         self,
+        initial_value: float = 0,
         label: Optional[str] = None,
         color: str = "default",
         line_width: float | Literal["default"] = "default",
@@ -556,6 +558,9 @@ class Curve:
 
         Parameters
         ----------
+        initial_value : float, optional
+            The value of the integral at the first x value (initial condition).
+            Defaults to 0.
         label : str, optional
             Label of the new curve to be displayed in the legend.
         color : str
@@ -572,9 +577,9 @@ class Curve:
         -------
         A :class:`~graphinglib.data_plotting_1d.Curve` object which is the integral of the original curve.
         """
-        x_data = self.x_data
-        y_data = np.cumsum(self.y_data) * np.diff(x_data)[0]
-        return Curve(x_data, y_data, label, color, line_width, line_style)
+        # calculate the integral curve using cumulative trapezoidal integration
+        y_data = cumtrapz(self.y_data, self.x_data, initial=0) + initial_value
+        return Curve(self.x_data, y_data, label, color, line_width, line_style)
 
     def create_tangent_curve(
         self,
