@@ -285,6 +285,13 @@ class TestCurve(unittest.TestCase):
         self.assertIsInstance(curve_sum, Curve)
         self.assertAlmostEqual(curve_sum.get_coordinates_at_x(0)[1], 0.1, places=3)
 
+    def test_absolute_value(self):
+        curve = abs(self.testCurve)
+        self.assertIsInstance(curve, Curve)
+        self.assertListEqual(
+            list(curve.y_data), [abs(y) for y in self.testCurve.y_data]
+        )
+
 
 class TestScatter(unittest.TestCase):
     def setUp(self):
@@ -533,6 +540,13 @@ class TestScatter(unittest.TestCase):
         other_scatter = Scatter(x, 0.005 * x**2 + 0.1, "Other Scatter")
         with self.assertRaises(ValueError):
             new_scatter = self.testScatter + other_scatter
+
+    def test_absolute_value(self):
+        scatter = abs(self.testScatter)
+        self.assertIsInstance(scatter, Scatter)
+        self.assertListEqual(
+            list(scatter.y_data), [abs(y) for y in self.testScatter.y_data]
+        )
 
 
 class TestHistogram(unittest.TestCase):
