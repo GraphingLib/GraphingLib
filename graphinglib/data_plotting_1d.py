@@ -364,7 +364,7 @@ class Curve:
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
-    ) -> Point | tuple[float, float]:
+    ) -> Point:
         """
         Creates a point on the curve at a given x value.
 
