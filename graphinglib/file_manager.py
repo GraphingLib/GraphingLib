@@ -208,7 +208,10 @@ def get_styles(
     matplotlib_list = []
     if customs:
         customs_list = [
-            file.split(".")[0] for file in listdir(user_config_dir("GraphingLib"))
+            file.split(".")[0]
+            for file in listdir(
+                user_config_dir(appname="GraphingLib", roaming=True, ensure_exists=True)
+            )
         ]
     if gl:
         gl_list = [
