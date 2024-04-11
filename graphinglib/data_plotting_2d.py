@@ -563,18 +563,20 @@ class Stream:
     Parameters
     ----------
     x_data, y_data : ArrayLike
-        x and y coordinates of the vectors.
+        x and y coordinates of the vectors as a mesh grid.
     u_data, v_data : ArrayLike
-        Magnitudes in the x and y coordinates.
+        Magnitudes of the vectors for each point of the mesh grid.
     density : float or tuple[float, float]
         Density of stream lines. Can be specified independently for the x and y coordinates
         by specifying a density tuple instead. Defaults to 1.
     line_width : float
         Width of the stream lines. Default depends on the ``figure_style`` configuration.
-    color : str
-        Color of the stream lines. Default depends on the ``figure_style`` configuration.
+    color : str or ArrayLike
+        Color of the stream lines. If an array of intensities is provided, the values are mapped to the specified color map.
+        Default depends on the ``figure_style`` configuration.
     color_map : str or Colormap
-        Color map of the stream lines. Default depends on the ``figure_style`` configuration.
+        Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+        Default depends on the ``figure_style`` configuration.
     arrow_size : float
         Arrow size multiplier. Default depends on the ``figure_style`` configuration.
     """
@@ -585,7 +587,7 @@ class Stream:
     v_data: ArrayLike
     density: float | tuple[float, float] = 1
     line_width: float | Literal["default"] = "default"
-    color: str | Literal["default"] = "default"
+    color: str | ArrayLike | Literal["default"] = "default"
     color_map: str | Colormap | Literal["default"] = "default"
     arrow_size: float | Literal["default"] = "default"
 
@@ -654,16 +656,20 @@ class Stream:
         params = {
             "density": self.density,
             "linewidth": self.line_width,
-            "color": self.color,
             "cmap": self.color_map,
             "arrowsize": self.arrow_size,
         }
         params = {k: v for k, v in params.items() if v != "default"}
+        if isinstance(self.color, str) and self.color == "default":
+            pass
+        else:
+            params["color"] = self.color
+
         axes.streamplot(
-            self.x_data,
-            self.y_data,
-            self.u_data,
-            self.v_data,
+            x=self.x_data,
+            y=self.y_data,
+            u=self.u_data,
+            v=self.v_data,
             zorder=z_order,
             **params,
         )
