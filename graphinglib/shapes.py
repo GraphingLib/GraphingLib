@@ -1,3 +1,4 @@
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Literal
 
@@ -58,6 +59,12 @@ class Circle:
         return (point.x - self.x_center) ** 2 + (
             point.y - self.y_center
         ) ** 2 <= self.radius**2
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.shapes.Circle` object.
+        """
+        return deepcopy(self)
 
     def get_area(self) -> float:
         """Returns the area of the circle.
@@ -415,6 +422,12 @@ class Rectangle:
             self.y_bottom_left <= point.y <= self.y_bottom_left + self.height
         )
 
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.shapes.Rectangle` object.
+        """
+        return deepcopy(self)
+
     def get_area(self) -> float:
         """Returns the area of the rectangle.
 
@@ -653,6 +666,12 @@ class Arrow:
         )
         return newA, newB
 
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.shapes.Arrow` object.
+        """
+        return deepcopy(self)
+
     def _plot_element(self, axes: plt.Axes, z_order: int):
         if self.two_sided:
             self._style = "<|-|>"
@@ -710,6 +729,12 @@ class Line:
     width: float | Literal["default"] = "default"
     capped_line: bool = False
     cap_width: float | Literal["default"] = "default"
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.shapes.Line` object.
+        """
+        return deepcopy(self)
 
     def _plot_element(self, axes: plt.axes, z_order: int):
         if self.capped_line:

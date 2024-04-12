@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Callable, Literal, Optional, Protocol
 
@@ -248,6 +250,12 @@ class Curve:
         Returns the absolute value of the curve.
         """
         return Curve(self.x_data, np.abs(self.y_data))
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.data_plotting_1d.Curve`.
+        """
+        return deepcopy(self)
 
     def add_errorbars(
         self,
@@ -1222,6 +1230,12 @@ class Scatter:
         new_y_data = np.abs(self.y_data)
         return Scatter(self.x_data, new_y_data)
 
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.data_plotting_1d.Scatter` object.
+        """
+        return deepcopy(self)
+
     def add_errorbars(
         self,
         x_error: Optional[ArrayLike] = None,
@@ -1645,6 +1659,12 @@ class Histogram:
         elif self.show_params:
             lab = f"$\mu$ = {0 if abs(self.mean) < 1e-3 else self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
         self.label = lab
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.data_plotting_1d.Histogram` object.
+        """
+        return deepcopy(self)
 
     def _normal_normalized(self, x: ArrayLike) -> ArrayLike:
         """
