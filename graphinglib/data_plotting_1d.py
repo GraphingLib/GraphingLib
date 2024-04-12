@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Callable, Literal, Optional, Protocol
@@ -150,6 +149,25 @@ class Curve:
     def __radd__(self, other: Self | float) -> Self:
         return self.__add__(other)
 
+    def __iadd__(self, other: Self | float) -> Self:
+        if isinstance(other, Curve):
+            if not np.array_equal(self.x_data, other.x_data):
+                if len(self.x_data) > len(other.x_data):
+                    x_data = other.x_data
+                    y_data = interp1d(self.x_data, self.y_data)(x_data)
+                    self.y_data = y_data + other.y_data
+                    return self
+                else:
+                    x_data = self.x_data
+                    y_data = interp1d(other.x_data, other.y_data)(x_data)
+                    self.y_data = y_data + self.y_data
+                    return self
+            self.y_data += other.y_data
+            return self
+        elif isinstance(other, (int, float)):
+            self.y_data += other
+            return self
+
     def __sub__(self, other: Self | float) -> Self:
         """
         Defines the subtraction of two curves or a curve and a number.
@@ -173,8 +191,26 @@ class Curve:
             raise TypeError("Can only subtract a curve from another curve or a number.")
 
     def __rsub__(self, other: Self | float) -> Self:
-        # 2 - curve => -curve + 2
         return (self * -1) + other
+
+    def __isub__(self, other: Self | float) -> Self:
+        if isinstance(other, Curve):
+            if not np.array_equal(self.x_data, other.x_data):
+                if len(self.x_data) > len(other.x_data):
+                    x_data = other.x_data
+                    y_data = interp1d(self.x_data, self.y_data)(x_data)
+                    self.y_data = y_data - other.y_data
+                    return self
+                else:
+                    x_data = self.x_data
+                    y_data = interp1d(other.x_data, other.y_data)(x_data)
+                    self.y_data = self.y_data - y_data
+                    return self
+            self.y_data -= other.y_data
+            return self
+        elif isinstance(other, (int, float)):
+            self.y_data -= other
+            return self
 
     def __mul__(self, other: Self | float) -> Self:
         """
@@ -200,6 +236,25 @@ class Curve:
 
     def __rmul__(self, other: Self | float) -> Self:
         return self.__mul__(other)
+
+    def __imul__(self, other: Self | float) -> Self:
+        if isinstance(other, Curve):
+            if not np.array_equal(self.x_data, other.x_data):
+                if len(self.x_data) > len(other.x_data):
+                    x_data = other.x_data
+                    y_data = interp1d(self.x_data, self.y_data)(x_data)
+                    self.y_data = y_data * other.y_data
+                    return self
+                else:
+                    x_data = self.x_data
+                    y_data = interp1d(other.x_data, other.y_data)(x_data)
+                    self.y_data = self.y_data * y_data
+                    return self
+            self.y_data *= other.y_data
+            return self
+        elif isinstance(other, (int, float)):
+            self.y_data *= other
+            return self
 
     def __truediv__(self, other: Self | float) -> Self:
         """
@@ -229,6 +284,25 @@ class Curve:
         except ZeroDivisionError:
             raise ZeroDivisionError("Cannot divide by zero.")
 
+    def __itruediv__(self, other: Self | float) -> Self:
+        if isinstance(other, Curve):
+            if not np.array_equal(self.x_data, other.x_data):
+                if len(self.x_data) > len(other.x_data):
+                    x_data = other.x_data
+                    y_data = interp1d(self.x_data, self.y_data)(x_data)
+                    self.y_data = y_data / other.y_data
+                    return self
+                else:
+                    x_data = self.x_data
+                    y_data = interp1d(other.x_data, other.y_data)(x_data)
+                    self.y_data = self.y_data / y_data
+                    return self
+            self.y_data /= other.y_data
+            return self
+        elif isinstance(other, (int, float)):
+            self.y_data /= other
+            return self
+
     def __pow__(self, other: float) -> Self:
         """
         Defines the power of a curve to a number.
@@ -238,6 +312,10 @@ class Curve:
             return Curve(self.x_data, new_y_data)
         else:
             raise TypeError("Can only raise a curve to another curve or a number.")
+
+    def __ipow__(self, other: float) -> Self:
+        self.y_data **= other
+        return self
 
     def __iter__(self):
         """
@@ -1121,6 +1199,20 @@ class Scatter:
         """
         return self.__add__(other)
 
+    def __iadd__(self, other: Self | float) -> Self:
+        if isinstance(other, Scatter):
+            try:
+                assert np.array_equal(self.x_data, other.x_data)
+            except AssertionError:
+                raise ValueError(
+                    "Cannot add two scatter plots with different x values."
+                )
+            self.y_data += other.y_data
+            return self
+        elif isinstance(other, (int, float)):
+            self.y_data += other
+            return self
+
     def __sub__(self, other: Self | float) -> Self:
         """
         Defines the subtraction of two scatter plots or a scatter plot and a number.
@@ -1148,6 +1240,20 @@ class Scatter:
         """
         return (self * -1) + other
 
+    def __isub__(self, other: Self | float) -> Self:
+        if isinstance(other, Scatter):
+            try:
+                assert np.array_equal(self.x_data, other.x_data)
+            except AssertionError:
+                raise ValueError(
+                    "Cannot subtract two scatter plots with different x values."
+                )
+            self.y_data -= other.y_data
+            return self
+        elif isinstance(other, (int, float)):
+            self.y_data -= other
+            return self
+
     def __mul__(self, other: Self | float) -> Self:
         """
         Defines the multiplication of two scatter plots or a scatter plot and a number.
@@ -1174,6 +1280,20 @@ class Scatter:
         Defines the reverse multiplication of a scatter plot and a number.
         """
         return self.__mul__(other)
+
+    def __imul__(self, other: Self | float) -> Self:
+        if isinstance(other, Scatter):
+            try:
+                assert np.array_equal(self.x_data, other.x_data)
+            except AssertionError:
+                raise ValueError(
+                    "Cannot multiply two scatter plots with different x values."
+                )
+            self.y_data *= other.y_data
+            return self
+        elif isinstance(other, (int, float)):
+            self.y_data *= other
+            return self
 
     def __truediv__(self, other: Self | float) -> Self:
         """
@@ -1205,6 +1325,20 @@ class Scatter:
         except ZeroDivisionError:
             raise ZeroDivisionError("Cannot divide by zero.")
 
+    def __itruediv__(self, other: Self | float) -> Self:
+        if isinstance(other, Scatter):
+            try:
+                assert np.array_equal(self.x_data, other.x_data)
+            except AssertionError:
+                raise ValueError(
+                    "Cannot divide two scatter plots with different x values."
+                )
+            self.y_data /= other.y_data
+            return self
+        elif isinstance(other, (int, float)):
+            self.y_data /= other
+            return self
+
     def __pow__(self, other: float) -> Self:
         """
         Defines the power of a scatter plot to a number.
@@ -1216,6 +1350,10 @@ class Scatter:
             raise TypeError(
                 "Can only raise a scatter plot to another scatter plot or a number."
             )
+
+    def __ipow__(self, other: float) -> Self:
+        self.y_data **= other
+        return self
 
     def __iter__(self):
         """
