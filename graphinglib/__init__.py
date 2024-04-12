@@ -27,6 +27,7 @@ from .figure import Figure
 from .file_manager import get_color, get_colors, get_styles
 from .fits import (
     FitFromExponential,
+    FitFromFOTF,
     FitFromFunction,
     FitFromGaussian,
     FitFromLog,

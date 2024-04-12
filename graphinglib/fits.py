@@ -1836,3 +1836,220 @@ class FitFromFunction(GeneralFit):
             Function
         """
         return self.function
+
+
+class FitFromFOTF(GeneralFit):
+    """
+    Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing :class:`~graphinglib.data_plotting_1d.Curve` object using a first order transfer function (FOTF) fit.
+
+    Fits a first order transfer function of the form :math:`f(x) = K \left(1 - e^{-\frac{t}{\tau}}\right)` to the given curve. All standard :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
+
+    Parameters
+    ----------
+    curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
+        The object to be fit.
+    label : str, optional
+        Label to be displayed in the legend.
+    guesses : ArrayLike, optional
+        Initial guesses for the parameters of the fit. Order is K, tau.
+    color : str
+        Color of the curve.
+        Default depends on the ``figure_style`` configuration.
+    line_width : int
+        Line width of the curve.
+        Default depends on the ``figure_style`` configuration.
+    line_style : str
+        Line style of the curve.
+        Default depends on the ``figure_style`` configuration.
+
+    Attributes
+    ----------
+    gain : float
+        Gain of the first order transfer function.
+    time_constant : float
+        Time constant of the first order transfer function.
+    cov_matrix : np.ndarray
+        Covariance matrix of the parameters of the fit.
+    standard_deviation : np.ndarray
+        Standard deviation of the parameters of the fit.
+    function : Callable
+        First order transfer function with the parameters of the fit.
+    """
+
+    def __init__(
+        self,
+        curve_to_be_fit: Curve | Scatter,
+        label: Optional[str] = None,
+        guesses: Optional[ArrayLike] = None,
+        color: str = "default",
+        line_width: int | Literal["default"] = "default",
+        line_style: str = "default",
+    ) -> None:
+        """
+        Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing :class:`~graphinglib.data_plotting_1d.Curve` object using a first order transfer function (FOTF) fit.
+
+        Fits a first order transfer function of the form :math:`f(x) = K \left(1 - e^{-\frac{t}{\tau}}\right)` to the given curve. All standard :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
+
+        Parameters
+        ----------
+        curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
+            The object to be fit.
+        label : str, optional
+            Label to be displayed in the legend.
+        guesses : ArrayLike, optional
+            Initial guesses for the parameters of the fit. Order is K, tau.
+        color : str
+            Color of the curve.
+            Default depends on the ``figure_style`` configuration.
+        line_width : int
+            Line width of the curve.
+            Default depends on the ``figure_style`` configuration.
+        line_style : str
+            Line style of the curve.
+            Default depends on the ``figure_style`` configuration.
+
+        Attributes
+        ----------
+        gain : float
+            Gain of the first order transfer function.
+        time_constant : float
+            Time constant of the first order transfer function.
+        cov_matrix : np.ndarray
+            Covariance matrix of the parameters of the fit.
+        standard_deviation : np.ndarray
+            Standard deviation of the parameters of the fit.
+        function : Callable
+            First order transfer function with the parameters of the fit.
+        """
+        self.curve_to_be_fit = curve_to_be_fit
+        self.guesses = guesses
+        self._calculate_parameters()
+        self.function = self._fotf_func_with_params()
+        self.color = color
+        if label:
+            self.label = label + " : " + str(self)
+        else:
+            self.label = str(self)
+        self.line_width = line_width
+        self.line_style = line_style
+        self._res_curves_to_be_plotted = False
+        number_of_points = (
+            len(self.curve_to_be_fit.x_data)
+            if len(self.curve_to_be_fit.x_data) > 500
+            else 500
+        )
+        self.x_data = np.linspace(
+            self.curve_to_be_fit.x_data[0],
+            self.curve_to_be_fit.x_data[-1],
+            number_of_points,
+        )
+        self.y_data = self.function(self.x_data)
+        self._fill_curve_between = False
+
+    def __str__(self) -> str:
+        """
+        Creates a string representation of the first order transfer function.
+        """
+        return f"$K = {self.gain:.3f}, \\tau = {self.time_constant:.3f}$"
+
+    def _calculate_parameters(self) -> None:
+        """
+        Calculates the parameters of the fit.
+        """
+        parameters, self.cov_matrix = curve_fit(
+            self._fotf_func_template,
+            self.curve_to_be_fit.x_data,
+            self.curve_to_be_fit.y_data,
+            p0=self.guesses,
+        )
+        self.gain = parameters[0]
+        self.time_constant = parameters[1]
+        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
+
+    @staticmethod
+    def _fotf_func_template(
+        x: np.ndarray, gain: float, time_constant: float
+    ) -> np.ndarray:
+        """
+        Function to be passed to the ``curve_fit`` function.
+        """
+        return gain * (1 - np.exp(-x / time_constant))
+
+    def _fotf_func_with_params(
+        self,
+    ) -> Callable[[float | np.ndarray], float | np.ndarray]:
+        """
+        Creates a first order transfer function with the parameters of the fit.
+
+        Returns
+        -------
+        function : Callable
+            First order transfer function with the parameters of the fit.
+        """
+        return lambda x: self.gain * (1 - np.exp(-x / self.time_constant))
+
+    def get_gain(self) -> float:
+        """
+        Returns the gain of the first order transfer function.
+
+        Returns
+        -------
+        float
+            Gain of the first order transfer function.
+        """
+        return self.gain
+
+    def get_time_constant(self) -> float:
+        """
+        Returns the time constant of the first order transfer function.
+
+        Returns
+        -------
+        float
+            Time constant of the first order transfer function.
+        """
+        return self.time_constant
+
+    def get_cov_matrix(self) -> np.ndarray:
+        """
+        Returns the covariance matrix of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Covariance matrix of the parameters of the fit.
+        """
+        return self.cov_matrix
+
+    def get_standard_deviation(self) -> np.ndarray:
+        """
+        Returns the standard deviation of the parameters of the fit.
+
+        Returns
+        -------
+        np.ndarray
+            Standard deviation of the parameters of the fit.
+        """
+        return self.standard_deviation
+
+    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
+        """
+        Returns the first order transfer function with the parameters of the fit.
+
+        Returns
+        -------
+        function : Callable
+            First order transfer function with the parameters of the fit.
+        """
+        return self.function
+
+    def get_parameters(self) -> list[float]:
+        """
+        Returns the parameters of the fit.
+
+        Returns
+        -------
+        list[float]
+            Parameters of the fit (gain, time constant)
+        """
+        return [self.gain, self.time_constant]
