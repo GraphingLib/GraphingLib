@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Callable, Literal, Optional
 
@@ -232,6 +233,12 @@ class Heatmap:
             interpolation,
         )
 
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
+        """
+        return deepcopy(self)
+
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
         Plots the element in the specified
@@ -390,6 +397,12 @@ class VectorField:
             color,
         )
 
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.VectorField`.
+        """
+        return deepcopy(self)
+
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
         Plots the element in the specified
@@ -523,6 +536,12 @@ class Contour:
             alpha,
         )
 
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Contour`.
+        """
+        return deepcopy(self)
+
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
         Plots the element in the specified
@@ -648,6 +667,12 @@ class Stream:
         x_grid, y_grid = np.meshgrid(x, y)
         u, v = func(x_grid, y_grid)
         return cls(x, y, u, v, density, line_width, color, color_map, arrow_size)
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Stream`.
+        """
+        return deepcopy(self)
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """

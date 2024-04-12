@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from functools import partial
 from typing import Callable, Literal, Optional
 
@@ -10,6 +11,11 @@ from scipy.optimize import curve_fit
 
 from .data_plotting_1d import Curve, Scatter
 from .graph_elements import Point
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 
 class GeneralFit(Curve):
@@ -313,6 +319,9 @@ class GeneralFit(Curve):
             )
         )
         return Rsquared
+
+    def copy(self) -> Self:
+        return deepcopy(self)
 
 
 class FitFromPolynomial(GeneralFit):

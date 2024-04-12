@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Literal, Optional, Protocol
 
@@ -9,6 +10,11 @@ from matplotlib.collections import LineCollection
 from numpy.typing import ArrayLike
 
 from .legend_artists import VerticalLineCollection
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 
 class Plottable(Protocol):
@@ -144,6 +150,12 @@ class Hlines:
                     "There must be the same number of colors, "
                     + "line styles, line widths and lines!"
                 )
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.graph_elements.Hlines` object.
+        """
+        return deepcopy(self)
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
@@ -296,6 +308,12 @@ class Vlines:
                     "There must be the same number of colors, "
                     + "line styles, line widths and lines!"
                 )
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.graph_elements.Vlines` object.
+        """
+        return deepcopy(self)
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
@@ -450,6 +468,12 @@ class Point:
         self.v_align = v_align
         self._show_coordinates: bool = False
 
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.graph_elements.Point` object.
+        """
+        return deepcopy(self)
+
     def get_coordinates(self) -> tuple[float, float]:
         """
         Returns the coordinates of the :class:`~graphinglib.graph_elements.Point`.
@@ -563,6 +587,12 @@ class Text:
     h_align: str = "default"
     v_align: str = "default"
     _arrow_pointing_to: Optional[tuple[float]] = field(default=None, init=False)
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.graph_elements.Text` object.
+        """
+        return deepcopy(self)
 
     def add_arrow(
         self,
@@ -701,6 +731,12 @@ class Table:
     row_colors: Optional[list] = None
     scaling: tuple[float] = (1, 1.5)
     location: str = "best"
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.graph_elements.Table` object.
+        """
+        return deepcopy(self)
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
