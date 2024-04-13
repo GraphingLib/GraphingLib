@@ -128,6 +128,20 @@ class TestFitFromPolynomial(unittest.TestCase):
             self.fit_second_degree.get_arc_length_between(0, 1), 2.44455, places=0
         )
 
+    def test_copy(self):
+        copy = self.fit_first_degree.copy()
+        # check that all attributes are the same
+        self.assertEqual(list(copy.coeffs), list(self.fit_first_degree.coeffs))
+        self.assertEqual(
+            copy.cov_matrix.tolist(), self.fit_first_degree.cov_matrix.tolist()
+        )
+        self.assertEqual(
+            copy.standard_deviation.tolist(),
+            self.fit_first_degree.standard_deviation.tolist(),
+        )
+        self.assertEqual(copy.color, self.fit_first_degree.color)
+        self.assertEqual(copy.label, self.fit_first_degree.label)
+
 
 class TestFitFromSine(unittest.TestCase):
     def setUp(self):
@@ -207,6 +221,21 @@ class TestFitFromSine(unittest.TestCase):
             self.fit.get_arc_length_between(0, np.pi / 2), 5.538, places=1
         )
 
+    def test_copy(self):
+        copy = self.fit.copy()
+        # check that all attributes are the same
+        self.assertEqual(copy.amplitude, self.fit.amplitude)
+        self.assertEqual(copy.frequency_rad, self.fit.frequency_rad)
+        self.assertEqual(copy.phase_rad, self.fit.phase_rad)
+        self.assertEqual(copy.vertical_shift, self.fit.vertical_shift)
+        self.assertEqual(copy.cov_matrix.tolist(), self.fit.cov_matrix.tolist())
+        self.assertEqual(
+            copy.standard_deviation.tolist(),
+            self.fit.standard_deviation.tolist(),
+        )
+        self.assertEqual(copy.color, self.fit.color)
+        self.assertEqual(copy.label, self.fit.label)
+
 
 class TestFitFromExponential(unittest.TestCase):
     def setUp(self):
@@ -280,6 +309,18 @@ class TestFitFromExponential(unittest.TestCase):
             self.fit.get_arc_length_between(0, 1), 2084.07, places=-3
         )
 
+    def test_copy(self):
+        copy = self.fit.copy()
+        # check that all attributes are the same
+        self.assertEqual(list(copy.parameters), list(self.fit.parameters))
+        self.assertEqual(copy.cov_matrix.tolist(), self.fit.cov_matrix.tolist())
+        self.assertEqual(
+            copy.standard_deviation.tolist(),
+            self.fit.standard_deviation.tolist(),
+        )
+        self.assertEqual(copy.color, self.fit.color)
+        self.assertEqual(copy.label, self.fit.label)
+
 
 class TestFitFromGaussian(unittest.TestCase):
     def setUp(self) -> None:
@@ -347,6 +388,20 @@ class TestFitFromGaussian(unittest.TestCase):
     def test_arc_length_between(self):
         self.assertAlmostEqual(self.fit.get_arc_length_between(0, 1), 2.27338, places=1)
 
+    def test_copy(self):
+        copy = self.fit.copy()
+        # check that all attributes are the same
+        self.assertEqual(copy.amplitude, self.fit.amplitude)
+        self.assertEqual(copy.mean, self.fit.mean)
+        self.assertEqual(copy.standard_deviation, self.fit.standard_deviation)
+        self.assertEqual(copy.cov_matrix.tolist(), self.fit.cov_matrix.tolist())
+        self.assertEqual(
+            copy.standard_deviation_of_fit_params.tolist(),
+            self.fit.standard_deviation_of_fit_params.tolist(),
+        )
+        self.assertEqual(copy.color, self.fit.color)
+        self.assertEqual(copy.label, self.fit.label)
+
 
 class TestFitFromSquareRoot(unittest.TestCase):
     def setUp(self) -> None:
@@ -410,6 +465,17 @@ class TestFitFromSquareRoot(unittest.TestCase):
 
     def test_arc_length_between(self):
         self.assertAlmostEqual(self.fit.get_arc_length_between(0, 1), 1.2255, places=1)
+
+    def test_copy(self):
+        copy = self.fit.copy()
+        # check that all attributes are the same
+        self.assertEqual(list(copy.parameters), list(self.fit.parameters))
+        self.assertEqual(copy.cov_matrix.tolist(), self.fit.cov_matrix.tolist())
+        self.assertEqual(
+            copy.standard_deviation.tolist(), self.fit.standard_deviation.tolist()
+        )
+        self.assertEqual(copy.color, self.fit.color)
+        self.assertEqual(copy.label, self.fit.label)
 
 
 class TestFitFromLog(unittest.TestCase):
@@ -477,6 +543,18 @@ class TestFitFromLog(unittest.TestCase):
     def test_arc_length_between(self):
         self.assertAlmostEqual(self.fit.get_arc_length_between(1, 2), 1.0954, places=1)
 
+    def test_copy(self):
+        copy = self.fit.copy()
+        # check that all attributes are the same
+        self.assertEqual(list(copy.parameters), list(self.fit.parameters))
+        self.assertEqual(copy.cov_matrix.tolist(), self.fit.cov_matrix.tolist())
+        self.assertEqual(
+            copy.standard_deviation.tolist(),
+            self.fit.standard_deviation.tolist(),
+        )
+        self.assertEqual(copy.color, self.fit.color)
+        self.assertEqual(copy.label, self.fit.label)
+
 
 class TestFitFromFunction(unittest.TestCase):
     def setUp(self):
@@ -530,3 +608,15 @@ class TestFitFromFunction(unittest.TestCase):
 
     def test_arc_length_between(self):
         self.assertAlmostEqual(self.fit.get_arc_length_between(1, 2), 2.6937, places=3)
+
+    def test_copy(self):
+        copy = self.fit.copy()
+        # check that all attributes are the same
+        self.assertEqual(list(copy.parameters), list(self.fit.parameters))
+        self.assertEqual(copy.cov_matrix.tolist(), self.fit.cov_matrix.tolist())
+        self.assertEqual(
+            copy.standard_deviation.tolist(),
+            self.fit.standard_deviation.tolist(),
+        )
+        self.assertEqual(copy.color, self.fit.color)
+        self.assertEqual(copy.label, self.fit.label)
