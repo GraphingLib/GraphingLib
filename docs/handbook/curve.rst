@@ -132,3 +132,13 @@ The :meth:`~graphinglib.data_plotting_1d.Curve.get_area_between` method can be u
     Arc length of the curve between x = 0 and x = 2: 6.634026509067356
 
 .. image:: images/curve_area_between.png
+
+Other methods
+-------------
+
+Also available are the :meth:`~graphinglib.data_plotting_1d.Curve.create_slice_x` and :meth:`~graphinglib.data_plotting_1d.Curve.create_slice_y` methods, which create a slice of a curve between two x or y values. These are especially useful when you have a noisy patch in your data and you want to create a fit of just the clean part of the curve. ::
+
+    curve_1 = gl.Curve.from_function(lambda x: x**2 - 5, x_min=-5, x_max=5)
+
+    slice_x = curve_1.create_slice_x(-3, 3)
+    slice_y = curve_1.create_slice_y(1, 5)

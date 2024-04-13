@@ -1,4 +1,5 @@
 import unittest
+from calendar import c
 from random import random
 
 from matplotlib.colors import to_hex
@@ -333,6 +334,27 @@ class TestCurve(unittest.TestCase):
         self.assertListEqual(list(curve_copy.x_data), list(self.testCurve.x_data))
         self.assertListEqual(list(curve_copy.y_data), list(self.testCurve.y_data))
 
+    def test_create_slice_x(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        curve_slice = curve.create_slice_x(-5, 5)
+        self.assertIsInstance(curve_slice, Curve)
+        correct_x_data = linspace(-10, 10, 100)
+        correct_x_data = correct_x_data[correct_x_data >= -5]
+        correct_x_data = correct_x_data[correct_x_data <= 5]
+        correct_y_data = correct_x_data**2
+        self.assertListEqual(list(curve_slice.x_data), list(correct_x_data))
+        self.assertListEqual(list(curve_slice.y_data), list(correct_y_data))
+
+    def test_create_slice_y(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        curve_slice = curve.create_slice_y(0, 25)
+        self.assertIsInstance(curve_slice, Curve)
+        correct_x_data = linspace(-10, 10, 100)
+        correct_x_data = correct_x_data[correct_x_data**2 <= 25]
+        correct_y_data = correct_x_data**2
+        self.assertListEqual(list(curve_slice.x_data), list(correct_x_data))
+        self.assertListEqual(list(curve_slice.y_data), list(correct_y_data))
+
 
 class TestScatter(unittest.TestCase):
     def setUp(self):
@@ -600,6 +622,27 @@ class TestScatter(unittest.TestCase):
         self.assertEqual(scatter_copy.marker_style, self.testScatter.marker_style)
         self.assertListEqual(list(scatter_copy.x_data), list(self.testScatter.x_data))
         self.assertListEqual(list(scatter_copy.y_data), list(self.testScatter.y_data))
+
+    def test_create_slice_x(self):
+        scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        scatter_slice = scatter.create_slice_x(-5, 5)
+        self.assertIsInstance(scatter_slice, Scatter)
+        correct_x_data = linspace(-10, 10, 100)
+        correct_x_data = correct_x_data[correct_x_data >= -5]
+        correct_x_data = correct_x_data[correct_x_data <= 5]
+        correct_y_data = correct_x_data**2
+        self.assertListEqual(list(scatter_slice.x_data), list(correct_x_data))
+        self.assertListEqual(list(scatter_slice.y_data), list(correct_y_data))
+
+    def test_create_slice_y(self):
+        scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        scatter_slice = scatter.create_slice_y(0, 25)
+        self.assertIsInstance(scatter_slice, Scatter)
+        correct_x_data = linspace(-10, 10, 100)
+        correct_x_data = correct_x_data[correct_x_data**2 <= 25]
+        correct_y_data = correct_x_data**2
+        self.assertListEqual(list(scatter_slice.x_data), list(correct_x_data))
+        self.assertListEqual(list(scatter_slice.y_data), list(correct_y_data))
 
 
 class TestHistogram(unittest.TestCase):
