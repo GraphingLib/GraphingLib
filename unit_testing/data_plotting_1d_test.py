@@ -323,6 +323,16 @@ class TestCurve(unittest.TestCase):
             list(curve.y_data), [abs(y) for y in self.testCurve.y_data]
         )
 
+    def test_copy(self):
+        curve_copy = self.testCurve.copy()
+        self.assertIsInstance(curve_copy, Curve)
+        self.assertEqual(curve_copy.label, self.testCurve.label)
+        self.assertEqual(curve_copy.color, self.testCurve.color)
+        self.assertEqual(curve_copy.line_width, self.testCurve.line_width)
+        self.assertEqual(curve_copy.line_style, self.testCurve.line_style)
+        self.assertListEqual(list(curve_copy.x_data), list(self.testCurve.x_data))
+        self.assertListEqual(list(curve_copy.y_data), list(self.testCurve.y_data))
+
 
 class TestScatter(unittest.TestCase):
     def setUp(self):
@@ -580,6 +590,17 @@ class TestScatter(unittest.TestCase):
             list(scatter.y_data), [abs(y) for y in self.testScatter.y_data]
         )
 
+    def test_copy(self):
+        scatter_copy = self.testScatter.copy()
+        self.assertIsInstance(scatter_copy, Scatter)
+        self.assertEqual(scatter_copy.label, self.testScatter.label)
+        self.assertEqual(scatter_copy.face_color, self.testScatter.face_color)
+        self.assertEqual(scatter_copy.edge_color, self.testScatter.edge_color)
+        self.assertEqual(scatter_copy.marker_size, self.testScatter.marker_size)
+        self.assertEqual(scatter_copy.marker_style, self.testScatter.marker_style)
+        self.assertListEqual(list(scatter_copy.x_data), list(self.testScatter.x_data))
+        self.assertListEqual(list(scatter_copy.y_data), list(self.testScatter.y_data))
+
 
 class TestHistogram(unittest.TestCase):
     def setUp(self):
@@ -617,6 +638,17 @@ class TestHistogram(unittest.TestCase):
         fit = FitFromPolynomial(curve, degree=2)
         histo = self.testHist.from_fit_residuals(fit, 30)
         self.assertIsInstance(histo, Histogram)
+
+    def test_copy(self):
+        hist_copy = self.testHist.copy()
+        self.assertIsInstance(hist_copy, Histogram)
+        self.assertEqual(hist_copy.label, self.testHist.label)
+        self.assertEqual(hist_copy.face_color, self.testHist.face_color)
+        self.assertEqual(hist_copy.edge_color, self.testHist.edge_color)
+        self.assertEqual(hist_copy.number_of_bins, self.testHist.number_of_bins)
+        self.assertEqual(hist_copy.alpha, self.testHist.alpha)
+        self.assertEqual(hist_copy.hist_type, self.testHist.hist_type)
+        self.assertListEqual(list(hist_copy.data), list(self.testHist.data))
 
 
 if __name__ == "__main__":

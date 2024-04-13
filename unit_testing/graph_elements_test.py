@@ -29,6 +29,15 @@ class TestHlines(unittest.TestCase):
     def test_label_is_str(self):
         self.assertIsInstance(self.testHlines.label, str)
 
+    def test_copy(self):
+        testHlinesCopy = self.testHlines.copy()
+        self.assertEqual(testHlinesCopy.y, self.testHlines.y)
+        self.assertEqual(testHlinesCopy.x_min, self.testHlines.x_min)
+        self.assertEqual(testHlinesCopy.x_max, self.testHlines.x_max)
+        self.assertEqual(testHlinesCopy.colors, self.testHlines.colors)
+        self.assertEqual(testHlinesCopy.line_styles, self.testHlines.line_styles)
+        self.assertEqual(testHlinesCopy.label, self.testHlines.label)
+
 
 class TestVlines(unittest.TestCase):
     def setUp(self):
@@ -51,6 +60,15 @@ class TestVlines(unittest.TestCase):
 
     def test_label_is_str(self):
         self.assertEqual(self.testVlines.label, "Test Vlines")
+
+    def test_copy(self):
+        testVlinesCopy = self.testVlines.copy()
+        self.assertEqual(list(testVlinesCopy.x), list(self.testVlines.x))
+        self.assertEqual(testVlinesCopy.y_min, self.testVlines.y_min)
+        self.assertEqual(testVlinesCopy.y_max, self.testVlines.y_max)
+        self.assertEqual(testVlinesCopy.colors, self.testVlines.colors)
+        self.assertEqual(testVlinesCopy.line_styles, self.testVlines.line_styles)
+        self.assertEqual(testVlinesCopy.label, self.testVlines.label)
 
 
 class TestPoint(unittest.TestCase):
@@ -95,6 +113,21 @@ class TestPoint(unittest.TestCase):
 
     def test_coordinates_property(self):
         self.assertEqual(self.testPoint.get_coordinates(), (0.0, 0.0))
+
+    def test_copy(self):
+        testPointCopy = self.testPoint.copy()
+        self.assertEqual(testPointCopy.x, self.testPoint.x)
+        self.assertEqual(testPointCopy.y, self.testPoint.y)
+        self.assertEqual(testPointCopy.label, self.testPoint.label)
+        self.assertEqual(testPointCopy.color, self.testPoint.color)
+        self.assertEqual(testPointCopy.edge_color, self.testPoint.edge_color)
+        self.assertEqual(testPointCopy.marker_size, self.testPoint.marker_size)
+        self.assertEqual(testPointCopy.marker_style, self.testPoint.marker_style)
+        self.assertEqual(testPointCopy.edge_width, self.testPoint.edge_width)
+        self.assertEqual(testPointCopy.font_size, self.testPoint.font_size)
+        self.assertEqual(testPointCopy.text_color, self.testPoint.text_color)
+        self.assertEqual(testPointCopy.h_align, self.testPoint.h_align)
+        self.assertEqual(testPointCopy.v_align, self.testPoint.v_align)
 
 
 class TestText(unittest.TestCase):
@@ -166,6 +199,26 @@ class TestText(unittest.TestCase):
                 self.assertEqual(child.arrowprops["headlength"], 0.2)
                 self.assertEqual(child.arrowprops["shrink"], 0.05)
         plt.close(fig)
+
+    def test_copy(self):
+        testText = Text(
+            x=0.0,
+            y=0.0,
+            text="Test Text",
+            color="red",
+            font_size=12,
+            h_align="center",
+            v_align="center",
+        )
+        testTextCopy = testText.copy()
+        self.assertEqual(testTextCopy.x, testText.x)
+        self.assertEqual(testTextCopy.y, testText.y)
+        self.assertEqual(testTextCopy.text, testText.text)
+        self.assertEqual(testTextCopy.color, testText.color)
+        self.assertEqual(testTextCopy.font_size, testText.font_size)
+        self.assertEqual(testTextCopy.h_align, testText.h_align)
+        self.assertEqual(testTextCopy.v_align, testText.v_align)
+        self.assertEqual(testTextCopy._arrow_pointing_to, testText._arrow_pointing_to)
 
 
 class TestTable(unittest.TestCase):
@@ -314,6 +367,50 @@ class TestTable(unittest.TestCase):
             to_rgba("#bfbfbf"),
         )
         self.assertEqual(ax.tables[0].get_celld()[(1, 1)].get_width(), 0.1 * 1.1)
+
+    def test_copy(self):
+        data = [
+            [5, 223.9369, 0.0323, 0.0532, 0.1764],
+            [10, 223.9367, 0.0324, 0.0533, 0.1765],
+            [15, 223.9367, 0.0325, 0.0534, 0.1764],
+            [20, 223.9387, 0.0326, 0.0535, 0.1763],
+            [25, 223.9385, 0.0327, 0.0536, 0.1761],
+        ]
+        columns = [
+            "Time (s)",
+            "Voltage (V)",
+            "Current 1 (A)",
+            "Current 2 (A)",
+            "Current 3 (A)",
+        ]
+        rows = ["Series 1", "Series 2", "Series 3", "Series 4", "Series 5"]
+        colors = [["#bfbfbf"] * 5] * 5
+
+        table = Table(
+            cell_text=data,
+            cell_colors=colors,
+            cell_align="center",
+            col_labels=columns,
+            col_widths=[0.1, 0.1, 0.1, 0.1, 0.1],
+            col_align="center",
+            col_colors=["#bfbfbf"] * 5,
+            row_labels=rows,
+            row_align="center",
+            row_colors=["#bfbfbf"] * 5,
+            scaling=(1.1, 1.1),
+            location="bottom",
+        )
+        tableCopy = table.copy()
+        self.assertListEqual(tableCopy.cell_text, table.cell_text)
+        self.assertListEqual(tableCopy.cell_colors, table.cell_colors)
+        self.assertEqual(tableCopy.cell_align, table.cell_align)
+        self.assertListEqual(tableCopy.col_labels, table.col_labels)
+        self.assertListEqual(tableCopy.col_widths, table.col_widths)
+        self.assertEqual(tableCopy.col_align, table.col_align)
+        self.assertListEqual(tableCopy.col_colors, table.col_colors)
+        self.assertListEqual(tableCopy.row_labels, table.row_labels)
+        self.assertEqual(tableCopy.row_align, table.row_align)
+        self.assertListEqual(tableCopy.row_colors, table.row_colors)
 
 
 if __name__ == "__main__":

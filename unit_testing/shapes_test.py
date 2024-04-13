@@ -135,6 +135,18 @@ class TestCircle(unittest.TestCase):
         self.assertEqual(center_point.x, 2.5)
         self.assertEqual(center_point.y, 3.5)
 
+    def test_copy(self):
+        circle = Circle(0, 0, 1)
+        circle_copy = circle.copy()
+        self.assertEqual(circle.x_center, circle_copy.x_center)
+        self.assertEqual(circle.y_center, circle_copy.y_center)
+        self.assertEqual(circle.radius, circle_copy.radius)
+        self.assertEqual(circle.color, circle_copy.color)
+        self.assertEqual(circle.line_width, circle_copy.line_width)
+        self.assertEqual(circle.fill, circle_copy.fill)
+        self.assertEqual(circle.line_style, circle_copy.line_style)
+        self.assertEqual(circle.fill_alpha, circle_copy.fill_alpha)
+
 
 class TestRectangle(unittest.TestCase):
     def test_width_and_height(self):
@@ -274,6 +286,19 @@ class TestRectangle(unittest.TestCase):
         self.assertEqual(points[1].x, 7)
         self.assertEqual(points[1].y, 4.3)
 
+    def test_copy(self):
+        rect = Rectangle(0, 0, 1, 1)
+        rect_copy = rect.copy()
+        self.assertEqual(rect.x_bottom_left, rect_copy.x_bottom_left)
+        self.assertEqual(rect.y_bottom_left, rect_copy.y_bottom_left)
+        self.assertEqual(rect.width, rect_copy.width)
+        self.assertEqual(rect.height, rect_copy.height)
+        self.assertEqual(rect.color, rect_copy.color)
+        self.assertEqual(rect.line_width, rect_copy.line_width)
+        self.assertEqual(rect.fill, rect_copy.fill)
+        self.assertEqual(rect.line_style, rect_copy.line_style)
+        self.assertEqual(rect.fill_alpha, rect_copy.fill_alpha)
+
 
 class TestArrow(unittest.TestCase):
     def test_init(self):
@@ -364,6 +389,25 @@ class TestArrow(unittest.TestCase):
                 self.assertEqual(child.arrow_patch.get_linewidth(), 2)
         plt.close()
 
+    def test_copy(self):
+        arrow = Arrow(
+            pointA=(3, 3),
+            pointB=(4, 4),
+            color="blue",
+            width=2,
+            head_size=3,
+            shrink=0.1,
+            two_sided=True,
+        )
+        arrow_copy = arrow.copy()
+        self.assertEqual(arrow.pointA, arrow_copy.pointA)
+        self.assertEqual(arrow.pointB, arrow_copy.pointB)
+        self.assertEqual(arrow.color, arrow_copy.color)
+        self.assertEqual(arrow.width, arrow_copy.width)
+        self.assertEqual(arrow.head_size, arrow_copy.head_size)
+        self.assertEqual(arrow.shrink, arrow_copy.shrink)
+        self.assertEqual(arrow.two_sided, arrow_copy.two_sided)
+
 
 class TestLine(unittest.TestCase):
     def test_init(self):
@@ -405,6 +449,23 @@ class TestLine(unittest.TestCase):
                 self.assertEqual(child.arrow_patch.get_edgecolor(), to_rgba("blue"))
                 self.assertEqual(child.arrow_patch.get_linewidth(), 2)
         plt.close()
+
+    def test_copy(self):
+        line = Line(
+            pointA=(3, 3),
+            pointB=(4, 4),
+            color="blue",
+            width=2,
+            capped_line=True,
+            cap_width=3,
+        )
+        line_copy = line.copy()
+        self.assertEqual(line.pointA, line_copy.pointA)
+        self.assertEqual(line.pointB, line_copy.pointB)
+        self.assertEqual(line.color, line_copy.color)
+        self.assertEqual(line.width, line_copy.width)
+        self.assertEqual(line.capped_line, line_copy.capped_line)
+        self.assertEqual(line.cap_width, line_copy.cap_width)
 
 
 if __name__ == "__main__":
