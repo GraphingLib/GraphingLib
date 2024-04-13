@@ -335,6 +335,80 @@ class Curve:
         """
         return deepcopy(self)
 
+    def create_slice_x(
+        self,
+        x1: float,
+        x2: float,
+        label: Optional[str] = None,
+        color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+    ) -> Self:
+        """
+        Creates a slice of the curve between two x values.
+
+        Parameters
+        ----------
+        x1, x2 : float
+            The x values between which the slice is to be created.
+        label : str, optional
+            Label of the slice to be displayed in the legend.
+        color : str
+            Color of the slice.
+            Default depends on the ``figure_style`` configuration.
+        line_width : float
+            Width of the slice.
+            Default depends on the ``figure_style`` configuration.
+        line_style : str
+            Style of the slice.
+            Default depends on the ``figure_style`` configuration.
+
+        Returns
+        -------
+        A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two x values.
+        """
+        mask = (self.x_data >= x1) & (self.x_data <= x2)
+        x_data = self.x_data[mask]
+        y_data = self.y_data[mask]
+        return Curve(x_data, y_data, label, color, line_width, line_style)
+
+    def create_slice_y(
+        self,
+        y1: float,
+        y2: float,
+        label: Optional[str] = None,
+        color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+    ) -> Self:
+        """
+        Creates a slice of the curve between two y values.
+
+        Parameters
+        ----------
+        y1, y2 : float
+            The y values between which the slice is to be created.
+        label : str, optional
+            Label of the slice to be displayed in the legend.
+        color : str
+            Color of the slice.
+            Default depends on the ``figure_style`` configuration.
+        line_width : float
+            Width of the slice.
+            Default depends on the ``figure_style`` configuration.
+        line_style : str
+            Style of the slice.
+            Default depends on the ``figure_style`` configuration.
+
+        Returns
+        -------
+        A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two y values.
+        """
+        mask = (self.y_data >= y1) & (self.y_data <= y2)
+        x_data = self.x_data[mask]
+        y_data = self.y_data[mask]
+        return Curve(x_data, y_data, label, color, line_width, line_style)
+
     def add_errorbars(
         self,
         x_error: Optional[ArrayLike] = None,
@@ -1373,6 +1447,102 @@ class Scatter:
         Returns a deep copy of the :class:`~graphinglib.data_plotting_1d.Scatter` object.
         """
         return deepcopy(self)
+
+    def create_slice_x(
+        self,
+        x_min: float,
+        x_max: float,
+        label: Optional[str] = None,
+        color: str = "default",
+        edge_color: str = "default",
+        marker_size: float | Literal["default"] = "default",
+        marker_style: str = "default",
+    ) -> Self:
+        """
+        Creates a slice of the scatter plot between two x values.
+
+        Parameters
+        ----------
+        x_min, x_max : float
+            The slice will be created between x_min and x_max.
+        label : str, optional
+            Label to be displayed in the legend.
+        color : str
+            Face color of the points.
+            Default depends on the ``figure_style`` configuration.
+        edge_color : str
+            Edge color of the points.
+            Default depends on the ``figure_style`` configuration.
+        marker_size : float
+            Size of the points.
+            Default depends on the ``figure_style`` configuration.
+        marker_style : str
+            Style of the points.
+            Default depends on the ``figure_style`` configuration.
+
+        Returns
+        -------
+        :class:`~graphinglib.data_plotting_1d.Scatter`
+            A new :class:`~graphinglib.data_plotting_1d.Scatter` object which is a slice of the original scatter plot.
+        """
+        mask = (self.x_data >= x_min) & (self.x_data <= x_max)
+        return Scatter(
+            self.x_data[mask],
+            self.y_data[mask],
+            label,
+            color,
+            edge_color,
+            marker_size,
+            marker_style,
+        )
+
+    def create_slice_y(
+        self,
+        y_min: float,
+        y_max: float,
+        label: Optional[str] = None,
+        color: str = "default",
+        edge_color: str = "default",
+        marker_size: float | Literal["default"] = "default",
+        marker_style: str = "default",
+    ) -> Self:
+        """
+        Creates a slice of the scatter plot between two y values.
+
+        Parameters
+        ----------
+        y_min, y_max : float
+            The slice will be created between y_min and y_max.
+        label : str, optional
+            Label to be displayed in the legend.
+        color : str
+            Face color of the points.
+            Default depends on the ``figure_style`` configuration.
+        edge_color : str
+            Edge color of the points.
+            Default depends on the ``figure_style`` configuration.
+        marker_size : float
+            Size of the points.
+            Default depends on the ``figure_style`` configuration.
+        marker_style : str
+            Style of the points.
+            Default depends on the ``figure_style`` configuration.
+
+        Returns
+        -------
+        :class:`~graphinglib.data_plotting_1d.Scatter`
+            A new :class:`~graphinglib.data_plotting_1d.Scatter` object which is a slice of the original scatter plot.
+        """
+        mask = (self.y_data >= y_min) & (self.y_data <= y_max)
+        return Scatter(
+            self.x_data[mask],
+            self.y_data[mask],
+            label,
+            color,
+            edge_color,
+            marker_size,
+            marker_style,
+        )
 
     def add_errorbars(
         self,
