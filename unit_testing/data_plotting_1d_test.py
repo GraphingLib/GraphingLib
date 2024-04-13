@@ -209,6 +209,12 @@ class TestCurve(unittest.TestCase):
         self.assertIsInstance(curve_sum, Curve)
         self.assertAlmostEqual(curve_sum.get_coordinates_at_x(0)[1], 2, places=3)
         self.assertAlmostEqual(curve_sum.get_coordinates_at_x(2)[1], 2.909118, places=3)
+        # in place
+        self.testCurve += 2
+        self.assertAlmostEqual(self.testCurve.get_coordinates_at_x(0)[1], 2, places=3)
+        self.assertAlmostEqual(
+            self.testCurve.get_coordinates_at_x(2)[1], 2.909118, places=3
+        )
 
     def test_subtract_with_int(self):
         curve_sub = self.testCurve - 2
@@ -228,6 +234,12 @@ class TestCurve(unittest.TestCase):
             2 - self.testCurve.get_coordinates_at_x(2)[1],
             places=3,
         )
+        # in place
+        self.testCurve -= 2
+        self.assertAlmostEqual(self.testCurve.get_coordinates_at_x(0)[1], -2, places=3)
+        self.assertAlmostEqual(
+            self.testCurve.get_coordinates_at_x(2)[1], -1.09088, places=3
+        )
 
     def test_multiply_with_int(self):
         curve_mult = self.testCurve * 2
@@ -239,6 +251,12 @@ class TestCurve(unittest.TestCase):
         self.assertIsInstance(curve_mult, Curve)
         self.assertAlmostEqual(curve_mult.get_coordinates_at_x(0)[1], 0, places=3)
         self.assertAlmostEqual(curve_mult.get_coordinates_at_x(2)[1], 1.8182, places=3)
+        # in place
+        self.testCurve *= 2
+        self.assertAlmostEqual(self.testCurve.get_coordinates_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(
+            self.testCurve.get_coordinates_at_x(2)[1], 1.8182, places=3
+        )
 
     def test_divide_with_int(self):
         curve_div = self.testCurve / 2
@@ -259,6 +277,12 @@ class TestCurve(unittest.TestCase):
             2 / new_curve.get_coordinates_at_x(2)[1],
             places=3,
         )
+        # in place
+        self.testCurve /= 2
+        self.assertAlmostEqual(self.testCurve.get_coordinates_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(
+            self.testCurve.get_coordinates_at_x(2)[1], 0.45455, places=3
+        )
 
     def test_power_with_int(self):
         curve_pow = self.testCurve**2
@@ -268,6 +292,13 @@ class TestCurve(unittest.TestCase):
             curve_pow.get_coordinates_at_x(2)[1],
             self.testCurve.get_coordinates_at_x(2)[1] ** 2,
             places=3,
+        )
+        # in place
+        reference_val = self.testCurve.get_coordinates_at_x(2)[1]
+        self.testCurve **= 2
+        self.assertAlmostEqual(self.testCurve.get_coordinates_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(
+            self.testCurve.get_coordinates_at_x(2)[1], reference_val**2, places=3
         )
 
     def test_max_curves(self):
@@ -398,12 +429,18 @@ class TestScatter(unittest.TestCase):
         self.assertAlmostEqual(
             scatter_sum.get_coordinates_at_x(2)[1], 2.909118, places=3
         )
-
+        # Test with int on the left
         scatter_sum = 2 + self.testScatter
         self.assertIsInstance(scatter_sum, Scatter)
         self.assertAlmostEqual(scatter_sum.get_coordinates_at_x(0)[1], 2, places=3)
         self.assertAlmostEqual(
             scatter_sum.get_coordinates_at_x(2)[1], 2.909118, places=3
+        )
+        # in place
+        self.testScatter += 2
+        self.assertAlmostEqual(self.testScatter.get_coordinates_at_x(0)[1], 2, places=3)
+        self.assertAlmostEqual(
+            self.testScatter.get_coordinates_at_x(2)[1], 2.909118, places=3
         )
 
     def test_subtract_scatter(self):
@@ -421,7 +458,7 @@ class TestScatter(unittest.TestCase):
         self.assertAlmostEqual(
             scatter_sub.get_coordinates_at_x(2)[1], -1.09088, places=3
         )
-
+        # Test with int on the left
         scatter_sub = 2 - self.testScatter
         self.assertIsInstance(scatter_sub, Scatter)
         self.assertAlmostEqual(
@@ -433,6 +470,14 @@ class TestScatter(unittest.TestCase):
             scatter_sub.get_coordinates_at_x(2)[1],
             2 - self.testScatter.get_coordinates_at_x(2)[1],
             places=3,
+        )
+        # in place
+        self.testScatter -= 2
+        self.assertAlmostEqual(
+            self.testScatter.get_coordinates_at_x(0)[1], -2, places=3
+        )
+        self.assertAlmostEqual(
+            self.testScatter.get_coordinates_at_x(2)[1], -1.09088, places=3
         )
 
     def test_multiply_scatter(self):
@@ -450,12 +495,18 @@ class TestScatter(unittest.TestCase):
         self.assertAlmostEqual(
             scatter_mult.get_coordinates_at_x(2)[1], 1.8182, places=3
         )
-
+        # Test with int on the left
         scatter_mult = 2 * self.testScatter
         self.assertIsInstance(scatter_mult, Scatter)
         self.assertAlmostEqual(scatter_mult.get_coordinates_at_x(0)[1], 0, places=3)
         self.assertAlmostEqual(
             scatter_mult.get_coordinates_at_x(2)[1], 1.8182, places=3
+        )
+        # in place
+        self.testScatter *= 2
+        self.assertAlmostEqual(self.testScatter.get_coordinates_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(
+            self.testScatter.get_coordinates_at_x(2)[1], 1.8182, places=3
         )
 
     def test_divide_scatter(self):
@@ -475,7 +526,7 @@ class TestScatter(unittest.TestCase):
         self.assertAlmostEqual(
             scatter_div.get_coordinates_at_x(2)[1], 0.45455, places=3
         )
-
+        # Test with int on the left
         new_scatter = 5 + self.testScatter
         scatter_div = 2 / new_scatter
         self.assertIsInstance(scatter_div, Scatter)
@@ -484,37 +535,11 @@ class TestScatter(unittest.TestCase):
             2 / new_scatter.get_coordinates_at_x(0)[1],
             places=3,
         )
-
-    def test_add_with_int(self):
-        scatter_sum = self.testScatter + 2
-        self.assertIsInstance(scatter_sum, Scatter)
-        self.assertAlmostEqual(scatter_sum.get_coordinates_at_x(0)[1], 2, places=3)
+        # in place
+        self.testScatter /= 2
+        self.assertAlmostEqual(self.testScatter.get_coordinates_at_x(0)[1], 0, places=3)
         self.assertAlmostEqual(
-            scatter_sum.get_coordinates_at_x(2)[1], 2.909118, places=3
-        )
-
-    def test_subtract_with_int(self):
-        scatter_sub = self.testScatter - 2
-        self.assertIsInstance(scatter_sub, Scatter)
-        self.assertAlmostEqual(scatter_sub.get_coordinates_at_x(0)[1], -2, places=3)
-        self.assertAlmostEqual(
-            scatter_sub.get_coordinates_at_x(2)[1], -1.09088, places=3
-        )
-
-    def test_multiply_with_int(self):
-        scatter_mult = self.testScatter * 2
-        self.assertIsInstance(scatter_mult, Scatter)
-        self.assertAlmostEqual(scatter_mult.get_coordinates_at_x(0)[1], 0, places=3)
-        self.assertAlmostEqual(
-            scatter_mult.get_coordinates_at_x(2)[1], 1.8182, places=3
-        )
-
-    def test_divide_with_int(self):
-        scatter_div = self.testScatter / 2
-        self.assertIsInstance(scatter_div, Scatter)
-        self.assertAlmostEqual(scatter_div.get_coordinates_at_x(0)[1], 0, places=3)
-        self.assertAlmostEqual(
-            scatter_div.get_coordinates_at_x(2)[1], 0.45455, places=3
+            self.testScatter.get_coordinates_at_x(2)[1], 0.45455, places=3
         )
 
     def test_power_with_int(self):
@@ -525,6 +550,13 @@ class TestScatter(unittest.TestCase):
             scatter_pow.get_coordinates_at_x(2)[1],
             self.testScatter.get_coordinates_at_x(2)[1] ** 2,
             places=3,
+        )
+        # in place
+        reference_val = self.testScatter.get_coordinates_at_x(2)[1]
+        self.testScatter **= 2
+        self.assertAlmostEqual(self.testScatter.get_coordinates_at_x(0)[1], 0, places=3)
+        self.assertAlmostEqual(
+            self.testScatter.get_coordinates_at_x(2)[1], reference_val**2, places=3
         )
 
     def test_max_scatter(self):
