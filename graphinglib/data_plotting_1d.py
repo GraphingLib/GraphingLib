@@ -343,6 +343,7 @@ class Curve:
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        copy_first: bool = False,
     ) -> Self:
         """
         Creates a slice of the curve between two x values.
@@ -362,6 +363,8 @@ class Curve:
         line_style : str
             Style of the slice.
             Default depends on the ``figure_style`` configuration.
+        copy_first : bool
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the slicing applied and the parameters passed to this method.
 
         Returns
         -------
@@ -370,7 +373,21 @@ class Curve:
         mask = (self.x_data >= x1) & (self.x_data <= x2)
         x_data = self.x_data[mask]
         y_data = self.y_data[mask]
-        return Curve(x_data, y_data, label, color, line_width, line_style)
+        if copy_first:
+            copy = self.copy()
+            copy.x_data = x_data
+            copy.y_data = y_data
+            if label is not None:
+                copy.label = label
+            if color != "default":
+                copy.color = color
+            if line_width != "default":
+                copy.line_width = line_width
+            if line_style != "default":
+                copy.line_style = line_style
+            return copy
+        else:
+            return Curve(x_data, y_data, label, color, line_width, line_style)
 
     def create_slice_y(
         self,
@@ -380,6 +397,7 @@ class Curve:
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        copy_first: bool = False,
     ) -> Self:
         """
         Creates a slice of the curve between two y values.
@@ -399,6 +417,8 @@ class Curve:
         line_style : str
             Style of the slice.
             Default depends on the ``figure_style`` configuration.
+        copy_first : bool
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the slicing applied and the parameters passed to this method.
 
         Returns
         -------
@@ -407,7 +427,21 @@ class Curve:
         mask = (self.y_data >= y1) & (self.y_data <= y2)
         x_data = self.x_data[mask]
         y_data = self.y_data[mask]
-        return Curve(x_data, y_data, label, color, line_width, line_style)
+        if copy_first:
+            copy = self.copy()
+            copy.x_data = x_data
+            copy.y_data = y_data
+            if label is not None:
+                copy.label = label
+            if color != "default":
+                copy.color = color
+            if line_width != "default":
+                copy.line_width = line_width
+            if line_style != "default":
+                copy.line_style = line_style
+            return copy
+        else:
+            return Curve(x_data, y_data, label, color, line_width, line_style)
 
     def add_errorbars(
         self,
@@ -679,6 +713,7 @@ class Curve:
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        copy_first: bool = False,
     ) -> Self:
         """
         Creates a new curve which is the derivative of the original curve.
@@ -696,6 +731,8 @@ class Curve:
         line_style : str
             Style of the new curve.
             Default depends on the ``figure_style`` configuration.
+        copy_first : bool
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the derivative applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the derivative applied and the parameters passed to this method.
 
         Returns
         -------
@@ -703,7 +740,20 @@ class Curve:
         """
         x_data = self.x_data
         y_data = np.gradient(self.y_data, x_data)
-        return Curve(x_data, y_data, label, color, line_width, line_style)
+        if copy_first:
+            copy = self.copy()
+            copy.y_data = y_data
+            if label is not None:
+                copy.label = label
+            if color != "default":
+                copy.color = color
+            if line_width != "default":
+                copy.line_width = line_width
+            if line_style != "default":
+                copy.line_style = line_style
+            return copy
+        else:
+            return Curve(x_data, y_data, label, color, line_width, line_style)
 
     def create_integral_curve(
         self,
@@ -712,6 +762,7 @@ class Curve:
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        copy_first: bool = False,
     ) -> Self:
         """
         Creates a new curve which is the integral of the original curve.
@@ -732,6 +783,8 @@ class Curve:
         line_style : str
             Style of the new curve.
             Default depends on the ``figure_style`` configuration.
+        copy_first : bool
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the integral applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the integral applied and the parameters passed to this method.
 
         Returns
         -------
@@ -739,7 +792,20 @@ class Curve:
         """
         # calculate the integral curve using cumulative trapezoidal integration
         y_data = cumtrapz(self.y_data, self.x_data, initial=0) + initial_value
-        return Curve(self.x_data, y_data, label, color, line_width, line_style)
+        if copy_first:
+            copy = self.copy()
+            copy.y_data = y_data
+            if label is not None:
+                copy.label = label
+            if color != "default":
+                copy.color = color
+            if line_width != "default":
+                copy.line_width = line_width
+            if line_style != "default":
+                copy.line_style = line_style
+            return copy
+        else:
+            return Curve(self.x_data, y_data, label, color, line_width, line_style)
 
     def create_tangent_curve(
         self,
@@ -748,6 +814,7 @@ class Curve:
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        copy_first: bool = False,
     ) -> Self:
         """
         Creates a new curve which is the tangent to the original curve at a given x value.
@@ -767,6 +834,8 @@ class Curve:
         line_style : str
             Style of the new curve.
             Default depends on the ``figure_style`` configuration.
+        copy_first : bool
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the tangent applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the tangent applied and the parameters passed to this method.
 
         Returns
         -------
@@ -776,8 +845,23 @@ class Curve:
         point = self.get_coordinates_at_x(x)
         gradient = self.create_derivative_curve().get_coordinates_at_x(x)[1]
         y_data = gradient * (self.x_data - x) + point[1]
-        tangent_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
-        return tangent_curve
+        if copy_first:
+            copy = self.copy()
+            copy.y_data = y_data
+            if label is not None:
+                copy.label = label
+            if color != "default":
+                copy.color = color
+            if line_width != "default":
+                copy.line_width = line_width
+            if line_style != "default":
+                copy.line_style = line_style
+            return copy
+        else:
+            tangent_curve = Curve(
+                self.x_data, y_data, label, color, line_width, line_style
+            )
+            return tangent_curve
 
     def create_normal_curve(
         self,
@@ -786,6 +870,7 @@ class Curve:
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        copy_first: bool = False,
     ) -> Self:
         """
         Creates a new curve which is the normal to the original curve at a given x value.
@@ -805,6 +890,8 @@ class Curve:
         line_style : str
             Style of the new curve.
             Default depends on the ``figure_style`` configuration.
+        copy_first : bool
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the normal applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the normal applied and the parameters passed to this method.
 
         Returns
         -------
@@ -814,8 +901,23 @@ class Curve:
         point = self.get_coordinates_at_x(x)
         gradient = self.create_derivative_curve().get_coordinates_at_x(x)[1]
         y_data = -1 / gradient * (self.x_data - x) + point[1]
-        normal_curve = Curve(self.x_data, y_data, label, color, line_width, line_style)
-        return normal_curve
+        if copy_first:
+            copy = self.copy()
+            copy.y_data = y_data
+            if label is not None:
+                copy.label = label
+            if color != "default":
+                copy.color = color
+            if line_width != "default":
+                copy.line_width = line_width
+            if line_style != "default":
+                copy.line_style = line_style
+            return copy
+        else:
+            normal_curve = Curve(
+                self.x_data, y_data, label, color, line_width, line_style
+            )
+            return normal_curve
 
     def get_slope_at(self, x: float) -> float:
         """
@@ -1457,6 +1559,7 @@ class Scatter:
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
+        copy_first: bool = False,
     ) -> Self:
         """
         Creates a slice of the scatter plot between two x values.
@@ -1479,6 +1582,8 @@ class Scatter:
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
+        copy_first : bool
+            If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
 
         Returns
         -------
@@ -1486,15 +1591,31 @@ class Scatter:
             A new :class:`~graphinglib.data_plotting_1d.Scatter` object which is a slice of the original scatter plot.
         """
         mask = (self.x_data >= x_min) & (self.x_data <= x_max)
-        return Scatter(
-            self.x_data[mask],
-            self.y_data[mask],
-            label,
-            color,
-            edge_color,
-            marker_size,
-            marker_style,
-        )
+        if copy_first:
+            copy = self.copy()
+            copy.x_data = self.x_data[mask]
+            copy.y_data = self.y_data[mask]
+            if label is not None:
+                copy.label = label
+            if color != "default":
+                copy.face_color = color
+            if edge_color != "default":
+                copy.edge_color = edge_color
+            if marker_size != "default":
+                copy.marker_size = marker_size
+            if marker_style != "default":
+                copy.marker_style = marker_style
+            return copy
+        else:
+            return Scatter(
+                self.x_data[mask],
+                self.y_data[mask],
+                label,
+                color,
+                edge_color,
+                marker_size,
+                marker_style,
+            )
 
     def create_slice_y(
         self,
@@ -1505,6 +1626,7 @@ class Scatter:
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
+        copy_first: bool = False,
     ) -> Self:
         """
         Creates a slice of the scatter plot between two y values.
@@ -1527,6 +1649,8 @@ class Scatter:
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
+        copy_first : bool
+            If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
 
         Returns
         -------
@@ -1534,15 +1658,31 @@ class Scatter:
             A new :class:`~graphinglib.data_plotting_1d.Scatter` object which is a slice of the original scatter plot.
         """
         mask = (self.y_data >= y_min) & (self.y_data <= y_max)
-        return Scatter(
-            self.x_data[mask],
-            self.y_data[mask],
-            label,
-            color,
-            edge_color,
-            marker_size,
-            marker_style,
-        )
+        if copy_first:
+            copy = self.copy()
+            copy.x_data = self.x_data[mask]
+            copy.y_data = self.y_data[mask]
+            if label is not None:
+                copy.label = label
+            if color != "default":
+                copy.face_color = color
+            if edge_color != "default":
+                copy.edge_color = edge_color
+            if marker_size != "default":
+                copy.marker_size = marker_size
+            if marker_style != "default":
+                copy.marker_style = marker_style
+            return copy
+        else:
+            return Scatter(
+                self.x_data[mask],
+                self.y_data[mask],
+                label,
+                color,
+                edge_color,
+                marker_size,
+                marker_style,
+            )
 
     def add_errorbars(
         self,
