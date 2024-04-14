@@ -17,6 +17,7 @@ matplotlib = "^3.7.1"
 PyYAML = "^6.0"
 platformdirs = "^3.11.0"
 setuptools-scm = "^8.0.4"
+shapely = "^2.0.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

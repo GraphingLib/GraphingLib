@@ -190,6 +190,14 @@ Line:
   width: 2
   cap_width: 1
 
+Polygon:
+  fill: True
+  fill_alpha: 0.5
+  fill_color:
+  edge_color: "black"
+  line_width: 2
+  line_style: "-"
+
 rc_params:
   figure.facecolor: "white"
   axes.facecolor: "white"

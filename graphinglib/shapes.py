@@ -1,9 +1,12 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import to_rgba
+from matplotlib.patches import Polygon as MPLPolygon
+from shapely import Polygon as ShPolygon
 
 from .graph_elements import Point
 
@@ -753,3 +756,235 @@ class Line:
             zorder=z_order,
             arrowprops=props,
         )
+
+
+class Polygon:
+    """This class implements a Polygon object.
+
+    Parameters
+    ----------
+    points : list[tuple[float, float]]
+        List of points that define the polygon.
+    fill : bool, optional
+        Whether the polygon should be filled or not.
+        Default depends on the ``figure_style`` configuration.
+    color : str, optional
+        The color of the polygon (both the line and the fill).
+        Default depends on the ``figure_style`` configuration.
+    line_width : float, optional
+        The width of the line.
+        Default depends on the ``figure_style`` configuration.
+    line_style : str, optional
+        The style of the line.
+        Default depends on the ``figure_style`` configuration.
+    fill_alpha : float, optional
+        The alpha value of the fill.
+        Default depends on the ``figure_style`` configuration.
+    """
+
+    def __init__(
+        self,
+        points: list[tuple[float, float]],
+        fill: bool = "default",
+        edge_color: str = "default",
+        fill_color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+        fill_alpha: float | Literal["default"] = "default",
+    ):
+        self.points = points
+        self.fill = fill
+        self.edge_color = edge_color
+        self.fill_color = fill_color
+        self.line_width = line_width
+        self.line_style = line_style
+        self.fill_alpha = fill_alpha
+        self.sh_polygon = ShPolygon(points)
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.shapes.Polygon` object.
+        """
+        return deepcopy(self)
+
+    def get_area(self) -> float:
+        """Returns the area of the polygon.
+
+        Returns
+        -------
+        float
+            The area of the polygon.
+        """
+        return self.sh_polygon.area
+
+    def get_perimeter(self) -> float:
+        """Returns the perimeter of the polygon.
+
+        Returns
+        -------
+        float
+            The perimeter of the polygon.
+        """
+        return self.sh_polygon.length
+
+    def get_centroid_coordinates(self) -> tuple[float, float]:
+        """Returns the center coordinates of the polygon.
+
+        Returns
+        -------
+        tuple[float, float]
+            The center coordinates of the polygon.
+        """
+        return self.sh_polygon.centroid.coords[0]
+
+    def create_centroid_point(self) -> Point:
+        """Returns the center point of the polygon.
+
+        Returns
+        -------
+        :class:`~graphinglib.graph_elements.Point`
+            The center point of the polygon.
+        """
+        return Point(*self.get_centroid_coordinates())
+
+    def create_intersection(self, other: Self) -> Self:
+        """
+        Returns the intersection of the polygon with another polygon.
+
+        Parameters
+        ----------
+        other : :class:`~graphinglib.shapes.Polygon`
+            The other polygon.
+
+        Returns
+        -------
+        :class:`~graphinglib.shapes.Polygon`
+            The intersection of the two polygons.
+        """
+        return Polygon(
+            list(self.sh_polygon.intersection(other.sh_polygon).exterior.coords)
+        )
+
+    def create_union(self, other: Self) -> Self:
+        """
+        Returns the union of the polygon with another polygon.
+
+        Parameters
+        ----------
+        other : :class:`~graphinglib.shapes.Polygon`
+            The other polygon.
+
+        Returns
+        -------
+        :class:`~graphinglib.shapes.Polygon`
+            The union of the two polygons.
+        """
+        return Polygon(list(self.sh_polygon.union(other.sh_polygon).exterior.coords))
+
+    def create_difference(self, other: Self) -> Self:
+        """
+        Returns the difference of the polygon with another polygon.
+
+        Parameters
+        ----------
+        other : :class:`~graphinglib.shapes.Polygon`
+            The other polygon to subtract from the current polygon.
+
+        Returns
+        -------
+        :class:`~graphinglib.shapes.Polygon`
+            The difference of the two polygons.
+        """
+        return Polygon(
+            list(self.sh_polygon.difference(other.sh_polygon).exterior.coords)
+        )
+
+    def move(self, dx: float, dy: float) -> Self:
+        """
+        Moves the polygon by the specified amount.
+
+        Parameters
+        ----------
+        dx : float
+            The amount to move the polygon in the x direction.
+        dy : float
+            The amount to move the polygon in the y direction.
+        """
+        new_points = [(x + dx, y + dy) for x, y in self.points]
+        self.points = new_points
+        self.sh_polygon = ShPolygon(new_points)
+
+    def rotate(
+        self,
+        angle_rad: Optional[float] = None,
+        angle_deg: Optional[float] = None,
+        center: Optional[tuple[float, float]] = None,
+    ) -> Self:
+        """
+        Rotates the polygon by the specified angle.
+
+        Parameters
+        ----------
+        angle_rad : float
+            The angle to rotate the polygon by, in radians. Only one of ``angle_rad`` and ``angle_deg`` should be specified. Positive values rotate the polygon counter-clockwise.
+        angle_deg : float
+            The angle to rotate the polygon by, in degrees. Only one of ``angle_rad`` and ``angle_deg`` should be specified. Positive values rotate the polygon counter-clockwise.
+        center : tuple[float, float], optional
+            The center of rotation. If not specified, the centroid of the polygon is used.
+        """
+        if angle_rad is not None and angle_deg is not None:
+            raise ValueError("Only one of angle_rad and angle_deg should be specified.")
+        if angle_rad is None and angle_deg is None:
+            raise ValueError("One of angle_rad and angle_deg should be specified.")
+        if angle_rad is None and angle_deg is not None:
+            angle_rad = np.radians(angle_deg)
+        if center is None:
+            center = self.get_centroid_coordinates()
+
+        new_points = [
+            (
+                (x - center[0]) * np.cos(angle_rad)
+                - (y - center[1]) * np.sin(angle_rad)
+                + center[0],
+                (x - center[0]) * np.sin(angle_rad)
+                + (y - center[1]) * np.cos(angle_rad)
+                + center[1],
+            )
+            for x, y in self.points
+        ]
+        self.points = new_points
+        self.sh_polygon = ShPolygon(new_points)
+
+    def apply_transform(self, matrix: np.ndarray) -> Self:
+        """
+        Applies a transformation matrix to the polygon.
+
+        Parameters
+        ----------
+        transform : numpy.ndarray
+            The transformation matrix to apply. The matrix should be a 2x2 matrix for 2D transformations.
+        """
+        new_points = np.dot(np.array(self.points), matrix)
+        self.points = new_points
+        self.sh_polygon = ShPolygon(new_points)
+
+    def _plot_element(self, axes: plt.Axes, z_order: int):
+        # Create a polygon patch for the fill
+        if self.fill:
+            kwargs = {
+                "alpha": self.fill_alpha,
+            }
+            if self.fill_color is not None:
+                kwargs["facecolor"] = self.fill_color
+            polygon_fill = MPLPolygon(self.points, **kwargs)
+            axes.add_patch(polygon_fill)
+        # Create a polygon patch for the edge
+        if self.edge_color is not None:
+            kwargs = {
+                "fill": None,
+                "linewidth": self.line_width,
+                "linestyle": self.line_style,
+                "edgecolor": self.edge_color,
+            }
+            polygon_edge = MPLPolygon(self.points, **kwargs)
+            axes.add_patch(polygon_edge)
