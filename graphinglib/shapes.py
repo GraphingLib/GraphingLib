@@ -941,17 +941,31 @@ class Polygon:
         if center is None:
             center = self.get_centroid_coordinates()
 
-        new_points = [
-            (
-                (x - center[0]) * np.cos(angle_rad)
-                - (y - center[1]) * np.sin(angle_rad)
-                + center[0],
-                (x - center[0]) * np.sin(angle_rad)
-                + (y - center[1]) * np.cos(angle_rad)
-                + center[1],
-            )
-            for x, y in self.points
-        ]
+        # Setup matrix for 2d rotation about a point (homogeneous coordinates)
+        rotation_matrix = np.array(
+            [
+                [
+                    np.cos(angle_rad),
+                    -np.sin(angle_rad),
+                    center[0]
+                    - center[0] * np.cos(angle_rad)
+                    + center[1] * np.sin(angle_rad),
+                ],
+                [
+                    np.sin(angle_rad),
+                    np.cos(angle_rad),
+                    center[1]
+                    - center[0] * np.sin(angle_rad)
+                    - center[1] * np.cos(angle_rad),
+                ],
+                [0, 0, 1],
+            ]
+        )
+        # get points in homogeneous coordinates
+        points = np.array(self.points)
+        points = np.hstack([points, np.ones((len(points), 1))])
+        # apply rotation
+        new_points = np.dot(points, rotation_matrix.T)[:, :2]
         self.points = new_points
         self.sh_polygon = ShPolygon(new_points)
 
