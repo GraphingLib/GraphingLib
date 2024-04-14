@@ -847,7 +847,7 @@ class Polygon:
         """
         return Point(*self.get_centroid_coordinates())
 
-    def create_intersection(self, other: Self) -> Self:
+    def create_intersection(self, other: Self, copy_style: bool = False) -> Self:
         """
         Returns the intersection of the polygon with another polygon.
 
@@ -855,17 +855,25 @@ class Polygon:
         ----------
         other : :class:`~graphinglib.shapes.Polygon`
             The other polygon.
+        copy_style : bool, optional
+            If ``True``, the current polygon's parameters are copied to the new polygon. If ``False``, the new polygon will have default parameters. Default is ``False``.
 
         Returns
         -------
         :class:`~graphinglib.shapes.Polygon`
             The intersection of the two polygons.
         """
-        return Polygon(
-            list(self.sh_polygon.intersection(other.sh_polygon).exterior.coords)
-        )
+        if copy_style:
+            new_poly = self.copy()
+            new_poly.sh_polygon = self.sh_polygon.intersection(other.sh_polygon)
+            new_poly.points = list(new_poly.sh_polygon.exterior.coords)
+            return new_poly
+        else:
+            return Polygon(
+                list(self.sh_polygon.intersection(other.sh_polygon).exterior.coords)
+            )
 
-    def create_union(self, other: Self) -> Self:
+    def create_union(self, other: Self, copy_style: bool = False) -> Self:
         """
         Returns the union of the polygon with another polygon.
 
@@ -873,15 +881,25 @@ class Polygon:
         ----------
         other : :class:`~graphinglib.shapes.Polygon`
             The other polygon.
+        copy_style : bool, optional
+            If ``True``, the current polygon's parameters are copied to the new polygon. If ``False``, the new polygon will have default parameters. Default is ``False``.
 
         Returns
         -------
         :class:`~graphinglib.shapes.Polygon`
             The union of the two polygons.
         """
-        return Polygon(list(self.sh_polygon.union(other.sh_polygon).exterior.coords))
+        if copy_style:
+            new_poly = self.copy()
+            new_poly.sh_polygon = self.sh_polygon.union(other.sh_polygon)
+            new_poly.points = list(new_poly.sh_polygon.exterior.coords)
+            return new_poly
+        else:
+            return Polygon(
+                list(self.sh_polygon.union(other.sh_polygon).exterior.coords)
+            )
 
-    def create_difference(self, other: Self) -> Self:
+    def create_difference(self, other: Self, copy_style: bool = False) -> Self:
         """
         Returns the difference of the polygon with another polygon.
 
@@ -889,17 +907,25 @@ class Polygon:
         ----------
         other : :class:`~graphinglib.shapes.Polygon`
             The other polygon to subtract from the current polygon.
+        copy_style : bool, optional
+            If ``True``, the current polygon's parameters are copied to the new polygon. If ``False``, the new polygon will have default parameters. Default is ``False``.
 
         Returns
         -------
         :class:`~graphinglib.shapes.Polygon`
             The difference of the two polygons.
         """
-        return Polygon(
-            list(self.sh_polygon.difference(other.sh_polygon).exterior.coords)
-        )
+        if copy_style:
+            new_poly = self.copy()
+            new_poly.sh_polygon = self.sh_polygon.difference(other.sh_polygon)
+            new_poly.points = list(new_poly.sh_polygon.exterior.coords)
+            return new_poly
+        else:
+            return Polygon(
+                list(self.sh_polygon.difference(other.sh_polygon).exterior.coords)
+            )
 
-    def move(self, dx: float, dy: float) -> Self:
+    def translate(self, dx: float, dy: float) -> Self | None:
         """
         Moves the polygon by the specified amount.
 
@@ -910,7 +936,13 @@ class Polygon:
         dy : float
             The amount to move the polygon in the y direction.
         """
-        new_points = [(x + dx, y + dy) for x, y in self.points]
+        # translation matrix in homogeneous coordinates
+        translation_matrix = np.array([[1, 0, dx], [0, 1, dy], [0, 0, 1]])
+        # get points in homogeneous coordinates
+        points = np.array(self.points)
+        points = np.hstack([points, np.ones((len(points), 1))])
+        # apply translation
+        new_points = np.dot(points, translation_matrix.T)[:, :2]
         self.points = new_points
         self.sh_polygon = ShPolygon(new_points)
 
