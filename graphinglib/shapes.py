@@ -6,8 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon as MPLPolygon
+from shapely import LineString
 from shapely import Polygon as ShPolygon
 
+from .data_plotting_1d import Curve
 from .graph_elements import Point
 
 try:
@@ -1013,6 +1015,52 @@ class Polygon:
         new_points = np.dot(np.array(self.points), matrix)
         self.points = new_points
         self.sh_polygon = ShPolygon(new_points)
+
+    def get_intersection_coordinates(self, other: Self) -> list[tuple[float, float]]:
+        """
+        Returns the coordinates of the intersection points of the borders of the two polygons.
+
+        Parameters
+        ----------
+        other : :class:`~graphinglib.shapes.Polygon`
+            The other polygon.
+
+        Returns
+        -------
+        list[tuple[float, float]]
+            The coordinates of the intersection of the two polygons.
+        """
+        intersection = self.sh_polygon.boundary.intersection(other.sh_polygon.boundary)
+        return [(p.x, p.y) for p in intersection.geoms]
+
+    def create_intersection_points(self, other: Self | Curve) -> list[Point]:
+        """
+        Returns the intersection points of the borders of the two polygons.
+
+        Parameters
+        ----------
+        other : :class:`~graphinglib.shapes.Polygon` or :class:`~graphinglib.data_plotting_1d.Curve`
+            The other polygon.
+
+        Returns
+        -------
+        list[:class:`~graphinglib.graph_elements.Point`]
+            The intersection points of the two polygons.
+        """
+        if isinstance(other, Curve):
+            # create curve points from the x_data and y_data of the curve
+            other_points = [(x, y) for x, y in zip(other.x_data, other.y_data)]
+            other_boundary = LineString(other_points)
+
+            intersection = self.sh_polygon.boundary.intersection(other_boundary)
+            return [Point(p.x, p.y) for p in intersection.geoms]
+        elif isinstance(other, Polygon):
+            intersection = self.sh_polygon.boundary.intersection(
+                other.sh_polygon.boundary
+            )
+            return [Point(p.x, p.y) for p in intersection.geoms]
+        else:
+            raise TypeError("The other object must be a Polygon or a Curve")
 
     def _plot_element(self, axes: plt.Axes, z_order: int):
         # Create a polygon patch for the fill
