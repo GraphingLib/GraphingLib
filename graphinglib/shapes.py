@@ -1051,8 +1051,7 @@ class Polygon:
         transform : numpy.ndarray
             The transformation matrix to apply. The matrix should be a 2x2 matrix for 2D transformations.
         """
-        new_points = np.dot(np.array(self.points), matrix)
-        self.points = new_points
+        new_points = np.dot(self.vertices, matrix)
         self.sh_polygon = ShPolygon(new_points)
 
     def get_intersection_coordinates(self, other: Self) -> list[tuple[float, float]]:
