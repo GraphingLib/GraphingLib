@@ -4,7 +4,8 @@ from typing import Literal, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import to_rgba
+import shapely as sh
+import shapely.ops as ops
 from matplotlib.patches import Polygon as MPLPolygon
 from shapely import LineString
 from shapely import Polygon as ShPolygon
@@ -794,7 +795,6 @@ class Polygon:
         line_style: str = "default",
         fill_alpha: float | Literal["default"] = "default",
     ):
-        self.points = points
         self.fill = fill
         self.edge_color = edge_color
         self.fill_color = fill_color
@@ -802,6 +802,10 @@ class Polygon:
         self.line_style = line_style
         self.fill_alpha = fill_alpha
         self.sh_polygon = ShPolygon(points)
+
+    @property
+    def vertices(self):
+        return np.array(self.sh_polygon.exterior.coords)
 
     def copy(self) -> Self:
         """
@@ -868,7 +872,6 @@ class Polygon:
         if copy_style:
             new_poly = self.copy()
             new_poly.sh_polygon = self.sh_polygon.intersection(other.sh_polygon)
-            new_poly.points = list(new_poly.sh_polygon.exterior.coords)
             return new_poly
         else:
             return Polygon(
@@ -894,7 +897,6 @@ class Polygon:
         if copy_style:
             new_poly = self.copy()
             new_poly.sh_polygon = self.sh_polygon.union(other.sh_polygon)
-            new_poly.points = list(new_poly.sh_polygon.exterior.coords)
             return new_poly
         else:
             return Polygon(
@@ -920,7 +922,6 @@ class Polygon:
         if copy_style:
             new_poly = self.copy()
             new_poly.sh_polygon = self.sh_polygon.difference(other.sh_polygon)
-            new_poly.points = list(new_poly.sh_polygon.exterior.coords)
             return new_poly
         else:
             return Polygon(
@@ -929,7 +930,7 @@ class Polygon:
 
     def translate(self, dx: float, dy: float) -> Self | None:
         """
-        Moves the polygon by the specified amount.
+        Translates the polygon by the specified amount.
 
         Parameters
         ----------
@@ -938,70 +939,108 @@ class Polygon:
         dy : float
             The amount to move the polygon in the y direction.
         """
-        # translation matrix in homogeneous coordinates
-        translation_matrix = np.array([[1, 0, dx], [0, 1, dy], [0, 0, 1]])
-        # get points in homogeneous coordinates
-        points = np.array(self.points)
-        points = np.hstack([points, np.ones((len(points), 1))])
-        # apply translation
-        new_points = np.dot(points, translation_matrix.T)[:, :2]
-        self.points = new_points
-        self.sh_polygon = ShPolygon(new_points)
+        self.sh_polygon = sh.affinity.translate(self.sh_polygon, xoff=dx, yoff=dy)
 
     def rotate(
         self,
-        angle_rad: Optional[float] = None,
-        angle_deg: Optional[float] = None,
+        angle: float,
         center: Optional[tuple[float, float]] = None,
+        use_rad: bool = False,
     ) -> Self:
         """
         Rotates the polygon by the specified angle.
 
         Parameters
         ----------
-        angle_rad : float
-            The angle to rotate the polygon by, in radians. Only one of ``angle_rad`` and ``angle_deg`` should be specified. Positive values rotate the polygon counter-clockwise.
-        angle_deg : float
-            The angle to rotate the polygon by, in degrees. Only one of ``angle_rad`` and ``angle_deg`` should be specified. Positive values rotate the polygon counter-clockwise.
+        angle : float
+            The angle by which to rotate the polygon (in degrees by default).
         center : tuple[float, float], optional
             The center of rotation. If not specified, the centroid of the polygon is used.
+        use_rad : bool, optional
+            Set to ``True`` if the angle is in radians instead of degrees. Default is ``False``.
         """
-        if angle_rad is not None and angle_deg is not None:
-            raise ValueError("Only one of angle_rad and angle_deg should be specified.")
-        if angle_rad is None and angle_deg is None:
-            raise ValueError("One of angle_rad and angle_deg should be specified.")
-        if angle_rad is None and angle_deg is not None:
-            angle_rad = np.radians(angle_deg)
         if center is None:
             center = self.get_centroid_coordinates()
 
-        # Setup matrix for 2d rotation about a point (homogeneous coordinates)
-        rotation_matrix = np.array(
-            [
-                [
-                    np.cos(angle_rad),
-                    -np.sin(angle_rad),
-                    center[0]
-                    - center[0] * np.cos(angle_rad)
-                    + center[1] * np.sin(angle_rad),
-                ],
-                [
-                    np.sin(angle_rad),
-                    np.cos(angle_rad),
-                    center[1]
-                    - center[0] * np.sin(angle_rad)
-                    - center[1] * np.cos(angle_rad),
-                ],
-                [0, 0, 1],
-            ]
+        # Use shapely.affinity.rotate to rotate the polygon
+        self.sh_polygon = sh.affinity.rotate(
+            self.sh_polygon, angle, origin=center, use_radians=use_rad
         )
-        # get points in homogeneous coordinates
-        points = np.array(self.points)
-        points = np.hstack([points, np.ones((len(points), 1))])
-        # apply rotation
-        new_points = np.dot(points, rotation_matrix.T)[:, :2]
-        self.points = new_points
-        self.sh_polygon = ShPolygon(new_points)
+
+    def scale(
+        self,
+        x_scale: float,
+        y_scale: float,
+        center: Optional[tuple[float, float]] = None,
+    ) -> Self:
+        """
+        Scales the polygon by the specified factors.
+
+        Parameters
+        ----------
+        x_scale : float
+            The factor by which to scale the polygon in the x direction.
+        y_scale : float
+            The factor by which to scale the polygon in the y direction.
+        center : tuple[float, float], optional
+            The center of the scaling. If not specified, the centroid of the polygon is used.
+        """
+        if center is None:
+            center = self.get_centroid_coordinates()
+
+        # Use shapely.affinity.scale to scale the polygon
+        self.sh_polygon = sh.affinity.scale(
+            self.sh_polygon, xfact=x_scale, yfact=y_scale, origin=center
+        )
+
+    def skew(
+        self,
+        x_skew: float,
+        y_skew: float,
+        center: Optional[tuple[float, float]] = None,
+        use_rad: bool = False,
+    ) -> Self:
+        """
+        Skews the polygon by the specified factors.
+
+        Parameters
+        ----------
+        x_skew : float
+            The factor by which to skew the polygon in the x direction.
+        y_skew : float
+            The factor by which to skew the polygon in the y direction.
+        center : tuple[float, float], optional
+            The center of the skewing. If not specified, the centroid of the polygon is used.
+        use_rad : bool, optional
+            Set to ``True`` if the skewing factors are in radians instead of degrees. Default is ``False``.
+        """
+        if center is None:
+            center = self.get_centroid_coordinates()
+
+        # Use shapely.affinity.skew to skew the polygon
+        self.sh_polygon = sh.affinity.skew(
+            self.sh_polygon, xs=x_skew, ys=y_skew, origin=center, use_radians=use_rad
+        )
+
+    def split(self, curve: Curve) -> list[Self]:
+        """
+        Splits the polygon by a curve.
+
+        Parameters
+        ----------
+        curve : :class:`~graphinglib.data_plotting_1d.Curve`
+            The curve to split the polygon by.
+
+        Returns
+        -------
+        list[:class:`~shapely.geometry.polygon.Polygon`]
+            The list of polygons resulting from the split.
+        """
+        if not isinstance(curve, Curve):
+            raise TypeError("The curve must be a Curve object")
+        sh_curve = LineString([(x, y) for x, y in zip(curve.x_data, curve.y_data)])
+        split_sh_polygons = ops.split(self.sh_polygon, sh_curve)
+        return [Polygon(list(p.exterior.coords)) for p in list(split_sh_polygons.geoms)]
 
     def apply_transform(self, matrix: np.ndarray) -> Self:
         """
@@ -1070,7 +1109,7 @@ class Polygon:
             }
             if self.fill_color is not None:
                 kwargs["facecolor"] = self.fill_color
-            polygon_fill = MPLPolygon(self.points, **kwargs)
+            polygon_fill = MPLPolygon(self.vertices, **kwargs)
             axes.add_patch(polygon_fill)
         # Create a polygon patch for the edge
         if self.edge_color is not None:
@@ -1080,5 +1119,5 @@ class Polygon:
                 "linestyle": self.line_style,
                 "edgecolor": self.edge_color,
             }
-            polygon_edge = MPLPolygon(self.points, **kwargs)
+            polygon_edge = MPLPolygon(self.vertices, **kwargs)
             axes.add_patch(polygon_edge)
