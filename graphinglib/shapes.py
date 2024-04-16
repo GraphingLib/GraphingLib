@@ -1045,7 +1045,7 @@ class Polygon:
         ]
         return [Polygon(list(p.exterior.coords)) for p in split_sh_polygons]
 
-    def apply_transform(self, matrix: np.ndarray) -> Self:
+    def linear_transformation(self, matrix: np.ndarray) -> Self:
         """
         Applies a transformation matrix to the polygon.
 

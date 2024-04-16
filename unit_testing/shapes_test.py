@@ -808,7 +808,7 @@ class TestPolygon(unittest.TestCase):
         ]
         polygon = Polygon(vertices, line_width=2)
         transform_matrix_2x2 = np.array([[2, 0], [0, 2]])
-        polygon.apply_transform(transform_matrix_2x2)
+        polygon.linear_transformation(transform_matrix_2x2)
 
         self.assertIn(list((0, 0)), polygon.vertices)
         self.assertIn(list((2, 0)), polygon.vertices)
