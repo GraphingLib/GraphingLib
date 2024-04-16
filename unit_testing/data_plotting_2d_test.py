@@ -60,6 +60,7 @@ class TestHeatmap(unittest.TestCase):
 
     def test_from_points(self):
         # make list of random (x,y) points
+        np.random.seed(0)
         x = np.random.rand(10)
         y = np.random.rand(10)
         points = np.array([x, y]).T

@@ -1040,7 +1040,10 @@ class Polygon:
             raise TypeError("The curve must be a Curve object")
         sh_curve = LineString([(x, y) for x, y in zip(curve.x_data, curve.y_data)])
         split_sh_polygons = ops.split(self.sh_polygon, sh_curve)
-        return [Polygon(list(p.exterior.coords)) for p in list(split_sh_polygons.geoms)]
+        split_sh_polygons = [
+            p.simplify(0.001 * p.length) for p in list(split_sh_polygons.geoms)
+        ]
+        return [Polygon(list(p.exterior.coords)) for p in split_sh_polygons]
 
     def apply_transform(self, matrix: np.ndarray) -> Self:
         """
