@@ -20,611 +20,6 @@ except ImportError:
 
 
 @dataclass
-class Circle:
-    """This class implements a Circle object with a given center and radius.
-
-    Parameters
-    ----------
-    x_center : float
-        The x coordinate of the :class:`~graphinglib.shapes.Circle`.
-    y_center : float
-        The y coordinate of the :class:`~graphinglib.shapes.Circle`.
-    radius : float
-        The radius of the :class:`~graphinglib.shapes.Circle`.
-    fill : bool, optional
-        Whether the circle should be filled or not.
-        Default depends on the ``figure_style`` configuration.
-    color : str, optional
-        The color of the circle (both the line and the fill).
-        Default depends on the ``figure_style`` configuration.
-    line_width : float, optional
-        The width of the line.
-        Default depends on the ``figure_style`` configuration.
-    line_style : str, optional
-        The style of the line.
-        Default depends on the ``figure_style`` configuration.
-    fill_alpha : float, optional
-        The alpha value of the fill.
-        Default depends on the ``figure_style`` configuration.
-    """
-
-    x_center: float
-    y_center: float
-    radius: float
-    fill: bool = "default"
-    color: str = "default"
-    line_width: float | Literal["default"] = "default"
-    line_style: str = "default"
-    fill_alpha: float | Literal["default"] = "default"
-
-    def __post_init__(self) -> None:
-        if self.radius <= 0:
-            raise ValueError("The radius must be positive")
-
-    def __contains__(self, point: Point) -> bool:
-        return (point.x - self.x_center) ** 2 + (
-            point.y - self.y_center
-        ) ** 2 <= self.radius**2
-
-    def copy(self) -> Self:
-        """
-        Returns a deep copy of the :class:`~graphinglib.shapes.Circle` object.
-        """
-        return deepcopy(self)
-
-    def get_area(self) -> float:
-        """Returns the area of the circle.
-
-        Returns
-        -------
-        float
-            The area of the circle.
-        """
-        return np.pi * self.radius**2
-
-    def get_circumference(self) -> float:
-        """Returns the circumference of the circle.
-
-        Returns
-        -------
-        float
-            The circumference of the circle.
-        """
-        return 2 * np.pi * self.radius
-
-    def get_center_coordinates(self) -> tuple[float, float]:
-        """Returns the coordinates of the center of the circle.
-
-        Returns
-        -------
-        tuple of floats
-            The coordinates of the center of the circle.
-        """
-        return (self.x_center, self.y_center)
-
-    def create_center_point(self) -> Point:
-        """Returns the center point of the circle.
-
-        Returns
-        -------
-        tuple of floats or :class:`~graphinglib.graph_elements.Point`
-            The center point of the circle.
-        """
-        return Point(self.x_center, self.y_center)
-
-    def get_coordinates_at_x(self, x: float) -> list[tuple[float, float]]:
-        """Returns the coordinates on the circle at the specified x coordinate.
-
-        Parameters
-        ----------
-        x : float
-            The x coordinate of the points.
-
-        Returns
-        -------
-        list[tuple[float, float]]
-            The coordinates on the circle at the specified x coordinate.
-        """
-        if x < self.x_center - self.radius or x > self.x_center + self.radius:
-            raise ValueError(
-                f"x must be between {self.x_center - self.radius} and {self.x_center + self.radius}"
-            )
-        y = np.sqrt(self.radius**2 - (x - self.x_center) ** 2)
-        if y == 0:
-            return [(x, y)]
-        return [(x, y), (x, -y)]
-
-    def create_points_at_x(self, x: float) -> list[Point]:
-        """Returns the points on the circle at the specified x coordinate.
-
-        Parameters
-        ----------
-        x : float
-            The x coordinate of the points.
-
-        Returns
-        -------
-        list[:class:`~graphinglib.graph_elements.Point`]
-            The points on the circle at the specified x coordinate.
-        """
-        if x < self.x_center - self.radius or x > self.x_center + self.radius:
-            raise ValueError(
-                f"x must be between {self.x_center - self.radius} and {self.x_center + self.radius}"
-            )
-        y = np.sqrt(self.radius**2 - (x - self.x_center) ** 2)
-        if y == 0:
-            return [Point(x, y)]
-        return [Point(x, y), Point(x, -y)]
-
-    def get_coordinates_at_y(self, y: float) -> list[tuple[float, float]]:
-        """Returns the coordinates on the circle at the specified y coordinate.
-
-        Parameters
-        ----------
-        y : float
-            The y coordinate of the points.
-
-        Returns
-        -------
-        list[tuple[float, float]]
-            The coordinates on the circle at the specified y coordinate.
-        """
-        if y < self.y_center - self.radius or y > self.y_center + self.radius:
-            raise ValueError(
-                f"y must be between {self.y_center - self.radius} and {self.y_center + self.radius}"
-            )
-        x = np.sqrt(self.radius**2 - (y - self.y_center) ** 2)
-        if x == 0:
-            return [(x, y)]
-        return [(x, y), (-x, y)]
-
-    def create_points_at_y(self, y: float) -> list[Point]:
-        """Returns the points on the circle at the specified y coordinate.
-
-        Parameters
-        ----------
-        y : float
-            The y coordinate of the points.
-
-        Returns
-        -------
-        list[]:class:`~graphinglib.graph_elements.Point`]
-            The points on the circle at the specified y coordinate.
-        """
-        if y < self.y_center - self.radius or y > self.y_center + self.radius:
-            raise ValueError(
-                f"y must be between {self.y_center - self.radius} and {self.y_center + self.radius}"
-            )
-        x = np.sqrt(self.radius**2 - (y - self.y_center) ** 2)
-        if x == 0:
-            return [Point(x, y)]
-        return [Point(x, y), Point(-x, y)]
-
-    def get_coordinates_at_angle(
-        self, angle: float, degrees=False
-    ) -> tuple[float, float]:
-        """Returns the coordinates on the circle at the specified angle.
-
-        Parameters
-        ----------
-        angle : float
-            The angle of the point.
-        degrees : bool, optional
-            Whether the angle is in degrees or radians.
-            Default is ``False`` (angle is in radians).
-
-        Returns
-        -------
-        tuple of floats
-            The coordinates on the circle at the specified angle.
-        """
-        if degrees:
-            angle = np.radians(angle)
-        x = self.x_center + self.radius * np.cos(angle)
-        y = self.y_center + self.radius * np.sin(angle)
-        return (x, y)
-
-    def create_point_at_angle(self, angle: float, degrees=False) -> Point:
-        """Returns the point on the circle at the specified angle.
-
-        Parameters
-        ----------
-        angle : float
-            The angle of the point.
-        degrees : bool, optional
-            Whether the angle is in degrees or radians.
-            Default is ``False`` (angle is in radians).
-
-        Returns
-        -------
-        :class:`~graphinglib.graph_elements.Point`
-            The point on the circle at the specified angle.
-        """
-        if degrees:
-            angle = np.radians(angle)
-        x = self.x_center + self.radius * np.cos(angle)
-        y = self.y_center + self.radius * np.sin(angle)
-        return Point(x, y)
-
-    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
-        """
-        Plots the element in the specified
-        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
-        """
-
-        def xy(r, phi, x0, y0):
-            return r * np.cos(phi) + x0, r * np.sin(phi) + y0
-
-        phi = np.linspace(0, 2 * np.pi, 100)
-        x, y = xy(self.radius, phi, self.x_center, self.y_center)
-        params = {
-            "color": self.color,
-            "linewidth": self.line_width,
-            "linestyle": self.line_style,
-        }
-
-        params = {k: v for k, v in params.items() if v != "default"}
-        axes.plot(x, y, zorder=z_order, **params)
-        if self.fill:
-            params = {
-                "alpha": self.fill_alpha,
-                "facecolor": self.color,
-            }
-            params = {k: v for k, v in params.items() if v != "default"}
-            axes.fill_between(x, y, self.y_center, zorder=z_order, **params)
-
-
-@dataclass
-class Rectangle:
-    """This class implements a Rectangle object with a given bottom left corner, width and height.
-
-    Parameters
-    ----------
-    x_bottom_left : float
-        The x coordinate of the bottom left corner of the :class:`~graphinglib.shapes.Rectangle`.
-    y_bottom_left : float
-        The y coordinate of the bottom left corner of the :class:`~graphinglib.shapes.Rectangle`.
-    width : float
-        The width of the :class:`~graphinglib.shapes.Rectangle`.
-    height : float
-        The height of the :class:`~graphinglib.shapes.Rectangle`.
-    fill : bool, optional
-        Whether the rectangle should be filled or not.
-        Default depends on the ``figure_style`` configuration.
-    color : str, optional
-        The color of the rectangle (both the line and the fill).
-        Default depends on the ``figure_style`` configuration.
-    line_width : float, optional
-        The width of the line.
-        Default depends on the ``figure_style`` configuration.
-    line_style : str, optional
-        The style of the line.
-        Default depends on the ``figure_style`` configuration.
-    fill_alpha : float, optional
-        The alpha value of the fill.
-        Default depends on the ``figure_style`` configuration.
-    """
-
-    x_bottom_left: float
-    y_bottom_left: float
-    width: float
-    height: float
-    fill: bool = "default"
-    color: str = "default"
-    line_width: float | Literal["default"] = "default"
-    line_style: str = "default"
-    fill_alpha: float | Literal["default"] = "default"
-
-    def __post_init__(self):
-        if self.width <= 0:
-            raise ValueError("The width must be positive")
-        if self.height <= 0:
-            raise ValueError("The height must be positive")
-
-    @classmethod
-    def from_center(
-        cls,
-        x: float,
-        y: float,
-        width: float,
-        height: float,
-        fill: bool = "default",
-        color: str = "default",
-        line_width: float | Literal["default"] = "default",
-        line_style: str = "default",
-        fill_alpha: float | Literal["default"] = "default",
-    ) -> Self:
-        """Creates a :class:`~graphinglib.shapes.Rectangle` from its center point, width and height.
-
-        Parameters
-        ----------
-        x : float
-            The x coordinate of the center point.
-        y : float
-            The y coordinate of the center point.
-        width : float
-            The width of the :class:`~graphinglib.shapes.Rectangle`.
-        height : float
-            The height of the :class:`~graphinglib.shapes.Rectangle`.
-        fill : bool, optional
-            Whether the rectangle should be filled or not.
-            Default depends on the ``figure_style`` configuration.
-        color : str, optional
-            The color of the rectangle (both the line and the fill).
-            Default depends on the ``figure_style`` configuration.
-        line_width : float, optional
-            The width of the line.
-            Default depends on the ``figure_style`` configuration.
-        line_style : str, optional
-            The style of the line.
-            Default depends on the ``figure_style`` configuration.
-        fill_alpha : float, optional
-            The alpha value of the fill.
-            Default depends on the ``figure_style`` configuration.
-        """
-        return cls(
-            x - width / 2,
-            y - height / 2,
-            width,
-            height,
-            fill,
-            color,
-            line_width,
-            line_style,
-            fill_alpha,
-        )
-
-    @classmethod
-    def from_points(
-        cls,
-        point1: Point,
-        point2: Point,
-        fill: bool = "default",
-        color: str = "default",
-        line_width: float | Literal["default"] = "default",
-        line_style: str = "default",
-        fill_alpha: float | Literal["default"] = "default",
-    ) -> Self:
-        """Creates a :class:`~graphinglib.shapes.Rectangle` from two of its opposite corners.
-
-        Parameters
-        ----------
-        point1 : :class:`~graphinglib.graph_elements.Point`
-            The first point.
-        point2 : :class:`~graphinglib.graph_elements.Point`
-            The second point.
-        fill : bool, optional
-            Whether the rectangle should be filled or not.
-            Default depends on the ``figure_style`` configuration.
-        color : str, optional
-            The color of the rectangle (both the line and the fill).
-            Default depends on the ``figure_style`` configuration.
-        line_width : float, optional
-            The width of the line.
-            Default depends on the ``figure_style`` configuration.
-        line_style : str, optional
-            The style of the line.
-            Default depends on the ``figure_style`` configuration.
-        fill_alpha : float, optional
-            The alpha value of the fill.
-            Default depends on the ``figure_style`` configuration.
-        """
-        if point1.x == point2.x or point1.y == point2.y:
-            raise ValueError("The points must not be on the same line")
-        return cls(
-            min(point1.x, point2.x),
-            min(point1.y, point2.y),
-            abs(point1.x - point2.x),
-            abs(point1.y - point2.y),
-            fill,
-            color,
-            line_width,
-            line_style,
-            fill_alpha,
-        )
-
-    def __contains__(self, point: Point) -> bool:
-        return (self.x_bottom_left <= point.x <= self.x_bottom_left + self.width) and (
-            self.y_bottom_left <= point.y <= self.y_bottom_left + self.height
-        )
-
-    def copy(self) -> Self:
-        """
-        Returns a deep copy of the :class:`~graphinglib.shapes.Rectangle` object.
-        """
-        return deepcopy(self)
-
-    def get_area(self) -> float:
-        """Returns the area of the rectangle.
-
-        Returns
-        -------
-        float
-            The area of the rectangle.
-        """
-        return self.width * self.height
-
-    def get_perimeter(self) -> float:
-        """Returns the perimeter of the rectangle.
-
-        Returns
-        -------
-        float
-            The perimeter of the rectangle.
-        """
-        return 2 * (self.width + self.height)
-
-    def get_center_coordinates(self) -> tuple[float, float] | Point:
-        """Returns the center coordinates of the rectangle.
-
-        Returns
-        -------
-        tuple[float, float]
-            The center point of the rectangle.
-        """
-        return (
-            self.x_bottom_left + self.width / 2,
-            self.y_bottom_left + self.height / 2,
-        )
-
-    def create_center_point(self) -> Point:
-        """Returns the center point of the rectangle.
-
-        Returns
-        -------
-        :class:`~graphinglib.graph_elements.Point`
-            The center point of the rectangle.
-        """
-        return Point(
-            self.x_bottom_left + self.width / 2,
-            self.y_bottom_left + self.height / 2,
-        )
-
-    def get_coordinates_at_x(self, x: float) -> list[tuple[float, float]]:
-        """Returns the coordinates on the rectangle at the specified x coordinate.
-
-        Parameters
-        ----------
-        x : float
-            The x coordinate of the points.
-
-        Returns
-        -------
-        list[tuple[float, float]]
-            The coordinates on the rectangle at the specified x coordinate.
-        """
-        if x <= self.x_bottom_left or x >= self.x_bottom_left + self.width:
-            raise ValueError(
-                f"x must be between {self.x_bottom_left} and {self.x_bottom_left + self.width}"
-            )
-        return [
-            (x, self.y_bottom_left),
-            (x, self.y_bottom_left + self.height),
-        ]
-
-    def create_points_at_x(self, x: float) -> list[Point]:
-        """Returns the points on the rectangle at the specified x coordinate.
-
-        Parameters
-        ----------
-        x : float
-            The x coordinate of the points.
-
-        Returns
-        -------
-        list[:class:`~graphinglib.graph_elements.Point`]
-            The points on the rectangle at the specified x coordinate.
-        """
-        if x <= self.x_bottom_left or x >= self.x_bottom_left + self.width:
-            raise ValueError(
-                f"x must be between {self.x_bottom_left} and {self.x_bottom_left + self.width}"
-            )
-        return [
-            Point(x, self.y_bottom_left),
-            Point(x, self.y_bottom_left + self.height),
-        ]
-
-    def get_coordinates_at_y(self, y: float) -> list[tuple[float, float]]:
-        """Returns the coordinates on the rectangle at the specified y coordinate.
-
-        Parameters
-        ----------
-        y : float
-            The y coordinate of the points.
-
-        Returns
-        -------
-        list[tuple[float, float]]
-            The coordinates on the rectangle at the specified y coordinate.
-        """
-        if y <= self.y_bottom_left or y >= self.y_bottom_left + self.height:
-            raise ValueError(
-                f"y must be between {self.y_bottom_left} and {self.y_bottom_left + self.height}"
-            )
-        return [
-            (self.x_bottom_left, y),
-            (self.x_bottom_left + self.width, y),
-        ]
-
-    def create_points_at_y(self, y: float) -> list[Point]:
-        """Returns the points on the rectangle at the specified y coordinate.
-
-        Parameters
-        ----------
-        y : float
-            The y coordinate of the points.
-
-        Returns
-        -------
-        list[:class:`~graphinglib.graph_elements.Point`]
-            The points on the rectangle at the specified y coordinate.
-        """
-        if y <= self.y_bottom_left or y >= self.y_bottom_left + self.height:
-            raise ValueError(
-                f"y must be between {self.y_bottom_left} and {self.y_bottom_left + self.height}"
-            )
-        return [
-            Point(self.x_bottom_left, y),
-            Point(self.x_bottom_left + self.width, y),
-        ]
-
-    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
-        """
-        Plots the element in the specified
-        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
-        """
-        params = {
-            "color": self.color,
-            "linewidth": self.line_width,
-            "linestyle": self.line_style,
-        }
-
-        params = {k: v for k, v in params.items() if v != "default"}
-        axes.plot(
-            [
-                self.x_bottom_left,
-                self.x_bottom_left + self.width,
-                self.x_bottom_left + self.width,
-                self.x_bottom_left,
-                self.x_bottom_left,
-            ],
-            [
-                self.y_bottom_left,
-                self.y_bottom_left,
-                self.y_bottom_left + self.height,
-                self.y_bottom_left + self.height,
-                self.y_bottom_left,
-            ],
-            zorder=z_order,
-            **params,
-        )
-        if self.fill:
-            params = {
-                "alpha": self.fill_alpha,
-                "facecolor": self.color,
-            }
-            params = {k: v for k, v in params.items() if v != None}
-            axes.fill_between(
-                [
-                    self.x_bottom_left,
-                    self.x_bottom_left + self.width,
-                    self.x_bottom_left + self.width,
-                    self.x_bottom_left,
-                    self.x_bottom_left,
-                ],
-                [
-                    self.y_bottom_left,
-                    self.y_bottom_left,
-                    self.y_bottom_left + self.height,
-                    self.y_bottom_left + self.height,
-                    self.y_bottom_left,
-                ],
-                zorder=z_order,
-                **params,
-            )
-
-
-@dataclass
 class Arrow:
     """This class implements an arrow object.
 
@@ -691,7 +86,6 @@ class Arrow:
         }
         if self.shrink != 0:
             shrinkPointA, shrinkPointB = self._shrink_points()
-            print(shrinkPointA, shrinkPointB)
             axes.annotate(
                 "",
                 shrinkPointB,
@@ -802,6 +196,9 @@ class Polygon:
         self.line_style = line_style
         self.fill_alpha = fill_alpha
         self.sh_polygon = ShPolygon(points)
+
+    def __contains__(self, point: Point) -> bool:
+        return self.sh_polygon.contains(sh.geometry.Point(point.x, point.y))
 
     @property
     def vertices(self):
@@ -1022,7 +419,7 @@ class Polygon:
             self.sh_polygon, xs=x_skew, ys=y_skew, origin=center, use_radians=use_rad
         )
 
-    def split(self, curve: Curve) -> list[Self]:
+    def split(self, curve: Curve, copy_style: bool = False) -> list[Self]:
         """
         Splits the polygon by a curve.
 
@@ -1030,6 +427,8 @@ class Polygon:
         ----------
         curve : :class:`~graphinglib.data_plotting_1d.Curve`
             The curve to split the polygon by.
+        copy_style : bool, optional
+            If ``True``, the current polygon's parameters are copied to the new polygons. If ``False``, the new polygons will have default parameters. Default is ``False``.
 
         Returns
         -------
@@ -1043,7 +442,16 @@ class Polygon:
         split_sh_polygons = [
             p.simplify(0.001 * p.length) for p in list(split_sh_polygons.geoms)
         ]
-        return [Polygon(list(p.exterior.coords)) for p in split_sh_polygons]
+        polygons = [Polygon(list(p.exterior.coords)) for p in split_sh_polygons]
+        if copy_style:
+            for polygon in polygons:
+                polygon.fill = self.fill
+                polygon.fill_color = self.fill_color
+                polygon.edge_color = self.edge_color
+                polygon.line_width = self.line_width
+                polygon.line_style = self.line_style
+                polygon.fill_alpha = self.fill_alpha
+        return polygons
 
     def linear_transformation(self, matrix: np.ndarray) -> Self:
         """
@@ -1108,6 +516,7 @@ class Polygon:
         if self.fill:
             kwargs = {
                 "alpha": self.fill_alpha,
+                "zorder": z_order - 1,
             }
             if self.fill_color is not None:
                 kwargs["facecolor"] = self.fill_color
@@ -1120,6 +529,196 @@ class Polygon:
                 "linewidth": self.line_width,
                 "linestyle": self.line_style,
                 "edgecolor": self.edge_color,
+                "zorder": z_order,
             }
             polygon_edge = MPLPolygon(self.vertices, **kwargs)
             axes.add_patch(polygon_edge)
+
+
+@dataclass
+class Circle(Polygon):
+    """This class implements a Circle object with a given center and radius.
+
+    Parameters
+    ----------
+    x_center : float
+        The x coordinate of the :class:`~graphinglib.shapes.Circle`.
+    y_center : float
+        The y coordinate of the :class:`~graphinglib.shapes.Circle`.
+    radius : float
+        The radius of the :class:`~graphinglib.shapes.Circle`.
+    fill : bool, optional
+        Whether the circle should be filled or not.
+        Default depends on the ``figure_style`` configuration.
+    fill_color : str, optional
+        The color of the circle's fill.
+        Default depends on the ``figure_style`` configuration.
+    edge_color : str, optional
+        The color of the circle's edge.
+        Default depends on the ``figure_style`` configuration.
+    line_width : float, optional
+        The width of the line.
+        Default depends on the ``figure_style`` configuration.
+    line_style : str, optional
+        The style of the line.
+        Default depends on the ``figure_style`` configuration.
+    fill_alpha : float, optional
+        The alpha value of the fill.
+        Default depends on the ``figure_style`` configuration.
+    number_of_points : int, optional
+        The number of points to use to approximate the circle.
+        Default is 100 (covers approximately 99.9% of perfect circle area).
+    """
+
+    def __init__(
+        self,
+        x_center: float,
+        y_center: float,
+        radius: float,
+        fill: bool = "default",
+        fill_color: str = "default",
+        edge_color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+        fill_alpha: float | Literal["default"] = "default",
+        number_of_points: int = 100,
+    ):
+        if number_of_points < 4:
+            raise ValueError("The number of points must be greater than or equal to 4")
+        self.fill = fill
+        self.fill_color = fill_color
+        self.edge_color = edge_color
+        self.line_width = line_width
+        self.line_style = line_style
+        self.fill_alpha = fill_alpha
+        if radius <= 0:
+            raise ValueError("The radius must be positive")
+        self.sh_polygon = sh.geometry.Point(x_center, y_center).buffer(
+            radius, number_of_points // 4
+        )
+
+
+@dataclass
+class Rectangle(Polygon):
+    """This class implements a Rectangle object with a given bottom left corner, width and height.
+
+    Parameters
+    ----------
+    x_bottom_left : float
+        The x coordinate of the bottom left corner of the :class:`~graphinglib.shapes.Rectangle`.
+    y_bottom_left : float
+        The y coordinate of the bottom left corner of the :class:`~graphinglib.shapes.Rectangle`.
+    width : float
+        The width of the :class:`~graphinglib.shapes.Rectangle`.
+    height : float
+        The height of the :class:`~graphinglib.shapes.Rectangle`.
+    fill : bool, optional
+        Whether the rectangle should be filled or not.
+        Default depends on the ``figure_style`` configuration.
+    fill_color : str, optional
+        The color of the rectangle's fill.
+        Default depends on the ``figure_style`` configuration.
+    edge_color : str, optional
+        The color of the rectangle's edge.
+        Default depends on the ``figure_style`` configuration.
+    line_width : float, optional
+        The width of the line.
+        Default depends on the ``figure_style`` configuration.
+    line_style : str, optional
+        The style of the line.
+        Default depends on the ``figure_style`` configuration.
+    fill_alpha : float, optional
+        The alpha value of the fill.
+        Default depends on the ``figure_style`` configuration.
+    """
+
+    def __init__(
+        self,
+        x_bottom_left: float,
+        y_bottom_left: float,
+        width: float,
+        height: float,
+        fill: bool = "default",
+        fill_color: str = "default",
+        edge_color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+        fill_alpha: float | Literal["default"] = "default",
+    ):
+        if width <= 0:
+            raise ValueError("The width must be positive")
+        if height <= 0:
+            raise ValueError("The height must be positive")
+
+        self.fill = fill
+        self.fill_color = fill_color
+        self.edge_color = edge_color
+        self.line_width = line_width
+        self.line_style = line_style
+        self.fill_alpha = fill_alpha
+        self.sh_polygon = ShPolygon(
+            [
+                (x_bottom_left, y_bottom_left),
+                (x_bottom_left + width, y_bottom_left),
+                (x_bottom_left + width, y_bottom_left + height),
+                (x_bottom_left, y_bottom_left + height),
+            ]
+        )
+
+    @classmethod
+    def from_center(
+        cls,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        fill: bool = "default",
+        fill_color: str = "default",
+        edge_color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+        fill_alpha: float | Literal["default"] = "default",
+    ) -> Self:
+        """Creates a :class:`~graphinglib.shapes.Rectangle` from its center point, width and height.
+
+        Parameters
+        ----------
+        x : float
+            The x coordinate of the center point.
+        y : float
+            The y coordinate of the center point.
+        width : float
+            The width of the :class:`~graphinglib.shapes.Rectangle`.
+        height : float
+            The height of the :class:`~graphinglib.shapes.Rectangle`.
+        fill : bool, optional
+            Whether the rectangle should be filled or not.
+            Default depends on the ``figure_style`` configuration.
+        fill_color : str, optional
+            The color of the rectangle's fill.
+            Default depends on the ``figure_style`` configuration.
+        edge_color : str, optional
+            The color of the rectangle's edge.
+            Default depends on the ``figure_style`` configuration.
+        line_width : float, optional
+            The width of the line.
+            Default depends on the ``figure_style`` configuration.
+        line_style : str, optional
+            The style of the line.
+            Default depends on the ``figure_style`` configuration.
+        fill_alpha : float, optional
+            The alpha value of the fill.
+            Default depends on the ``figure_style`` configuration.
+        """
+        return cls(
+            x - width / 2,
+            y - height / 2,
+            width,
+            height,
+            fill,
+            fill_color,
+            edge_color,
+            line_width,
+            line_style,
+            fill_alpha,
+        )
