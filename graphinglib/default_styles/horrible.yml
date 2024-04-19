@@ -168,16 +168,26 @@ Stream:
   
 Circle:
   fill: True
-  fill_alpha: 0.2
-  color:
-  line_width: 1
+  fill_alpha: 0.5
+  fill_color:
+  edge_color: "black"
+  line_width: 2
   line_style: "-"
 
 Rectangle:
   fill: True
-  fill_alpha: 0.2
-  color:
-  line_width: 1
+  fill_alpha: 0.5
+  fill_color:
+  edge_color: "black"
+  line_width: 2
+  line_style: "-"
+
+Polygon:
+  fill: True
+  fill_alpha: 0.5
+  fill_color:
+  edge_color: "black"
+  line_width: 2
   line_style: "-"
 
 Arrow:
