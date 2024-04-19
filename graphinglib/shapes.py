@@ -160,8 +160,8 @@ class Polygon:
 
     Parameters
     ----------
-    points : list[tuple[float, float]]
-        List of points that define the polygon.
+    vertices : list[tuple[float, float]]
+        List of coordinates that define the polygon.
     fill : bool, optional
         Whether the polygon should be filled or not.
         Default depends on the ``figure_style`` configuration.
@@ -181,7 +181,7 @@ class Polygon:
 
     def __init__(
         self,
-        points: list[tuple[float, float]],
+        vertices: list[tuple[float, float]],
         fill: bool = "default",
         edge_color: str = "default",
         fill_color: str = "default",
@@ -195,7 +195,7 @@ class Polygon:
         self.line_width = line_width
         self.line_style = line_style
         self.fill_alpha = fill_alpha
-        self.sh_polygon = ShPolygon(points)
+        self.sh_polygon = ShPolygon(vertices)
 
     def __contains__(self, point: Point) -> bool:
         return self.sh_polygon.contains(sh.geometry.Point(point.x, point.y))
@@ -324,6 +324,39 @@ class Polygon:
             return Polygon(
                 list(self.sh_polygon.difference(other.sh_polygon).exterior.coords)
             )
+
+    def create_symmetric_difference(
+        self, other: Self, copy_style: bool = False
+    ) -> list[Self]:
+        """
+        Returns the symmetric difference of the polygon with another polygon.
+
+        In general, this can create more than one polygon, so the result is returned as a list of polygons even if there is only one.
+
+        Parameters
+        ----------
+        other : :class:`~graphinglib.shapes.Polygon`
+            The other polygon to find the symmetric difference with.
+        copy_style : bool, optional
+            If ``True``, the current polygon's parameters are copied to the new polygon. If ``False``, the new polygon will have default parameters. Default is ``False``.
+
+        Returns
+        -------
+        list[:class:`~graphinglib.shapes.Polygon`]
+            A list of polygons resulting from the symmetric difference.
+        """
+        if copy_style:
+            new_poly = self.copy()
+            new_poly.sh_polygon = self.sh_polygon.symmetric_difference(other.sh_polygon)
+            return new_poly
+        else:
+            multi_poly = self.sh_polygon.symmetric_difference(other.sh_polygon)
+            if multi_poly.geom_type == "MultiPolygon":
+                return [
+                    Polygon(list(p.exterior.coords)) for p in list(multi_poly.geoms)
+                ]
+            else:
+                return [Polygon(list(multi_poly.exterior.coords))]
 
     def translate(self, dx: float, dy: float) -> Self | None:
         """

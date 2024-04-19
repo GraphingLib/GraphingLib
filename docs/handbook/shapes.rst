@@ -1,11 +1,64 @@
 ===============
 Creating Shapes
 ===============
+The :class:`~graphinglib.shapes.Polygon` Object
+-------------------------------------------------
+
+GraphingLib allows you to create polygons by specifying their vertices. Here is an example with a random shape: ::
+
+    import graphinglib as gl
+
+    polygon = gl.Polygon(
+        vertices=[(0, 0), (1, 1), (2, 0), (1, -1)],
+        edge_color="C0",
+        line_width=2,
+        line_style="solid",
+        fill=True,
+        fill_color="C0",
+        fill_alpha=0.5,
+    )
+
+The only required parameter is ``vertices``, but you can customize the appearance of the polygon by specifying the other parameters above. The real power of the :class:`~graphinglib.shapes.Polygon` object comes from its methods. Here are some methods used to get information about a polygon: ::
+
+    print(polygon.get_area())
+    print(polygon.get_perimeter())
+    print(polygon.get_centroid_coordinates())
+
+    # Check if a point is inside the polygon
+    print(Point(1, 0) in polygon)
+
+    # Get the intersection points of the polygon with a curve, or the intersection points of the edges of two polygons
+    curve = gl.Curve(lambda x: x ** 2, x_min=-1, x_max=1)
+    print(polygon.get_intersection_coordinates(curve))
+
+With GraphingLib, whenever you see a "get_..._coordinates" method, you can safely assume there also exists a "create_..._point" or "create_..._points" method in order to get :class:`~graphinglib.graph_elements.Point` objects instead of coordinates (and vice versa).
+
+There are also many methods which manipulate and transform polygons. Here are some examples: ::
+
+    # Translate, rotate, scale, and skew
+    polygon.translate(dx=1, dy=1)
+    polygon.rotate(45) # use_rad parameter can be set to True to use radians
+    polygon.scale(x_scale=2, y_scale=2)
+    polygon.skew(x_skew=30, y_skew=30) # use_rad exists for skew as well
+
+    # Apply an arbitrary linear transformation matrix to the polygon
+    polygon.linear_transformation(matrix=np.array([[1, 2], [3, 4]]))
+
+    # Union, intersection, and difference of polygons
+    union = polygon.create_union(polygon2)
+    intersection = polygon.create_intersection(polygon2)
+    difference = polygon.create_difference(polygon2)
+
+    # Split a polygon into multiple polygons using a Curve
+    curve = gl.Curve(lambda x: x ** 2, x_min=-1, x_max=1)
+    polygons = polygon.split(curve)
+
+Some of the most common shapes, such as rectangles and circles, have their dedicated classes to simplify their creation. These classes are detailed below.
 
 The :class:`~graphinglib.shapes.Rectangle` Object
 -------------------------------------------------
 
-You can draw rectangles easily by creating an instance of the :class:`~graphinglib.shapes.Rectangle` class as shown below: ::
+Rectangles can be created easily by creating an instance of the :class:`~graphinglib.shapes.Rectangle` class as shown below: ::
 
     import graphinglib as gl
 
@@ -15,12 +68,7 @@ You can draw rectangles easily by creating an instance of the :class:`~graphingl
     # Create a Rectangle from its center
     rect2 = gl.Rectangle.from_center(x=0, y=0, width=10, height=10)
 
-    # Create a Rectangle from two opposite corner points
-    point1 = gl.Point(0,0)
-    point2 = gl.Point(10,10)
-    rect3 = gl.Rectangle.from_points(point1, point2)
-
-You can customize the appearance of Rectangles by specifying the following optional parameters: ``color``, ``line_width``, ``line_style``, ``fill`` (True or False), and ``fill_alpha``. Here is an example with different styles of Rectangles: ::
+You can customize the appearance of Rectangles by specifying the following optional parameters: ``edge_color``, ``line_width``, ``line_style``, ``fill`` (True or False), ``fill_color``, and ``fill_alpha``. Here is an example with different styles of Rectangles: ::
 
     import graphinglib as gl
 
@@ -29,7 +77,8 @@ You can customize the appearance of Rectangles by specifying the following optio
         y_bottom_left=2,
         width=10,
         height=10,
-        color="red",
+        fill_color="red",
+        edge_color="red",
         line_width=1,
         line_style="solid",
         fill=True,
@@ -65,35 +114,8 @@ You can customize the appearance of Rectangles by specifying the following optio
 
 .. image:: images/rectangle.png
 
-There are many useful methods which can be used with Rectangles. For example, you can check if a point is inside a Rectangle: ::
+All :class:`~graphinglib.shapes.Polygon` methods can also be used with :class:`~graphinglib.shapes.Rectangle` objects.
 
-    import graphinglib as gl
-
-    rect = gl.Rectangle(x_bottom_left=0, y_bottom_left=0, width=10, height=10)
-    point = gl.Point(5, 5)
-
-    print(point in rect)  # True
-
-You can get the area and perimeter of a Rectangle: ::
-
-    import graphinglib as gl
-
-    rect = gl.Rectangle(x_bottom_left=0, y_bottom_left=0, width=10, height=10)
-
-    print(rect.get_area())  # 100
-    print(rect.get_perimeter())  # 40
-
-You can also get Point objects or coordinates out of a Rectangle, like the center point, or the two points at a given x or y value: ::
-
-    import graphinglib as gl
-
-    rect = gl.Rectangle(x_bottom_left=0, y_bottom_left=0, width=10, height=10)
-
-    point_center = rect.create_center_point()
-    coordinates_center = rect.get_center_coordinates()
-
-    point1, point2 = rect.create_points_at_x(5)
-    coords1, coords2 = rect.get_coordinates_at_x(5)
 
 The :class:`~graphinglib.shapes.Circle` Object
 -----------------------------------------------
@@ -112,7 +134,8 @@ You can customize the appearance of Circles by specifying the following optional
         x_center=-4,
         y_center=6,
         radius=10,
-        color="red",
+        fill_color="red",
+        edge_color="red",
         line_width=1,
         line_style="solid",
         fill=True,
@@ -123,7 +146,8 @@ You can customize the appearance of Circles by specifying the following optional
         x_center=4,
         y_center=6,
         radius=7,
-        color="blue",
+        fill_color="blue",
+        edge_color="blue",
         line_width=2,
         line_style="dashed",
         fill=True,
@@ -134,7 +158,8 @@ You can customize the appearance of Circles by specifying the following optional
         x_center=0,
         y_center=-4,
         radius=13,
-        color="green",
+        fill_color="green",
+        edge_color="green",
         line_width=5,
         line_style="dotted",
         fill=False,
@@ -147,32 +172,15 @@ You can customize the appearance of Circles by specifying the following optional
 
 .. image:: images/circle.png
 
-As with Rectangles, there are also many useful methods which can be used with Circles. Here are some examples: ::
+As with Rectangles, all :class:`~graphinglib.shapes.Polygon` methods can also be used with :class:`~graphinglib.shapes.Circle` objects.
+
+Since :class:`~graphinglib.shapes.Circle` objects actually inherit from :class:`~graphinglib.shapes.Polygon`, they aren't perfectly round, and so area and perimeter calculations are approximations. You can get arbitrarily close to the true values by increasing the number of points used to approximate the circle. This can be done by setting the ``number_of_points`` parameter when creating the Circle object. The default value is 100, which gives you 99.9% accuracy for the area and even better for the perimeter. Here is an example: ::
 
     import graphinglib as gl
 
-    circle = gl.Circle(x_center=0, y_center=0, radius=1)
-
-    print(circle.get_area()) # 3.141592653589793
-    print(circle.get_circumference()) # 6.283185307179586
-
-    point = gl.Point(5, 5)
-    print(point in circle)  # False
-
-You can also get Point objects and coordinates out of a Circle like so: ::
-
-    import graphinglib as gl
-
-    circle = gl.Circle(x_center=0, y_center=0, radius=1)
-
-    # Get the center point
-    point_center = circle.create_center_point()
-
-    # Get the coordinates at a certain x value
-    point1, point2 = circle.get_coordinates_at_x(0)
-
-    # Get the point on the circle at a given angle
-    point = circle.create_point_at_angle(45, degrees=True)
+    circle = gl.Circle(x_center=0, y_center=0, radius=10, number_of_points=1000)
+    print(circle.get_area())
+    print(circle.get_perimeter())
 
 The :class:`~graphinglib.shapes.Arrow` Object
 ----------------------------------------------
