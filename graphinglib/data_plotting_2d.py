@@ -59,7 +59,7 @@ class Heatmap:
     x_axis_range: Optional[tuple[float, float]] = None
     y_axis_range: Optional[tuple[float, float]] = None
     color_map: str | Colormap = "default"
-    show_color_bar: bool = True
+    show_color_bar: bool | Literal["default"] = "default"
     alpha_value: float = 1.0
     aspect_ratio: str | float = "default"
     origin_position: str = "default"
