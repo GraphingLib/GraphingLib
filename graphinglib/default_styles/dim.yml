@@ -83,6 +83,7 @@ Heatmap:
   aspect_ratio: equal
   color_map: RdBu
   origin_position: upper
+  show_color_bar: True
 Histogram:
   alpha: 0.3
   edge_color: '#3e82a0'

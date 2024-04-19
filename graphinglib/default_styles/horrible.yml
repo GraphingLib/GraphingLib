@@ -134,6 +134,7 @@ Heatmap:
   aspect_ratio: "equal"
   origin_position: "lower"
   color_map: "prism"
+  show_color_bar: True
 
 Contour:
   number_of_levels: 10
