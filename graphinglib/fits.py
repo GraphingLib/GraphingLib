@@ -66,14 +66,15 @@ class GeneralFit(Curve):
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
         """
+        self.handle = None
         self.curve_to_be_fit = curve_to_be_fit
-        self.color = color
-        self.line_width = line_width
+        self._color = color
+        self._line_width = line_width
         if label:
             self.label = label + " : " + "$f(x) = $" + str(self)
         else:
             self.label = "$f(x) = $" + str(self)
-        self.line_style = line_style
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         self.function: Callable[[np.ndarray], np.ndarray]
 
@@ -207,20 +208,20 @@ class GeneralFit(Curve):
         Axes
         """
         params = {
-            "color": self.color,
-            "linewidth": self.line_width,
-            "linestyle": self.line_style,
+            "color": self._color,
+            "linewidth": self._line_width,
+            "linestyle": self._line_style,
         }
         params = {key: value for key, value in params.items() if value != "default"}
         (self.handle,) = axes.plot(
-            self.x_data,
-            self.y_data,
+            self._x_data,
+            self._y_data,
             label=self.label,
             zorder=z_order,
             **params,
         )
         if self._res_curves_to_be_plotted:
-            y_fit = self.y_data
+            y_fit = self._y_data
             residuals = self.get_residuals()
             std = np.std(residuals)
             y_fit_plus_std = y_fit + (self.res_sigma_multiplier * std)
@@ -232,30 +233,30 @@ class GeneralFit(Curve):
             }
             params = {key: value for key, value in params.items() if value != "default"}
             axes.plot(
-                self.x_data,
+                self._x_data,
                 y_fit_minus_std,
                 zorder=z_order,
                 **params,
             )
             axes.plot(
-                self.x_data,
+                self._x_data,
                 y_fit_plus_std,
                 zorder=z_order,
                 **params,
             )
-        if self._fill_curve_between:
+        if self._fill_between_bounds:
             kwargs = {"alpha": 0.2}
-            if self._fill_under_color:
-                kwargs["color"] = self._fill_under_color
+            if self._fill_between_color:
+                kwargs["color"] = self._fill_between_color
             else:
                 kwargs["color"] = self.handle[0].get_color()
             params = {key: value for key, value in kwargs.items() if value != "default"}
             axes.fill_between(
-                self.x_data,
-                self.y_data,
+                self._x_data,
+                self._y_data,
                 where=np.logical_and(
-                    self.x_data >= self._fill_curve_between[0],
-                    self.x_data <= self._fill_curve_between[1],
+                    self._x_data >= self._fill_between_bounds[0],
+                    self._x_data <= self._fill_between_bounds[1],
                 ),
                 zorder=z_order - 2,
                 **params,
@@ -405,6 +406,7 @@ class FitFromPolynomial(GeneralFit):
         function : Callable
             Polynomial function with the parameters of the fit.
         """
+        self.handle = None
         self.curve_to_be_fit = curve_to_be_fit
         inversed_coeffs, inversed_cov_matrix = np.polyfit(
             self.curve_to_be_fit.x_data, self.curve_to_be_fit.y_data, degree, cov=True
@@ -413,26 +415,26 @@ class FitFromPolynomial(GeneralFit):
         self.cov_matrix = np.flip(inversed_cov_matrix)
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
         self.function = self._polynomial_func_with_params()
-        self.color = color
-        self.line_width = line_width
+        self._color = color
+        self._line_width = line_width
         if label:
             self.label = label + " : " + "$f(x) = $" + str(self)
         else:
             self.label = "$f(x) = $" + str(self)
-        self.line_style = line_style
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self.curve_to_be_fit.x_data)
             if len(self.curve_to_be_fit.x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
+        self._x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
-        self._fill_curve_between = False
+        self._y_data = self.function(self.x_data)
+        self._fill_between_bounds = False
 
     def __str__(self) -> str:
         """
@@ -626,30 +628,31 @@ class FitFromSine(GeneralFit):
         function : Callable
             Sine function with the parameters of the fit.
         """
+        self.handle = None
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
         self._calculate_parameters()
         self.function = self._sine_func_with_params()
-        self.color = color
+        self._color = color
         if label:
             self.label = label + " : " + "$f(x) = $" + str(self)
         else:
             self.label = "$f(x) = $" + str(self)
-        self.line_width = line_width
-        self.line_style = line_style
+        self._line_width = line_width
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self.curve_to_be_fit.x_data)
             if len(self.curve_to_be_fit.x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
+        self._x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
-        self._fill_curve_between = False
+        self._y_data = self.function(self._x_data)
+        self._fill_between_bounds = False
 
     def __str__(self) -> str:
         """
@@ -886,30 +889,31 @@ class FitFromExponential(GeneralFit):
         function : Callable
             Exponential function with the parameters of the fit.
         """
+        self.handle = None
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
         self._calculate_parameters()
         self.function = self._exp_func_with_params()
-        self.color = color
+        self._color = color
         if label:
             self.label = label + " : " + "$f(x) = $" + str(self)
         else:
             self.label = "$f(x) = $" + str(self)
-        self.line_width = line_width
-        self.line_style = line_style
+        self._line_width = line_width
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self.curve_to_be_fit.x_data)
             if len(self.curve_to_be_fit.x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
+        self._x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
-        self._fill_curve_between = False
+        self._y_data = self.function(self._x_data)
+        self._fill_between_bounds = False
 
     def __str__(self) -> str:
         """
@@ -1103,30 +1107,31 @@ class FitFromGaussian(GeneralFit):
         -------
         The ``standard_deviation`` attribute doesn't represent the standard deviation of the fit parameters as it does in the other fit classes. Instead, it represents the standard deviation of the gaussian function (it is one of parameters of the fit). The standard deviation of the fit parameters can be found in the ``standard_deviation_of_fit_params`` attribute.
         """
+        self.handle = None
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
         self._calculate_parameters()
         self.function = self._gaussian_func_with_params()
-        self.color = color
+        self._color = color
         if label:
             self.label = label + " : " + str(self)
         else:
             self.label = str(self)
-        self.line_width = line_width
-        self.line_style = line_style
+        self._line_width = line_width
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self.curve_to_be_fit.x_data)
             if len(self.curve_to_be_fit.x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
+        self._x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
-        self._fill_curve_between = False
+        self._y_data = self.function(self._x_data)
+        self._fill_between_bounds = False
 
     def __str__(self) -> str:
         """
@@ -1334,30 +1339,31 @@ class FitFromSquareRoot(GeneralFit):
         function : Callable
             Square root function with the parameters of the fit.
         """
+        self.handle = None
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
         self._calculate_parameters()
         self.function = self._square_root_func_with_params()
-        self.color = color
+        self._color = color
         if label:
             self.label = label + " : " + str(self)
         else:
             self.label = str(self)
-        self.line_width = line_width
-        self.line_style = line_style
+        self._line_width = line_width
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self.curve_to_be_fit.x_data)
             if len(self.curve_to_be_fit.x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
+        self._x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
-        self._fill_curve_between = False
+        self._y_data = self.function(self._x_data)
+        self._fill_between_bounds = False
 
     def __str__(self) -> str:
         """
@@ -1538,31 +1544,32 @@ class FitFromLog(GeneralFit):
         function : Callable
             Logarithmic function with the parameters of the fit.
         """
+        self.handle = None
         self.curve_to_be_fit = curve_to_be_fit
         self.log_base = log_base
         self.guesses = guesses
         self._calculate_parameters()
         self.function = self._log_func_with_params()
-        self.color = color
+        self._color = color
         if label:
             self.label = label + " : " + str(self)
         else:
             self.label = str(self)
-        self.line_width = line_width
-        self.line_style = line_style
+        self._line_width = line_width
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self.curve_to_be_fit.x_data)
             if len(self.curve_to_be_fit.x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
+        self._x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
-        self._fill_curve_between = False
+        self._y_data = self.function(self._x_data)
+        self._fill_between_bounds = False
 
     def __str__(self) -> str:
         """
@@ -1740,12 +1747,13 @@ class FitFromFunction(GeneralFit):
         function : Callable
             Function with the parameters of the fit.
         """
+        self.handle = None
         self._function_template = function
         self.curve_to_be_fit = curve_to_be_fit
         self.guesses = guesses
-        self.color = color
-        self.line_width = line_width
-        self.line_style = line_style
+        self._color = color
+        self._line_width = line_width
+        self._line_style = line_style
 
         self._calculate_parameters()
         self.function = self._get_function_with_params()
@@ -1756,13 +1764,13 @@ class FitFromFunction(GeneralFit):
             if len(self.curve_to_be_fit.x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
+        self._x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
-        self._fill_curve_between = False
+        self._y_data = self.function(self._x_data)
+        self._fill_between_bounds = False
 
     def _calculate_parameters(self) -> None:
         """
@@ -1925,26 +1933,26 @@ class FitFromFOTF(GeneralFit):
         self.guesses = guesses
         self._calculate_parameters()
         self.function = self._fotf_func_with_params()
-        self.color = color
+        self._color = color
         if label:
             self.label = label + " : " + str(self)
         else:
             self.label = str(self)
-        self.line_width = line_width
-        self.line_style = line_style
+        self._line_width = line_width
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self.curve_to_be_fit.x_data)
             if len(self.curve_to_be_fit.x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
+        self._x_data = np.linspace(
             self.curve_to_be_fit.x_data[0],
             self.curve_to_be_fit.x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
-        self._fill_curve_between = False
+        self._y_data = self.function(self._x_data)
+        self._fill_between_bounds = False
 
     def __str__(self) -> str:
         """

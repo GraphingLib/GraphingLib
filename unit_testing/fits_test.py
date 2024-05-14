@@ -139,8 +139,8 @@ class TestFitFromPolynomial(unittest.TestCase):
             copy.standard_deviation.tolist(),
             self.fit_first_degree.standard_deviation.tolist(),
         )
-        self.assertEqual(copy.color, self.fit_first_degree.color)
-        self.assertEqual(copy.label, self.fit_first_degree.label)
+        self.assertEqual(copy._color, self.fit_first_degree._color)
+        self.assertEqual(copy._label, self.fit_first_degree._label)
 
 
 class TestFitFromSine(unittest.TestCase):
@@ -233,8 +233,8 @@ class TestFitFromSine(unittest.TestCase):
             copy.standard_deviation.tolist(),
             self.fit.standard_deviation.tolist(),
         )
-        self.assertEqual(copy.color, self.fit.color)
-        self.assertEqual(copy.label, self.fit.label)
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)
 
 
 class TestFitFromExponential(unittest.TestCase):
@@ -318,8 +318,8 @@ class TestFitFromExponential(unittest.TestCase):
             copy.standard_deviation.tolist(),
             self.fit.standard_deviation.tolist(),
         )
-        self.assertEqual(copy.color, self.fit.color)
-        self.assertEqual(copy.label, self.fit.label)
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)
 
 
 class TestFitFromGaussian(unittest.TestCase):
@@ -399,8 +399,8 @@ class TestFitFromGaussian(unittest.TestCase):
             copy.standard_deviation_of_fit_params.tolist(),
             self.fit.standard_deviation_of_fit_params.tolist(),
         )
-        self.assertEqual(copy.color, self.fit.color)
-        self.assertEqual(copy.label, self.fit.label)
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)
 
 
 class TestFitFromSquareRoot(unittest.TestCase):
@@ -474,8 +474,8 @@ class TestFitFromSquareRoot(unittest.TestCase):
         self.assertEqual(
             copy.standard_deviation.tolist(), self.fit.standard_deviation.tolist()
         )
-        self.assertEqual(copy.color, self.fit.color)
-        self.assertEqual(copy.label, self.fit.label)
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)
 
 
 class TestFitFromLog(unittest.TestCase):
@@ -552,8 +552,8 @@ class TestFitFromLog(unittest.TestCase):
             copy.standard_deviation.tolist(),
             self.fit.standard_deviation.tolist(),
         )
-        self.assertEqual(copy.color, self.fit.color)
-        self.assertEqual(copy.label, self.fit.label)
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)
 
 
 class TestFitFromFunction(unittest.TestCase):
@@ -618,5 +618,5 @@ class TestFitFromFunction(unittest.TestCase):
             copy.standard_deviation.tolist(),
             self.fit.standard_deviation.tolist(),
         )
-        self.assertEqual(copy.color, self.fit.color)
-        self.assertEqual(copy.label, self.fit.label)
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)

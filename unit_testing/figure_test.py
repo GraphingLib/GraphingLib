@@ -30,9 +30,11 @@ class TestFigure(unittest.TestCase):
         self.testFigure.add_elements(self.testCurve)
         self.assertIs(self.testFigure._elements[0], self.testCurve)
         # Test if adding multiple elements works
-        other_curve = Curve(self.testCurve.x_data, self.testCurve.y_data, "Other Curve")
+        other_curve = Curve(
+            self.testCurve._x_data, self.testCurve._y_data, "Other Curve"
+        )
         other_other_curve = Curve(
-            self.testCurve.x_data, self.testCurve.y_data, "Other Other Curve"
+            self.testCurve._x_data, self.testCurve._y_data, "Other Other Curve"
         )
         self.testFigure.add_elements(other_curve, other_other_curve)
         self.assertTrue(len(self.testFigure._elements), 3)
@@ -55,7 +57,7 @@ class TestFigure(unittest.TestCase):
         a_figure.add_elements(a_curve)
         a_figure.default_params = self.plainDefaults
         a_figure._fill_in_missing_params(a_curve)
-        self.assertEqual(a_curve.line_width, 2)
+        self.assertEqual(a_curve._line_width, 2)
 
     def test_auto_assign_default_params_horrible(self):
         x = linspace(0, 3 * pi, 200)
@@ -64,7 +66,7 @@ class TestFigure(unittest.TestCase):
         a_figure.add_elements(a_curve)
         a_figure.default_params = self.horribleDefaults
         a_figure._fill_in_missing_params(a_curve)
-        self.assertEqual(a_curve.line_width, 10)
+        self.assertEqual(a_curve._line_width, 10)
 
     def test_auto_assign_default_params_skip_predefined(self):
         x = linspace(0, 3 * pi, 200)
@@ -73,7 +75,7 @@ class TestFigure(unittest.TestCase):
         a_figure.add_elements(a_curve)
         a_figure.default_params = self.plainDefaults
         a_figure._fill_in_missing_params(a_curve)
-        self.assertEqual(a_curve.line_width, 3)
+        self.assertEqual(a_curve._line_width, 3)
 
     def test_assign_figure_params_horrible(self):
         a_figure = Figure(figure_style="horrible")
@@ -87,12 +89,12 @@ class TestFigure(unittest.TestCase):
         self.assertFalse(a_figure.show_grid)
 
     def test_element_defaults_are_reset(self):
-        self.testCurve.line_width = "default"
+        self.testCurve._line_width = "default"
         self.testFigure.add_elements(self.testCurve)
         self.testFigure._prepare_figure()
-        self.assertEqual(self.testCurve.line_width, "default")
+        self.assertEqual(self.testCurve._line_width, "default")
         self.testFigure._fill_in_missing_params(self.testCurve)
-        self.assertEqual(self.testCurve.line_width, 2)
+        self.assertEqual(self.testCurve._line_width, 2)
         plt.close("all")
 
     def test_handles_and_labels_cleared(self):
@@ -104,7 +106,9 @@ class TestFigure(unittest.TestCase):
 
     def test_handles_and_labels_added(self):
         self.testFigure.add_elements(self.testCurve)
-        other_curve = Curve(self.testCurve.x_data, self.testCurve.y_data, "Other Curve")
+        other_curve = Curve(
+            self.testCurve._x_data, self.testCurve._y_data, "Other Curve"
+        )
         self.testFigure.add_elements(other_curve)
         self.testFigure._prepare_figure()
         handles, labels = self.testFigure._axes.get_legend_handles_labels()
@@ -234,6 +238,19 @@ class TestFigure(unittest.TestCase):
         a_figure._prepare_figure()
         self.assertEqual(a_figure._axes.get_aspect(), 1)
 
+    def test_animation(self):
+        a_figure = Figure()
+        a_figure.add_elements(self.testCurve)
+        a_figure._prepare_figure()
+
+        def update_func(frame):
+            self.testCurve.y_data = sin(self.testCurve.x_data + pi * frame / 100)
+            self.testCurve.label = f"sin(x + {frame})"
+
+        with unittest.mock.patch("matplotlib.pyplot.show"):
+            a_figure.show_animation(update_func, number_of_frames=10)
+        plt.close("all")
+
 
 class TestTwinAxis(unittest.TestCase):
     def test_init(self):
@@ -287,9 +304,9 @@ class TestTwinAxis(unittest.TestCase):
     def test_fill_in_missing_params(self):
         default_params = {
             "Curve": {
-                "line_width": 2,
-                "color": "k",
-                "line_style": "-",
+                "_line_width": 2,
+                "_color": "k",
+                "_line_style": "-",
             }
         }
         twin = TwinAxis()
@@ -297,15 +314,15 @@ class TestTwinAxis(unittest.TestCase):
 
         curve = Curve([1, 2, 3], [1, 2, 3], label="Test")
         twin._fill_in_missing_params(curve)
-        self.assertEqual(curve.line_width, 2)
-        self.assertEqual(curve.color, "k")
-        self.assertEqual(curve.line_style, "-")
+        self.assertEqual(curve._line_width, 2)
+        self.assertEqual(curve._color, "k")
+        self.assertEqual(curve._line_style, "-")
 
     def test_reset_params_to_default(self):
         curve = Curve(
             [1, 2, 3], [1, 2, 3], label="Test", line_width=3, color="r", line_style="--"
         )
-        params_to_reset = ["line_width", "color", "line_style"]
+        params_to_reset = ["_line_width", "_color", "_line_style"]
         twin = TwinAxis()
         twin._reset_params_to_default(curve, params_to_reset)
 

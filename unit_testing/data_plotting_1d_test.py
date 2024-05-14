@@ -2,7 +2,7 @@ import unittest
 from calendar import c
 from random import random
 
-from matplotlib.colors import to_hex
+from matplotlib.colors import to_hex, to_rgba
 from matplotlib.pyplot import close, subplots
 from numpy import linspace, ndarray, pi, sin
 
@@ -18,19 +18,19 @@ class TestCurve(unittest.TestCase):
         self.testCurve = Curve(x, sin(x), "Test Curve", color="k")
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testCurve.x_data, list | ndarray)
+        self.assertIsInstance(self.testCurve._x_data, list | ndarray)
 
     def test_ydata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testCurve.y_data, list | ndarray)
+        self.assertIsInstance(self.testCurve._y_data, list | ndarray)
 
     def test_default_value(self):
-        self.assertEqual(self.testCurve.line_width, "default")
+        self.assertEqual(self.testCurve._line_width, "default")
 
     def test_color_is_str(self):
-        self.assertIsInstance(self.testCurve.color, str)
+        self.assertIsInstance(self.testCurve._color, str)
 
     def test_label_is_str(self):
-        self.assertIsInstance(self.testCurve.label, str)
+        self.assertIsInstance(self.testCurve._label, str)
 
     def test_from_function(self):
         self.assertIsInstance(
@@ -61,10 +61,10 @@ class TestCurve(unittest.TestCase):
             cap_thickness=10,
             cap_width=10,
         )
-        self.assertEqual(self.testCurve.errorbars_color, "red")
-        self.assertEqual(self.testCurve.errorbars_line_width, 10)
-        self.assertEqual(self.testCurve.cap_thickness, 10)
-        self.assertEqual(self.testCurve.cap_width, 10)
+        self.assertEqual(self.testCurve._errorbars_color, "red")
+        self.assertEqual(self.testCurve._errorbars_line_width, 10)
+        self.assertEqual(self.testCurve._cap_thickness, 10)
+        self.assertEqual(self.testCurve._cap_width, 10)
 
     def test_create_point_at_x(self):
         point = self.testCurve.create_point_at_x(0.5)
@@ -115,7 +115,7 @@ class TestCurve(unittest.TestCase):
     def test_area_between_fill_under(self):
         curve = Curve.from_function(lambda x: x**2, 0, 1)
         curve2 = Curve.from_function(lambda x: x**3, 0, 1)
-        curve2.get_area_between(0, 1, fill_under=True)
+        curve2.get_area_between(0, 1, fill_between=True)
         fig = Figure()
         fig.add_elements(curve, curve2)
         fig._prepare_figure()
@@ -127,7 +127,7 @@ class TestCurve(unittest.TestCase):
     def test_area_between_fill_under_two_curves(self):
         curve = Curve.from_function(lambda x: x**2, 0, 1)
         curve2 = Curve.from_function(lambda x: x**3, 0, 1)
-        area = curve.get_area_between(0, 1, fill_under=True, other_curve=curve2)
+        area = curve.get_area_between(0, 1, fill_between=True, other_curve=curve2)
         self.assertAlmostEqual(area, 1 / 12, places=3)
         fig = Figure()
         fig.add_elements(curve, curve2)
@@ -321,18 +321,18 @@ class TestCurve(unittest.TestCase):
         curve = abs(self.testCurve)
         self.assertIsInstance(curve, Curve)
         self.assertListEqual(
-            list(curve.y_data), [abs(y) for y in self.testCurve.y_data]
+            list(curve._y_data), [abs(y) for y in self.testCurve._y_data]
         )
 
     def test_copy(self):
         curve_copy = self.testCurve.copy()
         self.assertIsInstance(curve_copy, Curve)
-        self.assertEqual(curve_copy.label, self.testCurve.label)
-        self.assertEqual(curve_copy.color, self.testCurve.color)
-        self.assertEqual(curve_copy.line_width, self.testCurve.line_width)
-        self.assertEqual(curve_copy.line_style, self.testCurve.line_style)
-        self.assertListEqual(list(curve_copy.x_data), list(self.testCurve.x_data))
-        self.assertListEqual(list(curve_copy.y_data), list(self.testCurve.y_data))
+        self.assertEqual(curve_copy._label, self.testCurve._label)
+        self.assertEqual(curve_copy._color, self.testCurve._color)
+        self.assertEqual(curve_copy._line_width, self.testCurve._line_width)
+        self.assertEqual(curve_copy._line_style, self.testCurve._line_style)
+        self.assertListEqual(list(curve_copy._x_data), list(self.testCurve._x_data))
+        self.assertListEqual(list(curve_copy._y_data), list(self.testCurve._y_data))
 
     def test_create_slice_x(self):
         curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
@@ -342,8 +342,8 @@ class TestCurve(unittest.TestCase):
         correct_x_data = correct_x_data[correct_x_data >= -5]
         correct_x_data = correct_x_data[correct_x_data <= 5]
         correct_y_data = correct_x_data**2
-        self.assertListEqual(list(curve_slice.x_data), list(correct_x_data))
-        self.assertListEqual(list(curve_slice.y_data), list(correct_y_data))
+        self.assertListEqual(list(curve_slice._x_data), list(correct_x_data))
+        self.assertListEqual(list(curve_slice._y_data), list(correct_y_data))
 
     def test_create_slice_y(self):
         curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
@@ -352,8 +352,196 @@ class TestCurve(unittest.TestCase):
         correct_x_data = linspace(-10, 10, 100)
         correct_x_data = correct_x_data[correct_x_data**2 <= 25]
         correct_y_data = correct_x_data**2
-        self.assertListEqual(list(curve_slice.x_data), list(correct_x_data))
-        self.assertListEqual(list(curve_slice.y_data), list(correct_y_data))
+        self.assertListEqual(list(curve_slice._x_data), list(correct_x_data))
+        self.assertListEqual(list(curve_slice._y_data), list(correct_y_data))
+
+    def test_getters(self):
+        new_curve = Curve.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            color="k",
+            line_width=1,
+            line_style="-",
+            label="Test",
+        )
+        new_curve.add_error_curves(
+            y_error=0.6, x_error=1, color=(0, 0, 1), line_width=2, line_style="--"
+        )
+        new_curve.add_errorbars(
+            y_error=0.6,
+            x_error=1,
+            cap_width=6,
+            cap_thickness=1,
+            errorbars_line_width=1,
+            errorbars_color=(0.4, 1, 1),
+        )
+        new_curve.get_area_between(x1=-5, x2=5, fill_between=True, fill_color="blue")
+
+        self.assertListEqual(list(new_curve.x_data), list(linspace(-10, 10, 100)))
+        self.assertListEqual(list(new_curve.y_data), list(linspace(-10, 10, 100) ** 2))
+        self.assertEqual(new_curve.color, "k")
+        self.assertEqual(new_curve.line_width, 1)
+        self.assertEqual(new_curve.line_style, "-")
+        self.assertEqual(new_curve.label, "Test")
+        self.assertEqual(new_curve.errorbars_color, (0.4, 1, 1))
+        self.assertEqual(new_curve.errorbars_line_width, 1)
+        self.assertEqual(new_curve.cap_thickness, 1)
+        self.assertEqual(new_curve.cap_width, 6)
+        self.assertEqual(new_curve.error_curves_color, (0, 0, 1))
+        self.assertEqual(new_curve.error_curves_line_width, 2)
+        self.assertEqual(new_curve.error_curves_line_style, "--")
+        self.assertEqual(new_curve.fill_between_color, "blue")
+
+    def test_set_x_data(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        fig = Figure()
+        fig.add_elements(curve)
+        fig._prepare_figure()
+        curve.x_data = linspace(-10, 10, 10)
+        self.assertListEqual(list(curve._x_data), list(linspace(-10, 10, 10)))
+        self.assertListEqual(
+            fig._axes.get_lines()[0].get_xdata().tolist(), list(linspace(-10, 10, 10))
+        )
+        close("all")
+
+    def test_set_y_data(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        fig = Figure()
+        fig.add_elements(curve)
+        fig._prepare_figure()
+        curve.y_data = linspace(-10, 10, 10) ** 2
+        self.assertListEqual(list(curve._y_data), list(linspace(-10, 10, 10) ** 2))
+        self.assertListEqual(
+            fig._axes.get_lines()[0].get_ydata().tolist(),
+            list(linspace(-10, 10, 10) ** 2),
+        )
+        close("all")
+
+    def test_set_color(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        fig = Figure()
+        fig.add_elements(curve)
+        fig._prepare_figure()
+        curve.color = "red"
+        self.assertEqual(curve._color, "red")
+        self.assertEqual(fig._axes.get_lines()[0].get_color(), to_rgba("red"))
+        close("all")
+
+    def test_set_line_width(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        fig = Figure()
+        fig.add_elements(curve)
+        fig._prepare_figure()
+        curve.line_width = 10
+        self.assertEqual(curve._line_width, 10)
+        self.assertEqual(fig._axes.get_lines()[0].get_linewidth(), 10)
+        close("all")
+
+    def test_set_line_style(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        fig = Figure()
+        fig.add_elements(curve)
+        fig._prepare_figure()
+        curve.line_style = "--"
+        self.assertEqual(curve._line_style, "--")
+        self.assertEqual(fig._axes.get_lines()[0].get_linestyle(), "--")
+        close("all")
+
+    def test_set_label(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        fig = Figure()
+        fig.add_elements(curve)
+        fig._prepare_figure()
+        curve.label = "Test"
+        self.assertEqual(curve._label, "Test")
+        self.assertEqual(fig._axes.get_lines()[0].get_label(), "Test")
+        close("all")
+
+    def test_set_errorbars_color(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        curve.add_errorbars(0.1, 0.1)
+        fig = Figure()
+        fig.add_elements(curve)
+        fig._prepare_figure()
+        curve.errorbars_color = "red"
+        self.assertEqual(curve._errorbars_color, "red")
+        for elem in fig._axes.get_lines()[1:]:
+            self.assertEqual(elem.get_color(), "red")
+        close("all")
+
+    def test_set_errorbars_line_width(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        curve.add_errorbars(0.1, 0.1)
+        fig = Figure()
+        fig.add_elements(curve)
+        fig._prepare_figure()
+        curve.errorbars_line_width = 10
+        (line, caps, err) = curve.handle
+        for elem in err:
+            self.assertEqual(elem.get_linewidth(), 10)
+        close("all")
+
+    def test_set_cap_thickness(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        curve.add_errorbars(0.1, 0.1)
+        curve.cap_thickness = 10
+        self.assertEqual(curve._cap_thickness, 10)
+
+    def test_set_cap_width(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        curve.add_errorbars(0.1, 0.1)
+        curve.cap_width = 10
+        self.assertEqual(curve._cap_width, 10)
+
+    def test_set_error_curves_color(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        curve.add_error_curves(0.1, 0.1)
+        fig = Figure()
+        fig.add_elements(curve)
+        fig._prepare_figure()
+        curve.error_curves_color = "red"
+        for i in fig._axes.get_lines()[1:]:
+            self.assertEqual(i.get_color(), "red")
+        close("all")
+
+    def test_set_error_curves_line_width(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        curve.add_error_curves(0.1, 0.1)
+        fig = Figure()
+        fig.add_elements(curve)
+        fig._prepare_figure()
+        curve.error_curves_line_width = 10
+        for i in fig._axes.get_lines()[1:]:
+            self.assertEqual(i.get_linewidth(), 10)
+        close("all")
+
+    def test_set_error_curves_line_style(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        curve.add_error_curves(0.1, 0.1)
+        fig = Figure()
+        fig.add_elements(curve)
+        fig._prepare_figure()
+        curve.error_curves_line_style = "--"
+        for i in fig._axes.get_lines()[1:]:
+            self.assertEqual(i.get_linestyle(), "--")
+        close("all")
+
+    def test_set_fill_between_color(self):
+        curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        curve.get_area_between(x1=-5, x2=5, fill_between=True, fill_color="blue")
+        fig = Figure()
+        fig.add_elements(curve)
+        fig._prepare_figure()
+        curve.fill_between_color = "red"
+        self.assertEqual(curve._fill_between_color, "red")
+        print(fig._axes.collections[0].get_facecolor())
+        self.assertListEqual(
+            list(fig._axes.collections[0].get_facecolor()[0]),
+            list(to_rgba("red", alpha=0.2)),
+        )
+        close("all")
 
 
 class TestScatter(unittest.TestCase):

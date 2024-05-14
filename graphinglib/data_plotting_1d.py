@@ -3,11 +3,13 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Callable, Literal, Optional, Protocol
+from warnings import warn
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
+from matplotlib.pylab import f
 from numpy.typing import ArrayLike
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
@@ -66,17 +68,38 @@ class Curve:
         Default depends on the ``figure_style`` configuration.
     """
 
-    x_data: ArrayLike
-    y_data: ArrayLike
-    label: Optional[str] = None
-    color: str = "default"
-    line_width: float | Literal["default"] = "default"
-    line_style: str = "default"
-    show_errorbars: bool = field(default=False, init=False)
-    show_error_curves: bool = field(default=False, init=False)
-    _fill_curve_between: Optional[tuple[float, float]] = field(init=False, default=None)
-    _fill_under_other_curve: Optional[Self] = field(init=False, default=None)
-    _fill_under_color: Optional[str] = field(init=False, default=None)
+    def __init__(
+        self,
+        x_data: ArrayLike,
+        y_data: ArrayLike,
+        label: Optional[str] = None,
+        color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+    ) -> None:
+        self.handle = None
+        self._x_data = np.array(x_data)
+        self._y_data = np.array(y_data)
+        self._label = label
+        self._color = color
+        self._line_width = line_width
+        self._line_style = line_style
+
+        self._show_errorbars: bool = False
+        self._errorbars_color = None
+        self._errorbars_line_width = None
+        self._cap_thickness = None
+        self._cap_width = None
+
+        self._show_error_curves: bool = False
+        self._error_curves_fill_between: bool = False
+        self._error_curves_color = None
+        self._error_curves_line_style = None
+        self._error_curves_line_width = None
+
+        self._fill_between_bounds: Optional[tuple[float, float]] = None
+        self._fill_between_other_curve: Optional[Self] = None
+        self._fill_between_color: Optional[str] = None
 
     @classmethod
     def from_function(
@@ -119,30 +142,471 @@ class Curve:
         y_data = func(x_data)
         return cls(x_data, y_data, label, color, line_width, line_style)
 
-    def __post_init__(self):
-        self.x_data = np.array(self.x_data)
-        self.y_data = np.array(self.y_data)
+    @property
+    def x_data(self):
+        return self._x_data
+
+    @x_data.setter
+    def x_data(self, value: ArrayLike):
+        self._x_data = np.array(value)
+        if self.handle is not None:
+            (
+                line,
+                caps,
+                err,
+            ) = self.handle
+            line.set_xdata(self._x_data)
+
+            if self._show_errorbars:
+                do_x = self._x_error is not None
+                do_y = self._y_error is not None
+
+                # Indices for errorbars and caps
+                # err: (x_err, y_err) or (x_err) or (y_err)
+                # caps: (x_caps_bottom, x_caps_top, y_caps_bottom, y_caps_top) or (x_caps_bottom, x_caps_top) or (y_caps_bottom, y_caps_top)
+                x_err_index = 0
+                y_err_index = 0
+                x_caps_index = 0
+                y_caps_index = 0
+                if do_x and do_y:
+                    y_err_index = 1
+                    y_caps_index = 2
+
+                if do_x:
+                    if self._x_error.shape != self._x_data.shape:
+                        x_error_array = np.full_like(self._x_data, self._x_error)
+                    else:
+                        x_error_array = self._x_error
+                    segments = [
+                        np.array([[q - a, w], [q + a, w]])
+                        for q, w, a in zip(self._x_data, self._y_data, x_error_array)
+                    ]
+                    err[x_err_index].set_segments(segments)
+                    caps[x_caps_index].set_xdata(self._x_data - self._x_error)
+                    caps[x_caps_index + 1].set_xdata(self._x_data + self._x_error)
+
+                if do_y:
+                    if self._y_error.shape != self._y_data.shape:
+                        y_error_array = np.full_like(self._y_data, self._y_error)
+                    else:
+                        y_error_array = self._y_error
+                    segments = [
+                        np.array([[q, w - a], [q, w + a]])
+                        for q, w, a in zip(self._x_data, self._y_data, y_error_array)
+                    ]
+                    err[y_err_index].set_segments(segments)
+                    caps[y_caps_index].set_xdata(self._x_data)
+                    caps[y_caps_index + 1].set_xdata(self._x_data)
+
+            if self._fill_between_bounds is not None:
+                ax = plt.gca()
+                for coll in ax.collections:
+                    verts = coll.get_paths()[0].vertices
+                    verts_handle = self._fill_between_handle.get_paths()[0].vertices
+                    if np.array_equal(verts[:10], verts_handle[:10]):
+                        coll.remove()
+                        break
+
+                kwargs = {"alpha": 0.2}
+                if self._fill_between_color is not None:
+                    kwargs["color"] = self._fill_between_color
+                else:
+                    kwargs["color"] = self.handle[0].get_color()
+                kwargs = {k: v for k, v in kwargs.items() if v != "default"}
+                if self._fill_between_other_curve:
+                    self_y_data = self._y_data
+                    self_x_data = self._x_data
+                    other_y_data = self._fill_between_other_curve._y_data
+                    other_x_data = self._fill_between_other_curve._x_data
+                    x_data = np.linspace(
+                        self._fill_between_bounds[0],
+                        self._fill_between_bounds[1],
+                        max(len(self_x_data), len(other_x_data)),
+                    )
+                    self_y_data = interp1d(self_x_data, self_y_data)(x_data)
+                    other_y_data = interp1d(other_x_data, other_y_data)(x_data)
+                    kwargs["x"] = x_data
+                    kwargs["y1"] = self_y_data
+                    kwargs["y2"] = other_y_data
+                    where_x_data = x_data
+                else:
+                    kwargs["x"] = self._x_data
+                    kwargs["y1"] = self._y_data
+                    where_x_data = self._x_data
+
+                self._fill_between_handle = ax.fill_between(
+                    where=np.logical_and(
+                        where_x_data >= self._fill_between_bounds[0],
+                        where_x_data <= self._fill_between_bounds[1],
+                    ),
+                    zorder=self._z_order - 2,
+                    **kwargs,
+                )
+
+            if self._show_error_curves:
+                self._error_curve_min_handle[0].set_xdata(self._x_data)
+                self._error_curve_max_handle[0].set_xdata(self._x_data)
+
+                if self._error_curves_fill_between:
+                    ax = plt.gca()
+                    for coll in ax.collections:
+                        verts = coll.get_paths()[0].vertices
+                        verts_handle = self._error_curve_fill_handle.get_paths()[
+                            0
+                        ].vertices
+                        if np.array_equal(verts[:10], verts_handle[:10]):
+                            coll.remove()
+                            break
+
+                    if self._error_curves_fill_between:
+                        max_y = (
+                            self._y_data + self._y_error
+                            if self._y_error is not None
+                            else self._y_data
+                        )
+                        min_y = (
+                            self._y_data - self._y_error
+                            if self._y_error is not None
+                            else self._y_data
+                        )
+                        error_curves_color = line.get_color()
+                        self._error_curve_fill_handle = ax.fill_between(
+                            self._x_data,
+                            max_y,
+                            min_y,
+                            color=error_curves_color,
+                            alpha=0.2,
+                        )
+
+    @property
+    def y_data(self):
+        return self._y_data
+
+    @y_data.setter
+    def y_data(self, value: ArrayLike):
+        self._y_data = np.array(value)
+        if self.handle is not None:
+            (
+                line,
+                caps,
+                err,
+            ) = self.handle
+            line.set_ydata(self._y_data)
+
+            if self._show_errorbars:
+                do_x = self._x_error is not None
+                do_y = self._y_error is not None
+
+                # Indices for errorbars and caps
+                # err: (x_err, y_err) or (x_err) or (y_err)
+                # caps: (x_caps_bottom, x_caps_top, y_caps_bottom, y_caps_top) or (x_caps_bottom, x_caps_top) or (y_caps_bottom, y_caps_top)
+                x_err_index = 0
+                y_err_index = 0
+                x_caps_index = 0
+                y_caps_index = 0
+                if do_x and do_y:
+                    y_err_index = 1
+                    y_caps_index = 2
+
+                if do_x:
+                    if self._x_error.shape != self._x_data.shape:
+                        x_error_array = np.full_like(self._x_data, self._x_error)
+                    else:
+                        x_error_array = self._x_error
+                    segments = [
+                        np.array([[q - a, w], [q + a, w]])
+                        for q, w, a in zip(self._x_data, self._y_data, x_error_array)
+                    ]
+                    err[x_err_index].set_segments(segments)
+                    if len(caps) != 0:
+                        caps[x_caps_index].set_ydata(self._y_data)
+                        caps[x_caps_index + 1].set_ydata(self._y_data)
+
+                if do_y:
+                    if self._y_error.shape != self._y_data.shape:
+                        y_error_array = np.full_like(self._y_data, self._y_error)
+                    else:
+                        y_error_array = self._y_error
+                    segments = [
+                        np.array([[q, w - a], [q, w + a]])
+                        for q, w, a in zip(self._x_data, self._y_data, y_error_array)
+                    ]
+                    err[y_err_index].set_segments(segments)
+                    if len(caps) != 0:
+                        caps[y_caps_index].set_ydata(self._y_data - self._y_error)
+                        caps[y_caps_index + 1].set_ydata(self._y_data + self._y_error)
+
+            if self._fill_between_bounds is not None:
+                ax = plt.gca()
+                for coll in ax.collections:  # remove previous fill_between
+                    verts = coll.get_paths()[0].vertices
+                    verts_handle = self._fill_between_handle.get_paths()[0].vertices
+                    if np.array_equal(verts[:10], verts_handle[:10]):
+                        coll.remove()
+                        break
+
+                # Add new fill_between
+                kwargs = {"alpha": 0.2}
+                if self._fill_between_color is not None:
+                    kwargs["color"] = self._fill_between_color
+                else:
+                    kwargs["color"] = self.handle[0].get_color()
+                kwargs = {k: v for k, v in kwargs.items() if v != "default"}
+                if self._fill_between_other_curve:
+                    self_y_data = self._y_data
+                    self_x_data = self._x_data
+                    other_y_data = self._fill_between_other_curve._y_data
+                    other_x_data = self._fill_between_other_curve._x_data
+                    x_data = np.linspace(
+                        self._fill_between_bounds[0],
+                        self._fill_between_bounds[1],
+                        max(len(self_x_data), len(other_x_data)),
+                    )
+                    self_y_data = interp1d(self_x_data, self_y_data)(x_data)
+                    other_y_data = interp1d(other_x_data, other_y_data)(x_data)
+                    kwargs["x"] = x_data
+                    kwargs["y1"] = self_y_data
+                    kwargs["y2"] = other_y_data
+                    where_x_data = x_data
+                else:
+                    kwargs["x"] = self._x_data
+                    kwargs["y1"] = self._y_data
+                    where_x_data = self._x_data
+
+                self._fill_between_handle = ax.fill_between(
+                    where=np.logical_and(
+                        where_x_data >= self._fill_between_bounds[0],
+                        where_x_data <= self._fill_between_bounds[1],
+                    ),
+                    zorder=self._z_order - 2,
+                    **kwargs,
+                )
+
+            if self._show_error_curves:
+                self._error_curve_min_handle[0].set_ydata(self._y_data - self._y_error)
+                self._error_curve_max_handle[0].set_ydata(self._y_data + self._y_error)
+
+                if self._error_curves_fill_between:
+                    ax = plt.gca()
+                    for coll in ax.collections:
+                        verts = coll.get_paths()[0].vertices
+                        verts_handle = self._error_curve_fill_handle.get_paths()[
+                            0
+                        ].vertices
+                        if np.array_equal(verts[:10], verts_handle[:10]):
+                            coll.remove()
+                            break
+
+                    if self._error_curves_fill_between:
+                        max_y = (
+                            self._y_data + self._y_error
+                            if self._y_error is not None
+                            else self._y_data
+                        )
+                        min_y = (
+                            self._y_data - self._y_error
+                            if self._y_error is not None
+                            else self._y_data
+                        )
+                        error_curves_color = line.get_color()
+                        self._error_curve_fill_handle = ax.fill_between(
+                            self._x_data,
+                            max_y,
+                            min_y,
+                            color=error_curves_color,
+                            alpha=0.2,
+                        )
+
+    @property
+    def label(self):
+        return self._label
+
+    @label.setter
+    def label(self, value: str):
+        self._label = value
+        if self.handle is not None:
+            self.handle[0].set_label(value)
+
+    @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, value: str):
+        self._color = value
+        color_rgba = to_rgba(value)
+        if self.handle is not None:
+            self.handle[0].set_color(color_rgba)
+
+    @property
+    def line_width(self):
+        return self._line_width
+
+    @line_width.setter
+    def line_width(self, value: float | Literal["default"]):
+        self._line_width = value
+        if self.handle is not None:
+            self.handle[0].set_linewidth(value)
+
+    @property
+    def line_style(self):
+        return self._line_style
+
+    @line_style.setter
+    def line_style(self, value: str):
+        self._line_style = value
+        if self.handle is not None:
+            self.handle[0].set_linestyle(value)
+
+    @property
+    def fill_between_color(self):
+        return self._fill_between_color
+
+    @fill_between_color.setter
+    def fill_between_color(self, value: str):
+        if self._fill_between_bounds is None:
+            raise AttributeError(
+                "No fill_between area has been created for this Curve. Use the `get_area_between` method with fill_between=True to create one."
+            )
+        self._fill_between_color = value
+        if self.handle is not None:
+            self._fill_between_handle.set_color(value)
+
+    @property
+    def errorbars_color(self):
+        return self._errorbars_color
+
+    @errorbars_color.setter
+    def errorbars_color(self, value: str):
+        if not self._show_errorbars:
+            raise AttributeError(
+                "No error bars have been created for this Curve. Use the `add_errorbars` method to create some."
+            )
+        self._errorbars_color = value
+        if self.handle is not None:
+            (
+                line,
+                caps,
+                err,
+            ) = self.handle
+            for cap in caps:
+                cap.set_color(value)
+            for e in err:
+                e.set_color(value)
+
+    @property
+    def errorbars_line_width(self):
+        return self._errorbars_line_width
+
+    @errorbars_line_width.setter
+    def errorbars_line_width(self, value: float):
+        if not self._show_errorbars:
+            raise AttributeError(
+                "No error bars have been created for this Curve. Use the `add_errorbars` method to create some."
+            )
+        self._errorbars_line_width = value
+        if self.handle is not None:
+            (_, _, err) = self.handle
+            for e in err:
+                e.set_linewidth(value)
+
+    @property
+    def cap_thickness(self):
+        return self._cap_thickness
+
+    @cap_thickness.setter
+    def cap_thickness(self, value: float):
+        if not self._show_errorbars:
+            raise AttributeError(
+                "No error bars have been created for this Curve. Use the `add_errorbars` method to create some."
+            )
+        self._cap_thickness = value
+        if self.handle is not None:
+            # once the error bars are created, cap thickness cannot be changed dynamically
+            warn("Cap thickness cannot be changed dynamically during an animation.")
+
+    @property
+    def cap_width(self):
+        return self._cap_width
+
+    @cap_width.setter
+    def cap_width(self, value: float):
+        if not self._show_errorbars:
+            raise AttributeError(
+                "No error bars have been created for this Curve. Use the `add_errorbars` method to create some."
+            )
+        self._cap_width = value
+        if self.handle is not None:
+            # once the error bars are created, cap width cannot be changed dynamically
+            warn("Cap width cannot be changed dynamically during an animation.")
+
+    @property
+    def error_curves_color(self):
+        return self._error_curves_color
+
+    @error_curves_color.setter
+    def error_curves_color(self, value: str):
+        if not self._show_error_curves:
+            raise AttributeError(
+                "No error curves have been created for this Curve. Use the `add_error_curves` method to create some."
+            )
+        self._error_curves_color = value
+        if self.handle is not None:
+            self._error_curve_min_handle[0].set_color(value)
+            self._error_curve_max_handle[0].set_color(value)
+            if self._error_curves_fill_between:
+                self._error_curve_fill_handle.set_color(value)
+
+    @property
+    def error_curves_line_style(self):
+        return self._error_curves_line_style
+
+    @error_curves_line_style.setter
+    def error_curves_line_style(self, value: str):
+        if not self._show_error_curves:
+            raise AttributeError(
+                "No error curves have been created for this Curve. Use the `add_error_curves` method to create some."
+            )
+        self._error_curves_line_style = value
+        if self.handle is not None:
+            self._error_curve_min_handle[0].set_linestyle(value)
+            self._error_curve_max_handle[0].set_linestyle(value)
+
+    @property
+    def error_curves_line_width(self):
+        return self._error_curves_line_width
+
+    @error_curves_line_width.setter
+    def error_curves_line_width(self, value: float):
+        if not self._show_error_curves:
+            raise AttributeError(
+                "No error curves have been created for this Curve. Use the `add_error_curves` method to create some."
+            )
+        self._error_curves_line_width = value
+        if self.handle is not None:
+            self._error_curve_min_handle[0].set_linewidth(value)
+            self._error_curve_max_handle[0].set_linewidth(value)
 
     def __add__(self, other: Self | float) -> Self:
         """
         Defines the addition of two curves or a curve and a number.
         """
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    return Curve(x_data, y_data + other.y_data)
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    return Curve(x_data, y_data + other._y_data)
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    return Curve(x_data, y_data + self.y_data)
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    return Curve(x_data, y_data + self._y_data)
 
-            new_y_data = self.y_data + other.y_data
-            return Curve(self.x_data, new_y_data)
+            new_y_data = self._y_data + other._y_data
+            return Curve(self._x_data, new_y_data)
         elif isinstance(other, (int, float)):
-            new_y_data = self.y_data + other
-            return Curve(self.x_data, new_y_data)
+            new_y_data = self._y_data + other
+            return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only add a curve to another curve or a number.")
 
@@ -151,21 +615,21 @@ class Curve:
 
     def __iadd__(self, other: Self | float) -> Self:
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    self.y_data = y_data + other.y_data
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    self._y_data = y_data + other._y_data
                     return self
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    self.y_data = y_data + self.y_data
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    self._y_data = y_data + self._y_data
                     return self
-            self.y_data += other.y_data
+            self._y_data += other._y_data
             return self
         elif isinstance(other, (int, float)):
-            self.y_data += other
+            self._y_data += other
             return self
 
     def __sub__(self, other: Self | float) -> Self:
@@ -173,20 +637,20 @@ class Curve:
         Defines the subtraction of two curves or a curve and a number.
         """
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    return Curve(x_data, y_data - other.y_data)
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    return Curve(x_data, y_data - other._y_data)
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    return Curve(x_data, self.y_data - y_data)
-            new_y_data = self.y_data - other.y_data
-            return Curve(self.x_data, new_y_data)
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    return Curve(x_data, self._y_data - y_data)
+            new_y_data = self._y_data - other._y_data
+            return Curve(self._x_data, new_y_data)
         elif isinstance(other, (int, float)):
-            new_y_data = self.y_data - other
-            return Curve(self.x_data, new_y_data)
+            new_y_data = self._y_data - other
+            return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only subtract a curve from another curve or a number.")
 
@@ -195,21 +659,21 @@ class Curve:
 
     def __isub__(self, other: Self | float) -> Self:
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    self.y_data = y_data - other.y_data
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    self._y_data = y_data - other._y_data
                     return self
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    self.y_data = self.y_data - y_data
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    self._y_data = self._y_data - y_data
                     return self
-            self.y_data -= other.y_data
+            self._y_data -= other._y_data
             return self
         elif isinstance(other, (int, float)):
-            self.y_data -= other
+            self._y_data -= other
             return self
 
     def __mul__(self, other: Self | float) -> Self:
@@ -217,20 +681,20 @@ class Curve:
         Defines the multiplication of two curves or a curve and a number.
         """
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    return Curve(x_data, y_data * other.y_data)
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    return Curve(x_data, y_data * other._y_data)
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    return Curve(x_data, y_data * self.y_data)
-            new_y_data = self.y_data * other.y_data
-            return Curve(self.x_data, new_y_data)
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    return Curve(x_data, y_data * self._y_data)
+            new_y_data = self._y_data * other._y_data
+            return Curve(self._x_data, new_y_data)
         elif isinstance(other, (int, float)):
-            new_y_data = self.y_data * other
-            return Curve(self.x_data, new_y_data)
+            new_y_data = self._y_data * other
+            return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only multiply a curve by another curve or a number.")
 
@@ -239,21 +703,21 @@ class Curve:
 
     def __imul__(self, other: Self | float) -> Self:
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    self.y_data = y_data * other.y_data
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    self._y_data = y_data * other._y_data
                     return self
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    self.y_data = self.y_data * y_data
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    self._y_data = self._y_data * y_data
                     return self
-            self.y_data *= other.y_data
+            self._y_data *= other._y_data
             return self
         elif isinstance(other, (int, float)):
-            self.y_data *= other
+            self._y_data *= other
             return self
 
     def __truediv__(self, other: Self | float) -> Self:
@@ -261,20 +725,20 @@ class Curve:
         Defines the division of two curves or a curve and a number.
         """
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    return Curve(x_data, y_data / other.y_data)
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    return Curve(x_data, y_data / other._y_data)
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    return Curve(x_data, self.y_data / y_data)
-            new_y_data = self.y_data / other.y_data
-            return Curve(self.x_data, new_y_data)
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    return Curve(x_data, self._y_data / y_data)
+            new_y_data = self._y_data / other._y_data
+            return Curve(self._x_data, new_y_data)
         elif isinstance(other, (int, float)):
-            new_y_data = self.y_data / other
-            return Curve(self.x_data, new_y_data)
+            new_y_data = self._y_data / other
+            return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only divide a curve by another curve or a number.")
 
@@ -286,21 +750,21 @@ class Curve:
 
     def __itruediv__(self, other: Self | float) -> Self:
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    self.y_data = y_data / other.y_data
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    self._y_data = y_data / other._y_data
                     return self
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    self.y_data = self.y_data / y_data
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    self._y_data = self._y_data / y_data
                     return self
-            self.y_data /= other.y_data
+            self._y_data /= other._y_data
             return self
         elif isinstance(other, (int, float)):
-            self.y_data /= other
+            self._y_data /= other
             return self
 
     def __pow__(self, other: float) -> Self:
@@ -308,26 +772,26 @@ class Curve:
         Defines the power of a curve to a number.
         """
         if isinstance(other, (int, float)):
-            new_y_data = self.y_data**other
-            return Curve(self.x_data, new_y_data)
+            new_y_data = self._y_data**other
+            return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only raise a curve to another curve or a number.")
 
     def __ipow__(self, other: float) -> Self:
-        self.y_data **= other
+        self._y_data **= other
         return self
 
     def __iter__(self):
         """
         Defines the iteration of a curve. Returns the y values.
         """
-        return iter(self.y_data)
+        return iter(self._y_data)
 
     def __abs__(self) -> Self:
         """
         Returns the absolute value of the curve.
         """
-        return Curve(self.x_data, np.abs(self.y_data))
+        return Curve(self._x_data, np.abs(self._y_data))
 
     def copy(self) -> Self:
         """
@@ -370,21 +834,21 @@ class Curve:
         -------
         A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two x values.
         """
-        mask = (self.x_data >= x1) & (self.x_data <= x2)
-        x_data = self.x_data[mask]
-        y_data = self.y_data[mask]
+        mask = (self._x_data >= x1) & (self._x_data <= x2)
+        x_data = self._x_data[mask]
+        y_data = self._y_data[mask]
         if copy_first:
             copy = self.copy()
-            copy.x_data = x_data
-            copy.y_data = y_data
+            copy._x_data = x_data
+            copy._y_data = y_data
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.color = color
+                copy._color = color
             if line_width != "default":
-                copy.line_width = line_width
+                copy._line_width = line_width
             if line_style != "default":
-                copy.line_style = line_style
+                copy._line_style = line_style
             return copy
         else:
             return Curve(x_data, y_data, label, color, line_width, line_style)
@@ -424,21 +888,21 @@ class Curve:
         -------
         A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two y values.
         """
-        mask = (self.y_data >= y1) & (self.y_data <= y2)
-        x_data = self.x_data[mask]
-        y_data = self.y_data[mask]
+        mask = (self._y_data >= y1) & (self._y_data <= y2)
+        x_data = self._x_data[mask]
+        y_data = self._y_data[mask]
         if copy_first:
             copy = self.copy()
-            copy.x_data = x_data
-            copy.y_data = y_data
+            copy._x_data = x_data
+            copy._y_data = y_data
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.color = color
+                copy._color = color
             if line_width != "default":
-                copy.line_width = line_width
+                copy._line_width = line_width
             if line_style != "default":
-                copy.line_style = line_style
+                copy._line_style = line_style
             return copy
         else:
             return Curve(x_data, y_data, label, color, line_width, line_style)
@@ -472,22 +936,22 @@ class Curve:
             Thickness of the errorbar caps.
             Default depends on the ``figure_style`` configuration.
         """
-        self.show_errorbars = True
-        self.x_error = np.array(x_error) if x_error is not None else x_error
-        self.y_error = np.array(y_error) if y_error is not None else y_error
-        self.errorbars_color = errorbars_color
-        self.errorbars_line_width = errorbars_line_width
-        self.cap_thickness = cap_thickness
-        self.cap_width = cap_width
+        self._show_errorbars = True
+        self._x_error = np.array(x_error) if x_error is not None else x_error
+        self._y_error = np.array(y_error) if y_error is not None else y_error
+        self._errorbars_color = errorbars_color
+        self._errorbars_line_width = errorbars_line_width
+        self._cap_thickness = cap_thickness
+        self._cap_width = cap_width
 
     def add_error_curves(
         self,
         x_error: Optional[ArrayLike] = None,
         y_error: Optional[ArrayLike] = None,
-        error_curves_color: str = "default",
-        error_curves_line_style: str = "default",
-        error_curves_line_width: float | Literal["default"] = "default",
-        error_curves_fill_between: bool | Literal["default"] = "default",
+        color: str = "default",
+        line_style: str = "default",
+        line_width: float | Literal["default"] = "default",
+        fill_between: bool | Literal["default"] = "default",
     ) -> None:
         """
         Adds error curves to the :class:`~graphinglib.data_plotting_1d.Curve`.
@@ -498,26 +962,26 @@ class Curve:
             Array of x errors.
         y_error : ArrayLike, optional
             Array of y errors.
-        error_curves_color : str
+        color : str
             Color of the error curves.
             Default depends on the ``figure_style`` configuration.
-        error_curves_line_style : str
+        line_style : str
             Line style of the error curves.
             Default depends on the ``figure_style`` configuration.
-        error_curves_line_width : float
+        line_width : float
             Line width of the error curves.
-            Default depends on the ``figure_style`` configuration.ç
-        error_curves_fill_between : bool
+            Default depends on the ``figure_style`` configuration.
+        fill_between : bool
             Whether or not to fill the area between the two error curves.
             Default depends on the ``figure_style`` configuration.
         """
-        self.show_error_curves = True
-        self.x_error = np.array(x_error) if x_error is not None else x_error
-        self.y_error = np.array(y_error) if y_error is not None else y_error
-        self.error_curves_color = error_curves_color
-        self.error_curves_line_style = error_curves_line_style
-        self.error_curves_line_width = error_curves_line_width
-        self.error_curves_fill_between = error_curves_fill_between
+        self._show_error_curves = True
+        self._x_error = np.array(x_error) if x_error is not None else x_error
+        self._y_error = np.array(y_error) if y_error is not None else y_error
+        self._error_curves_color = color
+        self._error_curves_line_style = line_style
+        self._error_curves_line_width = line_width
+        self._error_curves_fill_between = fill_between
 
     def get_coordinates_at_x(
         self,
@@ -545,7 +1009,7 @@ class Curve:
         """
         return (
             x,
-            float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
+            float(interp1d(self._x_data, self._y_data, kind=interpolation_method)(x)),
         )
 
     def create_point_at_x(
@@ -631,8 +1095,8 @@ class Curve:
         list[tuple[float, float]]
             The coordinates of the points on the curve at the given y value.
         """
-        xs = self.x_data
-        ys = self.y_data
+        xs = self._x_data
+        ys = self._y_data
         crossings = np.where(np.diff(np.sign(ys - y)))[0]
         x_vals: list[float] = []
         for cross in crossings:
@@ -738,19 +1202,19 @@ class Curve:
         -------
         A :class:`~graphinglib.data_plotting_1d.Curve` object which is the derivative of the original curve.
         """
-        x_data = self.x_data
-        y_data = np.gradient(self.y_data, x_data)
+        x_data = self._x_data
+        y_data = np.gradient(self._y_data, x_data)
         if copy_first:
             copy = self.copy()
-            copy.y_data = y_data
+            copy._y_data = y_data
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.color = color
+                copy._color = color
             if line_width != "default":
-                copy.line_width = line_width
+                copy._line_width = line_width
             if line_style != "default":
-                copy.line_style = line_style
+                copy._line_style = line_style
             return copy
         else:
             return Curve(x_data, y_data, label, color, line_width, line_style)
@@ -791,21 +1255,21 @@ class Curve:
         A :class:`~graphinglib.data_plotting_1d.Curve` object which is the integral of the original curve.
         """
         # calculate the integral curve using cumulative trapezoidal integration
-        y_data = cumtrapz(self.y_data, self.x_data, initial=0) + initial_value
+        y_data = cumtrapz(self._y_data, self._x_data, initial=0) + initial_value
         if copy_first:
             copy = self.copy()
-            copy.y_data = y_data
+            copy._y_data = y_data
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.color = color
+                copy._color = color
             if line_width != "default":
-                copy.line_width = line_width
+                copy._line_width = line_width
             if line_style != "default":
-                copy.line_style = line_style
+                copy._line_style = line_style
             return copy
         else:
-            return Curve(self.x_data, y_data, label, color, line_width, line_style)
+            return Curve(self._x_data, y_data, label, color, line_width, line_style)
 
     def create_tangent_curve(
         self,
@@ -844,22 +1308,22 @@ class Curve:
         """
         point = self.get_coordinates_at_x(x)
         gradient = self.create_derivative_curve().get_coordinates_at_x(x)[1]
-        y_data = gradient * (self.x_data - x) + point[1]
+        y_data = gradient * (self._x_data - x) + point[1]
         if copy_first:
             copy = self.copy()
-            copy.y_data = y_data
+            copy._y_data = y_data
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.color = color
+                copy._color = color
             if line_width != "default":
-                copy.line_width = line_width
+                copy._line_width = line_width
             if line_style != "default":
-                copy.line_style = line_style
+                copy._line_style = line_style
             return copy
         else:
             tangent_curve = Curve(
-                self.x_data, y_data, label, color, line_width, line_style
+                self._x_data, y_data, label, color, line_width, line_style
             )
             return tangent_curve
 
@@ -900,22 +1364,22 @@ class Curve:
         """
         point = self.get_coordinates_at_x(x)
         gradient = self.create_derivative_curve().get_coordinates_at_x(x)[1]
-        y_data = -1 / gradient * (self.x_data - x) + point[1]
+        y_data = -1 / gradient * (self._x_data - x) + point[1]
         if copy_first:
             copy = self.copy()
-            copy.y_data = y_data
+            copy._y_data = y_data
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.color = color
+                copy._color = color
             if line_width != "default":
-                copy.line_width = line_width
+                copy._line_width = line_width
             if line_style != "default":
-                copy.line_style = line_style
+                copy._line_style = line_style
             return copy
         else:
             normal_curve = Curve(
-                self.x_data, y_data, label, color, line_width, line_style
+                self._x_data, y_data, label, color, line_width, line_style
             )
             return normal_curve
 
@@ -947,11 +1411,8 @@ class Curve:
         -------
         The arc length of the curve (float) between the two given x values.
         """
-        y_data = self.y_data
-        x_data = self.x_data
-        # f = interp1d(x_data, y_data)
-        # x = np.linspace(x1, x2, 1000)
-        # y = f(x)
+        y_data = self._y_data
+        x_data = self._x_data
         x = x_data[(x_data >= x1) & (x_data <= x2)]
         y = y_data[(x_data >= x1) & (x_data <= x2)]
         return np.trapz(np.sqrt(1 + np.gradient(y, x) ** 2), x)
@@ -960,7 +1421,7 @@ class Curve:
         self,
         x1: float,
         x2: float,
-        fill_under: bool = False,
+        fill_between: bool = False,
         fill_color: str = "default",
         other_curve: Optional[Self] = None,
     ) -> float:
@@ -972,11 +1433,11 @@ class Curve:
         ----------
         x1, x2 : float
             The x values between which the area is to be calculated.
-        fill_under : bool
-            Whether to fill the specified area between the curve and the x axis when displaying.
+        fill_between : bool
+            Whether to fill the specified area between the curve and the x axis/other curve when displaying.
             Defaults to ``False``.
         fill_color : str
-            Color of the area between the curve and the x axis when ``fill_under`` is set to ``True``.
+            Color of the area between the curve and the x axis when ``fill_between`` is set to ``True``.
             Default depends on the ``figure_style`` configuration.
         other_curve : :class:`~graphinglib.data_plotting_1d.Curve`, optional
             If specified, the area between the two curves will be calculated instead of the area between the curve and the x axis.
@@ -986,39 +1447,39 @@ class Curve:
         The area (float) between the curve and the x axis between the two given x values.
         """
         if other_curve is None:
-            if fill_under:
-                self._fill_curve_between = (x1, x2)
+            if fill_between:
+                self._fill_between_bounds = (x1, x2)
                 if fill_color != "default":
-                    self._fill_under_color = fill_color
-            y_data = self.y_data
-            x_data = self.x_data
+                    self._fill_between_color = fill_color
+            y_data = self._y_data
+            x_data = self._x_data
             mask = (x_data >= x1) & (x_data <= x2)
             y = y_data[mask]
             x = x_data[mask]
             return np.trapz(y, x)
         else:
-            if fill_under:
-                self._fill_curve_between = (x1, x2)
+            if fill_between:
+                self._fill_between_bounds = (x1, x2)
                 if fill_color != "default":
-                    self._fill_under_color = fill_color
-                self._fill_under_other_curve = other_curve
-            if np.array_equal(self.x_data, other_curve.x_data):
+                    self._fill_between_color = fill_color
+                self._fill_between_other_curve = other_curve
+            if np.array_equal(self._x_data, other_curve._x_data):
                 # No need to interpolate
-                mask = (self.x_data >= x1) & (self.x_data <= x2)
-                common_x = self.x_data[mask]
-                y1 = self.y_data[mask]
-                y2 = other_curve.y_data[mask]
+                mask = (self._x_data >= x1) & (self._x_data <= x2)
+                common_x = self._x_data[mask]
+                y1 = self._y_data[mask]
+                y2 = other_curve._y_data[mask]
             else:
                 # Interpolate to get common x values
-                density_x1 = len(self.x_data) / (self.x_data[-1] - self.x_data[0])
-                density_x2 = len(other_curve.x_data) / (
-                    other_curve.x_data[-1] - other_curve.x_data[0]
+                density_x1 = len(self._x_data) / (self._x_data[-1] - self._x_data[0])
+                density_x2 = len(other_curve._x_data) / (
+                    other_curve._x_data[-1] - other_curve._x_data[0]
                 )
                 higher_density = max(density_x1, density_x2)
                 num_of_values = int(np.ceil(higher_density * (x2 - x1)))
                 common_x = np.linspace(x1, x2, num_of_values)
-                y1 = np.interp(common_x, self.x_data, self.y_data)
-                y2 = np.interp(common_x, other_curve.x_data, other_curve.y_data)
+                y1 = np.interp(common_x, self._x_data, self._y_data)
+                y2 = np.interp(common_x, other_curve._x_data, other_curve._y_data)
 
             difference = y1 - y2
             area = np.trapz(difference, common_x)
@@ -1041,12 +1502,12 @@ class Curve:
         list[tuple[float, float]]
             A list of tuples of coordinates which are the intersection points between the two curves.
         """
-        y = self.y_data - other.y_data
+        y = self._y_data - other._y_data
         s = np.abs(np.diff(np.sign(y))).astype(bool)
-        intersections_x = self.x_data[:-1][s] + np.diff(self.x_data)[s] / (
+        intersections_x = self._x_data[:-1][s] + np.diff(self._x_data)[s] / (
             np.abs(y[1:][s] / y[:-1][s]) + 1
         )
-        intersections_y = np.interp(intersections_x, self.x_data, self.y_data)
+        intersections_y = np.interp(intersections_x, self._x_data, self._y_data)
         points = []
         for i in range(len(intersections_x)):
             x_val = intersections_x[i]
@@ -1103,9 +1564,9 @@ class Curve:
         list[:class:`~graphinglib.graph_elements.Point`] or list[tuple[float, float]]
             A list of :class:`~graphinglib.graph_elements.Point` objects which are the intersection points between the two curves.
         """
-        y = self.y_data - other.y_data
+        y = self._y_data - other._y_data
         s = np.abs(np.diff(np.sign(y))).astype(bool)
-        intersections_x = self.x_data[:-1][s] + np.diff(self.x_data)[s] / (
+        intersections_x = self._x_data[:-1][s] + np.diff(self._x_data)[s] / (
             np.abs(y[1:][s] / y[:-1][s]) + 1
         )
         point_coords = self.get_intersection_coordinates(other)
@@ -1160,80 +1621,99 @@ class Curve:
         """
         Plots the element in the specified axes.
         """
-        if self.show_errorbars:
+        self._z_order = z_order
+        if self._show_errorbars:
             params = {
-                "color": self.color,
-                "linewidth": self.line_width,
-                "linestyle": self.line_style,
-                "elinewidth": self.errorbars_line_width,
-                "capsize": self.cap_width,
-                "capthick": self.cap_thickness,
-                "ecolor": self.errorbars_color,
+                "color": self._color,
+                "linewidth": self._line_width,
+                "linestyle": self._line_style,
+                "elinewidth": self._errorbars_line_width,
+                "capsize": self._cap_width,
+                "capthick": self._cap_thickness,
+                "ecolor": self._errorbars_color,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
-                self.x_data,
-                self.y_data,
-                xerr=self.x_error,
-                yerr=self.y_error,
-                label=self.label,
+                self._x_data,
+                self._y_data,
+                xerr=self._x_error,
+                yerr=self._y_error,
                 zorder=z_order,
                 **params,
             )
+            self.handle[0].set_label(self._label)
         else:
             params = {
-                "color": self.color,
-                "linewidth": self.line_width,
-                "linestyle": self.line_style,
+                "color": self._color,
+                "linewidth": self._line_width,
+                "linestyle": self._line_style,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
-                self.x_data,
-                self.y_data,
-                label=self.label,
+                self._x_data,
+                self._y_data,
                 zorder=z_order,
                 **params,
             )
-        if self.show_error_curves:
+            self.handle[0].set_label(self._label)
+        if self._show_error_curves:
             max_y = (
-                self.y_data + self.y_error if self.y_error is not None else self.y_data
+                self._y_data + self._y_error
+                if self._y_error is not None
+                else self._y_data
             )
             min_y = (
-                self.y_data - self.y_error if self.y_error is not None else self.y_data
+                self._y_data - self._y_error
+                if self._y_error is not None
+                else self._y_data
             )
-            axes.plot(
-                self.x_data,
+            params = {
+                "linewidth": self._error_curves_line_width,
+                "linestyle": self._error_curves_line_style,
+            }
+            if self._error_curves_color == "default":
+                params["color"] = self.handle[0].get_color()
+            else:
+                params["color"] = self._error_curves_color
+            params = {k: v for k, v in params.items() if v != "default"}
+            self._error_curve_min_handle = axes.plot(
+                self._x_data,
                 min_y,
-                linestyle=self.error_curves_line_style,
-                linewidth=self.error_curves_line_width,
-                color=self.handle[0].get_color(),
+                **params,
             )
-            axes.plot(
-                self.x_data,
+            self._error_curve_max_handle = axes.plot(
+                self._x_data,
                 max_y,
-                linestyle=self.error_curves_line_style,
-                linewidth=self.error_curves_line_width,
-                color=self.handle[0].get_color(),
+                **params,
             )
-            if self.error_curves_fill_between:
-                axes.fill_between(
-                    self.x_data, max_y, min_y, color=self.error_curves_color, alpha=0.2
+            if self._error_curves_fill_between:
+                params = {}
+                if self._error_curves_color == "default":
+                    params["color"] = self.handle[0].get_color()
+                else:
+                    params["color"] = self._error_curves_color
+                self._error_curve_fill_handle = axes.fill_between(
+                    self._x_data,
+                    max_y,
+                    min_y,
+                    alpha=0.2,
+                    **params,
                 )
-        if self._fill_curve_between:
+        if self._fill_between_bounds:
             kwargs = {"alpha": 0.2}
-            if self._fill_under_color is not None:
-                kwargs["color"] = self._fill_under_color
+            if self._fill_between_color is not None:
+                kwargs["color"] = self._fill_between_color
             else:
                 kwargs["color"] = self.handle[0].get_color()
             kwargs = {k: v for k, v in kwargs.items() if v != "default"}
-            if self._fill_under_other_curve:
-                self_y_data = self.y_data
-                self_x_data = self.x_data
-                other_y_data = self._fill_under_other_curve.y_data
-                other_x_data = self._fill_under_other_curve.x_data
+            if self._fill_between_other_curve:
+                self_y_data = self._y_data
+                self_x_data = self._x_data
+                other_y_data = self._fill_between_other_curve._y_data
+                other_x_data = self._fill_between_other_curve._x_data
                 x_data = np.linspace(
-                    self._fill_curve_between[0],
-                    self._fill_curve_between[1],
+                    self._fill_between_bounds[0],
+                    self._fill_between_bounds[1],
                     max(len(self_x_data), len(other_x_data)),
                 )
                 self_y_data = interp1d(self_x_data, self_y_data)(x_data)
@@ -1243,14 +1723,14 @@ class Curve:
                 kwargs["y2"] = other_y_data
                 where_x_data = x_data
             else:
-                kwargs["x"] = self.x_data
-                kwargs["y1"] = self.y_data
-                where_x_data = self.x_data
+                kwargs["x"] = self._x_data
+                kwargs["y1"] = self._y_data
+                where_x_data = self._x_data
 
-            axes.fill_between(
+            self._fill_between_handle = axes.fill_between(
                 where=np.logical_and(
-                    where_x_data >= self._fill_curve_between[0],
-                    where_x_data <= self._fill_curve_between[1],
+                    where_x_data >= self._fill_between_bounds[0],
+                    where_x_data <= self._fill_between_bounds[1],
                 ),
                 zorder=z_order - 2,
                 **kwargs,

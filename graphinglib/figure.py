@@ -3,6 +3,7 @@ from typing import Literal, Optional
 from warnings import warn
 
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
@@ -322,12 +323,12 @@ class Figure:
         object_type = type(element).__name__
         tries = 0
         curve_defaults = {
-            "errorbars_color": "color",
-            "errorbars_line_width": "line_width",
-            "cap_thickness": "line_width",
-            "fill_under_color": "color",
-            "error_curves_line_width": "line_width",
-            "error_curves_color": "color",
+            "_errorbars_color": "_color",
+            "_errorbars_line_width": "_line_width",
+            "_cap_thickness": "_line_width",
+            "_fill_under_color": "_color",
+            "_error_curves_line_width": "_line_width",
+            "_error_curves_color": "_color",
         }
         while tries < 2:
             try:
@@ -617,6 +618,59 @@ class Figure:
         else:
             self._twin_x_axis = twin
         return twin
+
+    def show_animation(
+        self,
+        update_function: callable,
+        number_of_frames: int,
+        interval: int = 100,
+        legend: bool = True,
+    ):
+        """
+        Animates the :class:`~graphinglib.figure.Figure`.
+
+        Parameters
+        ----------
+        update_function : callable
+            The function that updates the objects each frame. The function must take the frame number as an argument.
+        number_of_frames : int
+            The number of frames to animate.
+        interval : int
+            The time between each frame in milliseconds.
+            Defaults to ``100``.
+        legend : bool
+            Whether or not to display the legend.
+            Defaults to ``True``.
+        """
+        try:
+            update_function(0)
+        except TypeError:
+            raise GraphingException(
+                "The update function must take an integer argument representing the frame number."
+            )
+
+        self._prepare_figure(legend=legend)
+
+        if legend:
+
+            def update_func(i):
+                update_function(i)
+                self._axes.legend()
+
+        else:
+            update_func = update_function
+
+        anim = FuncAnimation(
+            self._figure,
+            update_func,
+            frames=number_of_frames,
+            interval=interval,
+        )
+        # show the animation
+        plt.draw()
+        plt.show()
+
+        plt.rcParams.update(plt.rcParamsDefault)
 
 
 class TwinAxis:
