@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import to_rgba
 from matplotlib.patches import Polygon
-from matplotlib.pylab import f
 from numpy.typing import ArrayLike
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
