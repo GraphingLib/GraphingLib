@@ -633,6 +633,7 @@ class Figure:
         number_of_frames: int,
         interval: int = 100,
         legend: bool = True,
+        auto_scale: bool = True,
     ):
         """
         Animates the :class:`~graphinglib.figure.Figure`.
@@ -649,6 +650,9 @@ class Figure:
         legend : bool
             Whether or not to display the legend.
             Defaults to ``True``.
+        auto_scale : bool
+            Whether or not to automatically rescale the axes after each frame.
+            Defaults to ``True``.
         """
         try:
             update_function(0)
@@ -659,11 +663,28 @@ class Figure:
 
         self._prepare_figure(legend=legend)
 
-        if legend:
+        if legend and auto_scale:
+            self._axes.set_autoscale_on(True)
 
             def update_func(i):
                 update_function(i)
                 self._axes.legend()
+                self._axes.relim()
+                self._axes.autoscale_view()
+
+        elif legend:
+
+            def update_func(i):
+                update_function(i)
+                self._axes.legend()
+
+        elif auto_scale:
+            self._axes.set_autoscale_on(True)
+
+            def update_func(i):
+                update_function(i)
+                self._axes.relim()
+                self._axes.autoscale_view()
 
         else:
             update_func = update_function
@@ -675,7 +696,7 @@ class Figure:
             interval=interval,
         )
         # show the animation
-        plt.draw()
+        # plt.draw()
         plt.show()
 
         plt.rcParams.update(plt.rcParamsDefault)
