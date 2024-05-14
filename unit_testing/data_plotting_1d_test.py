@@ -56,8 +56,8 @@ class TestCurve(unittest.TestCase):
         self.testCurve.add_errorbars(
             0.1,
             0.1,
-            errorbars_color="red",
-            errorbars_line_width=10,
+            color="red",
+            line_width=10,
             cap_thickness=10,
             cap_width=10,
         )
@@ -374,8 +374,8 @@ class TestCurve(unittest.TestCase):
             x_error=1,
             cap_width=6,
             cap_thickness=1,
-            errorbars_line_width=1,
-            errorbars_color=(0.4, 1, 1),
+            line_width=1,
+            color=(0.4, 1, 1),
         )
         new_curve.get_area_between(x1=-5, x2=5, fill_between=True, fill_color="blue")
 
@@ -866,6 +866,106 @@ class TestScatter(unittest.TestCase):
         self.assertEqual(new_scatter.errorbars_line_width, 2)
         self.assertEqual(new_scatter.cap_thickness, 3)
         self.assertEqual(new_scatter.cap_width, 6)
+
+    def test_set_x_data(self):
+        scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        fig = Figure()
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        scatter.x_data = linspace(-10, 10, 10)
+        self.assertListEqual(list(scatter._x_data), list(linspace(-10, 10, 10)))
+        self.assertListEqual(
+            fig._axes.get_lines()[0].get_xdata().tolist(), list(linspace(-10, 10, 10))
+        )
+        close("all")
+
+    def test_set_y_data(self):
+        scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        fig = Figure()
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        scatter.y_data = linspace(-10, 10, 10) ** 2
+        self.assertListEqual(list(scatter._y_data), list(linspace(-10, 10, 10) ** 2))
+        self.assertListEqual(
+            fig._axes.get_lines()[0].get_ydata().tolist(),
+            list(linspace(-10, 10, 10) ** 2),
+        )
+        close("all")
+
+    def test_set_face_color(self):
+        scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        fig = Figure()
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        scatter.face_color = "red"
+        self.assertEqual(scatter._face_color, "red")
+        self.assertEqual(fig._axes.get_lines()[0].get_markerfacecolor(), "red")
+        close("all")
+
+    def test_set_edge_color(self):
+        scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        fig = Figure()
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        scatter.edge_color = "red"
+        self.assertEqual(scatter._edge_color, "red")
+        self.assertEqual(fig._axes.get_lines()[0].get_markeredgecolor(), "red")
+        close("all")
+
+    def test_set_marker_size(self):
+        scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        fig = Figure()
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        scatter.marker_size = 10
+        self.assertEqual(scatter._marker_size, 10)
+        self.assertEqual(fig._axes.get_lines()[0].get_markersize(), 10)
+        close("all")
+
+    def test_set_marker_style(self):
+        scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        fig = Figure()
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        scatter.marker_style = "x"
+        self.assertEqual(scatter._marker_style, "x")
+        self.assertEqual(fig._axes.get_lines()[0].get_marker(), "x")
+        close("all")
+
+    def test_set_errorbars_line_width(self):
+        scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        scatter.add_errorbars(0.1, 0.1)
+        fig = Figure()
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        scatter.errorbars_line_width = 10
+        (line, caps, err) = scatter.handle
+        for elem in err:
+            self.assertEqual(elem.get_linewidth(), 10)
+        close("all")
+
+    def test_set_errorbars_color(self):
+        scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        scatter.add_errorbars(0.1, 0.1)
+        fig = Figure()
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        scatter.errorbars_color = "red"
+        for elem in fig._axes.get_lines()[1:]:
+            self.assertEqual(elem.get_color(), "red")
+        close("all")
+
+    def test_set_cap_thickness(self):
+        scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        scatter.add_errorbars(0.1, 0.1)
+        scatter.cap_thickness = 10
+        self.assertEqual(scatter._cap_thickness, 10)
+
+    def test_set_cap_width(self):
+        scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
+        scatter.add_errorbars(0.1, 0.1)
+        scatter.cap_width = 10
+        self.assertEqual(scatter._cap_width, 10)
 
 
 class TestHistogram(unittest.TestCase):

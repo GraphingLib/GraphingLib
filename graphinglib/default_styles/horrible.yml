@@ -13,14 +13,14 @@ Curve:
   _fill_under_color: "same as curve"
 
 Scatter:
-  face_color: 
-  edge_color: "none"
-  marker_size: 60
-  marker_style: "+"
-  cap_width: 10
-  errorbars_color: "same as scatter"
-  errorbars_line_width: 3
-  cap_thickness: 3
+  _face_color: 
+  _edge_color: "none"
+  _marker_size: 60
+  _marker_style: "+"
+  _cap_width: 10
+  _errorbars_color: "same as scatter"
+  _errorbars_line_width: 3
+  _cap_thickness: 3
 
 Histogram:
   number_of_bins: 30

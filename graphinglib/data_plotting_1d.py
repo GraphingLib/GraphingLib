@@ -181,8 +181,9 @@ class Curve:
                         for q, w, a in zip(self._x_data, self._y_data, x_error_array)
                     ]
                     err[x_err_index].set_segments(segments)
-                    caps[x_caps_index].set_xdata(self._x_data - self._x_error)
-                    caps[x_caps_index + 1].set_xdata(self._x_data + self._x_error)
+                    if len(caps) != 0:
+                        caps[x_caps_index].set_xdata(self._x_data - self._x_error)
+                        caps[x_caps_index + 1].set_xdata(self._x_data + self._x_error)
 
                 if do_y:
                     if self._y_error.shape != self._y_data.shape:
@@ -194,8 +195,9 @@ class Curve:
                         for q, w, a in zip(self._x_data, self._y_data, y_error_array)
                     ]
                     err[y_err_index].set_segments(segments)
-                    caps[y_caps_index].set_xdata(self._x_data)
-                    caps[y_caps_index + 1].set_xdata(self._x_data)
+                    if len(caps) != 0:
+                        caps[y_caps_index].set_xdata(self._x_data)
+                        caps[y_caps_index + 1].set_xdata(self._x_data)
 
             if self._fill_between_bounds is not None:
                 ax = plt.gca()
@@ -911,8 +913,8 @@ class Curve:
         x_error: Optional[ArrayLike] = None,
         y_error: Optional[ArrayLike] = None,
         cap_width: float | Literal["default"] = "default",
-        errorbars_color: str = "default",
-        errorbars_line_width: float | Literal["default"] = "default",
+        color: str = "default",
+        line_width: float | Literal["default"] = "default",
         cap_thickness: float | Literal["default"] = "default",
     ) -> None:
         """
@@ -938,8 +940,8 @@ class Curve:
         self._show_errorbars = True
         self._x_error = np.asarray(x_error) if x_error is not None else x_error
         self._y_error = np.asarray(y_error) if y_error is not None else y_error
-        self._errorbars_color = errorbars_color
-        self._errorbars_line_width = errorbars_line_width
+        self._errorbars_color = color
+        self._errorbars_line_width = line_width
         self._cap_thickness = cap_thickness
         self._cap_width = cap_width
 
@@ -1793,6 +1795,7 @@ class Scatter:
             Style of the points.
             Default depends on the ``figure_style`` configuration.
         """
+        self.handle = None
         self._x_data = np.asarray(x_data)
         self._y_data = np.asarray(y_data)
         self._label = label
@@ -1801,8 +1804,6 @@ class Scatter:
         self._marker_size = marker_size
         self._marker_style = marker_style
         self._show_errorbars: bool = False
-        self._x_error: Optional[ArrayLike] = None
-        self._y_error: Optional[ArrayLike] = None
         self._errorbars_line_width: float = 1.0
         self._cap_width: float = 3.0
         self._cap_thickness: float = 1.0
@@ -1862,53 +1863,237 @@ class Scatter:
     def x_data(self):
         return self._x_data
 
+    @x_data.setter
+    def x_data(self, x_data: ArrayLike) -> None:
+        self._x_data = np.asarray(x_data)
+
+        if self.handle is not None:
+            (
+                line,
+                caps,
+                err,
+            ) = self.handle
+            line.set_xdata(self._x_data)
+
+            if self._show_errorbars:
+                do_x = self._x_error is not None
+                do_y = self._y_error is not None
+
+                # Indices for errorbars and caps
+                # err: (x_err, y_err) or (x_err) or (y_err)
+                # caps: (x_caps_bottom, x_caps_top, y_caps_bottom, y_caps_top) or (x_caps_bottom, x_caps_top) or (y_caps_bottom, y_caps_top)
+                x_err_index = 0
+                y_err_index = 0
+                x_caps_index = 0
+                y_caps_index = 0
+                if do_x and do_y:
+                    y_err_index = 1
+                    y_caps_index = 2
+
+                if do_x:
+                    if self._x_error.shape != self._x_data.shape:
+                        x_error_array = np.full_like(self._x_data, self._x_error)
+                    else:
+                        x_error_array = self._x_error
+                    segments = [
+                        np.array([[q - a, w], [q + a, w]])
+                        for q, w, a in zip(self._x_data, self._y_data, x_error_array)
+                    ]
+                    err[x_err_index].set_segments(segments)
+                    if len(caps) != 0:
+                        caps[x_caps_index].set_xdata(self._x_data - self._x_error)
+                        caps[x_caps_index + 1].set_xdata(self._x_data + self._x_error)
+
+                if do_y:
+                    if self._y_error.shape != self._y_data.shape:
+                        y_error_array = np.full_like(self._y_data, self._y_error)
+                    else:
+                        y_error_array = self._y_error
+                    segments = [
+                        np.array([[q, w - a], [q, w + a]])
+                        for q, w, a in zip(self._x_data, self._y_data, y_error_array)
+                    ]
+                    err[y_err_index].set_segments(segments)
+                    if len(caps) != 0:
+                        caps[y_caps_index].set_xdata(self._x_data)
+                        caps[y_caps_index + 1].set_xdata(self._x_data)
+
     @property
     def y_data(self):
         return self._y_data
+
+    @y_data.setter
+    def y_data(self, y_data: ArrayLike) -> None:
+        self._y_data = np.asarray(y_data)
+
+        if self.handle is not None:
+            (
+                line,
+                caps,
+                err,
+            ) = self.handle
+            line.set_ydata(self._y_data)
+
+            if self._show_errorbars:
+                do_x = self._x_error is not None
+                do_y = self._y_error is not None
+
+                # Indices for errorbars and caps
+                # err: (x_err, y_err) or (x_err) or (y_err)
+                # caps: (x_caps_bottom, x_caps_top, y_caps_bottom, y_caps_top) or (x_caps_bottom, x_caps_top) or (y_caps_bottom, y_caps_top)
+                x_err_index = 0
+                y_err_index = 0
+                x_caps_index = 0
+                y_caps_index = 0
+                if do_x and do_y:
+                    y_err_index = 1
+                    y_caps_index = 2
+
+                if do_x:
+                    if self._x_error.shape != self._x_data.shape:
+                        x_error_array = np.full_like(self._x_data, self._x_error)
+                    else:
+                        x_error_array = self._x_error
+                    segments = [
+                        np.array([[q - a, w], [q + a, w]])
+                        for q, w, a in zip(self._x_data, self._y_data, x_error_array)
+                    ]
+                    err[x_err_index].set_segments(segments)
+                    if len(caps) != 0:
+                        caps[x_caps_index].set_ydata(self._y_data)
+                        caps[x_caps_index + 1].set_ydata(self._y_data)
+
+                if do_y:
+                    if self._y_error.shape != self._y_data.shape:
+                        y_error_array = np.full_like(self._y_data, self._y_error)
+                    else:
+                        y_error_array = self._y_error
+                    segments = [
+                        np.array([[q, w - a], [q, w + a]])
+                        for q, w, a in zip(self._x_data, self._y_data, y_error_array)
+                    ]
+                    err[y_err_index].set_segments(segments)
+                    if len(caps) != 0:
+                        caps[y_caps_index].set_ydata(self._y_data - self._y_error)
+                        caps[y_caps_index + 1].set_ydata(self._y_data + self._y_error)
 
     @property
     def label(self):
         return self._label
 
+    @label.setter
+    def label(self, label: str) -> None:
+        self._label = label
+        if self.handle is not None:
+            self.handle[0].set_label(label)
+
     @property
     def face_color(self):
         return self._face_color
+
+    @face_color.setter
+    def face_color(self, face_color: str) -> None:
+        self._face_color = face_color
+        if self.handle is not None:
+            self.handle[0].set_markerfacecolor(face_color)
 
     @property
     def edge_color(self):
         return self._edge_color
 
+    @edge_color.setter
+    def edge_color(self, edge_color: str) -> None:
+        self._edge_color = edge_color
+        if self.handle is not None:
+            self.handle[0].set_markeredgecolor(edge_color)
+
     @property
     def marker_size(self):
         return self._marker_size
+
+    @marker_size.setter
+    def marker_size(self, marker_size: float) -> None:
+        self._marker_size = marker_size
+        if self.handle is not None:
+            self.handle[0].set_markersize(marker_size)
 
     @property
     def marker_style(self):
         return self._marker_style
 
-    @property
-    def x_error(self):
-        return self._x_error
-
-    @property
-    def y_error(self):
-        return self._y_error
+    @marker_style.setter
+    def marker_style(self, marker_style: str) -> None:
+        self._marker_style = marker_style
+        if self.handle is not None:
+            self.handle[0].set_marker(marker_style)
 
     @property
     def errorbars_line_width(self):
         return self._errorbars_line_width
 
+    @errorbars_line_width.setter
+    def errorbars_line_width(self, value: float) -> None:
+        if not self._show_errorbars:
+            raise AttributeError(
+                "No error bars have been created for this Curve. Use the `add_errorbars` method to create some."
+            )
+        self._errorbars_line_width = value
+        if self.handle is not None:
+            (_, _, err) = self.handle
+            for e in err:
+                e.set_linewidth(value)
+
     @property
     def cap_width(self):
         return self._cap_width
+
+    @cap_width.setter
+    def cap_width(self, value: float) -> None:
+        if not self._show_errorbars:
+            raise AttributeError(
+                "No error bars have been created for this Curve. Use the `add_errorbars` method to create some."
+            )
+        self._cap_width = value
+        if self.handle is not None:
+            # once the error bars are created, cap width cannot be changed dynamically
+            warn("Cap width cannot be changed dynamically during an animation.")
 
     @property
     def cap_thickness(self):
         return self._cap_thickness
 
+    @cap_thickness.setter
+    def cap_thickness(self, value: float) -> None:
+        if not self._show_errorbars:
+            raise AttributeError(
+                "No error bars have been created for this Curve. Use the `add_errorbars` method to create some."
+            )
+        self._cap_thickness = value
+        if self.handle is not None:
+            # once the error bars are created, cap thickness cannot be changed dynamically
+            warn("Cap thickness cannot be changed dynamically during an animation.")
+
     @property
     def errorbars_color(self):
         return self._errorbars_color
+
+    @errorbars_color.setter
+    def errorbars_color(self, value: str) -> None:
+        if not self._show_errorbars:
+            raise AttributeError(
+                "No error bars have been created for this Curve. Use the `add_errorbars` method to create some."
+            )
+        self._errorbars_color = value
+        if self.handle is not None:
+            (
+                line,
+                caps,
+                err,
+            ) = self.handle
+            for cap in caps:
+                cap.set_color(value)
+            for e in err:
+                e.set_color(value)
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -2496,10 +2681,10 @@ class Scatter:
                 self._y_data,
                 xerr=self._x_error,
                 yerr=self._y_error,
-                label=self._label,
                 zorder=z_order,
                 **params,
             )
+            self.handle[0].set_label(self._label)
         else:
             params = {
                 "markerfacecolor": self._face_color,
@@ -2514,10 +2699,10 @@ class Scatter:
             self.handle = axes.errorbar(
                 self._x_data,
                 self._y_data,
-                label=self._label,
                 zorder=z_order,
                 **params,
             )
+            self.handle[0].set_label(self._label)
 
 
 @dataclass

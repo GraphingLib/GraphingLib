@@ -114,14 +114,14 @@ Point:
   marker_size: 30
   marker_style: o
 Scatter:
-  cap_thickness: 2
-  cap_width: 3
-  edge_color: none
-  errorbars_color: same as scatter
-  errorbars_line_width: 2
-  face_color: null
-  marker_size: 8
-  marker_style: o
+  _cap_thickness: 2
+  _cap_width: 3
+  _edge_color: none
+  _errorbars_color: same as scatter
+  _errorbars_line_width: 2
+  _face_color: null
+  _marker_size: 8
+  _marker_style: o
 Stream:
   arrow_size: 1
   color: null
