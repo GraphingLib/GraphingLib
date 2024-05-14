@@ -322,6 +322,7 @@ class Figure:
         params_to_reset = []
         object_type = type(element).__name__
         tries = 0
+        # Correspondence dictionaries for "same as [object]" behavior
         curve_defaults = {
             "_errorbars_color": "_color",
             "_errorbars_line_width": "_line_width",
@@ -329,6 +330,9 @@ class Figure:
             "_fill_under_color": "_color",
             "_error_curves_line_width": "_line_width",
             "_error_curves_color": "_color",
+        }
+        scatter_defaults = {
+            "_errorbars_color": "_face_color",
         }
         while tries < 2:
             try:
@@ -343,7 +347,11 @@ class Figure:
                                 getattr(element, curve_defaults[property]),
                             )
                         elif default_value == "same as scatter":
-                            element.errorbars_color = getattr(element, "face_color")
+                            setattr(
+                                element,
+                                property,
+                                getattr(element, scatter_defaults[property]),
+                            )
                         else:
                             setattr(element, property, default_value)
                 break
