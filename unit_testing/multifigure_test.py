@@ -7,8 +7,6 @@ from graphinglib.figure import Figure
 from graphinglib.graph_elements import GraphingException
 from graphinglib.multifigure import MultiFigure
 
-# Import mocking
-
 
 class TestMultiFigure(unittest.TestCase):
     def test_create_multifigure(self):
