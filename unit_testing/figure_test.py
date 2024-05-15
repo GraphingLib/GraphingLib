@@ -12,7 +12,7 @@ from graphinglib.graph_elements import GraphingException
 class TestFigure(unittest.TestCase):
     def setUp(self):
         x = linspace(0, 3 * pi, 200)
-        self.testFigure = Figure()
+        self.testFigure = Figure(figure_style="plain")
         self.testCurve = Curve(x, sin(x), "Test Curve", color="k")
         self.plainDefaults = FileLoader("plain").load()
         self.horribleDefaults = FileLoader("horrible").load()

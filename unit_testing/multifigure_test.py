@@ -222,7 +222,9 @@ class TestMultiFigure(unittest.TestCase):
         a_figure.add_elements(curve)
         another_figure = Figure()
         another_figure.add_elements(curve2)
-        a_multifig = MultiFigure.from_stack([a_figure, another_figure])
+        a_multifig = MultiFigure.from_stack(
+            [a_figure, another_figure], figure_style="plain"
+        )
         a_multifig._prepare_multi_figure()
         self.assertEqual(len(a_figure._axes.get_lines()), 1)
         self.assertEqual(len(another_figure._axes.get_lines()), 1)
@@ -233,7 +235,7 @@ class TestMultiFigure(unittest.TestCase):
         plt.close("all")
 
     def test_fill_in_missing_params(self):
-        a_multifig = MultiFigure(num_rows=2, num_cols=2)
+        a_multifig = MultiFigure(num_rows=2, num_cols=2, figure_style="plain")
         a_multifig.default_params = {"MultiFigure": {"size": (8, 8)}}
         a_multifig._fill_in_missing_params(a_multifig)
         self.assertEqual(a_multifig.size, (8, 8))
