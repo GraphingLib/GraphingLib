@@ -12,7 +12,7 @@ from graphinglib.graph_elements import GraphingException
 class TestFigure(unittest.TestCase):
     def setUp(self):
         x = linspace(0, 3 * pi, 200)
-        self.testFigure = Figure()
+        self.testFigure = Figure(figure_style="plain")
         self.testCurve = Curve(x, sin(x), "Test Curve", color="k")
         self.plainDefaults = FileLoader("plain").load()
         self.horribleDefaults = FileLoader("horrible").load()
@@ -222,13 +222,13 @@ class TestFigure(unittest.TestCase):
         self.assertEqual(twin_axis, a_figure._twin_y_axis)
 
     def test_aspect_ratio(self):
-        a_figure = Figure(aspect_ratio=1.5)
+        a_figure = Figure(aspect_ratio=1.5, figure_style="plain")
         self.assertEqual(a_figure.aspect_ratio, 1.5)
         a_figure.add_elements(self.testCurve)
         a_figure._prepare_figure()
         self.assertEqual(a_figure._axes.get_aspect(), 1.5)
 
-        a_figure = Figure(aspect_ratio="equal")
+        a_figure = Figure(aspect_ratio="equal", figure_style="plain")
         self.assertEqual(a_figure.aspect_ratio, "equal")
         a_figure.add_elements(self.testCurve)
         a_figure._prepare_figure()

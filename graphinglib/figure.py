@@ -7,7 +7,7 @@ from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 
-from .file_manager import FileLoader, FileUpdater
+from .file_manager import FileLoader, FileUpdater, get_default_style
 from .graph_elements import GraphingException, Plottable
 from .legend_artists import (
     HandlerMultipleLines,
@@ -62,7 +62,7 @@ class Figure:
         show_grid: bool | Literal["default"] = "default",
         remove_axes: bool = False,
         aspect_ratio: float | str = "auto",
-        figure_style: str = "plain",
+        figure_style: str = "default",
     ) -> None:
         """
         This class implements a general figure object.
@@ -93,6 +93,7 @@ class Figure:
             Defaults to "auto".
         figure_style : str
             The figure style to use for the figure.
+            Default can be set using ``gl.set_default_style()``.
         """
         self.figure_style = figure_style
         self.size = size
@@ -149,6 +150,7 @@ class Figure:
         """
         Prepares the :class:`~graphinglib.figure.Figure` to be displayed.
         """
+
         if default_params is not None:
             self.default_params = default_params
             is_a_subfigure = default_params.get("is_a_subfigure", False)
@@ -156,6 +158,8 @@ class Figure:
                 self._fill_in_rc_params()
             figure_params_to_reset = self._fill_in_missing_params(self)
         else:
+            if self.figure_style == "default":
+                self.figure_style = get_default_style()
             try:
                 file_loader = FileLoader(self.figure_style)
                 self.default_params = file_loader.load()
@@ -687,13 +691,15 @@ class TwinAxis:
         fig_axes: plt.Axes,
         is_matplotlib_style: bool = False,
         default_params: dict = None,
-        figure_style: str = "plain",
+        figure_style: str = "default",
     ):
         """
         Prepares the :class:`~graphinglib.figure.TwinAxis` to be displayed.
         """
         self.default_params = default_params
-        self.figure_style = figure_style
+        self.figure_style = (
+            figure_style if figure_style != "default" else get_default_style()
+        )
         if self.is_y:
             self._axes = fig_axes.twinx()
             self._axes.set_ylabel(self.label)
