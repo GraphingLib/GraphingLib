@@ -1,5 +1,7 @@
 import unittest
+from unittest import mock
 from unittest.mock import MagicMock, patch
+from warnings import warn
 
 from matplotlib import pyplot as plt
 
@@ -10,7 +12,9 @@ from graphinglib.file_manager import (
     FileUpdater,
     get_color,
     get_colors,
+    get_default_style,
     get_styles,
+    set_default_style,
 )
 
 
@@ -92,3 +96,67 @@ class TestGetStyles(unittest.TestCase):
         self.assertIsInstance(styles, dict)
         self.assertIn("plain", styles["gl"])
         self.assertListEqual(styles["matplotlib"], plt.style.available)
+
+
+class TestGetDefaultStyle(unittest.TestCase):
+    @patch("yaml.load")
+    @patch("yaml.dump")
+    def test_get_default_style(self, mock_dump, mock_load):
+        mock_load.return_value = {"default_style": "plain"}
+        style = get_default_style()
+        self.assertEqual(style, "plain")
+        mock_load.assert_called_once()
+        mock_dump.assert_not_called()
+
+    @patch("yaml.load")
+    @patch("yaml.dump")
+    def test_get_default_style_no_file(self, mock_dump, mock_load):
+        mock_load.side_effect = FileNotFoundError
+        style = get_default_style()
+        self.assertEqual(style, "plain")
+        mock_load.assert_called_once()
+        mock_dump.assert_called_once()
+
+    @patch("yaml.load")
+    @patch("yaml.dump")
+    def test_get_default_style_non_existent_style(self, mock_dump, mock_load):
+        mock_load.return_value = {"default_style": "non_existent_style"}
+        with self.assertWarns(UserWarning):
+            style = get_default_style()
+        self.assertEqual(style, "plain")
+        mock_load.assert_called_once()
+        mock_dump.assert_called_once()
+
+
+class TestSetDefaultStyle(unittest.TestCase):
+    @patch("yaml.load")
+    @patch("yaml.dump")
+    def test_set_default_style(self, mock_dump, mock_load):
+        set_default_style("dark")
+        mock_load.assert_called_once()
+        mock_dump.assert_called_once()
+
+    @patch("yaml.load")
+    @patch("yaml.dump")
+    def test_set_default_style_no_file(self, mock_dump, mock_load):
+        mock_load.side_effect = FileNotFoundError
+        set_default_style("dark")
+        mock_load.assert_called_once()
+        mock_dump.assert_called_once()
+
+    @patch("yaml.load")
+    @patch("yaml.dump")
+    def test_set_default_style_empty_file(self, mock_dump, mock_load):
+        mock_load.return_value = {}
+        set_default_style("dark")
+        self.assertEqual(mock_load.call_count, 2)
+        mock_dump.assert_called_once()
+
+    @patch("yaml.load")
+    @patch("yaml.dump")
+    def test_set_default_style_non_existent_style(self, mock_dump, mock_load):
+        # Should raise a ValueError
+        with self.assertRaises(ValueError):
+            set_default_style("non_existent_style")
+        mock_load.assert_not_called()
+        mock_dump.assert_not_called()

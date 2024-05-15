@@ -208,7 +208,7 @@ class TestMultiFigure(unittest.TestCase):
         plt.close("all")
 
     def test_prepare_multifigure_resets_rc(self):
-        a_multifig = MultiFigure(num_rows=2, num_cols=2)
+        a_multifig = MultiFigure(num_rows=2, num_cols=2, figure_style="plain")
         a_multifig._prepare_multi_figure()
         self.assertDictEqual(a_multifig._rc_dict, {})
         plt.close("all")

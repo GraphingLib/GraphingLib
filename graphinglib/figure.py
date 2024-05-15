@@ -150,8 +150,6 @@ class Figure:
         """
         Prepares the :class:`~graphinglib.figure.Figure` to be displayed.
         """
-        if self.figure_style == "default":
-            self.figure_style = get_default_style()
 
         if default_params is not None:
             self.default_params = default_params
@@ -160,6 +158,8 @@ class Figure:
                 self._fill_in_rc_params()
             figure_params_to_reset = self._fill_in_missing_params(self)
         else:
+            if self.figure_style == "default":
+                self.figure_style = get_default_style()
             try:
                 file_loader = FileLoader(self.figure_style)
                 self.default_params = file_loader.load()

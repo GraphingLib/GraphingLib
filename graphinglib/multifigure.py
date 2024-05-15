@@ -511,6 +511,7 @@ class MultiFigure:
             )
         default_params_copy = self.default_params.copy()
         default_params_copy.update(is_a_subfigure=True)
+        default_params_copy["Figure"]["figure_style"] = self.figure_style
         labels, handles = sub_figure._prepare_figure(
             legend=legend,
             axes=axes,

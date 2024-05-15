@@ -307,8 +307,16 @@ def set_default_style(style: str) -> None:
         with open(config_file, "w") as file:
             yaml.dump(config, file)
         print(f"Default style changed from '{old_style}' to '{style}'.")
+    except KeyError:
+        # If file doesn't have the default style key, create it
+        with open(config_file, "r") as file:
+            config = yaml.safe_load(file)
+        config["default_style"] = style
+        with open(config_file, "w") as file:
+            yaml.dump(config, file)
+        print(f"Default style set to '{style}'.")
     except FileNotFoundError:
-        # If file doesn't exist, create it with the given style
+        # If file doesn't exist or is empty, create it with the default style
         with open(config_file, "w") as file:
             config = {"default_style": style}
             yaml.dump(config, file)
