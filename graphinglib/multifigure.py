@@ -10,7 +10,7 @@ from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.transforms import ScaledTranslation
 
-from graphinglib.file_manager import FileLoader
+from graphinglib.file_manager import FileLoader, get_default_style
 from graphinglib.graph_elements import GraphingException, Plottable
 from graphinglib.legend_artists import (
     HandlerMultipleLines,
@@ -62,7 +62,7 @@ class MultiFigure:
         Defaults to "outside".
     figure_style : str
         The figure style to use for the figure.
-        Defaults to "plain".
+        Default can be set using ``gl.set_default_style()``.
     """
 
     def __init__(
@@ -73,7 +73,7 @@ class MultiFigure:
         title: Optional[str] = None,
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
-        figure_style: str = "plain",
+        figure_style: str = "default",
     ) -> None:
         """
         This class implements the "canvas" on which multiple plots are displayed.
@@ -109,7 +109,7 @@ class MultiFigure:
             Defaults to "outside".
         figure_style : str
             The figure style to use for the figure.
-            Defaults to "plain".
+            Default can be set using ``gl.set_default_style()``.
         """
         if type(num_rows) != int or type(num_cols) != int:
             raise TypeError("The number of rows and columns must be integers.")
@@ -134,7 +134,7 @@ class MultiFigure:
         title: Optional[str] = None,
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
-        figure_style: str = "plain",
+        figure_style: str = "default",
     ) -> Self:
         """Creates a MultiFigure with the specified :class:`~graphinglib.figure.Figure` objects in a horizontal configuration.
 
@@ -156,7 +156,7 @@ class MultiFigure:
             Defaults to "outside".
         figure_style : str
             The figure style to use for the figure.
-            Defaults to "plain".
+            Default can be set using ``gl.set_default_style()``.
 
         Returns
         -------
@@ -183,7 +183,7 @@ class MultiFigure:
         title: Optional[str] = None,
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
-        figure_style: str = "plain",
+        figure_style: str = "default",
     ) -> Self:
         """Creates a MultiFigure with the specified :class:`~graphinglib.figure.Figure` objects in a vertical configuration.
 
@@ -205,7 +205,7 @@ class MultiFigure:
             Defaults to "outside".
         figure_style : str
             The figure style to use for the figure.
-            Defaults to "plain".
+            Default can be set using ``gl.set_default_style()``.
 
         Returns
         -------
@@ -233,7 +233,7 @@ class MultiFigure:
         title: Optional[str] = None,
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
-        figure_style: str = "plain",
+        figure_style: str = "default",
     ) -> Self:
         """Creates a MultiFigure with the specified :class:`~graphinglib.figure.Figure` objects in a grid configuration.
 
@@ -257,7 +257,7 @@ class MultiFigure:
             Defaults to "outside".
         figure_style : str
             The figure style to use for the figure.
-            Defaults to "plain".
+            Default can be set using ``gl.set_default_style()``.
 
         Returns
         -------
@@ -398,6 +398,8 @@ class MultiFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.MultiFigure` to be displayed.
         """
+        if self.figure_style == "default":
+            self.figure_style = get_default_style()
         try:
             file_loader = FileLoader(self.figure_style)
             self.default_params = file_loader.load()

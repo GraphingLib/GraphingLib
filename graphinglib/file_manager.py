@@ -1,4 +1,5 @@
 from os import listdir, path, remove
+from warnings import warn
 
 import yaml
 from matplotlib import pyplot as plt
@@ -230,3 +231,84 @@ def get_styles(
         style_dict = {k: v for k, v in style_dict.items() if v}
         return style_dict
     return customs_list + gl_list + matplotlib_list
+
+
+def get_default_style() -> str:
+    """
+    Returns the default style.
+
+    Returns
+    -------
+    str
+        The default style.
+    """
+
+    # Check if the user has a default style
+    config_dir = user_config_dir(
+        appname="GraphingLib", roaming=True, ensure_exists=True
+    )
+    config_file = f"{config_dir}/config.yml"
+
+    # If file exists, load the default style
+    try:
+        with open(config_file, "r") as file:
+            config = yaml.safe_load(file)
+        default_style = config["default_style"]
+
+        # Ensure the style exists
+        available_styles = get_styles(matplotlib=True)
+        if default_style not in available_styles + ["matplotlib"]:
+            warn(
+                f"Default style '{default_style}' does not exist. Resetting to 'plain'."
+            )
+            default_style = "plain"
+
+            # Reset the default style
+            config["default_style"] = default_style
+            with open(config_file, "w") as file:
+                yaml.dump(config, file)
+
+    except FileNotFoundError:
+        # If file doesn't exist, create it with the default style
+        with open(config_file, "w") as file:
+            config = {"default_style": "plain"}
+            yaml.dump(config, file)
+        default_style = "plain"
+
+    return default_style
+
+
+def set_default_style(style: str) -> None:
+    """
+    Sets the default style.
+
+    Parameters
+    ----------
+    style : str
+        The name of the style to set as the default.
+    """
+
+    # Ensure the style exists
+    available_styles = get_styles(matplotlib=True)
+    if style not in available_styles + ["matplotlib"]:
+        raise ValueError(f"Style '{style}' does not exist.")
+
+    # Set the default style
+    config_dir = user_config_dir(
+        appname="GraphingLib", roaming=True, ensure_exists=True
+    )
+    config_file = f"{config_dir}/config.yml"
+
+    try:
+        with open(config_file, "r") as file:
+            config = yaml.safe_load(file)
+        old_style = config["default_style"]
+        config["default_style"] = style
+        with open(config_file, "w") as file:
+            yaml.dump(config, file)
+        print(f"Default style changed from '{old_style}' to '{style}'.")
+    except FileNotFoundError:
+        # If file doesn't exist, create it with the given style
+        with open(config_file, "w") as file:
+            config = {"default_style": style}
+            yaml.dump(config, file)
