@@ -40,7 +40,7 @@ There are 3 categories of predefined styles.
 
 - GraphingLib styles are styles that we have created and that are always available. The default style called "plain" is one of these, and you can see the others at the bottom of :doc:`this page</handbook/figure_style_file>`.
 - All Matplotlib styles are also available. You can see the list of available Matplotlib styles `here <https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html>`_. To use the default Matplotlib style, simply specify "matplotlib" as the style.
-- You can also create, save and specify your own custom styles.
+- You can also create, save and specify your own custom styles, and you can even set your preferred style as the default style. For more information on how to do this, see :doc:`/handbook/figure_style_file`.
 
 It is important to note that the parameters controlled by the specified style can be overridden simply by specifying the desired options. **The explicitly specified options will always be prioritized.**
 

@@ -2,23 +2,31 @@
 Writing your own figure style file
 ==================================
 
-In GraphingLib, all objects have defaults for most parameters which are governed by the style you choose to give your figure when creating it:
+In GraphingLib, all objects have default values for most parameters. For example, a curve object has a default line width, and a figure object has a default background color. These defaults are governed by the style you choose to give your figure when creating it:
 
 .. code-block:: python
 
     fig = Figure(style='plain')
-    fig2 = Figure(style='horrible')
+    fig2 = Figure(style='dark')
 
-If no style is specified, the "plain" style is used. GraphingLib has a number of built-in styles which are showcased at the bottom of this page. These define **defaults**, which means you can always override them by specifying a parameter when creating an object:
+GraphingLib has a number of built-in styles which are showcased at the bottom of this page. The parameters controlled by styles are called "defaults" for a reason; they can always be overridden by explicitely specifying a parameter when creating an object:
 
 .. code-block:: python
 
     fig = Figure(figure_style="dark") # uses the "dark" style
 
-    fig2 = Figure(figure_style="dark") # "dark" style, but axes lines are red
-    fig2.set_visual_params(axes_edge_color="red")
+    fig2 = Figure(figure_style="dark")
+    fig2.set_visual_params(axes_edge_color="red") # "dark" style, but axes color is overridden
 
-You can also create your own styles or modify existing ones. To do this, you can use GraphingLib's style editor through the terminal.
+If no style is specified, the user's default style is used. This default style can be set by the user using the `set_default_style` function. Once set, the default style will be saved and used for all figures created without a specified style. The default style can also be retrieved using the `get_default_style` function.
+
+.. code-block:: python
+
+    print(gl.get_default_style()) # prints "plain"
+    gl.set_default_style("dark")
+    print(gl.get_default_style()) # prints "dark"
+
+When you install GraphingLib for the first time, the default style is the "plain" style. You can also create your own styles or modify existing ones. To do this, you can use GraphingLib's style editor through the terminal.
 
 GraphingLib's Style Editor
 ---------------------------
