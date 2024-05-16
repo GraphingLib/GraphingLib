@@ -253,6 +253,7 @@ def get_default_style() -> str:
     try:
         with open(config_file, "r") as file:
             config = yaml.safe_load(file)
+        config = config if config is not None else {}
         default_style = config["default_style"]
 
         # Ensure the style exists
@@ -267,6 +268,16 @@ def get_default_style() -> str:
             config["default_style"] = default_style
             with open(config_file, "w") as file:
                 yaml.dump(config, file)
+
+    except KeyError:
+        # If file doesn't have the default style key, create it
+        with open(config_file, "r") as file:
+            config = yaml.safe_load(file)
+        config = config if config is not None else {}
+        default_style = "plain"
+        config["default_style"] = default_style
+        with open(config_file, "w") as file:
+            yaml.dump(config, file)
 
     except FileNotFoundError:
         # If file doesn't exist, create it with the default style
@@ -302,6 +313,7 @@ def set_default_style(style: str) -> None:
     try:
         with open(config_file, "r") as file:
             config = yaml.safe_load(file)
+        config = config if config is not None else {}
         old_style = config["default_style"]
         config["default_style"] = style
         with open(config_file, "w") as file:
@@ -311,6 +323,7 @@ def set_default_style(style: str) -> None:
         # If file doesn't have the default style key, create it
         with open(config_file, "r") as file:
             config = yaml.safe_load(file)
+        config = config if config is not None else {}
         config["default_style"] = style
         with open(config_file, "w") as file:
             yaml.dump(config, file)

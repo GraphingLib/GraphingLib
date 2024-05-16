@@ -119,6 +119,15 @@ class TestGetDefaultStyle(unittest.TestCase):
 
     @patch("yaml.load")
     @patch("yaml.dump")
+    def test_get_default_style_empty_file(self, mock_dump, mock_load):
+        mock_load.return_value = None
+        style = get_default_style()
+        self.assertEqual(style, "plain")
+        self.assertEqual(mock_load.call_count, 2)
+        mock_dump.assert_called_once()
+
+    @patch("yaml.load")
+    @patch("yaml.dump")
     def test_get_default_style_non_existent_style(self, mock_dump, mock_load):
         mock_load.return_value = {"default_style": "non_existent_style"}
         with self.assertWarns(UserWarning):
@@ -147,7 +156,7 @@ class TestSetDefaultStyle(unittest.TestCase):
     @patch("yaml.load")
     @patch("yaml.dump")
     def test_set_default_style_empty_file(self, mock_dump, mock_load):
-        mock_load.return_value = {}
+        mock_load.return_value = None
         set_default_style("dark")
         self.assertEqual(mock_load.call_count, 2)
         mock_dump.assert_called_once()
