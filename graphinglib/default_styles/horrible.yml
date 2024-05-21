@@ -225,3 +225,4 @@ rc_params:
   grid.linewidth: 5
   grid.color: "orange"
   grid.alpha: 0.3
+  axes.grid: True

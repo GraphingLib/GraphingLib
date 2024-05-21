@@ -98,7 +98,6 @@ Histogram:
   pdf_show_std: true
   pdf_std_color: white
   show_params: true
-  show_pdf: null
 Hlines:
   colors: white
   line_styles: '-'
