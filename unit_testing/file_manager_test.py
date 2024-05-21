@@ -1,8 +1,8 @@
 import unittest
-from unittest import mock
+from os import path
 from unittest.mock import MagicMock, patch
-from warnings import warn
 
+import yaml
 from matplotlib import pyplot as plt
 
 from graphinglib.file_manager import (
@@ -169,3 +169,41 @@ class TestSetDefaultStyle(unittest.TestCase):
             set_default_style("non_existent_style")
         mock_load.assert_not_called()
         mock_dump.assert_not_called()
+
+
+class TestStyles(unittest.TestCase):
+    def test_styles_are_consistent(self):
+        # Start by loading the plain style
+        file_plain = f"{path.dirname(__file__)}/../graphinglib/default_styles/plain.yml"
+        with open(file_plain, "r") as file:
+            plain_dict = yaml.safe_load(file)
+
+        # For each style in built-in styles, check that the style is consistent (same keys and subkeys) with the plain style
+        for style in get_styles(gl=True, customs=False, matplotlib=False):
+            file_style = (
+                f"{path.dirname(__file__)}/../graphinglib/default_styles/{style}.yml"
+            )
+            with open(file_style, "r") as file:
+                style_dict = yaml.safe_load(file)
+            res = self._compare_dict_structure(plain_dict, style_dict)
+            if not res[0]:
+                if res[1] is not None:
+                    self.fail(
+                        f"Style {style} is inconsistent with plain style: in {res[1]}, check for following keys: {res[2]}"
+                    )
+                else:
+                    self.fail(
+                        f"Style {style} is inconsistent with plain style: check for following keys: {res[2]}"
+                    )
+
+    def _compare_dict_structure(self, dict1, dict2):
+        keys1 = set(dict1.keys())
+        keys2 = set(dict2.keys())
+        if keys1 != keys2:
+            return (False, None, keys1.symmetric_difference(keys2))
+        for key in keys1:
+            if isinstance(dict1[key], dict):
+                res = self._compare_dict_structure(dict1[key], dict2[key])
+                if not res[0]:
+                    return (False, key, res[2])
+        return (True, None, None)
