@@ -854,8 +854,9 @@ class FitFromExponential(GeneralFit):
         line_style: str = "default",
     ) -> None:
         """
-        Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
-        :class:`~graphinglib.data_plotting_1d.Curve` object using an exponential fit.
+        Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`)
+        of the form :math:`f(x) = a \exp(bx + c)` from an existing :class:`~graphinglib.data_plotting_1d.Curve`
+        object using an exponential fit.
 
         Parameters
         ----------
@@ -1018,7 +1019,7 @@ class FitFromGaussian(GeneralFit):
     label : str, optional
         Label to be displayed in the legend.
     guesses : ArrayLike, optional
-        Initial guesses for the parameters of the fit.
+        Initial guesses for the parameters of the fit. Order is amplitude (A), mean (mu), standard deviation (sigma).
     color : str
         Color of the curve.
         Default depends on the ``figure_style`` configuration.
@@ -1669,7 +1670,7 @@ class FitFromFunction(GeneralFit):
     label : str, optional
         Label to be displayed in the legend.
     guesses : ArrayLike, optional
-        Initial guesses for the parameters of the fit. Order is a, b, c, ... as written above.
+        Initial guesses for the parameters of the fit. Order is a, b, c, ...
     color : str
         Color of the curve.
         Default depends on the ``figure_style`` configuration.
