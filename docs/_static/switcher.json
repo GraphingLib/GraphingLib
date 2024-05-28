@@ -2,17 +2,17 @@
     {
         "name": "dev",
         "version": "dev",
-        "url": "https://www.graphinglib.com/en/latest/"
+        "url": "https://www.graphinglib.org/en/latest/"
     },
     {
         "name": "1.4.0",
         "version": "1.4.0",
-        "url": "https://www.graphinglib.com/en/stable/",
+        "url": "https://www.graphinglib.org/en/stable/",
         "preferred": true
     },
     {
         "name": "1.3.0",
         "version": "1.3.0",
-        "url": "https://www.graphinglib.com/en/v1.3.0/"
+        "url": "https://www.graphinglib.org/en/v1.3.0/"
     }
 ]
