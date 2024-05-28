@@ -1,18 +1,18 @@
 [
     {
-        "name" : "dev",
+        "name": "dev",
         "version": "dev",
-        "url": "https://graphinglib.readthedocs.io/en/latest/"
+        "url": "https://www.graphinglib.com/en/latest/"
     },
     {
         "name": "1.4.0",
         "version": "1.4.0",
-        "url": "https://graphinglib.readthedocs.io/en/stable/",
+        "url": "https://www.graphinglib.com/en/stable/",
         "preferred": true
     },
     {
         "name": "1.3.0",
         "version": "1.3.0",
-        "url": "https://graphinglib.readthedocs.io/en/v1.3.0/"
+        "url": "https://www.graphinglib.com/en/v1.3.0/"
     }
 ]
