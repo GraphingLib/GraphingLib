@@ -2745,24 +2745,36 @@ class Histogram:
         Default depends on the ``figure_style`` configuration.
     """
 
-    data: ArrayLike
-    number_of_bins: int
-    label: Optional[str] = None
-    face_color: str = "default"
-    edge_color: str = "default"
-    hist_type: str = "default"
-    alpha: float | Literal["default"] = "default"
-    line_width: float | Literal["default"] = "default"
-    normalize: bool | Literal["default"] = "default"
-    show_params: bool | Literal["default"] = "default"
+    def __init__(
+        self,
+        data: ArrayLike,
+        number_of_bins: int,
+        label: Optional[str] = None,
+        face_color: str = "default",
+        edge_color: str = "default",
+        hist_type: str = "default",
+        alpha: float | Literal["default"] = "default",
+        line_width: float | Literal["default"] = "default",
+        normalize: bool | Literal["default"] = "default",
+        show_pdf: str = "default",
+        show_params: bool | Literal["default"] = "default",
+    ) -> None:
+        self._hist_handle = None
+        self._data = np.asarray(data)
+        self.number_of_bins = number_of_bins
+        self.label = label
+        self.face_color = face_color
+        self.edge_color = edge_color
+        self.hist_type = hist_type
+        self.alpha = alpha
+        self.line_width = line_width
+        self.normalize = normalize
+        self.show_pdf = show_pdf
+        self.show_params = show_params
 
-    def __post_init__(self) -> None:
-        self.data = np.asarray(self.data)
-        self.mean = np.mean(self.data)
-        self.standard_deviation = np.std(self.data)
-        parameters = np.histogram(
-            self.data, bins=self.number_of_bins, density=self.normalize
-        )
+        self.mean = np.mean(self._data)
+        self.standard_deviation = np.std(self._data)
+        parameters = np.histogram(self._data, bins=number_of_bins, density=normalize)
         self._bin_heights, bin_edges = parameters[0], parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
         bin_centers = bin_edges[1:] - bin_width / 2
@@ -2829,17 +2841,67 @@ class Histogram:
         """
         residuals = fit.get_residuals()
         return cls(
-            residuals,
-            number_of_bins,
-            label,
-            face_color,
-            edge_color,
-            hist_type,
-            alpha,
-            line_width,
-            normalize,
-            show_params,
+            data=residuals,
+            number_of_bins=number_of_bins,
+            label=label,
+            face_color=face_color,
+            edge_color=edge_color,
+            hist_type=hist_type,
+            alpha=alpha,
+            line_width=line_width,
+            normalize=normalize,
+            show_params=show_params,
         )
+
+    @property
+    def data(self) -> np.ndarray:
+        return self._data
+
+    @data.setter
+    def data(self, data: ArrayLike) -> None:
+        self._data = np.asarray(data)
+        self.mean = np.mean(self._data)
+        self.standard_deviation = np.std(self._data)
+        parameters = np.histogram(
+            self._data, bins=self.number_of_bins, density=self.normalize
+        )
+        self._bin_heights, bin_edges = parameters[0], parameters[1]
+        bin_width = bin_edges[1] - bin_edges[0]
+        bin_centers = bin_edges[1:] - bin_width / 2
+        self._bin_width = bin_width
+        self._bin_centers = bin_centers
+        self._bin_edges = bin_edges
+        self._create_label()
+
+        if self._hist_handle is not None:
+            ax = plt.gca()
+            self._hist_handle[2][0].set_label(None)
+            counts, bins, bars = self._hist_handle
+            _ = [b.remove() for b in bars]
+
+            params = {
+                "facecolor": (
+                    to_rgba(self.face_color, self.alpha)
+                    if self.face_color != "default" and self.alpha != "default"
+                    else "default"
+                ),
+                "edgecolor": (
+                    to_rgba(self.edge_color, 1)
+                    if self.edge_color != "default"
+                    else self.edge_color
+                ),
+                "histtype": self.hist_type,
+                "linewidth": self.line_width,
+                "density": self.normalize,
+            }
+            params = {k: v for k, v in params.items() if v != "default"}
+            self._hist_handle = ax.hist(
+                self._data,
+                bins=self.number_of_bins,
+                **params,
+            )
+            # self.handle.set_label(self.label)
+            self._hist_handle[2][0].set_label(self.label)
 
     def _create_label(self) -> None:
         """
@@ -2917,6 +2979,7 @@ class Histogram:
             np.array([[0, 2, 2, 3, 3, 1, 1, 0, 0], [0, 0, 1, 1, 2, 2, 3, 3, 0]]).T,
             **params,
         )
+        self.handle.set_label(self.label)
         params = {
             "facecolor": (
                 to_rgba(self.face_color, self.alpha)
@@ -2933,10 +2996,9 @@ class Histogram:
             "density": self.normalize,
         }
         params = {k: v for k, v in params.items() if v != "default"}
-        axes.hist(
-            self.data,
+        self._hist_handle = axes.hist(
+            self._data,
             bins=self.number_of_bins,
-            label=self.label,
             zorder=z_order - 1,
             **params,
         )

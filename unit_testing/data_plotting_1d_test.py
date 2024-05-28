@@ -982,7 +982,7 @@ class TestHistogram(unittest.TestCase):
         self.assertEqual(self.testHist.label[:19], "Random Distribution")
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testHist.data, list | ndarray)
+        self.assertIsInstance(self.testHist._data, list | ndarray)
 
     def test_face_color_is_str(self):
         self.assertEqual(self.testHist.face_color, "silver")
@@ -1014,7 +1014,7 @@ class TestHistogram(unittest.TestCase):
         self.assertEqual(hist_copy.number_of_bins, self.testHist.number_of_bins)
         self.assertEqual(hist_copy.alpha, self.testHist.alpha)
         self.assertEqual(hist_copy.hist_type, self.testHist.hist_type)
-        self.assertListEqual(list(hist_copy.data), list(self.testHist.data))
+        self.assertListEqual(list(hist_copy._data), list(self.testHist._data))
 
 
 if __name__ == "__main__":

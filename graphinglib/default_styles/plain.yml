@@ -36,6 +36,7 @@ Histogram:
   pdf_curve_color: "k"
   pdf_mean_color: "r"
   pdf_std_color: "k"
+  show_pdf: False
 
 Hlines:
   colors: "k"
