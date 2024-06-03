@@ -365,14 +365,14 @@ class TestScatter(unittest.TestCase):
         self.assertIsInstance(self.testScatter, Scatter)
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testScatter.x_data, list | ndarray)
+        self.assertIsInstance(self.testScatter._x_data, list | ndarray)
 
     def test_color_is_str(self):
-        self.assertIsInstance(self.testScatter.face_color, str)
-        self.assertIsInstance(self.testScatter.edge_color, str)
+        self.assertIsInstance(self.testScatter._face_color, str)
+        self.assertIsInstance(self.testScatter._edge_color, str)
 
     def test_label_is_str(self):
-        self.assertIsInstance(self.testScatter.label, str)
+        self.assertIsInstance(self.testScatter._label, str)
 
     def test_from_function(self):
         self.assertIsInstance(
@@ -404,10 +404,10 @@ class TestScatter(unittest.TestCase):
             cap_thickness=10,
             errorbars_line_width=10,
         )
-        self.assertEqual(self.testScatter.errorbars_color, "red")
-        self.assertEqual(self.testScatter.errorbars_line_width, 10)
-        self.assertEqual(self.testScatter.cap_thickness, 10)
-        self.assertEqual(self.testScatter.cap_width, 10)
+        self.assertEqual(self.testScatter._errorbars_color, "red")
+        self.assertEqual(self.testScatter._errorbars_line_width, 10)
+        self.assertEqual(self.testScatter._cap_thickness, 10)
+        self.assertEqual(self.testScatter._cap_width, 10)
 
     def test_create_point_at_x(self):
         point = self.testScatter.create_point_at_x(0.5)
@@ -609,19 +609,19 @@ class TestScatter(unittest.TestCase):
         scatter = abs(self.testScatter)
         self.assertIsInstance(scatter, Scatter)
         self.assertListEqual(
-            list(scatter.y_data), [abs(y) for y in self.testScatter.y_data]
+            list(scatter._y_data), [abs(y) for y in self.testScatter._y_data]
         )
 
     def test_copy(self):
         scatter_copy = self.testScatter.copy()
         self.assertIsInstance(scatter_copy, Scatter)
-        self.assertEqual(scatter_copy.label, self.testScatter.label)
-        self.assertEqual(scatter_copy.face_color, self.testScatter.face_color)
-        self.assertEqual(scatter_copy.edge_color, self.testScatter.edge_color)
-        self.assertEqual(scatter_copy.marker_size, self.testScatter.marker_size)
-        self.assertEqual(scatter_copy.marker_style, self.testScatter.marker_style)
-        self.assertListEqual(list(scatter_copy.x_data), list(self.testScatter.x_data))
-        self.assertListEqual(list(scatter_copy.y_data), list(self.testScatter.y_data))
+        self.assertEqual(scatter_copy._label, self.testScatter._label)
+        self.assertEqual(scatter_copy._face_color, self.testScatter._face_color)
+        self.assertEqual(scatter_copy._edge_color, self.testScatter._edge_color)
+        self.assertEqual(scatter_copy._marker_size, self.testScatter._marker_size)
+        self.assertEqual(scatter_copy._marker_style, self.testScatter._marker_style)
+        self.assertListEqual(list(scatter_copy._x_data), list(self.testScatter._x_data))
+        self.assertListEqual(list(scatter_copy._y_data), list(self.testScatter._y_data))
 
     def test_create_slice_x(self):
         scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
@@ -631,8 +631,8 @@ class TestScatter(unittest.TestCase):
         correct_x_data = correct_x_data[correct_x_data >= -5]
         correct_x_data = correct_x_data[correct_x_data <= 5]
         correct_y_data = correct_x_data**2
-        self.assertListEqual(list(scatter_slice.x_data), list(correct_x_data))
-        self.assertListEqual(list(scatter_slice.y_data), list(correct_y_data))
+        self.assertListEqual(list(scatter_slice._x_data), list(correct_x_data))
+        self.assertListEqual(list(scatter_slice._y_data), list(correct_y_data))
 
     def test_create_slice_y(self):
         scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
@@ -641,8 +641,8 @@ class TestScatter(unittest.TestCase):
         correct_x_data = linspace(-10, 10, 100)
         correct_x_data = correct_x_data[correct_x_data**2 <= 25]
         correct_y_data = correct_x_data**2
-        self.assertListEqual(list(scatter_slice.x_data), list(correct_x_data))
-        self.assertListEqual(list(scatter_slice.y_data), list(correct_y_data))
+        self.assertListEqual(list(scatter_slice._x_data), list(correct_x_data))
+        self.assertListEqual(list(scatter_slice._y_data), list(correct_y_data))
 
 
 class TestHistogram(unittest.TestCase):
