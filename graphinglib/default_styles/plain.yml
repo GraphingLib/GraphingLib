@@ -131,10 +131,10 @@ FitFromFOTF:
   line_style: "-"
 
 Heatmap:
-  aspect_ratio: "equal"
-  origin_position: "upper"
-  color_map: "coolwarm"
-  show_color_bar: True
+  _aspect_ratio: "equal"
+  _origin_position: "upper"
+  _color_map: "coolwarm"
+  _show_color_bar: True
 
 Contour:
   number_of_levels: 10

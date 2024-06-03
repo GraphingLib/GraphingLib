@@ -80,10 +80,10 @@ FitFromFOTF:
   line_width: 2
   line_style: "-"
 Heatmap:
-  aspect_ratio: equal
-  color_map: RdBu
-  origin_position: upper
-  show_color_bar: True
+  _aspect_ratio: equal
+  _color_map: RdBu
+  _origin_position: upper
+  _show_color_bar: True
 Histogram:
   _alpha: 0.3
   _edge_color: '#3e82a0'

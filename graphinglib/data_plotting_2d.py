@@ -55,24 +55,70 @@ class Heatmap:
             `Interpolations for imshow <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_.
     """
 
-    image: ArrayLike | str
-    x_axis_range: Optional[tuple[float, float]] = None
-    y_axis_range: Optional[tuple[float, float]] = None
-    color_map: str | Colormap = "default"
-    show_color_bar: bool | Literal["default"] = "default"
-    alpha_value: float = 1.0
-    aspect_ratio: str | float = "default"
-    origin_position: str = "default"
-    interpolation: str = "none"
+    def __init__(
+        self,
+        image: ArrayLike | str,
+        x_axis_range: Optional[tuple[float, float]] = None,
+        y_axis_range: Optional[tuple[float, float]] = None,
+        color_map: str | Colormap = "default",
+        show_color_bar: bool | Literal["default"] = "default",
+        alpha_value: float = 1.0,
+        aspect_ratio: str | float = "default",
+        origin_position: str = "default",
+        interpolation: str = "none",
+    ) -> None:
+        """
+        The class implements heatmaps.
 
-    def __post_init__(self) -> None:
-        if isinstance(self.image, str):
-            self.image = imread(self.image)
-            self.show_color_bar = False
+        Parameters
+        ----------
+        image : ArrayLike or str
+            Image to display as an array of values or from a file.
+        x_axis_range, y_axis_range : tuple[float, float], optional
+            The range of x and y values used for the axes as tuples containing the
+            start and end of the range.
+        color_map : str, Colormap
+            The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
+            string (named colormap from Matplotlib) or a Colormap object.
+            Default depends on the ``figure_style`` configuration.
+        show_color_bar : bool
+            Whether or not to display the color bar next to the plot.
+            Defaults to ``True``.
+        alpha_value : float
+            Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
+            Defaults to 1.0.
+        aspect_ratio : str or float
+            Aspect ratio of the axes.
+            Default depends on the ``figure_style`` configuration.
+        origin_position : str
+            Position of the origin of the axes (upper left or lower left corner).
+            Default depends on the ``figure_style`` configuration.
+        interpolation : str
+            Interpolation method to be applied to the image.
+            Defaults to ``"none"``.
+
+            .. seealso::
+
+                For other interpolation methods, refer to
+                `Interpolations for imshow <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_.
+        """
+        self._image = image
+        self._x_axis_range = x_axis_range
+        self._y_axis_range = y_axis_range
+        self._color_map = color_map
+        self._show_color_bar = show_color_bar
+        self._alpha_value = alpha_value
+        self._aspect_ratio = aspect_ratio
+        self._origin_position = origin_position
+        self._interpolation = interpolation
+
+        if isinstance(self._image, str):
+            self._image = imread(self._image)
+            self._show_color_bar = False
         else:
-            self.image = np.array(self.image)
-        if self.x_axis_range is not None and self.y_axis_range is not None:
-            self._xy_range = self.x_axis_range + self.y_axis_range
+            self._image = np.asarray(self._image)
+        if self._x_axis_range is not None and self._y_axis_range is not None:
+            self._xy_range = self._x_axis_range + self._y_axis_range
 
     @classmethod
     def from_function(
@@ -244,37 +290,37 @@ class Heatmap:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if self.x_axis_range is not None and self.y_axis_range is not None:
+        if self._x_axis_range is not None and self._y_axis_range is not None:
             params = {
-                "cmap": self.color_map,
-                "alpha": self.alpha_value,
-                "aspect": self.aspect_ratio,
-                "origin": self.origin_position,
-                "interpolation": self.interpolation,
+                "cmap": self._color_map,
+                "alpha": self._alpha_value,
+                "aspect": self._aspect_ratio,
+                "origin": self._origin_position,
+                "interpolation": self._interpolation,
                 "extent": self._xy_range,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             image = axes.imshow(
-                self.image,
+                self._image,
                 zorder=z_order,
                 **params,
             )
         else:
             params = {
-                "cmap": self.color_map,
-                "alpha": self.alpha_value,
-                "aspect": self.aspect_ratio,
-                "origin": self.origin_position,
-                "interpolation": self.interpolation,
+                "cmap": self._color_map,
+                "alpha": self._alpha_value,
+                "aspect": self._aspect_ratio,
+                "origin": self._origin_position,
+                "interpolation": self._interpolation,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             image = axes.imshow(
-                self.image,
+                self._image,
                 zorder=z_order,
                 **params,
             )
         fig = axes.get_figure()
-        if self.show_color_bar:
+        if self._show_color_bar:
             fig.colorbar(image, ax=axes)
 
 
