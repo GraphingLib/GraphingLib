@@ -314,15 +314,15 @@ class TestStream(unittest.TestCase):
         )
 
         self.assertIsInstance(stream, Stream)
-        self.assertListEqual(stream.x_data.tolist(), x_grid.tolist())
-        self.assertListEqual(stream.y_data.tolist(), y_grid.tolist())
-        self.assertListEqual(stream.u_data.tolist(), u.tolist())
-        self.assertListEqual(stream.v_data.tolist(), v.tolist())
-        self.assertEqual(stream.density, 0.7)
-        self.assertEqual(stream.line_width, 2)
-        self.assertEqual(stream.color, "black")
-        self.assertEqual(stream.color_map, "viridis")
-        self.assertEqual(stream.arrow_size, 2)
+        self.assertListEqual(stream._x_data.tolist(), x_grid.tolist())
+        self.assertListEqual(stream._y_data.tolist(), y_grid.tolist())
+        self.assertListEqual(stream._u_data.tolist(), u.tolist())
+        self.assertListEqual(stream._v_data.tolist(), v.tolist())
+        self.assertEqual(stream._density, 0.7)
+        self.assertEqual(stream._line_width, 2)
+        self.assertEqual(stream._color, "black")
+        self.assertEqual(stream._color_map, "viridis")
+        self.assertEqual(stream._arrow_size, 2)
 
     def test_from_function(self):
         stream = Stream.from_function(
@@ -340,16 +340,16 @@ class TestStream(unittest.TestCase):
 
         self.assertIsInstance(stream, Stream)
         self.assertListEqual(
-            stream.x_data.tolist(), np.linspace(0, 3 * np.pi, 20).tolist()
+            stream._x_data.tolist(), np.linspace(0, 3 * np.pi, 20).tolist()
         )
         self.assertListEqual(
-            stream.y_data.tolist(), np.linspace(0, 3 * np.pi, 20).tolist()
+            stream._y_data.tolist(), np.linspace(0, 3 * np.pi, 20).tolist()
         )
-        self.assertEqual(stream.density, 0.7)
-        self.assertEqual(stream.line_width, 2)
-        self.assertEqual(stream.color, "black")
-        self.assertEqual(stream.color_map, "viridis")
-        self.assertEqual(stream.arrow_size, 2)
+        self.assertEqual(stream._density, 0.7)
+        self.assertEqual(stream._line_width, 2)
+        self.assertEqual(stream._color, "black")
+        self.assertEqual(stream._color_map, "viridis")
+        self.assertEqual(stream._arrow_size, 2)
 
     def test_plot_element(self):
         x_grid, y_grid = np.meshgrid(np.linspace(0, 11, 30), np.linspace(0, 11, 30))
@@ -393,15 +393,15 @@ class TestStream(unittest.TestCase):
         )
         stream_copy = stream.copy()
         self.assertIsInstance(stream_copy, Stream)
-        self.assertListEqual(stream_copy.x_data.tolist(), x_grid.tolist())
-        self.assertListEqual(stream_copy.y_data.tolist(), y_grid.tolist())
-        self.assertListEqual(stream_copy.u_data.tolist(), u.tolist())
-        self.assertListEqual(stream_copy.v_data.tolist(), v.tolist())
-        self.assertEqual(stream_copy.density, 0.7)
-        self.assertEqual(stream_copy.line_width, 2)
-        self.assertEqual(stream_copy.color, "black")
-        self.assertEqual(stream_copy.color_map, "viridis")
-        self.assertEqual(stream_copy.arrow_size, 2)
+        self.assertListEqual(stream_copy._x_data.tolist(), x_grid.tolist())
+        self.assertListEqual(stream_copy._y_data.tolist(), y_grid.tolist())
+        self.assertListEqual(stream_copy._u_data.tolist(), u.tolist())
+        self.assertListEqual(stream_copy._v_data.tolist(), v.tolist())
+        self.assertEqual(stream_copy._density, 0.7)
+        self.assertEqual(stream_copy._line_width, 2)
+        self.assertEqual(stream_copy._color, "black")
+        self.assertEqual(stream_copy._color_map, "viridis")
+        self.assertEqual(stream_copy._arrow_size, 2)
 
 
 if __name__ == "__main__":

@@ -279,6 +279,81 @@ class Heatmap:
             interpolation,
         )
 
+    @property
+    def image(self) -> ArrayLike:
+        return self._image
+
+    @image.setter
+    def image(self, image: ArrayLike | str) -> None:
+        if isinstance(image, str):
+            self._image = imread(image)
+        else:
+            self._image = np.asarray(image)
+
+    @property
+    def x_axis_range(self) -> Optional[tuple[float, float]]:
+        return self._x_axis_range
+
+    @x_axis_range.setter
+    def x_axis_range(self, x_axis_range: Optional[tuple[float, float]]) -> None:
+        self._x_axis_range = x_axis_range
+
+    @property
+    def y_axis_range(self) -> Optional[tuple[float, float]]:
+        return self._y_axis_range
+
+    @y_axis_range.setter
+    def y_axis_range(self, y_axis_range: Optional[tuple[float, float]]) -> None:
+        self._y_axis_range = y_axis_range
+
+    @property
+    def color_map(self) -> str | Colormap:
+        return self._color_map
+
+    @color_map.setter
+    def color_map(self, color_map: str | Colormap) -> None:
+        self._color_map = color_map
+
+    @property
+    def show_color_bar(self) -> bool:
+        return self._show_color_bar
+
+    @show_color_bar.setter
+    def show_color_bar(self, show_color_bar: bool) -> None:
+        self._show_color_bar = show_color_bar
+
+    @property
+    def alpha_value(self) -> float:
+        return self._alpha_value
+
+    @alpha_value.setter
+    def alpha_value(self, alpha_value: float) -> None:
+        self._alpha_value = alpha_value
+
+    @property
+    def aspect_ratio(self) -> str | float:
+        return self._aspect_ratio
+
+    @aspect_ratio.setter
+    def aspect_ratio(self, aspect_ratio: str | float) -> None:
+        self._aspect_ratio = aspect_ratio
+
+    @property
+    def origin_position(self) -> str:
+        return self._origin_position
+
+    @origin_position.setter
+    def origin_position(self, origin_position: str) -> None:
+        self._origin_position = origin_position
+
+    @property
+    def interpolation(self) -> str:
+        return self._interpolation
+
+    @interpolation.setter
+    def interpolation(self, interpolation: str) -> None:
+        self._interpolation = interpolation
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
@@ -479,6 +554,86 @@ class VectorField:
             color,
         )
 
+    @property
+    def x_data(self) -> ArrayLike:
+        return self._x_data
+
+    @x_data.setter
+    def x_data(self, x_data: ArrayLike) -> None:
+        self._x_data = np.asarray(x_data)
+
+    @property
+    def y_data(self) -> ArrayLike:
+        return self._y_data
+
+    @y_data.setter
+    def y_data(self, y_data: ArrayLike) -> None:
+        self._y_data = np.asarray(y_data)
+
+    @property
+    def u_data(self) -> ArrayLike:
+        return self._u_data
+
+    @u_data.setter
+    def u_data(self, u_data: ArrayLike) -> None:
+        self._u_data = np.asarray(u_data)
+
+    @property
+    def v_data(self) -> ArrayLike:
+        return self._v_data
+
+    @v_data.setter
+    def v_data(self, v_data: ArrayLike) -> None:
+        self._v_data = np.asarray(v_data)
+
+    @property
+    def arrow_width(self) -> float:
+        return self._arrow_width
+
+    @arrow_width.setter
+    def arrow_width(self, arrow_width: float) -> None:
+        self._arrow_width = arrow_width
+
+    @property
+    def arrow_head_width(self) -> float:
+        return self._arrow_head_width
+
+    @arrow_head_width.setter
+    def arrow_head_width(self, arrow_head_width: float) -> None:
+        self._arrow_head_width = arrow_head_width
+
+    @property
+    def arrow_head_length(self) -> float:
+        return self._arrow_head_length
+
+    @arrow_head_length.setter
+    def arrow_head_length(self, arrow_head_length: float) -> None:
+        self._arrow_head_length = arrow_head_length
+
+    @property
+    def arrow_head_axis_length(self) -> float:
+        return self._arrow_head_axis_length
+
+    @arrow_head_axis_length.setter
+    def arrow_head_axis_length(self, arrow_head_axis_length: float) -> None:
+        self._arrow_head_axis_length = arrow_head_axis_length
+
+    @property
+    def angle_in_data_coords(self) -> bool:
+        return self._angle_in_data_coords
+
+    @angle_in_data_coords.setter
+    def angle_in_data_coords(self, angle_in_data_coords: bool) -> None:
+        self._angle_in_data_coords = angle_in_data_coords
+
+    @property
+    def color(self) -> str:
+        return self._color
+
+    @color.setter
+    def color(self, color: str) -> None:
+        self._color = color
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.VectorField`.
@@ -659,6 +814,70 @@ class Contour:
             alpha,
         )
 
+    @property
+    def x_mesh(self) -> ArrayLike:
+        return self._x_mesh
+
+    @x_mesh.setter
+    def x_mesh(self, x_mesh: ArrayLike) -> None:
+        self._x_mesh = np.asarray(x_mesh)
+
+    @property
+    def y_mesh(self) -> ArrayLike:
+        return self._y_mesh
+
+    @y_mesh.setter
+    def y_mesh(self, y_mesh: ArrayLike) -> None:
+        self._y_mesh = np.asarray(y_mesh)
+
+    @property
+    def z_data(self) -> ArrayLike:
+        return self._z_data
+
+    @z_data.setter
+    def z_data(self, z_data: ArrayLike) -> None:
+        self._z_data = np.asarray(z_data)
+
+    @property
+    def number_of_levels(self) -> int:
+        return self._number_of_levels
+
+    @number_of_levels.setter
+    def number_of_levels(self, number_of_levels: int) -> None:
+        self._number_of_levels = number_of_levels
+
+    @property
+    def color_map(self) -> str | Colormap:
+        return self._color_map
+
+    @color_map.setter
+    def color_map(self, color_map: str | Colormap) -> None:
+        self._color_map = color_map
+
+    @property
+    def show_color_bar(self) -> bool:
+        return self._show_color_bar
+
+    @show_color_bar.setter
+    def show_color_bar(self, show_color_bar: bool) -> None:
+        self._show_color_bar = show_color_bar
+
+    @property
+    def filled(self) -> bool:
+        return self._filled
+
+    @filled.setter
+    def filled(self, filled: bool) -> None:
+        self._filled = filled
+
+    @property
+    def alpha(self) -> float:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float) -> None:
+        self._alpha = alpha
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Contour`.
@@ -723,21 +942,50 @@ class Stream:
         Arrow size multiplier. Default depends on the ``figure_style`` configuration.
     """
 
-    x_data: ArrayLike
-    y_data: ArrayLike
-    u_data: ArrayLike
-    v_data: ArrayLike
-    density: float | tuple[float, float] = 1
-    line_width: float | Literal["default"] = "default"
-    color: str | ArrayLike | Literal["default"] = "default"
-    color_map: str | Colormap | Literal["default"] = "default"
-    arrow_size: float | Literal["default"] = "default"
+    def __init__(
+        self,
+        x_data: ArrayLike,
+        y_data: ArrayLike,
+        u_data: ArrayLike,
+        v_data: ArrayLike,
+        density: float | tuple[float, float] = 1,
+        line_width: float | Literal["default"] = "default",
+        color: str | ArrayLike | Literal["default"] = "default",
+        color_map: str | Colormap | Literal["default"] = "default",
+        arrow_size: float | Literal["default"] = "default",
+    ) -> None:
+        """
+        This class implements stream plots.
 
-    def __post_init__(self) -> None:
-        self.x_data = np.array(self.x_data)
-        self.y_data = np.array(self.y_data)
-        self.u_data = np.array(self.u_data)
-        self.v_data = np.array(self.v_data)
+        Parameters
+        ----------
+        x_data, y_data : ArrayLike
+            x and y coordinates of the vectors as a mesh grid.
+        u_data, v_data : ArrayLike
+            Magnitudes of the vectors for each point of the mesh grid.
+        density : float or tuple[float, float]
+            Density of stream lines. Can be specified independently for the x and y coordinates
+            by specifying a density tuple instead. Defaults to 1.
+        line_width : float
+            Width of the stream lines. Default depends on the ``figure_style`` configuration.
+        color : str or ArrayLike
+            Color of the stream lines. If an array of intensities is provided, the values are mapped to the specified color map.
+            Default depends on the ``figure_style`` configuration.
+        color_map : str or Colormap
+            Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+            Default depends on the ``figure_style`` configuration.
+        arrow_size : float
+            Arrow size multiplier. Default depends on the ``figure_style`` configuration.
+        """
+        self._x_data = np.asarray(x_data)
+        self._y_data = np.asarray(y_data)
+        self._u_data = np.asarray(u_data)
+        self._v_data = np.asarray(v_data)
+        self._density = density
+        self._line_width = line_width
+        self._color = color
+        self._color_map = color_map
+        self._arrow_size = arrow_size
 
     @classmethod
     def from_function(
@@ -802,22 +1050,22 @@ class Stream:
         Plots the element in the specified Axes.
         """
         params = {
-            "density": self.density,
-            "linewidth": self.line_width,
-            "cmap": self.color_map,
-            "arrowsize": self.arrow_size,
+            "density": self._density,
+            "linewidth": self._line_width,
+            "cmap": self._color_map,
+            "arrowsize": self._arrow_size,
         }
         params = {k: v for k, v in params.items() if v != "default"}
-        if isinstance(self.color, str) and self.color == "default":
+        if isinstance(self._color, str) and self._color == "default":
             pass
         else:
-            params["color"] = self.color
+            params["color"] = self._color
 
         axes.streamplot(
-            x=self.x_data,
-            y=self.y_data,
-            u=self.u_data,
-            v=self.v_data,
+            x=self._x_data,
+            y=self._y_data,
+            u=self._u_data,
+            v=self._v_data,
             zorder=z_order,
             **params,
         )

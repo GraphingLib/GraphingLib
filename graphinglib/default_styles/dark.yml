@@ -122,10 +122,10 @@ Scatter:
   _marker_size: 8
   _marker_style: o
 Stream:
-  arrow_size: 1
-  color: null
-  color_map: null
-  line_width: 1
+  _arrow_size: 1
+  _color: null
+  _color_map: null
+  _line_width: 1
 SubFigure:
   log_scale_x: false
   log_scale_y: false

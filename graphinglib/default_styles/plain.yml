@@ -162,10 +162,10 @@ Table:
   col_align: "center"
 
 Stream:
-  line_width: 1
-  color: 
-  color_map: 
-  arrow_size: 1
+  _line_width: 1
+  _color: 
+  _color_map: 
+  _arrow_size: 1
 
 Circle:
   fill: True
