@@ -543,19 +543,60 @@ class Contour:
         Default depends on the ``figure_style`` configuration.
     """
 
-    x_mesh: ArrayLike
-    y_mesh: ArrayLike
-    z_data: ArrayLike
-    number_of_levels: int | Literal["default"] = "default"
-    color_map: str | Colormap | Literal["default"] = "default"
-    show_color_bar: bool | Literal["default"] = "default"
-    filled: bool | Literal["default"] = "default"
-    alpha: float | Literal["default"] = "default"
+    _x_mesh: ArrayLike
+    _y_mesh: ArrayLike
+    _z_data: ArrayLike
+    _number_of_levels: int | Literal["default"] = "default"
+    _color_map: str | Colormap | Literal["default"] = "default"
+    _show_color_bar: bool | Literal["default"] = "default"
+    _filled: bool | Literal["default"] = "default"
+    _alpha: float | Literal["default"] = "default"
 
-    def __post_init__(self) -> None:
-        self.x_mesh = np.array(self.x_mesh)
-        self.y_mesh = np.array(self.y_mesh)
-        self.z_data = np.array(self.z_data)
+    def __init__(
+        self,
+        x_mesh: ArrayLike,
+        y_mesh: ArrayLike,
+        z_data: ArrayLike,
+        number_of_levels: int | Literal["default"] = "default",
+        color_map: str | Colormap | Literal["default"] = "default",
+        show_color_bar: bool | Literal["default"] = "default",
+        filled: bool | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
+    ) -> None:
+        """
+        This class implements contour plots.
+
+        Parameters
+        ----------
+        x_mesh, y_mesh : ArrayLike
+            x and y coordinates of the mesh grid.
+        z_data : ArrayLike
+            Data for each point of the mesh.
+        number_of_levels : int
+            Number of distinct levels of contour plot.
+            Default depends on the ``figure_style`` configuration.
+        color_map : str or Colormap
+            The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
+            string (named colormap from Matplotlib) or a Colormap object.
+            Default depends on the ``figure_style`` configuration.
+        show_color_bar : bool
+            Whether or not to display the color bar next to the plot.
+            Default depends on the ``figure_style`` configuration.
+        filled : bool
+            Wheter or not to fill the contour with color.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the filled contour.
+            Default depends on the ``figure_style`` configuration.
+        """
+        self._x_mesh = np.asarray(x_mesh)
+        self._y_mesh = np.asarray(y_mesh)
+        self._z_data = np.asarray(z_data)
+        self._number_of_levels = number_of_levels
+        self._color_map = color_map
+        self._show_color_bar = show_color_bar
+        self._filled = filled
+        self._alpha = alpha
 
     @classmethod
     def from_function(
@@ -630,28 +671,28 @@ class Contour:
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         params = {
-            "levels": self.number_of_levels,
-            "cmap": self.color_map,
-            "alpha": self.alpha,
+            "levels": self._number_of_levels,
+            "cmap": self._color_map,
+            "alpha": self._alpha,
         }
         params = {k: v for k, v in params.items() if v != "default"}
-        if self.filled:
+        if self._filled:
             cont = axes.contourf(
-                self.x_mesh,
-                self.y_mesh,
-                self.z_data,
+                self._x_mesh,
+                self._y_mesh,
+                self._z_data,
                 zorder=z_order,
                 **params,
             )
         else:
             cont = axes.contour(
-                self.x_mesh,
-                self.y_mesh,
-                self.z_data,
+                self._x_mesh,
+                self._y_mesh,
+                self._z_data,
                 zorder=z_order,
                 **params,
             )
-        if self.show_color_bar:
+        if self._show_color_bar:
             fig = axes.get_figure()
             fig.colorbar(cont, ax=axes)
 

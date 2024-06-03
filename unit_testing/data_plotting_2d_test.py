@@ -291,9 +291,9 @@ class TestContour(unittest.TestCase):
         )
         contour_copy = contour.copy()
         self.assertIsInstance(contour_copy, Contour)
-        self.assertListEqual(contour_copy.x_mesh.tolist(), xx.tolist())
-        self.assertListEqual(contour_copy.y_mesh.tolist(), yy.tolist())
-        self.assertListEqual(contour_copy.z_data.tolist(), z.tolist())
+        self.assertListEqual(contour_copy._x_mesh.tolist(), xx.tolist())
+        self.assertListEqual(contour_copy._y_mesh.tolist(), yy.tolist())
+        self.assertListEqual(contour_copy._z_data.tolist(), z.tolist())
 
 
 class TestStream(unittest.TestCase):

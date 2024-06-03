@@ -137,11 +137,11 @@ Heatmap:
   _show_color_bar: True
 
 Contour:
-  number_of_levels: 10
-  color_map: "coolwarm"
-  show_color_bar: True
-  filled: True
-  alpha: 1.0
+  _number_of_levels: 10
+  _color_map: "coolwarm"
+  _show_color_bar: True
+  _filled: True
+  _alpha: 1.0
 
 VectorField:
   _arrow_width: 0.005
