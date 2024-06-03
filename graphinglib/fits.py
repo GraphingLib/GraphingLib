@@ -213,14 +213,14 @@ class GeneralFit(Curve):
         }
         params = {key: value for key, value in params.items() if value != "default"}
         (self.handle,) = axes.plot(
-            self.x_data,
-            self.y_data,
+            self._x_data,
+            self._y_data,
             label=self.label,
             zorder=z_order,
             **params,
         )
         if self._res_curves_to_be_plotted:
-            y_fit = self.y_data
+            y_fit = self._y_data
             residuals = self.get_residuals()
             std = np.std(residuals)
             y_fit_plus_std = y_fit + (self.res_sigma_multiplier * std)
@@ -232,13 +232,13 @@ class GeneralFit(Curve):
             }
             params = {key: value for key, value in params.items() if value != "default"}
             axes.plot(
-                self.x_data,
+                self._x_data,
                 y_fit_minus_std,
                 zorder=z_order,
                 **params,
             )
             axes.plot(
-                self.x_data,
+                self._x_data,
                 y_fit_plus_std,
                 zorder=z_order,
                 **params,
@@ -251,11 +251,11 @@ class GeneralFit(Curve):
                 kwargs["color"] = self.handle[0].get_color()
             params = {key: value for key, value in kwargs.items() if value != "default"}
             axes.fill_between(
-                self.x_data,
-                self.y_data,
+                self._x_data,
+                self._y_data,
                 where=np.logical_and(
-                    self.x_data >= self._fill_curve_between[0],
-                    self.x_data <= self._fill_curve_between[1],
+                    self._x_data >= self._fill_curve_between[0],
+                    self._x_data <= self._fill_curve_between[1],
                 ),
                 zorder=z_order - 2,
                 **params,
@@ -298,8 +298,8 @@ class GeneralFit(Curve):
         residuals : np.ndarray
             Array of residuals.
         """
-        y_data = self.function(self.curve_to_be_fit.x_data)
-        residuals = y_data - self.curve_to_be_fit.y_data
+        y_data = self.function(self.curve_to_be_fit._x_data)
+        residuals = y_data - self.curve_to_be_fit._y_data
         return residuals
 
     def get_Rsquared(self) -> float:
@@ -314,7 +314,7 @@ class GeneralFit(Curve):
         Rsquared = 1 - (
             np.sum(self.get_residuals() ** 2)
             / np.sum(
-                (self.curve_to_be_fit.y_data - np.mean(self.curve_to_be_fit.y_data))
+                (self.curve_to_be_fit._y_data - np.mean(self.curve_to_be_fit._y_data))
                 ** 2
             )
         )
@@ -407,7 +407,7 @@ class FitFromPolynomial(GeneralFit):
         """
         self.curve_to_be_fit = curve_to_be_fit
         inversed_coeffs, inversed_cov_matrix = np.polyfit(
-            self.curve_to_be_fit.x_data, self.curve_to_be_fit.y_data, degree, cov=True
+            self.curve_to_be_fit._x_data, self.curve_to_be_fit._y_data, degree, cov=True
         )
         self.coeffs = inversed_coeffs[::-1]
         self.cov_matrix = np.flip(inversed_cov_matrix)
@@ -422,13 +422,13 @@ class FitFromPolynomial(GeneralFit):
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit.x_data)
-            if len(self.curve_to_be_fit.x_data) > 500
+            len(self.curve_to_be_fit._x_data)
+            if len(self.curve_to_be_fit._x_data) > 500
             else 500
         )
         self.x_data = np.linspace(
-            self.curve_to_be_fit.x_data[0],
-            self.curve_to_be_fit.x_data[-1],
+            self.curve_to_be_fit._x_data[0],
+            self.curve_to_be_fit._x_data[-1],
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
@@ -639,13 +639,13 @@ class FitFromSine(GeneralFit):
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit.x_data)
-            if len(self.curve_to_be_fit.x_data) > 500
+            len(self.curve_to_be_fit._x_data)
+            if len(self.curve_to_be_fit._x_data) > 500
             else 500
         )
         self.x_data = np.linspace(
-            self.curve_to_be_fit.x_data[0],
-            self.curve_to_be_fit.x_data[-1],
+            self.curve_to_be_fit._x_data[0],
+            self.curve_to_be_fit._x_data[-1],
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
@@ -674,8 +674,8 @@ class FitFromSine(GeneralFit):
         """
         parameters, self.cov_matrix = curve_fit(
             self._sine_func_template,
-            self.curve_to_be_fit.x_data,
-            self.curve_to_be_fit.y_data,
+            self.curve_to_be_fit._x_data,
+            self.curve_to_be_fit._y_data,
             p0=self.guesses,
         )
         self.amplitude, self.frequency_rad, self.phase_rad, self.vertical_shift = (
@@ -900,13 +900,13 @@ class FitFromExponential(GeneralFit):
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit.x_data)
-            if len(self.curve_to_be_fit.x_data) > 500
+            len(self.curve_to_be_fit._x_data)
+            if len(self.curve_to_be_fit._x_data) > 500
             else 500
         )
         self.x_data = np.linspace(
-            self.curve_to_be_fit.x_data[0],
-            self.curve_to_be_fit.x_data[-1],
+            self.curve_to_be_fit._x_data[0],
+            self.curve_to_be_fit._x_data[-1],
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
@@ -930,8 +930,8 @@ class FitFromExponential(GeneralFit):
         """
         parameters, self.cov_matrix = curve_fit(
             self._exp_func_template,
-            self.curve_to_be_fit.x_data,
-            self.curve_to_be_fit.y_data,
+            self.curve_to_be_fit._x_data,
+            self.curve_to_be_fit._y_data,
             p0=self.guesses,
         )
         self.parameters = parameters
@@ -1117,13 +1117,13 @@ class FitFromGaussian(GeneralFit):
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit.x_data)
-            if len(self.curve_to_be_fit.x_data) > 500
+            len(self.curve_to_be_fit._x_data)
+            if len(self.curve_to_be_fit._x_data) > 500
             else 500
         )
         self.x_data = np.linspace(
-            self.curve_to_be_fit.x_data[0],
-            self.curve_to_be_fit.x_data[-1],
+            self.curve_to_be_fit._x_data[0],
+            self.curve_to_be_fit._x_data[-1],
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
@@ -1141,8 +1141,8 @@ class FitFromGaussian(GeneralFit):
         """
         parameters, self.cov_matrix = curve_fit(
             self._gaussian_func_template,
-            self.curve_to_be_fit.x_data,
-            self.curve_to_be_fit.y_data,
+            self.curve_to_be_fit._x_data,
+            self.curve_to_be_fit._y_data,
             p0=self.guesses,
         )
         self.amplitude = parameters[0]
@@ -1348,13 +1348,13 @@ class FitFromSquareRoot(GeneralFit):
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit.x_data)
-            if len(self.curve_to_be_fit.x_data) > 500
+            len(self.curve_to_be_fit._x_data)
+            if len(self.curve_to_be_fit._x_data) > 500
             else 500
         )
         self.x_data = np.linspace(
-            self.curve_to_be_fit.x_data[0],
-            self.curve_to_be_fit.x_data[-1],
+            self.curve_to_be_fit._x_data[0],
+            self.curve_to_be_fit._x_data[-1],
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
@@ -1372,8 +1372,8 @@ class FitFromSquareRoot(GeneralFit):
         """
         parameters, self.cov_matrix = curve_fit(
             self._square_root_func_template,
-            self.curve_to_be_fit.x_data,
-            self.curve_to_be_fit.y_data,
+            self.curve_to_be_fit._x_data,
+            self.curve_to_be_fit._y_data,
             p0=self.guesses,
         )
         self.parameters = parameters
@@ -1553,13 +1553,13 @@ class FitFromLog(GeneralFit):
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit.x_data)
-            if len(self.curve_to_be_fit.x_data) > 500
+            len(self.curve_to_be_fit._x_data)
+            if len(self.curve_to_be_fit._x_data) > 500
             else 500
         )
         self.x_data = np.linspace(
-            self.curve_to_be_fit.x_data[0],
-            self.curve_to_be_fit.x_data[-1],
+            self.curve_to_be_fit._x_data[0],
+            self.curve_to_be_fit._x_data[-1],
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
@@ -1577,8 +1577,8 @@ class FitFromLog(GeneralFit):
         """
         self.parameters, self.cov_matrix = curve_fit(
             self._log_func_template(),
-            self.curve_to_be_fit.x_data,
-            self.curve_to_be_fit.y_data,
+            self.curve_to_be_fit._x_data,
+            self.curve_to_be_fit._y_data,
             p0=self.guesses,
         )
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
@@ -1753,13 +1753,13 @@ class FitFromFunction(GeneralFit):
         self.label = label
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit.x_data)
-            if len(self.curve_to_be_fit.x_data) > 500
+            len(self.curve_to_be_fit._x_data)
+            if len(self.curve_to_be_fit._x_data) > 500
             else 500
         )
         self.x_data = np.linspace(
-            self.curve_to_be_fit.x_data[0],
-            self.curve_to_be_fit.x_data[-1],
+            self.curve_to_be_fit._x_data[0],
+            self.curve_to_be_fit._x_data[-1],
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
@@ -1771,8 +1771,8 @@ class FitFromFunction(GeneralFit):
         """
         self.parameters, self.cov_matrix = curve_fit(
             self._function_template,
-            self.curve_to_be_fit.x_data,
-            self.curve_to_be_fit.y_data,
+            self.curve_to_be_fit._x_data,
+            self.curve_to_be_fit._y_data,
             p0=self.guesses,
         )
         self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
@@ -1935,13 +1935,13 @@ class FitFromFOTF(GeneralFit):
         self.line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit.x_data)
-            if len(self.curve_to_be_fit.x_data) > 500
+            len(self.curve_to_be_fit._x_data)
+            if len(self.curve_to_be_fit._x_data) > 500
             else 500
         )
         self.x_data = np.linspace(
-            self.curve_to_be_fit.x_data[0],
-            self.curve_to_be_fit.x_data[-1],
+            self.curve_to_be_fit._x_data[0],
+            self.curve_to_be_fit._x_data[-1],
             number_of_points,
         )
         self.y_data = self.function(self.x_data)
@@ -1959,8 +1959,8 @@ class FitFromFOTF(GeneralFit):
         """
         parameters, self.cov_matrix = curve_fit(
             self._fotf_func_template,
-            self.curve_to_be_fit.x_data,
-            self.curve_to_be_fit.y_data,
+            self.curve_to_be_fit._x_data,
+            self.curve_to_be_fit._y_data,
             p0=self.guesses,
         )
         self.gain = parameters[0]

@@ -18,19 +18,19 @@ class TestCurve(unittest.TestCase):
         self.testCurve = Curve(x, sin(x), "Test Curve", color="k")
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testCurve.x_data, list | ndarray)
+        self.assertIsInstance(self.testCurve._x_data, list | ndarray)
 
     def test_ydata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testCurve.y_data, list | ndarray)
+        self.assertIsInstance(self.testCurve._y_data, list | ndarray)
 
     def test_default_value(self):
-        self.assertEqual(self.testCurve.line_width, "default")
+        self.assertEqual(self.testCurve._line_width, "default")
 
     def test_color_is_str(self):
-        self.assertIsInstance(self.testCurve.color, str)
+        self.assertIsInstance(self.testCurve._color, str)
 
     def test_label_is_str(self):
-        self.assertIsInstance(self.testCurve.label, str)
+        self.assertIsInstance(self.testCurve._label, str)
 
     def test_from_function(self):
         self.assertIsInstance(
@@ -61,10 +61,10 @@ class TestCurve(unittest.TestCase):
             cap_thickness=10,
             cap_width=10,
         )
-        self.assertEqual(self.testCurve.errorbars_color, "red")
-        self.assertEqual(self.testCurve.errorbars_line_width, 10)
-        self.assertEqual(self.testCurve.cap_thickness, 10)
-        self.assertEqual(self.testCurve.cap_width, 10)
+        self.assertEqual(self.testCurve._errorbars_color, "red")
+        self.assertEqual(self.testCurve._errorbars_line_width, 10)
+        self.assertEqual(self.testCurve._cap_thickness, 10)
+        self.assertEqual(self.testCurve._cap_width, 10)
 
     def test_create_point_at_x(self):
         point = self.testCurve.create_point_at_x(0.5)
@@ -321,18 +321,18 @@ class TestCurve(unittest.TestCase):
         curve = abs(self.testCurve)
         self.assertIsInstance(curve, Curve)
         self.assertListEqual(
-            list(curve.y_data), [abs(y) for y in self.testCurve.y_data]
+            list(curve._y_data), [abs(y) for y in self.testCurve._y_data]
         )
 
     def test_copy(self):
         curve_copy = self.testCurve.copy()
         self.assertIsInstance(curve_copy, Curve)
-        self.assertEqual(curve_copy.label, self.testCurve.label)
-        self.assertEqual(curve_copy.color, self.testCurve.color)
-        self.assertEqual(curve_copy.line_width, self.testCurve.line_width)
-        self.assertEqual(curve_copy.line_style, self.testCurve.line_style)
-        self.assertListEqual(list(curve_copy.x_data), list(self.testCurve.x_data))
-        self.assertListEqual(list(curve_copy.y_data), list(self.testCurve.y_data))
+        self.assertEqual(curve_copy._label, self.testCurve._label)
+        self.assertEqual(curve_copy._color, self.testCurve._color)
+        self.assertEqual(curve_copy._line_width, self.testCurve._line_width)
+        self.assertEqual(curve_copy._line_style, self.testCurve._line_style)
+        self.assertListEqual(list(curve_copy._x_data), list(self.testCurve._x_data))
+        self.assertListEqual(list(curve_copy._y_data), list(self.testCurve._y_data))
 
     def test_create_slice_x(self):
         curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
@@ -342,8 +342,8 @@ class TestCurve(unittest.TestCase):
         correct_x_data = correct_x_data[correct_x_data >= -5]
         correct_x_data = correct_x_data[correct_x_data <= 5]
         correct_y_data = correct_x_data**2
-        self.assertListEqual(list(curve_slice.x_data), list(correct_x_data))
-        self.assertListEqual(list(curve_slice.y_data), list(correct_y_data))
+        self.assertListEqual(list(curve_slice._x_data), list(correct_x_data))
+        self.assertListEqual(list(curve_slice._y_data), list(correct_y_data))
 
     def test_create_slice_y(self):
         curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
@@ -352,8 +352,8 @@ class TestCurve(unittest.TestCase):
         correct_x_data = linspace(-10, 10, 100)
         correct_x_data = correct_x_data[correct_x_data**2 <= 25]
         correct_y_data = correct_x_data**2
-        self.assertListEqual(list(curve_slice.x_data), list(correct_x_data))
-        self.assertListEqual(list(curve_slice.y_data), list(correct_y_data))
+        self.assertListEqual(list(curve_slice._x_data), list(correct_x_data))
+        self.assertListEqual(list(curve_slice._y_data), list(correct_y_data))
 
 
 class TestScatter(unittest.TestCase):

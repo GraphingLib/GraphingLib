@@ -470,7 +470,7 @@ class Polygon:
         """
         if not isinstance(curve, Curve):
             raise TypeError("The curve must be a Curve object")
-        sh_curve = LineString([(x, y) for x, y in zip(curve.x_data, curve.y_data)])
+        sh_curve = LineString([(x, y) for x, y in zip(curve._x_data, curve._y_data)])
         split_sh_polygons = ops.split(self.sh_polygon, sh_curve)
         split_sh_polygons = [
             p.simplify(0.001 * p.length) for p in list(split_sh_polygons.geoms)
@@ -531,7 +531,7 @@ class Polygon:
         """
         if isinstance(other, Curve):
             # create curve points from the x_data and y_data of the curve
-            other_points = [(x, y) for x, y in zip(other.x_data, other.y_data)]
+            other_points = [(x, y) for x, y in zip(other._x_data, other._y_data)]
             other_boundary = LineString(other_points)
 
             intersection = self.sh_polygon.boundary.intersection(other_boundary)
