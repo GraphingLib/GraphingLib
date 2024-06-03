@@ -198,7 +198,7 @@ class Polygon:
         self.sh_polygon = ShPolygon(vertices)
 
     def __contains__(self, point: Point) -> bool:
-        return self.sh_polygon.contains(sh.geometry.Point(point.x, point.y))
+        return self.sh_polygon.contains(sh.geometry.Point(point._x, point._y))
 
     @property
     def vertices(self):

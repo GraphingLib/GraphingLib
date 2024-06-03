@@ -257,8 +257,8 @@ class TestPolygon(unittest.TestCase):
         polygon = Polygon(vertices, line_width=2)
         centroid = polygon.create_centroid_point()
 
-        self.assertAlmostEqual(centroid.x, -0.00476190476190, places=6)
-        self.assertAlmostEqual(centroid.y, 0.70317460317460, places=6)
+        self.assertAlmostEqual(centroid._x, -0.00476190476190, places=6)
+        self.assertAlmostEqual(centroid._y, 0.70317460317460, places=6)
 
     def test_get_centroid_coordinates(self):
         vertices = [
@@ -583,10 +583,10 @@ class TestPolygon(unittest.TestCase):
         intersection = polygon_1.create_intersection_points(polygon_2)
 
         self.assertEqual(len(intersection), 2)
-        self.assertEqual(intersection[0].x, 0.5)
-        self.assertEqual(intersection[0].y, 1)
-        self.assertEqual(intersection[1].x, 1)
-        self.assertEqual(intersection[1].y, 0.5)
+        self.assertEqual(intersection[0]._x, 0.5)
+        self.assertEqual(intersection[0]._y, 1)
+        self.assertEqual(intersection[1]._x, 1)
+        self.assertEqual(intersection[1]._y, 0.5)
 
 
 if __name__ == "__main__":

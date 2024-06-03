@@ -76,58 +76,58 @@ class TestPoint(unittest.TestCase):
         self.testPoint = Point(x=0.0, y=0.0, label="Test Point")
 
     def test_x_is_float(self):
-        self.assertEqual(self.testPoint.x, 0.0)
+        self.assertEqual(self.testPoint._x, 0.0)
 
     def test_y_is_float(self):
-        self.assertEqual(self.testPoint.y, 0.0)
+        self.assertEqual(self.testPoint._y, 0.0)
 
     def test_label_is_str(self):
-        self.assertEqual(self.testPoint.label, "Test Point")
+        self.assertEqual(self.testPoint._label, "Test Point")
 
     def test_colors_is_default(self):
-        self.assertEqual(self.testPoint.color, "default")
+        self.assertEqual(self.testPoint._color, "default")
 
     def test_edge_color_is_default(self):
-        self.assertEqual(self.testPoint.edge_color, "default")
+        self.assertEqual(self.testPoint._edge_color, "default")
 
     def test_marker_size_is_default(self):
-        self.assertEqual(self.testPoint.marker_size, "default")
+        self.assertEqual(self.testPoint._marker_size, "default")
 
     def test_marker_style_is_default(self):
-        self.assertEqual(self.testPoint.marker_style, "default")
+        self.assertEqual(self.testPoint._marker_style, "default")
 
     def test_edge_width_is_default(self):
-        self.assertEqual(self.testPoint.edge_width, "default")
+        self.assertEqual(self.testPoint._edge_width, "default")
 
     def test_font_size_is_same_as_figure(self):
-        self.assertEqual(self.testPoint.font_size, "same as figure")
+        self.assertEqual(self.testPoint._font_size, "same as figure")
 
     def test_text_color_is_k(self):
-        self.assertEqual(self.testPoint.text_color, "k")
+        self.assertEqual(self.testPoint._text_color, "k")
 
     def test_h_align_is_left(self):
-        self.assertEqual(self.testPoint.h_align, "left")
+        self.assertEqual(self.testPoint._h_align, "left")
 
     def test_v_align_is_bottom(self):
-        self.assertEqual(self.testPoint.v_align, "bottom")
+        self.assertEqual(self.testPoint._v_align, "bottom")
 
     def test_coordinates_property(self):
-        self.assertEqual(self.testPoint.get_coordinates(), (0.0, 0.0))
+        self.assertEqual(self.testPoint.coordinates, (0.0, 0.0))
 
     def test_copy(self):
         testPointCopy = self.testPoint.copy()
-        self.assertEqual(testPointCopy.x, self.testPoint.x)
-        self.assertEqual(testPointCopy.y, self.testPoint.y)
-        self.assertEqual(testPointCopy.label, self.testPoint.label)
-        self.assertEqual(testPointCopy.color, self.testPoint.color)
-        self.assertEqual(testPointCopy.edge_color, self.testPoint.edge_color)
-        self.assertEqual(testPointCopy.marker_size, self.testPoint.marker_size)
-        self.assertEqual(testPointCopy.marker_style, self.testPoint.marker_style)
-        self.assertEqual(testPointCopy.edge_width, self.testPoint.edge_width)
-        self.assertEqual(testPointCopy.font_size, self.testPoint.font_size)
-        self.assertEqual(testPointCopy.text_color, self.testPoint.text_color)
-        self.assertEqual(testPointCopy.h_align, self.testPoint.h_align)
-        self.assertEqual(testPointCopy.v_align, self.testPoint.v_align)
+        self.assertEqual(testPointCopy._x, self.testPoint._x)
+        self.assertEqual(testPointCopy._y, self.testPoint._y)
+        self.assertEqual(testPointCopy._label, self.testPoint._label)
+        self.assertEqual(testPointCopy._color, self.testPoint._color)
+        self.assertEqual(testPointCopy._edge_color, self.testPoint._edge_color)
+        self.assertEqual(testPointCopy._marker_size, self.testPoint._marker_size)
+        self.assertEqual(testPointCopy._marker_style, self.testPoint._marker_style)
+        self.assertEqual(testPointCopy._edge_width, self.testPoint._edge_width)
+        self.assertEqual(testPointCopy._font_size, self.testPoint._font_size)
+        self.assertEqual(testPointCopy._text_color, self.testPoint._text_color)
+        self.assertEqual(testPointCopy._h_align, self.testPoint._h_align)
+        self.assertEqual(testPointCopy._v_align, self.testPoint._v_align)
 
 
 class TestText(unittest.TestCase):

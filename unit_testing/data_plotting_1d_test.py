@@ -68,8 +68,8 @@ class TestCurve(unittest.TestCase):
 
     def test_create_point_at_x(self):
         point = self.testCurve.create_point_at_x(0.5)
-        self.assertEqual(point.x, 0.5)
-        self.assertAlmostEqual(point.y, sin(0.5), places=3)
+        self.assertEqual(point._x, 0.5)
+        self.assertAlmostEqual(point._y, sin(0.5), places=3)
 
     def test_get_coordinates_at_x(self):
         point = self.testCurve.get_coordinates_at_x(0.5)
@@ -85,8 +85,8 @@ class TestCurve(unittest.TestCase):
     def test_create_points_at_y(self):
         points = self.testCurve.create_points_at_y(0)
         for i, point in enumerate(points):
-            self.assertEqual(point.y, 0)
-            self.assertAlmostEqual(point.x, i * pi, places=3)
+            self.assertEqual(point._y, 0)
+            self.assertAlmostEqual(point._x, i * pi, places=3)
 
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
@@ -165,8 +165,8 @@ class TestCurve(unittest.TestCase):
         self.assertEqual(len(points), 4)
         for i, point in enumerate(points):
             self.assertIsInstance(point, Point)
-            self.assertAlmostEqual(point.x, points_x[i], places=3)
-            self.assertAlmostEqual(point.y, points_y[i], places=3)
+            self.assertAlmostEqual(point._x, points_x[i], places=3)
+            self.assertAlmostEqual(point._y, points_y[i], places=3)
 
     def test_add_curves(self):
         x = linspace(0, 3 * pi, 200)
@@ -411,8 +411,8 @@ class TestScatter(unittest.TestCase):
 
     def test_create_point_at_x(self):
         point = self.testScatter.create_point_at_x(0.5)
-        self.assertEqual(point.x, 0.5)
-        self.assertAlmostEqual(point.y, sin(0.5), places=3)
+        self.assertEqual(point._x, 0.5)
+        self.assertAlmostEqual(point._y, sin(0.5), places=3)
 
     def test_get_coordinates_at_x(self):
         point = self.testScatter.get_coordinates_at_x(0.5)
@@ -428,8 +428,8 @@ class TestScatter(unittest.TestCase):
     def test_create_points_at_y(self):
         points = self.testScatter.create_points_at_y(0)
         for i, point in enumerate(points):
-            self.assertEqual(point.y, 0)
-            self.assertAlmostEqual(point.x, i * pi, places=3)
+            self.assertEqual(point._y, 0)
+            self.assertAlmostEqual(point._x, i * pi, places=3)
 
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)

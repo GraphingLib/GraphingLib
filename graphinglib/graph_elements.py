@@ -566,31 +566,137 @@ class Point:
                 "The x and y coordinates for a point must be a single number each!"
             )
         else:
-            self.x = x
-            self.y = y
-        self.label = label
-        self.color = color
-        self.edge_color = edge_color
-        self.marker_size = marker_size
-        self.marker_style = marker_style
-        self.edge_width = edge_width
-        self.font_size = font_size
-        self.text_color = text_color
-        self.h_align = h_align
-        self.v_align = v_align
+            self._x = x
+            self._y = y
+        self._label = label
+        self._color = color
+        self._edge_color = edge_color
+        self._marker_size = marker_size
+        self._marker_style = marker_style
+        self._edge_width = edge_width
+        self._font_size = font_size
+        self._text_color = text_color
+        self._h_align = h_align
+        self._v_align = v_align
         self._show_coordinates: bool = False
+
+    @property
+    def x(self) -> float:
+        return self._x
+
+    @x.setter
+    def x(self, x: float) -> None:
+        self._x = x
+
+    @property
+    def y(self) -> float:
+        return self._y
+
+    @y.setter
+    def y(self, y: float) -> None:
+        self._y = y
+
+    @property
+    def label(self) -> Optional[str]:
+        return self._label
+
+    @label.setter
+    def label(self, label: Optional[str]) -> None:
+        self._label = label
+
+    @property
+    def color(self) -> str:
+        return self._color
+
+    @color.setter
+    def color(self, color: str) -> None:
+        self._color = color
+
+    @property
+    def edge_color(self) -> str:
+        return self._edge_color
+
+    @edge_color.setter
+    def edge_color(self, edge_color: str) -> None:
+        self._edge_color = edge_color
+
+    @property
+    def marker_size(self) -> float | Literal["default"]:
+        return self._marker_size
+
+    @marker_size.setter
+    def marker_size(self, marker_size: float | Literal["default"]) -> None:
+        self._marker_size = marker_size
+
+    @property
+    def marker_style(self) -> str:
+        return self._marker_style
+
+    @marker_style.setter
+    def marker_style(self, marker_style: str) -> None:
+        self._marker_style = marker_style
+
+    @property
+    def edge_width(self) -> float | Literal["default"]:
+        return self._edge_width
+
+    @edge_width.setter
+    def edge_width(self, edge_width: float | Literal["default"]) -> None:
+        self._edge_width = edge_width
+
+    @property
+    def font_size(self) -> float | Literal["same as figure"]:
+        return self._font_size
+
+    @font_size.setter
+    def font_size(self, font_size: float | Literal["same as figure"]) -> None:
+        self._font_size = font_size
+
+    @property
+    def text_color(self) -> str:
+        return self._text_color
+
+    @text_color.setter
+    def text_color(self, text_color: str) -> None:
+        self._text_color = text_color
+
+    @property
+    def h_align(self) -> str:
+        return self._h_align
+
+    @h_align.setter
+    def h_align(self, h_align: str) -> None:
+        self._h_align = h_align
+
+    @property
+    def v_align(self) -> str:
+        return self._v_align
+
+    @v_align.setter
+    def v_align(self, v_align: str) -> None:
+        self._v_align = v_align
+
+    @property
+    def show_coordinates(self) -> bool:
+        return self._show_coordinates
+
+    @show_coordinates.setter
+    def show_coordinates(self, show_coordinates: bool) -> None:
+        self._show_coordinates = show_coordinates
+
+    @property
+    def coordinates(self) -> tuple[float, float]:
+        return (self._x, self._y)
+
+    @coordinates.setter
+    def coordinates(self, coordinates: tuple[float, float]) -> None:
+        self._x, self._y = coordinates
 
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.graph_elements.Point` object.
         """
         return deepcopy(self)
-
-    def get_coordinates(self) -> tuple[float, float]:
-        """
-        Returns the coordinates of the :class:`~graphinglib.graph_elements.Point`.
-        """
-        return self.x, self.y
 
     def add_coordinates(self) -> None:
         """
@@ -603,63 +709,63 @@ class Point:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        size = self.font_size if self.font_size != "same as figure" else None
-        prefix = " " if self.h_align == "left" else ""
-        postfix = " " if self.h_align == "right" else ""
-        if self.label is not None and not self._show_coordinates:
-            point_label = prefix + self.label + postfix
+        size = self._font_size if self._font_size != "same as figure" else None
+        prefix = " " if self._h_align == "left" else ""
+        postfix = " " if self._h_align == "right" else ""
+        if self._label is not None and not self._show_coordinates:
+            point_label = prefix + self._label + postfix
         else:
             point_label = None
         params = {
-            "c": self.color,
-            "edgecolors": self.edge_color,
-            "s": self.marker_size,
-            "marker": self.marker_style,
-            "linewidths": self.edge_width,
+            "c": self._color,
+            "edgecolors": self._edge_color,
+            "s": self._marker_size,
+            "marker": self._marker_style,
+            "linewidths": self._edge_width,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.scatter(
-            self.x,
-            self.y,
+            self._x,
+            self._y,
             zorder=z_order,
             **params,
         )
         params = {
-            "color": self.text_color,
+            "color": self._text_color,
             "fontsize": size,
-            "horizontalalignment": self.h_align,
-            "verticalalignment": self.v_align,
+            "horizontalalignment": self._h_align,
+            "verticalalignment": self._v_align,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.annotate(
             point_label,
-            (self.x, self.y),
+            (self._x, self._y),
             zorder=z_order,
             **params,
         )
         if self._show_coordinates:
-            prefix = " " if self.h_align == "left" else ""
-            postfix = " " if self.h_align == "right" else ""
-            if self.label is not None:
+            prefix = " " if self._h_align == "left" else ""
+            postfix = " " if self._h_align == "right" else ""
+            if self._label is not None:
                 point_label = (
                     prefix
-                    + self.label
+                    + self._label
                     + " : "
-                    + f"({self.x:.3f}, {self.y:.3f})"
+                    + f"({self._x:.3f}, {self._y:.3f})"
                     + postfix
                 )
             else:
-                point_label = prefix + f"({self.x:.3f}, {self.y:.3f})" + postfix
+                point_label = prefix + f"({self._x:.3f}, {self._y:.3f})" + postfix
             params = {
-                "color": self.text_color,
+                "color": self._text_color,
                 "fontsize": size,
-                "horizontalalignment": self.h_align,
-                "verticalalignment": self.v_align,
+                "horizontalalignment": self._h_align,
+                "verticalalignment": self._v_align,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             axes.annotate(
                 point_label,
-                (self.x, self.y),
+                (self._x, self._y),
                 zorder=z_order,
                 **params,
             )
