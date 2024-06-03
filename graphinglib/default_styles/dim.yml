@@ -149,26 +149,26 @@ Vlines:
   _line_styles: solid
   _line_widths: 2
 Circle:
-  fill: True
-  fill_alpha: 0.5
-  fill_color:
-  edge_color: "black"
-  line_width: 2
-  line_style: "-"
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
 Rectangle:
-  fill: True
-  fill_alpha: 0.5
-  fill_color:
-  edge_color: "black"
-  line_width: 2
-  line_style: "-"
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
 Polygon:
-  fill: True
-  fill_alpha: 0.5
-  fill_color:
-  edge_color: "black"
-  line_width: 2
-  line_style: "-"
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
 Arrow:
   _color: "white"
   _head_size: 1

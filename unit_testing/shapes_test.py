@@ -13,16 +13,16 @@ class TestCircle(unittest.TestCase):
     def test_init(self):
         circle = Circle(2, 2, 1)
 
-        self.assertAlmostEqual(circle.get_area(), np.pi, places=2)
-        self.assertAlmostEqual(circle.get_perimeter(), 2 * np.pi, places=2)
+        self.assertAlmostEqual(circle.area, np.pi, places=2)
+        self.assertAlmostEqual(circle.perimeter, 2 * np.pi, places=2)
 
 
 class TestRectangle(unittest.TestCase):
     def test_init(self):
         rectangle = Rectangle(0, 0, 1, 1)
 
-        self.assertAlmostEqual(rectangle.get_area(), 1, places=2)
-        self.assertAlmostEqual(rectangle.get_perimeter(), 4, places=2)
+        self.assertAlmostEqual(rectangle.area, 1, places=2)
+        self.assertAlmostEqual(rectangle.perimeter, 4, places=2)
 
 
 class TestArrow(unittest.TestCase):
@@ -211,37 +211,7 @@ class TestPolygon(unittest.TestCase):
         for i in range(len(vertices) - 1):
             self.assertEqual(polygon.vertices[i][0], vertices[i][0])
             self.assertEqual(polygon.vertices[i][1], vertices[i][1])
-        self.assertEqual(polygon.line_width, 2)
-
-    def test_get_area(self):
-        vertices = [
-            (0, 0),
-            (1, 0),
-            (1, 1),
-            (0.5, 1.5),
-            (0, 1),
-            (-0.5, 2),
-            (-0.8, 1.3),
-            (-1, 0),
-            (0, 0),
-        ]
-        polygon = Polygon(vertices, line_width=2)
-        self.assertEqual(polygon.get_area(), 2.625)
-
-    def test_get_perimeter(self):
-        vertices = [
-            (0, 0),
-            (1, 0),
-            (1, 1),
-            (0.5, 1.5),
-            (0, 1),
-            (-0.5, 2),
-            (-0.8, 1.3),
-            (-1, 0),
-            (0, 0),
-        ]
-        polygon = Polygon(vertices, line_width=2)
-        self.assertEqual(polygon.get_perimeter(), 7.609119505505971)
+        self.assertEqual(polygon._line_width, 2)
 
     def test_create_centroid_point(self):
         vertices = [

@@ -168,20 +168,20 @@ Stream:
   _arrow_size: 1
 
 Circle:
-  fill: True
-  fill_alpha: 0.5
-  fill_color:
-  edge_color: "black"
-  line_width: 2
-  line_style: "-"
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
 
 Rectangle:
-  fill: True
-  fill_alpha: 0.5
-  fill_color:
-  edge_color: "black"
-  line_width: 2
-  line_style: "-"
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
 
 Arrow:
   _color: "black"
@@ -194,12 +194,12 @@ Line:
   _cap_width: 1
 
 Polygon:
-  fill: True
-  fill_alpha: 0.5
-  fill_color:
-  edge_color: "black"
-  line_width: 2
-  line_style: "-"
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
 
 rc_params:
   figure.facecolor: "white"

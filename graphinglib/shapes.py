@@ -341,46 +341,86 @@ class Polygon:
         line_style: str = "default",
         fill_alpha: float | Literal["default"] = "default",
     ):
-        self.fill = fill
-        self.edge_color = edge_color
-        self.fill_color = fill_color
-        self.line_width = line_width
-        self.line_style = line_style
-        self.fill_alpha = fill_alpha
-        self.sh_polygon = ShPolygon(vertices)
+        self._fill = fill
+        self._edge_color = edge_color
+        self._fill_color = fill_color
+        self._line_width = line_width
+        self._line_style = line_style
+        self._fill_alpha = fill_alpha
+        self._sh_polygon = ShPolygon(vertices)
 
-    def __contains__(self, point: Point) -> bool:
-        return self.sh_polygon.contains(sh.geometry.Point(point._x, point._y))
+    @property
+    def fill(self):
+        return self._fill
+
+    @fill.setter
+    def fill(self, value):
+        self._fill = value
+
+    @property
+    def fill_color(self):
+        return self._fill_color
+
+    @fill_color.setter
+    def fill_color(self, value):
+        self._fill_color = value
+
+    @property
+    def edge_color(self):
+        return self._edge_color
+
+    @edge_color.setter
+    def edge_color(self, value):
+        self._edge_color = value
+
+    @property
+    def line_width(self):
+        return self._line_width
+
+    @line_width.setter
+    def line_width(self, value):
+        self._line_width = value
+
+    @property
+    def line_style(self):
+        return self._line_style
+
+    @line_style.setter
+    def line_style(self, value):
+        self._line_style = value
+
+    @property
+    def fill_alpha(self):
+        return self._fill_alpha
+
+    @fill_alpha.setter
+    def fill_alpha(self, value):
+        self._fill_alpha = value
 
     @property
     def vertices(self):
-        return np.array(self.sh_polygon.exterior.coords)
+        return np.array(self._sh_polygon.exterior.coords)
+
+    @vertices.setter
+    def vertices(self, value):
+        self._sh_polygon = ShPolygon(value)
+
+    @property
+    def area(self):
+        return self._sh_polygon.area
+
+    @property
+    def perimeter(self):
+        return self._sh_polygon.length
+
+    def __contains__(self, point: Point) -> bool:
+        return self._sh_polygon.contains(sh.geometry.Point(point._x, point._y))
 
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.shapes.Polygon` object.
         """
         return deepcopy(self)
-
-    def get_area(self) -> float:
-        """Returns the area of the polygon.
-
-        Returns
-        -------
-        float
-            The area of the polygon.
-        """
-        return self.sh_polygon.area
-
-    def get_perimeter(self) -> float:
-        """Returns the perimeter of the polygon.
-
-        Returns
-        -------
-        float
-            The perimeter of the polygon.
-        """
-        return self.sh_polygon.length
 
     def get_centroid_coordinates(self) -> tuple[float, float]:
         """Returns the center coordinates of the polygon.
@@ -390,7 +430,7 @@ class Polygon:
         tuple[float, float]
             The center coordinates of the polygon.
         """
-        return self.sh_polygon.centroid.coords[0]
+        return self._sh_polygon.centroid.coords[0]
 
     def create_centroid_point(self) -> Point:
         """Returns the center point of the polygon.
@@ -420,11 +460,11 @@ class Polygon:
         """
         if copy_style:
             new_poly = self.copy()
-            new_poly.sh_polygon = self.sh_polygon.intersection(other.sh_polygon)
+            new_poly._sh_polygon = self._sh_polygon.intersection(other._sh_polygon)
             return new_poly
         else:
             return Polygon(
-                list(self.sh_polygon.intersection(other.sh_polygon).exterior.coords)
+                list(self._sh_polygon.intersection(other._sh_polygon).exterior.coords)
             )
 
     def create_union(self, other: Self, copy_style: bool = False) -> Self:
@@ -445,11 +485,11 @@ class Polygon:
         """
         if copy_style:
             new_poly = self.copy()
-            new_poly.sh_polygon = self.sh_polygon.union(other.sh_polygon)
+            new_poly._sh_polygon = self._sh_polygon.union(other._sh_polygon)
             return new_poly
         else:
             return Polygon(
-                list(self.sh_polygon.union(other.sh_polygon).exterior.coords)
+                list(self._sh_polygon.union(other._sh_polygon).exterior.coords)
             )
 
     def create_difference(self, other: Self, copy_style: bool = False) -> Self:
@@ -470,11 +510,11 @@ class Polygon:
         """
         if copy_style:
             new_poly = self.copy()
-            new_poly.sh_polygon = self.sh_polygon.difference(other.sh_polygon)
+            new_poly._sh_polygon = self._sh_polygon.difference(other._sh_polygon)
             return new_poly
         else:
             return Polygon(
-                list(self.sh_polygon.difference(other.sh_polygon).exterior.coords)
+                list(self._sh_polygon.difference(other._sh_polygon).exterior.coords)
             )
 
     def create_symmetric_difference(
@@ -499,10 +539,12 @@ class Polygon:
         """
         if copy_style:
             new_poly = self.copy()
-            new_poly.sh_polygon = self.sh_polygon.symmetric_difference(other.sh_polygon)
+            new_poly._sh_polygon = self._sh_polygon.symmetric_difference(
+                other._sh_polygon
+            )
             return new_poly
         else:
-            multi_poly = self.sh_polygon.symmetric_difference(other.sh_polygon)
+            multi_poly = self._sh_polygon.symmetric_difference(other._sh_polygon)
             if multi_poly.geom_type == "MultiPolygon":
                 return [
                     Polygon(list(p.exterior.coords)) for p in list(multi_poly.geoms)
@@ -521,7 +563,7 @@ class Polygon:
         dy : float
             The amount to move the polygon in the y direction.
         """
-        self.sh_polygon = sh.affinity.translate(self.sh_polygon, xoff=dx, yoff=dy)
+        self._sh_polygon = sh.affinity.translate(self._sh_polygon, xoff=dx, yoff=dy)
 
     def rotate(
         self,
@@ -545,8 +587,8 @@ class Polygon:
             center = self.get_centroid_coordinates()
 
         # Use shapely.affinity.rotate to rotate the polygon
-        self.sh_polygon = sh.affinity.rotate(
-            self.sh_polygon, angle, origin=center, use_radians=use_rad
+        self._sh_polygon = sh.affinity.rotate(
+            self._sh_polygon, angle, origin=center, use_radians=use_rad
         )
 
     def scale(
@@ -571,8 +613,8 @@ class Polygon:
             center = self.get_centroid_coordinates()
 
         # Use shapely.affinity.scale to scale the polygon
-        self.sh_polygon = sh.affinity.scale(
-            self.sh_polygon, xfact=x_scale, yfact=y_scale, origin=center
+        self._sh_polygon = sh.affinity.scale(
+            self._sh_polygon, xfact=x_scale, yfact=y_scale, origin=center
         )
 
     def skew(
@@ -600,8 +642,8 @@ class Polygon:
             center = self.get_centroid_coordinates()
 
         # Use shapely.affinity.skew to skew the polygon
-        self.sh_polygon = sh.affinity.skew(
-            self.sh_polygon, xs=x_skew, ys=y_skew, origin=center, use_radians=use_rad
+        self._sh_polygon = sh.affinity.skew(
+            self._sh_polygon, xs=x_skew, ys=y_skew, origin=center, use_radians=use_rad
         )
 
     def split(self, curve: Curve, copy_style: bool = False) -> list[Self]:
@@ -623,19 +665,19 @@ class Polygon:
         if not isinstance(curve, Curve):
             raise TypeError("The curve must be a Curve object")
         sh_curve = LineString([(x, y) for x, y in zip(curve._x_data, curve._y_data)])
-        split_sh_polygons = ops.split(self.sh_polygon, sh_curve)
+        split_sh_polygons = ops.split(self._sh_polygon, sh_curve)
         split_sh_polygons = [
             p.simplify(0.001 * p.length) for p in list(split_sh_polygons.geoms)
         ]
         polygons = [Polygon(list(p.exterior.coords)) for p in split_sh_polygons]
         if copy_style:
             for polygon in polygons:
-                polygon.fill = self.fill
-                polygon.fill_color = self.fill_color
-                polygon.edge_color = self.edge_color
-                polygon.line_width = self.line_width
-                polygon.line_style = self.line_style
-                polygon.fill_alpha = self.fill_alpha
+                polygon._fill = self._fill
+                polygon._fill_color = self._fill_color
+                polygon._edge_color = self._edge_color
+                polygon._line_width = self._line_width
+                polygon._line_style = self._line_style
+                polygon._fill_alpha = self._fill_alpha
         return polygons
 
     def linear_transformation(self, matrix: np.ndarray) -> Self:
@@ -648,7 +690,7 @@ class Polygon:
             The transformation matrix to apply. The matrix should be a 2x2 matrix for 2D transformations.
         """
         new_points = np.dot(self.vertices, matrix)
-        self.sh_polygon = ShPolygon(new_points)
+        self._sh_polygon = ShPolygon(new_points)
 
     def get_intersection_coordinates(self, other: Self) -> list[tuple[float, float]]:
         """
@@ -664,7 +706,9 @@ class Polygon:
         list[tuple[float, float]]
             The coordinates of the intersection of the two polygons.
         """
-        intersection = self.sh_polygon.boundary.intersection(other.sh_polygon.boundary)
+        intersection = self._sh_polygon.boundary.intersection(
+            other._sh_polygon.boundary
+        )
         return [(p.x, p.y) for p in intersection.geoms]
 
     def create_intersection_points(self, other: Self | Curve) -> list[Point]:
@@ -686,11 +730,11 @@ class Polygon:
             other_points = [(x, y) for x, y in zip(other._x_data, other._y_data)]
             other_boundary = LineString(other_points)
 
-            intersection = self.sh_polygon.boundary.intersection(other_boundary)
+            intersection = self._sh_polygon.boundary.intersection(other_boundary)
             return [Point(p.x, p.y) for p in intersection.geoms]
         elif isinstance(other, Polygon):
-            intersection = self.sh_polygon.boundary.intersection(
-                other.sh_polygon.boundary
+            intersection = self._sh_polygon.boundary.intersection(
+                other._sh_polygon.boundary
             )
             return [Point(p.x, p.y) for p in intersection.geoms]
         else:
@@ -698,22 +742,22 @@ class Polygon:
 
     def _plot_element(self, axes: plt.Axes, z_order: int):
         # Create a polygon patch for the fill
-        if self.fill:
+        if self._fill:
             kwargs = {
-                "alpha": self.fill_alpha,
+                "alpha": self._fill_alpha,
                 "zorder": z_order - 1,
             }
-            if self.fill_color is not None:
-                kwargs["facecolor"] = self.fill_color
+            if self._fill_color is not None:
+                kwargs["facecolor"] = self._fill_color
             polygon_fill = MPLPolygon(self.vertices, **kwargs)
             axes.add_patch(polygon_fill)
         # Create a polygon patch for the edge
-        if self.edge_color is not None:
+        if self._edge_color is not None:
             kwargs = {
                 "fill": None,
-                "linewidth": self.line_width,
-                "linestyle": self.line_style,
-                "edgecolor": self.edge_color,
+                "linewidth": self._line_width,
+                "linestyle": self._line_style,
+                "edgecolor": self._edge_color,
                 "zorder": z_order,
             }
             polygon_edge = MPLPolygon(self.vertices, **kwargs)
@@ -770,17 +814,59 @@ class Circle(Polygon):
     ):
         if number_of_points < 4:
             raise ValueError("The number of points must be greater than or equal to 4")
-        self.fill = fill
-        self.fill_color = fill_color
-        self.edge_color = edge_color
-        self.line_width = line_width
-        self.line_style = line_style
-        self.fill_alpha = fill_alpha
+        self._fill = fill
+        self._fill_color = fill_color
+        self._edge_color = edge_color
+        self._line_width = line_width
+        self._line_style = line_style
+        self._fill_alpha = fill_alpha
         if radius <= 0:
             raise ValueError("The radius must be positive")
-        self.sh_polygon = sh.geometry.Point(x_center, y_center).buffer(
+        self._sh_polygon = sh.geometry.Point(x_center, y_center).buffer(
             radius, number_of_points // 4
         )
+
+    @property
+    def x_center(self):
+        return self.get_centroid_coordinates()[0]
+
+    @x_center.setter
+    def x_center(self, value):
+        self._sh_polygon = sh.geometry.Point(value, self.y_center).buffer(
+            self.radius, self._sh_polygon.exterior.coords
+        )
+
+    @property
+    def y_center(self):
+        return self.get_centroid_coordinates()[1]
+
+    @y_center.setter
+    def y_center(self, value):
+        self._sh_polygon = sh.geometry.Point(self.x_center, value).buffer(
+            self.radius, self._sh_polygon.exterior.coords
+        )
+
+    @property
+    def radius(self):
+        return self._sh_polygon.exterior.length / (2 * np.pi)
+
+    @radius.setter
+    def radius(self, value):
+        self._sh_polygon = sh.geometry.Point(self.x_center, self.y_center).buffer(
+            value, self._sh_polygon.exterior.coords
+        )
+
+    @property
+    def diameter(self):
+        return 2 * self.radius
+
+    @diameter.setter
+    def diameter(self, value):
+        self.radius = value / 2
+
+    @property
+    def circumference(self):
+        return self._sh_polygon.exterior.length
 
 
 @dataclass
@@ -835,18 +921,94 @@ class Rectangle(Polygon):
         if height <= 0:
             raise ValueError("The height must be positive")
 
-        self.fill = fill
-        self.fill_color = fill_color
-        self.edge_color = edge_color
-        self.line_width = line_width
-        self.line_style = line_style
-        self.fill_alpha = fill_alpha
-        self.sh_polygon = ShPolygon(
+        self._fill = fill
+        self._fill_color = fill_color
+        self._edge_color = edge_color
+        self._line_width = line_width
+        self._line_style = line_style
+        self._fill_alpha = fill_alpha
+        self._sh_polygon = ShPolygon(
             [
                 (x_bottom_left, y_bottom_left),
                 (x_bottom_left + width, y_bottom_left),
                 (x_bottom_left + width, y_bottom_left + height),
                 (x_bottom_left, y_bottom_left + height),
+            ]
+        )
+
+    @property
+    def x_bottom_left(self):
+        return self.vertices[0][0]
+
+    @x_bottom_left.setter
+    def x_bottom_left(self, value):
+        self._sh_polygon = ShPolygon(
+            [
+                (value, self.y_bottom_left),
+                (value + self.width, self.y_bottom_left),
+                (value + self.width, self.y_bottom_left + self.height),
+                (value, self.y_bottom_left + self.height),
+            ]
+        )
+
+    @property
+    def y_bottom_left(self):
+        return self.vertices[0][1]
+
+    @y_bottom_left.setter
+    def y_bottom_left(self, value):
+        self._sh_polygon = ShPolygon(
+            [
+                (self.x_bottom_left, value),
+                (self.x_bottom_left + self.width, value),
+                (self.x_bottom_left + self.width, value + self.height),
+                (self.x_bottom_left, value + self.height),
+            ]
+        )
+
+    @property
+    def width(self):
+        return self.vertices[1][0] - self.vertices[0][0]
+
+    @width.setter
+    def width(self, value):
+        self._sh_polygon = ShPolygon(
+            [
+                (self.x_bottom_left, self.y_bottom_left),
+                (self.x_bottom_left + value, self.y_bottom_left),
+                (self.x_bottom_left + value, self.y_bottom_left + self.height),
+                (self.x_bottom_left, self.y_bottom_left + self.height),
+            ]
+        )
+
+    @property
+    def height(self):
+        return self.vertices[2][1] - self.vertices[1][1]
+
+    @height.setter
+    def height(self, value):
+        self._sh_polygon = ShPolygon(
+            [
+                (self.x_bottom_left, self.y_bottom_left),
+                (self.x_bottom_left + self.width, self.y_bottom_left),
+                (self.x_bottom_left + self.width, self.y_bottom_left + value),
+                (self.x_bottom_left, self.y_bottom_left + value),
+            ]
+        )
+
+    @property
+    def center(self):
+        return self.get_centroid_coordinates()
+
+    @center.setter
+    def center(self, value):
+        x, y = value
+        self._sh_polygon = ShPolygon(
+            [
+                (x - self.width / 2, y - self.height / 2),
+                (x + self.width / 2, y - self.height / 2),
+                (x + self.width / 2, y + self.height / 2),
+                (x - self.width / 2, y + self.height / 2),
             ]
         )
 
