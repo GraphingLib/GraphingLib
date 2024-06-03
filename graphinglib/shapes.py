@@ -211,12 +211,76 @@ class Line:
         Width of the caps. Default depends on the ``figure_style`` configuration.
     """
 
-    pointA: tuple[float, float]
-    pointB: tuple[float, float]
-    color: str = "default"
-    width: float | Literal["default"] = "default"
-    capped_line: bool = False
-    cap_width: float | Literal["default"] = "default"
+    _pointA: tuple[float, float]
+    _pointB: tuple[float, float]
+    _color: str = "default"
+    _width: float | Literal["default"] = "default"
+    _capped_line: bool = False
+    _cap_width: float | Literal["default"] = "default"
+
+    def __init__(
+        self,
+        pointA: tuple[float, float],
+        pointB: tuple[float, float],
+        color: str = "default",
+        width: float | Literal["default"] = "default",
+        capped_line: bool = False,
+        cap_width: float | Literal["default"] = "default",
+    ):
+        self._pointA = pointA
+        self._pointB = pointB
+        self._color = color
+        self._width = width
+        self._capped_line = capped_line
+        self._cap_width = cap_width
+
+    @property
+    def pointA(self) -> tuple[float, float]:
+        return self._pointA
+
+    @pointA.setter
+    def pointA(self, value: tuple[float, float]):
+        self._pointA = value
+
+    @property
+    def pointB(self) -> tuple[float, float]:
+        return self._pointB
+
+    @pointB.setter
+    def pointB(self, value: tuple[float, float]):
+        self._pointB = value
+
+    @property
+    def color(self) -> str:
+        return self._color
+
+    @color.setter
+    def color(self, value: str):
+        self._color = value
+
+    @property
+    def width(self) -> float:
+        return self._width
+
+    @width.setter
+    def width(self, value: float):
+        self._width = value
+
+    @property
+    def capped_line(self) -> bool:
+        return self._capped_line
+
+    @capped_line.setter
+    def capped_line(self, value: bool):
+        self._capped_line = value
+
+    @property
+    def cap_width(self) -> float:
+        return self._cap_width
+
+    @cap_width.setter
+    def cap_width(self, value: float):
+        self._cap_width = value
 
     def copy(self) -> Self:
         """
@@ -225,19 +289,19 @@ class Line:
         return deepcopy(self)
 
     def _plot_element(self, axes: plt.axes, z_order: int):
-        if self.capped_line:
-            style = f"|-|, widthA={self.cap_width/2}, widthB={self.cap_width/2}"
+        if self._capped_line:
+            style = f"|-|, widthA={self._cap_width/2}, widthB={self._cap_width/2}"
         else:
             style = "-"
         props = {
             "arrowstyle": style,
-            "color": self.color,
-            "linewidth": self.width,
+            "color": self._color,
+            "linewidth": self._width,
         }
         axes.annotate(
             "",
-            self.pointA,
-            self.pointB,
+            self._pointA,
+            self._pointB,
             zorder=z_order,
             arrowprops=props,
         )

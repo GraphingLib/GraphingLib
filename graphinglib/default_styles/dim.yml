@@ -174,9 +174,9 @@ Arrow:
   _head_size: 1
   _width: 2
 Line:
-  color: "white"
-  width: 2
-  cap_width: 1
+  _color: "white"
+  _width: 2
+  _cap_width: 1
 rc_params:
   axes.edgecolor: white
   axes.facecolor: dimgrey

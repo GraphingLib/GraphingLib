@@ -145,14 +145,14 @@ class TestLine(unittest.TestCase):
             cap_width=3,
         )
 
-        self.assertEqual(line.pointA[0], 3)
-        self.assertEqual(line.pointA[1], 3)
-        self.assertEqual(line.pointB[0], 4)
-        self.assertEqual(line.pointB[1], 4)
-        self.assertEqual(line.color, "blue")
-        self.assertEqual(line.width, 2)
-        self.assertEqual(line.capped_line, True)
-        self.assertEqual(line.cap_width, 3)
+        self.assertEqual(line._pointA[0], 3)
+        self.assertEqual(line._pointA[1], 3)
+        self.assertEqual(line._pointB[0], 4)
+        self.assertEqual(line._pointB[1], 4)
+        self.assertEqual(line._color, "blue")
+        self.assertEqual(line._width, 2)
+        self.assertEqual(line._capped_line, True)
+        self.assertEqual(line._cap_width, 3)
 
     def test_plotting(self):
         line = Line(
@@ -185,12 +185,12 @@ class TestLine(unittest.TestCase):
             cap_width=3,
         )
         line_copy = line.copy()
-        self.assertEqual(line.pointA, line_copy.pointA)
-        self.assertEqual(line.pointB, line_copy.pointB)
-        self.assertEqual(line.color, line_copy.color)
-        self.assertEqual(line.width, line_copy.width)
-        self.assertEqual(line.capped_line, line_copy.capped_line)
-        self.assertEqual(line.cap_width, line_copy.cap_width)
+        self.assertEqual(line._pointA, line_copy._pointA)
+        self.assertEqual(line._pointB, line_copy._pointB)
+        self.assertEqual(line._color, line_copy._color)
+        self.assertEqual(line._width, line_copy._width)
+        self.assertEqual(line._capped_line, line_copy._capped_line)
+        self.assertEqual(line._cap_width, line_copy._cap_width)
 
 
 class TestPolygon(unittest.TestCase):

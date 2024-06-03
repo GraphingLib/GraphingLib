@@ -197,9 +197,10 @@ Arrow:
   _width: 10
 
 Line:
-  color: "tab:olive"
-  width: 10
-  cap_width: 3
+  _color: "tab:olive"
+  _width: 10
+  _cap_width: 3
+  
 rc_params:
   figure.facecolor: "white"
   axes.facecolor: "white"

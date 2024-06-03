@@ -189,9 +189,9 @@ Arrow:
   _width: 2
 
 Line:
-  color: "black"
-  width: 2
-  cap_width: 1
+  _color: "black"
+  _width: 2
+  _cap_width: 1
 
 Polygon:
   fill: True
