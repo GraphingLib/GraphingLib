@@ -144,12 +144,12 @@ Contour:
   alpha: 0.5
 
 VectorField:
-  arrow_width: 0.015
-  arrow_head_width: 3
-  arrow_head_length: 5
-  arrow_head_axis_length: 6
-  color: "k"
-  angle_in_data_coords: False
+  _arrow_width: 0.015
+  _arrow_head_width: 3
+  _arrow_head_length: 5
+  _arrow_head_axis_length: 6
+  _color: "k"
+  _angle_in_data_coords: False
 
 Text:
   color: "orange"

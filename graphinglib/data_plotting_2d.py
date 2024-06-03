@@ -356,22 +356,58 @@ class VectorField:
         Default depends on the ``figure_style`` configuration.
     """
 
-    x_data: ArrayLike
-    y_data: ArrayLike
-    u_data: ArrayLike
-    v_data: ArrayLike
-    arrow_width: float | Literal["default"] = "default"
-    arrow_head_width: float | Literal["default"] = "default"
-    arrow_head_length: float | Literal["default"] = "default"
-    arrow_head_axis_length: float | Literal["default"] = "default"
-    angle_in_data_coords: bool = True
-    color: str | Literal["default"] = "default"
+    def __init__(
+        self,
+        x_data: ArrayLike,
+        y_data: ArrayLike,
+        u_data: ArrayLike,
+        v_data: ArrayLike,
+        arrow_width: float | Literal["default"] = "default",
+        arrow_head_width: float | Literal["default"] = "default",
+        arrow_head_length: float | Literal["default"] = "default",
+        arrow_head_axis_length: float | Literal["default"] = "default",
+        angle_in_data_coords: bool = True,
+        color: str | Literal["default"] = "default",
+    ) -> None:
+        """
+        This class implements vector fields.
 
-    def __post_init__(self) -> None:
-        self.x_data = np.array(self.x_data)
-        self.y_data = np.array(self.y_data)
-        self.u_data = np.array(self.u_data)
-        self.v_data = np.array(self.v_data)
+        Parameters
+        ----------
+        x_data, y_data : ArrayLike
+            x and y coordinates of the vectors.
+        u_data, v_data : ArrayLike
+            Magnitudes in the x and y coordinates.
+        arrow_width : float
+            Arrow width.
+            Default depends on the ``figure_style`` configuration.
+        arrow_head_width : float
+            Arrow head width.
+            Default depends on the ``figure_style`` configuration.
+        arrow_head_length : float
+            Arrow head length.
+            Default depends on the ``figure_style`` configuration.
+        arrow_head_axis_length : float
+            Arrow head axis length.
+            Default depends on the ``figure_style`` configuration.
+        angle_in_data_coords : bool
+            Wheter to use the screen coordinates or the data coordinates to
+            determine the vector directions.
+            Defaults to ``True``.
+        color : str
+            Color of the vector arrows.
+            Default depends on the ``figure_style`` configuration.
+        """
+        self._x_data = np.asarray(x_data)
+        self._y_data = np.asarray(y_data)
+        self._u_data = np.asarray(u_data)
+        self._v_data = np.asarray(v_data)
+        self._arrow_width = arrow_width
+        self._arrow_head_width = arrow_head_width
+        self._arrow_head_length = arrow_head_length
+        self._arrow_head_axis_length = arrow_head_axis_length
+        self._angle_in_data_coords = angle_in_data_coords
+        self._color = color
 
     @classmethod
     def from_function(
@@ -454,24 +490,24 @@ class VectorField:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if self.angle_in_data_coords:
+        if self._angle_in_data_coords:
             angle = "xy"
         else:
             angle = "uv"
         params = {
             "angles": angle,
-            "width": self.arrow_width,
-            "headwidth": self.arrow_head_width,
-            "headlength": self.arrow_head_length,
-            "headaxislength": self.arrow_head_axis_length,
-            "color": self.color,
+            "width": self._arrow_width,
+            "headwidth": self._arrow_head_width,
+            "headlength": self._arrow_head_length,
+            "headaxislength": self._arrow_head_axis_length,
+            "color": self._color,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.quiver(
-            self.x_data,
-            self.y_data,
-            self.u_data,
-            self.v_data,
+            self._x_data,
+            self._y_data,
+            self._u_data,
+            self._v_data,
             # scale=self.arrow_length_multiplier,
             zorder=z_order,
             **params,

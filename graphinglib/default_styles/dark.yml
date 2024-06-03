@@ -138,12 +138,12 @@ Text:
   h_align: center
   v_align: baseline
 VectorField:
-  angle_in_data_coords: false
-  arrow_head_axis_length: 4.5
-  arrow_head_length: 5
-  arrow_head_width: 3
-  arrow_width: 0.005
-  color: white
+  _angle_in_data_coords: false
+  _arrow_head_axis_length: 4.5
+  _arrow_head_length: 5
+  _arrow_head_width: 3
+  _arrow_width: 0.005
+  _color: white
 Vlines:
   colors: white
   line_styles: solid
