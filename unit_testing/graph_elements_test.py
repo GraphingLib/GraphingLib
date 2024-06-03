@@ -141,13 +141,13 @@ class TestText(unittest.TestCase):
             h_align="center",
             v_align="center",
         )
-        self.assertEqual(testText.x, 0.0)
-        self.assertEqual(testText.y, 0.0)
-        self.assertEqual(testText.text, "Test Text")
-        self.assertEqual(testText.color, "red")
-        self.assertEqual(testText.font_size, 12)
-        self.assertEqual(testText.h_align, "center")
-        self.assertEqual(testText.v_align, "center")
+        self.assertEqual(testText._x, 0.0)
+        self.assertEqual(testText._y, 0.0)
+        self.assertEqual(testText._text, "Test Text")
+        self.assertEqual(testText._color, "red")
+        self.assertEqual(testText._font_size, 12)
+        self.assertEqual(testText._h_align, "center")
+        self.assertEqual(testText._v_align, "center")
 
     def test_add_arrow(self):
         testText = Text(
@@ -164,7 +164,7 @@ class TestText(unittest.TestCase):
         )
         self.assertEqual(testText._arrow_pointing_to, (1, 1))
         self.assertDictEqual(
-            testText.arrow_properties,
+            testText._arrow_properties,
             {"width": 0.1, "headwidth": 0.3, "headlength": 0.2, "shrink": 0.05},
         )
 
@@ -211,13 +211,13 @@ class TestText(unittest.TestCase):
             v_align="center",
         )
         testTextCopy = testText.copy()
-        self.assertEqual(testTextCopy.x, testText.x)
-        self.assertEqual(testTextCopy.y, testText.y)
-        self.assertEqual(testTextCopy.text, testText.text)
-        self.assertEqual(testTextCopy.color, testText.color)
-        self.assertEqual(testTextCopy.font_size, testText.font_size)
-        self.assertEqual(testTextCopy.h_align, testText.h_align)
-        self.assertEqual(testTextCopy.v_align, testText.v_align)
+        self.assertEqual(testTextCopy._x, testText._x)
+        self.assertEqual(testTextCopy._y, testText._y)
+        self.assertEqual(testTextCopy._text, testText._text)
+        self.assertEqual(testTextCopy._color, testText._color)
+        self.assertEqual(testTextCopy._font_size, testText._font_size)
+        self.assertEqual(testTextCopy._h_align, testText._h_align)
+        self.assertEqual(testTextCopy._v_align, testText._v_align)
         self.assertEqual(testTextCopy._arrow_pointing_to, testText._arrow_pointing_to)
 
 

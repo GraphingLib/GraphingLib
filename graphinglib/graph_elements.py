@@ -797,14 +797,120 @@ class Text:
         Default depends on the ``figure_style`` configuration.
     """
 
-    x: float
-    y: float
-    text: str
-    color: str = "default"
-    font_size: float | Literal["same as figure"] = "same as figure"
-    h_align: str = "default"
-    v_align: str = "default"
+    _x: float
+    _y: float
+    _text: str
+    _color: str = "default"
+    _font_size: float | Literal["same as figure"] = "same as figure"
+    _h_align: str = "default"
+    _v_align: str = "default"
     _arrow_pointing_to: Optional[tuple[float]] = field(default=None, init=False)
+
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        text: str,
+        color: str = "default",
+        font_size: float | Literal["same as figure"] = "same as figure",
+        h_align: str = "default",
+        v_align: str = "default",
+    ) -> None:
+        """
+        This class allows text to be plotted.
+
+        It is also possible to attach an arrow to the :class:`~graphinglib.graph_elements.Text`
+        with the method :py:meth:`~graphinglib.graph_elements.Text.attach_arrow`
+        to point at something of interest in the plot.
+
+        Parameters
+        ----------
+        x, y : float
+            The x and y coordinates at which to plot the :class:`~graphinglib.graph_elements.Text`.
+        text : str
+            The text to be plotted.
+        color : str
+            Color of the text.
+            Default depends on the ``figure_style`` configuration.
+        font_size : float
+            Font size of the text.
+            Default depends on the ``figure_style`` configuration.
+        h_align, v_align : str
+            Horizontal and vertical alignment of the text.
+            Default depends on the ``figure_style`` configuration.
+        """
+        self._x = x
+        self._y = y
+        self._text = text
+        self._color = color
+        self._font_size = font_size
+        self._h_align = h_align
+        self._v_align = v_align
+        self._arrow_pointing_to = None
+
+    @property
+    def x(self) -> float:
+        return self._x
+
+    @x.setter
+    def x(self, x: float) -> None:
+        self._x = x
+
+    @property
+    def y(self) -> float:
+        return self._y
+
+    @y.setter
+    def y(self, y: float) -> None:
+        self._y = y
+
+    @property
+    def text(self) -> str:
+        return self._text
+
+    @text.setter
+    def text(self, text: str) -> None:
+        self._text = text
+
+    @property
+    def color(self) -> str:
+        return self._color
+
+    @color.setter
+    def color(self, color: str) -> None:
+        self._color = color
+
+    @property
+    def font_size(self) -> float | Literal["same as figure"]:
+        return self._font_size
+
+    @font_size.setter
+    def font_size(self, font_size: float | Literal["same as figure"]) -> None:
+        self._font_size = font_size
+
+    @property
+    def h_align(self) -> str:
+        return self._h_align
+
+    @h_align.setter
+    def h_align(self, h_align: str) -> None:
+        self._h_align = h_align
+
+    @property
+    def v_align(self) -> str:
+        return self._v_align
+
+    @v_align.setter
+    def v_align(self, v_align: str) -> None:
+        self._v_align = v_align
+
+    @property
+    def arrow_pointing_to(self) -> Optional[tuple[float]]:
+        return self._arrow_pointing_to
+
+    @arrow_pointing_to.setter
+    def arrow_pointing_to(self, arrow_pointing_to: Optional[tuple[float]]) -> None:
+        self._arrow_pointing_to = arrow_pointing_to
 
     def copy(self) -> Self:
         """
@@ -839,51 +945,51 @@ class Text:
             Length of the head of the arrow.
         """
         self._arrow_pointing_to = points_to
-        self.arrow_properties = {}
+        self._arrow_properties = {}
         if width is not None:
-            self.arrow_properties["width"] = width
+            self._arrow_properties["width"] = width
         if shrink is not None:
-            self.arrow_properties["shrink"] = shrink
+            self._arrow_properties["shrink"] = shrink
         if head_width is not None:
-            self.arrow_properties["headwidth"] = head_width
+            self._arrow_properties["headwidth"] = head_width
         if head_length is not None:
-            self.arrow_properties["headlength"] = head_length
+            self._arrow_properties["headlength"] = head_length
 
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
         Plots the element in the specified Axes
         """
-        size = self.font_size if self.font_size != "same as figure" else None
+        size = self._font_size if self._font_size != "same as figure" else None
         params = {
-            "color": self.color,
+            "color": self._color,
             "fontsize": size,
-            "horizontalalignment": self.h_align,
-            "verticalalignment": self.v_align,
+            "horizontalalignment": self._h_align,
+            "verticalalignment": self._v_align,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.text(
-            self.x,
-            self.y,
-            self.text,
+            self._x,
+            self._y,
+            self._text,
             zorder=z_order,
             **params,
         )
         if self._arrow_pointing_to is not None:
-            self.arrow_properties["color"] = self.color
+            self._arrow_properties["color"] = self._color
             params = {
-                "color": self.color,
+                "color": self._color,
                 "fontsize": size,
-                "horizontalalignment": self.h_align,
-                "verticalalignment": self.v_align,
+                "horizontalalignment": self._h_align,
+                "verticalalignment": self._v_align,
             }
             params = {k: v for k, v in params.items() if v != "default"}
-            if self.color != "default":
-                self.arrow_properties["color"] = self.color
-                params["arrowprops"] = self.arrow_properties
+            if self._color != "default":
+                self._arrow_properties["color"] = self._color
+                params["arrowprops"] = self._arrow_properties
             axes.annotate(
-                self.text,
+                self._text,
                 self._arrow_pointing_to,
-                xytext=(self.x, self.y),
+                xytext=(self._x, self._y),
                 zorder=z_order,
                 **params,
             )
