@@ -192,9 +192,9 @@ Polygon:
   line_style: "-"
 
 Arrow:
-  color: "tab:olive"
-  head_size: 5
-  width: 10
+  _color: "tab:olive"
+  _head_size: 5
+  _width: 10
 
 Line:
   color: "tab:olive"

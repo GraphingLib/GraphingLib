@@ -37,15 +37,15 @@ class TestArrow(unittest.TestCase):
             two_sided=True,
         )
 
-        self.assertEqual(arrow.pointA[0], 3)
-        self.assertEqual(arrow.pointA[1], 3)
-        self.assertEqual(arrow.pointB[0], 4)
-        self.assertEqual(arrow.pointB[1], 4)
-        self.assertEqual(arrow.color, "blue")
-        self.assertEqual(arrow.width, 2)
-        self.assertEqual(arrow.head_size, 3)
-        self.assertEqual(arrow.shrink, 0.1)
-        self.assertEqual(arrow.two_sided, True)
+        self.assertEqual(arrow._pointA[0], 3)
+        self.assertEqual(arrow._pointA[1], 3)
+        self.assertEqual(arrow._pointB[0], 4)
+        self.assertEqual(arrow._pointB[1], 4)
+        self.assertEqual(arrow._color, "blue")
+        self.assertEqual(arrow._width, 2)
+        self.assertEqual(arrow._head_size, 3)
+        self.assertEqual(arrow._shrink, 0.1)
+        self.assertEqual(arrow._two_sided, True)
 
     def test_shrink_points(self):
         arrow = Arrow(
@@ -125,13 +125,13 @@ class TestArrow(unittest.TestCase):
             two_sided=True,
         )
         arrow_copy = arrow.copy()
-        self.assertEqual(arrow.pointA, arrow_copy.pointA)
-        self.assertEqual(arrow.pointB, arrow_copy.pointB)
-        self.assertEqual(arrow.color, arrow_copy.color)
-        self.assertEqual(arrow.width, arrow_copy.width)
-        self.assertEqual(arrow.head_size, arrow_copy.head_size)
-        self.assertEqual(arrow.shrink, arrow_copy.shrink)
-        self.assertEqual(arrow.two_sided, arrow_copy.two_sided)
+        self.assertEqual(arrow._pointA, arrow_copy._pointA)
+        self.assertEqual(arrow._pointB, arrow_copy._pointB)
+        self.assertEqual(arrow._color, arrow_copy._color)
+        self.assertEqual(arrow._width, arrow_copy._width)
+        self.assertEqual(arrow._head_size, arrow_copy._head_size)
+        self.assertEqual(arrow._shrink, arrow_copy._shrink)
+        self.assertEqual(arrow._two_sided, arrow_copy._two_sided)
 
 
 class TestLine(unittest.TestCase):
