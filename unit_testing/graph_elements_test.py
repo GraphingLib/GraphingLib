@@ -12,31 +12,31 @@ class TestHlines(unittest.TestCase):
         self.testHlines = Hlines(1, 0, 1, "Test Hlines")
 
     def test_y_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.y, list | ndarray | float | int)
+        self.assertIsInstance(self.testHlines._y, list | ndarray | float | int)
 
     def test_xmin_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.x_min, list | ndarray | float | int)
+        self.assertIsInstance(self.testHlines._x_min, list | ndarray | float | int)
 
     def test_ymin_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.x_min, list | ndarray | float | int)
+        self.assertIsInstance(self.testHlines._x_min, list | ndarray | float | int)
 
     def test_colors_is_str_list_or_none(self):
-        self.assertIsInstance(self.testHlines.colors, list | str | None)
+        self.assertIsInstance(self.testHlines._colors, list | str | None)
 
     def test_linestyles_is_str_list_or_none(self):
-        self.assertIsInstance(self.testHlines.line_styles, list | str | None)
+        self.assertIsInstance(self.testHlines._line_styles, list | str | None)
 
     def test_label_is_str(self):
-        self.assertIsInstance(self.testHlines.label, str)
+        self.assertIsInstance(self.testHlines._label, str)
 
     def test_copy(self):
         testHlinesCopy = self.testHlines.copy()
-        self.assertEqual(testHlinesCopy.y, self.testHlines.y)
-        self.assertEqual(testHlinesCopy.x_min, self.testHlines.x_min)
-        self.assertEqual(testHlinesCopy.x_max, self.testHlines.x_max)
-        self.assertEqual(testHlinesCopy.colors, self.testHlines.colors)
-        self.assertEqual(testHlinesCopy.line_styles, self.testHlines.line_styles)
-        self.assertEqual(testHlinesCopy.label, self.testHlines.label)
+        self.assertEqual(testHlinesCopy._y, self.testHlines._y)
+        self.assertEqual(testHlinesCopy._x_min, self.testHlines._x_min)
+        self.assertEqual(testHlinesCopy._x_max, self.testHlines._x_max)
+        self.assertEqual(testHlinesCopy._colors, self.testHlines._colors)
+        self.assertEqual(testHlinesCopy._line_styles, self.testHlines._line_styles)
+        self.assertEqual(testHlinesCopy._label, self.testHlines._label)
 
 
 class TestVlines(unittest.TestCase):
@@ -44,31 +44,31 @@ class TestVlines(unittest.TestCase):
         self.testVlines = Vlines(x=[4, 5, 6, 7], y_min=0, y_max=1, label="Test Vlines")
 
     def test_x_is_list_ndarray_float_int(self):
-        self.assertListEqual(list(self.testVlines.x), [4, 5, 6, 7])
+        self.assertListEqual(list(self.testVlines._x), [4, 5, 6, 7])
 
     def test_ymin_is_list_ndarray_float_int(self):
-        self.assertEqual(self.testVlines.y_min, 0)
+        self.assertEqual(self.testVlines._y_min, 0)
 
     def test_ymax_is_list_ndarray_float_int(self):
-        self.assertEqual(self.testVlines.y_max, 1)
+        self.assertEqual(self.testVlines._y_max, 1)
 
     def test_colors_is_default(self):
-        self.assertEqual(self.testVlines.colors, "default")
+        self.assertEqual(self.testVlines._colors, "default")
 
     def test_linestyles_is_str_list_or_none(self):
-        self.assertIsInstance(self.testVlines.line_styles, list | str | None)
+        self.assertIsInstance(self.testVlines._line_styles, list | str | None)
 
     def test_label_is_str(self):
-        self.assertEqual(self.testVlines.label, "Test Vlines")
+        self.assertEqual(self.testVlines._label, "Test Vlines")
 
     def test_copy(self):
         testVlinesCopy = self.testVlines.copy()
-        self.assertEqual(list(testVlinesCopy.x), list(self.testVlines.x))
-        self.assertEqual(testVlinesCopy.y_min, self.testVlines.y_min)
-        self.assertEqual(testVlinesCopy.y_max, self.testVlines.y_max)
-        self.assertEqual(testVlinesCopy.colors, self.testVlines.colors)
-        self.assertEqual(testVlinesCopy.line_styles, self.testVlines.line_styles)
-        self.assertEqual(testVlinesCopy.label, self.testVlines.label)
+        self.assertEqual(list(testVlinesCopy._x), list(self.testVlines._x))
+        self.assertEqual(testVlinesCopy._y_min, self.testVlines._y_min)
+        self.assertEqual(testVlinesCopy._y_max, self.testVlines._y_max)
+        self.assertEqual(testVlinesCopy._colors, self.testVlines._colors)
+        self.assertEqual(testVlinesCopy._line_styles, self.testVlines._line_styles)
+        self.assertEqual(testVlinesCopy._label, self.testVlines._label)
 
 
 class TestPoint(unittest.TestCase):

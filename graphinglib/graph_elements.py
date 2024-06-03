@@ -104,52 +104,108 @@ class Hlines:
             Default depends on the ``figure_style`` configuration.
         """
         if isinstance(y, (int, float)):
-            self.y = y
+            self._y = y
         elif isinstance(y, (list, np.ndarray)):
-            self.y = np.array(y)
+            self._y = np.array(y)
         if isinstance(x_min, (int, float)):
-            self.x_min = x_min
+            self._x_min = x_min
         elif isinstance(x_min, (list, np.ndarray)):
-            self.x_min = np.array(x_min)
+            self._x_min = np.array(x_min)
         if isinstance(x_max, (int, float)):
-            self.x_max = x_max
+            self._x_max = x_max
         elif isinstance(x_max, (list, np.ndarray)):
-            self.x_max = np.array(x_max)
-        self.label = label
-        self.colors = colors
-        self.line_widths = line_widths
-        self.line_styles = line_styles
-        if isinstance(self.y, (int, float)) and isinstance(
-            self.colors, (list, np.ndarray)
+            self._x_max = np.array(x_max)
+        self._label = label
+        self._colors = colors
+        self._line_widths = line_widths
+        self._line_styles = line_styles
+        if isinstance(self._y, (int, float)) and isinstance(
+            self._colors, (list, np.ndarray)
         ):
             raise GraphingException("There can't be multiple colors for a single line!")
-        if isinstance(self.y, (int, float)) and isinstance(
-            self.line_styles, (list, np.ndarray)
+        if isinstance(self._y, (int, float)) and isinstance(
+            self._line_styles, (list, np.ndarray)
         ):
             raise GraphingException(
                 "There can't be multiple line styles for a single line!"
             )
-        if isinstance(self.y, (int, float)) and isinstance(
-            self.line_widths, (list, np.ndarray)
+        if isinstance(self._y, (int, float)) and isinstance(
+            self._line_widths, (list, np.ndarray)
         ):
             raise GraphingException(
                 "There can't be multiple line widths for a single line!"
             )
         if (
-            isinstance(self.y, (list, np.ndarray))
-            and isinstance(self.colors, list)
-            and isinstance(self.line_styles, list)
-            and isinstance(self.line_widths, list)
+            isinstance(self._y, (list, np.ndarray))
+            and isinstance(self._colors, list)
+            and isinstance(self._line_styles, list)
+            and isinstance(self._line_widths, list)
         ):
             if (
-                len(self.y) != len(self.colors)
-                or len(self.y) != len(self.line_styles)
-                or len(self.y) != len(self.line_widths)
+                len(self._y) != len(self._colors)
+                or len(self._y) != len(self._line_styles)
+                or len(self._y) != len(self._line_widths)
             ):
                 raise GraphingException(
                     "There must be the same number of colors, "
                     + "line styles, line widths and lines!"
                 )
+
+    @property
+    def y(self) -> ArrayLike:
+        return self._y
+
+    @y.setter
+    def y(self, y: ArrayLike) -> None:
+        self._y = y
+
+    @property
+    def x_min(self) -> ArrayLike:
+        return self._x_min
+
+    @x_min.setter
+    def x_min(self, x_min: ArrayLike) -> None:
+        self._x_min = x_min
+
+    @property
+    def x_max(self) -> ArrayLike:
+        return self._x_max
+
+    @x_max.setter
+    def x_max(self, x_max: ArrayLike) -> None:
+        self._x_max = x_max
+
+    @property
+    def label(self) -> Optional[str]:
+        return self._label
+
+    @label.setter
+    def label(self, label: Optional[str]) -> None:
+        self._label = label
+
+    @property
+    def colors(self) -> list[str] | str:
+        return self._colors
+
+    @colors.setter
+    def colors(self, colors: list[str] | str) -> None:
+        self._colors = colors
+
+    @property
+    def line_widths(self) -> list[float] | float:
+        return self._line_widths
+
+    @line_widths.setter
+    def line_widths(self, line_widths: list[float] | float) -> None:
+        self._line_widths = line_widths
+
+    @property
+    def line_styles(self) -> list[str] | str:
+        return self._line_styles
+
+    @line_styles.setter
+    def line_styles(self, line_styles: list[str] | str) -> None:
+        self._line_styles = line_styles
 
     def copy(self) -> Self:
         """
@@ -164,36 +220,36 @@ class Hlines:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if isinstance(self.y, list) and len(self.y) > 1:
+        if isinstance(self._y, list) and len(self._y) > 1:
             params = {
-                "colors": self.colors,
-                "linestyles": self.line_styles,
-                "linewidths": self.line_widths,
+                "colors": self._colors,
+                "linestyles": self._line_styles,
+                "linewidths": self._line_widths,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             axes.hlines(
-                self.y,
-                self.x_min,
-                self.x_max,
+                self._y,
+                self._x_min,
+                self._x_max,
                 zorder=z_order,
                 **params,
             )
             params.pop("linewidths")
             self.handle = LineCollection(
-                [[(0, 0)]] * (len(self.y) if len(self.y) <= 3 else 3),
+                [[(0, 0)]] * (len(self._y) if len(self._y) <= 3 else 3),
                 **params,
             )
         else:
             params = {
-                "colors": self.colors,
-                "linestyles": self.line_styles,
-                "linewidths": self.line_widths,
+                "colors": self._colors,
+                "linestyles": self._line_styles,
+                "linewidths": self._line_widths,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.hlines(
-                self.y,
-                self.x_min,
-                self.x_max,
+                self._y,
+                self._x_min,
+                self._x_max,
                 zorder=z_order,
                 **params,
             )
@@ -262,52 +318,108 @@ class Vlines:
             Default depends on the ``figure_style`` configuration.
         """
         if isinstance(x, (int, float)):
-            self.x = x
+            self._x = x
         elif isinstance(x, (list, np.ndarray)):
-            self.x = np.array(x)
+            self._x = np.array(x)
         if isinstance(y_min, (int, float)):
-            self.y_min = y_min
+            self._y_min = y_min
         elif isinstance(y_min, (list, np.ndarray)):
-            self.y_min = np.array(y_min)
+            self._y_min = np.array(y_min)
         if isinstance(y_max, (int, float)):
-            self.y_max = y_max
+            self._y_max = y_max
         elif isinstance(y_max, (list, np.ndarray)):
-            self.y_max = np.array(y_max)
-        self.label = label
-        self.colors = colors
-        self.line_styles = line_styles
-        self.line_widths = line_widths
-        if isinstance(self.x, (int, float)) and isinstance(
-            self.colors, (list, np.ndarray)
+            self._y_max = np.array(y_max)
+        self._label = label
+        self._colors = colors
+        self._line_styles = line_styles
+        self._line_widths = line_widths
+        if isinstance(self._x, (int, float)) and isinstance(
+            self._colors, (list, np.ndarray)
         ):
             raise GraphingException("There can't be multiple colors for a single line!")
-        if isinstance(self.x, (int, float)) and isinstance(
-            self.line_styles, (list, np.ndarray)
+        if isinstance(self._x, (int, float)) and isinstance(
+            self._line_styles, (list, np.ndarray)
         ):
             raise GraphingException(
                 "There can't be multiple line styles for a single line!"
             )
-        if isinstance(self.x, (int, float)) and isinstance(
-            self.line_widths, (list, np.ndarray)
+        if isinstance(self._x, (int, float)) and isinstance(
+            self._line_widths, (list, np.ndarray)
         ):
             raise GraphingException(
                 "There can't be multiple line widths for a single line!"
             )
         if (
-            isinstance(self.x, (list, np.ndarray))
-            and isinstance(self.colors, list)
-            and isinstance(self.line_styles, list)
-            and isinstance(self.line_widths, list)
+            isinstance(self._x, (list, np.ndarray))
+            and isinstance(self._colors, list)
+            and isinstance(self._line_styles, list)
+            and isinstance(self._line_widths, list)
         ):
             if (
-                len(self.x) != len(self.colors)
-                or len(self.x) != len(self.line_styles)
-                or len(self.x) != len(self.line_widths)
+                len(self._x) != len(self._colors)
+                or len(self._x) != len(self._line_styles)
+                or len(self._x) != len(self._line_widths)
             ):
                 raise GraphingException(
                     "There must be the same number of colors, "
                     + "line styles, line widths and lines!"
                 )
+
+    @property
+    def x(self) -> ArrayLike:
+        return self._x
+
+    @x.setter
+    def x(self, x: ArrayLike) -> None:
+        self._x = x
+
+    @property
+    def y_min(self) -> ArrayLike:
+        return self._y_min
+
+    @y_min.setter
+    def y_min(self, y_min: ArrayLike) -> None:
+        self._y_min = y_min
+
+    @property
+    def y_max(self) -> ArrayLike:
+        return self._y_max
+
+    @y_max.setter
+    def y_max(self, y_max: ArrayLike) -> None:
+        self._y_max = y_max
+
+    @property
+    def label(self) -> Optional[str]:
+        return self._label
+
+    @label.setter
+    def label(self, label: Optional[str]) -> None:
+        self._label = label
+
+    @property
+    def colors(self) -> list[str] | str:
+        return self._colors
+
+    @colors.setter
+    def colors(self, colors: list[str] | str) -> None:
+        self._colors = colors
+
+    @property
+    def line_widths(self) -> list[float] | float:
+        return self._line_widths
+
+    @line_widths.setter
+    def line_widths(self, line_widths: list[float] | float) -> None:
+        self._line_widths = line_widths
+
+    @property
+    def line_styles(self) -> list[str] | str:
+        return self._line_styles
+
+    @line_styles.setter
+    def line_styles(self, line_styles: list[str] | str) -> None:
+        self._line_styles = line_styles
 
     def copy(self) -> Self:
         """
@@ -320,36 +432,36 @@ class Vlines:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if isinstance(self.x, list) and len(self.x) > 1:
+        if isinstance(self._x, list) and len(self._x) > 1:
             params = {
-                "colors": self.colors,
-                "linestyles": self.line_styles,
-                "linewidths": self.line_widths,
+                "colors": self._colors,
+                "linestyles": self._line_styles,
+                "linewidths": self._line_widths,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             axes.vlines(
-                self.x,
-                self.y_min,
-                self.y_max,
+                self._x,
+                self._y_min,
+                self._y_max,
                 zorder=z_order,
                 **params,
             )
             params.pop("linewidths")
             self.handle = VerticalLineCollection(
-                [[(0, 0)]] * (len(self.x) if len(self.x) <= 4 else 4),
+                [[(0, 0)]] * (len(self._x) if len(self._x) <= 4 else 4),
                 **params,
             )
         else:
             params = {
-                "colors": self.colors,
-                "linestyles": self.line_styles,
-                "linewidths": self.line_widths,
+                "colors": self._colors,
+                "linestyles": self._line_styles,
+                "linewidths": self._line_widths,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.vlines(
-                self.x,
-                self.y_min,
-                self.y_max,
+                self._x,
+                self._y_min,
+                self._y_max,
                 zorder=z_order,
                 **params,
             )
