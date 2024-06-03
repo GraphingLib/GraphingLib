@@ -140,6 +140,162 @@ class Curve:
         y_data = func(x_data)
         return cls(x_data, y_data, label, color, line_width, line_style)
 
+    @property
+    def x_data(self) -> np.ndarray:
+        return self._x_data
+
+    @x_data.setter
+    def x_data(self, x_data: ArrayLike) -> None:
+        self._x_data = np.asarray(x_data)
+
+    @property
+    def y_data(self) -> np.ndarray:
+        return self._y_data
+
+    @y_data.setter
+    def y_data(self, y_data: ArrayLike) -> None:
+        self._y_data = np.asarray(y_data)
+
+    @property
+    def label(self) -> Optional[str]:
+        return self._label
+
+    @label.setter
+    def label(self, label: Optional[str]) -> None:
+        self._label = label
+
+    @property
+    def color(self) -> str:
+        return self._color
+
+    @color.setter
+    def color(self, color: str) -> None:
+        self._color = color
+
+    @property
+    def line_width(self) -> float | Literal["default"]:
+        return self._line_width
+
+    @line_width.setter
+    def line_width(self, line_width: float | Literal["default"]) -> None:
+        self._line_width = line_width
+
+    @property
+    def line_style(self) -> str:
+        return self._line_style
+
+    @line_style.setter
+    def line_style(self, line_style: str) -> None:
+        self._line_style = line_style
+
+    @property
+    def show_errorbars(self) -> bool:
+        return self._show_errorbars
+
+    @show_errorbars.setter
+    def show_errorbars(self, show_errorbars: bool) -> None:
+        self._show_errorbars = show_errorbars
+
+    @property
+    def errorbars_color(self) -> str:
+        return self._errorbars_color
+
+    @errorbars_color.setter
+    def errorbars_color(self, errorbars_color: str) -> None:
+        self._errorbars_color = errorbars_color
+
+    @property
+    def errorbars_line_width(self) -> float | Literal["default"]:
+        return self._errorbars_line_width
+
+    @errorbars_line_width.setter
+    def errorbars_line_width(
+        self, errorbars_line_width: float | Literal["default"]
+    ) -> None:
+        self._errorbars_line_width = errorbars_line_width
+
+    @property
+    def cap_thickness(self) -> float | Literal["default"]:
+        return self._cap_thickness
+
+    @cap_thickness.setter
+    def cap_thickness(self, cap_thickness: float | Literal["default"]) -> None:
+        self._cap_thickness = cap_thickness
+
+    @property
+    def cap_width(self) -> float | Literal["default"]:
+        return self._cap_width
+
+    @cap_width.setter
+    def cap_width(self, cap_width: float | Literal["default"]) -> None:
+        self._cap_width = cap_width
+
+    @property
+    def show_error_curves(self) -> bool:
+        return self._show_error_curves
+
+    @show_error_curves.setter
+    def show_error_curves(self, show_error_curves: bool) -> None:
+        self._show_error_curves = show_error_curves
+
+    @property
+    def error_curves_fill_between(self) -> bool:
+        return self._error_curves_fill_between
+
+    @error_curves_fill_between.setter
+    def error_curves_fill_between(self, error_curves_fill_between: bool) -> None:
+        self._error_curves_fill_between = error_curves_fill_between
+
+    @property
+    def error_curves_color(self) -> str:
+        return self._error_curves_color
+
+    @error_curves_color.setter
+    def error_curves_color(self, error_curves_color: str) -> None:
+        self._error_curves_color = error_curves_color
+
+    @property
+    def error_curves_line_style(self) -> str:
+        return self._error_curves_line_style
+
+    @error_curves_line_style.setter
+    def error_curves_line_style(self, error_curves_line_style: str) -> None:
+        self._error_curves_line_style = error_curves_line_style
+
+    @property
+    def error_curves_line_width(self) -> float | Literal["default"]:
+        return self._error_curves_line_width
+
+    @error_curves_line_width.setter
+    def error_curves_line_width(
+        self, error_curves_line_width: float | Literal["default"]
+    ) -> None:
+        self._error_curves_line_width = error_curves_line_width
+
+    @property
+    def fill_between_bounds(self) -> tuple[float, float]:
+        return self._fill_between_bounds
+
+    @fill_between_bounds.setter
+    def fill_between_bounds(self, fill_between_bounds: tuple[float, float]) -> None:
+        self._fill_between_bounds = fill_between_bounds
+
+    @property
+    def fill_between_other_curve(self) -> Self:
+        return self._fill_between_other_curve
+
+    @fill_between_other_curve.setter
+    def fill_between_other_curve(self, fill_between_other_curve: Self) -> None:
+        self._fill_between_other_curve = fill_between_other_curve
+
+    @property
+    def fill_between_color(self) -> str:
+        return self._fill_between_color
+
+    @fill_between_color.setter
+    def fill_between_color(self, fill_between_color: str) -> None:
+        self._fill_between_color = fill_between_color
+
     def __add__(self, other: Self | float) -> Self:
         """
         Defines the addition of two curves or a curve and a number.
@@ -490,8 +646,8 @@ class Curve:
             Default depends on the ``figure_style`` configuration.
         """
         self._show_errorbars = True
-        self.x_error = np.array(x_error) if x_error is not None else x_error
-        self.y_error = np.array(y_error) if y_error is not None else y_error
+        self._x_error = np.array(x_error) if x_error is not None else x_error
+        self._y_error = np.array(y_error) if y_error is not None else y_error
         self._errorbars_color = errorbars_color
         self._errorbars_line_width = errorbars_line_width
         self._cap_thickness = cap_thickness
@@ -529,8 +685,8 @@ class Curve:
             Default depends on the ``figure_style`` configuration.
         """
         self._show_error_curves = True
-        self.x_error = np.array(x_error) if x_error is not None else x_error
-        self.y_error = np.array(y_error) if y_error is not None else y_error
+        self._x_error = np.array(x_error) if x_error is not None else x_error
+        self._y_error = np.array(y_error) if y_error is not None else y_error
         self._error_curves_color = error_curves_color
         self._error_curves_line_style = error_curves_line_style
         self._error_curves_line_width = error_curves_line_width
@@ -1191,8 +1347,8 @@ class Curve:
             self.handle = axes.errorbar(
                 self._x_data,
                 self._y_data,
-                xerr=self.x_error,
-                yerr=self.y_error,
+                xerr=self._x_error,
+                yerr=self._y_error,
                 label=self._label,
                 zorder=z_order,
                 **params,
@@ -1213,13 +1369,13 @@ class Curve:
             )
         if self._show_error_curves:
             max_y = (
-                self._y_data + self.y_error
-                if self.y_error is not None
+                self._y_data + self._y_error
+                if self._y_error is not None
                 else self._y_data
             )
             min_y = (
-                self._y_data - self.y_error
-                if self.y_error is not None
+                self._y_data - self._y_error
+                if self._y_error is not None
                 else self._y_data
             )
             axes.plot(

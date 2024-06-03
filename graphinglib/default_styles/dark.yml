@@ -5,18 +5,18 @@ Contour:
   number_of_levels: 10
   show_color_bar: true
 Curve:
-  cap_thickness: same as curve
-  cap_width: 3
-  color: null
-  errorbars_color: same as curve
-  errorbars_line_width: same as curve
-  error_curves_color: same as curve
-  error_curves_fill_between: true
-  error_curves_line_style: --
-  error_curves_line_width: 1
-  fill_under_color: same as curve
-  line_style: '-'
-  line_width: 2
+  _cap_thickness: same as curve
+  _cap_width: 3
+  _color: null
+  _errorbars_color: same as curve
+  _errorbars_line_width: same as curve
+  _error_curves_color: same as curve
+  _error_curves_fill_between: true
+  _error_curves_line_style: --
+  _error_curves_line_width: 1
+  _fill_under_color: same as curve
+  _line_style: '-'
+  _line_width: 2
 Figure:
   log_scale_x: false
   log_scale_y: false
