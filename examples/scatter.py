@@ -6,8 +6,8 @@ _thumb: .4, .4
 """
 
 import numpy as np
-import graphinglib as gl
 
+import graphinglib as gl
 
 # Create noisy data0
 x = np.linspace(0, 10, 100)
@@ -17,7 +17,7 @@ scatter = gl.Scatter(x, y, "Data")
 fit = gl.FitFromPolynomial(scatter, 2, "Fit")
 
 # Use the fit to predict value of y at x = 5.
-print(f"Value of fit at x = 5 is y = {fit.function(5)}")
+print(f"Value of fit at x = 5 is y = {fit._function(5)}")
 predicted_point = fit.create_point_at_x(5, color="red")
 
 fig = gl.Figure(size=(8, 6))

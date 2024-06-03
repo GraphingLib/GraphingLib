@@ -28,41 +28,41 @@ class TestFitFromPolynomial(unittest.TestCase):
 
     def test_first_degree_coeffs(self):
         self.assertListEqual(
-            [round(i, 5) for i in list(self.fit_first_degree.coeffs)], [2, 3]
+            [round(i, 5) for i in list(self.fit_first_degree._coeffs)], [2, 3]
         )
 
     def test_first_degree_cov(self):
-        self.assertIsInstance(self.fit_first_degree.cov_matrix, np.ndarray)
-        self.assertEqual(self.fit_first_degree.cov_matrix.shape, (2, 2))
+        self.assertIsInstance(self.fit_first_degree._cov_matrix, np.ndarray)
+        self.assertEqual(self.fit_first_degree._cov_matrix.shape, (2, 2))
 
     def test_first_degree_std_dev(self):
-        self.assertIsInstance(self.fit_first_degree.standard_deviation, np.ndarray)
-        self.assertEqual(self.fit_first_degree.standard_deviation.shape, (2,))
+        self.assertIsInstance(self.fit_first_degree._standard_deviation, np.ndarray)
+        self.assertEqual(self.fit_first_degree._standard_deviation.shape, (2,))
 
     def test_first_degree_string(self):
         self.assertEqual(str(self.fit_first_degree), "$3.0x^1 + 2.0$")
 
     def test_first_degree_functions(self):
-        self.assertAlmostEqual(self.fit_first_degree.function(5), 17)
+        self.assertAlmostEqual(self.fit_first_degree._function(5), 17)
 
     def test_second_degree_coeffs(self):
         self.assertListEqual(
-            [round(i, 5) for i in list(self.fit_second_degree.coeffs)], [-2, -3, 4]
+            [round(i, 5) for i in list(self.fit_second_degree._coeffs)], [-2, -3, 4]
         )
 
     def test_second_degree_cov(self):
-        self.assertIsInstance(self.fit_second_degree.cov_matrix, np.ndarray)
-        self.assertEqual(self.fit_second_degree.cov_matrix.shape, (3, 3))
+        self.assertIsInstance(self.fit_second_degree._cov_matrix, np.ndarray)
+        self.assertEqual(self.fit_second_degree._cov_matrix.shape, (3, 3))
 
     def test_second_degree_std_dev(self):
-        self.assertIsInstance(self.fit_second_degree.standard_deviation, np.ndarray)
-        self.assertEqual(self.fit_second_degree.standard_deviation.shape, (3,))
+        self.assertIsInstance(self.fit_second_degree._standard_deviation, np.ndarray)
+        self.assertEqual(self.fit_second_degree._standard_deviation.shape, (3,))
 
     def test_second_degree_string(self):
         self.assertEqual(str(self.fit_second_degree), "$4.0x^2 - 3.0x^1 - 2.0$")
 
     def test_second_degree_functions(self):
-        self.assertAlmostEqual(round(self.fit_second_degree.function(5), 5), 83)
+        self.assertAlmostEqual(round(self.fit_second_degree._function(5), 5), 83)
 
     def test_get_coordinates_at_x(self):
         self.assertAlmostEqual(
@@ -131,16 +131,16 @@ class TestFitFromPolynomial(unittest.TestCase):
     def test_copy(self):
         copy = self.fit_first_degree.copy()
         # check that all attributes are the same
-        self.assertEqual(list(copy.coeffs), list(self.fit_first_degree.coeffs))
+        self.assertEqual(list(copy._coeffs), list(self.fit_first_degree._coeffs))
         self.assertEqual(
-            copy.cov_matrix.tolist(), self.fit_first_degree.cov_matrix.tolist()
+            copy._cov_matrix.tolist(), self.fit_first_degree._cov_matrix.tolist()
         )
         self.assertEqual(
-            copy.standard_deviation.tolist(),
-            self.fit_first_degree.standard_deviation.tolist(),
+            copy._standard_deviation.tolist(),
+            self.fit_first_degree._standard_deviation.tolist(),
         )
-        self.assertEqual(copy.color, self.fit_first_degree.color)
-        self.assertEqual(copy.label, self.fit_first_degree.label)
+        self.assertEqual(copy._color, self.fit_first_degree._color)
+        self.assertEqual(copy._label, self.fit_first_degree._label)
 
 
 class TestFitFromSine(unittest.TestCase):
@@ -154,27 +154,27 @@ class TestFitFromSine(unittest.TestCase):
     def test_parameters(self):
         self.assertListEqual(
             [
-                self.fit.amplitude,
-                self.fit.frequency_rad,
-                self.fit.phase_rad,
-                self.fit.vertical_shift,
+                self.fit._amplitude,
+                self.fit._frequency_rad,
+                self.fit._phase_rad,
+                self.fit._vertical_shift,
             ],
             [2, 3, 4, 5],
         )
 
     def test_cov(self):
-        self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
-        self.assertEqual(self.fit.cov_matrix.shape, (4, 4))
+        self.assertIsInstance(self.fit._cov_matrix, np.ndarray)
+        self.assertEqual(self.fit._cov_matrix.shape, (4, 4))
 
     def test_std_dev(self):
-        self.assertIsInstance(self.fit.standard_deviation, np.ndarray)
-        self.assertEqual(self.fit.standard_deviation.shape, (4,))
+        self.assertIsInstance(self.fit._standard_deviation, np.ndarray)
+        self.assertEqual(self.fit._standard_deviation.shape, (4,))
 
     def test_string(self):
         self.assertEqual(str(self.fit), "$2.000 \\sin(3.000x + 4.000) + 5.000$")
 
     def test_function(self):
-        self.assertAlmostEqual(self.fit.function(17), 3.00048965)
+        self.assertAlmostEqual(self.fit._function(17), 3.00048965)
 
     def test_get_coordinates_at_x(self):
         self.assertAlmostEqual(self.fit.get_coordinates_at_x(17)[1], 3.00048965)
@@ -224,17 +224,17 @@ class TestFitFromSine(unittest.TestCase):
     def test_copy(self):
         copy = self.fit.copy()
         # check that all attributes are the same
-        self.assertEqual(copy.amplitude, self.fit.amplitude)
-        self.assertEqual(copy.frequency_rad, self.fit.frequency_rad)
-        self.assertEqual(copy.phase_rad, self.fit.phase_rad)
-        self.assertEqual(copy.vertical_shift, self.fit.vertical_shift)
-        self.assertEqual(copy.cov_matrix.tolist(), self.fit.cov_matrix.tolist())
+        self.assertEqual(copy._amplitude, self.fit._amplitude)
+        self.assertEqual(copy._frequency_rad, self.fit._frequency_rad)
+        self.assertEqual(copy._phase_rad, self.fit._phase_rad)
+        self.assertEqual(copy._vertical_shift, self.fit._vertical_shift)
+        self.assertEqual(copy._cov_matrix.tolist(), self.fit._cov_matrix.tolist())
         self.assertEqual(
-            copy.standard_deviation.tolist(),
-            self.fit.standard_deviation.tolist(),
+            copy._standard_deviation.tolist(),
+            self.fit._standard_deviation.tolist(),
         )
-        self.assertEqual(copy.color, self.fit.color)
-        self.assertEqual(copy.label, self.fit.label)
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)
 
 
 class TestFitFromExponential(unittest.TestCase):
@@ -246,7 +246,7 @@ class TestFitFromExponential(unittest.TestCase):
         )
 
     def test_parameters(self):
-        self.assertListEqual([round(i) for i in list(self.fit.parameters)[1:]], [3, 4])
+        self.assertListEqual([round(i) for i in list(self.fit._parameters)[1:]], [3, 4])
 
     def test_cov(self):
         self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
@@ -260,7 +260,7 @@ class TestFitFromExponential(unittest.TestCase):
         self.assertEqual(str(self.fit)[6:-7], " \exp(3.000x + ")
 
     def test_function(self):
-        self.assertAlmostEqual(self.fit.function(0.001), 109.524, places=3)
+        self.assertAlmostEqual(self.fit._function(0.001), 109.524, places=3)
 
     def test_get_coordinates_at_x(self):
         self.assertAlmostEqual(
@@ -312,14 +312,14 @@ class TestFitFromExponential(unittest.TestCase):
     def test_copy(self):
         copy = self.fit.copy()
         # check that all attributes are the same
-        self.assertEqual(list(copy.parameters), list(self.fit.parameters))
+        self.assertEqual(list(copy._parameters), list(self.fit._parameters))
         self.assertEqual(copy.cov_matrix.tolist(), self.fit.cov_matrix.tolist())
         self.assertEqual(
             copy.standard_deviation.tolist(),
             self.fit.standard_deviation.tolist(),
         )
-        self.assertEqual(copy.color, self.fit.color)
-        self.assertEqual(copy.label, self.fit.label)
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)
 
 
 class TestFitFromGaussian(unittest.TestCase):
@@ -329,23 +329,23 @@ class TestFitFromGaussian(unittest.TestCase):
         self.fit = FitFromGaussian(self.data, "Gaussian fit")
 
     def test_cov(self):
-        self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
-        self.assertEqual(self.fit.cov_matrix.shape, (3, 3))
+        self.assertIsInstance(self.fit._cov_matrix, np.ndarray)
+        self.assertEqual(self.fit._cov_matrix.shape, (3, 3))
 
     def test_parameters(self):
-        params = [self.fit.amplitude, self.fit.mean, self.fit.standard_deviation]
+        params = [self.fit._amplitude, self.fit._mean, self.fit._standard_deviation]
         rounded_params = [round(i, 2) for i in params]
         self.assertListEqual(rounded_params, [5, 1, 1])
 
     def test_std_dev(self):
-        self.assertIsInstance(self.fit.standard_deviation_of_fit_params, np.ndarray)
-        self.assertEqual(self.fit.standard_deviation_of_fit_params.shape, (3,))
+        self.assertIsInstance(self.fit._standard_deviation_of_fit_params, np.ndarray)
+        self.assertEqual(self.fit._standard_deviation_of_fit_params.shape, (3,))
 
     def test_str(self):
         self.assertEqual(str(self.fit), "$\mu = 1.000, \sigma = 1.000, A = 5.000$")
 
     def test_function(self):
-        self.assertAlmostEqual(self.fit.function(3), 0.676515, places=3)
+        self.assertAlmostEqual(self.fit._function(3), 0.676515, places=3)
 
     def test_get_coordinates_at_x(self):
         self.assertAlmostEqual(self.fit.get_coordinates_at_x(3)[1], 0.676515, places=3)
@@ -391,16 +391,16 @@ class TestFitFromGaussian(unittest.TestCase):
     def test_copy(self):
         copy = self.fit.copy()
         # check that all attributes are the same
-        self.assertEqual(copy.amplitude, self.fit.amplitude)
-        self.assertEqual(copy.mean, self.fit.mean)
-        self.assertEqual(copy.standard_deviation, self.fit.standard_deviation)
-        self.assertEqual(copy.cov_matrix.tolist(), self.fit.cov_matrix.tolist())
+        self.assertEqual(copy._amplitude, self.fit._amplitude)
+        self.assertEqual(copy._mean, self.fit._mean)
+        self.assertEqual(copy._standard_deviation, self.fit._standard_deviation)
+        self.assertEqual(copy._cov_matrix.tolist(), self.fit._cov_matrix.tolist())
         self.assertEqual(
-            copy.standard_deviation_of_fit_params.tolist(),
-            self.fit.standard_deviation_of_fit_params.tolist(),
+            copy._standard_deviation_of_fit_params.tolist(),
+            self.fit._standard_deviation_of_fit_params.tolist(),
         )
-        self.assertEqual(copy.color, self.fit.color)
-        self.assertEqual(copy.label, self.fit.label)
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)
 
 
 class TestFitFromSquareRoot(unittest.TestCase):
@@ -410,22 +410,22 @@ class TestFitFromSquareRoot(unittest.TestCase):
         self.fit = FitFromSquareRoot(self.data, "Square root fit")
 
     def test_parameters(self):
-        rounded_params = [round(i, 3) for i in list(self.fit.parameters)]
+        rounded_params = [round(i, 3) for i in list(self.fit._parameters)]
         self.assertListEqual(rounded_params, [3, 4, 5])
 
     def test_cov(self):
-        self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
-        self.assertEqual(self.fit.cov_matrix.shape, (3, 3))
+        self.assertIsInstance(self.fit._cov_matrix, np.ndarray)
+        self.assertEqual(self.fit._cov_matrix.shape, (3, 3))
 
     def test_std_dev(self):
-        self.assertIsInstance(self.fit.standard_deviation, np.ndarray)
-        self.assertEqual(self.fit.standard_deviation.shape, (3,))
+        self.assertIsInstance(self.fit._standard_deviation, np.ndarray)
+        self.assertEqual(self.fit._standard_deviation.shape, (3,))
 
     def test_str(self):
         self.assertEqual(str(self.fit), "$3.000 \\sqrt{x + 4.000} + 5.000$")
 
     def test_function(self):
-        self.assertAlmostEqual(self.fit.function(3), 12.937, places=3)
+        self.assertAlmostEqual(self.fit._function(3), 12.937, places=3)
 
     def test_get_coordinates_at_x(self):
         self.assertAlmostEqual(self.fit.get_coordinates_at_x(3)[1], 12.937, places=3)
@@ -469,13 +469,13 @@ class TestFitFromSquareRoot(unittest.TestCase):
     def test_copy(self):
         copy = self.fit.copy()
         # check that all attributes are the same
-        self.assertEqual(list(copy.parameters), list(self.fit.parameters))
-        self.assertEqual(copy.cov_matrix.tolist(), self.fit.cov_matrix.tolist())
+        self.assertEqual(list(copy._parameters), list(self.fit._parameters))
+        self.assertEqual(copy._cov_matrix.tolist(), self.fit._cov_matrix.tolist())
         self.assertEqual(
-            copy.standard_deviation.tolist(), self.fit.standard_deviation.tolist()
+            copy._standard_deviation.tolist(), self.fit._standard_deviation.tolist()
         )
-        self.assertEqual(copy.color, self.fit.color)
-        self.assertEqual(copy.label, self.fit.label)
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)
 
 
 class TestFitFromLog(unittest.TestCase):
@@ -485,22 +485,22 @@ class TestFitFromLog(unittest.TestCase):
         self.fit = FitFromLog(self.data, "Logarithmic fit")
 
     def test_parameters(self):
-        rounded_params = [round(i) for i in list(self.fit.parameters)]
+        rounded_params = [round(i) for i in list(self.fit._parameters)]
         self.assertListEqual(rounded_params, [2, 3, 4])
 
     def test_cov(self):
-        self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
-        self.assertEqual(self.fit.cov_matrix.shape, (3, 3))
+        self.assertIsInstance(self.fit._cov_matrix, np.ndarray)
+        self.assertEqual(self.fit._cov_matrix.shape, (3, 3))
 
     def test_std_dev(self):
-        self.assertIsInstance(self.fit.standard_deviation, np.ndarray)
-        self.assertEqual(self.fit.standard_deviation.shape, (3,))
+        self.assertIsInstance(self.fit._standard_deviation, np.ndarray)
+        self.assertEqual(self.fit._standard_deviation.shape, (3,))
 
     def test_string(self):
         self.assertEqual(str(self.fit), "$2.000 log_e(x + 3.000) + 4.000$")
 
     def test_function(self):
-        self.assertAlmostEqual(self.fit.function(0.001), 6.19789, places=3)
+        self.assertAlmostEqual(self.fit._function(0.001), 6.19789, places=3)
 
     def test_get_coordinates_at_x(self):
         self.assertAlmostEqual(
@@ -546,14 +546,14 @@ class TestFitFromLog(unittest.TestCase):
     def test_copy(self):
         copy = self.fit.copy()
         # check that all attributes are the same
-        self.assertEqual(list(copy.parameters), list(self.fit.parameters))
-        self.assertEqual(copy.cov_matrix.tolist(), self.fit.cov_matrix.tolist())
+        self.assertEqual(list(copy._parameters), list(self.fit._parameters))
+        self.assertEqual(copy._cov_matrix.tolist(), self.fit._cov_matrix.tolist())
         self.assertEqual(
-            copy.standard_deviation.tolist(),
-            self.fit.standard_deviation.tolist(),
+            copy._standard_deviation.tolist(),
+            self.fit._standard_deviation.tolist(),
         )
-        self.assertEqual(copy.color, self.fit.color)
-        self.assertEqual(copy.label, self.fit.label)
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)
 
 
 class TestFitFromFunction(unittest.TestCase):
@@ -563,19 +563,19 @@ class TestFitFromFunction(unittest.TestCase):
         self.fit = FitFromFunction(lambda x, a, b: a / x + b * x, self.data)
 
     def test_parameters(self):
-        rounded_params = [round(i) for i in list(self.fit.parameters)]
+        rounded_params = [round(i) for i in list(self.fit._parameters)]
         self.assertListEqual(rounded_params, [1, 3])
 
     def test_cov(self):
-        self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
-        self.assertEqual(self.fit.cov_matrix.shape, (2, 2))
+        self.assertIsInstance(self.fit._cov_matrix, np.ndarray)
+        self.assertEqual(self.fit._cov_matrix.shape, (2, 2))
 
     def test_std_dev(self):
-        self.assertIsInstance(self.fit.standard_deviation, np.ndarray)
-        self.assertEqual(self.fit.standard_deviation.shape, (2,))
+        self.assertIsInstance(self.fit._standard_deviation, np.ndarray)
+        self.assertEqual(self.fit._standard_deviation.shape, (2,))
 
     def test_function(self):
-        self.assertAlmostEqual(self.fit.function(1), 4, places=3)
+        self.assertAlmostEqual(self.fit._function(1), 4, places=3)
 
     def test_get_coordinates_at_x(self):
         self.assertAlmostEqual(self.fit.get_coordinates_at_x(1)[1], 4, places=3)
@@ -612,11 +612,11 @@ class TestFitFromFunction(unittest.TestCase):
     def test_copy(self):
         copy = self.fit.copy()
         # check that all attributes are the same
-        self.assertEqual(list(copy.parameters), list(self.fit.parameters))
-        self.assertEqual(copy.cov_matrix.tolist(), self.fit.cov_matrix.tolist())
+        self.assertEqual(list(copy._parameters), list(self.fit._parameters))
+        self.assertEqual(copy._cov_matrix.tolist(), self.fit._cov_matrix.tolist())
         self.assertEqual(
-            copy.standard_deviation.tolist(),
-            self.fit.standard_deviation.tolist(),
+            copy._standard_deviation.tolist(),
+            self.fit._standard_deviation.tolist(),
         )
-        self.assertEqual(copy.color, self.fit.color)
-        self.assertEqual(copy.label, self.fit.label)
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)

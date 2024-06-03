@@ -24,61 +24,61 @@ Figure:
   - 6.4
   - 4.8
 FitFromExponential:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromFunction:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromGaussian:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromLog:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromPolynomial:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromSine:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromSquareRoot:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromFOTF:
-  res_color: "k"
-  res_line_width: 1
-  res_line_style: "--"
-  color: "k"
-  line_width: 2
-  line_style: "-"
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
 Heatmap:
   _aspect_ratio: equal
   _color_map: RdBu

@@ -66,16 +66,34 @@ class GeneralFit(Curve):
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
         """
-        self.curve_to_be_fit = curve_to_be_fit
-        self.color = color
-        self.line_width = line_width
+        self._curve_to_be_fit = curve_to_be_fit
+        self._color = color
+        self._line_width = line_width
         if label:
-            self.label = label + " : " + "$f(x) = $" + str(self)
+            self._label = label + " : " + "$f(x) = $" + str(self)
         else:
-            self.label = "$f(x) = $" + str(self)
-        self.line_style = line_style
+            self._label = "$f(x) = $" + str(self)
+        self._line_style = line_style
+
         self._res_curves_to_be_plotted = False
-        self.function: Callable[[np.ndarray], np.ndarray]
+        self._res_sigma_multiplier = None
+        self._res_color = None
+        self._res_line_width = None
+        self._res_line_style = None
+
+        self._function: Callable[[np.ndarray], np.ndarray]
+
+    @property
+    def curve_to_be_fit(self) -> Curve | Scatter:
+        return self._curve_to_be_fit
+
+    @curve_to_be_fit.setter
+    def curve_to_be_fit(self, curve: Curve | Scatter) -> None:
+        self._curve_to_be_fit = curve
+
+    @property
+    def function(self) -> Callable[[np.ndarray], np.ndarray]:
+        return self._function
 
     def __str__(self) -> str:
         """
@@ -84,7 +102,7 @@ class GeneralFit(Curve):
         raise NotImplementedError()
 
     def get_coordinates_at_x(self, x: float) -> tuple[float, float]:
-        return (x, self.function(x))
+        return (x, self._function(x))
 
     def create_point_at_x(
         self,
@@ -127,7 +145,7 @@ class GeneralFit(Curve):
         """
         return Point(
             x,
-            self.function(x),
+            self._function(x),
             label=label,
             color=color,
             edge_color=edge_color,
@@ -207,15 +225,15 @@ class GeneralFit(Curve):
         Axes
         """
         params = {
-            "color": self.color,
-            "linewidth": self.line_width,
-            "linestyle": self.line_style,
+            "color": self._color,
+            "linewidth": self._line_width,
+            "linestyle": self._line_style,
         }
         params = {key: value for key, value in params.items() if value != "default"}
         (self.handle,) = axes.plot(
             self._x_data,
             self._y_data,
-            label=self.label,
+            label=self._label,
             zorder=z_order,
             **params,
         )
@@ -223,12 +241,12 @@ class GeneralFit(Curve):
             y_fit = self._y_data
             residuals = self.get_residuals()
             std = np.std(residuals)
-            y_fit_plus_std = y_fit + (self.res_sigma_multiplier * std)
-            y_fit_minus_std = y_fit - (self.res_sigma_multiplier * std)
+            y_fit_plus_std = y_fit + (self._res_sigma_multiplier * std)
+            y_fit_minus_std = y_fit - (self._res_sigma_multiplier * std)
             params = {
-                "color": self.res_color,
-                "linewidth": self.res_line_width,
-                "linestyle": self.res_line_style,
+                "color": self._res_color,
+                "linewidth": self._res_line_width,
+                "linestyle": self._res_line_style,
             }
             params = {key: value for key, value in params.items() if value != "default"}
             axes.plot(
@@ -284,10 +302,10 @@ class GeneralFit(Curve):
             Default depends on the ``figure_style`` configuration.
         """
         self._res_curves_to_be_plotted = True
-        self.res_sigma_multiplier = sigma_multiplier
-        self.res_color = color
-        self.res_line_width = line_width
-        self.res_line_style = line_style
+        self._res_sigma_multiplier = sigma_multiplier
+        self._res_color = color
+        self._res_line_width = line_width
+        self._res_line_style = line_style
 
     def get_residuals(self) -> np.ndarray:
         """
@@ -298,8 +316,8 @@ class GeneralFit(Curve):
         residuals : np.ndarray
             Array of residuals.
         """
-        y_data = self.function(self.curve_to_be_fit._x_data)
-        residuals = y_data - self.curve_to_be_fit._y_data
+        y_data = self._function(self._curve_to_be_fit._x_data)
+        residuals = y_data - self._curve_to_be_fit._y_data
         return residuals
 
     def get_Rsquared(self) -> float:
@@ -314,7 +332,7 @@ class GeneralFit(Curve):
         Rsquared = 1 - (
             np.sum(self.get_residuals() ** 2)
             / np.sum(
-                (self.curve_to_be_fit._y_data - np.mean(self.curve_to_be_fit._y_data))
+                (self._curve_to_be_fit._y_data - np.mean(self._curve_to_be_fit._y_data))
                 ** 2
             )
         )
@@ -405,34 +423,49 @@ class FitFromPolynomial(GeneralFit):
         function : Callable
             Polynomial function with the parameters of the fit.
         """
-        self.curve_to_be_fit = curve_to_be_fit
+        self._curve_to_be_fit = curve_to_be_fit
         inversed_coeffs, inversed_cov_matrix = np.polyfit(
-            self.curve_to_be_fit._x_data, self.curve_to_be_fit._y_data, degree, cov=True
+            self._curve_to_be_fit._x_data,
+            self._curve_to_be_fit._y_data,
+            degree,
+            cov=True,
         )
-        self.coeffs = inversed_coeffs[::-1]
-        self.cov_matrix = np.flip(inversed_cov_matrix)
-        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
-        self.function = self._polynomial_func_with_params()
-        self.color = color
-        self.line_width = line_width
+        self._coeffs = inversed_coeffs[::-1]
+        self._cov_matrix = np.flip(inversed_cov_matrix)
+        self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
+        self._function = self._polynomial_func_with_params()
+        self._color = color
+        self._line_width = line_width
         if label:
-            self.label = label + " : " + "$f(x) = $" + str(self)
+            self._label = label + " : " + "$f(x) = $" + str(self)
         else:
-            self.label = "$f(x) = $" + str(self)
-        self.line_style = line_style
+            self._label = "$f(x) = $" + str(self)
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit._x_data)
-            if len(self.curve_to_be_fit._x_data) > 500
+            len(self._curve_to_be_fit._x_data)
+            if len(self._curve_to_be_fit._x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
-            self.curve_to_be_fit._x_data[0],
-            self.curve_to_be_fit._x_data[-1],
+        self._x_data = np.linspace(
+            self._curve_to_be_fit._x_data[0],
+            self._curve_to_be_fit._x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
+        self._y_data = self._function(self._x_data)
         self._fill_curve_between = False
+
+    @property
+    def coeffs(self) -> np.ndarray:
+        return self._coeffs
+
+    @property
+    def cov_matrix(self) -> np.ndarray:
+        return self._cov_matrix
+
+    @property
+    def standard_deviation(self) -> np.ndarray:
+        return self._standard_deviation
 
     def __str__(self) -> str:
         """
@@ -440,7 +473,7 @@ class FitFromPolynomial(GeneralFit):
         """
         coeff_chunks = []
         power_chunks = []
-        ordered_rounded_coeffs = [round(coeff, 3) for coeff in self.coeffs[::-1]]
+        ordered_rounded_coeffs = [round(coeff, 3) for coeff in self._coeffs[::-1]]
         for coeff, power in zip(
             ordered_rounded_coeffs, range(len(ordered_rounded_coeffs) - 1, -1, -1)
         ):
@@ -483,52 +516,8 @@ class FitFromPolynomial(GeneralFit):
             Polynomial function with the parameters of the fit.
         """
         return lambda x: sum(
-            coeff * x**exponent for exponent, coeff in enumerate(self.coeffs)
+            coeff * x**exponent for exponent, coeff in enumerate(self._coeffs)
         )
-
-    def get_coeffs(self) -> np.ndarray:
-        """
-        Returns the coefficients of the polynomial fit.
-
-        Returns
-        -------
-        coeffs : np.ndarray
-            Coefficients of the polynomial fit. The first element is the coefficient of the lowest order term (constant term).
-        """
-        return self.coeffs
-
-    def get_cov_matrix(self) -> np.ndarray:
-        """
-        Returns the covariance matrix of the polynomial fit.
-
-        Returns
-        -------
-        cov_matrix : np.ndarray
-            Covariance matrix of the polynomial fit (using the same order as the coeffs attribute).
-        """
-        return self.cov_matrix
-
-    def get_standard_deviation(self) -> np.ndarray:
-        """
-        Returns the standard deviation of the coefficients of the polynomial fit.
-
-        Returns
-        -------
-        standard_deviation : np.ndarray
-            Standard deviation of the coefficients of the polynomial fit (same order as coeffs).
-        """
-        return self.standard_deviation
-
-    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
-        """
-        Returns the polynomial function with the parameters of the fit.
-
-        Returns
-        -------
-        function : Callable
-            Polynomial function with the parameters of the fit.
-        """
-        return self.function
 
 
 class FitFromSine(GeneralFit):
@@ -615,10 +604,16 @@ class FitFromSine(GeneralFit):
             Amplitude of the sine function.
         frequency_rad : float
             Frequency of the sine function in radians.
-        phase : float
+        frequency_deg : float
+            Frequency of the sine function in degrees.
+        phase_rad : float
             Phase of the sine function.
+        phase_deg : float
+            Phase of the sine function in degrees.
         vertical_shift : float
             Vertical shift of the sine function.
+        parameters : np.ndarray
+            Parameters of the fit (amplitude, frequency (rad), phase (rad), vertical shift)
         cov_matrix : np.ndarray
             Covariance matrix of the parameters of the fit.
         standard_deviation : np.ndarray
@@ -626,45 +621,81 @@ class FitFromSine(GeneralFit):
         function : Callable
             Sine function with the parameters of the fit.
         """
-        self.curve_to_be_fit = curve_to_be_fit
-        self.guesses = guesses
+        self._curve_to_be_fit = curve_to_be_fit
+        self._guesses = guesses
         self._calculate_parameters()
-        self.function = self._sine_func_with_params()
-        self.color = color
+        self._function = self._sine_func_with_params()
+        self._color = color
         if label:
-            self.label = label + " : " + "$f(x) = $" + str(self)
+            self._label = label + " : " + "$f(x) = $" + str(self)
         else:
-            self.label = "$f(x) = $" + str(self)
-        self.line_width = line_width
-        self.line_style = line_style
+            self._label = "$f(x) = $" + str(self)
+        self._line_width = line_width
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit._x_data)
-            if len(self.curve_to_be_fit._x_data) > 500
+            len(self._curve_to_be_fit._x_data)
+            if len(self._curve_to_be_fit._x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
-            self.curve_to_be_fit._x_data[0],
-            self.curve_to_be_fit._x_data[-1],
+        self._x_data = np.linspace(
+            self._curve_to_be_fit._x_data[0],
+            self._curve_to_be_fit._x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
+        self._y_data = self._function(self._x_data)
         self._fill_curve_between = False
+
+    @property
+    def amplitude(self) -> float:
+        return self._amplitude
+
+    @property
+    def frequency_rad(self) -> float:
+        return self._frequency_rad
+
+    @property
+    def frequency_deg(self) -> float:
+        return self._frequency_deg
+
+    @property
+    def phase_rad(self) -> float:
+        return self._phase_rad
+
+    @property
+    def phase_deg(self) -> float:
+        return self._phase_deg
+
+    @property
+    def vertical_shift(self) -> float:
+        return self._vertical_shift
+
+    @property
+    def cov_matrix(self) -> np.ndarray:
+        return self._cov_matrix
+
+    @property
+    def standard_deviation(self) -> np.ndarray:
+        return self._standard_deviation
+
+    @property
+    def parameters(self) -> np.ndarray:
+        return self._parameters
 
     def __str__(self) -> str:
         """
         Creates a string representation of the sine function.
         """
-        part1 = f"{self.amplitude:.3f} \sin({self.frequency_rad:.3f}x"
+        part1 = f"{self._amplitude:.3f} \sin({self._frequency_rad:.3f}x"
         part2 = (
-            f" + {self.phase_rad:.3f})"
-            if self.phase_rad >= 0
-            else f" - {abs(self.phase_rad):.3f})"
+            f" + {self._phase_rad:.3f})"
+            if self._phase_rad >= 0
+            else f" - {abs(self._phase_rad):.3f})"
         )
         part3 = (
-            f" + {self.vertical_shift:.3f}"
-            if self.vertical_shift >= 0
-            else f" - {abs(self.vertical_shift):.3f}"
+            f" + {self._vertical_shift:.3f}"
+            if self._vertical_shift >= 0
+            else f" - {abs(self._vertical_shift):.3f}"
         )
         return f"${part1 + part2 + part3}$"
 
@@ -672,16 +703,20 @@ class FitFromSine(GeneralFit):
         """
         Calculates the parameters of the fit.
         """
-        parameters, self.cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = curve_fit(
             self._sine_func_template,
-            self.curve_to_be_fit._x_data,
-            self.curve_to_be_fit._y_data,
-            p0=self.guesses,
+            self._curve_to_be_fit._x_data,
+            self._curve_to_be_fit._y_data,
+            p0=self._guesses,
         )
-        self.amplitude, self.frequency_rad, self.phase_rad, self.vertical_shift = (
-            parameters
+        self._amplitude, self._frequency_rad, self._phase_rad, self._vertical_shift = (
+            self._parameters
         )
-        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
+        self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
+
+        # Calculate the frequency and phase in degrees
+        self._frequency_deg = np.degrees(self._frequency_rad)
+        self._phase_deg = np.degrees(self._phase_rad)
 
     @staticmethod
     def _sine_func_template(
@@ -704,109 +739,10 @@ class FitFromSine(GeneralFit):
             Sine function with the parameters of the fit.
         """
         return (
-            lambda x: self.amplitude * np.sin(self.frequency_rad * x + self.phase_rad)
-            + self.vertical_shift
+            lambda x: self._amplitude
+            * np.sin(self._frequency_rad * x + self._phase_rad)
+            + self._vertical_shift
         )
-
-    def get_amplitude(self) -> float:
-        """
-        Returns the amplitude of the sine function.
-
-        Returns
-        -------
-        float
-            Amplitude of the sine function.
-        """
-        return self.amplitude
-
-    def get_frequency(self, in_rad: bool = True) -> float:
-        """
-        Returns the frequency of the sine function.
-
-        Parameters
-        ----------
-        in_rad : bool, optional
-            If True, returns the frequency in radians. If False, returns the frequency in Hz.
-            Default is True.
-
-        Returns
-        -------
-        float
-            Frequency of the sine function in radians.
-        """
-        return self.frequency_rad if in_rad else np.degrees(self.frequency_rad)
-
-    def get_phase(self, in_rad: bool = True) -> float:
-        """
-        Returns the phase of the sine function.
-
-        Parameters
-        ----------
-        in_rad : bool, optional
-            If True, returns the phase in radians. If False, returns the phase in degrees.
-            Default is True.
-
-        Returns
-        -------
-        float
-            Phase of the sine function.
-        """
-        return self.phase_rad if in_rad else np.degrees(self.phase_rad)
-
-    def get_vertical_shift(self) -> float:
-        """
-        Returns the vertical shift of the sine function.
-
-        Returns
-        -------
-        float
-            Vertical shift of the sine function.
-        """
-        return self.vertical_shift
-
-    def get_cov_matrix(self) -> np.ndarray:
-        """
-        Returns the covariance matrix of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Covariance matrix of the parameters of the fit.
-        """
-        return self.cov_matrix
-
-    def get_standard_deviation(self) -> np.ndarray:
-        """
-        Returns the standard deviation of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Standard deviation of the parameters of the fit.
-        """
-        return self.standard_deviation
-
-    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
-        """
-        Returns the sine function with the parameters of the fit.
-
-        Returns
-        -------
-        Callable
-            Sine function with the parameters of the fit.
-        """
-        return self.function
-
-    def get_parameters(self) -> list[float]:
-        """
-        Returns the parameters of the fit.
-
-        Returns
-        -------
-        list[float]
-            Parameters of the fit (amplitude, frequency (rad), phase, vertical shift)
-        """
-        return [self.amplitude, self.frequency_rad, self.phase_rad, self.vertical_shift]
 
 
 class FitFromExponential(GeneralFit):
@@ -887,40 +823,52 @@ class FitFromExponential(GeneralFit):
         function : Callable
             Exponential function with the parameters of the fit.
         """
-        self.curve_to_be_fit = curve_to_be_fit
-        self.guesses = guesses
+        self._curve_to_be_fit = curve_to_be_fit
+        self._guesses = guesses
         self._calculate_parameters()
-        self.function = self._exp_func_with_params()
-        self.color = color
+        self._function = self._exp_func_with_params()
+        self._color = color
         if label:
-            self.label = label + " : " + "$f(x) = $" + str(self)
+            self._label = label + " : " + "$f(x) = $" + str(self)
         else:
-            self.label = "$f(x) = $" + str(self)
-        self.line_width = line_width
-        self.line_style = line_style
+            self._label = "$f(x) = $" + str(self)
+        self._line_width = line_width
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit._x_data)
-            if len(self.curve_to_be_fit._x_data) > 500
+            len(self._curve_to_be_fit._x_data)
+            if len(self._curve_to_be_fit._x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
-            self.curve_to_be_fit._x_data[0],
-            self.curve_to_be_fit._x_data[-1],
+        self._x_data = np.linspace(
+            self._curve_to_be_fit._x_data[0],
+            self._curve_to_be_fit._x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
+        self._y_data = self._function(self._x_data)
         self._fill_curve_between = False
+
+    @property
+    def parameters(self) -> np.ndarray:
+        return self._parameters
+
+    @property
+    def cov_matrix(self) -> np.ndarray:
+        return self._cov_matrix
+
+    @property
+    def standard_deviation(self) -> np.ndarray:
+        return self._standard_deviation
 
     def __str__(self) -> str:
         """
         Creates a string representation of the exponential function.
         """
-        part1 = f"{self.parameters[0]:.3f} \exp({self.parameters[1]:.3f}x"
+        part1 = f"{self._parameters[0]:.3f} \exp({self._parameters[1]:.3f}x"
         part2 = (
-            f" + {self.parameters[2]:.3f})"
-            if self.parameters[2] >= 0
-            else f" - {abs(self.parameters[2]):.3f})"
+            f" + {self._parameters[2]:.3f})"
+            if self._parameters[2] >= 0
+            else f" - {abs(self._parameters[2]):.3f})"
         )
         return f"${part1 + part2}$"
 
@@ -928,14 +876,13 @@ class FitFromExponential(GeneralFit):
         """
         Calculates the parameters of the fit.
         """
-        parameters, self.cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = curve_fit(
             self._exp_func_template,
-            self.curve_to_be_fit._x_data,
-            self.curve_to_be_fit._y_data,
-            p0=self.guesses,
+            self._curve_to_be_fit._x_data,
+            self._curve_to_be_fit._y_data,
+            p0=self._guesses,
         )
-        self.parameters = parameters
-        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
+        self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
 
     @staticmethod
     def _exp_func_template(x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
@@ -955,53 +902,9 @@ class FitFromExponential(GeneralFit):
         function : Callable
             Exponential function with the parameters of the fit.
         """
-        return lambda x: self.parameters[0] * np.exp(
-            self.parameters[1] * x + self.parameters[2]
+        return lambda x: self._parameters[0] * np.exp(
+            self._parameters[1] * x + self._parameters[2]
         )
-
-    def get_parameters(self) -> np.ndarray:
-        """
-        Returns the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Parameters of the fit (same order as guesses).
-        """
-        return self.parameters
-
-    def get_cov_matrix(self) -> np.ndarray:
-        """
-        Returns the covariance matrix of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Covariance matrix of the parameters of the fit.
-        """
-        return self.cov_matrix
-
-    def get_standard_deviation(self) -> np.ndarray:
-        """
-        Returns the standard deviation of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Standard deviation of the parameters of the fit.
-        """
-        return self.standard_deviation
-
-    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
-        """
-        Returns the exponential function with the parameters of the fit.
-
-        Returns
-        -------
-        function : Callable
-            Exponential function with the parameters of the fit.
-        """
-        return self.function
 
 
 class FitFromGaussian(GeneralFit):
@@ -1104,51 +1007,75 @@ class FitFromGaussian(GeneralFit):
         -------
         The ``standard_deviation`` attribute doesn't represent the standard deviation of the fit parameters as it does in the other fit classes. Instead, it represents the standard deviation of the gaussian function (it is one of parameters of the fit). The standard deviation of the fit parameters can be found in the ``standard_deviation_of_fit_params`` attribute.
         """
-        self.curve_to_be_fit = curve_to_be_fit
-        self.guesses = guesses
+        self._curve_to_be_fit = curve_to_be_fit
+        self._guesses = guesses
         self._calculate_parameters()
-        self.function = self._gaussian_func_with_params()
-        self.color = color
+        self._function = self._gaussian_func_with_params()
+        self._color = color
         if label:
-            self.label = label + " : " + str(self)
+            self._label = label + " : " + str(self)
         else:
-            self.label = str(self)
-        self.line_width = line_width
-        self.line_style = line_style
+            self._label = str(self)
+        self._line_width = line_width
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit._x_data)
-            if len(self.curve_to_be_fit._x_data) > 500
+            len(self._curve_to_be_fit._x_data)
+            if len(self._curve_to_be_fit._x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
-            self.curve_to_be_fit._x_data[0],
-            self.curve_to_be_fit._x_data[-1],
+        self._x_data = np.linspace(
+            self._curve_to_be_fit._x_data[0],
+            self._curve_to_be_fit._x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
+        self._y_data = self._function(self._x_data)
         self._fill_curve_between = False
+
+    @property
+    def amplitude(self) -> float:
+        return self._amplitude
+
+    @property
+    def mean(self) -> float:
+        return self._mean
+
+    @property
+    def standard_deviation(self) -> float:
+        return self._standard_deviation
+
+    @property
+    def cov_matrix(self) -> np.ndarray:
+        return self._cov_matrix
+
+    @property
+    def standard_deviation_of_fit_params(self) -> np.ndarray:
+        return self._standard_deviation_of_fit_params
+
+    @property
+    def parameters(self) -> np.ndarray:
+        return self._parameters
 
     def __str__(self) -> str:
         """
         Creates a string representation of the gaussian function.
         """
-        return f"$\mu = {self.mean:.3f}, \sigma = {self.standard_deviation:.3f}, A = {self.amplitude:.3f}$"
+        return f"$\mu = {self._mean:.3f}, \sigma = {self._standard_deviation:.3f}, A = {self._amplitude:.3f}$"
 
     def _calculate_parameters(self) -> None:
         """
         Calculates the parameters of the fit.
         """
-        parameters, self.cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = curve_fit(
             self._gaussian_func_template,
-            self.curve_to_be_fit._x_data,
-            self.curve_to_be_fit._y_data,
-            p0=self.guesses,
+            self._curve_to_be_fit._x_data,
+            self._curve_to_be_fit._y_data,
+            p0=self._guesses,
         )
-        self.amplitude = parameters[0]
-        self.mean = parameters[1]
-        self.standard_deviation = parameters[2]
-        self.standard_deviation_of_fit_params = np.sqrt(np.diag(self.cov_matrix))
+        self._amplitude = self._parameters[0]
+        self._mean = self._parameters[1]
+        self._standard_deviation = self._parameters[2]
+        self._standard_deviation_of_fit_params = np.sqrt(np.diag(self._cov_matrix))
 
     @staticmethod
     def _gaussian_func_template(
@@ -1170,86 +1097,9 @@ class FitFromGaussian(GeneralFit):
         function : Callable
             Gaussian function with the parameters of the fit.
         """
-        return lambda x: self.amplitude * np.exp(
-            -(((x - self.mean) / self.standard_deviation) ** 2) / 2
+        return lambda x: self._amplitude * np.exp(
+            -(((x - self._mean) / self._standard_deviation) ** 2) / 2
         )
-
-    def get_amplitude(self) -> float:
-        """
-        Returns the amplitude of the gaussian function.
-
-        Returns
-        -------
-        float
-            Amplitude of the gaussian function.
-        """
-        return self.amplitude
-
-    def get_mean(self) -> float:
-        """
-        Returns the mean of the gaussian function.
-
-        Returns
-        -------
-        float
-            Mean of the gaussian function.
-        """
-        return self.mean
-
-    def get_standard_deviation(self) -> float:
-        """
-        Returns the standard deviation of the gaussian function.
-
-        Returns
-        -------
-        float
-            Standard deviation of the gaussian function.
-        """
-        return self.standard_deviation
-
-    def get_cov_matrix(self) -> np.ndarray:
-        """
-        Returns the covariance matrix of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Covariance matrix of the parameters of the fit.
-        """
-        return self.cov_matrix
-
-    def get_standard_deviation_of_fit_params(self) -> np.ndarray:
-        """
-        Returns the standard deviation of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Standard deviation of the parameters of the fit.
-        """
-        return self.standard_deviation_of_fit_params
-
-    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
-        """
-        Returns the gaussian function with the parameters of the fit.
-
-        Returns
-        -------
-        function : Callable
-            Gaussian function with the parameters of the fit.
-        """
-        return self.function
-
-    def get_parameters(self) -> list[float]:
-        """
-        Returns the parameters of the fit.
-
-        Returns
-        -------
-        list[float]
-            Parameters of the fit (amplitude, mean, standard deviation)
-        """
-        return [self.amplitude, self.mean, self.standard_deviation]
 
 
 class FitFromSquareRoot(GeneralFit):
@@ -1335,49 +1185,60 @@ class FitFromSquareRoot(GeneralFit):
         function : Callable
             Square root function with the parameters of the fit.
         """
-        self.curve_to_be_fit = curve_to_be_fit
-        self.guesses = guesses
+        self._curve_to_be_fit = curve_to_be_fit
+        self._guesses = guesses
         self._calculate_parameters()
-        self.function = self._square_root_func_with_params()
-        self.color = color
+        self._function = self._square_root_func_with_params()
+        self._color = color
         if label:
-            self.label = label + " : " + str(self)
+            self._label = label + " : " + str(self)
         else:
-            self.label = str(self)
-        self.line_width = line_width
-        self.line_style = line_style
+            self._label = str(self)
+        self._line_width = line_width
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit._x_data)
-            if len(self.curve_to_be_fit._x_data) > 500
+            len(self._curve_to_be_fit._x_data)
+            if len(self._curve_to_be_fit._x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
-            self.curve_to_be_fit._x_data[0],
-            self.curve_to_be_fit._x_data[-1],
+        self._x_data = np.linspace(
+            self._curve_to_be_fit._x_data[0],
+            self._curve_to_be_fit._x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
+        self._y_data = self._function(self._x_data)
         self._fill_curve_between = False
+
+    @property
+    def parameters(self) -> np.ndarray:
+        return self._parameters
+
+    @property
+    def cov_matrix(self) -> np.ndarray:
+        return self.cov_matrix
+
+    @property
+    def standard_deviation(self) -> np.ndarray:
+        return self.standard_deviation
 
     def __str__(self) -> str:
         """
         Creates a string representation of the square root function.
         """
-        return f"${self.parameters[0]:.3f} \sqrt{{x {'+' if self.parameters[1] > 0 else '-'} {abs(self.parameters[1]):.3f}}} {'+' if self.parameters[2] > 0 else '-'} {abs(self.parameters[2]):.3f}$"
+        return f"${self._parameters[0]:.3f} \sqrt{{x {'+' if self._parameters[1] > 0 else '-'} {abs(self._parameters[1]):.3f}}} {'+' if self._parameters[2] > 0 else '-'} {abs(self._parameters[2]):.3f}$"
 
     def _calculate_parameters(self) -> None:
         """
         Calculates the parameters of the fit.
         """
-        parameters, self.cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = curve_fit(
             self._square_root_func_template,
-            self.curve_to_be_fit._x_data,
-            self.curve_to_be_fit._y_data,
-            p0=self.guesses,
+            self._curve_to_be_fit._x_data,
+            self._curve_to_be_fit._y_data,
+            p0=self._guesses,
         )
-        self.parameters = parameters
-        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
+        self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
 
     @staticmethod
     def _square_root_func_template(
@@ -1400,53 +1261,9 @@ class FitFromSquareRoot(GeneralFit):
             Square root function with the parameters of the fit.
         """
         return (
-            lambda x: self.parameters[0] * np.sqrt(x + self.parameters[1])
-            + self.parameters[2]
+            lambda x: self._parameters[0] * np.sqrt(x + self._parameters[1])
+            + self._parameters[2]
         )
-
-    def get_parameters(self) -> np.ndarray:
-        """
-        Returns the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Parameters of the fit (same order as guesses).
-        """
-        return self.parameters
-
-    def get_cov_matrix(self) -> np.ndarray:
-        """
-        Returns the covariance matrix of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Covariance matrix of the parameters of the fit.
-        """
-        return self.cov_matrix
-
-    def get_standard_deviation(self) -> np.ndarray:
-        """
-        Returns the standard deviation of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Standard deviation of the parameters of the fit.
-        """
-        return self.standard_deviation
-
-    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
-        """
-        Returns the square root function with the parameters of the fit.
-
-        Returns
-        -------
-        function : Callable
-            Square root function with the parameters of the fit.
-        """
-        return self.function
 
 
 class FitFromLog(GeneralFit):
@@ -1539,49 +1356,61 @@ class FitFromLog(GeneralFit):
         function : Callable
             Logarithmic function with the parameters of the fit.
         """
-        self.curve_to_be_fit = curve_to_be_fit
-        self.log_base = log_base
-        self.guesses = guesses
+        self._curve_to_be_fit = curve_to_be_fit
+        self._log_base = log_base
+        self._guesses = guesses
         self._calculate_parameters()
-        self.function = self._log_func_with_params()
-        self.color = color
+        self._function = self._log_func_with_params()
+        self._color = color
         if label:
-            self.label = label + " : " + str(self)
+            self._label = label + " : " + str(self)
         else:
-            self.label = str(self)
-        self.line_width = line_width
-        self.line_style = line_style
+            self._label = str(self)
+        self._line_width = line_width
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit._x_data)
-            if len(self.curve_to_be_fit._x_data) > 500
+            len(self._curve_to_be_fit._x_data)
+            if len(self._curve_to_be_fit._x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
-            self.curve_to_be_fit._x_data[0],
-            self.curve_to_be_fit._x_data[-1],
+        self._x_data = np.linspace(
+            self._curve_to_be_fit._x_data[0],
+            self._curve_to_be_fit._x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
+        self._y_data = self._function(self._x_data)
         self._fill_curve_between = False
+
+    @property
+    def parameters(self) -> np.ndarray:
+        return self._parameters
+
+    @property
+    def cov_matrix(self) -> np.ndarray:
+        return self._cov_matrix
+
+    @property
+    def standard_deviation(self) -> np.ndarray:
+        return self._standard_deviation
 
     def __str__(self) -> str:
         """
         Creates a string representation of the logarithmic function.
         """
-        return f"${self.parameters[0]:.3f} log_{self.log_base if self.log_base != np.e else 'e'}(x {'-' if self.parameters[1] < 0 else '+'} {abs(self.parameters[1]):.3f}) {'-' if self.parameters[2] < 0 else '+'} {abs(self.parameters[2]):.3f}$"
+        return f"${self._parameters[0]:.3f} log_{self._log_base if self._log_base != np.e else 'e'}(x {'-' if self._parameters[1] < 0 else '+'} {abs(self._parameters[1]):.3f}) {'-' if self._parameters[2] < 0 else '+'} {abs(self._parameters[2]):.3f}$"
 
     def _calculate_parameters(self) -> None:
         """
         Calculates the parameters of the fit.
         """
-        self.parameters, self.cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = curve_fit(
             self._log_func_template(),
-            self.curve_to_be_fit._x_data,
-            self.curve_to_be_fit._y_data,
-            p0=self.guesses,
+            self._curve_to_be_fit._x_data,
+            self._curve_to_be_fit._y_data,
+            p0=self._guesses,
         )
-        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
+        self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
 
     def _log_func_template(
         self,
@@ -1589,7 +1418,7 @@ class FitFromLog(GeneralFit):
         """
         Function to be passed to the ``curve_fit`` function.
         """
-        return lambda x, a, b, c: a * (np.log(x + b) / np.log(self.log_base)) + c
+        return lambda x, a, b, c: a * (np.log(x + b) / np.log(self._log_base)) + c
 
     def _log_func_with_params(
         self,
@@ -1603,54 +1432,10 @@ class FitFromLog(GeneralFit):
             Logarithmic function with the parameters of the fit.
         """
         return (
-            lambda x: self.parameters[0]
-            * (np.log(x + self.parameters[1]) / np.log(self.log_base))
-            + self.parameters[2]
+            lambda x: self._parameters[0]
+            * (np.log(x + self._parameters[1]) / np.log(self._log_base))
+            + self._parameters[2]
         )
-
-    def get_parameters(self) -> np.ndarray:
-        """
-        Returns the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Parameters of the fit (same order as guesses).
-        """
-        return self.parameters
-
-    def get_cov_matrix(self) -> np.ndarray:
-        """
-        Returns the covariance matrix of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Covariance matrix of the parameters of the fit.
-        """
-        return self.cov_matrix
-
-    def get_standard_deviation(self) -> np.ndarray:
-        """
-        Returns the standard deviation of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Standard deviation of the parameters of the fit.
-        """
-        return self.standard_deviation
-
-    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
-        """
-        Returns the logarithmic function with the parameters of the fit.
-
-        Returns
-        -------
-        function : Callable
-            Logarithmic function with the parameters of the fit.
-        """
-        return self.function
 
 
 class FitFromFunction(GeneralFit):
@@ -1742,40 +1527,52 @@ class FitFromFunction(GeneralFit):
             Function with the parameters of the fit.
         """
         self._function_template = function
-        self.curve_to_be_fit = curve_to_be_fit
-        self.guesses = guesses
-        self.color = color
-        self.line_width = line_width
-        self.line_style = line_style
+        self._curve_to_be_fit = curve_to_be_fit
+        self._guesses = guesses
+        self._color = color
+        self._line_width = line_width
+        self._line_style = line_style
 
         self._calculate_parameters()
-        self.function = self._get_function_with_params()
-        self.label = label
+        self._function = self._get_function_with_params()
+        self._label = label
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit._x_data)
-            if len(self.curve_to_be_fit._x_data) > 500
+            len(self._curve_to_be_fit._x_data)
+            if len(self._curve_to_be_fit._x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
-            self.curve_to_be_fit._x_data[0],
-            self.curve_to_be_fit._x_data[-1],
+        self._x_data = np.linspace(
+            self._curve_to_be_fit._x_data[0],
+            self._curve_to_be_fit._x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
+        self._y_data = self._function(self._x_data)
         self._fill_curve_between = False
+
+    @property
+    def parameters(self) -> np.ndarray:
+        return self._parameters
+
+    @property
+    def cov_matrix(self) -> np.ndarray:
+        return self._cov_matrix
+
+    @property
+    def standard_deviation(self) -> np.ndarray:
+        return self._standard_deviation
 
     def _calculate_parameters(self) -> None:
         """
         Calculates the parameters of the fit.
         """
-        self.parameters, self.cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = curve_fit(
             self._function_template,
-            self.curve_to_be_fit._x_data,
-            self.curve_to_be_fit._y_data,
-            p0=self.guesses,
+            self._curve_to_be_fit._x_data,
+            self._curve_to_be_fit._y_data,
+            p0=self._guesses,
         )
-        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
+        self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
 
     def _get_function_with_params(self) -> Callable:
         """
@@ -1790,53 +1587,9 @@ class FitFromFunction(GeneralFit):
             : self._function_template.__code__.co_argcount
         ][1:]
         args_dict = {
-            argument_names[i]: self.parameters[i] for i in range(len(argument_names))
+            argument_names[i]: self._parameters[i] for i in range(len(argument_names))
         }
         return partial(self._function_template, **args_dict)
-
-    def get_parameters(self) -> np.ndarray:
-        """
-        Returns the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Parameters of the fit (same order as guesses).
-        """
-        return self.parameters
-
-    def get_cov_matrix(self) -> np.ndarray:
-        """
-        Returns the covariance matrix of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Covariance matrix of the parameters of the fit.
-        """
-        return self.cov_matrix
-
-    def get_standard_deviation(self) -> np.ndarray:
-        """
-        Returns the standard deviation of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Standard deviation of the parameters of the fit.
-        """
-        return self.standard_deviation
-
-    def get_function(self) -> Callable:
-        """
-        Returns the function with the parameters of the fit.
-
-        Returns
-        -------
-        function : Callable
-            Function
-        """
-        return self.function
 
 
 class FitFromFOTF(GeneralFit):
@@ -1922,50 +1675,70 @@ class FitFromFOTF(GeneralFit):
         function : Callable
             First order transfer function with the parameters of the fit.
         """
-        self.curve_to_be_fit = curve_to_be_fit
-        self.guesses = guesses
+        self._curve_to_be_fit = curve_to_be_fit
+        self._guesses = guesses
         self._calculate_parameters()
-        self.function = self._fotf_func_with_params()
-        self.color = color
+        self._function = self._fotf_func_with_params()
+        self._color = color
         if label:
-            self.label = label + " : " + str(self)
+            self._label = label + " : " + str(self)
         else:
-            self.label = str(self)
-        self.line_width = line_width
-        self.line_style = line_style
+            self._label = str(self)
+        self._line_width = line_width
+        self._line_style = line_style
         self._res_curves_to_be_plotted = False
         number_of_points = (
-            len(self.curve_to_be_fit._x_data)
-            if len(self.curve_to_be_fit._x_data) > 500
+            len(self._curve_to_be_fit._x_data)
+            if len(self._curve_to_be_fit._x_data) > 500
             else 500
         )
-        self.x_data = np.linspace(
-            self.curve_to_be_fit._x_data[0],
-            self.curve_to_be_fit._x_data[-1],
+        self._x_data = np.linspace(
+            self._curve_to_be_fit._x_data[0],
+            self._curve_to_be_fit._x_data[-1],
             number_of_points,
         )
-        self.y_data = self.function(self.x_data)
+        self._y_data = self._function(self._x_data)
         self._fill_curve_between = False
+
+    @property
+    def gain(self) -> float:
+        return self._gain
+
+    @property
+    def time_constant(self) -> float:
+        return self._time_constant
+
+    @property
+    def cov_matrix(self) -> np.ndarray:
+        return self._cov_matrix
+
+    @property
+    def standard_deviation(self) -> np.ndarray:
+        return self._standard_deviation
+
+    @property
+    def parameters(self) -> np.ndarray:
+        return self._parameters
 
     def __str__(self) -> str:
         """
         Creates a string representation of the first order transfer function.
         """
-        return f"$K = {self.gain:.3f}, \\tau = {self.time_constant:.3f}$"
+        return f"$K = {self._gain:.3f}, \\tau = {self._time_constant:.3f}$"
 
     def _calculate_parameters(self) -> None:
         """
         Calculates the parameters of the fit.
         """
-        parameters, self.cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = curve_fit(
             self._fotf_func_template,
-            self.curve_to_be_fit._x_data,
-            self.curve_to_be_fit._y_data,
-            p0=self.guesses,
+            self._curve_to_be_fit._x_data,
+            self._curve_to_be_fit._y_data,
+            p0=self._guesses,
         )
-        self.gain = parameters[0]
-        self.time_constant = parameters[1]
-        self.standard_deviation = np.sqrt(np.diag(self.cov_matrix))
+        self._gain = self._parameters[0]
+        self._time_constant = self._parameters[1]
+        self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
 
     @staticmethod
     def _fotf_func_template(
@@ -1987,70 +1760,4 @@ class FitFromFOTF(GeneralFit):
         function : Callable
             First order transfer function with the parameters of the fit.
         """
-        return lambda x: self.gain * (1 - np.exp(-x / self.time_constant))
-
-    def get_gain(self) -> float:
-        """
-        Returns the gain of the first order transfer function.
-
-        Returns
-        -------
-        float
-            Gain of the first order transfer function.
-        """
-        return self.gain
-
-    def get_time_constant(self) -> float:
-        """
-        Returns the time constant of the first order transfer function.
-
-        Returns
-        -------
-        float
-            Time constant of the first order transfer function.
-        """
-        return self.time_constant
-
-    def get_cov_matrix(self) -> np.ndarray:
-        """
-        Returns the covariance matrix of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Covariance matrix of the parameters of the fit.
-        """
-        return self.cov_matrix
-
-    def get_standard_deviation(self) -> np.ndarray:
-        """
-        Returns the standard deviation of the parameters of the fit.
-
-        Returns
-        -------
-        np.ndarray
-            Standard deviation of the parameters of the fit.
-        """
-        return self.standard_deviation
-
-    def get_function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
-        """
-        Returns the first order transfer function with the parameters of the fit.
-
-        Returns
-        -------
-        function : Callable
-            First order transfer function with the parameters of the fit.
-        """
-        return self.function
-
-    def get_parameters(self) -> list[float]:
-        """
-        Returns the parameters of the fit.
-
-        Returns
-        -------
-        list[float]
-            Parameters of the fit (gain, time constant)
-        """
-        return [self.gain, self.time_constant]
+        return lambda x: self._gain * (1 - np.exp(-x / self._time_constant))
