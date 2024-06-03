@@ -243,10 +243,10 @@ class GeneralFit(Curve):
                 zorder=z_order,
                 **params,
             )
-        if self._fill_curve_between:
+        if self._fill_between_bounds:
             kwargs = {"alpha": 0.2}
-            if self._fill_under_color:
-                kwargs["color"] = self._fill_under_color
+            if self._fill_between_color:
+                kwargs["color"] = self._fill_between_color
             else:
                 kwargs["color"] = self.handle[0].get_color()
             params = {key: value for key, value in kwargs.items() if value != "default"}
@@ -254,8 +254,8 @@ class GeneralFit(Curve):
                 self._x_data,
                 self._y_data,
                 where=np.logical_and(
-                    self._x_data >= self._fill_curve_between[0],
-                    self._x_data <= self._fill_curve_between[1],
+                    self._x_data >= self._fill_between_bounds[0],
+                    self._x_data <= self._fill_between_bounds[1],
                 ),
                 zorder=z_order - 2,
                 **params,

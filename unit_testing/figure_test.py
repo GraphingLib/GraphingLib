@@ -291,9 +291,9 @@ class TestTwinAxis(unittest.TestCase):
     def test_fill_in_missing_params(self):
         default_params = {
             "Curve": {
-                "line_width": 2,
-                "color": "k",
-                "line_style": "-",
+                "_line_width": 2,
+                "_color": "k",
+                "_line_style": "-",
             }
         }
         twin = TwinAxis()

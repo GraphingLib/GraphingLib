@@ -115,7 +115,7 @@ class TestCurve(unittest.TestCase):
     def test_area_between_fill_under(self):
         curve = Curve.from_function(lambda x: x**2, 0, 1)
         curve2 = Curve.from_function(lambda x: x**3, 0, 1)
-        curve2.get_area_between(0, 1, fill_under=True)
+        curve2.get_area_between(0, 1, fill_between=True)
         fig = Figure(figure_style="plain")
         fig.add_elements(curve, curve2)
         fig._prepare_figure()
@@ -127,7 +127,7 @@ class TestCurve(unittest.TestCase):
     def test_area_between_fill_under_two_curves(self):
         curve = Curve.from_function(lambda x: x**2, 0, 1)
         curve2 = Curve.from_function(lambda x: x**3, 0, 1)
-        area = curve.get_area_between(0, 1, fill_under=True, other_curve=curve2)
+        area = curve.get_area_between(0, 1, fill_between=True, other_curve=curve2)
         self.assertAlmostEqual(area, 1 / 12, places=3)
         fig = Figure(figure_style="plain")
         fig.add_elements(curve, curve2)

@@ -1133,7 +1133,7 @@ class Curve:
         self,
         x1: float,
         x2: float,
-        fill_under: bool = False,
+        fill_between: bool = False,
         fill_color: str = "default",
         other_curve: Optional[Self] = None,
     ) -> float:
@@ -1145,24 +1145,24 @@ class Curve:
         ----------
         x1, x2 : float
             The x values between which the area is to be calculated.
-        fill_under : bool
+        fill_between : bool
             Whether to fill the specified area between the curve and the x axis when displaying.
             Defaults to ``False``.
         fill_color : str
-            Color of the area between the curve and the x axis when ``fill_under`` is set to ``True``.
+            Color of the area between the curve and the x axis when ``fill_between`` is set to ``True``.
             Default depends on the ``figure_style`` configuration.
         other_curve : :class:`~graphinglib.data_plotting_1d.Curve`, optional
             If specified, the area between the two curves will be calculated instead of the area between the curve and the x axis.
 
         Returns
         -------
-        The area (float) between the curve and the x axis between the two given x values.
+        The area (float) between the curve and the x axis (or between the two curves) between the two given x values.
         """
         if other_curve is None:
-            if fill_under:
-                self._fill_curve_between = (x1, x2)
+            if fill_between:
+                self._fill_between_bounds = (x1, x2)
                 if fill_color != "default":
-                    self._fill_under_color = fill_color
+                    self._fill_between_color = fill_color
             y_data = self._y_data
             x_data = self._x_data
             mask = (x_data >= x1) & (x_data <= x2)
@@ -1170,11 +1170,11 @@ class Curve:
             x = x_data[mask]
             return np.trapz(y, x)
         else:
-            if fill_under:
-                self._fill_curve_between = (x1, x2)
+            if fill_between:
+                self._fill_between_bounds = (x1, x2)
                 if fill_color != "default":
-                    self._fill_under_color = fill_color
-                self._fill_under_other_curve = other_curve
+                    self._fill_between_color = fill_color
+                self._fill_between_other_curve = other_curve
             if np.array_equal(self._x_data, other_curve._x_data):
                 # No need to interpolate
                 mask = (self._x_data >= x1) & (self._x_data <= x2)
@@ -1400,21 +1400,21 @@ class Curve:
                     color=self._error_curves_color,
                     alpha=0.2,
                 )
-        if self._fill_curve_between:
+        if self._fill_between_bounds:
             kwargs = {"alpha": 0.2}
-            if self._fill_under_color is not None:
-                kwargs["color"] = self._fill_under_color
+            if self._fill_between_color is not None:
+                kwargs["color"] = self._fill_between_color
             else:
                 kwargs["color"] = self.handle[0].get_color()
             kwargs = {k: v for k, v in kwargs.items() if v != "default"}
-            if self._fill_under_other_curve:
+            if self._fill_between_other_curve:
                 self_y_data = self._y_data
                 self_x_data = self._x_data
-                other_y_data = self._fill_under_other_curve._y_data
-                other_x_data = self._fill_under_other_curve._x_data
+                other_y_data = self._fill_between_other_curve._y_data
+                other_x_data = self._fill_between_other_curve._x_data
                 x_data = np.linspace(
-                    self._fill_curve_between[0],
-                    self._fill_curve_between[1],
+                    self._fill_between_bounds[0],
+                    self._fill_between_bounds[1],
                     max(len(self_x_data), len(other_x_data)),
                 )
                 self_y_data = interp1d(self_x_data, self_y_data)(x_data)
@@ -1430,8 +1430,8 @@ class Curve:
 
             axes.fill_between(
                 where=np.logical_and(
-                    where_x_data >= self._fill_curve_between[0],
-                    where_x_data <= self._fill_curve_between[1],
+                    where_x_data >= self._fill_between_bounds[0],
+                    where_x_data <= self._fill_between_bounds[1],
                 ),
                 zorder=z_order - 2,
                 **kwargs,
