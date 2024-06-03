@@ -23,19 +23,19 @@ Scatter:
   _cap_thickness: 3
 
 Histogram:
-  number_of_bins: 30
-  face_color: "silver"
-  edge_color: "k"
-  hist_type: "stepfilled"
-  alpha: 1.0
-  line_width: 2
-  normalize: True
-  show_params: True
-  pdf_show_mean: True
-  pdf_show_std: True
-  pdf_curve_color: "y"
-  pdf_mean_color: "g"
-  pdf_std_color: "b"
+  _number_of_bins: 30
+  _face_color: "silver"
+  _edge_color: "k"
+  _hist_type: "stepfilled"
+  _alpha: 1.0
+  _line_width: 2
+  _normalize: True
+  _show_params: True
+  _pdf_show_mean: True
+  _pdf_show_std: True
+  _pdf_curve_color: "y"
+  _pdf_mean_color: "g"
+  _pdf_std_color: "b"
 
 Hlines:
   colors: "k"

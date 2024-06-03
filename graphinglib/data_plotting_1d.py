@@ -2309,32 +2309,87 @@ class Histogram:
         Default depends on the ``figure_style`` configuration.
     """
 
-    data: ArrayLike
-    number_of_bins: int
-    label: Optional[str] = None
-    face_color: str = "default"
-    edge_color: str = "default"
-    hist_type: str = "default"
-    alpha: float | Literal["default"] = "default"
-    line_width: float | Literal["default"] = "default"
-    normalize: bool | Literal["default"] = "default"
-    show_params: bool | Literal["default"] = "default"
+    def __init__(
+        self,
+        data: ArrayLike,
+        number_of_bins: int,
+        label: Optional[str] = None,
+        face_color: str = "default",
+        edge_color: str = "default",
+        hist_type: str = "default",
+        alpha: float | Literal["default"] = "default",
+        line_width: float | Literal["default"] = "default",
+        normalize: bool | Literal["default"] = "default",
+        show_params: bool | Literal["default"] = "default",
+    ) -> None:
+        """
+        This class implements a general histogram.
 
-    def __post_init__(self) -> None:
-        self.data = np.array(self.data)
-        self.mean = np.mean(self.data)
-        self.standard_deviation = np.std(self.data)
-        parameters = np.histogram(
-            self.data, bins=self.number_of_bins, density=self.normalize
+        Parameters
+        ----------
+        data : ArrayLike
+            Array of values to be plotted.
+        number_of_bins : int
+            Number of bins to be used in the histogram.
+        label : str, optional
+            Label to be displayed in the legend.
+        face_color : str
+            Face color of the histogram.
+            Default depends on the ``figure_style`` configuration.
+        edge_color : str
+            Edge color of the histogram.
+            Default depends on the ``figure_style`` configuration.
+        hist_type : str
+            Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the histogram.
+            Default depends on the ``figure_style`` configuration.
+        line_width : float
+            Width of the histogram edge.
+            Default depends on the ``figure_style`` configuration.
+        normalize : bool
+            Whether or not to normalize the histogram.
+            Default depends on the ``figure_style`` configuration.
+        show_pdf : str
+            Whether or not to show the probability density function.
+            Can be "normal" or "gaussian".
+            Default depends on the ``figure_style`` configuration.
+        show_params : bool
+            Whether or not to show the mean and standard deviation of the data.
+            Default depends on the ``figure_style`` configuration.
+        """
+        self._data = np.asarray(data)
+        self._number_of_bins = number_of_bins
+        self._label = label
+        self._face_color = face_color
+        self._edge_color = edge_color
+        self._hist_type = hist_type
+        self._alpha = alpha
+        self._line_width = line_width
+        self._normalize = normalize
+        self._show_params = show_params
+
+        self._show_pdf = False
+        self._pdf_type = "default"
+        self._pdf_show_mean = "default"
+        self._pdf_show_std = "default"
+        self._pdf_curve_color = "default"
+        self._pdf_mean_color = "default"
+        self._pdf_std_color = "default"
+
+        self._mean = np.mean(self._data)
+        self._standard_deviation = np.std(self._data)
+        _parameters = np.histogram(
+            self._data, bins=self._number_of_bins, density=self._normalize
         )
-        self._bin_heights, bin_edges = parameters[0], parameters[1]
+        self._bin_heights, bin_edges = _parameters[0], _parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
         bin_centers = bin_edges[1:] - bin_width / 2
         self._bin_width = bin_width
         self._bin_centers = bin_centers
         self._bin_edges = bin_edges
         self._create_label()
-        self._show_pdf = False
 
     @classmethod
     def from_fit_residuals(
@@ -2405,19 +2460,147 @@ class Histogram:
             show_params,
         )
 
+    @property
+    def data(self) -> np.ndarray:
+        return self._data
+
+    @data.setter
+    def data(self, data: ArrayLike) -> None:
+        self._data = np.array(data)
+        self._mean = np.mean(self._data)
+        self._standard_deviation = np.std(self._data)
+        _parameters = np.histogram(
+            self._data, bins=self._number_of_bins, density=self._normalize
+        )
+        self._bin_heights, bin_edges = _parameters[0], _parameters[1]
+        bin_width = bin_edges[1] - bin_edges[0]
+        bin_centers = bin_edges[1:] - bin_width / 2
+        self._bin_width = bin_width
+        self._bin_centers = bin_centers
+        self._bin_edges = bin_edges
+        self._create_label()
+
+    @property
+    def number_of_bins(self) -> int:
+        return self._number_of_bins
+
+    @number_of_bins.setter
+    def number_of_bins(self, number_of_bins: int) -> None:
+        self._number_of_bins = number_of_bins
+        _parameters = np.histogram(
+            self._data, bins=self._number_of_bins, density=self._normalize
+        )
+        self._bin_heights, bin_edges = _parameters[0], _parameters[1]
+        bin_width = bin_edges[1] - bin_edges[0]
+        bin_centers = bin_edges[1:] - bin_width / 2
+        self._bin_width = bin_width
+        self._bin_centers = bin_centers
+        self._bin_edges = bin_edges
+        self._create_label()
+
+    @property
+    def label(self) -> str:
+        return self._label
+
+    @label.setter
+    def label(self, label: str) -> None:
+        self._label = label
+        self._create_label()
+
+    @property
+    def face_color(self) -> str:
+        return self._face_color
+
+    @face_color.setter
+    def face_color(self, face_color: str) -> None:
+        self._face_color = face_color
+
+    @property
+    def edge_color(self) -> str:
+        return self._edge_color
+
+    @edge_color.setter
+    def edge_color(self, edge_color: str) -> None:
+        self._edge_color = edge_color
+
+    @property
+    def hist_type(self) -> str:
+        return self._hist_type
+
+    @hist_type.setter
+    def hist_type(self, hist_type: str) -> None:
+        self._hist_type = hist_type
+
+    @property
+    def alpha(self) -> float:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float) -> None:
+        self._alpha = alpha
+
+    @property
+    def line_width(self) -> float:
+        return self._line_width
+
+    @line_width.setter
+    def line_width(self, line_width: float) -> None:
+        self._line_width = line_width
+
+    @property
+    def normalize(self) -> bool:
+        return self._normalize
+
+    @normalize.setter
+    def normalize(self, normalize: bool) -> None:
+        self._normalize = normalize
+
+    @property
+    def show_params(self) -> bool:
+        return self._show_params
+
+    @show_params.setter
+    def show_params(self, show_params: bool) -> None:
+        self._show_params = show_params
+        self._create_label()
+
+    @property
+    def mean(self) -> float:
+        return self._mean
+
+    @property
+    def standard_deviation(self) -> float:
+        return self._standard_deviation
+
+    @property
+    def parameters(self) -> tuple[float, float]:
+        return self._mean, self._standard_deviation
+
+    @property
+    def bin_heights(self) -> np.ndarray:
+        return self._bin_heights
+
+    @property
+    def bin_centers(self) -> np.ndarray:
+        return self._bin_centers
+
+    @property
+    def bin_edges(self) -> np.ndarray:
+        return self._bin_edges
+
     def _create_label(self) -> None:
         """
         Creates the label of the histogram (with or without parameters).
         """
-        lab = self.label
-        if lab and self.show_params:
+        lab = self._label
+        if lab and self._show_params:
             lab += (
                 " :\n"
-                + f"$\mu$ = {0 if abs(self.mean) < 1e-3 else self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
+                + f"$\mu$ = {0 if abs(self._mean) < 1e-3 else self._mean:.3f}, $\sigma$ = {self._standard_deviation:.3f}"
             )
-        elif self.show_params:
-            lab = f"$\mu$ = {0 if abs(self.mean) < 1e-3 else self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
-        self.label = lab
+        elif self._show_params:
+            lab = f"$\mu$ = {0 if abs(self._mean) < 1e-3 else self._mean:.3f}, $\sigma$ = {self._standard_deviation:.3f}"
+        self._label = lab
 
     def copy(self) -> Self:
         """
@@ -2439,8 +2622,8 @@ class Histogram:
         The corresponding array of y values of the gaussian curve.
         """
         x = np.array(x)
-        return (1 / (self.standard_deviation * np.sqrt(2 * np.pi))) * np.exp(
-            -0.5 * (((x - self.mean) / self.standard_deviation) ** 2)
+        return (1 / (self._standard_deviation * np.sqrt(2 * np.pi))) * np.exp(
+            -0.5 * (((x - self._mean) / self._standard_deviation) ** 2)
         )
 
     def _normal_not_normalized(self, x: ArrayLike) -> ArrayLike:
@@ -2465,16 +2648,16 @@ class Histogram:
         """
         params = {
             "facecolor": (
-                to_rgba(self.face_color, self.alpha)
-                if self.face_color != "default" and self.alpha != "default"
+                to_rgba(self._face_color, self._alpha)
+                if self._face_color != "default" and self._alpha != "default"
                 else "default"
             ),
             "edgecolor": (
-                to_rgba(self.edge_color, 1)
-                if self.edge_color != "default"
-                else self.edge_color
+                to_rgba(self._edge_color, 1)
+                if self._edge_color != "default"
+                else self._edge_color
             ),
-            "linewidth": self.line_width,
+            "linewidth": self._line_width,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         self.handle = Polygon(
@@ -2483,38 +2666,38 @@ class Histogram:
         )
         params = {
             "facecolor": (
-                to_rgba(self.face_color, self.alpha)
-                if self.face_color != "default" and self.alpha != "default"
+                to_rgba(self._face_color, self._alpha)
+                if self._face_color != "default" and self._alpha != "default"
                 else "default"
             ),
             "edgecolor": (
-                to_rgba(self.edge_color, 1)
-                if self.edge_color != "default"
-                else self.edge_color
+                to_rgba(self._edge_color, 1)
+                if self._edge_color != "default"
+                else self._edge_color
             ),
-            "histtype": self.hist_type,
-            "linewidth": self.line_width,
-            "density": self.normalize,
+            "histtype": self._hist_type,
+            "linewidth": self._line_width,
+            "density": self._normalize,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.hist(
-            self.data,
-            bins=self.number_of_bins,
-            label=self.label,
+            self._data,
+            bins=self._number_of_bins,
+            label=self._label,
             zorder=z_order - 1,
             **params,
         )
         if self._show_pdf:
             normal = (
                 self._normal_normalized
-                if self.normalize
+                if self._normalize
                 else self._normal_not_normalized
             )
             num_of_points = 500
             x_data = np.linspace(self._bin_edges[0], self._bin_edges[-1], num_of_points)
             y_data = normal(x_data)
             params = {
-                "color": self.pdf_curve_color,
+                "color": self._pdf_curve_color,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             axes.plot(
@@ -2523,16 +2706,16 @@ class Histogram:
                 zorder=z_order,
                 **params,
             )
-            curve_max_y = normal(self.mean)
-            curve_std_y = normal(self.mean + self.standard_deviation)
-            if self.pdf_show_std:
+            curve_max_y = normal(self._mean)
+            curve_std_y = normal(self._mean + self._standard_deviation)
+            if self._pdf_show_std:
                 params = {}
-                if self.pdf_std_color != "default":
-                    params["colors"] = [self.pdf_std_color, self.pdf_std_color]
+                if self._pdf_std_color != "default":
+                    params["colors"] = [self._pdf_std_color, self._pdf_std_color]
                 plt.vlines(
                     [
-                        self.mean - self.standard_deviation,
-                        self.mean + self.standard_deviation,
+                        self._mean - self._standard_deviation,
+                        self._mean + self._standard_deviation,
                     ],
                     [0, 0],
                     [curve_std_y, curve_std_y],
@@ -2540,12 +2723,12 @@ class Histogram:
                     zorder=z_order - 1,
                     **params,
                 )
-            if self.pdf_show_mean:
+            if self._pdf_show_mean:
                 params = {}
-                if self.pdf_mean_color != "default":
-                    params["colors"] = [self.pdf_mean_color]
+                if self._pdf_mean_color != "default":
+                    params["colors"] = [self._pdf_mean_color]
                 plt.vlines(
-                    self.mean,
+                    self._mean,
                     0,
                     curve_max_y,
                     linestyles=["dashed"],
@@ -2588,11 +2771,11 @@ class Histogram:
             Default depends on the ``figure_style`` configuration.
         """
         if type != "normal":
-            raise ValueError("Currently only normal distribution is supported.")
+            raise ValueError("Currently, only 'normal' distribution is supported.")
         self._show_pdf = True
         self._pdf_type = type
-        self.pdf_show_mean = show_mean
-        self.pdf_show_std = show_std
-        self.pdf_curve_color = curve_color
-        self.pdf_mean_color = mean_color
-        self.pdf_std_color = std_color
+        self._pdf_show_mean = show_mean
+        self._pdf_show_std = show_std
+        self._pdf_curve_color = curve_color
+        self._pdf_mean_color = mean_color
+        self._pdf_std_color = std_color

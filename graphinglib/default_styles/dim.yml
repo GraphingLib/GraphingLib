@@ -85,19 +85,19 @@ Heatmap:
   origin_position: upper
   show_color_bar: True
 Histogram:
-  alpha: 0.3
-  edge_color: '#3e82a0'
-  face_color: '#3e82a0'
-  hist_type: stepfilled
-  line_width: 2
-  normalize: true
-  number_of_bins: 30
-  pdf_curve_color: white
-  pdf_mean_color: r
-  pdf_show_mean: true
-  pdf_show_std: true
-  pdf_std_color: white
-  show_params: true
+  _alpha: 0.3
+  _edge_color: '#3e82a0'
+  _face_color: '#3e82a0'
+  _hist_type: stepfilled
+  _line_width: 2
+  _normalize: true
+  _number_of_bins: 30
+  _pdf_curve_color: white
+  _pdf_mean_color: r
+  _pdf_show_mean: true
+  _pdf_show_std: true
+  _pdf_std_color: white
+  _show_params: true
 Hlines:
   colors: white
   line_styles: '-'

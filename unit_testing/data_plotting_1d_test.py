@@ -656,25 +656,25 @@ class TestHistogram(unittest.TestCase):
         )
 
     def test_label_is_str(self):
-        self.assertEqual(self.testHist.label[:19], "Random Distribution")
+        self.assertEqual(self.testHist._label[:19], "Random Distribution")
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testHist.data, list | ndarray)
+        self.assertIsInstance(self.testHist._data, list | ndarray)
 
     def test_face_color_is_str(self):
-        self.assertEqual(self.testHist.face_color, "silver")
+        self.assertEqual(self.testHist._face_color, "silver")
 
     def test_edge_color_is_str(self):
-        self.assertEqual(self.testHist.edge_color, "k")
+        self.assertEqual(self.testHist._edge_color, "k")
 
     def test_bins_is_int(self):
-        self.assertEqual(self.testHist.number_of_bins, 20)
+        self.assertEqual(self.testHist._number_of_bins, 20)
 
     def test_alpha_is_default(self):
-        self.assertEqual(self.testHist.alpha, "default")
+        self.assertEqual(self.testHist._alpha, "default")
 
     def test_hist_type_is_str(self):
-        self.assertEqual(self.testHist.hist_type, "default")
+        self.assertEqual(self.testHist._hist_type, "default")
 
     def test_plot_residuals_from_fit(self):
         curve = Curve.from_function(lambda x: x**2, 0, 1)
@@ -685,13 +685,13 @@ class TestHistogram(unittest.TestCase):
     def test_copy(self):
         hist_copy = self.testHist.copy()
         self.assertIsInstance(hist_copy, Histogram)
-        self.assertEqual(hist_copy.label, self.testHist.label)
-        self.assertEqual(hist_copy.face_color, self.testHist.face_color)
-        self.assertEqual(hist_copy.edge_color, self.testHist.edge_color)
-        self.assertEqual(hist_copy.number_of_bins, self.testHist.number_of_bins)
-        self.assertEqual(hist_copy.alpha, self.testHist.alpha)
-        self.assertEqual(hist_copy.hist_type, self.testHist.hist_type)
-        self.assertListEqual(list(hist_copy.data), list(self.testHist.data))
+        self.assertEqual(hist_copy._label, self.testHist._label)
+        self.assertEqual(hist_copy._face_color, self.testHist._face_color)
+        self.assertEqual(hist_copy._edge_color, self.testHist._edge_color)
+        self.assertEqual(hist_copy._number_of_bins, self.testHist._number_of_bins)
+        self.assertEqual(hist_copy._alpha, self.testHist._alpha)
+        self.assertEqual(hist_copy._hist_type, self.testHist._hist_type)
+        self.assertListEqual(list(hist_copy._data), list(self.testHist._data))
 
 
 if __name__ == "__main__":
