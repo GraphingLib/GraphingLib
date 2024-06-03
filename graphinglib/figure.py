@@ -233,7 +233,7 @@ class Figure:
             self._handles += handles
             self._labels += labels
         if self._elements:
-            z_order = 1
+            z_order = 2
             for element in self._elements:
                 params_to_reset = []
                 if not is_matplotlib_style:
