@@ -60,11 +60,11 @@ SubFigure:
   log_scale_y: False
 
 Point:
-  color: "k"
-  edge_color: "none"
-  marker_size: 30
-  marker_style: "o"
-  edge_width: 1.5
+  _color: "k"
+  _edge_color: "none"
+  _marker_size: 30
+  _marker_style: "o"
+  _edge_width: 1.5
 
 FitFromPolynomial:
   _color: "k"
@@ -152,14 +152,14 @@ VectorField:
   _angle_in_data_coords: False
 
 Text:
-  color: "k"
-  h_align: "center"
-  v_align: "baseline"
+  _color: "k"
+  _h_align: "center"
+  _v_align: "baseline"
 
 Table:
-  cell_align: "right"
-  row_align: "left"
-  col_align: "center"
+  _cell_align: "right"
+  _row_align: "left"
+  _col_align: "center"
 
 Stream:
   _line_width: 1

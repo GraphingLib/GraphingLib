@@ -107,11 +107,11 @@ MultiFigure:
   - 6.4
   - 4.8
 Point:
-  color: white
-  edge_color: none
-  edge_width: 1.5
-  marker_size: 30
-  marker_style: o
+  _color: white
+  _edge_color: none
+  _edge_width: 1.5
+  _marker_size: 30
+  _marker_style: o
 Scatter:
   _cap_thickness: 2
   _cap_width: 3
@@ -130,13 +130,13 @@ SubFigure:
   log_scale_x: false
   log_scale_y: false
 Table:
-  cell_align: right
-  col_align: center
-  row_align: left
+  _cell_align: right
+  _col_align: center
+  _row_align: left
 Text:
-  color: white
-  h_align: center
-  v_align: baseline
+  _color: white
+  _h_align: center
+  _v_align: baseline
 VectorField:
   _angle_in_data_coords: false
   _arrow_head_axis_length: 4.5
