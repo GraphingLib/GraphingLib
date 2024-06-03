@@ -255,18 +255,18 @@ class TestTable(unittest.TestCase):
             location="bottom",
         )
 
-        self.assertListEqual(table.cell_text, data)
-        self.assertListEqual(table.cell_colors, colors)
-        self.assertEqual(table.cell_align, "center")
-        self.assertListEqual(table.col_labels, columns)
-        self.assertListEqual(table.col_widths, [0.1, 0.1, 0.1, 0.1, 0.1])
-        self.assertEqual(table.col_align, "center")
-        self.assertListEqual(table.col_colors, ["#bfbfbf"] * 5)
-        self.assertListEqual(table.row_labels, rows)
-        self.assertEqual(table.row_align, "center")
-        self.assertListEqual(table.row_colors, ["#bfbfbf"] * 5)
-        self.assertEqual(table.scaling, (1.1, 1.1))
-        self.assertEqual(table.location, "bottom")
+        self.assertListEqual(table._cell_text, data)
+        self.assertListEqual(table._cell_colors, colors)
+        self.assertEqual(table._cell_align, "center")
+        self.assertListEqual(table._col_labels, columns)
+        self.assertListEqual(table._col_widths, [0.1, 0.1, 0.1, 0.1, 0.1])
+        self.assertEqual(table._col_align, "center")
+        self.assertListEqual(table._col_colors, ["#bfbfbf"] * 5)
+        self.assertListEqual(table._row_labels, rows)
+        self.assertEqual(table._row_align, "center")
+        self.assertListEqual(table._row_colors, ["#bfbfbf"] * 5)
+        self.assertEqual(table._scaling, (1.1, 1.1))
+        self.assertEqual(table._location, "bottom")
 
     def test_plotting(self):
         data = [
@@ -401,16 +401,16 @@ class TestTable(unittest.TestCase):
             location="bottom",
         )
         tableCopy = table.copy()
-        self.assertListEqual(tableCopy.cell_text, table.cell_text)
-        self.assertListEqual(tableCopy.cell_colors, table.cell_colors)
-        self.assertEqual(tableCopy.cell_align, table.cell_align)
-        self.assertListEqual(tableCopy.col_labels, table.col_labels)
-        self.assertListEqual(tableCopy.col_widths, table.col_widths)
-        self.assertEqual(tableCopy.col_align, table.col_align)
-        self.assertListEqual(tableCopy.col_colors, table.col_colors)
-        self.assertListEqual(tableCopy.row_labels, table.row_labels)
-        self.assertEqual(tableCopy.row_align, table.row_align)
-        self.assertListEqual(tableCopy.row_colors, table.row_colors)
+        self.assertListEqual(tableCopy._cell_text, table._cell_text)
+        self.assertListEqual(tableCopy._cell_colors, table._cell_colors)
+        self.assertEqual(tableCopy._cell_align, table._cell_align)
+        self.assertListEqual(tableCopy._col_labels, table._col_labels)
+        self.assertListEqual(tableCopy._col_widths, table._col_widths)
+        self.assertEqual(tableCopy._col_align, table._col_align)
+        self.assertListEqual(tableCopy._col_colors, table._col_colors)
+        self.assertListEqual(tableCopy._row_labels, table._row_labels)
+        self.assertEqual(tableCopy._row_align, table._row_align)
+        self.assertListEqual(tableCopy._row_colors, table._row_colors)
 
 
 if __name__ == "__main__":

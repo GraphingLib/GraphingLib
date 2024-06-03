@@ -1043,18 +1043,174 @@ class Table:
         Defaults to ``"best"``.
     """
 
-    cell_text: list[str]
-    cell_colors: Optional[list] = None
-    cell_align: str = "default"
-    col_labels: Optional[list[str]] = None
-    col_widths: Optional[list[float]] = None
-    col_align: str = "default"
-    col_colors: Optional[list] = None
-    row_labels: Optional[list[str]] = None
-    row_align: str = "default"
-    row_colors: Optional[list] = None
-    scaling: tuple[float] = (1, 1.5)
-    location: str = "best"
+    def __init__(
+        self,
+        cell_text: list[str],
+        cell_colors: Optional[list] = None,
+        cell_align: str = "default",
+        col_labels: Optional[list[str]] = None,
+        col_widths: Optional[list[float]] = None,
+        col_align: str = "default",
+        col_colors: Optional[list] = None,
+        row_labels: Optional[list[str]] = None,
+        row_align: str = "default",
+        row_colors: Optional[list] = None,
+        scaling: tuple[float] = (1, 1.5),
+        location: str = "best",
+    ) -> None:
+        """
+        This class allows to plot a table inside a Figure or MultiFigure.
+
+        The Table object can be used to add raw data to a figure or add supplementary
+        information like output parameters for a fit or anyother operation.
+
+        Parameters
+        ----------
+        cell_text : list[str]
+            Text or data to be displayed in the table. The shape of the provided data
+            determines the number of columns and rows.
+        cell_colors : list, optional
+            Colors to apply to the cells' background. Must be a list of colors the same
+            shape as the cells. If none are specified, no color is applied.
+        cell_align : str
+            Alignment of the cells' text. Must be one of the following:
+            {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
+        col_labels : list[str], optional
+            List of labels for the rows of the table. If none are specified, no row labels are displayed.
+        col_widths : list[float], optional
+            Widths to apply to the columns. Must be a list the same length as the number of columns.
+        col_align : str
+            Alignment of the column labels' text. Must be one of the following:
+            {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
+        col_colors : list, optional
+            Colors to apply to the column labels' background. Must be a list of colors the same
+            length as the number of columns. If none are specified, no color is applied.
+        row_labels : list[str], optional
+            List of labels for the rows of the table. If none are specified, no row labels are displayed.
+        row_align : str
+            Alignment of the row labels' text. Must be one of the following:
+            {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
+        row_colors : list, optional
+            Colors to apply to the row labels' background. Must be a list of colors the same
+            length as the number of rows. If none are specified, no color is applied.
+        scaling : tuple[float], optional
+            Horizontal and vertical scaling factors to apply to the table.
+            Defaults to ``(1, 1.5)``.
+        location : str
+            Position of the table inside the axes. Must be one of the following:
+            {'best', 'bottom', 'bottom left', 'bottom right', 'center', 'center left', 'center right',
+            'left', 'lower center', 'lower left', 'lower right', 'right', 'top', 'top left', 'top right',
+            'upper center', 'upper left', 'upper right'}
+            Defaults to ``"best"``.
+        """
+        self._cell_text = cell_text
+        self._cell_colors = cell_colors
+        self._cell_align = cell_align
+        self._col_labels = col_labels
+        self._col_widths = col_widths
+        self._col_align = col_align
+        self._col_colors = col_colors
+        self._row_labels = row_labels
+        self._row_align = row_align
+        self._row_colors = row_colors
+        self._scaling = scaling
+        self._location = location
+
+    @property
+    def cell_text(self) -> list[str]:
+        return self._cell_text
+
+    @cell_text.setter
+    def cell_text(self, cell_text: list[str]) -> None:
+        self._cell_text = cell_text
+
+    @property
+    def cell_colors(self) -> list:
+        return self._cell_colors
+
+    @cell_colors.setter
+    def cell_colors(self, cell_colors: list) -> None:
+        self._cell_colors = cell_colors
+
+    @property
+    def cell_align(self) -> str:
+        return self._cell_align
+
+    @cell_align.setter
+    def cell_align(self, cell_align: str) -> None:
+        self._cell_align = cell_align
+
+    @property
+    def col_labels(self) -> list[str]:
+        return self._col_labels
+
+    @col_labels.setter
+    def col_labels(self, col_labels: list[str]) -> None:
+        self._col_labels = col_labels
+
+    @property
+    def col_widths(self) -> list[float]:
+        return self._col_widths
+
+    @col_widths.setter
+    def col_widths(self, col_widths: list[float]) -> None:
+        self._col_widths = col_widths
+
+    @property
+    def col_align(self) -> str:
+        return self._col_align
+
+    @col_align.setter
+    def col_align(self, col_align: str) -> None:
+        self._col_align = col_align
+
+    @property
+    def col_colors(self) -> list:
+        return self._col_colors
+
+    @col_colors.setter
+    def col_colors(self, col_colors: list) -> None:
+        self._col_colors = col_colors
+
+    @property
+    def row_labels(self) -> list[str]:
+        return self._row_labels
+
+    @row_labels.setter
+    def row_labels(self, row_labels: list[str]) -> None:
+        self._row_labels = row_labels
+
+    @property
+    def row_align(self) -> str:
+        return self._row_align
+
+    @row_align.setter
+    def row_align(self, row_align: str) -> None:
+        self._row_align = row_align
+
+    @property
+    def row_colors(self) -> list:
+        return self._row_colors
+
+    @row_colors.setter
+    def row_colors(self, row_colors: list) -> None:
+        self._row_colors = row_colors
+
+    @property
+    def scaling(self) -> tuple[float]:
+        return self._scaling
+
+    @scaling.setter
+    def scaling(self, scaling: tuple[float]) -> None:
+        self._scaling = scaling
+
+    @property
+    def location(self) -> str:
+        return self._location
+
+    @location.setter
+    def location(self, location: str) -> None:
+        self._location = location
 
     def copy(self) -> Self:
         """
@@ -1068,22 +1224,22 @@ class Table:
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         params = {
-            "cellLoc": self.cell_align,
-            "colLoc": self.col_align,
-            "rowLoc": self.row_align,
+            "cellLoc": self._cell_align,
+            "colLoc": self._col_align,
+            "rowLoc": self._row_align,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         table = axes.table(
-            cellText=self.cell_text,
-            cellColours=self.cell_colors,
-            colLabels=self.col_labels,
-            colWidths=self.col_widths,
-            colColours=self.col_colors,
-            rowLabels=self.row_labels,
-            rowColours=self.row_colors,
-            loc=self.location,
+            cellText=self._cell_text,
+            cellColours=self._cell_colors,
+            colLabels=self._col_labels,
+            colWidths=self._col_widths,
+            colColours=self._col_colors,
+            rowLabels=self._row_labels,
+            rowColours=self._row_colors,
+            loc=self._location,
             zorder=z_order,
             **params,
         )
         table.auto_set_font_size(False)
-        table.scale(self.scaling[0], self.scaling[1])
+        table.scale(self._scaling[0], self._scaling[1])
