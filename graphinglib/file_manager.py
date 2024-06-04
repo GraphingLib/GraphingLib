@@ -1,4 +1,4 @@
-from os import listdir, path, remove
+from os import listdir, mkdir, path, remove
 from warnings import warn
 
 import yaml
@@ -15,11 +15,15 @@ class FileLoader:
         self._config_dir = user_config_dir(
             appname="GraphingLib", roaming=True, ensure_exists=True
         )
+        if "custom_styles" not in listdir(self._config_dir):
+            mkdir(f"{self._config_dir}/custom_styles")
         self._file_name = file_name
         self._file_location_defaults = (
             f"{path.dirname(__file__)}/default_styles/{self._file_name}.yml"
         )
-        self._file_location_customs = f"{self._config_dir}/{self._file_name}.yml"
+        self._file_location_customs = (
+            f"{self._config_dir}/custom_styles/{self._file_name}.yml"
+        )
 
     def load(self) -> dict:
         try:
@@ -51,9 +55,11 @@ class FileSaver:
         self._config_dir = user_config_dir(
             appname="GraphingLib", roaming=True, ensure_exists=True
         )
+        if "custom_styles" not in listdir(self._config_dir):
+            mkdir(f"{self._config_dir}/custom_styles")
         self._file_name = file_name
         self._style_prefs = style_prefs
-        self._save_location = f"{self._config_dir}/{self._file_name}.yml"
+        self._save_location = f"{self._config_dir}/custom_styles/{self._file_name}.yml"
 
     def save(self) -> None:
         with open(self._save_location, "w") as file:
@@ -70,8 +76,10 @@ class FileDeleter:
         self._config_dir = user_config_dir(
             appname="GraphingLib", roaming=True, ensure_exists=True
         )
+        if "custom_styles" not in listdir(self._config_dir):
+            mkdir(f"{self._config_dir}/custom_styles")
         self._file_name = file_name
-        self._file_location = f"{self._config_dir}/{self._file_name}.yml"
+        self._file_location = f"{self._config_dir}/custom_styles/{self._file_name}.yml"
 
     def delete(self) -> None:
         try:
@@ -90,6 +98,8 @@ class FileUpdater:
         self._config_dir = user_config_dir(
             appname="GraphingLib", roaming=True, ensure_exists=True
         )
+        if "custom_styles" not in listdir(self._config_dir):
+            mkdir(f"{self._config_dir}/custom_styles")
         self._file_name = file_name
         self._file_location = f"{self._config_dir}/{self._file_name}.yml"
         self._plain_style_location = (
@@ -208,12 +218,13 @@ def get_styles(
     gl_list = []
     matplotlib_list = []
     if customs:
-        customs_list = [
-            file.split(".")[0]
-            for file in listdir(
-                user_config_dir(appname="GraphingLib", roaming=True, ensure_exists=True)
-            )
-        ]
+        config_dir = user_config_dir(
+            appname="GraphingLib", roaming=True, ensure_exists=True
+        )
+        if "custom_styles" in listdir(config_dir):
+            customs_list = [
+                file.split(".")[0] for file in listdir(f"{config_dir}/custom_styles")
+            ]
     if gl:
         gl_list = [
             file.split(".")[0]
