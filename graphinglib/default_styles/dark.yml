@@ -1,182 +1,179 @@
 Contour:
-  alpha: 1.0
-  color_map: RdBu
-  filled: true
-  number_of_levels: 10
-  show_color_bar: true
+  _alpha: 1.0
+  _color_map: RdBu
+  _filled: true
+  _number_of_levels: 10
+  _show_color_bar: true
 Curve:
-  cap_thickness: same as curve
-  cap_width: 3
-  color: null
-  errorbars_color: same as curve
-  errorbars_line_width: same as curve
-  error_curves_color: same as curve
-  error_curves_fill_between: true
-  error_curves_line_style: --
-  error_curves_line_width: 1
-  fill_under_color: same as curve
-  line_style: '-'
-  line_width: 2
+  _cap_thickness: same as curve
+  _cap_width: 3
+  _color: null
+  _errorbars_color: same as curve
+  _errorbars_line_width: same as curve
+  _error_curves_color: same as curve
+  _error_curves_fill_between: true
+  _error_curves_line_style: --
+  _error_curves_line_width: 1
+  _fill_under_color: same as curve
+  _line_style: '-'
+  _line_width: 2
 Figure:
-  log_scale_x: false
-  log_scale_y: false
-  size:
+  _log_scale_x: false
+  _log_scale_y: false
+  _size:
   - 6.4
   - 4.8
 FitFromExponential:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromFunction:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromGaussian:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromLog:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromPolynomial:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromSine:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromSquareRoot:
-  color: white
-  line_style: '-'
-  line_width: 2
-  res_color: white
-  res_line_style: --
-  res_line_width: 1
+  _color: white
+  _line_style: '-'
+  _line_width: 2
+  _res_color: white
+  _res_line_style: --
+  _res_line_width: 1
 FitFromFOTF:
-  res_color: "k"
-  res_line_width: 1
-  res_line_style: "--"
-  color: "k"
-  line_width: 2
-  line_style: "-"
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
 Heatmap:
-  aspect_ratio: equal
-  color_map: RdBu
-  origin_position: upper
-  show_color_bar: True
+  _aspect_ratio: equal
+  _color_map: RdBu
+  _origin_position: upper
+  _show_color_bar: True
 Histogram:
-  alpha: 0.3
-  edge_color: '#3e82a0'
-  face_color: '#3e82a0'
-  hist_type: stepfilled
-  line_width: 2
-  normalize: true
-  number_of_bins: 30
-  pdf_curve_color: white
-  pdf_mean_color: r
-  pdf_show_mean: true
-  pdf_show_std: true
-  pdf_std_color: white
-  show_params: true
+  _alpha: 0.3
+  _edge_color: '#3e82a0'
+  _face_color: '#3e82a0'
+  _hist_type: stepfilled
+  _line_width: 2
+  _normalize: true
+  _number_of_bins: 30
+  _pdf_curve_color: white
+  _pdf_mean_color: r
+  _pdf_show_mean: true
+  _pdf_show_std: true
+  _pdf_std_color: white
+  _show_params: true
 Hlines:
-  colors: white
-  line_styles: '-'
-  line_widths: 2
+  _colors: white
+  _line_styles: '-'
+  _line_widths: 2
 MultiFigure:
-  size:
+  _size:
   - 6.4
   - 4.8
 Point:
-  color: white
-  edge_color: none
-  edge_width: 1.5
-  marker_size: 30
-  marker_style: o
+  _color: white
+  _edge_color: none
+  _edge_width: 1.5
+  _marker_size: 30
+  _marker_style: o
 Scatter:
-  cap_thickness: 2
-  cap_width: 3
-  edge_color: none
-  errorbars_color: same as scatter
-  errorbars_line_width: 2
-  face_color: null
-  marker_size: 8
-  marker_style: o
+  _cap_thickness: 2
+  _cap_width: 3
+  _edge_color: none
+  _errorbars_color: same as scatter
+  _errorbars_line_width: 2
+  _face_color: null
+  _marker_size: 8
+  _marker_style: o
 Stream:
-  arrow_size: 1
-  color: null
-  color_map: null
-  line_width: 1
-SubFigure:
-  log_scale_x: false
-  log_scale_y: false
+  _arrow_size: 1
+  _color: null
+  _color_map: null
+  _line_width: 1
 Table:
-  cell_align: right
-  col_align: center
-  row_align: left
+  _cell_align: right
+  _col_align: center
+  _row_align: left
 Text:
-  color: white
-  h_align: center
-  v_align: baseline
+  _color: white
+  _h_align: center
+  _v_align: baseline
 VectorField:
-  angle_in_data_coords: false
-  arrow_head_axis_length: 4.5
-  arrow_head_length: 5
-  arrow_head_width: 3
-  arrow_width: 0.005
-  color: white
+  _angle_in_data_coords: false
+  _arrow_head_axis_length: 4.5
+  _arrow_head_length: 5
+  _arrow_head_width: 3
+  _arrow_width: 0.005
+  _color: white
 Vlines:
-  colors: white
-  line_styles: solid
-  line_widths: 2
+  _colors: white
+  _line_styles: solid
+  _line_widths: 2
 Circle:
-  fill: True
-  fill_alpha: 0.5
-  fill_color:
-  edge_color: "black"
-  line_width: 2
-  line_style: "-"
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
 Rectangle:
-  fill: True
-  fill_alpha: 0.5
-  fill_color:
-  edge_color: "black"
-  line_width: 2
-  line_style: "-"
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
 Polygon:
-  fill: True
-  fill_alpha: 0.5
-  fill_color:
-  edge_color: "black"
-  line_width: 2
-  line_style: "-"
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
 Arrow:
-  color: "white"
-  head_size: 1
-  width: 2
+  _color: "white"
+  _head_size: 1
+  _width: 2
 Line:
-  color: "white"
-  width: 2
-  cap_width: 1
+  _color: "white"
+  _width: 2
+  _cap_width: 1
 rc_params:
   axes.edgecolor: white
   axes.facecolor: black

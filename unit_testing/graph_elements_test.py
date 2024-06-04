@@ -12,31 +12,31 @@ class TestHlines(unittest.TestCase):
         self.testHlines = Hlines(1, 0, 1, "Test Hlines")
 
     def test_y_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.y, list | ndarray | float | int)
+        self.assertIsInstance(self.testHlines._y, list | ndarray | float | int)
 
     def test_xmin_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.x_min, list | ndarray | float | int)
+        self.assertIsInstance(self.testHlines._x_min, list | ndarray | float | int)
 
     def test_ymin_is_list_ndarray_float_int(self):
-        self.assertIsInstance(self.testHlines.x_min, list | ndarray | float | int)
+        self.assertIsInstance(self.testHlines._x_min, list | ndarray | float | int)
 
     def test_colors_is_str_list_or_none(self):
-        self.assertIsInstance(self.testHlines.colors, list | str | None)
+        self.assertIsInstance(self.testHlines._colors, list | str | None)
 
     def test_linestyles_is_str_list_or_none(self):
-        self.assertIsInstance(self.testHlines.line_styles, list | str | None)
+        self.assertIsInstance(self.testHlines._line_styles, list | str | None)
 
     def test_label_is_str(self):
-        self.assertIsInstance(self.testHlines.label, str)
+        self.assertIsInstance(self.testHlines._label, str)
 
     def test_copy(self):
         testHlinesCopy = self.testHlines.copy()
-        self.assertEqual(testHlinesCopy.y, self.testHlines.y)
-        self.assertEqual(testHlinesCopy.x_min, self.testHlines.x_min)
-        self.assertEqual(testHlinesCopy.x_max, self.testHlines.x_max)
-        self.assertEqual(testHlinesCopy.colors, self.testHlines.colors)
-        self.assertEqual(testHlinesCopy.line_styles, self.testHlines.line_styles)
-        self.assertEqual(testHlinesCopy.label, self.testHlines.label)
+        self.assertEqual(testHlinesCopy._y, self.testHlines._y)
+        self.assertEqual(testHlinesCopy._x_min, self.testHlines._x_min)
+        self.assertEqual(testHlinesCopy._x_max, self.testHlines._x_max)
+        self.assertEqual(testHlinesCopy._colors, self.testHlines._colors)
+        self.assertEqual(testHlinesCopy._line_styles, self.testHlines._line_styles)
+        self.assertEqual(testHlinesCopy._label, self.testHlines._label)
 
 
 class TestVlines(unittest.TestCase):
@@ -44,31 +44,31 @@ class TestVlines(unittest.TestCase):
         self.testVlines = Vlines(x=[4, 5, 6, 7], y_min=0, y_max=1, label="Test Vlines")
 
     def test_x_is_list_ndarray_float_int(self):
-        self.assertListEqual(list(self.testVlines.x), [4, 5, 6, 7])
+        self.assertListEqual(list(self.testVlines._x), [4, 5, 6, 7])
 
     def test_ymin_is_list_ndarray_float_int(self):
-        self.assertEqual(self.testVlines.y_min, 0)
+        self.assertEqual(self.testVlines._y_min, 0)
 
     def test_ymax_is_list_ndarray_float_int(self):
-        self.assertEqual(self.testVlines.y_max, 1)
+        self.assertEqual(self.testVlines._y_max, 1)
 
     def test_colors_is_default(self):
-        self.assertEqual(self.testVlines.colors, "default")
+        self.assertEqual(self.testVlines._colors, "default")
 
     def test_linestyles_is_str_list_or_none(self):
-        self.assertIsInstance(self.testVlines.line_styles, list | str | None)
+        self.assertIsInstance(self.testVlines._line_styles, list | str | None)
 
     def test_label_is_str(self):
-        self.assertEqual(self.testVlines.label, "Test Vlines")
+        self.assertEqual(self.testVlines._label, "Test Vlines")
 
     def test_copy(self):
         testVlinesCopy = self.testVlines.copy()
-        self.assertEqual(list(testVlinesCopy.x), list(self.testVlines.x))
-        self.assertEqual(testVlinesCopy.y_min, self.testVlines.y_min)
-        self.assertEqual(testVlinesCopy.y_max, self.testVlines.y_max)
-        self.assertEqual(testVlinesCopy.colors, self.testVlines.colors)
-        self.assertEqual(testVlinesCopy.line_styles, self.testVlines.line_styles)
-        self.assertEqual(testVlinesCopy.label, self.testVlines.label)
+        self.assertEqual(list(testVlinesCopy._x), list(self.testVlines._x))
+        self.assertEqual(testVlinesCopy._y_min, self.testVlines._y_min)
+        self.assertEqual(testVlinesCopy._y_max, self.testVlines._y_max)
+        self.assertEqual(testVlinesCopy._colors, self.testVlines._colors)
+        self.assertEqual(testVlinesCopy._line_styles, self.testVlines._line_styles)
+        self.assertEqual(testVlinesCopy._label, self.testVlines._label)
 
 
 class TestPoint(unittest.TestCase):
@@ -76,58 +76,58 @@ class TestPoint(unittest.TestCase):
         self.testPoint = Point(x=0.0, y=0.0, label="Test Point")
 
     def test_x_is_float(self):
-        self.assertEqual(self.testPoint.x, 0.0)
+        self.assertEqual(self.testPoint._x, 0.0)
 
     def test_y_is_float(self):
-        self.assertEqual(self.testPoint.y, 0.0)
+        self.assertEqual(self.testPoint._y, 0.0)
 
     def test_label_is_str(self):
-        self.assertEqual(self.testPoint.label, "Test Point")
+        self.assertEqual(self.testPoint._label, "Test Point")
 
     def test_colors_is_default(self):
-        self.assertEqual(self.testPoint.color, "default")
+        self.assertEqual(self.testPoint._color, "default")
 
     def test_edge_color_is_default(self):
-        self.assertEqual(self.testPoint.edge_color, "default")
+        self.assertEqual(self.testPoint._edge_color, "default")
 
     def test_marker_size_is_default(self):
-        self.assertEqual(self.testPoint.marker_size, "default")
+        self.assertEqual(self.testPoint._marker_size, "default")
 
     def test_marker_style_is_default(self):
-        self.assertEqual(self.testPoint.marker_style, "default")
+        self.assertEqual(self.testPoint._marker_style, "default")
 
     def test_edge_width_is_default(self):
-        self.assertEqual(self.testPoint.edge_width, "default")
+        self.assertEqual(self.testPoint._edge_width, "default")
 
     def test_font_size_is_same_as_figure(self):
-        self.assertEqual(self.testPoint.font_size, "same as figure")
+        self.assertEqual(self.testPoint._font_size, "same as figure")
 
     def test_text_color_is_k(self):
-        self.assertEqual(self.testPoint.text_color, "k")
+        self.assertEqual(self.testPoint._text_color, "k")
 
     def test_h_align_is_left(self):
-        self.assertEqual(self.testPoint.h_align, "left")
+        self.assertEqual(self.testPoint._h_align, "left")
 
     def test_v_align_is_bottom(self):
-        self.assertEqual(self.testPoint.v_align, "bottom")
+        self.assertEqual(self.testPoint._v_align, "bottom")
 
     def test_coordinates_property(self):
-        self.assertEqual(self.testPoint.get_coordinates(), (0.0, 0.0))
+        self.assertEqual(self.testPoint.coordinates, (0.0, 0.0))
 
     def test_copy(self):
         testPointCopy = self.testPoint.copy()
-        self.assertEqual(testPointCopy.x, self.testPoint.x)
-        self.assertEqual(testPointCopy.y, self.testPoint.y)
-        self.assertEqual(testPointCopy.label, self.testPoint.label)
-        self.assertEqual(testPointCopy.color, self.testPoint.color)
-        self.assertEqual(testPointCopy.edge_color, self.testPoint.edge_color)
-        self.assertEqual(testPointCopy.marker_size, self.testPoint.marker_size)
-        self.assertEqual(testPointCopy.marker_style, self.testPoint.marker_style)
-        self.assertEqual(testPointCopy.edge_width, self.testPoint.edge_width)
-        self.assertEqual(testPointCopy.font_size, self.testPoint.font_size)
-        self.assertEqual(testPointCopy.text_color, self.testPoint.text_color)
-        self.assertEqual(testPointCopy.h_align, self.testPoint.h_align)
-        self.assertEqual(testPointCopy.v_align, self.testPoint.v_align)
+        self.assertEqual(testPointCopy._x, self.testPoint._x)
+        self.assertEqual(testPointCopy._y, self.testPoint._y)
+        self.assertEqual(testPointCopy._label, self.testPoint._label)
+        self.assertEqual(testPointCopy._color, self.testPoint._color)
+        self.assertEqual(testPointCopy._edge_color, self.testPoint._edge_color)
+        self.assertEqual(testPointCopy._marker_size, self.testPoint._marker_size)
+        self.assertEqual(testPointCopy._marker_style, self.testPoint._marker_style)
+        self.assertEqual(testPointCopy._edge_width, self.testPoint._edge_width)
+        self.assertEqual(testPointCopy._font_size, self.testPoint._font_size)
+        self.assertEqual(testPointCopy._text_color, self.testPoint._text_color)
+        self.assertEqual(testPointCopy._h_align, self.testPoint._h_align)
+        self.assertEqual(testPointCopy._v_align, self.testPoint._v_align)
 
 
 class TestText(unittest.TestCase):
@@ -141,13 +141,13 @@ class TestText(unittest.TestCase):
             h_align="center",
             v_align="center",
         )
-        self.assertEqual(testText.x, 0.0)
-        self.assertEqual(testText.y, 0.0)
-        self.assertEqual(testText.text, "Test Text")
-        self.assertEqual(testText.color, "red")
-        self.assertEqual(testText.font_size, 12)
-        self.assertEqual(testText.h_align, "center")
-        self.assertEqual(testText.v_align, "center")
+        self.assertEqual(testText._x, 0.0)
+        self.assertEqual(testText._y, 0.0)
+        self.assertEqual(testText._text, "Test Text")
+        self.assertEqual(testText._color, "red")
+        self.assertEqual(testText._font_size, 12)
+        self.assertEqual(testText._h_align, "center")
+        self.assertEqual(testText._v_align, "center")
 
     def test_add_arrow(self):
         testText = Text(
@@ -164,7 +164,7 @@ class TestText(unittest.TestCase):
         )
         self.assertEqual(testText._arrow_pointing_to, (1, 1))
         self.assertDictEqual(
-            testText.arrow_properties,
+            testText._arrow_properties,
             {"width": 0.1, "headwidth": 0.3, "headlength": 0.2, "shrink": 0.05},
         )
 
@@ -211,13 +211,13 @@ class TestText(unittest.TestCase):
             v_align="center",
         )
         testTextCopy = testText.copy()
-        self.assertEqual(testTextCopy.x, testText.x)
-        self.assertEqual(testTextCopy.y, testText.y)
-        self.assertEqual(testTextCopy.text, testText.text)
-        self.assertEqual(testTextCopy.color, testText.color)
-        self.assertEqual(testTextCopy.font_size, testText.font_size)
-        self.assertEqual(testTextCopy.h_align, testText.h_align)
-        self.assertEqual(testTextCopy.v_align, testText.v_align)
+        self.assertEqual(testTextCopy._x, testText._x)
+        self.assertEqual(testTextCopy._y, testText._y)
+        self.assertEqual(testTextCopy._text, testText._text)
+        self.assertEqual(testTextCopy._color, testText._color)
+        self.assertEqual(testTextCopy._font_size, testText._font_size)
+        self.assertEqual(testTextCopy._h_align, testText._h_align)
+        self.assertEqual(testTextCopy._v_align, testText._v_align)
         self.assertEqual(testTextCopy._arrow_pointing_to, testText._arrow_pointing_to)
 
 
@@ -255,18 +255,18 @@ class TestTable(unittest.TestCase):
             location="bottom",
         )
 
-        self.assertListEqual(table.cell_text, data)
-        self.assertListEqual(table.cell_colors, colors)
-        self.assertEqual(table.cell_align, "center")
-        self.assertListEqual(table.col_labels, columns)
-        self.assertListEqual(table.col_widths, [0.1, 0.1, 0.1, 0.1, 0.1])
-        self.assertEqual(table.col_align, "center")
-        self.assertListEqual(table.col_colors, ["#bfbfbf"] * 5)
-        self.assertListEqual(table.row_labels, rows)
-        self.assertEqual(table.row_align, "center")
-        self.assertListEqual(table.row_colors, ["#bfbfbf"] * 5)
-        self.assertEqual(table.scaling, (1.1, 1.1))
-        self.assertEqual(table.location, "bottom")
+        self.assertListEqual(table._cell_text, data)
+        self.assertListEqual(table._cell_colors, colors)
+        self.assertEqual(table._cell_align, "center")
+        self.assertListEqual(table._col_labels, columns)
+        self.assertListEqual(table._col_widths, [0.1, 0.1, 0.1, 0.1, 0.1])
+        self.assertEqual(table._col_align, "center")
+        self.assertListEqual(table._col_colors, ["#bfbfbf"] * 5)
+        self.assertListEqual(table._row_labels, rows)
+        self.assertEqual(table._row_align, "center")
+        self.assertListEqual(table._row_colors, ["#bfbfbf"] * 5)
+        self.assertEqual(table._scaling, (1.1, 1.1))
+        self.assertEqual(table._location, "bottom")
 
     def test_plotting(self):
         data = [
@@ -401,16 +401,16 @@ class TestTable(unittest.TestCase):
             location="bottom",
         )
         tableCopy = table.copy()
-        self.assertListEqual(tableCopy.cell_text, table.cell_text)
-        self.assertListEqual(tableCopy.cell_colors, table.cell_colors)
-        self.assertEqual(tableCopy.cell_align, table.cell_align)
-        self.assertListEqual(tableCopy.col_labels, table.col_labels)
-        self.assertListEqual(tableCopy.col_widths, table.col_widths)
-        self.assertEqual(tableCopy.col_align, table.col_align)
-        self.assertListEqual(tableCopy.col_colors, table.col_colors)
-        self.assertListEqual(tableCopy.row_labels, table.row_labels)
-        self.assertEqual(tableCopy.row_align, table.row_align)
-        self.assertListEqual(tableCopy.row_colors, table.row_colors)
+        self.assertListEqual(tableCopy._cell_text, table._cell_text)
+        self.assertListEqual(tableCopy._cell_colors, table._cell_colors)
+        self.assertEqual(tableCopy._cell_align, table._cell_align)
+        self.assertListEqual(tableCopy._col_labels, table._col_labels)
+        self.assertListEqual(tableCopy._col_widths, table._col_widths)
+        self.assertEqual(tableCopy._col_align, table._col_align)
+        self.assertListEqual(tableCopy._col_colors, table._col_colors)
+        self.assertListEqual(tableCopy._row_labels, table._row_labels)
+        self.assertEqual(tableCopy._row_align, table._row_align)
+        self.assertListEqual(tableCopy._row_colors, table._row_colors)
 
 
 if __name__ == "__main__":

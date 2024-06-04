@@ -97,7 +97,7 @@ class MultiFigure:
         title : str, optional
             General title of the figure.
         reference_labels : bool
-            Wheter or not to add reference labels to the SubFigures.
+            Whether or not to add reference labels to the SubFigures.
             Defaults to ``True``.
 
             .. note::
@@ -115,16 +115,64 @@ class MultiFigure:
             raise TypeError("The number of rows and columns must be integers.")
         if num_rows < 1 or num_cols < 1:
             raise ValueError("The number of rows and columns must be greater than 0.")
-        self.num_rows = num_rows
-        self.num_cols = num_cols
-        self.title = title
-        self.reference_labels = reference_labels
-        self.reflabel_loc = reflabel_loc
-        self.figure_style = figure_style
-        self.size = size
+        self._num_rows = num_rows
+        self._num_cols = num_cols
+        self._title = title
+        self._reference_labels = reference_labels
+        self._reflabel_loc = reflabel_loc
+        self._figure_style = figure_style
+        self._size = size
         self._sub_figures = []
         self._rc_dict = {}
         self._user_rc_dict = {}
+
+    @property
+    def num_rows(self) -> int:
+        return self._num_rows
+
+    @property
+    def num_cols(self) -> int:
+        return self._num_cols
+
+    @property
+    def title(self) -> Optional[str]:
+        return self._title
+
+    @title.setter
+    def title(self, title: Optional[str]) -> None:
+        self._title = title
+
+    @property
+    def reference_labels(self) -> bool:
+        return self._reference_labels
+
+    @reference_labels.setter
+    def reference_labels(self, reference_labels: bool) -> None:
+        self._reference_labels = reference_labels
+
+    @property
+    def reflabel_loc(self) -> str:
+        return self._reflabel_loc
+
+    @reflabel_loc.setter
+    def reflabel_loc(self, reflabel_loc: str) -> None:
+        self._reflabel_loc = reflabel_loc
+
+    @property
+    def figure_style(self) -> str:
+        return self._figure_style
+
+    @figure_style.setter
+    def figure_style(self, figure_style: str) -> None:
+        self._figure_style = figure_style
+
+    @property
+    def size(self) -> tuple[float, float] | Literal["default"]:
+        return self._size
+
+    @size.setter
+    def size(self, size: tuple[float, float] | Literal["default"]) -> None:
+        self._size = size
 
     @classmethod
     def from_row(
@@ -316,15 +364,18 @@ class MultiFigure:
             raise TypeError("The span values must be integers.")
         if row_span < 1 or col_span < 1:
             raise ValueError("The span values must be greater than 0.")
-        if row_start + row_span > self.num_rows or col_start + col_span > self.num_cols:
+        if (
+            row_start + row_span > self._num_rows
+            or col_start + col_span > self._num_cols
+        ):
             raise ValueError(
                 "The placement values and span values must be inside the size of the MultiFigure."
             )
         # Add location and span to the SubFigure (create new attributes)
-        figure.row_start = row_start
-        figure.col_start = col_start
-        figure.row_span = row_span
-        figure.col_span = col_span
+        figure._row_start = row_start
+        figure._col_start = col_start
+        figure._row_span = row_span
+        figure._col_span = col_span
         self._sub_figures.append(figure)
 
     def show(
@@ -398,35 +449,35 @@ class MultiFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.MultiFigure` to be displayed.
         """
-        if self.figure_style == "default":
-            self.figure_style = get_default_style()
+        if self._figure_style == "default":
+            self._figure_style = get_default_style()
         try:
-            file_loader = FileLoader(self.figure_style)
-            self.default_params = file_loader.load()
+            file_loader = FileLoader(self._figure_style)
+            self._default_params = file_loader.load()
             is_matplotlib_style = False
         except FileNotFoundError:
             is_matplotlib_style = True
             try:
-                if self.figure_style == "matplotlib":
+                if self._figure_style == "matplotlib":
                     plt.style.use("default")
                 else:
-                    plt.style.use(self.figure_style)
+                    plt.style.use(self._figure_style)
                 file_loader = FileLoader("plain")
-                self.default_params = file_loader.load()
+                self._default_params = file_loader.load()
             except OSError:
                 raise GraphingException(
-                    f"The figure style {self.figure_style} was not found. Please choose a different style."
+                    f"The figure style {self._figure_style} was not found. Please choose a different style."
                 )
 
         multi_figure_params_to_reset = self._fill_in_missing_params(self)
 
         self._fill_in_rc_params(is_matplotlib_style)
-        self._figure = plt.figure(layout="constrained", figsize=self.size)
-        MultiFigure_grid = GridSpec(self.num_rows, self.num_cols, figure=self._figure)
+        self._figure = plt.figure(layout="constrained", figsize=self._size)
+        MultiFigure_grid = GridSpec(self._num_rows, self._num_cols, figure=self._figure)
 
-        if self.reflabel_loc == "outside":
+        if self._reflabel_loc == "outside":
             trans = ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
-        elif self.reflabel_loc == "inside":
+        elif self._reflabel_loc == "inside":
             trans = ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
         else:
             raise ValueError(
@@ -477,7 +528,7 @@ class MultiFigure:
                     loc=legend_loc,
                     ncols=legend_cols,
                 )
-        self._figure.suptitle(self.title)
+        self._figure.suptitle(self._title)
         self._reset_params_to_default(self, multi_figure_params_to_reset)
         self._rc_dict = {}
 
@@ -497,21 +548,21 @@ class MultiFigure:
         plt.rcParams.update(sub_rcs)
         axes = plt.subplot(
             grid.new_subplotspec(
-                (sub_figure.row_start, sub_figure.col_start),
-                rowspan=sub_figure.row_span,
-                colspan=sub_figure.col_span,
+                (sub_figure._row_start, sub_figure._col_start),
+                rowspan=sub_figure._row_span,
+                colspan=sub_figure._col_span,
             )
         )
-        if self.reference_labels:
+        if self._reference_labels:
             axes.text(
                 0,
                 1,
                 reference_label,
                 transform=axes.transAxes + transformation,
             )
-        default_params_copy = self.default_params.copy()
+        default_params_copy = self._default_params.copy()
         default_params_copy.update(is_a_subfigure=True)
-        default_params_copy["Figure"]["figure_style"] = self.figure_style
+        default_params_copy["Figure"]["_figure_style"] = self._figure_style
         labels, handles = sub_figure._prepare_figure(
             legend=legend,
             axes=axes,
@@ -529,22 +580,22 @@ class MultiFigure:
         for property, value in vars(element).items():
             if (type(value) == str) and (value == "default"):
                 params_to_reset.append(property)
-                if self.default_params[object_type][property] == "same as curve":
-                    element.__dict__["errorbars_color"] = self.default_params[
+                if self._default_params[object_type][property] == "same as curve":
+                    element.__dict__["_errorbars_color"] = self._default_params[
                         object_type
-                    ]["color"]
-                    element.__dict__["errorbars_line_width"] = self.default_params[
+                    ]["_color"]
+                    element.__dict__["_errorbars_line_width"] = self._default_params[
                         object_type
-                    ]["line_width"]
-                    element.__dict__["cap_thickness"] = self.default_params[
+                    ]["_line_width"]
+                    element.__dict__["_cap_thickness"] = self._default_params[
                         object_type
-                    ]["line_width"]
-                elif self.default_params[object_type][property] == "same as scatter":
-                    element.__dict__["errorbars_color"] = self.default_params[
+                    ]["_line_width"]
+                elif self._default_params[object_type][property] == "same as scatter":
+                    element.__dict__["_errorbars_color"] = self._default_params[
                         object_type
-                    ]["face_color"]
+                    ]["_face_color"]
                 else:
-                    element.__dict__[property] = self.default_params[object_type][
+                    element.__dict__[property] = self._default_params[object_type][
                         property
                     ]
         return params_to_reset
@@ -566,13 +617,13 @@ class MultiFigure:
         In both cases, the rc parameters are then updated with the user-specified parameters.
         """
         if is_matplotlib_style:
-            if self.figure_style == "matplotlib":
+            if self._figure_style == "matplotlib":
                 plt.style.use("default")
             else:
-                plt.style.use(self.figure_style)
+                plt.style.use(self._figure_style)
             plt.rcParams.update(self._user_rc_dict)
         else:
-            params = self.default_params["rc_params"]
+            params = self._default_params["rc_params"]
             for property, value in params.items():
                 # add to rc_dict if not already in there
                 if (property not in self._rc_dict) and (

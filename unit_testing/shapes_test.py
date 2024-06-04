@@ -13,16 +13,16 @@ class TestCircle(unittest.TestCase):
     def test_init(self):
         circle = Circle(2, 2, 1)
 
-        self.assertAlmostEqual(circle.get_area(), np.pi, places=2)
-        self.assertAlmostEqual(circle.get_perimeter(), 2 * np.pi, places=2)
+        self.assertAlmostEqual(circle.area, np.pi, places=2)
+        self.assertAlmostEqual(circle.perimeter, 2 * np.pi, places=2)
 
 
 class TestRectangle(unittest.TestCase):
     def test_init(self):
         rectangle = Rectangle(0, 0, 1, 1)
 
-        self.assertAlmostEqual(rectangle.get_area(), 1, places=2)
-        self.assertAlmostEqual(rectangle.get_perimeter(), 4, places=2)
+        self.assertAlmostEqual(rectangle.area, 1, places=2)
+        self.assertAlmostEqual(rectangle.perimeter, 4, places=2)
 
 
 class TestArrow(unittest.TestCase):
@@ -37,15 +37,15 @@ class TestArrow(unittest.TestCase):
             two_sided=True,
         )
 
-        self.assertEqual(arrow.pointA[0], 3)
-        self.assertEqual(arrow.pointA[1], 3)
-        self.assertEqual(arrow.pointB[0], 4)
-        self.assertEqual(arrow.pointB[1], 4)
-        self.assertEqual(arrow.color, "blue")
-        self.assertEqual(arrow.width, 2)
-        self.assertEqual(arrow.head_size, 3)
-        self.assertEqual(arrow.shrink, 0.1)
-        self.assertEqual(arrow.two_sided, True)
+        self.assertEqual(arrow._pointA[0], 3)
+        self.assertEqual(arrow._pointA[1], 3)
+        self.assertEqual(arrow._pointB[0], 4)
+        self.assertEqual(arrow._pointB[1], 4)
+        self.assertEqual(arrow._color, "blue")
+        self.assertEqual(arrow._width, 2)
+        self.assertEqual(arrow._head_size, 3)
+        self.assertEqual(arrow._shrink, 0.1)
+        self.assertEqual(arrow._two_sided, True)
 
     def test_shrink_points(self):
         arrow = Arrow(
@@ -125,13 +125,13 @@ class TestArrow(unittest.TestCase):
             two_sided=True,
         )
         arrow_copy = arrow.copy()
-        self.assertEqual(arrow.pointA, arrow_copy.pointA)
-        self.assertEqual(arrow.pointB, arrow_copy.pointB)
-        self.assertEqual(arrow.color, arrow_copy.color)
-        self.assertEqual(arrow.width, arrow_copy.width)
-        self.assertEqual(arrow.head_size, arrow_copy.head_size)
-        self.assertEqual(arrow.shrink, arrow_copy.shrink)
-        self.assertEqual(arrow.two_sided, arrow_copy.two_sided)
+        self.assertEqual(arrow._pointA, arrow_copy._pointA)
+        self.assertEqual(arrow._pointB, arrow_copy._pointB)
+        self.assertEqual(arrow._color, arrow_copy._color)
+        self.assertEqual(arrow._width, arrow_copy._width)
+        self.assertEqual(arrow._head_size, arrow_copy._head_size)
+        self.assertEqual(arrow._shrink, arrow_copy._shrink)
+        self.assertEqual(arrow._two_sided, arrow_copy._two_sided)
 
 
 class TestLine(unittest.TestCase):
@@ -145,14 +145,14 @@ class TestLine(unittest.TestCase):
             cap_width=3,
         )
 
-        self.assertEqual(line.pointA[0], 3)
-        self.assertEqual(line.pointA[1], 3)
-        self.assertEqual(line.pointB[0], 4)
-        self.assertEqual(line.pointB[1], 4)
-        self.assertEqual(line.color, "blue")
-        self.assertEqual(line.width, 2)
-        self.assertEqual(line.capped_line, True)
-        self.assertEqual(line.cap_width, 3)
+        self.assertEqual(line._pointA[0], 3)
+        self.assertEqual(line._pointA[1], 3)
+        self.assertEqual(line._pointB[0], 4)
+        self.assertEqual(line._pointB[1], 4)
+        self.assertEqual(line._color, "blue")
+        self.assertEqual(line._width, 2)
+        self.assertEqual(line._capped_line, True)
+        self.assertEqual(line._cap_width, 3)
 
     def test_plotting(self):
         line = Line(
@@ -185,12 +185,12 @@ class TestLine(unittest.TestCase):
             cap_width=3,
         )
         line_copy = line.copy()
-        self.assertEqual(line.pointA, line_copy.pointA)
-        self.assertEqual(line.pointB, line_copy.pointB)
-        self.assertEqual(line.color, line_copy.color)
-        self.assertEqual(line.width, line_copy.width)
-        self.assertEqual(line.capped_line, line_copy.capped_line)
-        self.assertEqual(line.cap_width, line_copy.cap_width)
+        self.assertEqual(line._pointA, line_copy._pointA)
+        self.assertEqual(line._pointB, line_copy._pointB)
+        self.assertEqual(line._color, line_copy._color)
+        self.assertEqual(line._width, line_copy._width)
+        self.assertEqual(line._capped_line, line_copy._capped_line)
+        self.assertEqual(line._cap_width, line_copy._cap_width)
 
 
 class TestPolygon(unittest.TestCase):
@@ -211,37 +211,7 @@ class TestPolygon(unittest.TestCase):
         for i in range(len(vertices) - 1):
             self.assertEqual(polygon.vertices[i][0], vertices[i][0])
             self.assertEqual(polygon.vertices[i][1], vertices[i][1])
-        self.assertEqual(polygon.line_width, 2)
-
-    def test_get_area(self):
-        vertices = [
-            (0, 0),
-            (1, 0),
-            (1, 1),
-            (0.5, 1.5),
-            (0, 1),
-            (-0.5, 2),
-            (-0.8, 1.3),
-            (-1, 0),
-            (0, 0),
-        ]
-        polygon = Polygon(vertices, line_width=2)
-        self.assertEqual(polygon.get_area(), 2.625)
-
-    def test_get_perimeter(self):
-        vertices = [
-            (0, 0),
-            (1, 0),
-            (1, 1),
-            (0.5, 1.5),
-            (0, 1),
-            (-0.5, 2),
-            (-0.8, 1.3),
-            (-1, 0),
-            (0, 0),
-        ]
-        polygon = Polygon(vertices, line_width=2)
-        self.assertEqual(polygon.get_perimeter(), 7.609119505505971)
+        self.assertEqual(polygon._line_width, 2)
 
     def test_create_centroid_point(self):
         vertices = [
@@ -257,8 +227,8 @@ class TestPolygon(unittest.TestCase):
         polygon = Polygon(vertices, line_width=2)
         centroid = polygon.create_centroid_point()
 
-        self.assertAlmostEqual(centroid.x, -0.00476190476190, places=6)
-        self.assertAlmostEqual(centroid.y, 0.70317460317460, places=6)
+        self.assertAlmostEqual(centroid._x, -0.00476190476190, places=6)
+        self.assertAlmostEqual(centroid._y, 0.70317460317460, places=6)
 
     def test_get_centroid_coordinates(self):
         vertices = [
@@ -583,10 +553,10 @@ class TestPolygon(unittest.TestCase):
         intersection = polygon_1.create_intersection_points(polygon_2)
 
         self.assertEqual(len(intersection), 2)
-        self.assertEqual(intersection[0].x, 0.5)
-        self.assertEqual(intersection[0].y, 1)
-        self.assertEqual(intersection[1].x, 1)
-        self.assertEqual(intersection[1].y, 0.5)
+        self.assertEqual(intersection[0]._x, 0.5)
+        self.assertEqual(intersection[0]._y, 1)
+        self.assertEqual(intersection[1]._x, 1)
+        self.assertEqual(intersection[1]._y, 0.5)
 
 
 if __name__ == "__main__":

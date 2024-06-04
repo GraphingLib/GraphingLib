@@ -66,17 +66,38 @@ class Curve:
         Default depends on the ``figure_style`` configuration.
     """
 
-    x_data: ArrayLike
-    y_data: ArrayLike
-    label: Optional[str] = None
-    color: str = "default"
-    line_width: float | Literal["default"] = "default"
-    line_style: str = "default"
-    show_errorbars: bool = field(default=False, init=False)
-    show_error_curves: bool = field(default=False, init=False)
-    _fill_curve_between: Optional[tuple[float, float]] = field(init=False, default=None)
-    _fill_under_other_curve: Optional[Self] = field(init=False, default=None)
-    _fill_under_color: Optional[str] = field(init=False, default=None)
+    def __init__(
+        self,
+        x_data: ArrayLike,
+        y_data: ArrayLike,
+        label: Optional[str] = None,
+        color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+    ) -> None:
+        self.handle = None
+        self._x_data = np.asarray(x_data)
+        self._y_data = np.asarray(y_data)
+        self._label = label
+        self._color = color
+        self._line_width = line_width
+        self._line_style = line_style
+
+        self._show_errorbars: bool = False
+        self._errorbars_color = None
+        self._errorbars_line_width = None
+        self._cap_thickness = None
+        self._cap_width = None
+
+        self._show_error_curves: bool = False
+        self._error_curves_fill_between: bool = False
+        self._error_curves_color = None
+        self._error_curves_line_style = None
+        self._error_curves_line_width = None
+
+        self._fill_between_bounds: Optional[tuple[float, float]] = None
+        self._fill_between_other_curve: Optional[Self] = None
+        self._fill_between_color: Optional[str] = None
 
     @classmethod
     def from_function(
@@ -119,30 +140,182 @@ class Curve:
         y_data = func(x_data)
         return cls(x_data, y_data, label, color, line_width, line_style)
 
-    def __post_init__(self):
-        self.x_data = np.array(self.x_data)
-        self.y_data = np.array(self.y_data)
+    @property
+    def x_data(self) -> np.ndarray:
+        return self._x_data
+
+    @x_data.setter
+    def x_data(self, x_data: ArrayLike) -> None:
+        self._x_data = np.asarray(x_data)
+
+    @property
+    def y_data(self) -> np.ndarray:
+        return self._y_data
+
+    @y_data.setter
+    def y_data(self, y_data: ArrayLike) -> None:
+        self._y_data = np.asarray(y_data)
+
+    @property
+    def label(self) -> Optional[str]:
+        return self._label
+
+    @label.setter
+    def label(self, label: Optional[str]) -> None:
+        self._label = label
+
+    @property
+    def color(self) -> str:
+        return self._color
+
+    @color.setter
+    def color(self, color: str) -> None:
+        self._color = color
+
+    @property
+    def line_width(self) -> float | Literal["default"]:
+        return self._line_width
+
+    @line_width.setter
+    def line_width(self, line_width: float | Literal["default"]) -> None:
+        self._line_width = line_width
+
+    @property
+    def line_style(self) -> str:
+        return self._line_style
+
+    @line_style.setter
+    def line_style(self, line_style: str) -> None:
+        self._line_style = line_style
+
+    @property
+    def show_errorbars(self) -> bool:
+        return self._show_errorbars
+
+    @show_errorbars.setter
+    def show_errorbars(self, show_errorbars: bool) -> None:
+        self._show_errorbars = show_errorbars
+
+    @property
+    def errorbars_color(self) -> str:
+        return self._errorbars_color
+
+    @errorbars_color.setter
+    def errorbars_color(self, errorbars_color: str) -> None:
+        self._errorbars_color = errorbars_color
+
+    @property
+    def errorbars_line_width(self) -> float | Literal["default"]:
+        return self._errorbars_line_width
+
+    @errorbars_line_width.setter
+    def errorbars_line_width(
+        self, errorbars_line_width: float | Literal["default"]
+    ) -> None:
+        self._errorbars_line_width = errorbars_line_width
+
+    @property
+    def cap_thickness(self) -> float | Literal["default"]:
+        return self._cap_thickness
+
+    @cap_thickness.setter
+    def cap_thickness(self, cap_thickness: float | Literal["default"]) -> None:
+        self._cap_thickness = cap_thickness
+
+    @property
+    def cap_width(self) -> float | Literal["default"]:
+        return self._cap_width
+
+    @cap_width.setter
+    def cap_width(self, cap_width: float | Literal["default"]) -> None:
+        self._cap_width = cap_width
+
+    @property
+    def show_error_curves(self) -> bool:
+        return self._show_error_curves
+
+    @show_error_curves.setter
+    def show_error_curves(self, show_error_curves: bool) -> None:
+        self._show_error_curves = show_error_curves
+
+    @property
+    def error_curves_fill_between(self) -> bool:
+        return self._error_curves_fill_between
+
+    @error_curves_fill_between.setter
+    def error_curves_fill_between(self, error_curves_fill_between: bool) -> None:
+        self._error_curves_fill_between = error_curves_fill_between
+
+    @property
+    def error_curves_color(self) -> str:
+        return self._error_curves_color
+
+    @error_curves_color.setter
+    def error_curves_color(self, error_curves_color: str) -> None:
+        self._error_curves_color = error_curves_color
+
+    @property
+    def error_curves_line_style(self) -> str:
+        return self._error_curves_line_style
+
+    @error_curves_line_style.setter
+    def error_curves_line_style(self, error_curves_line_style: str) -> None:
+        self._error_curves_line_style = error_curves_line_style
+
+    @property
+    def error_curves_line_width(self) -> float | Literal["default"]:
+        return self._error_curves_line_width
+
+    @error_curves_line_width.setter
+    def error_curves_line_width(
+        self, error_curves_line_width: float | Literal["default"]
+    ) -> None:
+        self._error_curves_line_width = error_curves_line_width
+
+    @property
+    def fill_between_bounds(self) -> tuple[float, float]:
+        return self._fill_between_bounds
+
+    @fill_between_bounds.setter
+    def fill_between_bounds(self, fill_between_bounds: tuple[float, float]) -> None:
+        self._fill_between_bounds = fill_between_bounds
+
+    @property
+    def fill_between_other_curve(self) -> Self:
+        return self._fill_between_other_curve
+
+    @fill_between_other_curve.setter
+    def fill_between_other_curve(self, fill_between_other_curve: Self) -> None:
+        self._fill_between_other_curve = fill_between_other_curve
+
+    @property
+    def fill_between_color(self) -> str:
+        return self._fill_between_color
+
+    @fill_between_color.setter
+    def fill_between_color(self, fill_between_color: str) -> None:
+        self._fill_between_color = fill_between_color
 
     def __add__(self, other: Self | float) -> Self:
         """
         Defines the addition of two curves or a curve and a number.
         """
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    return Curve(x_data, y_data + other.y_data)
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    return Curve(x_data, y_data + other._y_data)
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    return Curve(x_data, y_data + self.y_data)
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    return Curve(x_data, y_data + self._y_data)
 
-            new_y_data = self.y_data + other.y_data
-            return Curve(self.x_data, new_y_data)
+            new_y_data = self._y_data + other._y_data
+            return Curve(self._x_data, new_y_data)
         elif isinstance(other, (int, float)):
-            new_y_data = self.y_data + other
-            return Curve(self.x_data, new_y_data)
+            new_y_data = self._y_data + other
+            return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only add a curve to another curve or a number.")
 
@@ -151,21 +324,21 @@ class Curve:
 
     def __iadd__(self, other: Self | float) -> Self:
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    self.y_data = y_data + other.y_data
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    self._y_data = y_data + other._y_data
                     return self
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    self.y_data = y_data + self.y_data
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    self._y_data = y_data + self._y_data
                     return self
-            self.y_data += other.y_data
+            self._y_data += other._y_data
             return self
         elif isinstance(other, (int, float)):
-            self.y_data += other
+            self._y_data += other
             return self
 
     def __sub__(self, other: Self | float) -> Self:
@@ -173,20 +346,20 @@ class Curve:
         Defines the subtraction of two curves or a curve and a number.
         """
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    return Curve(x_data, y_data - other.y_data)
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    return Curve(x_data, y_data - other._y_data)
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    return Curve(x_data, self.y_data - y_data)
-            new_y_data = self.y_data - other.y_data
-            return Curve(self.x_data, new_y_data)
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    return Curve(x_data, self._y_data - y_data)
+            new_y_data = self._y_data - other._y_data
+            return Curve(self._x_data, new_y_data)
         elif isinstance(other, (int, float)):
-            new_y_data = self.y_data - other
-            return Curve(self.x_data, new_y_data)
+            new_y_data = self._y_data - other
+            return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only subtract a curve from another curve or a number.")
 
@@ -195,21 +368,21 @@ class Curve:
 
     def __isub__(self, other: Self | float) -> Self:
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    self.y_data = y_data - other.y_data
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    self._y_data = y_data - other._y_data
                     return self
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    self.y_data = self.y_data - y_data
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    self._y_data = self._y_data - y_data
                     return self
-            self.y_data -= other.y_data
+            self._y_data -= other._y_data
             return self
         elif isinstance(other, (int, float)):
-            self.y_data -= other
+            self._y_data -= other
             return self
 
     def __mul__(self, other: Self | float) -> Self:
@@ -217,20 +390,20 @@ class Curve:
         Defines the multiplication of two curves or a curve and a number.
         """
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    return Curve(x_data, y_data * other.y_data)
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    return Curve(x_data, y_data * other._y_data)
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    return Curve(x_data, y_data * self.y_data)
-            new_y_data = self.y_data * other.y_data
-            return Curve(self.x_data, new_y_data)
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    return Curve(x_data, y_data * self._y_data)
+            new_y_data = self._y_data * other._y_data
+            return Curve(self._x_data, new_y_data)
         elif isinstance(other, (int, float)):
-            new_y_data = self.y_data * other
-            return Curve(self.x_data, new_y_data)
+            new_y_data = self._y_data * other
+            return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only multiply a curve by another curve or a number.")
 
@@ -239,21 +412,21 @@ class Curve:
 
     def __imul__(self, other: Self | float) -> Self:
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    self.y_data = y_data * other.y_data
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    self._y_data = y_data * other._y_data
                     return self
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    self.y_data = self.y_data * y_data
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    self._y_data = self._y_data * y_data
                     return self
-            self.y_data *= other.y_data
+            self._y_data *= other._y_data
             return self
         elif isinstance(other, (int, float)):
-            self.y_data *= other
+            self._y_data *= other
             return self
 
     def __truediv__(self, other: Self | float) -> Self:
@@ -261,20 +434,20 @@ class Curve:
         Defines the division of two curves or a curve and a number.
         """
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    return Curve(x_data, y_data / other.y_data)
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    return Curve(x_data, y_data / other._y_data)
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    return Curve(x_data, self.y_data / y_data)
-            new_y_data = self.y_data / other.y_data
-            return Curve(self.x_data, new_y_data)
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    return Curve(x_data, self._y_data / y_data)
+            new_y_data = self._y_data / other._y_data
+            return Curve(self._x_data, new_y_data)
         elif isinstance(other, (int, float)):
-            new_y_data = self.y_data / other
-            return Curve(self.x_data, new_y_data)
+            new_y_data = self._y_data / other
+            return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only divide a curve by another curve or a number.")
 
@@ -286,21 +459,21 @@ class Curve:
 
     def __itruediv__(self, other: Self | float) -> Self:
         if isinstance(other, Curve):
-            if not np.array_equal(self.x_data, other.x_data):
-                if len(self.x_data) > len(other.x_data):
-                    x_data = other.x_data
-                    y_data = interp1d(self.x_data, self.y_data)(x_data)
-                    self.y_data = y_data / other.y_data
+            if not np.array_equal(self._x_data, other._x_data):
+                if len(self._x_data) > len(other._x_data):
+                    x_data = other._x_data
+                    y_data = interp1d(self._x_data, self._y_data)(x_data)
+                    self._y_data = y_data / other._y_data
                     return self
                 else:
-                    x_data = self.x_data
-                    y_data = interp1d(other.x_data, other.y_data)(x_data)
-                    self.y_data = self.y_data / y_data
+                    x_data = self._x_data
+                    y_data = interp1d(other._x_data, other._y_data)(x_data)
+                    self._y_data = self._y_data / y_data
                     return self
-            self.y_data /= other.y_data
+            self._y_data /= other._y_data
             return self
         elif isinstance(other, (int, float)):
-            self.y_data /= other
+            self._y_data /= other
             return self
 
     def __pow__(self, other: float) -> Self:
@@ -308,26 +481,26 @@ class Curve:
         Defines the power of a curve to a number.
         """
         if isinstance(other, (int, float)):
-            new_y_data = self.y_data**other
-            return Curve(self.x_data, new_y_data)
+            new_y_data = self._y_data**other
+            return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only raise a curve to another curve or a number.")
 
     def __ipow__(self, other: float) -> Self:
-        self.y_data **= other
+        self._y_data **= other
         return self
 
     def __iter__(self):
         """
         Defines the iteration of a curve. Returns the y values.
         """
-        return iter(self.y_data)
+        return iter(self._y_data)
 
     def __abs__(self) -> Self:
         """
         Returns the absolute value of the curve.
         """
-        return Curve(self.x_data, np.abs(self.y_data))
+        return Curve(self._x_data, np.abs(self._y_data))
 
     def copy(self) -> Self:
         """
@@ -370,21 +543,21 @@ class Curve:
         -------
         A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two x values.
         """
-        mask = (self.x_data >= x1) & (self.x_data <= x2)
-        x_data = self.x_data[mask]
-        y_data = self.y_data[mask]
+        mask = (self._x_data >= x1) & (self._x_data <= x2)
+        x_data = self._x_data[mask]
+        y_data = self._y_data[mask]
         if copy_first:
             copy = self.copy()
-            copy.x_data = x_data
-            copy.y_data = y_data
+            copy._x_data = x_data
+            copy._y_data = y_data
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.color = color
+                copy._color = color
             if line_width != "default":
-                copy.line_width = line_width
+                copy._line_width = line_width
             if line_style != "default":
-                copy.line_style = line_style
+                copy._line_style = line_style
             return copy
         else:
             return Curve(x_data, y_data, label, color, line_width, line_style)
@@ -424,21 +597,21 @@ class Curve:
         -------
         A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two y values.
         """
-        mask = (self.y_data >= y1) & (self.y_data <= y2)
-        x_data = self.x_data[mask]
-        y_data = self.y_data[mask]
+        mask = (self._y_data >= y1) & (self._y_data <= y2)
+        x_data = self._x_data[mask]
+        y_data = self._y_data[mask]
         if copy_first:
             copy = self.copy()
-            copy.x_data = x_data
-            copy.y_data = y_data
+            copy._x_data = x_data
+            copy._y_data = y_data
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.color = color
+                copy._color = color
             if line_width != "default":
-                copy.line_width = line_width
+                copy._line_width = line_width
             if line_style != "default":
-                copy.line_style = line_style
+                copy._line_style = line_style
             return copy
         else:
             return Curve(x_data, y_data, label, color, line_width, line_style)
@@ -472,13 +645,13 @@ class Curve:
             Thickness of the errorbar caps.
             Default depends on the ``figure_style`` configuration.
         """
-        self.show_errorbars = True
-        self.x_error = np.array(x_error) if x_error is not None else x_error
-        self.y_error = np.array(y_error) if y_error is not None else y_error
-        self.errorbars_color = errorbars_color
-        self.errorbars_line_width = errorbars_line_width
-        self.cap_thickness = cap_thickness
-        self.cap_width = cap_width
+        self._show_errorbars = True
+        self._x_error = np.array(x_error) if x_error is not None else x_error
+        self._y_error = np.array(y_error) if y_error is not None else y_error
+        self._errorbars_color = errorbars_color
+        self._errorbars_line_width = errorbars_line_width
+        self._cap_thickness = cap_thickness
+        self._cap_width = cap_width
 
     def add_error_curves(
         self,
@@ -511,13 +684,13 @@ class Curve:
             Whether or not to fill the area between the two error curves.
             Default depends on the ``figure_style`` configuration.
         """
-        self.show_error_curves = True
-        self.x_error = np.array(x_error) if x_error is not None else x_error
-        self.y_error = np.array(y_error) if y_error is not None else y_error
-        self.error_curves_color = error_curves_color
-        self.error_curves_line_style = error_curves_line_style
-        self.error_curves_line_width = error_curves_line_width
-        self.error_curves_fill_between = error_curves_fill_between
+        self._show_error_curves = True
+        self._x_error = np.array(x_error) if x_error is not None else x_error
+        self._y_error = np.array(y_error) if y_error is not None else y_error
+        self._error_curves_color = error_curves_color
+        self._error_curves_line_style = error_curves_line_style
+        self._error_curves_line_width = error_curves_line_width
+        self._error_curves_fill_between = error_curves_fill_between
 
     def get_coordinates_at_x(
         self,
@@ -545,7 +718,7 @@ class Curve:
         """
         return (
             x,
-            float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
+            float(interp1d(self._x_data, self._y_data, kind=interpolation_method)(x)),
         )
 
     def create_point_at_x(
@@ -631,8 +804,8 @@ class Curve:
         list[tuple[float, float]]
             The coordinates of the points on the curve at the given y value.
         """
-        xs = self.x_data
-        ys = self.y_data
+        xs = self._x_data
+        ys = self._y_data
         crossings = np.where(np.diff(np.sign(ys - y)))[0]
         x_vals: list[float] = []
         for cross in crossings:
@@ -738,19 +911,19 @@ class Curve:
         -------
         A :class:`~graphinglib.data_plotting_1d.Curve` object which is the derivative of the original curve.
         """
-        x_data = self.x_data
-        y_data = np.gradient(self.y_data, x_data)
+        x_data = self._x_data
+        y_data = np.gradient(self._y_data, x_data)
         if copy_first:
             copy = self.copy()
-            copy.y_data = y_data
+            copy._y_data = y_data
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.color = color
+                copy._color = color
             if line_width != "default":
-                copy.line_width = line_width
+                copy._line_width = line_width
             if line_style != "default":
-                copy.line_style = line_style
+                copy._line_style = line_style
             return copy
         else:
             return Curve(x_data, y_data, label, color, line_width, line_style)
@@ -791,21 +964,21 @@ class Curve:
         A :class:`~graphinglib.data_plotting_1d.Curve` object which is the integral of the original curve.
         """
         # calculate the integral curve using cumulative trapezoidal integration
-        y_data = cumtrapz(self.y_data, self.x_data, initial=0) + initial_value
+        y_data = cumtrapz(self._y_data, self._x_data, initial=0) + initial_value
         if copy_first:
             copy = self.copy()
-            copy.y_data = y_data
+            copy._y_data = y_data
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.color = color
+                copy._color = color
             if line_width != "default":
-                copy.line_width = line_width
+                copy._line_width = line_width
             if line_style != "default":
-                copy.line_style = line_style
+                copy._line_style = line_style
             return copy
         else:
-            return Curve(self.x_data, y_data, label, color, line_width, line_style)
+            return Curve(self._x_data, y_data, label, color, line_width, line_style)
 
     def create_tangent_curve(
         self,
@@ -844,22 +1017,22 @@ class Curve:
         """
         point = self.get_coordinates_at_x(x)
         gradient = self.create_derivative_curve().get_coordinates_at_x(x)[1]
-        y_data = gradient * (self.x_data - x) + point[1]
+        y_data = gradient * (self._x_data - x) + point[1]
         if copy_first:
             copy = self.copy()
-            copy.y_data = y_data
+            copy._y_data = y_data
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.color = color
+                copy._color = color
             if line_width != "default":
-                copy.line_width = line_width
+                copy._line_width = line_width
             if line_style != "default":
-                copy.line_style = line_style
+                copy._line_style = line_style
             return copy
         else:
             tangent_curve = Curve(
-                self.x_data, y_data, label, color, line_width, line_style
+                self._x_data, y_data, label, color, line_width, line_style
             )
             return tangent_curve
 
@@ -900,22 +1073,22 @@ class Curve:
         """
         point = self.get_coordinates_at_x(x)
         gradient = self.create_derivative_curve().get_coordinates_at_x(x)[1]
-        y_data = -1 / gradient * (self.x_data - x) + point[1]
+        y_data = -1 / gradient * (self._x_data - x) + point[1]
         if copy_first:
             copy = self.copy()
-            copy.y_data = y_data
+            copy._y_data = y_data
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.color = color
+                copy._color = color
             if line_width != "default":
-                copy.line_width = line_width
+                copy._line_width = line_width
             if line_style != "default":
-                copy.line_style = line_style
+                copy._line_style = line_style
             return copy
         else:
             normal_curve = Curve(
-                self.x_data, y_data, label, color, line_width, line_style
+                self._x_data, y_data, label, color, line_width, line_style
             )
             return normal_curve
 
@@ -947,8 +1120,8 @@ class Curve:
         -------
         The arc length of the curve (float) between the two given x values.
         """
-        y_data = self.y_data
-        x_data = self.x_data
+        y_data = self._y_data
+        x_data = self._x_data
         # f = interp1d(x_data, y_data)
         # x = np.linspace(x1, x2, 1000)
         # y = f(x)
@@ -960,7 +1133,7 @@ class Curve:
         self,
         x1: float,
         x2: float,
-        fill_under: bool = False,
+        fill_between: bool = False,
         fill_color: str = "default",
         other_curve: Optional[Self] = None,
     ) -> float:
@@ -972,53 +1145,53 @@ class Curve:
         ----------
         x1, x2 : float
             The x values between which the area is to be calculated.
-        fill_under : bool
+        fill_between : bool
             Whether to fill the specified area between the curve and the x axis when displaying.
             Defaults to ``False``.
         fill_color : str
-            Color of the area between the curve and the x axis when ``fill_under`` is set to ``True``.
+            Color of the area between the curve and the x axis when ``fill_between`` is set to ``True``.
             Default depends on the ``figure_style`` configuration.
         other_curve : :class:`~graphinglib.data_plotting_1d.Curve`, optional
             If specified, the area between the two curves will be calculated instead of the area between the curve and the x axis.
 
         Returns
         -------
-        The area (float) between the curve and the x axis between the two given x values.
+        The area (float) between the curve and the x axis (or between the two curves) between the two given x values.
         """
         if other_curve is None:
-            if fill_under:
-                self._fill_curve_between = (x1, x2)
+            if fill_between:
+                self._fill_between_bounds = (x1, x2)
                 if fill_color != "default":
-                    self._fill_under_color = fill_color
-            y_data = self.y_data
-            x_data = self.x_data
+                    self._fill_between_color = fill_color
+            y_data = self._y_data
+            x_data = self._x_data
             mask = (x_data >= x1) & (x_data <= x2)
             y = y_data[mask]
             x = x_data[mask]
             return np.trapz(y, x)
         else:
-            if fill_under:
-                self._fill_curve_between = (x1, x2)
+            if fill_between:
+                self._fill_between_bounds = (x1, x2)
                 if fill_color != "default":
-                    self._fill_under_color = fill_color
-                self._fill_under_other_curve = other_curve
-            if np.array_equal(self.x_data, other_curve.x_data):
+                    self._fill_between_color = fill_color
+                self._fill_between_other_curve = other_curve
+            if np.array_equal(self._x_data, other_curve._x_data):
                 # No need to interpolate
-                mask = (self.x_data >= x1) & (self.x_data <= x2)
-                common_x = self.x_data[mask]
-                y1 = self.y_data[mask]
-                y2 = other_curve.y_data[mask]
+                mask = (self._x_data >= x1) & (self._x_data <= x2)
+                common_x = self._x_data[mask]
+                y1 = self._y_data[mask]
+                y2 = other_curve._y_data[mask]
             else:
                 # Interpolate to get common x values
-                density_x1 = len(self.x_data) / (self.x_data[-1] - self.x_data[0])
-                density_x2 = len(other_curve.x_data) / (
-                    other_curve.x_data[-1] - other_curve.x_data[0]
+                density_x1 = len(self._x_data) / (self._x_data[-1] - self._x_data[0])
+                density_x2 = len(other_curve._x_data) / (
+                    other_curve._x_data[-1] - other_curve._x_data[0]
                 )
                 higher_density = max(density_x1, density_x2)
                 num_of_values = int(np.ceil(higher_density * (x2 - x1)))
                 common_x = np.linspace(x1, x2, num_of_values)
-                y1 = np.interp(common_x, self.x_data, self.y_data)
-                y2 = np.interp(common_x, other_curve.x_data, other_curve.y_data)
+                y1 = np.interp(common_x, self._x_data, self._y_data)
+                y2 = np.interp(common_x, other_curve._x_data, other_curve._y_data)
 
             difference = y1 - y2
             area = np.trapz(difference, common_x)
@@ -1041,12 +1214,12 @@ class Curve:
         list[tuple[float, float]]
             A list of tuples of coordinates which are the intersection points between the two curves.
         """
-        y = self.y_data - other.y_data
+        y = self._y_data - other._y_data
         s = np.abs(np.diff(np.sign(y))).astype(bool)
-        intersections_x = self.x_data[:-1][s] + np.diff(self.x_data)[s] / (
+        intersections_x = self._x_data[:-1][s] + np.diff(self._x_data)[s] / (
             np.abs(y[1:][s] / y[:-1][s]) + 1
         )
-        intersections_y = np.interp(intersections_x, self.x_data, self.y_data)
+        intersections_y = np.interp(intersections_x, self._x_data, self._y_data)
         points = []
         for i in range(len(intersections_x)):
             x_val = intersections_x[i]
@@ -1103,9 +1276,9 @@ class Curve:
         list[:class:`~graphinglib.graph_elements.Point`] or list[tuple[float, float]]
             A list of :class:`~graphinglib.graph_elements.Point` objects which are the intersection points between the two curves.
         """
-        y = self.y_data - other.y_data
+        y = self._y_data - other._y_data
         s = np.abs(np.diff(np.sign(y))).astype(bool)
-        intersections_x = self.x_data[:-1][s] + np.diff(self.x_data)[s] / (
+        intersections_x = self._x_data[:-1][s] + np.diff(self._x_data)[s] / (
             np.abs(y[1:][s] / y[:-1][s]) + 1
         )
         point_coords = self.get_intersection_coordinates(other)
@@ -1160,80 +1333,88 @@ class Curve:
         """
         Plots the element in the specified axes.
         """
-        if self.show_errorbars:
+        if self._show_errorbars:
             params = {
-                "color": self.color,
-                "linewidth": self.line_width,
-                "linestyle": self.line_style,
-                "elinewidth": self.errorbars_line_width,
-                "capsize": self.cap_width,
-                "capthick": self.cap_thickness,
-                "ecolor": self.errorbars_color,
+                "color": self._color,
+                "linewidth": self._line_width,
+                "linestyle": self._line_style,
+                "elinewidth": self._errorbars_line_width,
+                "capsize": self._cap_width,
+                "capthick": self._cap_thickness,
+                "ecolor": self._errorbars_color,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
-                self.x_data,
-                self.y_data,
-                xerr=self.x_error,
-                yerr=self.y_error,
-                label=self.label,
+                self._x_data,
+                self._y_data,
+                xerr=self._x_error,
+                yerr=self._y_error,
+                label=self._label,
                 zorder=z_order,
                 **params,
             )
         else:
             params = {
-                "color": self.color,
-                "linewidth": self.line_width,
-                "linestyle": self.line_style,
+                "color": self._color,
+                "linewidth": self._line_width,
+                "linestyle": self._line_style,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
-                self.x_data,
-                self.y_data,
-                label=self.label,
+                self._x_data,
+                self._y_data,
+                label=self._label,
                 zorder=z_order,
                 **params,
             )
-        if self.show_error_curves:
+        if self._show_error_curves:
             max_y = (
-                self.y_data + self.y_error if self.y_error is not None else self.y_data
+                self._y_data + self._y_error
+                if self._y_error is not None
+                else self._y_data
             )
             min_y = (
-                self.y_data - self.y_error if self.y_error is not None else self.y_data
+                self._y_data - self._y_error
+                if self._y_error is not None
+                else self._y_data
             )
             axes.plot(
-                self.x_data,
+                self._x_data,
                 min_y,
-                linestyle=self.error_curves_line_style,
-                linewidth=self.error_curves_line_width,
+                linestyle=self._error_curves_line_style,
+                linewidth=self._error_curves_line_width,
                 color=self.handle[0].get_color(),
             )
             axes.plot(
-                self.x_data,
+                self._x_data,
                 max_y,
-                linestyle=self.error_curves_line_style,
-                linewidth=self.error_curves_line_width,
+                linestyle=self._error_curves_line_style,
+                linewidth=self._error_curves_line_width,
                 color=self.handle[0].get_color(),
             )
-            if self.error_curves_fill_between:
+            if self._error_curves_fill_between:
                 axes.fill_between(
-                    self.x_data, max_y, min_y, color=self.error_curves_color, alpha=0.2
+                    self._x_data,
+                    max_y,
+                    min_y,
+                    color=self._error_curves_color,
+                    alpha=0.2,
                 )
-        if self._fill_curve_between:
+        if self._fill_between_bounds:
             kwargs = {"alpha": 0.2}
-            if self._fill_under_color is not None:
-                kwargs["color"] = self._fill_under_color
+            if self._fill_between_color is not None:
+                kwargs["color"] = self._fill_between_color
             else:
                 kwargs["color"] = self.handle[0].get_color()
             kwargs = {k: v for k, v in kwargs.items() if v != "default"}
-            if self._fill_under_other_curve:
-                self_y_data = self.y_data
-                self_x_data = self.x_data
-                other_y_data = self._fill_under_other_curve.y_data
-                other_x_data = self._fill_under_other_curve.x_data
+            if self._fill_between_other_curve:
+                self_y_data = self._y_data
+                self_x_data = self._x_data
+                other_y_data = self._fill_between_other_curve._y_data
+                other_x_data = self._fill_between_other_curve._x_data
                 x_data = np.linspace(
-                    self._fill_curve_between[0],
-                    self._fill_curve_between[1],
+                    self._fill_between_bounds[0],
+                    self._fill_between_bounds[1],
                     max(len(self_x_data), len(other_x_data)),
                 )
                 self_y_data = interp1d(self_x_data, self_y_data)(x_data)
@@ -1243,14 +1424,14 @@ class Curve:
                 kwargs["y2"] = other_y_data
                 where_x_data = x_data
             else:
-                kwargs["x"] = self.x_data
-                kwargs["y1"] = self.y_data
-                where_x_data = self.x_data
+                kwargs["x"] = self._x_data
+                kwargs["y1"] = self._y_data
+                where_x_data = self._x_data
 
             axes.fill_between(
                 where=np.logical_and(
-                    where_x_data >= self._fill_curve_between[0],
-                    where_x_data <= self._fill_curve_between[1],
+                    where_x_data >= self._fill_between_bounds[0],
+                    where_x_data <= self._fill_between_bounds[1],
                 ),
                 zorder=z_order - 2,
                 **kwargs,
@@ -1285,14 +1466,52 @@ class Scatter:
         Defaults to ``False``.
     """
 
-    x_data: ArrayLike
-    y_data: ArrayLike
-    label: Optional[str] = None
-    face_color: str = "default"
-    edge_color: str = "default"
-    marker_size: float | Literal["default"] = "default"
-    marker_style: str = "default"
-    errorbars: bool = field(default=False, init=False)
+    def __init__(
+        self,
+        x_data: ArrayLike,
+        y_data: ArrayLike,
+        label: Optional[str] = None,
+        face_color: str = "default",
+        edge_color: str = "default",
+        marker_size: float | Literal["default"] = "default",
+        marker_style: str = "default",
+    ) -> None:
+        """
+        This class implements a general scatter plot.
+
+        Parameters
+        ----------
+        x_data, y_data : ArrayLike
+            Arrays of x and y values to be plotted.
+        label : str, optional
+            Label to be displayed in the legend.
+        face_color : str
+            Face color of the points.
+            Default depends on the ``figure_style`` configuration.
+        edge_color : str
+            Edge color of the points.
+            Default depends on the ``figure_style`` configuration.
+        marker_size : float
+            Size of the points.
+            Default depends on the ``figure_style`` configuration.
+        marker_style : str
+            Style of the points.
+            Default depends on the ``figure_style`` configuration.
+        """
+        self.handle = None
+        self._x_data = np.asarray(x_data)
+        self._y_data = np.asarray(y_data)
+        self._label = label
+        self._face_color = face_color
+        self._edge_color = edge_color
+        self._marker_size = marker_size
+        self._marker_style = marker_style
+
+        self._show_errorbars: bool = False
+        self._errorbars_line_width: float = 1.0
+        self._cap_width: float = 3.0
+        self._cap_thickness: float = 1.0
+        self._errorbars_color: str = "default"
 
     @classmethod
     def from_function(
@@ -1344,9 +1563,101 @@ class Scatter:
             x_data, y_data, label, face_color, edge_color, marker_size, marker_style
         )
 
-    def __post_init__(self) -> None:
-        self.x_data = np.array(self.x_data)
-        self.y_data = np.array(self.y_data)
+    @property
+    def x_data(self) -> np.ndarray:
+        return self._x_data
+
+    @x_data.setter
+    def x_data(self, x_data: ArrayLike) -> None:
+        self._x_data = np.asarray(x_data)
+
+    @property
+    def y_data(self) -> np.ndarray:
+        return self._y_data
+
+    @y_data.setter
+    def y_data(self, y_data: ArrayLike) -> None:
+        self._y_data = np.asarray(y_data)
+
+    @property
+    def label(self) -> str | None:
+        return self._label
+
+    @label.setter
+    def label(self, label: str | None) -> None:
+        self._label = label
+
+    @property
+    def face_color(self) -> str:
+        return self._face_color
+
+    @face_color.setter
+    def face_color(self, face_color: str) -> None:
+        self._face_color = face_color
+
+    @property
+    def edge_color(self) -> str:
+        return self._edge_color
+
+    @edge_color.setter
+    def edge_color(self, edge_color: str) -> None:
+        self._edge_color = edge_color
+
+    @property
+    def marker_size(self) -> float | Literal["default"]:
+        return self._marker_size
+
+    @marker_size.setter
+    def marker_size(self, marker_size: float | Literal["default"]) -> None:
+        self._marker_size = marker_size
+
+    @property
+    def marker_style(self) -> str:
+        return self._marker_style
+
+    @marker_style.setter
+    def marker_style(self, marker_style: str) -> None:
+        self._marker_style = marker_style
+
+    @property
+    def show_errorbars(self) -> bool:
+        return self._show_errorbars
+
+    @show_errorbars.setter
+    def show_errorbars(self, show_errorbars: bool) -> None:
+        self._show_errorbars = show_errorbars
+
+    @property
+    def errorbars_line_width(self) -> float:
+        return self._errorbars_line_width
+
+    @errorbars_line_width.setter
+    def errorbars_line_width(self, errorbars_line_width: float) -> None:
+        self._errorbars_line_width = errorbars_line_width
+
+    @property
+    def cap_width(self) -> float:
+        return self._cap_width
+
+    @cap_width.setter
+    def cap_width(self, cap_width: float) -> None:
+        self._cap_width = cap_width
+
+    @property
+    def cap_thickness(self) -> float:
+        return self._cap_thickness
+
+    @cap_thickness.setter
+    def cap_thickness(self, cap_thickness: float) -> None:
+        self._cap_thickness = cap_thickness
+
+    @property
+    def errorbars_color(self) -> str:
+        return self._errorbars_color
+
+    @errorbars_color.setter
+    def errorbars_color(self, errorbars_color: str) -> None:
+        self._errorbars_color = errorbars_color
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -1354,16 +1665,16 @@ class Scatter:
         """
         if isinstance(other, Scatter):
             try:
-                assert np.array_equal(self.x_data, other.x_data)
+                assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
                 raise ValueError(
                     "Cannot add two scatter plots with different x values."
                 )
-            new_y_data = self.y_data + other.y_data
-            return Scatter(self.x_data, new_y_data)
+            new_y_data = self._y_data + other._y_data
+            return Scatter(self._x_data, new_y_data)
         elif isinstance(other, (int, float)):
-            new_y_data = self.y_data + other
-            return Scatter(self.x_data, new_y_data)
+            new_y_data = self._y_data + other
+            return Scatter(self._x_data, new_y_data)
         else:
             raise TypeError(
                 "Can only add a scatter plot to another scatter plot or a number."
@@ -1378,15 +1689,15 @@ class Scatter:
     def __iadd__(self, other: Self | float) -> Self:
         if isinstance(other, Scatter):
             try:
-                assert np.array_equal(self.x_data, other.x_data)
+                assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
                 raise ValueError(
                     "Cannot add two scatter plots with different x values."
                 )
-            self.y_data += other.y_data
+            self._y_data += other._y_data
             return self
         elif isinstance(other, (int, float)):
-            self.y_data += other
+            self._y_data += other
             return self
 
     def __sub__(self, other: Self | float) -> Self:
@@ -1395,16 +1706,16 @@ class Scatter:
         """
         if isinstance(other, Scatter):
             try:
-                assert np.array_equal(self.x_data, other.x_data)
+                assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
                 raise ValueError(
                     "Cannot subtract two scatter plots with different x values."
                 )
-            new_y_data = self.y_data - other.y_data
-            return Scatter(self.x_data, new_y_data)
+            new_y_data = self._y_data - other._y_data
+            return Scatter(self._x_data, new_y_data)
         elif isinstance(other, (int, float)):
-            new_y_data = self.y_data - other
-            return Scatter(self.x_data, new_y_data)
+            new_y_data = self._y_data - other
+            return Scatter(self._x_data, new_y_data)
         else:
             raise TypeError(
                 "Can only subtract a scatter plot from another scatter plot or a number."
@@ -1419,15 +1730,15 @@ class Scatter:
     def __isub__(self, other: Self | float) -> Self:
         if isinstance(other, Scatter):
             try:
-                assert np.array_equal(self.x_data, other.x_data)
+                assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
                 raise ValueError(
                     "Cannot subtract two scatter plots with different x values."
                 )
-            self.y_data -= other.y_data
+            self._y_data -= other._y_data
             return self
         elif isinstance(other, (int, float)):
-            self.y_data -= other
+            self._y_data -= other
             return self
 
     def __mul__(self, other: Self | float) -> Self:
@@ -1436,16 +1747,16 @@ class Scatter:
         """
         if isinstance(other, Scatter):
             try:
-                assert np.array_equal(self.x_data, other.x_data)
+                assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
                 raise ValueError(
                     "Cannot multiply two scatter plots with different x values."
                 )
-            new_y_data = self.y_data * other.y_data
-            return Scatter(self.x_data, new_y_data)
+            new_y_data = self._y_data * other._y_data
+            return Scatter(self._x_data, new_y_data)
         elif isinstance(other, (int, float)):
-            new_y_data = self.y_data * other
-            return Scatter(self.x_data, new_y_data)
+            new_y_data = self._y_data * other
+            return Scatter(self._x_data, new_y_data)
         else:
             raise TypeError(
                 "Can only multiply a scatter plot by another scatter plot or a number."
@@ -1460,15 +1771,15 @@ class Scatter:
     def __imul__(self, other: Self | float) -> Self:
         if isinstance(other, Scatter):
             try:
-                assert np.array_equal(self.x_data, other.x_data)
+                assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
                 raise ValueError(
                     "Cannot multiply two scatter plots with different x values."
                 )
-            self.y_data *= other.y_data
+            self._y_data *= other._y_data
             return self
         elif isinstance(other, (int, float)):
-            self.y_data *= other
+            self._y_data *= other
             return self
 
     def __truediv__(self, other: Self | float) -> Self:
@@ -1477,16 +1788,16 @@ class Scatter:
         """
         if isinstance(other, Scatter):
             try:
-                assert np.array_equal(self.x_data, other.x_data)
+                assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
                 raise ValueError(
                     "Cannot divide two scatter plots with different x values."
                 )
-            new_y_data = self.y_data / other.y_data
-            return Scatter(self.x_data, new_y_data)
+            new_y_data = self._y_data / other._y_data
+            return Scatter(self._x_data, new_y_data)
         elif isinstance(other, (int, float)):
-            new_y_data = self.y_data / other
-            return Scatter(self.x_data, new_y_data)
+            new_y_data = self._y_data / other
+            return Scatter(self._x_data, new_y_data)
         else:
             raise TypeError(
                 "Can only divide a scatter plot by another scatter plot or a number."
@@ -1504,15 +1815,15 @@ class Scatter:
     def __itruediv__(self, other: Self | float) -> Self:
         if isinstance(other, Scatter):
             try:
-                assert np.array_equal(self.x_data, other.x_data)
+                assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
                 raise ValueError(
                     "Cannot divide two scatter plots with different x values."
                 )
-            self.y_data /= other.y_data
+            self._y_data /= other._y_data
             return self
         elif isinstance(other, (int, float)):
-            self.y_data /= other
+            self._y_data /= other
             return self
 
     def __pow__(self, other: float) -> Self:
@@ -1520,29 +1831,29 @@ class Scatter:
         Defines the power of a scatter plot to a number.
         """
         if isinstance(other, (int, float)):
-            new_y_data = self.y_data**other
-            return Scatter(self.x_data, new_y_data)
+            new_y_data = self._y_data**other
+            return Scatter(self._x_data, new_y_data)
         else:
             raise TypeError(
                 "Can only raise a scatter plot to another scatter plot or a number."
             )
 
     def __ipow__(self, other: float) -> Self:
-        self.y_data **= other
+        self._y_data **= other
         return self
 
     def __iter__(self):
         """
         Defines the iteration of a scatter plot. Returns the y values.
         """
-        return iter(self.y_data)
+        return iter(self._y_data)
 
     def __abs__(self) -> Self:
         """
         Defines the absolute value of a scatter plot.
         """
-        new_y_data = np.abs(self.y_data)
-        return Scatter(self.x_data, new_y_data)
+        new_y_data = np.abs(self._y_data)
+        return Scatter(self._x_data, new_y_data)
 
     def copy(self) -> Self:
         """
@@ -1590,26 +1901,26 @@ class Scatter:
         :class:`~graphinglib.data_plotting_1d.Scatter`
             A new :class:`~graphinglib.data_plotting_1d.Scatter` object which is a slice of the original scatter plot.
         """
-        mask = (self.x_data >= x_min) & (self.x_data <= x_max)
+        mask = (self._x_data >= x_min) & (self._x_data <= x_max)
         if copy_first:
             copy = self.copy()
-            copy.x_data = self.x_data[mask]
-            copy.y_data = self.y_data[mask]
+            copy._x_data = self._x_data[mask]
+            copy._y_data = self._y_data[mask]
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.face_color = color
+                copy._face_color = color
             if edge_color != "default":
-                copy.edge_color = edge_color
+                copy._edge_color = edge_color
             if marker_size != "default":
-                copy.marker_size = marker_size
+                copy._marker_size = marker_size
             if marker_style != "default":
-                copy.marker_style = marker_style
+                copy._marker_style = marker_style
             return copy
         else:
             return Scatter(
-                self.x_data[mask],
-                self.y_data[mask],
+                self._x_data[mask],
+                self._y_data[mask],
                 label,
                 color,
                 edge_color,
@@ -1657,26 +1968,26 @@ class Scatter:
         :class:`~graphinglib.data_plotting_1d.Scatter`
             A new :class:`~graphinglib.data_plotting_1d.Scatter` object which is a slice of the original scatter plot.
         """
-        mask = (self.y_data >= y_min) & (self.y_data <= y_max)
+        mask = (self._y_data >= y_min) & (self._y_data <= y_max)
         if copy_first:
             copy = self.copy()
-            copy.x_data = self.x_data[mask]
-            copy.y_data = self.y_data[mask]
+            copy._x_data = self._x_data[mask]
+            copy._y_data = self._y_data[mask]
             if label is not None:
-                copy.label = label
+                copy._label = label
             if color != "default":
-                copy.face_color = color
+                copy._face_color = color
             if edge_color != "default":
-                copy.edge_color = edge_color
+                copy._edge_color = edge_color
             if marker_size != "default":
-                copy.marker_size = marker_size
+                copy._marker_size = marker_size
             if marker_style != "default":
-                copy.marker_style = marker_style
+                copy._marker_style = marker_style
             return copy
         else:
             return Scatter(
-                self.x_data[mask],
-                self.y_data[mask],
+                self._x_data[mask],
+                self._y_data[mask],
                 label,
                 color,
                 edge_color,
@@ -1713,13 +2024,13 @@ class Scatter:
             Thickness of the errorbar caps.
             Default depends on the ``figure_style`` configuration.
         """
-        self.errorbars = True
-        self.x_error = np.array(x_error) if x_error is not None else x_error
-        self.y_error = np.array(y_error) if y_error is not None else y_error
-        self.errorbars_color = errorbars_color
-        self.errorbars_line_width = errorbars_line_width
-        self.cap_thickness = cap_thickness
-        self.cap_width = cap_width
+        self._show_errorbars = True
+        self._x_error = np.array(x_error) if x_error is not None else x_error
+        self._y_error = np.array(y_error) if y_error is not None else y_error
+        self._errorbars_color = errorbars_color
+        self._errorbars_line_width = errorbars_line_width
+        self._cap_thickness = cap_thickness
+        self._cap_width = cap_width
 
     def get_coordinates_at_x(
         self,
@@ -1747,7 +2058,7 @@ class Scatter:
         """
         return (
             x,
-            float(interp1d(self.x_data, self.y_data, kind=interpolation_method)(x)),
+            float(interp1d(self._x_data, self._y_data, kind=interpolation_method)(x)),
         )
 
     def create_point_at_x(
@@ -1833,8 +2144,8 @@ class Scatter:
         list[tuple[float, float]]
             The coordinates of the points on the curve at the given y value.
         """
-        xs = self.x_data
-        ys = self.y_data
+        xs = self._x_data
+        ys = self._y_data
         assert isinstance(xs, np.ndarray) and isinstance(ys, np.ndarray)
         crossings = np.where(np.diff(np.sign(ys - y)))[0]
         x_vals: list[float] = []
@@ -1914,45 +2225,45 @@ class Scatter:
         """
         Plots the element in the specified axes.
         """
-        if self.errorbars:
+        if self._show_errorbars:
             params = {
-                "markerfacecolor": self.face_color,
-                "markeredgecolor": self.edge_color,
-                "markersize": self.marker_size,
-                "marker": self.marker_style,
-                "elinewidth": self.errorbars_line_width,
-                "capsize": self.cap_width,
-                "capthick": self.cap_thickness,
-                "ecolor": self.errorbars_color,
+                "markerfacecolor": self._face_color,
+                "markeredgecolor": self._edge_color,
+                "markersize": self._marker_size,
+                "marker": self._marker_style,
+                "elinewidth": self._errorbars_line_width,
+                "capsize": self._cap_width,
+                "capthick": self._cap_thickness,
+                "ecolor": self._errorbars_color,
                 "linestyle": "none",
             }
             if params["marker"] == "default":
                 params["marker"] = "o"
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
-                self.x_data,
-                self.y_data,
-                xerr=self.x_error,
-                yerr=self.y_error,
-                label=self.label,
+                self._x_data,
+                self._y_data,
+                xerr=self._x_error,
+                yerr=self._y_error,
+                label=self._label,
                 zorder=z_order,
                 **params,
             )
         else:
             params = {
-                "markerfacecolor": self.face_color,
-                "markeredgecolor": self.edge_color,
-                "markersize": self.marker_size,
-                "marker": self.marker_style,
+                "markerfacecolor": self._face_color,
+                "markeredgecolor": self._edge_color,
+                "markersize": self._marker_size,
+                "marker": self._marker_style,
                 "linestyle": "none",
             }
             if params["marker"] == "default":
                 params["marker"] = "o"
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
-                self.x_data,
-                self.y_data,
-                label=self.label,
+                self._x_data,
+                self._y_data,
+                label=self._label,
                 zorder=z_order,
                 **params,
             )
@@ -1998,32 +2309,87 @@ class Histogram:
         Default depends on the ``figure_style`` configuration.
     """
 
-    data: ArrayLike
-    number_of_bins: int
-    label: Optional[str] = None
-    face_color: str = "default"
-    edge_color: str = "default"
-    hist_type: str = "default"
-    alpha: float | Literal["default"] = "default"
-    line_width: float | Literal["default"] = "default"
-    normalize: bool | Literal["default"] = "default"
-    show_params: bool | Literal["default"] = "default"
+    def __init__(
+        self,
+        data: ArrayLike,
+        number_of_bins: int,
+        label: Optional[str] = None,
+        face_color: str = "default",
+        edge_color: str = "default",
+        hist_type: str = "default",
+        alpha: float | Literal["default"] = "default",
+        line_width: float | Literal["default"] = "default",
+        normalize: bool | Literal["default"] = "default",
+        show_params: bool | Literal["default"] = "default",
+    ) -> None:
+        """
+        This class implements a general histogram.
 
-    def __post_init__(self) -> None:
-        self.data = np.array(self.data)
-        self.mean = np.mean(self.data)
-        self.standard_deviation = np.std(self.data)
-        parameters = np.histogram(
-            self.data, bins=self.number_of_bins, density=self.normalize
+        Parameters
+        ----------
+        data : ArrayLike
+            Array of values to be plotted.
+        number_of_bins : int
+            Number of bins to be used in the histogram.
+        label : str, optional
+            Label to be displayed in the legend.
+        face_color : str
+            Face color of the histogram.
+            Default depends on the ``figure_style`` configuration.
+        edge_color : str
+            Edge color of the histogram.
+            Default depends on the ``figure_style`` configuration.
+        hist_type : str
+            Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the histogram.
+            Default depends on the ``figure_style`` configuration.
+        line_width : float
+            Width of the histogram edge.
+            Default depends on the ``figure_style`` configuration.
+        normalize : bool
+            Whether or not to normalize the histogram.
+            Default depends on the ``figure_style`` configuration.
+        show_pdf : str
+            Whether or not to show the probability density function.
+            Can be "normal" or "gaussian".
+            Default depends on the ``figure_style`` configuration.
+        show_params : bool
+            Whether or not to show the mean and standard deviation of the data.
+            Default depends on the ``figure_style`` configuration.
+        """
+        self._data = np.asarray(data)
+        self._number_of_bins = number_of_bins
+        self._label = label
+        self._face_color = face_color
+        self._edge_color = edge_color
+        self._hist_type = hist_type
+        self._alpha = alpha
+        self._line_width = line_width
+        self._normalize = normalize
+        self._show_params = show_params
+
+        self._show_pdf = False
+        self._pdf_type = None
+        self._pdf_show_mean = None
+        self._pdf_show_std = None
+        self._pdf_curve_color = None
+        self._pdf_mean_color = None
+        self._pdf_std_color = None
+
+        self._mean = np.mean(self._data)
+        self._standard_deviation = np.std(self._data)
+        _parameters = np.histogram(
+            self._data, bins=self._number_of_bins, density=self._normalize
         )
-        self._bin_heights, bin_edges = parameters[0], parameters[1]
+        self._bin_heights, bin_edges = _parameters[0], _parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
         bin_centers = bin_edges[1:] - bin_width / 2
         self._bin_width = bin_width
         self._bin_centers = bin_centers
         self._bin_edges = bin_edges
         self._create_label()
-        self._show_pdf = False
 
     @classmethod
     def from_fit_residuals(
@@ -2094,19 +2460,147 @@ class Histogram:
             show_params,
         )
 
+    @property
+    def data(self) -> np.ndarray:
+        return self._data
+
+    @data.setter
+    def data(self, data: ArrayLike) -> None:
+        self._data = np.array(data)
+        self._mean = np.mean(self._data)
+        self._standard_deviation = np.std(self._data)
+        _parameters = np.histogram(
+            self._data, bins=self._number_of_bins, density=self._normalize
+        )
+        self._bin_heights, bin_edges = _parameters[0], _parameters[1]
+        bin_width = bin_edges[1] - bin_edges[0]
+        bin_centers = bin_edges[1:] - bin_width / 2
+        self._bin_width = bin_width
+        self._bin_centers = bin_centers
+        self._bin_edges = bin_edges
+        self._create_label()
+
+    @property
+    def number_of_bins(self) -> int:
+        return self._number_of_bins
+
+    @number_of_bins.setter
+    def number_of_bins(self, number_of_bins: int) -> None:
+        self._number_of_bins = number_of_bins
+        _parameters = np.histogram(
+            self._data, bins=self._number_of_bins, density=self._normalize
+        )
+        self._bin_heights, bin_edges = _parameters[0], _parameters[1]
+        bin_width = bin_edges[1] - bin_edges[0]
+        bin_centers = bin_edges[1:] - bin_width / 2
+        self._bin_width = bin_width
+        self._bin_centers = bin_centers
+        self._bin_edges = bin_edges
+        self._create_label()
+
+    @property
+    def label(self) -> str:
+        return self._label
+
+    @label.setter
+    def label(self, label: str) -> None:
+        self._label = label
+        self._create_label()
+
+    @property
+    def face_color(self) -> str:
+        return self._face_color
+
+    @face_color.setter
+    def face_color(self, face_color: str) -> None:
+        self._face_color = face_color
+
+    @property
+    def edge_color(self) -> str:
+        return self._edge_color
+
+    @edge_color.setter
+    def edge_color(self, edge_color: str) -> None:
+        self._edge_color = edge_color
+
+    @property
+    def hist_type(self) -> str:
+        return self._hist_type
+
+    @hist_type.setter
+    def hist_type(self, hist_type: str) -> None:
+        self._hist_type = hist_type
+
+    @property
+    def alpha(self) -> float:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float) -> None:
+        self._alpha = alpha
+
+    @property
+    def line_width(self) -> float:
+        return self._line_width
+
+    @line_width.setter
+    def line_width(self, line_width: float) -> None:
+        self._line_width = line_width
+
+    @property
+    def normalize(self) -> bool:
+        return self._normalize
+
+    @normalize.setter
+    def normalize(self, normalize: bool) -> None:
+        self._normalize = normalize
+
+    @property
+    def show_params(self) -> bool:
+        return self._show_params
+
+    @show_params.setter
+    def show_params(self, show_params: bool) -> None:
+        self._show_params = show_params
+        self._create_label()
+
+    @property
+    def mean(self) -> float:
+        return self._mean
+
+    @property
+    def standard_deviation(self) -> float:
+        return self._standard_deviation
+
+    @property
+    def parameters(self) -> tuple[float, float]:
+        return self._mean, self._standard_deviation
+
+    @property
+    def bin_heights(self) -> np.ndarray:
+        return self._bin_heights
+
+    @property
+    def bin_centers(self) -> np.ndarray:
+        return self._bin_centers
+
+    @property
+    def bin_edges(self) -> np.ndarray:
+        return self._bin_edges
+
     def _create_label(self) -> None:
         """
         Creates the label of the histogram (with or without parameters).
         """
-        lab = self.label
-        if lab and self.show_params:
+        lab = self._label
+        if lab and self._show_params:
             lab += (
                 " :\n"
-                + f"$\mu$ = {0 if abs(self.mean) < 1e-3 else self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
+                + f"$\mu$ = {0 if abs(self._mean) < 1e-3 else self._mean:.3f}, $\sigma$ = {self._standard_deviation:.3f}"
             )
-        elif self.show_params:
-            lab = f"$\mu$ = {0 if abs(self.mean) < 1e-3 else self.mean:.3f}, $\sigma$ = {self.standard_deviation:.3f}"
-        self.label = lab
+        elif self._show_params:
+            lab = f"$\mu$ = {0 if abs(self._mean) < 1e-3 else self._mean:.3f}, $\sigma$ = {self._standard_deviation:.3f}"
+        self._label = lab
 
     def copy(self) -> Self:
         """
@@ -2128,8 +2622,8 @@ class Histogram:
         The corresponding array of y values of the gaussian curve.
         """
         x = np.array(x)
-        return (1 / (self.standard_deviation * np.sqrt(2 * np.pi))) * np.exp(
-            -0.5 * (((x - self.mean) / self.standard_deviation) ** 2)
+        return (1 / (self._standard_deviation * np.sqrt(2 * np.pi))) * np.exp(
+            -0.5 * (((x - self._mean) / self._standard_deviation) ** 2)
         )
 
     def _normal_not_normalized(self, x: ArrayLike) -> ArrayLike:
@@ -2154,16 +2648,16 @@ class Histogram:
         """
         params = {
             "facecolor": (
-                to_rgba(self.face_color, self.alpha)
-                if self.face_color != "default" and self.alpha != "default"
+                to_rgba(self._face_color, self._alpha)
+                if self._face_color != "default" and self._alpha != "default"
                 else "default"
             ),
             "edgecolor": (
-                to_rgba(self.edge_color, 1)
-                if self.edge_color != "default"
-                else self.edge_color
+                to_rgba(self._edge_color, 1)
+                if self._edge_color != "default"
+                else self._edge_color
             ),
-            "linewidth": self.line_width,
+            "linewidth": self._line_width,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         self.handle = Polygon(
@@ -2172,38 +2666,38 @@ class Histogram:
         )
         params = {
             "facecolor": (
-                to_rgba(self.face_color, self.alpha)
-                if self.face_color != "default" and self.alpha != "default"
+                to_rgba(self._face_color, self._alpha)
+                if self._face_color != "default" and self._alpha != "default"
                 else "default"
             ),
             "edgecolor": (
-                to_rgba(self.edge_color, 1)
-                if self.edge_color != "default"
-                else self.edge_color
+                to_rgba(self._edge_color, 1)
+                if self._edge_color != "default"
+                else self._edge_color
             ),
-            "histtype": self.hist_type,
-            "linewidth": self.line_width,
-            "density": self.normalize,
+            "histtype": self._hist_type,
+            "linewidth": self._line_width,
+            "density": self._normalize,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.hist(
-            self.data,
-            bins=self.number_of_bins,
-            label=self.label,
+            self._data,
+            bins=self._number_of_bins,
+            label=self._label,
             zorder=z_order - 1,
             **params,
         )
         if self._show_pdf:
             normal = (
                 self._normal_normalized
-                if self.normalize
+                if self._normalize
                 else self._normal_not_normalized
             )
             num_of_points = 500
             x_data = np.linspace(self._bin_edges[0], self._bin_edges[-1], num_of_points)
             y_data = normal(x_data)
             params = {
-                "color": self.pdf_curve_color,
+                "color": self._pdf_curve_color,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             axes.plot(
@@ -2212,16 +2706,16 @@ class Histogram:
                 zorder=z_order,
                 **params,
             )
-            curve_max_y = normal(self.mean)
-            curve_std_y = normal(self.mean + self.standard_deviation)
-            if self.pdf_show_std:
+            curve_max_y = normal(self._mean)
+            curve_std_y = normal(self._mean + self._standard_deviation)
+            if self._pdf_show_std:
                 params = {}
-                if self.pdf_std_color != "default":
-                    params["colors"] = [self.pdf_std_color, self.pdf_std_color]
+                if self._pdf_std_color != "default":
+                    params["colors"] = [self._pdf_std_color, self._pdf_std_color]
                 plt.vlines(
                     [
-                        self.mean - self.standard_deviation,
-                        self.mean + self.standard_deviation,
+                        self._mean - self._standard_deviation,
+                        self._mean + self._standard_deviation,
                     ],
                     [0, 0],
                     [curve_std_y, curve_std_y],
@@ -2229,12 +2723,12 @@ class Histogram:
                     zorder=z_order - 1,
                     **params,
                 )
-            if self.pdf_show_mean:
+            if self._pdf_show_mean:
                 params = {}
-                if self.pdf_mean_color != "default":
-                    params["colors"] = [self.pdf_mean_color]
+                if self._pdf_mean_color != "default":
+                    params["colors"] = [self._pdf_mean_color]
                 plt.vlines(
-                    self.mean,
+                    self._mean,
                     0,
                     curve_max_y,
                     linestyles=["dashed"],
@@ -2277,11 +2771,11 @@ class Histogram:
             Default depends on the ``figure_style`` configuration.
         """
         if type != "normal":
-            raise ValueError("Currently only normal distribution is supported.")
+            raise ValueError("Currently, only 'normal' distribution is supported.")
         self._show_pdf = True
         self._pdf_type = type
-        self.pdf_show_mean = show_mean
-        self.pdf_show_std = show_std
-        self.pdf_curve_color = curve_color
-        self.pdf_mean_color = mean_color
-        self.pdf_std_color = std_color
+        self._pdf_show_mean = show_mean
+        self._pdf_show_std = show_std
+        self._pdf_curve_color = curve_color
+        self._pdf_mean_color = mean_color
+        self._pdf_std_color = std_color

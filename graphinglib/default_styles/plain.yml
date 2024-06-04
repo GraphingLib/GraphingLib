@@ -1,205 +1,201 @@
 Curve:
-  color: 
-  line_width: 2
-  line_style: "-"
-  cap_width: 3
-  errorbars_color: "same as curve"
-  errorbars_line_width: "same as curve"
-  error_curves_color: same as curve
-  error_curves_fill_between: true
-  error_curves_line_style: --
-  error_curves_line_width: same as curve
-  cap_thickness: "same as curve"
-  fill_under_color: "same as curve"
+  _color: 
+  _line_width: 2
+  _line_style: "-"
+  _cap_width: 3
+  _errorbars_color: "same as curve"
+  _errorbars_line_width: "same as curve"
+  _error_curves_color: same as curve
+  _error_curves_fill_between: true
+  _error_curves_line_style: --
+  _error_curves_line_width: same as curve
+  _cap_thickness: "same as curve"
+  _fill_under_color: "same as curve"
 
 Scatter:
-  face_color: 
-  edge_color: "none"
-  marker_size: 7
-  marker_style: "o"
-  cap_width: 3
-  errorbars_color: "same as scatter"
-  errorbars_line_width: 1
-  cap_thickness: 1
+  _face_color: 
+  _edge_color: "none"
+  _marker_size: 7
+  _marker_style: "o"
+  _cap_width: 3
+  _errorbars_color: "same as scatter"
+  _errorbars_line_width: 1
+  _cap_thickness: 1
 
 Histogram:
-  number_of_bins: 30
-  face_color: "#3e82a0"
-  edge_color: "#3e82a0"
-  hist_type: "stepfilled"
-  alpha: 0.3
-  line_width: 2
-  normalize: True
-  show_params: True
-  pdf_show_mean: True
-  pdf_show_std: True
-  pdf_curve_color: "k"
-  pdf_mean_color: "r"
-  pdf_std_color: "k"
+  _number_of_bins: 30
+  _face_color: "#3e82a0"
+  _edge_color: "#3e82a0"
+  _hist_type: "stepfilled"
+  _alpha: 0.3
+  _line_width: 2
+  _normalize: True
+  _show_params: True
+  _pdf_show_mean: True
+  _pdf_show_std: True
+  _pdf_curve_color: "k"
+  _pdf_mean_color: "r"
+  _pdf_std_color: "k"
 
 Hlines:
-  colors: "k"
-  line_styles: "-"
-  line_widths: 2
+  _colors: "k"
+  _line_styles: "-"
+  _line_widths: 2
 
 Vlines:
-  colors: "k"
-  line_styles: "solid"
-  line_widths: 2
+  _colors: "k"
+  _line_styles: "solid"
+  _line_widths: 2
 
 Figure:
-  size: [6.4, 4.8]
-  log_scale_x: False
-  log_scale_y: False
+  _size: [6.4, 4.8]
+  _log_scale_x: False
+  _log_scale_y: False
 
 MultiFigure:
-  size: [6.4, 4.8]
-
-SubFigure:
-  log_scale_x: False
-  log_scale_y: False
+  _size: [6.4, 4.8]
 
 Point:
-  color: "k"
-  edge_color: "none"
-  marker_size: 30
-  marker_style: "o"
-  edge_width: 1.5
+  _color: "k"
+  _edge_color: "none"
+  _marker_size: 30
+  _marker_style: "o"
+  _edge_width: 1.5
 
 FitFromPolynomial:
-  color: "k"
-  line_width: 2
-  line_style: "-"
-  res_color: "k"
-  res_line_width: 1
-  res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
 
 FitFromExponential:
-  color: "k"
-  line_width: 2
-  line_style: "-"
-  res_color: "k"
-  res_line_width: 1
-  res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
 
 FitFromGaussian:
-  color: "k"
-  line_width: 2
-  line_style: "-"
-  res_color: "k"
-  res_line_width: 1
-  res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
 
 FitFromSine:
-  color: "k"
-  line_width: 2
-  line_style: "-"
-  res_color: "k"
-  res_line_width: 1
-  res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
 
 FitFromSquareRoot:
-  color: "k"
-  line_width: 2
-  line_style: "-"
-  res_color: "k"
-  res_line_width: 1
-  res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
 
 FitFromLog:
-  res_color: "k"
-  res_line_width: 1
-  res_line_style: "--"
-  color: "k"
-  line_width: 2
-  line_style: "-"
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
 
 FitFromFunction:
-  res_color: "k"
-  res_line_width: 1
-  res_line_style: "--"
-  color: "k"
-  line_width: 2
-  line_style: "-"
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
 
 FitFromFOTF:
-  res_color: "k"
-  res_line_width: 1
-  res_line_style: "--"
-  color: "k"
-  line_width: 2
-  line_style: "-"
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
 
 Heatmap:
-  aspect_ratio: "equal"
-  origin_position: "upper"
-  color_map: "coolwarm"
-  show_color_bar: True
+  _aspect_ratio: "equal"
+  _origin_position: "upper"
+  _color_map: "coolwarm"
+  _show_color_bar: True
 
 Contour:
-  number_of_levels: 10
-  color_map: "coolwarm"
-  show_color_bar: True
-  filled: True
-  alpha: 1.0
+  _number_of_levels: 10
+  _color_map: "coolwarm"
+  _show_color_bar: True
+  _filled: True
+  _alpha: 1.0
 
 VectorField:
-  arrow_width: 0.005
-  arrow_head_width: 3
-  arrow_head_length: 5
-  arrow_head_axis_length: 4.5
-  color: "k"
-  angle_in_data_coords: False
+  _arrow_width: 0.005
+  _arrow_head_width: 3
+  _arrow_head_length: 5
+  _arrow_head_axis_length: 4.5
+  _color: "k"
+  _angle_in_data_coords: False
 
 Text:
-  color: "k"
-  h_align: "center"
-  v_align: "baseline"
+  _color: "k"
+  _h_align: "center"
+  _v_align: "baseline"
 
 Table:
-  cell_align: "right"
-  row_align: "left"
-  col_align: "center"
+  _cell_align: "right"
+  _row_align: "left"
+  _col_align: "center"
 
 Stream:
-  line_width: 1
-  color: 
-  color_map: 
-  arrow_size: 1
+  _line_width: 1
+  _color: 
+  _color_map: 
+  _arrow_size: 1
 
 Circle:
-  fill: True
-  fill_alpha: 0.5
-  fill_color:
-  edge_color: "black"
-  line_width: 2
-  line_style: "-"
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
 
 Rectangle:
-  fill: True
-  fill_alpha: 0.5
-  fill_color:
-  edge_color: "black"
-  line_width: 2
-  line_style: "-"
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
 
 Arrow:
-  color: "black"
-  head_size: 1
-  width: 2
+  _color: "black"
+  _head_size: 1
+  _width: 2
 
 Line:
-  color: "black"
-  width: 2
-  cap_width: 1
+  _color: "black"
+  _width: 2
+  _cap_width: 1
 
 Polygon:
-  fill: True
-  fill_alpha: 0.5
-  fill_color:
-  edge_color: "black"
-  line_width: 2
-  line_style: "-"
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
 
 rc_params:
   figure.facecolor: "white"

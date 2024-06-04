@@ -18,19 +18,19 @@ class TestCurve(unittest.TestCase):
         self.testCurve = Curve(x, sin(x), "Test Curve", color="k")
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testCurve.x_data, list | ndarray)
+        self.assertIsInstance(self.testCurve._x_data, list | ndarray)
 
     def test_ydata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testCurve.y_data, list | ndarray)
+        self.assertIsInstance(self.testCurve._y_data, list | ndarray)
 
     def test_default_value(self):
-        self.assertEqual(self.testCurve.line_width, "default")
+        self.assertEqual(self.testCurve._line_width, "default")
 
     def test_color_is_str(self):
-        self.assertIsInstance(self.testCurve.color, str)
+        self.assertIsInstance(self.testCurve._color, str)
 
     def test_label_is_str(self):
-        self.assertIsInstance(self.testCurve.label, str)
+        self.assertIsInstance(self.testCurve._label, str)
 
     def test_from_function(self):
         self.assertIsInstance(
@@ -61,15 +61,15 @@ class TestCurve(unittest.TestCase):
             cap_thickness=10,
             cap_width=10,
         )
-        self.assertEqual(self.testCurve.errorbars_color, "red")
-        self.assertEqual(self.testCurve.errorbars_line_width, 10)
-        self.assertEqual(self.testCurve.cap_thickness, 10)
-        self.assertEqual(self.testCurve.cap_width, 10)
+        self.assertEqual(self.testCurve._errorbars_color, "red")
+        self.assertEqual(self.testCurve._errorbars_line_width, 10)
+        self.assertEqual(self.testCurve._cap_thickness, 10)
+        self.assertEqual(self.testCurve._cap_width, 10)
 
     def test_create_point_at_x(self):
         point = self.testCurve.create_point_at_x(0.5)
-        self.assertEqual(point.x, 0.5)
-        self.assertAlmostEqual(point.y, sin(0.5), places=3)
+        self.assertEqual(point._x, 0.5)
+        self.assertAlmostEqual(point._y, sin(0.5), places=3)
 
     def test_get_coordinates_at_x(self):
         point = self.testCurve.get_coordinates_at_x(0.5)
@@ -85,8 +85,8 @@ class TestCurve(unittest.TestCase):
     def test_create_points_at_y(self):
         points = self.testCurve.create_points_at_y(0)
         for i, point in enumerate(points):
-            self.assertEqual(point.y, 0)
-            self.assertAlmostEqual(point.x, i * pi, places=3)
+            self.assertEqual(point._y, 0)
+            self.assertAlmostEqual(point._x, i * pi, places=3)
 
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
@@ -115,7 +115,7 @@ class TestCurve(unittest.TestCase):
     def test_area_between_fill_under(self):
         curve = Curve.from_function(lambda x: x**2, 0, 1)
         curve2 = Curve.from_function(lambda x: x**3, 0, 1)
-        curve2.get_area_between(0, 1, fill_under=True)
+        curve2.get_area_between(0, 1, fill_between=True)
         fig = Figure(figure_style="plain")
         fig.add_elements(curve, curve2)
         fig._prepare_figure()
@@ -127,7 +127,7 @@ class TestCurve(unittest.TestCase):
     def test_area_between_fill_under_two_curves(self):
         curve = Curve.from_function(lambda x: x**2, 0, 1)
         curve2 = Curve.from_function(lambda x: x**3, 0, 1)
-        area = curve.get_area_between(0, 1, fill_under=True, other_curve=curve2)
+        area = curve.get_area_between(0, 1, fill_between=True, other_curve=curve2)
         self.assertAlmostEqual(area, 1 / 12, places=3)
         fig = Figure(figure_style="plain")
         fig.add_elements(curve, curve2)
@@ -165,8 +165,8 @@ class TestCurve(unittest.TestCase):
         self.assertEqual(len(points), 4)
         for i, point in enumerate(points):
             self.assertIsInstance(point, Point)
-            self.assertAlmostEqual(point.x, points_x[i], places=3)
-            self.assertAlmostEqual(point.y, points_y[i], places=3)
+            self.assertAlmostEqual(point._x, points_x[i], places=3)
+            self.assertAlmostEqual(point._y, points_y[i], places=3)
 
     def test_add_curves(self):
         x = linspace(0, 3 * pi, 200)
@@ -321,18 +321,18 @@ class TestCurve(unittest.TestCase):
         curve = abs(self.testCurve)
         self.assertIsInstance(curve, Curve)
         self.assertListEqual(
-            list(curve.y_data), [abs(y) for y in self.testCurve.y_data]
+            list(curve._y_data), [abs(y) for y in self.testCurve._y_data]
         )
 
     def test_copy(self):
         curve_copy = self.testCurve.copy()
         self.assertIsInstance(curve_copy, Curve)
-        self.assertEqual(curve_copy.label, self.testCurve.label)
-        self.assertEqual(curve_copy.color, self.testCurve.color)
-        self.assertEqual(curve_copy.line_width, self.testCurve.line_width)
-        self.assertEqual(curve_copy.line_style, self.testCurve.line_style)
-        self.assertListEqual(list(curve_copy.x_data), list(self.testCurve.x_data))
-        self.assertListEqual(list(curve_copy.y_data), list(self.testCurve.y_data))
+        self.assertEqual(curve_copy._label, self.testCurve._label)
+        self.assertEqual(curve_copy._color, self.testCurve._color)
+        self.assertEqual(curve_copy._line_width, self.testCurve._line_width)
+        self.assertEqual(curve_copy._line_style, self.testCurve._line_style)
+        self.assertListEqual(list(curve_copy._x_data), list(self.testCurve._x_data))
+        self.assertListEqual(list(curve_copy._y_data), list(self.testCurve._y_data))
 
     def test_create_slice_x(self):
         curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
@@ -342,8 +342,8 @@ class TestCurve(unittest.TestCase):
         correct_x_data = correct_x_data[correct_x_data >= -5]
         correct_x_data = correct_x_data[correct_x_data <= 5]
         correct_y_data = correct_x_data**2
-        self.assertListEqual(list(curve_slice.x_data), list(correct_x_data))
-        self.assertListEqual(list(curve_slice.y_data), list(correct_y_data))
+        self.assertListEqual(list(curve_slice._x_data), list(correct_x_data))
+        self.assertListEqual(list(curve_slice._y_data), list(correct_y_data))
 
     def test_create_slice_y(self):
         curve = Curve.from_function(lambda x: x**2, -10, 10, number_of_points=100)
@@ -352,8 +352,8 @@ class TestCurve(unittest.TestCase):
         correct_x_data = linspace(-10, 10, 100)
         correct_x_data = correct_x_data[correct_x_data**2 <= 25]
         correct_y_data = correct_x_data**2
-        self.assertListEqual(list(curve_slice.x_data), list(correct_x_data))
-        self.assertListEqual(list(curve_slice.y_data), list(correct_y_data))
+        self.assertListEqual(list(curve_slice._x_data), list(correct_x_data))
+        self.assertListEqual(list(curve_slice._y_data), list(correct_y_data))
 
 
 class TestScatter(unittest.TestCase):
@@ -365,14 +365,14 @@ class TestScatter(unittest.TestCase):
         self.assertIsInstance(self.testScatter, Scatter)
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testScatter.x_data, list | ndarray)
+        self.assertIsInstance(self.testScatter._x_data, list | ndarray)
 
     def test_color_is_str(self):
-        self.assertIsInstance(self.testScatter.face_color, str)
-        self.assertIsInstance(self.testScatter.edge_color, str)
+        self.assertIsInstance(self.testScatter._face_color, str)
+        self.assertIsInstance(self.testScatter._edge_color, str)
 
     def test_label_is_str(self):
-        self.assertIsInstance(self.testScatter.label, str)
+        self.assertIsInstance(self.testScatter._label, str)
 
     def test_from_function(self):
         self.assertIsInstance(
@@ -404,15 +404,15 @@ class TestScatter(unittest.TestCase):
             cap_thickness=10,
             errorbars_line_width=10,
         )
-        self.assertEqual(self.testScatter.errorbars_color, "red")
-        self.assertEqual(self.testScatter.errorbars_line_width, 10)
-        self.assertEqual(self.testScatter.cap_thickness, 10)
-        self.assertEqual(self.testScatter.cap_width, 10)
+        self.assertEqual(self.testScatter._errorbars_color, "red")
+        self.assertEqual(self.testScatter._errorbars_line_width, 10)
+        self.assertEqual(self.testScatter._cap_thickness, 10)
+        self.assertEqual(self.testScatter._cap_width, 10)
 
     def test_create_point_at_x(self):
         point = self.testScatter.create_point_at_x(0.5)
-        self.assertEqual(point.x, 0.5)
-        self.assertAlmostEqual(point.y, sin(0.5), places=3)
+        self.assertEqual(point._x, 0.5)
+        self.assertAlmostEqual(point._y, sin(0.5), places=3)
 
     def test_get_coordinates_at_x(self):
         point = self.testScatter.get_coordinates_at_x(0.5)
@@ -428,8 +428,8 @@ class TestScatter(unittest.TestCase):
     def test_create_points_at_y(self):
         points = self.testScatter.create_points_at_y(0)
         for i, point in enumerate(points):
-            self.assertEqual(point.y, 0)
-            self.assertAlmostEqual(point.x, i * pi, places=3)
+            self.assertEqual(point._y, 0)
+            self.assertAlmostEqual(point._x, i * pi, places=3)
 
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
@@ -609,19 +609,19 @@ class TestScatter(unittest.TestCase):
         scatter = abs(self.testScatter)
         self.assertIsInstance(scatter, Scatter)
         self.assertListEqual(
-            list(scatter.y_data), [abs(y) for y in self.testScatter.y_data]
+            list(scatter._y_data), [abs(y) for y in self.testScatter._y_data]
         )
 
     def test_copy(self):
         scatter_copy = self.testScatter.copy()
         self.assertIsInstance(scatter_copy, Scatter)
-        self.assertEqual(scatter_copy.label, self.testScatter.label)
-        self.assertEqual(scatter_copy.face_color, self.testScatter.face_color)
-        self.assertEqual(scatter_copy.edge_color, self.testScatter.edge_color)
-        self.assertEqual(scatter_copy.marker_size, self.testScatter.marker_size)
-        self.assertEqual(scatter_copy.marker_style, self.testScatter.marker_style)
-        self.assertListEqual(list(scatter_copy.x_data), list(self.testScatter.x_data))
-        self.assertListEqual(list(scatter_copy.y_data), list(self.testScatter.y_data))
+        self.assertEqual(scatter_copy._label, self.testScatter._label)
+        self.assertEqual(scatter_copy._face_color, self.testScatter._face_color)
+        self.assertEqual(scatter_copy._edge_color, self.testScatter._edge_color)
+        self.assertEqual(scatter_copy._marker_size, self.testScatter._marker_size)
+        self.assertEqual(scatter_copy._marker_style, self.testScatter._marker_style)
+        self.assertListEqual(list(scatter_copy._x_data), list(self.testScatter._x_data))
+        self.assertListEqual(list(scatter_copy._y_data), list(self.testScatter._y_data))
 
     def test_create_slice_x(self):
         scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
@@ -631,8 +631,8 @@ class TestScatter(unittest.TestCase):
         correct_x_data = correct_x_data[correct_x_data >= -5]
         correct_x_data = correct_x_data[correct_x_data <= 5]
         correct_y_data = correct_x_data**2
-        self.assertListEqual(list(scatter_slice.x_data), list(correct_x_data))
-        self.assertListEqual(list(scatter_slice.y_data), list(correct_y_data))
+        self.assertListEqual(list(scatter_slice._x_data), list(correct_x_data))
+        self.assertListEqual(list(scatter_slice._y_data), list(correct_y_data))
 
     def test_create_slice_y(self):
         scatter = Scatter.from_function(lambda x: x**2, -10, 10, number_of_points=100)
@@ -641,8 +641,8 @@ class TestScatter(unittest.TestCase):
         correct_x_data = linspace(-10, 10, 100)
         correct_x_data = correct_x_data[correct_x_data**2 <= 25]
         correct_y_data = correct_x_data**2
-        self.assertListEqual(list(scatter_slice.x_data), list(correct_x_data))
-        self.assertListEqual(list(scatter_slice.y_data), list(correct_y_data))
+        self.assertListEqual(list(scatter_slice._x_data), list(correct_x_data))
+        self.assertListEqual(list(scatter_slice._y_data), list(correct_y_data))
 
 
 class TestHistogram(unittest.TestCase):
@@ -656,25 +656,25 @@ class TestHistogram(unittest.TestCase):
         )
 
     def test_label_is_str(self):
-        self.assertEqual(self.testHist.label[:19], "Random Distribution")
+        self.assertEqual(self.testHist._label[:19], "Random Distribution")
 
     def test_xdata_is_list_or_ndarray(self):
-        self.assertIsInstance(self.testHist.data, list | ndarray)
+        self.assertIsInstance(self.testHist._data, list | ndarray)
 
     def test_face_color_is_str(self):
-        self.assertEqual(self.testHist.face_color, "silver")
+        self.assertEqual(self.testHist._face_color, "silver")
 
     def test_edge_color_is_str(self):
-        self.assertEqual(self.testHist.edge_color, "k")
+        self.assertEqual(self.testHist._edge_color, "k")
 
     def test_bins_is_int(self):
-        self.assertEqual(self.testHist.number_of_bins, 20)
+        self.assertEqual(self.testHist._number_of_bins, 20)
 
     def test_alpha_is_default(self):
-        self.assertEqual(self.testHist.alpha, "default")
+        self.assertEqual(self.testHist._alpha, "default")
 
     def test_hist_type_is_str(self):
-        self.assertEqual(self.testHist.hist_type, "default")
+        self.assertEqual(self.testHist._hist_type, "default")
 
     def test_plot_residuals_from_fit(self):
         curve = Curve.from_function(lambda x: x**2, 0, 1)
@@ -685,13 +685,13 @@ class TestHistogram(unittest.TestCase):
     def test_copy(self):
         hist_copy = self.testHist.copy()
         self.assertIsInstance(hist_copy, Histogram)
-        self.assertEqual(hist_copy.label, self.testHist.label)
-        self.assertEqual(hist_copy.face_color, self.testHist.face_color)
-        self.assertEqual(hist_copy.edge_color, self.testHist.edge_color)
-        self.assertEqual(hist_copy.number_of_bins, self.testHist.number_of_bins)
-        self.assertEqual(hist_copy.alpha, self.testHist.alpha)
-        self.assertEqual(hist_copy.hist_type, self.testHist.hist_type)
-        self.assertListEqual(list(hist_copy.data), list(self.testHist.data))
+        self.assertEqual(hist_copy._label, self.testHist._label)
+        self.assertEqual(hist_copy._face_color, self.testHist._face_color)
+        self.assertEqual(hist_copy._edge_color, self.testHist._edge_color)
+        self.assertEqual(hist_copy._number_of_bins, self.testHist._number_of_bins)
+        self.assertEqual(hist_copy._alpha, self.testHist._alpha)
+        self.assertEqual(hist_copy._hist_type, self.testHist._hist_type)
+        self.assertListEqual(list(hist_copy._data), list(self.testHist._data))
 
 
 if __name__ == "__main__":

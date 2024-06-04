@@ -106,15 +106,15 @@ class TestHeatmap(unittest.TestCase):
         )
         heatmap_copy = heatmap.copy()
         self.assertIsInstance(heatmap_copy, Heatmap)
-        self.assertEqual(heatmap_copy.image.tolist(), array_of_data.tolist())
-        self.assertEqual(heatmap_copy.x_axis_range, (0, 10))
-        self.assertEqual(heatmap_copy.y_axis_range, (0, 11))
-        self.assertEqual(heatmap_copy.color_map, "viridis")
-        self.assertEqual(heatmap_copy.show_color_bar, True)
-        self.assertEqual(heatmap_copy.alpha_value, 0.5)
-        self.assertEqual(heatmap_copy.aspect_ratio, "auto")
-        self.assertEqual(heatmap_copy.origin_position, "upper")
-        self.assertEqual(heatmap_copy.interpolation, "nearest")
+        self.assertEqual(heatmap_copy._image.tolist(), array_of_data.tolist())
+        self.assertEqual(heatmap_copy._x_axis_range, (0, 10))
+        self.assertEqual(heatmap_copy._y_axis_range, (0, 11))
+        self.assertEqual(heatmap_copy._color_map, "viridis")
+        self.assertEqual(heatmap_copy._show_color_bar, True)
+        self.assertEqual(heatmap_copy._alpha_value, 0.5)
+        self.assertEqual(heatmap_copy._aspect_ratio, "auto")
+        self.assertEqual(heatmap_copy._origin_position, "upper")
+        self.assertEqual(heatmap_copy._interpolation, "nearest")
 
 
 class TestVectorField(unittest.TestCase):
@@ -140,16 +140,16 @@ class TestVectorField(unittest.TestCase):
         )
 
         self.assertIsInstance(vector_field, VectorField)
-        self.assertListEqual(vector_field.x_data.tolist(), xx.tolist())
-        self.assertListEqual(vector_field.y_data.tolist(), yy.tolist())
-        self.assertListEqual(vector_field.u_data.tolist(), u.tolist())
-        self.assertListEqual(vector_field.v_data.tolist(), v.tolist())
-        self.assertEqual(vector_field.arrow_width, 0.1)
-        self.assertEqual(vector_field.arrow_head_width, 0.3)
-        self.assertEqual(vector_field.arrow_head_length, 0.3)
-        self.assertEqual(vector_field.arrow_head_axis_length, 0.3)
-        self.assertEqual(vector_field.angle_in_data_coords, True)
-        self.assertEqual(vector_field.color, "black")
+        self.assertListEqual(vector_field._x_data.tolist(), xx.tolist())
+        self.assertListEqual(vector_field._y_data.tolist(), yy.tolist())
+        self.assertListEqual(vector_field._u_data.tolist(), u.tolist())
+        self.assertListEqual(vector_field._v_data.tolist(), v.tolist())
+        self.assertEqual(vector_field._arrow_width, 0.1)
+        self.assertEqual(vector_field._arrow_head_width, 0.3)
+        self.assertEqual(vector_field._arrow_head_length, 0.3)
+        self.assertEqual(vector_field._arrow_head_axis_length, 0.3)
+        self.assertEqual(vector_field._angle_in_data_coords, True)
+        self.assertEqual(vector_field._color, "black")
 
     def test_from_function(self):
         vector_field = VectorField.from_function(
@@ -167,11 +167,11 @@ class TestVectorField(unittest.TestCase):
         )
 
         self.assertIsInstance(vector_field, VectorField)
-        self.assertEqual(vector_field.arrow_width, 0.1)
-        self.assertEqual(vector_field.arrow_head_width, 0.3)
-        self.assertEqual(vector_field.arrow_head_length, 0.3)
-        self.assertEqual(vector_field.arrow_head_axis_length, 0.3)
-        self.assertEqual(vector_field.angle_in_data_coords, True)
+        self.assertEqual(vector_field._arrow_width, 0.1)
+        self.assertEqual(vector_field._arrow_head_width, 0.3)
+        self.assertEqual(vector_field._arrow_head_length, 0.3)
+        self.assertEqual(vector_field._arrow_head_axis_length, 0.3)
+        self.assertEqual(vector_field._angle_in_data_coords, True)
 
     def test_plot_element(self):
         x = np.linspace(0, 3 * np.pi, 20)
@@ -228,16 +228,16 @@ class TestVectorField(unittest.TestCase):
         )
         vector_field_copy = vector_field.copy()
         self.assertIsInstance(vector_field_copy, VectorField)
-        self.assertListEqual(vector_field_copy.x_data.tolist(), xx.tolist())
-        self.assertListEqual(vector_field_copy.y_data.tolist(), yy.tolist())
-        self.assertListEqual(vector_field_copy.u_data.tolist(), u.tolist())
-        self.assertListEqual(vector_field_copy.v_data.tolist(), v.tolist())
-        self.assertEqual(vector_field_copy.arrow_width, 0.1)
-        self.assertEqual(vector_field_copy.arrow_head_width, 0.3)
-        self.assertEqual(vector_field_copy.arrow_head_length, 0.3)
-        self.assertEqual(vector_field_copy.arrow_head_axis_length, 0.3)
-        self.assertEqual(vector_field_copy.angle_in_data_coords, True)
-        self.assertEqual(vector_field_copy.color, "black")
+        self.assertListEqual(vector_field_copy._x_data.tolist(), xx.tolist())
+        self.assertListEqual(vector_field_copy._y_data.tolist(), yy.tolist())
+        self.assertListEqual(vector_field_copy._u_data.tolist(), u.tolist())
+        self.assertListEqual(vector_field_copy._v_data.tolist(), v.tolist())
+        self.assertEqual(vector_field_copy._arrow_width, 0.1)
+        self.assertEqual(vector_field_copy._arrow_head_width, 0.3)
+        self.assertEqual(vector_field_copy._arrow_head_length, 0.3)
+        self.assertEqual(vector_field_copy._arrow_head_axis_length, 0.3)
+        self.assertEqual(vector_field_copy._angle_in_data_coords, True)
+        self.assertEqual(vector_field_copy._color, "black")
 
 
 class TestContour(unittest.TestCase):
@@ -291,9 +291,9 @@ class TestContour(unittest.TestCase):
         )
         contour_copy = contour.copy()
         self.assertIsInstance(contour_copy, Contour)
-        self.assertListEqual(contour_copy.x_mesh.tolist(), xx.tolist())
-        self.assertListEqual(contour_copy.y_mesh.tolist(), yy.tolist())
-        self.assertListEqual(contour_copy.z_data.tolist(), z.tolist())
+        self.assertListEqual(contour_copy._x_mesh.tolist(), xx.tolist())
+        self.assertListEqual(contour_copy._y_mesh.tolist(), yy.tolist())
+        self.assertListEqual(contour_copy._z_data.tolist(), z.tolist())
 
 
 class TestStream(unittest.TestCase):
@@ -314,15 +314,15 @@ class TestStream(unittest.TestCase):
         )
 
         self.assertIsInstance(stream, Stream)
-        self.assertListEqual(stream.x_data.tolist(), x_grid.tolist())
-        self.assertListEqual(stream.y_data.tolist(), y_grid.tolist())
-        self.assertListEqual(stream.u_data.tolist(), u.tolist())
-        self.assertListEqual(stream.v_data.tolist(), v.tolist())
-        self.assertEqual(stream.density, 0.7)
-        self.assertEqual(stream.line_width, 2)
-        self.assertEqual(stream.color, "black")
-        self.assertEqual(stream.color_map, "viridis")
-        self.assertEqual(stream.arrow_size, 2)
+        self.assertListEqual(stream._x_data.tolist(), x_grid.tolist())
+        self.assertListEqual(stream._y_data.tolist(), y_grid.tolist())
+        self.assertListEqual(stream._u_data.tolist(), u.tolist())
+        self.assertListEqual(stream._v_data.tolist(), v.tolist())
+        self.assertEqual(stream._density, 0.7)
+        self.assertEqual(stream._line_width, 2)
+        self.assertEqual(stream._color, "black")
+        self.assertEqual(stream._color_map, "viridis")
+        self.assertEqual(stream._arrow_size, 2)
 
     def test_from_function(self):
         stream = Stream.from_function(
@@ -340,16 +340,16 @@ class TestStream(unittest.TestCase):
 
         self.assertIsInstance(stream, Stream)
         self.assertListEqual(
-            stream.x_data.tolist(), np.linspace(0, 3 * np.pi, 20).tolist()
+            stream._x_data.tolist(), np.linspace(0, 3 * np.pi, 20).tolist()
         )
         self.assertListEqual(
-            stream.y_data.tolist(), np.linspace(0, 3 * np.pi, 20).tolist()
+            stream._y_data.tolist(), np.linspace(0, 3 * np.pi, 20).tolist()
         )
-        self.assertEqual(stream.density, 0.7)
-        self.assertEqual(stream.line_width, 2)
-        self.assertEqual(stream.color, "black")
-        self.assertEqual(stream.color_map, "viridis")
-        self.assertEqual(stream.arrow_size, 2)
+        self.assertEqual(stream._density, 0.7)
+        self.assertEqual(stream._line_width, 2)
+        self.assertEqual(stream._color, "black")
+        self.assertEqual(stream._color_map, "viridis")
+        self.assertEqual(stream._arrow_size, 2)
 
     def test_plot_element(self):
         x_grid, y_grid = np.meshgrid(np.linspace(0, 11, 30), np.linspace(0, 11, 30))
@@ -393,15 +393,15 @@ class TestStream(unittest.TestCase):
         )
         stream_copy = stream.copy()
         self.assertIsInstance(stream_copy, Stream)
-        self.assertListEqual(stream_copy.x_data.tolist(), x_grid.tolist())
-        self.assertListEqual(stream_copy.y_data.tolist(), y_grid.tolist())
-        self.assertListEqual(stream_copy.u_data.tolist(), u.tolist())
-        self.assertListEqual(stream_copy.v_data.tolist(), v.tolist())
-        self.assertEqual(stream_copy.density, 0.7)
-        self.assertEqual(stream_copy.line_width, 2)
-        self.assertEqual(stream_copy.color, "black")
-        self.assertEqual(stream_copy.color_map, "viridis")
-        self.assertEqual(stream_copy.arrow_size, 2)
+        self.assertListEqual(stream_copy._x_data.tolist(), x_grid.tolist())
+        self.assertListEqual(stream_copy._y_data.tolist(), y_grid.tolist())
+        self.assertListEqual(stream_copy._u_data.tolist(), u.tolist())
+        self.assertListEqual(stream_copy._v_data.tolist(), v.tolist())
+        self.assertEqual(stream_copy._density, 0.7)
+        self.assertEqual(stream_copy._line_width, 2)
+        self.assertEqual(stream_copy._color, "black")
+        self.assertEqual(stream_copy._color_map, "viridis")
+        self.assertEqual(stream_copy._arrow_size, 2)
 
 
 if __name__ == "__main__":

@@ -55,24 +55,70 @@ class Heatmap:
             `Interpolations for imshow <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_.
     """
 
-    image: ArrayLike | str
-    x_axis_range: Optional[tuple[float, float]] = None
-    y_axis_range: Optional[tuple[float, float]] = None
-    color_map: str | Colormap = "default"
-    show_color_bar: bool | Literal["default"] = "default"
-    alpha_value: float = 1.0
-    aspect_ratio: str | float = "default"
-    origin_position: str = "default"
-    interpolation: str = "none"
+    def __init__(
+        self,
+        image: ArrayLike | str,
+        x_axis_range: Optional[tuple[float, float]] = None,
+        y_axis_range: Optional[tuple[float, float]] = None,
+        color_map: str | Colormap = "default",
+        show_color_bar: bool | Literal["default"] = "default",
+        alpha_value: float = 1.0,
+        aspect_ratio: str | float = "default",
+        origin_position: str = "default",
+        interpolation: str = "none",
+    ) -> None:
+        """
+        The class implements heatmaps.
 
-    def __post_init__(self) -> None:
-        if isinstance(self.image, str):
-            self.image = imread(self.image)
-            self.show_color_bar = False
+        Parameters
+        ----------
+        image : ArrayLike or str
+            Image to display as an array of values or from a file.
+        x_axis_range, y_axis_range : tuple[float, float], optional
+            The range of x and y values used for the axes as tuples containing the
+            start and end of the range.
+        color_map : str, Colormap
+            The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
+            string (named colormap from Matplotlib) or a Colormap object.
+            Default depends on the ``figure_style`` configuration.
+        show_color_bar : bool
+            Whether or not to display the color bar next to the plot.
+            Defaults to ``True``.
+        alpha_value : float
+            Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
+            Defaults to 1.0.
+        aspect_ratio : str or float
+            Aspect ratio of the axes.
+            Default depends on the ``figure_style`` configuration.
+        origin_position : str
+            Position of the origin of the axes (upper left or lower left corner).
+            Default depends on the ``figure_style`` configuration.
+        interpolation : str
+            Interpolation method to be applied to the image.
+            Defaults to ``"none"``.
+
+            .. seealso::
+
+                For other interpolation methods, refer to
+                `Interpolations for imshow <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_.
+        """
+        self._image = image
+        self._x_axis_range = x_axis_range
+        self._y_axis_range = y_axis_range
+        self._color_map = color_map
+        self._show_color_bar = show_color_bar
+        self._alpha_value = alpha_value
+        self._aspect_ratio = aspect_ratio
+        self._origin_position = origin_position
+        self._interpolation = interpolation
+
+        if isinstance(self._image, str):
+            self._image = imread(self._image)
+            self._show_color_bar = False
         else:
-            self.image = np.array(self.image)
-        if self.x_axis_range is not None and self.y_axis_range is not None:
-            self._xy_range = self.x_axis_range + self.y_axis_range
+            self._image = np.asarray(self._image)
+        if self._x_axis_range is not None and self._y_axis_range is not None:
+            self._xy_range = self._x_axis_range + self._y_axis_range
 
     @classmethod
     def from_function(
@@ -233,6 +279,81 @@ class Heatmap:
             interpolation,
         )
 
+    @property
+    def image(self) -> ArrayLike:
+        return self._image
+
+    @image.setter
+    def image(self, image: ArrayLike | str) -> None:
+        if isinstance(image, str):
+            self._image = imread(image)
+        else:
+            self._image = np.asarray(image)
+
+    @property
+    def x_axis_range(self) -> Optional[tuple[float, float]]:
+        return self._x_axis_range
+
+    @x_axis_range.setter
+    def x_axis_range(self, x_axis_range: Optional[tuple[float, float]]) -> None:
+        self._x_axis_range = x_axis_range
+
+    @property
+    def y_axis_range(self) -> Optional[tuple[float, float]]:
+        return self._y_axis_range
+
+    @y_axis_range.setter
+    def y_axis_range(self, y_axis_range: Optional[tuple[float, float]]) -> None:
+        self._y_axis_range = y_axis_range
+
+    @property
+    def color_map(self) -> str | Colormap:
+        return self._color_map
+
+    @color_map.setter
+    def color_map(self, color_map: str | Colormap) -> None:
+        self._color_map = color_map
+
+    @property
+    def show_color_bar(self) -> bool:
+        return self._show_color_bar
+
+    @show_color_bar.setter
+    def show_color_bar(self, show_color_bar: bool) -> None:
+        self._show_color_bar = show_color_bar
+
+    @property
+    def alpha_value(self) -> float:
+        return self._alpha_value
+
+    @alpha_value.setter
+    def alpha_value(self, alpha_value: float) -> None:
+        self._alpha_value = alpha_value
+
+    @property
+    def aspect_ratio(self) -> str | float:
+        return self._aspect_ratio
+
+    @aspect_ratio.setter
+    def aspect_ratio(self, aspect_ratio: str | float) -> None:
+        self._aspect_ratio = aspect_ratio
+
+    @property
+    def origin_position(self) -> str:
+        return self._origin_position
+
+    @origin_position.setter
+    def origin_position(self, origin_position: str) -> None:
+        self._origin_position = origin_position
+
+    @property
+    def interpolation(self) -> str:
+        return self._interpolation
+
+    @interpolation.setter
+    def interpolation(self, interpolation: str) -> None:
+        self._interpolation = interpolation
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
@@ -244,37 +365,37 @@ class Heatmap:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if self.x_axis_range is not None and self.y_axis_range is not None:
+        if self._x_axis_range is not None and self._y_axis_range is not None:
             params = {
-                "cmap": self.color_map,
-                "alpha": self.alpha_value,
-                "aspect": self.aspect_ratio,
-                "origin": self.origin_position,
-                "interpolation": self.interpolation,
+                "cmap": self._color_map,
+                "alpha": self._alpha_value,
+                "aspect": self._aspect_ratio,
+                "origin": self._origin_position,
+                "interpolation": self._interpolation,
                 "extent": self._xy_range,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             image = axes.imshow(
-                self.image,
+                self._image,
                 zorder=z_order,
                 **params,
             )
         else:
             params = {
-                "cmap": self.color_map,
-                "alpha": self.alpha_value,
-                "aspect": self.aspect_ratio,
-                "origin": self.origin_position,
-                "interpolation": self.interpolation,
+                "cmap": self._color_map,
+                "alpha": self._alpha_value,
+                "aspect": self._aspect_ratio,
+                "origin": self._origin_position,
+                "interpolation": self._interpolation,
             }
             params = {k: v for k, v in params.items() if v != "default"}
             image = axes.imshow(
-                self.image,
+                self._image,
                 zorder=z_order,
                 **params,
             )
         fig = axes.get_figure()
-        if self.show_color_bar:
+        if self._show_color_bar:
             fig.colorbar(image, ax=axes)
 
 
@@ -310,22 +431,58 @@ class VectorField:
         Default depends on the ``figure_style`` configuration.
     """
 
-    x_data: ArrayLike
-    y_data: ArrayLike
-    u_data: ArrayLike
-    v_data: ArrayLike
-    arrow_width: float | Literal["default"] = "default"
-    arrow_head_width: float | Literal["default"] = "default"
-    arrow_head_length: float | Literal["default"] = "default"
-    arrow_head_axis_length: float | Literal["default"] = "default"
-    angle_in_data_coords: bool = True
-    color: str | Literal["default"] = "default"
+    def __init__(
+        self,
+        x_data: ArrayLike,
+        y_data: ArrayLike,
+        u_data: ArrayLike,
+        v_data: ArrayLike,
+        arrow_width: float | Literal["default"] = "default",
+        arrow_head_width: float | Literal["default"] = "default",
+        arrow_head_length: float | Literal["default"] = "default",
+        arrow_head_axis_length: float | Literal["default"] = "default",
+        angle_in_data_coords: bool = True,
+        color: str | Literal["default"] = "default",
+    ) -> None:
+        """
+        This class implements vector fields.
 
-    def __post_init__(self) -> None:
-        self.x_data = np.array(self.x_data)
-        self.y_data = np.array(self.y_data)
-        self.u_data = np.array(self.u_data)
-        self.v_data = np.array(self.v_data)
+        Parameters
+        ----------
+        x_data, y_data : ArrayLike
+            x and y coordinates of the vectors.
+        u_data, v_data : ArrayLike
+            Magnitudes in the x and y coordinates.
+        arrow_width : float
+            Arrow width.
+            Default depends on the ``figure_style`` configuration.
+        arrow_head_width : float
+            Arrow head width.
+            Default depends on the ``figure_style`` configuration.
+        arrow_head_length : float
+            Arrow head length.
+            Default depends on the ``figure_style`` configuration.
+        arrow_head_axis_length : float
+            Arrow head axis length.
+            Default depends on the ``figure_style`` configuration.
+        angle_in_data_coords : bool
+            Wheter to use the screen coordinates or the data coordinates to
+            determine the vector directions.
+            Defaults to ``True``.
+        color : str
+            Color of the vector arrows.
+            Default depends on the ``figure_style`` configuration.
+        """
+        self._x_data = np.asarray(x_data)
+        self._y_data = np.asarray(y_data)
+        self._u_data = np.asarray(u_data)
+        self._v_data = np.asarray(v_data)
+        self._arrow_width = arrow_width
+        self._arrow_head_width = arrow_head_width
+        self._arrow_head_length = arrow_head_length
+        self._arrow_head_axis_length = arrow_head_axis_length
+        self._angle_in_data_coords = angle_in_data_coords
+        self._color = color
 
     @classmethod
     def from_function(
@@ -397,6 +554,86 @@ class VectorField:
             color,
         )
 
+    @property
+    def x_data(self) -> ArrayLike:
+        return self._x_data
+
+    @x_data.setter
+    def x_data(self, x_data: ArrayLike) -> None:
+        self._x_data = np.asarray(x_data)
+
+    @property
+    def y_data(self) -> ArrayLike:
+        return self._y_data
+
+    @y_data.setter
+    def y_data(self, y_data: ArrayLike) -> None:
+        self._y_data = np.asarray(y_data)
+
+    @property
+    def u_data(self) -> ArrayLike:
+        return self._u_data
+
+    @u_data.setter
+    def u_data(self, u_data: ArrayLike) -> None:
+        self._u_data = np.asarray(u_data)
+
+    @property
+    def v_data(self) -> ArrayLike:
+        return self._v_data
+
+    @v_data.setter
+    def v_data(self, v_data: ArrayLike) -> None:
+        self._v_data = np.asarray(v_data)
+
+    @property
+    def arrow_width(self) -> float:
+        return self._arrow_width
+
+    @arrow_width.setter
+    def arrow_width(self, arrow_width: float) -> None:
+        self._arrow_width = arrow_width
+
+    @property
+    def arrow_head_width(self) -> float:
+        return self._arrow_head_width
+
+    @arrow_head_width.setter
+    def arrow_head_width(self, arrow_head_width: float) -> None:
+        self._arrow_head_width = arrow_head_width
+
+    @property
+    def arrow_head_length(self) -> float:
+        return self._arrow_head_length
+
+    @arrow_head_length.setter
+    def arrow_head_length(self, arrow_head_length: float) -> None:
+        self._arrow_head_length = arrow_head_length
+
+    @property
+    def arrow_head_axis_length(self) -> float:
+        return self._arrow_head_axis_length
+
+    @arrow_head_axis_length.setter
+    def arrow_head_axis_length(self, arrow_head_axis_length: float) -> None:
+        self._arrow_head_axis_length = arrow_head_axis_length
+
+    @property
+    def angle_in_data_coords(self) -> bool:
+        return self._angle_in_data_coords
+
+    @angle_in_data_coords.setter
+    def angle_in_data_coords(self, angle_in_data_coords: bool) -> None:
+        self._angle_in_data_coords = angle_in_data_coords
+
+    @property
+    def color(self) -> str:
+        return self._color
+
+    @color.setter
+    def color(self, color: str) -> None:
+        self._color = color
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.VectorField`.
@@ -408,24 +645,24 @@ class VectorField:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if self.angle_in_data_coords:
+        if self._angle_in_data_coords:
             angle = "xy"
         else:
             angle = "uv"
         params = {
             "angles": angle,
-            "width": self.arrow_width,
-            "headwidth": self.arrow_head_width,
-            "headlength": self.arrow_head_length,
-            "headaxislength": self.arrow_head_axis_length,
-            "color": self.color,
+            "width": self._arrow_width,
+            "headwidth": self._arrow_head_width,
+            "headlength": self._arrow_head_length,
+            "headaxislength": self._arrow_head_axis_length,
+            "color": self._color,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.quiver(
-            self.x_data,
-            self.y_data,
-            self.u_data,
-            self.v_data,
+            self._x_data,
+            self._y_data,
+            self._u_data,
+            self._v_data,
             # scale=self.arrow_length_multiplier,
             zorder=z_order,
             **params,
@@ -461,19 +698,60 @@ class Contour:
         Default depends on the ``figure_style`` configuration.
     """
 
-    x_mesh: ArrayLike
-    y_mesh: ArrayLike
-    z_data: ArrayLike
-    number_of_levels: int | Literal["default"] = "default"
-    color_map: str | Colormap | Literal["default"] = "default"
-    show_color_bar: bool | Literal["default"] = "default"
-    filled: bool | Literal["default"] = "default"
-    alpha: float | Literal["default"] = "default"
+    _x_mesh: ArrayLike
+    _y_mesh: ArrayLike
+    _z_data: ArrayLike
+    _number_of_levels: int | Literal["default"] = "default"
+    _color_map: str | Colormap | Literal["default"] = "default"
+    _show_color_bar: bool | Literal["default"] = "default"
+    _filled: bool | Literal["default"] = "default"
+    _alpha: float | Literal["default"] = "default"
 
-    def __post_init__(self) -> None:
-        self.x_mesh = np.array(self.x_mesh)
-        self.y_mesh = np.array(self.y_mesh)
-        self.z_data = np.array(self.z_data)
+    def __init__(
+        self,
+        x_mesh: ArrayLike,
+        y_mesh: ArrayLike,
+        z_data: ArrayLike,
+        number_of_levels: int | Literal["default"] = "default",
+        color_map: str | Colormap | Literal["default"] = "default",
+        show_color_bar: bool | Literal["default"] = "default",
+        filled: bool | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
+    ) -> None:
+        """
+        This class implements contour plots.
+
+        Parameters
+        ----------
+        x_mesh, y_mesh : ArrayLike
+            x and y coordinates of the mesh grid.
+        z_data : ArrayLike
+            Data for each point of the mesh.
+        number_of_levels : int
+            Number of distinct levels of contour plot.
+            Default depends on the ``figure_style`` configuration.
+        color_map : str or Colormap
+            The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
+            string (named colormap from Matplotlib) or a Colormap object.
+            Default depends on the ``figure_style`` configuration.
+        show_color_bar : bool
+            Whether or not to display the color bar next to the plot.
+            Default depends on the ``figure_style`` configuration.
+        filled : bool
+            Wheter or not to fill the contour with color.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the filled contour.
+            Default depends on the ``figure_style`` configuration.
+        """
+        self._x_mesh = np.asarray(x_mesh)
+        self._y_mesh = np.asarray(y_mesh)
+        self._z_data = np.asarray(z_data)
+        self._number_of_levels = number_of_levels
+        self._color_map = color_map
+        self._show_color_bar = show_color_bar
+        self._filled = filled
+        self._alpha = alpha
 
     @classmethod
     def from_function(
@@ -536,6 +814,70 @@ class Contour:
             alpha,
         )
 
+    @property
+    def x_mesh(self) -> ArrayLike:
+        return self._x_mesh
+
+    @x_mesh.setter
+    def x_mesh(self, x_mesh: ArrayLike) -> None:
+        self._x_mesh = np.asarray(x_mesh)
+
+    @property
+    def y_mesh(self) -> ArrayLike:
+        return self._y_mesh
+
+    @y_mesh.setter
+    def y_mesh(self, y_mesh: ArrayLike) -> None:
+        self._y_mesh = np.asarray(y_mesh)
+
+    @property
+    def z_data(self) -> ArrayLike:
+        return self._z_data
+
+    @z_data.setter
+    def z_data(self, z_data: ArrayLike) -> None:
+        self._z_data = np.asarray(z_data)
+
+    @property
+    def number_of_levels(self) -> int:
+        return self._number_of_levels
+
+    @number_of_levels.setter
+    def number_of_levels(self, number_of_levels: int) -> None:
+        self._number_of_levels = number_of_levels
+
+    @property
+    def color_map(self) -> str | Colormap:
+        return self._color_map
+
+    @color_map.setter
+    def color_map(self, color_map: str | Colormap) -> None:
+        self._color_map = color_map
+
+    @property
+    def show_color_bar(self) -> bool:
+        return self._show_color_bar
+
+    @show_color_bar.setter
+    def show_color_bar(self, show_color_bar: bool) -> None:
+        self._show_color_bar = show_color_bar
+
+    @property
+    def filled(self) -> bool:
+        return self._filled
+
+    @filled.setter
+    def filled(self, filled: bool) -> None:
+        self._filled = filled
+
+    @property
+    def alpha(self) -> float:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float) -> None:
+        self._alpha = alpha
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Contour`.
@@ -548,28 +890,28 @@ class Contour:
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         params = {
-            "levels": self.number_of_levels,
-            "cmap": self.color_map,
-            "alpha": self.alpha,
+            "levels": self._number_of_levels,
+            "cmap": self._color_map,
+            "alpha": self._alpha,
         }
         params = {k: v for k, v in params.items() if v != "default"}
-        if self.filled:
+        if self._filled:
             cont = axes.contourf(
-                self.x_mesh,
-                self.y_mesh,
-                self.z_data,
+                self._x_mesh,
+                self._y_mesh,
+                self._z_data,
                 zorder=z_order,
                 **params,
             )
         else:
             cont = axes.contour(
-                self.x_mesh,
-                self.y_mesh,
-                self.z_data,
+                self._x_mesh,
+                self._y_mesh,
+                self._z_data,
                 zorder=z_order,
                 **params,
             )
-        if self.show_color_bar:
+        if self._show_color_bar:
             fig = axes.get_figure()
             fig.colorbar(cont, ax=axes)
 
@@ -600,21 +942,50 @@ class Stream:
         Arrow size multiplier. Default depends on the ``figure_style`` configuration.
     """
 
-    x_data: ArrayLike
-    y_data: ArrayLike
-    u_data: ArrayLike
-    v_data: ArrayLike
-    density: float | tuple[float, float] = 1
-    line_width: float | Literal["default"] = "default"
-    color: str | ArrayLike | Literal["default"] = "default"
-    color_map: str | Colormap | Literal["default"] = "default"
-    arrow_size: float | Literal["default"] = "default"
+    def __init__(
+        self,
+        x_data: ArrayLike,
+        y_data: ArrayLike,
+        u_data: ArrayLike,
+        v_data: ArrayLike,
+        density: float | tuple[float, float] = 1,
+        line_width: float | Literal["default"] = "default",
+        color: str | ArrayLike | Literal["default"] = "default",
+        color_map: str | Colormap | Literal["default"] = "default",
+        arrow_size: float | Literal["default"] = "default",
+    ) -> None:
+        """
+        This class implements stream plots.
 
-    def __post_init__(self) -> None:
-        self.x_data = np.array(self.x_data)
-        self.y_data = np.array(self.y_data)
-        self.u_data = np.array(self.u_data)
-        self.v_data = np.array(self.v_data)
+        Parameters
+        ----------
+        x_data, y_data : ArrayLike
+            x and y coordinates of the vectors as a mesh grid.
+        u_data, v_data : ArrayLike
+            Magnitudes of the vectors for each point of the mesh grid.
+        density : float or tuple[float, float]
+            Density of stream lines. Can be specified independently for the x and y coordinates
+            by specifying a density tuple instead. Defaults to 1.
+        line_width : float
+            Width of the stream lines. Default depends on the ``figure_style`` configuration.
+        color : str or ArrayLike
+            Color of the stream lines. If an array of intensities is provided, the values are mapped to the specified color map.
+            Default depends on the ``figure_style`` configuration.
+        color_map : str or Colormap
+            Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+            Default depends on the ``figure_style`` configuration.
+        arrow_size : float
+            Arrow size multiplier. Default depends on the ``figure_style`` configuration.
+        """
+        self._x_data = np.asarray(x_data)
+        self._y_data = np.asarray(y_data)
+        self._u_data = np.asarray(u_data)
+        self._v_data = np.asarray(v_data)
+        self._density = density
+        self._line_width = line_width
+        self._color = color
+        self._color_map = color_map
+        self._arrow_size = arrow_size
 
     @classmethod
     def from_function(
@@ -679,22 +1050,22 @@ class Stream:
         Plots the element in the specified Axes.
         """
         params = {
-            "density": self.density,
-            "linewidth": self.line_width,
-            "cmap": self.color_map,
-            "arrowsize": self.arrow_size,
+            "density": self._density,
+            "linewidth": self._line_width,
+            "cmap": self._color_map,
+            "arrowsize": self._arrow_size,
         }
         params = {k: v for k, v in params.items() if v != "default"}
-        if isinstance(self.color, str) and self.color == "default":
+        if isinstance(self._color, str) and self._color == "default":
             pass
         else:
-            params["color"] = self.color
+            params["color"] = self._color
 
         axes.streamplot(
-            x=self.x_data,
-            y=self.y_data,
-            u=self.u_data,
-            v=self.v_data,
+            x=self._x_data,
+            y=self._y_data,
+            u=self._u_data,
+            v=self._v_data,
             zorder=z_order,
             **params,
         )
