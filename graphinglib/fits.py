@@ -75,13 +75,32 @@ class GeneralFit(Curve):
             self._label = "$f(x) = $" + str(self)
         self._line_style = line_style
 
+        self._function: Callable[[np.ndarray], np.ndarray]
+
+        self._setup_attributes()
+
+    def _setup_attributes(self) -> None:
         self._res_curves_to_be_plotted = False
         self._res_sigma_multiplier = None
         self._res_color = None
         self._res_line_width = None
         self._res_line_style = None
 
-        self._function: Callable[[np.ndarray], np.ndarray]
+        self._show_errorbars: bool = False
+        self._errorbars_color = None
+        self._errorbars_line_width = None
+        self._cap_thickness = None
+        self._cap_width = None
+
+        self._show_error_curves: bool = False
+        self._error_curves_fill_between: bool = False
+        self._error_curves_color = None
+        self._error_curves_line_style = None
+        self._error_curves_line_width = None
+
+        self._fill_between_bounds: Optional[tuple[float, float]] = None
+        self._fill_between_other_curve: Optional[Self] = None
+        self._fill_between_color: Optional[str] = None
 
     @property
     def curve_to_be_fit(self) -> Curve | Scatter:
@@ -453,7 +472,8 @@ class FitFromPolynomial(GeneralFit):
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
-        self._fill_curve_between = False
+
+        self._setup_attributes()
 
     @property
     def coeffs(self) -> np.ndarray:
@@ -644,7 +664,8 @@ class FitFromSine(GeneralFit):
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
-        self._fill_curve_between = False
+
+        self._setup_attributes()
 
     @property
     def amplitude(self) -> float:
@@ -846,7 +867,8 @@ class FitFromExponential(GeneralFit):
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
-        self._fill_curve_between = False
+
+        self._setup_attributes()
 
     @property
     def parameters(self) -> np.ndarray:
@@ -1030,7 +1052,8 @@ class FitFromGaussian(GeneralFit):
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
-        self._fill_curve_between = False
+
+        self._setup_attributes()
 
     @property
     def amplitude(self) -> float:
@@ -1208,7 +1231,8 @@ class FitFromSquareRoot(GeneralFit):
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
-        self._fill_curve_between = False
+
+        self._setup_attributes()
 
     @property
     def parameters(self) -> np.ndarray:
@@ -1380,7 +1404,8 @@ class FitFromLog(GeneralFit):
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
-        self._fill_curve_between = False
+
+        self._setup_attributes()
 
     @property
     def parameters(self) -> np.ndarray:
@@ -1548,7 +1573,8 @@ class FitFromFunction(GeneralFit):
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
-        self._fill_curve_between = False
+
+        self._setup_attributes()
 
     @property
     def parameters(self) -> np.ndarray:
@@ -1698,7 +1724,8 @@ class FitFromFOTF(GeneralFit):
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
-        self._fill_curve_between = False
+
+        self._setup_attributes()
 
     @property
     def gain(self) -> float:

@@ -2371,12 +2371,12 @@ class Histogram:
         self._show_params = show_params
 
         self._show_pdf = False
-        self._pdf_type = "default"
-        self._pdf_show_mean = "default"
-        self._pdf_show_std = "default"
-        self._pdf_curve_color = "default"
-        self._pdf_mean_color = "default"
-        self._pdf_std_color = "default"
+        self._pdf_type = None
+        self._pdf_show_mean = None
+        self._pdf_show_std = None
+        self._pdf_curve_color = None
+        self._pdf_mean_color = None
+        self._pdf_std_color = None
 
         self._mean = np.mean(self._data)
         self._standard_deviation = np.std(self._data)
