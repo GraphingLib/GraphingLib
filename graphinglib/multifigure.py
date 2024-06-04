@@ -97,7 +97,7 @@ class MultiFigure:
         title : str, optional
             General title of the figure.
         reference_labels : bool
-            Wheter or not to add reference labels to the SubFigures.
+            Whether or not to add reference labels to the SubFigures.
             Defaults to ``True``.
 
             .. note::
@@ -125,6 +125,54 @@ class MultiFigure:
         self._sub_figures = []
         self._rc_dict = {}
         self._user_rc_dict = {}
+
+    @property
+    def num_rows(self) -> int:
+        return self._num_rows
+
+    @property
+    def num_cols(self) -> int:
+        return self._num_cols
+
+    @property
+    def title(self) -> Optional[str]:
+        return self._title
+
+    @title.setter
+    def title(self, title: Optional[str]) -> None:
+        self._title = title
+
+    @property
+    def reference_labels(self) -> bool:
+        return self._reference_labels
+
+    @reference_labels.setter
+    def reference_labels(self, reference_labels: bool) -> None:
+        self._reference_labels = reference_labels
+
+    @property
+    def reflabel_loc(self) -> str:
+        return self._reflabel_loc
+
+    @reflabel_loc.setter
+    def reflabel_loc(self, reflabel_loc: str) -> None:
+        self._reflabel_loc = reflabel_loc
+
+    @property
+    def figure_style(self) -> str:
+        return self._figure_style
+
+    @figure_style.setter
+    def figure_style(self, figure_style: str) -> None:
+        self._figure_style = figure_style
+
+    @property
+    def size(self) -> tuple[float, float] | Literal["default"]:
+        return self._size
+
+    @size.setter
+    def size(self, size: tuple[float, float] | Literal["default"]) -> None:
+        self._size = size
 
     @classmethod
     def from_row(
