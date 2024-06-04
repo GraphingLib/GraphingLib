@@ -18,9 +18,9 @@ Curve:
   _line_style: '-'
   _line_width: 2
 Figure:
-  log_scale_x: false
-  log_scale_y: false
-  size:
+  _log_scale_x: false
+  _log_scale_y: false
+  _size:
   - 6.4
   - 4.8
 FitFromExponential:
@@ -103,7 +103,7 @@ Hlines:
   _line_styles: '-'
   _line_widths: 2
 MultiFigure:
-  size:
+  _size:
   - 6.4
   - 4.8
 Point:
@@ -126,9 +126,6 @@ Stream:
   _color: null
   _color_map: null
   _line_width: 1
-SubFigure:
-  log_scale_x: false
-  log_scale_y: false
 Table:
   _cell_align: right
   _col_align: center

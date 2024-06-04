@@ -95,26 +95,26 @@ class Figure:
             The figure style to use for the figure.
             Default can be set using ``gl.set_default_style()``.
         """
-        self.figure_style = figure_style
-        self.size = size
-        self.title = title
-        self.log_scale_x = log_scale_x
-        self.log_scale_y = log_scale_y
+        self._figure_style = figure_style
+        self._size = size
+        self._title = title
+        self._log_scale_x = log_scale_x
+        self._log_scale_y = log_scale_y
         if show_grid == "default":
-            self.show_grid = "unchanged"
+            self._show_grid = "unchanged"
         else:
-            self.show_grid = show_grid
+            self._show_grid = show_grid
         self._elements: list[Plottable] = []
         self._labels: list[str | None] = []
         self._handles = []
-        self.x_axis_name = x_label
-        self.y_axis_name = y_label
-        self.x_lim = x_lim
-        self.y_lim = y_lim
+        self._x_axis_name = x_label
+        self._y_axis_name = y_label
+        self._x_lim = x_lim
+        self._y_lim = y_lim
         self._rc_dict = {}
         self._user_rc_dict = {}
         self._custom_ticks = False
-        self.remove_axes = remove_axes
+        self._remove_axes = remove_axes
         self._twin_x_axis = None
         self._twin_y_axis = None
 
@@ -126,7 +126,103 @@ class Figure:
         elif isinstance(aspect_ratio, float):
             if aspect_ratio <= 0:
                 raise GraphingException("Aspect ratio must be a positive float.")
-        self.aspect_ratio = aspect_ratio
+        self._aspect_ratio = aspect_ratio
+
+    @property
+    def figure_style(self) -> str:
+        return self._figure_style
+
+    @figure_style.setter
+    def figure_style(self, value: str):
+        self._figure_style = value
+
+    @property
+    def size(self) -> tuple[float, float]:
+        return self._size
+
+    @size.setter
+    def size(self, value: tuple[float, float]):
+        self._size = value
+
+    @property
+    def title(self) -> str:
+        return self._title
+
+    @title.setter
+    def title(self, value: str):
+        self._title = value
+
+    @property
+    def log_scale_x(self) -> bool:
+        return self._log_scale_x
+
+    @log_scale_x.setter
+    def log_scale_x(self, value: bool):
+        self._log_scale_x = value
+
+    @property
+    def log_scale_y(self) -> bool:
+        return self._log_scale_y
+
+    @log_scale_y.setter
+    def log_scale_y(self, value: bool):
+        self._log_scale_y = value
+
+    @property
+    def show_grid(self) -> bool:
+        return self._show_grid
+
+    @show_grid.setter
+    def show_grid(self, value: bool):
+        self._show_grid = value
+
+    @property
+    def x_axis_name(self) -> str:
+        return self._x_axis_name
+
+    @x_axis_name.setter
+    def x_axis_name(self, value: str):
+        self._x_axis_name = value
+
+    @property
+    def y_axis_name(self) -> str:
+        return self._y_axis_name
+
+    @y_axis_name.setter
+    def y_axis_name(self, value: str):
+        self._y_axis_name = value
+
+    @property
+    def x_lim(self) -> tuple[float, float]:
+        return self._x_lim
+
+    @x_lim.setter
+    def x_lim(self, value: tuple[float, float]):
+        self._x_lim = value
+
+    @property
+    def y_lim(self) -> tuple[float, float]:
+        return self._y_lim
+
+    @y_lim.setter
+    def y_lim(self, value: tuple[float, float]):
+        self._y_lim = value
+
+    @property
+    def remove_axes(self) -> bool:
+        return self._remove_axes
+
+    @remove_axes.setter
+    def remove_axes(self, value: bool):
+        self._remove_axes = value
+
+    @property
+    def aspect_ratio(self) -> float | str:
+        return self._aspect_ratio
+
+    @aspect_ratio.setter
+    def aspect_ratio(self, value: float | str):
+        self._aspect_ratio = value
 
     def add_elements(self, *elements: Plottable) -> None:
         """
@@ -152,54 +248,54 @@ class Figure:
         """
 
         if default_params is not None:
-            self.default_params = default_params
+            self._default_params = default_params
             is_a_subfigure = default_params.get("is_a_subfigure", False)
             if not is_a_subfigure:
                 self._fill_in_rc_params()
             figure_params_to_reset = self._fill_in_missing_params(self)
         else:
-            if self.figure_style == "default":
-                self.figure_style = get_default_style()
+            if self._figure_style == "default":
+                self._figure_style = get_default_style()
             try:
-                file_loader = FileLoader(self.figure_style)
-                self.default_params = file_loader.load()
+                file_loader = FileLoader(self._figure_style)
+                self._default_params = file_loader.load()
                 self._fill_in_rc_params()
             except FileNotFoundError:
                 # set the style use matplotlib style
                 try:
                     is_matplotlib_style = True
-                    if self.figure_style == "matplotlib":
+                    if self._figure_style == "matplotlib":
                         # set the style to default
                         plt.style.use("default")
                     else:
-                        plt.style.use(self.figure_style)
+                        plt.style.use(self._figure_style)
                     file_loader = FileLoader("plain")
-                    self.default_params = file_loader.load()
+                    self._default_params = file_loader.load()
                 except OSError:
                     raise GraphingException(
-                        f"The figure style {self.figure_style} was not found. Please choose a different style."
+                        f"The figure style {self._figure_style} was not found. Please choose a different style."
                     )
             figure_params_to_reset = self._fill_in_missing_params(self)
 
         if axes is not None:
             self._axes = axes
-            if self.title is not None:
-                self._axes.set_title(self.title, fontdict={"fontsize": "medium"})
+            if self._title is not None:
+                self._axes.set_title(self._title, fontdict={"fontsize": "medium"})
         else:
-            self._figure, self._axes = plt.subplots(figsize=self.size)
-            if self.title is not None:
-                self._axes.set_title(self.title)
+            self._figure, self._axes = plt.subplots(figsize=self._size)
+            if self._title is not None:
+                self._axes.set_title(self._title)
 
-        if self.show_grid == "unchanged":
+        if self._show_grid == "unchanged":
             pass
-        elif self.show_grid:
+        elif self._show_grid:
             self._axes.grid(True)
         else:
             self._axes.grid(False)
 
-        self._axes.set_xlabel(self.x_axis_name)
-        self._axes.set_ylabel(self.y_axis_name)
-        self._axes.set_aspect(self.aspect_ratio)
+        self._axes.set_xlabel(self._x_axis_name)
+        self._axes.set_ylabel(self._y_axis_name)
+        self._axes.set_aspect(self._aspect_ratio)
         if self._custom_ticks:
             if self._xticks:
                 self._axes.set_xticks(self._xticks, self._xticklabels)
@@ -209,26 +305,32 @@ class Figure:
                 self._axes.set_yticks(self._yticks, self._yticklabels)
             if self._yticklabels_rotation:
                 self._axes.tick_params("y", labelrotation=self._yticklabels_rotation)
-        if self.x_lim:
-            self._axes.set_xlim(*self.x_lim)
-        if self.y_lim:
-            self._axes.set_ylim(*self.y_lim)
-        if self.log_scale_x:
+        if self._x_lim:
+            self._axes.set_xlim(*self._x_lim)
+        if self._y_lim:
+            self._axes.set_ylim(*self._y_lim)
+        if self._log_scale_x:
             self._axes.set_xscale("log")
-        if self.log_scale_y:
+        if self._log_scale_y:
             self._axes.set_yscale("log")
-        if self.remove_axes:
+        if self._remove_axes:
             self._axes.axis("off")
             warn("Axes on this figure have been removed.")
         if self._twin_x_axis:
             labels, handles = self._twin_x_axis._prepare_twin_axis(
-                self._axes, is_matplotlib_style, self.default_params, self.figure_style
+                self._axes,
+                is_matplotlib_style,
+                self._default_params,
+                self._figure_style,
             )
             self._handles += handles
             self._labels += labels
         if self._twin_y_axis:
             labels, handles = self._twin_y_axis._prepare_twin_axis(
-                self._axes, is_matplotlib_style, self.default_params, self.figure_style
+                self._axes,
+                is_matplotlib_style,
+                self._default_params,
+                self._figure_style,
             )
             self._handles += handles
             self._labels += labels
@@ -326,19 +428,19 @@ class Figure:
         object_type = type(element).__name__
         tries = 0
         curve_defaults = {
-            "errorbars_color": "color",
-            "errorbars_line_width": "line_width",
-            "cap_thickness": "line_width",
-            "fill_under_color": "color",
-            "error_curves_line_width": "line_width",
-            "error_curves_color": "color",
+            "_errorbars_color": "_color",
+            "_errorbars_line_width": "_line_width",
+            "_cap_thickness": "_line_width",
+            "_fill_under_color": "_color",
+            "_error_curves_line_width": "_line_width",
+            "_error_curves_color": "_color",
         }
         while tries < 2:
             try:
                 for property, value in vars(element).items():
                     if (type(value) == str) and (value == "default"):
                         params_to_reset.append(property)
-                        default_value = self.default_params[object_type][property]
+                        default_value = self._default_params[object_type][property]
                         if default_value == "same as curve":
                             setattr(
                                 element,
@@ -346,7 +448,7 @@ class Figure:
                                 getattr(element, curve_defaults[property]),
                             )
                         elif default_value == "same as scatter":
-                            element.errorbars_color = getattr(element, "face_color")
+                            element._errorbars_color = getattr(element, "_face_color")
                         else:
                             setattr(element, property, default_value)
                 break
@@ -354,12 +456,12 @@ class Figure:
                 tries += 1
                 if tries >= 2:
                     raise GraphingException(
-                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n {e.args[0]}"
+                        f"There was an error auto updating your {self._figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self._figure_style} style file:\n {e.args[0]}"
                     )
-                file_updater = FileUpdater(self.figure_style)
+                file_updater = FileUpdater(self._figure_style)
                 file_updater.update()
-                file_loader = FileLoader(self.figure_style)
-                self.default_params = file_loader.load()
+                file_loader = FileLoader(self._figure_style)
+                self._default_params = file_loader.load()
         return params_to_reset
 
     def _reset_params_to_default(
@@ -523,7 +625,7 @@ class Figure:
         """
         Fills in the missing rc parameters from the specified ``figure_style``.
         """
-        params = self.default_params["rc_params"]
+        params = self._default_params["rc_params"]
         for property, value in params.items():
             # add to rc_dict if not already in there
             if (property not in self._rc_dict) and (property not in self._user_rc_dict):
@@ -611,7 +713,7 @@ class Figure:
         :class:`~graphinglib.figure.TwinAxis`
             The created twin axis.
         """
-        if self.remove_axes:
+        if self._remove_axes:
             raise GraphingException(
                 "Axis in this figure were removed, therefore twin-axis can't be added."
             )
@@ -672,19 +774,39 @@ class TwinAxis:
         axis_lim : tuple[float, float], optional
             The limits for the axis.
         """
-        self.is_y = is_y
-        self.label = label
-        self.log_scale = log_scale
+        self._is_y = is_y
+        self._label = label
+        self._log_scale = log_scale
         self._elements: list[Plottable] = []
         self._custom_ticks = False
         self._labels: list[str | None] = []
         self._handles = []
-        self.figure_style = None
-        self.default_params = None
-        self.tick_color = None
-        self.axes_label_color = None
-        self.axes_edge_color = None
-        self.axis_lim = axis_lim
+        self._figure_style = None
+        self._default_params = None
+        self._tick_color = None
+        self._axes_label_color = None
+        self._axes_edge_color = None
+        self._axis_lim = axis_lim
+
+    @property
+    def label(self) -> str:
+        return self._label
+
+    @label.setter
+    def label(self, value: str):
+        self._label = value
+
+    @property
+    def log_scale(self) -> bool:
+        return self._log_scale
+
+    @log_scale.setter
+    def log_scale(self, value: bool):
+        self._log_scale = value
+
+    @property
+    def axis_lim(self) -> tuple[float, float]:
+        return self._axis_lim
 
     def _prepare_twin_axis(
         self,
@@ -696,37 +818,37 @@ class TwinAxis:
         """
         Prepares the :class:`~graphinglib.figure.TwinAxis` to be displayed.
         """
-        self.default_params = default_params
-        self.figure_style = (
+        self._default_params = default_params
+        self._figure_style = (
             figure_style if figure_style != "default" else get_default_style()
         )
-        if self.is_y:
+        if self._is_y:
             self._axes = fig_axes.twinx()
-            self._axes.set_ylabel(self.label)
-            if self.axis_lim:
-                self._axes.set_ylim(*self.axis_lim)
+            self._axes.set_ylabel(self._label)
+            if self._axis_lim:
+                self._axes.set_ylim(*self._axis_lim)
         else:
             self._axes = fig_axes.twiny()
-            self._axes.set_xlabel(self.label)
-            if self.axis_lim:
-                self._axes.set_xlim(*self.axis_lim)
-        if self.is_y:
-            if self.tick_color:
-                self._axes.tick_params(axis="y", colors=self.tick_color)
-            if self.axes_label_color:
-                self._axes.yaxis.label.set_color(self.axes_label_color)
-            if self.axes_edge_color:
-                self._axes.spines["right"].set_color(self.axes_edge_color)
+            self._axes.set_xlabel(self._label)
+            if self._axis_lim:
+                self._axes.set_xlim(*self._axis_lim)
+        if self._is_y:
+            if self._tick_color:
+                self._axes.tick_params(axis="y", colors=self._tick_color)
+            if self._axes_label_color:
+                self._axes.yaxis.label.set_color(self._axes_label_color)
+            if self._axes_edge_color:
+                self._axes.spines["right"].set_color(self._axes_edge_color)
         else:
-            if self.tick_color:
-                self._axes.tick_params(axis="x", colors=self.tick_color)
-            if self.axes_label_color:
-                self._axes.xaxis.label.set_color(self.axes_label_color)
-            if self.axes_edge_color:
-                self._axes.spines["top"].set_color(self.axes_edge_color)
+            if self._tick_color:
+                self._axes.tick_params(axis="x", colors=self._tick_color)
+            if self._axes_label_color:
+                self._axes.xaxis.label.set_color(self._axes_label_color)
+            if self._axes_edge_color:
+                self._axes.spines["top"].set_color(self._axes_edge_color)
         if self._custom_ticks:
             if self._ticks:
-                if self.is_y:
+                if self._is_y:
                     self._axes.set_yticks(self._ticks, self._ticklabels)
                     if self._ticklabels_rotation:
                         self._axes.tick_params(
@@ -738,8 +860,8 @@ class TwinAxis:
                         self._axes.tick_params(
                             "x", labelrotation=self._ticklabels_rotation
                         )
-        if self.log_scale:
-            if self.is_y:
+        if self._log_scale:
+            if self._is_y:
                 self._axes.set_yscale("log")
             else:
                 self._axes.set_xscale("log")
@@ -831,9 +953,9 @@ class TwinAxis:
             The color of the axis ticks.
             Defaults to ``None``.
         """
-        self.axes_label_color = axes_label_color
-        self.tick_color = tick_color
-        self.axes_edge_color = axes_edge_color
+        self._axes_label_color = axes_label_color
+        self._tick_color = tick_color
+        self._axes_edge_color = axes_edge_color
 
     def _fill_in_missing_params(self, element: Plottable) -> list[str]:
         """
@@ -843,17 +965,17 @@ class TwinAxis:
         object_type = type(element).__name__
         tries = 0
         curve_defaults = {
-            "errorbars_color": "color",
-            "errorbars_line_width": "line_width",
-            "cap_thickness": "line_width",
-            "fill_under_color": "color",
+            "_errorbars_color": "_color",
+            "_errorbars_line_width": "_line_width",
+            "_cap_thickness": "_line_width",
+            "_fill_under_color": "_color",
         }
         while tries < 2:
             try:
                 for property, value in vars(element).items():
                     if (type(value) == str) and (value == "default"):
                         params_to_reset.append(property)
-                        default_value = self.default_params[object_type][property]
+                        default_value = self._default_params[object_type][property]
                         if default_value == "same as curve":
                             setattr(
                                 element,
@@ -861,7 +983,7 @@ class TwinAxis:
                                 getattr(element, curve_defaults[property]),
                             )
                         elif default_value == "same as scatter":
-                            element.errorbars_color = getattr(element, "face_color")
+                            element.errorbars_color = getattr(element, "_face_color")
                         else:
                             setattr(element, property, default_value)
                 break
@@ -869,12 +991,12 @@ class TwinAxis:
                 tries += 1
                 if tries >= 2:
                     raise GraphingException(
-                        f"There was an error auto updating your {self.figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self.figure_style} style file:\n {e.args[0]}"
+                        f"There was an error auto updating your {self._figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self._figure_style} style file:\n {e.args[0]}"
                     )
-                file_updater = FileUpdater(self.figure_style)
+                file_updater = FileUpdater(self._figure_style)
                 file_updater.update()
-                file_loader = FileLoader(self.figure_style)
-                self.default_params = file_loader.load()
+                file_loader = FileLoader(self._figure_style)
+                self._default_params = file_loader.load()
         return params_to_reset
 
     def _reset_params_to_default(

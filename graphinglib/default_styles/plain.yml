@@ -48,16 +48,12 @@ Vlines:
   _line_widths: 2
 
 Figure:
-  size: [6.4, 4.8]
-  log_scale_x: False
-  log_scale_y: False
+  _size: [6.4, 4.8]
+  _log_scale_x: False
+  _log_scale_y: False
 
 MultiFigure:
-  size: [6.4, 4.8]
-
-SubFigure:
-  log_scale_x: False
-  log_scale_y: False
+  _size: [6.4, 4.8]
 
 Point:
   _color: "k"

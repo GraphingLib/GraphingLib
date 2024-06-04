@@ -11,8 +11,8 @@ from graphinglib.multifigure import MultiFigure
 class TestMultiFigure(unittest.TestCase):
     def test_create_multifigure(self):
         a_multifig = MultiFigure(num_rows=2, num_cols=2)
-        self.assertEqual(a_multifig.num_rows, 2)
-        self.assertEqual(a_multifig.num_cols, 2)
+        self.assertEqual(a_multifig._num_rows, 2)
+        self.assertEqual(a_multifig._num_cols, 2)
 
         another_multifig = MultiFigure(
             num_rows=2,
@@ -23,11 +23,11 @@ class TestMultiFigure(unittest.TestCase):
             reflabel_loc="inside",
             figure_style="plain",
         )
-        self.assertEqual(another_multifig.size, (5, 5))
-        self.assertEqual(another_multifig.title, "Test Title")
-        self.assertEqual(another_multifig.reference_labels, False)
-        self.assertEqual(another_multifig.reflabel_loc, "inside")
-        self.assertEqual(another_multifig.figure_style, "plain")
+        self.assertEqual(another_multifig._size, (5, 5))
+        self.assertEqual(another_multifig._title, "Test Title")
+        self.assertEqual(another_multifig._reference_labels, False)
+        self.assertEqual(another_multifig._reflabel_loc, "inside")
+        self.assertEqual(another_multifig._figure_style, "plain")
         self.assertListEqual(another_multifig._sub_figures, [])
         self.assertDictEqual(another_multifig._rc_dict, {})
         self.assertDictEqual(another_multifig._user_rc_dict, {})
@@ -46,18 +46,18 @@ class TestMultiFigure(unittest.TestCase):
         a_multifig = MultiFigure(num_rows=2, num_cols=2)
         a_multifig.add_figure(a_figure, 0, 0, 1, 1)
         self.assertEqual(a_multifig._sub_figures[0], a_figure)
-        self.assertEqual(a_figure.row_start, 0)
-        self.assertEqual(a_figure.row_span, 1)
-        self.assertEqual(a_figure.col_start, 0)
-        self.assertEqual(a_figure.col_span, 1)
+        self.assertEqual(a_figure._row_start, 0)
+        self.assertEqual(a_figure._row_span, 1)
+        self.assertEqual(a_figure._col_start, 0)
+        self.assertEqual(a_figure._col_span, 1)
 
         another_figure = Figure()
         a_multifig.add_figure(another_figure, 1, 1, 1, 1)
         self.assertEqual(a_multifig._sub_figures[1], another_figure)
-        self.assertEqual(another_figure.row_start, 1)
-        self.assertEqual(another_figure.row_span, 1)
-        self.assertEqual(another_figure.col_start, 1)
-        self.assertEqual(another_figure.col_span, 1)
+        self.assertEqual(another_figure._row_start, 1)
+        self.assertEqual(another_figure._row_span, 1)
+        self.assertEqual(another_figure._col_start, 1)
+        self.assertEqual(another_figure._col_span, 1)
 
     def test_add_sub_figure_raises(self):
         a_figure = Figure()
@@ -84,39 +84,39 @@ class TestMultiFigure(unittest.TestCase):
         a_figure = Figure()
         another_figure = Figure()
         a_multifig = MultiFigure.from_stack([a_figure, another_figure])
-        self.assertEqual(a_multifig.num_rows, 2)
-        self.assertEqual(a_multifig.num_cols, 1)
+        self.assertEqual(a_multifig._num_rows, 2)
+        self.assertEqual(a_multifig._num_cols, 1)
         self.assertEqual(a_multifig._sub_figures[0], a_figure)
         self.assertEqual(a_multifig._sub_figures[1], another_figure)
 
-        self.assertEqual(a_figure.row_start, 0)
-        self.assertEqual(a_figure.row_span, 1)
-        self.assertEqual(a_figure.col_start, 0)
-        self.assertEqual(a_figure.col_span, 1)
+        self.assertEqual(a_figure._row_start, 0)
+        self.assertEqual(a_figure._row_span, 1)
+        self.assertEqual(a_figure._col_start, 0)
+        self.assertEqual(a_figure._col_span, 1)
 
-        self.assertEqual(another_figure.row_start, 1)
-        self.assertEqual(another_figure.row_span, 1)
-        self.assertEqual(another_figure.col_start, 0)
-        self.assertEqual(another_figure.col_span, 1)
+        self.assertEqual(another_figure._row_start, 1)
+        self.assertEqual(another_figure._row_span, 1)
+        self.assertEqual(another_figure._col_start, 0)
+        self.assertEqual(another_figure._col_span, 1)
 
     def test_row(self):
         a_figure = Figure()
         another_figure = Figure()
         a_multifig = MultiFigure.from_row([a_figure, another_figure])
-        self.assertEqual(a_multifig.num_rows, 1)
-        self.assertEqual(a_multifig.num_cols, 2)
+        self.assertEqual(a_multifig._num_rows, 1)
+        self.assertEqual(a_multifig._num_cols, 2)
         self.assertEqual(a_multifig._sub_figures[0], a_figure)
         self.assertEqual(a_multifig._sub_figures[1], another_figure)
 
-        self.assertEqual(a_figure.row_start, 0)
-        self.assertEqual(a_figure.row_span, 1)
-        self.assertEqual(a_figure.col_start, 0)
-        self.assertEqual(a_figure.col_span, 1)
+        self.assertEqual(a_figure._row_start, 0)
+        self.assertEqual(a_figure._row_span, 1)
+        self.assertEqual(a_figure._col_start, 0)
+        self.assertEqual(a_figure._col_span, 1)
 
-        self.assertEqual(another_figure.row_start, 0)
-        self.assertEqual(another_figure.row_span, 1)
-        self.assertEqual(another_figure.col_start, 1)
-        self.assertEqual(another_figure.col_span, 1)
+        self.assertEqual(another_figure._row_start, 0)
+        self.assertEqual(another_figure._row_span, 1)
+        self.assertEqual(another_figure._col_start, 1)
+        self.assertEqual(another_figure._col_span, 1)
 
     def test_grid(self):
         fig1 = Figure()
@@ -131,8 +131,8 @@ class TestMultiFigure(unittest.TestCase):
             size=(12, 8),
             title="Complex Example",
         )
-        self.assertEqual(a_multifig.num_rows, 2)
-        self.assertEqual(a_multifig.num_cols, 3)
+        self.assertEqual(a_multifig._num_rows, 2)
+        self.assertEqual(a_multifig._num_cols, 3)
         self.assertEqual(a_multifig._sub_figures[0], fig1)
         self.assertEqual(a_multifig._sub_figures[1], fig2)
         self.assertEqual(a_multifig._sub_figures[2], fig3)
@@ -140,35 +140,35 @@ class TestMultiFigure(unittest.TestCase):
         self.assertEqual(a_multifig._sub_figures[4], fig5)
         self.assertEqual(a_multifig._sub_figures[5], fig6)
 
-        self.assertEqual(fig1.row_start, 0)
-        self.assertEqual(fig1.row_span, 1)
-        self.assertEqual(fig1.col_start, 0)
-        self.assertEqual(fig1.col_span, 1)
+        self.assertEqual(fig1._row_start, 0)
+        self.assertEqual(fig1._row_span, 1)
+        self.assertEqual(fig1._col_start, 0)
+        self.assertEqual(fig1._col_span, 1)
 
-        self.assertEqual(fig2.row_start, 0)
-        self.assertEqual(fig2.row_span, 1)
-        self.assertEqual(fig2.col_start, 1)
-        self.assertEqual(fig2.col_span, 1)
+        self.assertEqual(fig2._row_start, 0)
+        self.assertEqual(fig2._row_span, 1)
+        self.assertEqual(fig2._col_start, 1)
+        self.assertEqual(fig2._col_span, 1)
 
-        self.assertEqual(fig3.row_start, 0)
-        self.assertEqual(fig3.row_span, 1)
-        self.assertEqual(fig3.col_start, 2)
-        self.assertEqual(fig3.col_span, 1)
+        self.assertEqual(fig3._row_start, 0)
+        self.assertEqual(fig3._row_span, 1)
+        self.assertEqual(fig3._col_start, 2)
+        self.assertEqual(fig3._col_span, 1)
 
-        self.assertEqual(fig4.row_start, 1)
-        self.assertEqual(fig4.row_span, 1)
-        self.assertEqual(fig4.col_start, 0)
-        self.assertEqual(fig4.col_span, 1)
+        self.assertEqual(fig4._row_start, 1)
+        self.assertEqual(fig4._row_span, 1)
+        self.assertEqual(fig4._col_start, 0)
+        self.assertEqual(fig4._col_span, 1)
 
-        self.assertEqual(fig5.row_start, 1)
-        self.assertEqual(fig5.row_span, 1)
-        self.assertEqual(fig5.col_start, 1)
-        self.assertEqual(fig5.col_span, 1)
+        self.assertEqual(fig5._row_start, 1)
+        self.assertEqual(fig5._row_span, 1)
+        self.assertEqual(fig5._col_start, 1)
+        self.assertEqual(fig5._col_span, 1)
 
-        self.assertEqual(fig6.row_start, 1)
-        self.assertEqual(fig6.row_span, 1)
-        self.assertEqual(fig6.col_start, 2)
-        self.assertEqual(fig6.col_span, 1)
+        self.assertEqual(fig6._row_start, 1)
+        self.assertEqual(fig6._row_span, 1)
+        self.assertEqual(fig6._col_start, 2)
+        self.assertEqual(fig6._col_span, 1)
 
     def test_grid_raises(self):
         # Grid too small
@@ -214,11 +214,11 @@ class TestMultiFigure(unittest.TestCase):
         plt.close("all")
 
     def test_prepare_multifigure_prepares_figures(self):
-        a_figure = Figure()
+        a_figure = Figure(figure_style="plain")
         curve = Curve([1, 2, 3], [1, 2, 3])
         curve2 = Curve([1, 2, 3], [1, 2, 3], line_width=5)
         a_figure.add_elements(curve)
-        another_figure = Figure()
+        another_figure = Figure(figure_style="plain")
         another_figure.add_elements(curve2)
         a_multifig = MultiFigure.from_stack(
             [a_figure, another_figure], figure_style="plain"
@@ -234,9 +234,9 @@ class TestMultiFigure(unittest.TestCase):
 
     def test_fill_in_missing_params(self):
         a_multifig = MultiFigure(num_rows=2, num_cols=2, figure_style="plain")
-        a_multifig.default_params = {"MultiFigure": {"size": (8, 8)}}
+        a_multifig._default_params = {"MultiFigure": {"_size": (8, 8)}}
         a_multifig._fill_in_missing_params(a_multifig)
-        self.assertEqual(a_multifig.size, (8, 8))
+        self.assertEqual(a_multifig._size, (8, 8))
 
     def test_reset_params_to_default(self):
         a_multifig = MultiFigure(num_rows=2, num_cols=2, size=(8, 8))
@@ -260,7 +260,7 @@ class TestMultiFigure(unittest.TestCase):
         a_multifig = MultiFigure(num_rows=2, num_cols=2)
         a_multifig.set_visual_params(legend_edge_color="red")
         # Get default params for dim style
-        a_multifig.default_params = {
+        a_multifig._default_params = {
             "rc_params": {
                 "axes.grid": False,
                 "axes.facecolor": "dimgrey",
@@ -345,11 +345,11 @@ class TestMultiFigure(unittest.TestCase):
         self.assertDictEqual(a_multifigure._user_rc_dict, {})
 
     def test_matplotlib_style_functional(self):
-        a_figure = Figure()
+        a_figure = Figure(figure_style="matplotlib")
         curve = Curve([1, 2, 3], [1, 2, 3])
         curve2 = Curve([1, 2, 3], [1, 2, 3], line_width=5)
         a_figure.add_elements(curve)
-        another_figure = Figure()
+        another_figure = Figure(figure_style="matplotlib")
         another_figure.add_elements(curve2)
         a_multifig = MultiFigure.from_stack(
             [a_figure, another_figure], figure_style="matplotlib"
