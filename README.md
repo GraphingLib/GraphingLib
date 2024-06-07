@@ -79,7 +79,7 @@ fig3.add_elements(curve1, curve2, *intersection_points)
 # Figure 4 - Integral of a curve between two points and tangent line
 
 curve = gl.Curve.from_function(lambda x: x**2 + 7, x_min=0, x_max=5, label="Curve")
-area = curve.get_area_between(2, 4, fill_under=True)
+area = curve.get_area_between(2, 4, fill_between=True)
 tangent = curve.create_tangent_curve(1, label="Tangent", line_style="--")
 area_text = gl.Text(3, 5, "A = {:.2f}".format(area))
 
