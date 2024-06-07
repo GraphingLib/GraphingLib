@@ -110,8 +110,8 @@ The :meth:`~graphinglib.data_plotting_1d.Curve.get_area_between` method can be u
 
     curve_1 = gl.Curve.from_function(lambda x: x**3 - 4 * x + 15, -3, 2, label="Curve 1")
 
-    # fill_under shades in the area under the curve
-    area = curve_1.get_area_between(-2, 1, fill_under=True)
+    # fill_between argument shades in the area under the curve
+    area = curve_1.get_area_between(-2, 1, fill_between=True)
 
     slope = curve_1.get_slope_at(0)
 
