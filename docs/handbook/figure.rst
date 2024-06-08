@@ -2,12 +2,10 @@
 Creating a simple :class:`~graphinglib.figure.Figure`
 =====================================================
 
-Creating a basic figure using the :class:`~graphinglib.figure.Figure` object is easy. Here is an example of what plotting a sine function can look like. ::
+Creating a basic figure using the :class:`~graphinglib.figure.Figure` object is easy. Here is an example of what plotting a sine function can look like. 
 
-    import numpy as np
-    import graphinglib as gl
+.. plot::
     
-
     figure = gl.Figure()
 
     sine = gl.Curve.from_function(lambda x: np.sin(x), 0, 2 * np.pi)
@@ -15,15 +13,15 @@ Creating a basic figure using the :class:`~graphinglib.figure.Figure` object is 
     figure.add_elements(sine)
     figure.show()
 
-.. image:: images/sine.png
-
 The :py:meth:`~graphinglib.figure.Figure.show` method is used to show the figure on screen. It is also possible to use the :py:meth:`~graphinglib.figure.Figure.save` method to save the figure to a specified path.
 
 .. seealso:: 
     
     For the documentation on the ``from_function`` method, see the :py:meth:`Reference section on the Curve object <graphinglib.data_plotting_1d.Curve.from_function>` or the :doc:`handbook section on curves </handbook/curve>`.
 
-We can specify the axis labels by using the ``x_label`` and ``y_label`` parameters of the figure. ::
+We can specify the axis labels by using the ``x_label`` and ``y_label`` parameters of the figure.
+
+.. plot::
 
     figure = gl.Figure(x_label="Time (s)", y_label="Potential (V)")
 
@@ -32,7 +30,9 @@ For further informations on the available parameters, please refer to the :doc:`
 Figure styles
 --------------------------
 
-The ``figure_style`` parameter of the :class:`~graphinglib.figure.Figure` class allows you to specify a predefined style to use to change the appearance of the figure and the elements plotted inside it. You can specify a predefined style as follows: ::
+The ``figure_style`` parameter of the :class:`~graphinglib.figure.Figure` class allows you to specify a predefined style to use to change the appearance of the figure and the elements plotted inside it. You can specify a predefined style as follows: 
+
+.. plot::
 
     figure = gl.Figure(x_label="Time (s)", y_label="Potential (V)", figure_style="plain")
 
@@ -49,7 +49,9 @@ It is important to note that the parameters controlled by the specified style ca
 Style customization
 -------------------
 
-After you've created a Figure and set its ``figure_style``, it is possible to customize its appearance further by using the :py:meth:`~graphinglib.figure.Figure.set_visual_params` or the :py:meth:`~graphinglib.figure.Figure.set_rc_params` methods. The first method allows you to specify the options directly, while the second method allows you to specify the options using a dictionary of matplotlib rc parameters. Only the most common options are available using the first method, while the second method allows you to specify any matplotlib rc parameter. Here is an example using the first method: ::
+After you've created a Figure and set its ``figure_style``, it is possible to customize its appearance further by using the :py:meth:`~graphinglib.figure.Figure.set_visual_params` or the :py:meth:`~graphinglib.figure.Figure.set_rc_params` methods. The first method allows you to specify the options directly, while the second method allows you to specify the options using a dictionary of matplotlib rc parameters. Only the most common options are available using the first method, while the second method allows you to specify any matplotlib rc parameter. Here is an example using the first method:
+
+.. plot::
 
     figure = gl.Figure(x_label="Time (s)", y_label="Potential (V)", figure_style="plain")
     figure.set_visual_params(
@@ -58,7 +60,9 @@ After you've created a Figure and set its ``figure_style``, it is possible to cu
         axes_edge_color="red",
     )
 
-And here is an example using the second method: ::
+And here is an example using the second method:
+
+.. plot::
 
     figure = gl.Figure(x_label="Time (s)", y_label="Potential (V)", figure_style="plain")
     figure.set_rc_params(
