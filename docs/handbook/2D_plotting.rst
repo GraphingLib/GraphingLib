@@ -51,8 +51,8 @@ It is also possible to create a Heatmap from a list or array of values at uneven
     plt.show()
 
 The :py:meth:`~graphinglib.data_plotting_2d.Heatmap.from_points` method used below will interpolate the data on a grid and create a Heatmap from this interpolated data: 
-
-.. plot::
+ 
+ .. plot::
 
     def func(x, y):
         return x * (1 - x) * np.cos(4 * np.pi * x) * np.sin(4 * np.pi * y**2) ** 2
@@ -102,7 +102,7 @@ The Contour class allows you to display a contour plot of 2-dimensional data. He
 
 .. plot::
 
-    x_grid, y_grid = np.meshgrid(np.arange(0, 50, 1), np.arange(0, 50, 1))
+    x_grid, y_grid = np.meshgrid(np.arange(0, 20, 2), np.arange(0, 20, 2))
     data = np.cos(x_grid * 0.2) + np.sin(y_grid * 0.3)
 
     contour = gl.Contour(x_grid, y_grid, data)
@@ -114,7 +114,7 @@ The contour class also has a :py:meth:`~graphinglib.data_plotting_2d.Contour.fro
 
 .. plot::
 
-    x_grid, y_grid = np.meshgrid(np.arange(0, 50, 1), np.arange(0, 50, 1))
+    x_grid, y_grid = np.meshgrid(np.arange(0, 20, 2), np.arange(0, 20, 2))
     contour = gl.Contour.from_function(
         lambda x, y: np.cos(x * 0.2) + np.sin(y * 0.3), x_grid, y_grid
     )
