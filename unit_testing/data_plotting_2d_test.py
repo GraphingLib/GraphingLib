@@ -131,11 +131,10 @@ class TestVectorField(unittest.TestCase):
             y_data=yy,
             u_data=u,
             v_data=v,
-            arrow_width=0.1,
-            arrow_head_width=0.3,
-            arrow_head_length=0.3,
-            arrow_head_axis_length=0.3,
-            angle_in_data_coords=True,
+            arrow_width=1,
+            arrow_head_size=1,
+            scale=1,
+            make_angles_axes_independent=True,
             color="black",
         )
 
@@ -144,11 +143,10 @@ class TestVectorField(unittest.TestCase):
         self.assertListEqual(vector_field._y_data.tolist(), yy.tolist())
         self.assertListEqual(vector_field._u_data.tolist(), u.tolist())
         self.assertListEqual(vector_field._v_data.tolist(), v.tolist())
-        self.assertEqual(vector_field._arrow_width, 0.1)
-        self.assertEqual(vector_field._arrow_head_width, 0.3)
-        self.assertEqual(vector_field._arrow_head_length, 0.3)
-        self.assertEqual(vector_field._arrow_head_axis_length, 0.3)
-        self.assertEqual(vector_field._angle_in_data_coords, True)
+        self.assertEqual(vector_field._arrow_width, 1)
+        self.assertEqual(vector_field._arrow_head_size, 1)
+        self.assertEqual(vector_field._scale, 1)
+        self.assertEqual(vector_field._make_angles_axes_independent, True)
         self.assertEqual(vector_field._color, "black")
 
     def test_from_function(self):
@@ -158,20 +156,19 @@ class TestVectorField(unittest.TestCase):
             y_axis_range=(0, 3 * np.pi),
             number_of_arrows_x=20,
             number_of_arrows_y=20,
-            arrow_width=0.1,
-            arrow_head_width=0.3,
-            arrow_head_length=0.3,
-            arrow_head_axis_length=0.3,
-            angle_in_data_coords=True,
+            arrow_width=1,
+            arrow_head_size=1,
+            scale=1,
+            make_angles_axes_independent=True,
             color="black",
         )
 
         self.assertIsInstance(vector_field, VectorField)
-        self.assertEqual(vector_field._arrow_width, 0.1)
-        self.assertEqual(vector_field._arrow_head_width, 0.3)
-        self.assertEqual(vector_field._arrow_head_length, 0.3)
-        self.assertEqual(vector_field._arrow_head_axis_length, 0.3)
-        self.assertEqual(vector_field._angle_in_data_coords, True)
+        self.assertEqual(vector_field._arrow_width, 1)
+        self.assertEqual(vector_field._arrow_head_size, 1)
+        self.assertEqual(vector_field._scale, 1)
+        self.assertEqual(vector_field._make_angles_axes_independent, True)
+        self.assertEqual(vector_field._color, "black")
 
     def test_plot_element(self):
         x = np.linspace(0, 3 * np.pi, 20)
@@ -186,11 +183,10 @@ class TestVectorField(unittest.TestCase):
             y_data=yy,
             u_data=u,
             v_data=v,
-            arrow_width=0.1,
-            arrow_head_width=0.3,
-            arrow_head_length=0.3,
-            arrow_head_axis_length=0.3,
-            angle_in_data_coords=True,
+            arrow_width=1,
+            arrow_head_size=1,
+            scale=1,
+            make_angles_axes_independent=True,
             color="black",
         )
 
@@ -200,11 +196,11 @@ class TestVectorField(unittest.TestCase):
         self.assertListEqual(
             ax.collections[0].get_facecolors()[0].tolist(), [0, 0, 0, 1]
         )
-        self.assertEqual(ax.collections[0].width, 0.1)
-        self.assertEqual(ax.collections[0].headwidth, 0.3)
-        self.assertEqual(ax.collections[0].headlength, 0.3)
-        self.assertEqual(ax.collections[0].headaxislength, 0.3)
-        self.assertEqual(ax.collections[0].angles, "xy")
+        self.assertEqual(ax.collections[0].width, 1 * 0.005)
+        self.assertEqual(ax.collections[0].headwidth, 4 * 1 / 1)
+        self.assertEqual(ax.collections[0].headlength, 4)
+        self.assertEqual(ax.collections[0].headaxislength, 4)
+        self.assertEqual(ax.collections[0].angles, "uv")
 
     def test_copy(self):
         x = np.linspace(0, 3 * np.pi, 20)
@@ -219,11 +215,9 @@ class TestVectorField(unittest.TestCase):
             y_data=yy,
             u_data=u,
             v_data=v,
-            arrow_width=0.1,
-            arrow_head_width=0.3,
-            arrow_head_length=0.3,
-            arrow_head_axis_length=0.3,
-            angle_in_data_coords=True,
+            arrow_width=1,
+            arrow_head_size=1,
+            make_angles_axes_independent=True,
             color="black",
         )
         vector_field_copy = vector_field.copy()
@@ -232,11 +226,9 @@ class TestVectorField(unittest.TestCase):
         self.assertListEqual(vector_field_copy._y_data.tolist(), yy.tolist())
         self.assertListEqual(vector_field_copy._u_data.tolist(), u.tolist())
         self.assertListEqual(vector_field_copy._v_data.tolist(), v.tolist())
-        self.assertEqual(vector_field_copy._arrow_width, 0.1)
-        self.assertEqual(vector_field_copy._arrow_head_width, 0.3)
-        self.assertEqual(vector_field_copy._arrow_head_length, 0.3)
-        self.assertEqual(vector_field_copy._arrow_head_axis_length, 0.3)
-        self.assertEqual(vector_field_copy._angle_in_data_coords, True)
+        self.assertEqual(vector_field_copy._arrow_width, 1)
+        self.assertEqual(vector_field_copy._arrow_head_size, 1)
+        self.assertEqual(vector_field_copy._make_angles_axes_independent, True)
         self.assertEqual(vector_field_copy._color, "black")
 
 

@@ -411,17 +411,13 @@ class VectorField:
     u_data, v_data : ArrayLike
         Magnitudes in the x and y coordinates.
     arrow_width : float
-        Arrow width.
+        Width of the arrow shaft. Acts as a multiplier for the standard arrow width.
         Default depends on the ``figure_style`` configuration.
-    arrow_head_width : float
-        Arrow head width.
+    arrow_head_size : float
+        Size of the arrow head. Acts as a multiplier for the standard arrow head size.
         Default depends on the ``figure_style`` configuration.
-    arrow_head_length : float
-        Arrow head length.
-        Default depends on the ``figure_style`` configuration.
-    arrow_head_axis_length : float
-        Arrow head axis length.
-        Default depends on the ``figure_style`` configuration.
+    scale : float
+        Scaling of the arrow lengths. If ``None``, the arrows will be automatically scaled to look nice. Use 1 for no scaling.
     angle_in_data_coords : bool
         Wheter to use the screen coordinates or the data coordinates to
         determine the vector directions.
@@ -438,10 +434,9 @@ class VectorField:
         u_data: ArrayLike,
         v_data: ArrayLike,
         arrow_width: float | Literal["default"] = "default",
-        arrow_head_width: float | Literal["default"] = "default",
-        arrow_head_length: float | Literal["default"] = "default",
-        arrow_head_axis_length: float | Literal["default"] = "default",
-        angle_in_data_coords: bool = True,
+        arrow_head_size: float | Literal["default"] = "default",
+        scale: Optional[float] = None,
+        make_angles_axes_independent: bool = False,
         color: str | Literal["default"] = "default",
     ) -> None:
         """
@@ -454,21 +449,21 @@ class VectorField:
         u_data, v_data : ArrayLike
             Magnitudes in the x and y coordinates.
         arrow_width : float
-            Arrow width.
+            Width of the arrow shaft. Acts as a multiplier for the standard arrow width.
             Default depends on the ``figure_style`` configuration.
-        arrow_head_width : float
-            Arrow head width.
+        arrow_head_size : float
+            Size of the arrow head. Acts as a multiplier for the standard arrow head size.
             Default depends on the ``figure_style`` configuration.
-        arrow_head_length : float
-            Arrow head length.
-            Default depends on the ``figure_style`` configuration.
-        arrow_head_axis_length : float
-            Arrow head axis length.
-            Default depends on the ``figure_style`` configuration.
-        angle_in_data_coords : bool
-            Wheter to use the screen coordinates or the data coordinates to
-            determine the vector directions.
-            Defaults to ``True``.
+        scale : float
+            Scaling of the arrow lengths. If ``None``, the arrows will be automatically scaled to look nice. Use 1 for no scaling.
+            Default is ``None``.
+        make_angles_axes_independent : bool
+            Whether to use the screen coordinates or the data coordinates to
+            determine the vector directions. If ``True``, vectors with u = v will
+            always appear as 45 degree angles with respect to the screen, regardless
+            of the axes limits. If ``False``, the vectors will scale with the
+            aspect ratio of the axes.
+            Defaults to ``False``.
         color : str
             Color of the vector arrows.
             Default depends on the ``figure_style`` configuration.
@@ -478,10 +473,10 @@ class VectorField:
         self._u_data = np.asarray(u_data)
         self._v_data = np.asarray(v_data)
         self._arrow_width = arrow_width
-        self._arrow_head_width = arrow_head_width
-        self._arrow_head_length = arrow_head_length
-        self._arrow_head_axis_length = arrow_head_axis_length
-        self._angle_in_data_coords = angle_in_data_coords
+        self._arrow_head_size = arrow_head_size
+        self._scale = scale
+        self._make_angles_axes_independent = make_angles_axes_independent
+
         self._color = color
 
     @classmethod
@@ -493,10 +488,9 @@ class VectorField:
         number_of_arrows_x: int = 10,
         number_of_arrows_y: int = 10,
         arrow_width: float | Literal["default"] = "default",
-        arrow_head_width: float | Literal["default"] = "default",
-        arrow_head_length: float | Literal["default"] = "default",
-        arrow_head_axis_length: float | Literal["default"] = "default",
-        angle_in_data_coords: bool = True,
+        arrow_head_size: float | Literal["default"] = "default",
+        scale: Optional[float] = None,
+        make_angles_axes_independent: bool = False,
         color: str | Literal["default"] = "default",
     ) -> Self:
         """
@@ -514,21 +508,21 @@ class VectorField:
         number_of_arrows_x, number_of_arrows_y : int
             Number of arrows to plot in the x and y direction. Defaults to 10.
         arrow_width : float
-            Arrow width.
+            Width of the arrow shaft. Acts as a multiplier for the standard arrow width.
             Default depends on the ``figure_style`` configuration.
-        arrow_head_width : float
-            Arrow head width.
+        arrow_head_size : float
+            Size of the arrow head. Acts as a multiplier for the standard arrow head size.
             Default depends on the ``figure_style`` configuration.
-        arrow_head_length : float
-            Arrow head length.
-            Default depends on the ``figure_style`` configuration.
-        arrow_head_axis_length : float
-            Arrow head axis length.
-            Default depends on the ``figure_style`` configuration.
-        angle_in_data_coords : bool
+        scale : float
+            Scaling of the arrow lengths. If ``None``, the arrows will be automatically scaled to look nice. Use 1 for no scaling.
+            Default is ``None``.
+        make_angles_axes_independent : bool
             Whether to use the screen coordinates or the data coordinates to
-            determine the vector directions.
-            Defaults to ``True``.
+            determine the vector directions. If ``True``, vectors with u = v will
+            always appear as 45 degree angles with respect to the screen, regardless
+            of the axes limits. If ``False``, the vectors will scale with the
+            aspect ratio of the axes.
+            Defaults to ``False``.
         color : str
             Color of the vector arrows.
             Default depends on the ``figure_style`` configuration.
@@ -547,10 +541,9 @@ class VectorField:
             u,
             v,
             arrow_width,
-            arrow_head_width,
-            arrow_head_length,
-            arrow_head_axis_length,
-            angle_in_data_coords,
+            arrow_head_size,
+            scale,
+            make_angles_axes_independent,
             color,
         )
 
@@ -595,36 +588,28 @@ class VectorField:
         self._arrow_width = arrow_width
 
     @property
-    def arrow_head_width(self) -> float:
-        return self._arrow_head_width
+    def arrow_head_size(self) -> float:
+        return self._arrow_head_size
 
-    @arrow_head_width.setter
-    def arrow_head_width(self, arrow_head_width: float) -> None:
-        self._arrow_head_width = arrow_head_width
-
-    @property
-    def arrow_head_length(self) -> float:
-        return self._arrow_head_length
-
-    @arrow_head_length.setter
-    def arrow_head_length(self, arrow_head_length: float) -> None:
-        self._arrow_head_length = arrow_head_length
+    @arrow_head_size.setter
+    def arrow_head_size(self, arrow_head_size: float) -> None:
+        self._arrow_head_size = arrow_head_size
 
     @property
-    def arrow_head_axis_length(self) -> float:
-        return self._arrow_head_axis_length
+    def scale(self) -> Optional[float]:
+        return self._scale
 
-    @arrow_head_axis_length.setter
-    def arrow_head_axis_length(self, arrow_head_axis_length: float) -> None:
-        self._arrow_head_axis_length = arrow_head_axis_length
+    @scale.setter
+    def scale(self, scale: Optional[float]) -> None:
+        self._scale = scale
 
     @property
-    def angle_in_data_coords(self) -> bool:
-        return self._angle_in_data_coords
+    def make_angles_axes_independent(self) -> bool:
+        return self._make_angles_axes_independent
 
-    @angle_in_data_coords.setter
-    def angle_in_data_coords(self, angle_in_data_coords: bool) -> None:
-        self._angle_in_data_coords = angle_in_data_coords
+    @make_angles_axes_independent.setter
+    def make_angles_axes_independent(self, value: bool) -> None:
+        self._make_angles_axes_independent = value
 
     @property
     def color(self) -> str:
@@ -645,17 +630,19 @@ class VectorField:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if self._angle_in_data_coords:
-            angle = "xy"
-        else:
+        if self._make_angles_axes_independent:
             angle = "uv"
+        else:
+            angle = "xy"
         params = {
             "angles": angle,
-            "width": self._arrow_width,
-            "headwidth": self._arrow_head_width,
-            "headlength": self._arrow_head_length,
-            "headaxislength": self._arrow_head_axis_length,
+            "width": 0.005 * self._arrow_width,
+            "headwidth": 4 * self._arrow_head_size / self._arrow_width,
+            "headlength": 4 * self._arrow_head_size / self._arrow_width,
+            "headaxislength": 4 * self._arrow_head_size / self._arrow_width,
             "color": self._color,
+            "scale": 1 / self._scale if self._scale is not None else None,
+            "scale_units": "xy",
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.quiver(
@@ -663,7 +650,6 @@ class VectorField:
             self._y_data,
             self._u_data,
             self._v_data,
-            # scale=self.arrow_length_multiplier,
             zorder=z_order,
             **params,
         )

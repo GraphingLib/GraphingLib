@@ -140,12 +140,9 @@ Contour:
   _alpha: 1.0
 
 VectorField:
-  _arrow_width: 0.005
-  _arrow_head_width: 3
-  _arrow_head_length: 5
-  _arrow_head_axis_length: 4.5
+  _arrow_width: 1
+  _arrow_head_size: 1
   _color: "k"
-  _angle_in_data_coords: False
 
 Text:
   _color: "k"
