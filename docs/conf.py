@@ -38,6 +38,7 @@ extensions = [
     "sphinx_favicon",
     "sphinx_design",
     "gallery_generator",
+    "matplotlib.sphinxext.plot_directive",
 ]
 
 templates_path = ["_templates"]
@@ -94,3 +95,7 @@ autodoc_type_aliases = {
     "Iterable": "Iterable",
     "ArrayLike": "ArrayLike",
 }
+
+plot_include_source = True
+plot_html_show_source_link = False
+plot_pre_code = "import graphinglib as gl\nimport numpy as np"

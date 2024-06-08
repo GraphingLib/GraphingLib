@@ -4,27 +4,32 @@ Writing your own figure style file
 
 In GraphingLib, all objects have default values for most parameters. For example, a curve object has a default line width, and a figure object has a default background color. These defaults are governed by the style you choose to give your figure when creating it:
 
-.. code-block:: python
+.. plot::
 
-    fig = Figure(style='plain')
-    fig2 = Figure(style='dark')
+    fig = gl.Figure(figure_style='plain')
+    fig2 = gl.Figure(figure_style='dark')
 
 GraphingLib has a number of built-in styles which are showcased at the bottom of this page. The parameters controlled by styles are called "defaults" for a reason; they can always be overridden by explicitely specifying a parameter when creating an object:
 
-.. code-block:: python
+.. plot::
 
-    fig = Figure(figure_style="dark") # uses the "dark" style
+    fig = gl.Figure(figure_style="dark") # uses the "dark" style
 
-    fig2 = Figure(figure_style="dark")
+    fig2 = gl.Figure(figure_style="dark")
     fig2.set_visual_params(axes_edge_color="red") # "dark" style, but axes color is overridden
 
 If no style is specified, the user's default style is used. This default style can be set by the user using the `set_default_style` function or by using GraphingLib's Style Editor. Once set, the default style will be saved and used for all figures created without a specified style. The default style can also be retrieved using the `get_default_style` function.
 
-.. code-block:: python
+.. plot::
 
     print(gl.get_default_style()) # prints "plain"
     gl.set_default_style("dark")
     print(gl.get_default_style()) # prints "dark"
+
+.. plot::
+    :include-source: false
+    
+    gl.set_default_style("plain")
 
 When you install GraphingLib for the first time, the default style is the "plain" style. You can also create your own styles or modify existing ones. To do this, you can use GraphingLib's Style Editor as described below.
 

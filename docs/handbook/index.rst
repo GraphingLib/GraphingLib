@@ -8,9 +8,10 @@ Welcome to the Handbook section of the documentation! In this section, you will 
 
 .. note:: 
 
-    In every code snippets you will encounter, if the GraphingLib library is not explicitly imported, it is assumed to be imported the following way: ::
+    In every code snippets you will encounter, the following imports precede the snippet's code: ::
 
         import graphinglib as gl
+        import numpy as np
 
 
 Sections in this handbook

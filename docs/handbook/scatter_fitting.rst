@@ -7,10 +7,7 @@ The :class:`~graphinglib.data_plotting_1d.Scatter` Object
 
 In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plotting_1d.Scatter` object. If you want to plot existing data, you can use the standard constructor by passing in the x and y data as lists or numpy arrays. If you want to plot a function, you can use the :meth:`~graphinglib.data_plotting_1d.Scatter.from_function` method. This method takes in a function and a range of x values to evaluate the function at. In the latter case, you can also specify the number of points to evaluate the function at. Both of these alternatives are shown below.
 
-.. code-block:: python
-
-    import graphinglib as gl
-    import numpy as np
+.. plot::
 
     # Create data
     x_data = np.linspace(0, 10, 100)
@@ -33,12 +30,9 @@ In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plottin
     fig.add_elements(scatter_1, scatter_2)
     fig.show()
 
-
-.. image:: images/scatter_plot.png
-
 You can also add error bars for `x` and/or `y` by calling the :meth:`~graphinglib.data_plotting_1d.Scatter.add_errorbars` method like so:
 
-.. code-block:: python
+.. plot::
 
     # Create data
     x_data = np.linspace(0, 10, 10)
@@ -48,14 +42,16 @@ You can also add error bars for `x` and/or `y` by calling the :meth:`~graphingli
     scatter = gl.Scatter(x_data, y_data)
     scatter.add_errorbars(x_error=0.3, y_error=0.1 * y_data)
 
-.. image:: images/scatter_plot_with_errorbars.png
+    fig = gl.Figure()
+    fig.add_elements(scatter)
+    fig.show()
 
 Just like with the :class:`~graphinglib.data_plotting_1d.Curve` object, you can add, subtract, multiply, and divide two :class:`~graphinglib.data_plotting_1d.Scatter` objects. You can also add, subtract, multiply, and divide a :class:`~graphinglib.data_plotting_1d.Scatter` object by a float or int.
 
 .. warning ::
     If you add, subtract, multiply, or divide two :class:`~graphinglib.data_plotting_1d.Scatter` objects, the two objects must have the same x values. If they do not, an exception will be raised.
 
-.. code-block:: python
+.. plot::
 
     scatter_sine = gl.Scatter.from_function(
         lambda x: np.sin(x), x_min=0, x_max=2 * np.pi, label="Sine"
@@ -71,11 +67,13 @@ Just like with the :class:`~graphinglib.data_plotting_1d.Curve` object, you can 
     scatter_plus_constant = scatter_sine + 3
     scatter_plus_constant.label = "Sine + 3"
 
-.. image:: images/scatter_plot_addition.png
+    fig = gl.Figure()
+    fig.add_elements(scatter_sine, scatter_line, scatter_addition, scatter_plus_constant)
+    fig.show()
 
 Interpolation between data points is possible by calling the :meth:`~graphinglib.data_plotting_1d.Scatter.get_coordinates_at_x` and :meth:`~graphinglib.data_plotting_1d.Scatter.get_coordinates_at_y` methods. The first returns a tuple of coordinates that represent the point on the curve at the specified x value. The second works the same way, but returns a list of tuples, one for each point on the curve that has the specified y value. The :meth:`~graphinglib.data_plotting_1d.Scatter.create_point_at_x` and :meth:`~graphinglib.data_plotting_1d.Scatter.create_points_at_y` methods work the same way, but return :class:`~graphinglib.graph_elements.Point` objects instead of tuples.
 
-.. code-block:: python
+.. plot::
 
     scatter = gl.Scatter.from_function(
         lambda x: np.sin(3 * x) * np.cos(x) ** 2,
@@ -93,15 +91,12 @@ Interpolation between data points is possible by calling the :meth:`~graphinglib
     fig.add_elements(scatter, point_at_4, *points_at_y_one_half)
     fig.show()
 
-.. image:: images/scatter_plot_interpolation.png
-
-
 Curve fitting
 -------------
 
 There are a number of curve fit objects that can be used to fit data. The most versatile is the :class:`~graphinglib.fits.FitFromFunction` object. This object takes in a function and a :class:`~graphinglib.data_plotting_1d.Scatter` or :class:`~graphinglib.data_plotting_1d.Curve` object and fits the data to the function. However, the most common functions have their own dedicated fit objects to accelerate the fitting process. The most powerful of these is the :class:`~graphinglib.fits.FitFromPolynomial` object. All you need to do is pass in a :class:`~graphinglib.data_plotting_1d.Scatter` object and the degree of the polynomial you want to fit to the data:
 
-.. code-block:: python
+.. plot::
 
     # Create noisy data
     x = np.linspace(0, 10, 100)
@@ -130,8 +125,6 @@ There are a number of curve fit objects that can be used to fit data. The most v
     Coefficient of x^2: 1.0770659002222067
     Value of fit at x = 5 is y = 11.39362569494128
 
-.. image:: images/scatter_plot_polynomial_fit.png
-
 Currently, the following fit objects are available:
 - :class:`~graphinglib.fits.FitFromPolynomial`
 - :class:`~graphinglib.fits.FitFromExponential`
@@ -144,10 +137,7 @@ The details of how to use each of these fit objects, as well as the specific var
 
 Here is an example of fitting a sine function to some data:
 
-.. code-block:: python
-
-    import graphinglib as gl
-    import numpy as np
+.. plot::
 
     # Create noisy sine wave data
     x = np.linspace(0, 10, 100)
@@ -157,7 +147,7 @@ Here is an example of fitting a sine function to some data:
     # Frequency is the most important parameter to get close to the actual value
     scatter = gl.Scatter(x, y, label="Noisy sine")
     fit = gl.FitFromSine(scatter, label="Fit", guesses=(1, 2.2, 1, 1))
-    all_params = fit.get_parameters()
+    all_params = fit.parameters
     print(f"Amplitude: {fit.amplitude:.3f}")
     print(f"Frequency: {fit.frequency_rad:.3f}")
     print(f"Phase: {fit.phase_rad:.3f}")
@@ -174,14 +164,9 @@ Here is an example of fitting a sine function to some data:
     Phase: 2.943
     Vertical shift: 5.102
 
-.. image:: images/scatter_plot_sine_fit.png
-
 And here is an example of fitting a specific, user-defined function to some data. In this example, a laser of wavelength 532 nm is shone though a single slit of unknown width. The resulting diffraction pattern is recorded on a screen. You can use the Fraunhofer single-slit diffraction equation to fit the data and determine the width of the slit:
 
-.. code-block:: python
-
-    import graphinglib as gl
-    import numpy as np
+.. plot::
 
     def single_slit(theta, a):
         wavelength = 500e-9
@@ -208,7 +193,5 @@ And here is an example of fitting a specific, user-defined function to some data
 .. code-block:: none
 
     Slit width: 3.763 microns
-
-.. image:: images/single_slit.png
 
 As a bonus tip, you can use the :meth:`~graphinglib.data_plotting_1d.Scatter.create_slice_x` and :meth:`~graphinglib.data_plotting_1d.Scatter.create_slice_y` methods to create a :class:`~graphinglib.data_plotting_1d.Scatter` object that represents a slice of the original data. This can be useful for fitting a function to just part of your data if you measurements are not reliable at all x values.
