@@ -52,7 +52,7 @@ It is also possible to create a Heatmap from a list or array of values at uneven
 
 The :py:meth:`~graphinglib.data_plotting_2d.Heatmap.from_points` method used below will interpolate the data on a grid and create a Heatmap from this interpolated data: 
  
- .. plot::
+.. plot::
 
     def func(x, y):
         return x * (1 - x) * np.cos(4 * np.pi * x) * np.sin(4 * np.pi * y**2) ** 2
