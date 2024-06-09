@@ -1,35 +1,10 @@
-<html>
-<head>
-  <style>
-    .button-link {
-      background-color: rgb(19, 107, 188);
-      color: rgb(255, 255, 255);
-      margin: 1rem;
-      padding: 0.375rem 0.75rem;
-      border-radius: 4px;
-      display: inline-block;
-      text-align: center;
-      transition: background-color 0.425s, color 0.425s, box-shadow 0.3s;
-      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
-    }
-
-    .button-link:hover {
-      background-color: rgb(40, 120, 240); /* Change this to your desired hover background color */
-      color: rgb(225, 164, 0); /* Change this to your desired hover text color */
-      box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-    }
-  </style>
-</head>
-<body>
-  <div style="background-color: rgb(154, 206, 254); color: rgb(1, 66, 126); text-align: center; border-radius: 5px; margin-bottom: 20px;">
-    <div>
-      <div><strong>GraphingLib has a documentation site!</strong>
-        <a href="https://www.graphinglib.org/" class="button-link">Visit the documentation</a>
-      </div>
+<div style="background-color: rgb(154, 206, 254); color: rgb(1, 66, 126); text-align: center; border-radius: 5px; margin-bottom: 20px;">
+  <div>
+    <div><strong>GraphingLib has a documentation site!</strong>
+      <a href="{{ https://www.graphinglib.org/ }}" style="background-color: rgb(19, 107, 188); color: rgb(255, 255, 255); margin: 1rem; padding: 0.375rem 0.75rem; border-radius: 4px; display: inline-block; text-align: center;">Visit the documentation</a>
     </div>
   </div>
-</body>
-</html>
+</div>
 
 
 
