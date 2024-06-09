@@ -1,6 +1,50 @@
+<html>
+<head>
+  <style>
+    .button-link {
+      background-color: rgb(19, 107, 188);
+      color: rgb(255, 255, 255);
+      margin: 1rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 4px;
+      display: inline-block;
+      text-align: center;
+      transition: background-color 0.425s, color 0.425s, box-shadow 0.3s;
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    .button-link:hover {
+      background-color: rgb(40, 120, 240); /* Change this to your desired hover background color */
+      color: rgb(225, 164, 0); /* Change this to your desired hover text color */
+      box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div style="background-color: rgb(154, 206, 254); color: rgb(1, 66, 126); text-align: center; border-radius: 5px; margin-bottom: 20px;">
+    <div>
+      <div><strong>GraphingLib has a documentation site!</strong>
+        <a href="https://www.graphinglib.org/" class="button-link">Visit the documentation</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
+
+
 # GraphingLib
 
-![graphinglib logo](https://github.com/GraphingLib/GraphingLib/blob/master/images/GraphingLib-Logo-Bolder.svg?raw=true)
+<div style="text-align: center;">
+  <img src="https://github.com/GraphingLib/GraphingLib/blob/master/images/GraphingLib-Logo-Bolder.svg?raw=true" alt="graphinglib logo">
+</div>
+    
+[![PyPI version](https://badge.fury.io/py/graphinglib.svg)](https://badge.fury.io/py/graphinglib)
+[![Documentation Status](https://readthedocs.org/projects/graphinglib/badge/?version=latest)](https://graphinglib.readthedocs.io/en/latest/?badge=latest)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![PyPi downloads](https://img.shields.io/pypi/dm/graphinglib)](https://pypi.org/project/graphinglib/)
+![GitHub stars](https://img.shields.io/github/stars/GraphingLib/GraphingLib.svg?style=social&label=Star&maxAge=2592000)
+
 
 ## 1. Description
 
