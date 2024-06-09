@@ -1,26 +1,23 @@
 
-<div style="background-color: rgb(154, 206, 254); color: rgb(1, 66, 126); text-align: center; border-radius: 5px; margin-bottom: 20px;">
-  <div>
-    <div><strong>GraphingLib has a documentation site!</strong>
-      <a href="{{ https://www.graphinglib.org/ }}" style="background-color: rgb(19, 107, 188); color: rgb(255, 255, 255); margin: 1rem; padding: 0.375rem 0.75rem; border-radius: 4px; display: inline-block; text-align: center;">Visit the documentation</a>
-    </div>
-  </div>
+<div style="width: 100%;">
+  <a href="https://example.com" target="_blank">
+    <img src="html_readme.svg" style="width: 100%;" alt="Click to see the source">
+  </a>
 </div>
 
-
-
-# GraphingLib
-
-<div style="text-align: center;">
-  <img src="https://github.com/GraphingLib/GraphingLib/blob/master/images/GraphingLib-Logo-Bolder.svg?raw=true" alt="graphinglib logo">
-</div>
-    
 [![PyPI version](https://badge.fury.io/py/graphinglib.svg)](https://badge.fury.io/py/graphinglib)
 [![Documentation Status](https://readthedocs.org/projects/graphinglib/badge/?version=latest)](https://graphinglib.readthedocs.io/en/latest/?badge=latest)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![PyPi downloads](https://img.shields.io/pypi/dm/graphinglib)](https://pypi.org/project/graphinglib/)
 ![GitHub stars](https://img.shields.io/github/stars/GraphingLib/GraphingLib.svg?style=social&label=Star&maxAge=2592000)
 
+# GraphingLib
+
+<div style="text-align: center;">
+  <img src="https://github.com/GraphingLib/GraphingLib/blob/master/images/GraphingLib-Logo-Bolder.svg?raw=true" alt="graphinglib logo">
+</div>
+
+GraphingLib is an open-source data visualization library in Python, designed as a wrapper for matplotlib. It integrates powerful data manipulation features from libraries such as scipy, shapely, and others.
 
 ## 1. Description
 
