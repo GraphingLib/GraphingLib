@@ -239,6 +239,8 @@ class Figure:
     def _prepare_figure(
         self,
         legend: bool = True,
+        legend_loc: str = None,
+        legend_cols: int = 1,
         axes: plt.Axes = None,
         default_params: dict = None,
         is_matplotlib_style: bool = False,
@@ -353,6 +355,23 @@ class Figure:
             if not self._labels:
                 legend = False
             if legend:
+                if legend_loc is not None and "outside" in legend_loc:
+                    outside_coords = {
+                        "outside upper center": (0.5, 1),
+                        "outside center right": (1, 0.5),
+                        "outside lower center": (0.5, -0.1),
+                    }
+                    outside_keyword = {
+                        "outside upper center": "lower center",
+                        "outside center right": "center left",
+                        "outside lower center": "upper center",
+                    }
+                    legend_params = {
+                        "loc": outside_keyword[legend_loc],
+                        "bbox_to_anchor": outside_coords[legend_loc],
+                    }
+                else:
+                    legend_params = {"loc": legend_loc}
                 try:
                     self._axes.legend(
                         handles=self._handles,
@@ -364,6 +383,8 @@ class Figure:
                             VerticalLineCollection: HandlerMultipleVerticalLines(),
                         },
                         draggable=True,
+                        **legend_params,
+                        ncols=legend_cols,
                     )
                 except:
                     self._axes.legend(
@@ -375,6 +396,8 @@ class Figure:
                             LineCollection: HandlerMultipleLines(),
                             VerticalLineCollection: HandlerMultipleVerticalLines(),
                         },
+                        **legend_params,
+                        ncols=legend_cols,
                     )
         else:
             raise GraphingException("No curves to be plotted!")
@@ -386,7 +409,9 @@ class Figure:
         self._rc_dict = {}
         return temp_labels, temp_handles
 
-    def show(self, legend: bool = True) -> None:
+    def show(
+        self, legend: bool = True, legend_loc: str = "best", legend_cols: int = 1
+    ) -> None:
         """
         Displays the :class:`~graphinglib.figure.Figure`.
 
@@ -396,13 +421,30 @@ class Figure:
             Whether or not to display the legend. The legend is always set to be
             draggable.
             Defaults to ``True``.
+        legend_loc : str
+            Legend location keyword. Any value in {"best", "upper right", "upper left",
+            "lower left", "lower right", "right", "center left", "center right", "lower center",
+            "upper center", "center"} or {"outside upper center", "outside center right",
+            "outside lower center"}.
+            Defaults to "best".
+        legend_cols : int
+            Number of columns in the legend.
+            Defaults to 1.
         """
-        self._prepare_figure(legend=legend)
+        self._prepare_figure(
+            legend=legend, legend_loc=legend_loc, legend_cols=legend_cols
+        )
         plt.tight_layout()
         plt.show()
         plt.rcParams.update(plt.rcParamsDefault)
 
-    def save(self, file_name: str, legend: bool = True) -> None:
+    def save(
+        self,
+        file_name: str,
+        legend: bool = True,
+        legend_loc: str = "best",
+        legend_cols: int = 1,
+    ) -> None:
         """
         Saves the :class:`~graphinglib.figure.Figure`.
 
@@ -413,8 +455,19 @@ class Figure:
         legend : bool
             Wheter or not to display the legend.
             Defaults to ``True``.
+        legend_loc : str
+            Legend location keyword. Any value in {"best", "upper right", "upper left",
+            "lower left", "lower right", "right", "center left", "center right", "lower center",
+            "upper center", "center"} or {"outside upper center", "outside center right",
+            "outside lower center"}.
+            Defaults to "best".
+        legend_cols : int
+            Number of columns in the legend.
+            Defaults to 1.
         """
-        self._prepare_figure(legend=legend)
+        self._prepare_figure(
+            legend=legend, legend_loc=legend_loc, legend_cols=legend_cols
+        )
         plt.tight_layout()
         plt.savefig(file_name, bbox_inches="tight")
         plt.close()
