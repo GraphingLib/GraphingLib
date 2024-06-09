@@ -9,7 +9,7 @@ GraphingLib allows you to create polygons by specifying their vertices. Here is 
 .. plot::
     :context:
 
-    polygon = gl.Polygon(
+    polygon1 = gl.Polygon(
         vertices=[(0, 0), (1, 1), (2, 0), (1, -1)],
         edge_color="C0",
         line_width=2,
@@ -19,56 +19,84 @@ GraphingLib allows you to create polygons by specifying their vertices. Here is 
         fill_alpha=0.5,
     )
 
+    polygon2 = gl.Polygon(
+        vertices=[(0.5, 1), (2, 1.2), (1.5, -0.3), (0.5, 0)],
+        edge_color="C1",
+        line_width=2,
+        line_style="dashed",
+        fill=False,
+    )
+
+    fig = gl.Figure(x_lim=(-0.5, 2.5), y_lim=(-1.5, 1.5))
+    fig.add_elements(polygon1, polygon2)
+    fig.show()
+
 The only required parameter is ``vertices``, but you can customize the appearance of the polygon by specifying the other parameters above. The real power of the :class:`~graphinglib.shapes.Polygon` object comes from its methods. Here are some methods used to get information about a polygon:
 
 .. plot::
-    :context:
+    :context: close-figs
 
-    print(polygon.area)
-    print(polygon.perimeter)
-    print(polygon.get_centroid_coordinates())
+    print(polygon1.area) # 2.0
+    print(polygon1.perimeter) # about 5.66
+    print(polygon1.get_centroid_coordinates()) # (1.0, 0.0)
 
     # Check if a point is inside the polygon
-    print(gl.Point(1, 0) in polygon)
+    print(gl.Point(1, 0) in polygon1) # True
 
     # Get the intersection points of the polygon with a curve, or the intersection points of the edges of two polygons
-    curve = gl.Curve.from_function(lambda x: x ** 2, x_min=-1, x_max=1)
-    print(polygon.create_intersection_points(curve))
+    curve = gl.Curve.from_function(lambda x: 0.7 * x**3 - 1, x_min=-1, x_max=3, color="C1")
+    points = polygon1.create_intersection_points(curve)
+
+    fig = gl.Figure(x_lim=(-0.5, 2.5), y_lim=(-1.5, 1.5))
+    fig.add_elements(polygon1, curve, *points)
+    fig.show()
 
 With GraphingLib, whenever you see a ``get_..._coordinates`` method, you can safely assume there also exists a ``create_..._point`` or ``create_..._points`` method in order to get :class:`~graphinglib.graph_elements.Point` objects instead of coordinates (and vice versa).
 
-There are also many methods which manipulate and transform polygons. Here are some examples:
+There are also many methods which manipulate and transform polygons. Here are some examples of splitting, translating, and rotating polygons:
 
 .. plot::
-    :context:
+    :context: close-figs
 
-    # Translate, rotate, scale, and skew
-    polygon.translate(dx=1, dy=1)
-    polygon.rotate(45) # use_rad parameter can be set to True to use radians
-    polygon.scale(x_scale=2, y_scale=2)
-    polygon.skew(x_skew=30, y_skew=30) # use_rad exists for skew as well
+    # Split a polygon into two using a Curve
+    split_left, split_right = polygon1.split(curve)
+    split_left.fill_color = "C2"
+    split_left.edge_color = "C2"
+    split_right.fill_color = "C3"
+    split_right.edge_color = "C3"
 
-    # Apply an arbitrary linear transformation matrix to the polygon
-    polygon.linear_transformation(matrix=np.array([[1, 2], [3, 4]]))
+    # Translate and rotate the split polygons
+    split_left.translate(-0.2, 0.5)
+    split_left.rotate(15)
+    split_right.translate(0.2, -0.5)
+    split_right.rotate(-15)
 
-    polygon2 = gl.Polygon(
-        vertices=[(0, 0.5), (1, 1.5), (2, 0.5), (1, -0.5)],
-        edge_color="C1",
-        line_width=2,
-        line_style="solid",
-        fill=True,
-        fill_color="C1",
-        fill_alpha=0.5,
-    )
+    fig = gl.Figure(x_lim=(-0.5, 2.5), y_lim=(-1.6, 1.6))
+    fig.add_elements(polygon1, curve, split_left, split_right)
+    fig.show()
 
-    # Union, intersection, and difference of polygons
-    union = polygon.create_union(polygon2)
-    intersection = polygon.create_intersection(polygon2)
-    difference = polygon.create_difference(polygon2)
+And here are some examples of unions, scaling and skewing:
 
-    # Split a polygon into multiple polygons using a Curve
-    curve = gl.Curve.from_function(lambda x: x ** 2, x_min=-1, x_max=1)
-    polygons = polygon.split(curve)
+.. plot::
+    :context: close-figs
+
+    polygon2.fill = True
+    polygon2.fill_color = "C1"
+    polygon2.line_style = "solid"
+
+    # Create the union of two polygons
+    union = polygon1.create_union(polygon2)
+    union.fill_color = "C2"
+    union.edge_color = "C2"
+
+    # Scale, skew, and apply arbitrary linear transformation to the union
+    union.scale(x_scale=1.2, y_scale=1.4)
+    union.skew(0, -10)
+    union.translate(2.5, 0)
+
+    fig = gl.Figure(x_lim=(-0.2, 5), y_lim=(-2, 2))
+    fig.add_elements(polygon1, polygon2, union)
+    fig.show()
 
 Some of the most common shapes, such as rectangles and circles, have their dedicated classes to simplify their creation. These classes are detailed below.
 
@@ -94,8 +122,8 @@ You can customize the appearance of Rectangles by specifying the following optio
         y_bottom_left=2,
         width=10,
         height=10,
-        fill_color="red",
-        edge_color="red",
+        fill_color="C1",
+        edge_color="C1",
         line_width=1,
         line_style="solid",
         fill=True,
@@ -107,7 +135,8 @@ You can customize the appearance of Rectangles by specifying the following optio
         y_bottom_left=5,
         width=5,
         height=12,
-        fill_color="blue",
+        fill_color="C0",
+        edge_color="C0",
         line_width=2,
         line_style="dashed",
         fill=True,
@@ -119,13 +148,13 @@ You can customize the appearance of Rectangles by specifying the following optio
         y_bottom_left=0,
         width=14,
         height=19,
-        fill_color="green",
+        edge_color="C2",
         line_width=5,
         line_style="dotted",
         fill=False,
     )
 
-    figure = gl.Figure(x_lim=(0, 15),y_lim=(0, 20))
+    figure = gl.Figure(x_lim=(-1, 15),y_lim=(-1, 20))
     figure.add_elements(rect1, rect2, rect3)
     figure.show()
 
@@ -149,8 +178,8 @@ You can customize the appearance of Circles by specifying the following optional
         x_center=-4,
         y_center=6,
         radius=10,
-        fill_color="red",
-        edge_color="red",
+        fill_color="C1",
+        edge_color="C1",
         line_width=1,
         line_style="solid",
         fill=True,
@@ -161,8 +190,8 @@ You can customize the appearance of Circles by specifying the following optional
         x_center=4,
         y_center=6,
         radius=7,
-        fill_color="blue",
-        edge_color="blue",
+        fill_color="C0",
+        edge_color="C0",
         line_width=2,
         line_style="dashed",
         fill=True,
@@ -173,15 +202,15 @@ You can customize the appearance of Circles by specifying the following optional
         x_center=0,
         y_center=-4,
         radius=13,
-        fill_color="green",
-        edge_color="green",
+        fill_color="C2",
+        edge_color="C2",
         line_width=5,
         line_style="dotted",
         fill=False,
     )
 
-    # Figure size and axis limits are set to make the circles look round
-    figure = gl.Figure(x_lim=(-19, 19), y_lim=(-19, 19), size=(8, 8))
+    # Aspect ratio set to 1 to make the circles look round
+    figure = gl.Figure(x_lim=(-19, 19), y_lim=(-19, 19), aspect_ratio=1)
     figure.add_elements(circle1, circle2, circle3)
     figure.show()
 
@@ -211,13 +240,13 @@ You can customize the appearance of Arrows by specifying the following optional 
     arrow1 = gl.Arrow(
         pointA=(0, 0),
         pointB=(1, 1),
-        color="red",
+        color="C0",
         shrink=0,  # default, no shrinking
     )
     arrow2 = gl.Arrow(
         pointA=(1, 0),
         pointB=(2, 1),
-        color="blue",
+        color="C1",
         shrink=0.05,
         two_sided=True,
         head_size=3,
@@ -225,19 +254,19 @@ You can customize the appearance of Arrows by specifying the following optional 
     arrow3 = gl.Arrow(
         pointA=(2, 0),
         pointB=(3, 1),
-        color="green",
+        color="C2",
         shrink=0.2,
         two_sided=True,
         width=4,
     )
 
     # Create points at the start and end of the arrows (to illustrate the shrinking)
-    point1 = gl.Point(0, 0, color="red")
-    point2 = gl.Point(1, 0, color="blue")
-    point3 = gl.Point(2, 0, color="green")
-    point4 = gl.Point(1, 1, color="red")
-    point5 = gl.Point(2, 1, color="blue")
-    point6 = gl.Point(3, 1, color="green")
+    point1 = gl.Point(0, 0, color="C0")
+    point2 = gl.Point(1, 0, color="C1")
+    point3 = gl.Point(2, 0, color="C2")
+    point4 = gl.Point(1, 1, color="C0")
+    point5 = gl.Point(2, 1, color="C1")
+    point6 = gl.Point(3, 1, color="C2")
 
     fig = gl.Figure(y_lim=(-0.5, 1.5), x_lim=(-0.5, 3.5))
     fig.add_elements(arrow1, arrow2, arrow3)
@@ -259,7 +288,7 @@ It is possible to change the width of the line with the ``width`` parameter. The
 .. plot::
 
     # Creating a circle and finding a point at 45 degrees on the circumference
-    circle = gl.Circle(0, 0, 1, line_width=2)
+    circle = gl.Circle(0, 0, 1, line_width=2, edge_color="C0", fill_color="C0")
     center = gl.Point(0, 0, marker_size=50)
     point = gl.Point(1, 0, marker_size=50)
     
