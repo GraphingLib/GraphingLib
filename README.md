@@ -61,6 +61,7 @@ poetry add graphinglib
 We welcome contributions from the community. If you're interested in contributing to GraphingLib, please read our [contributing guidelines on our documentation website](https://www.graphinglib.org/en/stable/contributing.html).
 
 ## Example
+Here is a short example showing how to use GraphingLib to create a figure with a scatter plot, a fit, and a histogram of the residuals.
     
 ```python
 import graphinglib as gl
@@ -96,7 +97,5 @@ fig2.add_elements(residuals)
 multifigure = gl.MultiFigure.from_row([fig1, fig2], size=(10, 5))
 multifigure.show()
 ```
-
-The resulting plot is shown below:
 
 ![image](images/example_fit.svg)
