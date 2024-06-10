@@ -58,63 +58,66 @@ INDEX_TEMPLATE = """
         height: 180px;
         margin: 0;
     }}
-
+ 
     .thumb img {{
         position: absolute;
         display: inline;
         left: 0;
         width: 170px;
         height: 170px;
-        opacity:1.0;
-        filter:alpha(opacity=100); /* For IE8 and earlier */
+        opacity: 1.0;
+        filter: alpha(opacity=100); /* For IE8 and earlier */
+        transition: filter 0.3s, opacity 0.3s;
     }}
-
+ 
     .thumb:hover img {{
         -webkit-filter: blur(3px);
         -moz-filter: blur(3px);
         -o-filter: blur(3px);
         -ms-filter: blur(3px);
         filter: blur(3px);
-        opacity:1.0;
-        filter:alpha(opacity=100); /* For IE8 and earlier */
+        opacity: 1.0;
+        filter: alpha(opacity=100); /* For IE8 and earlier */
     }}
-    
+ 
     html[data-theme=dark] .thumb:hover img {{
         -webkit-filter: blur(3px);
         -moz-filter: blur(3px);
         -o-filter: blur(3px);
         -ms-filter: blur(3px);
         filter: blur(3px);
-        opacity:1.0;
-        filter:alpha(opacity=100); /* For IE8 and earlier */
+        opacity: 1.0;
+        filter: alpha(opacity=100); /* For IE8 and earlier */
     }}
-
+ 
     .thumb span {{
         position: absolute;
-        display: inline;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         left: 0;
         width: 170px;
         height: 170px;
-        background: #000;
+        background: rgba(0, 0, 0, 0.4);
         color: #fff;
         visibility: hidden;
         opacity: 0;
         z-index: 100;
+        transition: visibility 0s, opacity 0.3s;
     }}
-
+ 
     .thumb p {{
-        position: absolute;
-        top: 45%;
-        width: 170px;
         font-size: 110%;
         color: #fff;
+        margin: 0;
+        text-align: center;
     }}
-
+ 
     .thumb:hover span {{
         visibility: visible;
-        opacity: .4;
+        opacity: 1;
     }}
-
+ 
     .caption {{
         position: absolute;
         width: 180px;
