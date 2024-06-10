@@ -101,3 +101,7 @@ html[data-theme=dark] .sd-card img[src*='.svg'] {
     margin-left: auto;
     margin-right: auto;
 }
+
+.table tbody tr:hover{
+    background-color: unset;
+}
