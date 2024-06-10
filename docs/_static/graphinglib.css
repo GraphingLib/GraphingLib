@@ -102,6 +102,10 @@ html[data-theme=dark] .sd-card img[src*='.svg'] {
     margin-right: auto;
 }
 
-.table tbody tr:hover{
-    background-color: inherit;
+.table tbody tr:nth-child(2n+1):hover {
+    background-color: --pst-color-table-row-zebra-low-bg;
+}
+
+.table tbody tr:nth-child(2n):hover {
+    background-color: --pst-color-table-row-zebra-high-bg;
 }
