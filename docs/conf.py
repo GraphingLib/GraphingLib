@@ -8,13 +8,14 @@
 
 import os
 import sys
+import time
 
 from graphinglib import __version__
 
 sys.path.insert(0, os.path.abspath("sphinxext"))
 
 project = "GraphingLib"
-copyright = "2024, Gustave Coulombe, Yannick Lapointe"
+copyright = f"2023-{time.strftime("%Y")}, Gustave Coulombe, Yannick Lapointe"
 author = "Gustave Coulombe and Yannick Lapointe"
 release = __version__
 
@@ -30,9 +31,10 @@ else:
 
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
     "sphinx.ext.todo",
-    "sphinx.ext.napoleon",
+    "numpydoc",
     "sphinx_copybutton",
     "sphinx.ext.intersphinx",
     "sphinx_favicon",
@@ -95,6 +97,8 @@ autodoc_type_aliases = {
     "Iterable": "Iterable",
     "ArrayLike": "ArrayLike",
 }
+
+autosummary_generate = True
 
 plot_include_source = True
 plot_html_show_source_link = False

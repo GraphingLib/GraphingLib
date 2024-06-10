@@ -9,3 +9,4 @@ sphinx-favicon
 sphinx-design
 setuptools_scm
 git+https://github.com/GraphingLib/GraphingLib.git
+numpydoc
