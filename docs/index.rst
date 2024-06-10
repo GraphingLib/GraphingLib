@@ -290,5 +290,5 @@ Although it is possible to obtain a similar result with Matplotlib and Scipy, it
    installation
    handbook/index
    Gallery <examples/index>
-   reference/index
+   API <api>
    release_notes/index
