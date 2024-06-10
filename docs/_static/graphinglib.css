@@ -103,9 +103,9 @@ html[data-theme=dark] .sd-card img[src*='.svg'] {
 }
 
 .table tbody tr:nth-child(2n+1):hover {
-    background-color: --pst-color-table-row-zebra-low-bg;
+    background-color: var(--pst-color-table-row-zebra-low-bg);
 }
 
 .table tbody tr:nth-child(2n):hover {
-    background-color: --pst-color-table-row-zebra-high-bg;
+    background-color: var(--pst-color-table-row-zebra-high-bg);
 }
