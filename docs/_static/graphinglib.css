@@ -103,5 +103,5 @@ html[data-theme=dark] .sd-card img[src*='.svg'] {
 }
 
 .table tbody tr:hover{
-    background-color: unset;
+    background-color: inherit;
 }
