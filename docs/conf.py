@@ -15,7 +15,7 @@ from graphinglib import __version__
 sys.path.insert(0, os.path.abspath("sphinxext"))
 
 project = "GraphingLib"
-copyright = f"2023-{time.strftime("%Y")}, Gustave Coulombe, Yannick Lapointe"
+copyright = f"2023-{time.strftime('%Y')}, Gustave Coulombe, Yannick Lapointe"
 author = "Gustave Coulombe and Yannick Lapointe"
 release = __version__
 
