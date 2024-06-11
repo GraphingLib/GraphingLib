@@ -1,6 +1,6 @@
 
 <div style="width: 100%;">
-  <a href="https://example.com" target="_blank">
+  <a href="https://www.graphinglib.org" target="_blank">
     <img src="html_readme.svg" style="width: 100%;" alt="Click to see the source">
   </a>
 </div>
