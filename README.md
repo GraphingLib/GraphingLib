@@ -1,7 +1,7 @@
 
 <div style="width: 100%;">
-  <a href="https://example.com" target="_blank">
-    <img src="html_readme.svg" style="width: 100%;" alt="Click to see the source">
+  <a href="https://www.graphinglib.org/" target="_blank">
+    <img src="html_readme.svg" style="width: 100%;" alt="Click to see the documentation website">
   </a>
 </div>
 
@@ -36,7 +36,7 @@ GraphingLib has the following explicit goals:
 
 ## Getting started
 
-To get started with GraphingLib, check out our comprehensive [documentation and examples available on our website](https://www.graphinglib.org/en/stable/installation.html). Whether you're a beginner or an experienced user, our documentation provides step-by-step guides to help you make the most out of GraphingLib.
+To get started with GraphingLib, check out our comprehensive [documentation and examples](https://www.graphinglib.org/) available on our website. Whether you're a beginner or an experienced user, our documentation provides step-by-step guides to help you make the most out of GraphingLib. Here are a few ways to install GraphingLib:
 
 From PyPI with
 
@@ -58,7 +58,7 @@ poetry add graphinglib
 
 ## Contributing
 
-We welcome contributions from the community. If you're interested in contributing to GraphingLib, please read our [contributing guidelines on our documentation website](https://www.graphinglib.org/en/stable/contributing.html).
+We welcome contributions from the community. If you're interested in contributing to GraphingLib, please read our [contribution guidelines](https://www.graphinglib.org/en/stable/contributing.html) on our documentation website.
 
 ## Example
 Here is a short example showing how to use GraphingLib to create a figure with a scatter plot, a fit, and a histogram of the residuals.
