@@ -1,6 +1,6 @@
-===============
-Getting started
-===============
+==========
+Quickstart
+==========
 
 GraphingLib is based on two libraries that you are surely already familiar with: Matplotlib and SciPy. These two libraries are very powerful and versatile, but this extreme versatility often comes at a cost: readability, conciseness, and user friendliness. GraphingLib aims to simplify the process of creating figures for the overwhelming majority of use cases. To do this, we focused on three main points:
 

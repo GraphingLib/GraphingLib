@@ -70,6 +70,7 @@ html_theme_options = {
     },
     "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
     "show_version_warning_banner": True,
+    "header_links_before_dropdown": 10,
 }
 html_context = {"default_mode": "dark"}
 html_show_sourcelink = False
