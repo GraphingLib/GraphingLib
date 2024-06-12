@@ -25,7 +25,7 @@ We can specify the axis labels by using the ``x_label`` and ``y_label`` paramete
 
     figure = gl.Figure(x_label="Time (s)", y_label="Potential (V)")
 
-For further informations on the available parameters, please refer to the :doc:`Reference section on Figure objects <../reference/figure>`.
+For further informations on the available parameters, please refer to the :doc:`Reference section on Figure objects <../generated/graphinglib.Figure>`.
 
 Figure styles
 --------------------------

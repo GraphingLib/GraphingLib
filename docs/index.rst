@@ -54,7 +54,7 @@ them to be used anytime you want.
         If you are looking for more details on objects and their methods, visit this section.
         ++++
 
-        .. button-ref:: reference/index
+        .. button-ref:: api
             :expand:
             :color: primary
             :click-parent:
