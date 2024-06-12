@@ -115,10 +115,12 @@ Point:
 Scatter:
   _cap_thickness: 2
   _cap_width: 3
+  _face_color: null
   _edge_color: none
+  _color_map: RdBu
+  _show_color_bar: False
   _errorbars_color: same as scatter
   _errorbars_line_width: 2
-  _face_color: null
   _marker_size: 8
   _marker_style: o
 Stream:
