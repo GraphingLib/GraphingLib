@@ -501,7 +501,6 @@ class Figure:
                                 getattr(element, curve_defaults[property]),
                             )
                         elif default_value == "same as scatter":
-                            print(property, value)
                             if isinstance(element._face_color, str):
                                 element._errorbars_color = getattr(element, "_face_color")
                             else:
