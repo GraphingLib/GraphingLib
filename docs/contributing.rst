@@ -8,7 +8,7 @@ GraphingLib welcomes the contribution of the coding community to add new feature
 * Adding unit tests for existing features
 * Developping new features
 * Maintaining the code
-* Writing documentation
+* Writing documentation (see :ref:`the section on the documentation <doccontrib>`)
 
 This page will provide you with the information necessary to contribute to this project. If you have additionnal questions, feel free to connect with us by way of GitHub issues. Simply visit our `GitHub page <https://github.com/GraphingLib/GraphingLib/>`_ and create a new issue in the "Issues" tab at the top of the page or comment on an existing and related issue.
 
@@ -33,7 +33,7 @@ Here are the steps to make your **first contributions** :
 
    This step will allow you to pull the latest updates made on the main repository into your fork.
 
-    .. note::
+   .. note::
 
         For setting up your developpement environment, you can refer to our :ref:`recommended developpement environment <devenv>`.
 
@@ -120,12 +120,41 @@ Coding guidelines
 
 
 
+Code documentation
+^^^^^^^^^^^^^^^^^^
+
+
+
 .. _prguidelines:
 
 Guideline for submitting a pull request
 ---------------------------------------
 
+Before submitting your pull request, here are a few things you should do :
 
+1. If you modified any part of the code (not applicable to the documentation), run the unit tests to make sure that everything is in order.
+
+2. If your changes bring modifications to the API or if you've added or modified a function, please create a short release note in the ``docs/release_notes/upcoming_changes`` directory. Your release note should be a reST file named as ``<PR-NUMBER>.<TAG>.rst``, where ``<PR-NUMBER>`` is the number of your pull request and ``<TAG>`` is one of the following :
+
+   * ``new_feature`` : For new features added to GraphingLib
+
+   * ``improvement`` : For changes improving the efficiency of the code
+
+   * ``compatibility`` : For changes affecting backwards compatibility (not for removal of deprecated features)
+
+   * ``deprecation`` : For setting a feature as deprecated (not yet removed but emitting a ``DeprecationWarning``)
+
+   * ``expired`` : For removed deprecated features
+
+   * ``change`` : For other changes
+
+The file should have the following format : ::
+
+    Title for your changes
+    ----------------------
+    A short description of how the changes will affect users.
+
+.. _doccontrib:
 
 Contributing to the documentation
 ---------------------------------
@@ -135,7 +164,7 @@ Making changes to this documentation website is encouraged when new features are
 Building the documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To build the website locally, use thses commands in the terminal ::
+To build the website locally, use these commands in the terminal ::
 
     cd docs
     make html
