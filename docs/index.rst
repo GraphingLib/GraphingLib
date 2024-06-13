@@ -1,22 +1,26 @@
 :html_theme.sidebar_secondary.remove:
 
-
 .. grid:: 1 1 2 2
    :gutter: 3
 
    .. grid-item::
       :child-align: center
 
-      .. div:: sd-fs-1
+      .. div:: sd-fs-1 sd-pb-0
          
          GraphingLib |release| Documentation
         
-      .. div::
+      .. div:: sd-pt-0 sd-pb-4
             
          A Python library for creating publication-quality figures with ease.
+         
+      .. button-ref:: examples/index
+         :color: primary
+
+         Go to Gallery
     
    .. grid-item::
-    
+
         .. raw:: html
 
             <style>
@@ -72,14 +76,12 @@
                     { src: '_static/contour_from_data_thumb.png', link: 'examples/contour_from_data.html' },
                     { src: '_static/contour_from_function_thumb.png', link: 'examples/contour_from_function.html' },
                     { src: '_static/curve_arithmetic_thumb.png', link: 'examples/curve_arithmetic.html' },
-                    { src: '_static/curve_calculus_thumb.png', link: 'examples/curve_calculus.html' },
                     { src: '_static/curve_fill_between_thumb.png', link: 'examples/curve_fill_between.html' },
                     { src: '_static/curve_from_data_thumb.png', link: 'examples/curve_from_data.html' },
                     { src: '_static/curve_from_function_thumb.png', link: 'examples/curve_from_function.html' },
                     { src: '_static/curve_intersections_thumb.png', link: 'examples/curve_intersections.html' },
                     { src: '_static/curve_slices_thumb.png', link: 'examples/curve_slices.html' },
                     { src: '_static/fit_from_polynomial_thumb.png', link: 'examples/fit_from_polynomial.html' },
-                    { src: '_static/fit_residuals_thumb.png', link: 'examples/fit_residuals.html' },
                     { src: '_static/heatmap_from_data_thumb.png', link: 'examples/heatmap_from_data.html' },
                     { src: '_static/heatmap_from_function_thumb.png', link: 'examples/heatmap_from_function.html' },
                     { src: '_static/heatmap_from_image_thumb.png', link: 'examples/heatmap_from_image.html' },
@@ -88,7 +90,6 @@
                     { src: '_static/hlines_vlines_thumb.png', link: 'examples/hlines_vlines.html' },
                     { src: '_static/scatter_errorbars_thumb.png', link: 'examples/scatter_errorbars.html' },
                     { src: '_static/stream_from_data_thumb.png', link: 'examples/stream_from_data.html' },
-                    { src: '_static/stream_from_function_thumb.png', link: 'examples/stream_from_function.html' },
                     { src: '_static/vectorfield_from_data_thumb.png', link: 'examples/vectorfield_from_data.html' },
                     { src: '_static/vectorfield_from_function_thumb.png', link: 'examples/vectorfield_from_function.html' }
                 ];
@@ -154,14 +155,6 @@
                 setInterval(rotateImages, 5000); // Rotate every 5 seconds
             </script>
       
-
-
-
-
-
-
-
-
 
 .. grid:: 1 1 3 3
 
