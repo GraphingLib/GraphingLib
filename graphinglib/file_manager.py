@@ -101,7 +101,7 @@ class FileUpdater:
         if "custom_styles" not in listdir(self._config_dir):
             mkdir(f"{self._config_dir}/custom_styles")
         self._file_name = file_name
-        self._file_location = f"{self._config_dir}/{self._file_name}.yml"
+        self._file_location = f"{self._config_dir}/custom_styles/{self._file_name}.yml"
         self._plain_style_location = (
             f"{path.dirname(__file__)}/default_styles/plain.yml"
         )
