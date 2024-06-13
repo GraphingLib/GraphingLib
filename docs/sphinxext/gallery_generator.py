@@ -167,8 +167,10 @@ def create_thumbnail(infile, thumbfile):
         [105 / 255, 123 / 255, 150 / 255]
     )
 
+    new_height, new_width, _ = thumb.shape
+
     dpi = 100
-    fig = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
+    fig = plt.figure(figsize=(new_width / dpi, new_height / dpi), dpi=dpi)
 
     ax = fig.add_axes([0, 0, 1, 1], aspect="auto", frameon=False, xticks=[], yticks=[])
     if all(thumb.shape):
