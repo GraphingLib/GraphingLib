@@ -17,7 +17,7 @@ Scatter:
   _edge_color: "none"
   _color_map: "coolwarm"
   _show_color_bar: False
-  _marker_size: 7
+  _marker_size: 50
   _marker_style: "o"
   _cap_width: 3
   _errorbars_color: "same as scatter"

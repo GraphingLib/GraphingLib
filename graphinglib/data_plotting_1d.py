@@ -1468,9 +1468,6 @@ class Scatter:
     marker_style : str
         Style of the points.
         Default depends on the ``figure_style`` configuration.
-    errorbars : bool
-        Whether or not to display errorbars.
-        Defaults to ``False``.
     """
 
     def __init__(
@@ -1513,9 +1510,6 @@ class Scatter:
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
-        errorbars : bool
-            Whether or not to display errorbars.
-            Defaults to ``False``.
         """
         self.points_handle = None
         self.errorbars_handle = None
