@@ -41,6 +41,7 @@ extensions = [
     "sphinx_design",
     "gallery_generator",
     "matplotlib.sphinxext.plot_directive",
+    "release_notes_generator",
 ]
 
 templates_path = ["_templates"]
