@@ -126,7 +126,7 @@
                         } while (lastChangedIndices.includes(randomImageIndex));
 
                         attempts++;
-                        // Break the loop if max attempts reached to avoid infinite loop
+                        // Break the loop if max attempts reached, avoid infinite loop
                         if (attempts >= maxAttempts) break;
                     } while (imageElements[randomImageIndex].img.src.split('/').pop() === newImage.src.split('/').pop());
 
