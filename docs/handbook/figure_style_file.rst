@@ -78,18 +78,138 @@ GraphingLib Styles Showcase
 ---------------------------
 Here are the currently available built-in styles in GraphingLib:
 
-Plain style:
+.. plot::
+    :include-source: false
 
-.. image:: images/plain_showcase.png
+        def create_fig(style):
+            colors = gl.get_colors(style)
 
-Dim style:
+            # Figure 1
+            curves = gl.Hlines(
+                [i / 8 + 0.1 for i in range(8)], 0, 1, line_widths=9, colors=colors[0:8]
+            )
+            fig1 = gl.Figure(y_lim=(-0.1, 1.1))
+            fig1.add_elements(curves)
+            #######################
+            # Figure 2
+            data = np.random.normal(0, 1, 1000)
+            hist = gl.Histogram(data, 20, normalize=True)
+            hist._label = None
+            hist.add_pdf()
+            fig2 = gl.Figure(y_lim=(0, 0.5))
+            fig2.add_elements(hist)
+            #######################
+            # Figure 3
+            curve = gl.Curve.from_function(
+                lambda x: (-np.sin(x * 2 * np.pi) + x) * x, 0, 1, "A curve", colors[1]
+            )
+            curve.get_area_between(0, 1, fill_between=True, fill_color=colors[1])
+            fig3 = gl.Figure()
+            fig3.add_elements(curve)
+            #######################
+            # Figure 4: Stream plot
+            field = gl.Stream.from_function(
+                lambda x, y: (np.sin(x) + np.cos(y), (y + x) ** 2),
+                (-2, 2),
+                (-2, 2),
+                color=colors[2],
+            )
+            fig4 = gl.Figure()
+            fig4.add_elements(field)
+            #######################
+            # Figure 5: Curve fit
+            x_data = np.linspace(0, 2 * np.pi, 100)
+            y_data = np.sin(x_data) + np.random.normal(0, 0.1, 100)
+            scatter = gl.Scatter(x_data, y_data, face_color=colors[3], edge_color=colors[3])
+            fit = gl.FitFromSine(scatter, color=colors[5])
+            fit.label = None
+            fig5 = gl.Figure()
+            fig5.add_elements(scatter, fit)
+            #######################
+            # Create MultiFigure and display
+            canvas = gl.MultiFigure(
+                5, 4, reference_labels=False, title=style, size=(8, 8), figure_style=style
+            )
+            canvas.add_figure(fig1, 0, 0, 1, 4)
+            canvas.add_figure(fig2, 1, 0, 2, 2)
+            canvas.add_figure(fig3, 1, 2, 2, 2)
+            canvas.add_figure(fig4, 3, 0, 2, 2)
+            canvas.add_figure(fig5, 3, 2, 2, 2)
+            canvas.set_visual_params()
+            canvas.show()
+            # canvas.save_figure(f"docs/handbook/images/{style}_showcase.png")
 
-.. image:: images/dim_showcase.png
 
-Dark style:
+        for style in [
+            "plain",
+            "dark",
+            "dim",
+            "horrible",
+        ]:
+            create_fig(style)
 
-.. image:: images/dark_showcase.png
+Here is the code used to generate the above figures if you want to try it out with your own styles:
 
-Horrible style:
+.. code-block:: python
 
-.. image:: images/horrible_showcase.png
+    import numpy as np
+    import graphing_lib as gl
+
+    style = "plain" # Change this to the style you want to showcase
+    colors = gl.get_colors(style)
+
+    ######################
+    # Figure 1: Show main colors
+    curves = gl.Hlines(
+        [i / 8 + 0.1 for i in range(8)], 0, 1, line_widths=9, colors=colors[0:8]
+    )
+    fig1 = gl.Figure(y_lim=(-0.1, 1.1))
+    fig1.add_elements(curves)
+    #######################
+    # Figure 2: Histogram
+    data = np.random.normal(0, 1, 1000)
+    hist = gl.Histogram(data, 20, normalize=True)
+    hist._label = None
+    hist.add_pdf()
+    fig2 = gl.Figure(y_lim=(0, 0.5))
+    fig2.add_elements(hist)
+    #######################
+    # Figure 3: Curve and filled area
+    curve = gl.Curve.from_function(
+        lambda x: (-np.sin(x * 2 * np.pi) + x) * x, 0, 1, "A curve", colors[1]
+    )
+    curve.get_area_between(0, 1, fill_between=True, fill_color=colors[1])
+    fig3 = gl.Figure()
+    fig3.add_elements(curve)
+    #######################
+    # Figure 4: Stream plot
+    field = gl.Stream.from_function(
+        lambda x, y: (np.sin(x) + np.cos(y), (y + x) ** 2),
+        (-2, 2),
+        (-2, 2),
+        color=colors[2],
+    )
+    fig4 = gl.Figure()
+    fig4.add_elements(field)
+    #######################
+    # Figure 5: Curve fit
+    x_data = np.linspace(0, 2 * np.pi, 100)
+    y_data = np.sin(x_data) + np.random.normal(0, 0.1, 100)
+    scatter = gl.Scatter(x_data, y_data, face_color=colors[3], edge_color=colors[3])
+    fit = gl.FitFromSine(scatter, color=colors[5])
+    fit.label = None
+    fig5 = gl.Figure()
+    fig5.add_elements(scatter, fit)
+    #######################
+    # Create MultiFigure from all figures
+    canvas = gl.MultiFigure(
+        5, 4, reference_labels=False, title=style, size=(8, 8), figure_style=style
+    )
+
+    canvas.add_figure(fig1, 0, 0, 1, 4)
+    canvas.add_figure(fig2, 1, 0, 2, 2)
+    canvas.add_figure(fig3, 1, 2, 2, 2)
+    canvas.add_figure(fig4, 3, 0, 2, 2)
+    canvas.add_figure(fig5, 3, 2, 2, 2)
+    canvas.set_visual_params()
+    canvas.show()

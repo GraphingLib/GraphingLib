@@ -15,7 +15,9 @@ Curve:
 Scatter:
   _face_color: 
   _edge_color: "none"
-  _marker_size: 60
+  _color_map: "prism"
+  _show_color_bar: False
+  _marker_size: 4000
   _marker_style: "+"
   _cap_width: 10
   _errorbars_color: "same as scatter"
