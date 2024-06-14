@@ -503,10 +503,14 @@ class Figure:
                             )
                         elif default_value == "same as scatter":
                             if isinstance(element._face_color, str):
-                                element._errorbars_color = getattr(element, "_face_color")
+                                element._errorbars_color = getattr(
+                                    element, "_face_color"
+                                )
                             else:
-                                face_color = (self._rc_dict | self._user_rc_dict)["axes.facecolor"]
-                                element._errorbars_color = self._get_contrasting_shade(face_color)
+                                face_color = plt.rcParams["axes.facecolor"]
+                                element._errorbars_color = self._get_contrasting_shade(
+                                    face_color
+                                )
                         else:
                             setattr(element, property, default_value)
                 break
@@ -521,7 +525,7 @@ class Figure:
                 file_loader = FileLoader(self._figure_style)
                 self._default_params = file_loader.load()
         return params_to_reset
-    
+
     @staticmethod
     def _get_contrasting_shade(color: str | tuple[int, int, int]) -> str:
         """
@@ -540,24 +544,24 @@ class Figure:
             Shade (black/white) that contrasts the most with the given color.
         """
         if isinstance(color, str):
-            color = to_rgba_array(color)[0,:3] * 255
+            color = to_rgba_array(color)[0, :3] * 255
 
         R, G, B = color
 
         if R <= 10:
-            Rg = R/3294
+            Rg = R / 3294
         else:
-            Rg = (R/269 + 0.0513)**2.4
+            Rg = (R / 269 + 0.0513) ** 2.4
 
         if G <= 10:
-            Gg = G/3294
+            Gg = G / 3294
         else:
-            Gg = (G/269 + 0.0513)**2.4
+            Gg = (G / 269 + 0.0513) ** 2.4
 
         if B <= 10:
-            Bg = B/3294
+            Bg = B / 3294
         else:
-            Bg = (B/269 + 0.0513)**2.4
+            Bg = (B / 269 + 0.0513) ** 2.4
 
         L = 0.2126 * Rg + 0.7152 * Gg + 0.0722 * Bg
         if L < 0.5:
