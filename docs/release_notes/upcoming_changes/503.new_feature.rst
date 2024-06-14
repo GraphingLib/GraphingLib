@@ -1,0 +1,3 @@
+Added support for color maps with Scatter
+-----------------------------------------
+Scatter has new parameters ``color_map`` and ``show_color_bar`` to specify a color map and display the color bar. To be used in combination with ``face_color`` to provide intensity values.

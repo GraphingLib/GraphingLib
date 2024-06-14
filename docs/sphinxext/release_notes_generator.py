@@ -2,6 +2,7 @@ from graphinglib import __version__
 from glob import glob
 from os.path import split, join, exists
 from collections import defaultdict
+from github import Github
 
 
 RELEASE_NOTES_INDEX_TEMPLATE = """
@@ -78,12 +79,15 @@ def fetch_old_versions(path):
 def fetch_new_files(path):
     upcoming_rn = glob(join(path, "*.*.rst"))
     sorted_upcoming = {}
+    pr_list = []
     for file in upcoming_rn:
         fname = split(file)[1]
         prnbr, tag, _ = fname.split(".")
         sorted_upcoming[tag] = sorted_upcoming.get(tag, [])
         sorted_upcoming[tag].append(prnbr)
-    return sorted_upcoming
+        pr_list.append(prnbr)
+    pr_list.sort()
+    return sorted_upcoming, pr_list
 
 
 def get_highlights(path):
@@ -94,6 +98,21 @@ def get_highlights(path):
             f.close()
         return highlights
     return None
+
+
+def get_github_info(pr_list):
+    g = Github()
+    org = g.get_organization("GraphingLib")
+    repo = org.get_repo("GraphingLib")
+    pr_dict = {}
+    contrib_dict = {}
+    for pr in pr_list:
+        pull = repo.get_pull(int(pr))
+        pr_dict[pull.title] = pr
+        commits = pull.get_commits()
+        for c in commits:
+            contrib_dict[c.author.login] = None
+    return pr_dict, contrib_dict
 
 
 class ReleaseNoteGenerator:
@@ -109,14 +128,16 @@ def main(app):
     old_v_path = join(app.builder.srcdir, "release_notes", "old_release_notes")
     upcoming_path = join(app.builder.srcdir, "release_notes", "upcoming_changes")
     target_path = join(app.builder.srcdir, "release_notes")
-    upcoming = fetch_new_files(upcoming_path)
+    upcoming, pr_list = fetch_new_files(upcoming_path)
     output = RELEASE_NOTES_TEMPLATE.format(version1=__version__, version2=__version__)
+
     highlights = get_highlights(upcoming_path)
     if highlights:
         output += "Highlights\n----------\n\n"
         for line in highlights:
             output += line + "\n\n"
     present_tags = [tag for tag in TAGS if tag in upcoming.keys()]
+
     for tag in present_tags:
         output += (
             TAGS_TO_SECTIONS[tag] + "\n" + "-" * len(TAGS_TO_SECTIONS[tag]) + "\n\n"
@@ -130,6 +151,21 @@ def main(app):
                     continue
                 output += line + "\n"
             output += f"\n(`pr-{prn} <{pr_url}>`_)\n\n"
+
+    pr_dict, contrib_list = get_github_info(pr_list)
+    output += (
+        "Contributors\n------------\n\n"
+        + f"A total of {len(contrib_list)} people contributed to this release.\n\n"
+    )
+    for contrib in contrib_list.keys():
+        output += f"* `@{contrib} <https://github.com/{contrib}>`_\n\n"
+    output += (
+        "Merged Pull Requests\n--------------------\n\n"
+        + f"A total of {len(pr_dict)} pull requests were merged for this release.\n\n"
+    )
+    for title in pr_dict.keys():
+        output += f"* `#{pr_dict[title]} <https://github.com/GraphingLib/GraphingLib/pull/{pr_dict[title]}>`_ : {title}\n\n"
+
     if "dev" in __version__:
         with open(join(target_path, f"v{__version__}.rst"), "w") as f:
             f.write(output)
@@ -143,6 +179,7 @@ def main(app):
             f.close()
         all_v = fetch_old_versions(old_v_path)
         all_v = order_versions(all_v)
+
     toctree = ""
     for versions in all_v:
         major_release = versions[0].split(".")[:2]
@@ -158,8 +195,11 @@ def main(app):
             if "dev" in v:
                 toctree += "   " + v.lstrip("v") + f" <{v}>\n"
             else:
-                toctree += "   " + v.lstrip("v") + f" <{join("old_release_notes", v)}>\n"
+                toctree += (
+                    "   " + v.lstrip("v") + f" <{join('old_release_notes', v)}>\n"
+                )
         toctree += "\n"
+
     output = RELEASE_NOTES_INDEX_TEMPLATE.format(toctree=toctree)
     with open(join(target_path, "index.rst"), "w") as f:
         f.write(output)
