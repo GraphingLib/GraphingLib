@@ -101,29 +101,39 @@ One you have Poetry installed and the repository cloned on your computer, run th
 GraphingLib's philosophy
 ------------------------
 
+.. note::
 
+    Section in construction
 
 GraphingLib's repository structure
 ----------------------------------
 
+.. note::
 
+    Section in construction
 
 Code structure
 --------------
 
+.. note::
 
+    Section in construction
 
 .. _codeguidelines:
 
 Coding guidelines
 -----------------
 
+.. note::
 
+    Section in construction
 
 Code documentation
 ^^^^^^^^^^^^^^^^^^
 
+.. note::
 
+    Section in construction
 
 .. _prguidelines:
 
@@ -153,6 +163,10 @@ The file should have the following format : ::
     Title for your changes
     ----------------------
     A short description of how the changes will affect users.
+
+.. note::
+
+    It is possible to create two separate files (with the same ``<PR-NUMBER>`` but different ``<TAG>``) if your changes fall into two categories.
 
 .. _doccontrib:
 
@@ -235,3 +249,10 @@ The Gallery page is generated automatically from the examples located in the ``e
     """
 
 The code generating the example must run as a standalone file for the example page to be generated. This means that you should be able to run the code on your computer and the plot should be displayed.
+
+Reviewers' workflow
+-------------------
+
+.. note::
+
+    Section in construction
