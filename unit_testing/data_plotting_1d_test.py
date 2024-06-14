@@ -4,6 +4,7 @@ from random import random
 
 from matplotlib.colors import to_hex
 from matplotlib.pyplot import close, subplots
+from matplotlib.collections import PathCollection
 from numpy import linspace, ndarray, pi, sin
 
 from graphinglib.data_plotting_1d import Curve, Histogram, Scatter
@@ -431,7 +432,7 @@ class TestScatter(unittest.TestCase):
             self.assertEqual(point._y, 0)
             self.assertAlmostEqual(point._x, i * pi, places=3)
 
-    def test_curve_is_plotted(self):
+    def test_scatter_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
         self.testScatter = Scatter(
             x,
@@ -440,8 +441,15 @@ class TestScatter(unittest.TestCase):
             face_color="k",
             edge_color="k",
             marker_size=30,
-            marker_style="o",
+            marker_style="o"
         )
+        _, self.testAxes = subplots()
+        self.testScatter._plot_element(self.testAxes, 0)
+        number_of_scatters = sum([isinstance(element, PathCollection) for element in list(self.testAxes.get_children())])
+        self.assertEqual(number_of_scatters, 1)
+
+    def test_scatter_is_plotted_with_errorbar(self):
+        self.testScatter.add_errorbars(linspace(0,1,200), linspace(2,3,200))
         _, self.testAxes = subplots()
         self.testScatter._plot_element(self.testAxes, 0)
         self.assertEqual(len(self.testAxes.get_lines()), 1)

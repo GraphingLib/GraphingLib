@@ -6,7 +6,7 @@ from typing import Callable, Literal, Optional, Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import to_rgba
+from matplotlib.colors import to_rgba, Colormap
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
 from scipy.integrate import cumtrapz
@@ -1449,11 +1449,18 @@ class Scatter:
         Arrays of x and y values to be plotted.
     label : str, optional
         Label to be displayed in the legend.
-    face_color : str
-        Face color of the points.
+    face_color : str or ArrayLike
+        Face color of the points. If an array of intensities is provided, the values are mapped to the specified color
+        map.
         Default depends on the ``figure_style`` configuration.
     edge_color : str
         Edge color of the points.
+        Default depends on the ``figure_style`` configuration.
+    color_map : str or Colormap
+        Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+        Default depends on the ``figure_style`` configuration.
+    show_color_bar : bool
+        Whether or not to display the color bar next to the plot.
         Default depends on the ``figure_style`` configuration.
     marker_size : float
         Size of the points.
@@ -1461,9 +1468,6 @@ class Scatter:
     marker_style : str
         Style of the points.
         Default depends on the ``figure_style`` configuration.
-    errorbars : bool
-        Whether or not to display errorbars.
-        Defaults to ``False``.
     """
 
     def __init__(
@@ -1471,8 +1475,10 @@ class Scatter:
         x_data: ArrayLike,
         y_data: ArrayLike,
         label: Optional[str] = None,
-        face_color: str = "default",
+        face_color: str | ArrayLike | Literal["default"] = "default",
         edge_color: str = "default",
+        color_map: str | Colormap | Literal["default"] = "default",
+        show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
     ) -> None:
@@ -1485,11 +1491,18 @@ class Scatter:
             Arrays of x and y values to be plotted.
         label : str, optional
             Label to be displayed in the legend.
-        face_color : str
-            Face color of the points.
+        face_color : str or ArrayLike
+            Face color of the points. If an array of intensities is provided, the values are mapped to the specified
+            color map.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the points.
+            Default depends on the ``figure_style`` configuration.
+        color_map : str or Colormap
+            Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+            Default depends on the ``figure_style`` configuration.
+        show_color_bar : bool
+            Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the points.
@@ -1498,12 +1511,15 @@ class Scatter:
             Style of the points.
             Default depends on the ``figure_style`` configuration.
         """
-        self.handle = None
+        self.points_handle = None
+        self.errorbars_handle = None
         self._x_data = np.asarray(x_data)
         self._y_data = np.asarray(y_data)
         self._label = label
         self._face_color = face_color
         self._edge_color = edge_color
+        self._color_map = color_map
+        self._show_color_bar = show_color_bar
         self._marker_size = marker_size
         self._marker_style = marker_style
 
@@ -1520,8 +1536,10 @@ class Scatter:
         x_min: float,
         x_max: float,
         label: Optional[str] = None,
-        face_color: str = "default",
+        face_color: str | ArrayLike | Literal["default"] = "default",
         edge_color: str = "default",
+        color_map: str | Colormap | Literal["default"] = "default",
+        show_color_bar: bool | Literal["default"] = "default",
         marker_size: int | Literal["default"] = "default",
         marker_style: str = "default",
         number_of_points: int = 30,
@@ -1537,11 +1555,17 @@ class Scatter:
             The scatter plot will be created for x values between x_min and x_max.
         label : str, optional
             Label to be displayed in the legend.
-        face_color : str
-            Face color of the points.
-            Default depends on the ``figure_style`` configuration.
+        face_color : str or ArrayLike
+            Face color of the points. If an array of intensities is provided, the values are mapped to the specified
+            color map.
         edge_color : str
             Edge color of the points.
+            Default depends on the ``figure_style`` configuration.
+        color_map : str or Colormap
+            Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+            Default depends on the ``figure_style`` configuration.
+        show_color_bar : bool
+            Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
         marker_size : int
             Size of the points.
@@ -1560,7 +1584,7 @@ class Scatter:
         x_data = np.linspace(x_min, x_max, number_of_points)
         y_data = func(x_data)
         return cls(
-            x_data, y_data, label, face_color, edge_color, marker_size, marker_style
+            x_data, y_data, label, face_color, edge_color, color_map, show_color_bar, marker_size, marker_style
         )
 
     @property
@@ -1588,11 +1612,11 @@ class Scatter:
         self._label = label
 
     @property
-    def face_color(self) -> str:
+    def face_color(self) -> str | ArrayLike:
         return self._face_color
 
     @face_color.setter
-    def face_color(self, face_color: str) -> None:
+    def face_color(self, face_color: str | ArrayLike) -> None:
         self._face_color = face_color
 
     @property
@@ -1602,6 +1626,22 @@ class Scatter:
     @edge_color.setter
     def edge_color(self, edge_color: str) -> None:
         self._edge_color = edge_color
+
+    @property
+    def color_map(self) -> str | Colormap:
+        return self._color_map
+
+    @color_map.setter
+    def color_map(self, color_map: str | Colormap) -> None:
+        self._color_map = color_map
+
+    @property
+    def show_color_bar(self) -> bool:
+        return self._show_color_bar
+
+    @show_color_bar.setter
+    def show_color_bar(self, show_color_bar: bool) -> None:
+        self._show_color_bar = show_color_bar
 
     @property
     def marker_size(self) -> float | Literal["default"]:
@@ -1866,8 +1906,10 @@ class Scatter:
         x_min: float,
         x_max: float,
         label: Optional[str] = None,
-        color: str = "default",
+        face_color: str | ArrayLike | Literal["default"] = "default",
         edge_color: str = "default",
+        color_map: str | Colormap | Literal["default"] = "default",
+        show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         copy_first: bool = False,
@@ -1881,11 +1923,18 @@ class Scatter:
             The slice will be created between x_min and x_max.
         label : str, optional
             Label to be displayed in the legend.
-        color : str
-            Face color of the points.
+        face_color : str or ArrayLike
+            Face color of the points. If an array of intensities is provided, the values are mapped to the specified
+            color map.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the points.
+            Default depends on the ``figure_style`` configuration.
+        color_map : str or Colormap
+            Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+            Default depends on the ``figure_style`` configuration.
+        show_color_bar : bool
+            Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the points.
@@ -1908,10 +1957,14 @@ class Scatter:
             copy._y_data = self._y_data[mask]
             if label is not None:
                 copy._label = label
-            if color != "default":
-                copy._face_color = color
+            if face_color != "default":
+                copy._face_color = face_color
             if edge_color != "default":
                 copy._edge_color = edge_color
+            if color_map != "default":
+                copy._color_map = color_map
+            if show_color_bar != "default":
+                copy._show_color_bar = show_color_bar
             if marker_size != "default":
                 copy._marker_size = marker_size
             if marker_style != "default":
@@ -1922,8 +1975,10 @@ class Scatter:
                 self._x_data[mask],
                 self._y_data[mask],
                 label,
-                color,
+                face_color,
                 edge_color,
+                color_map,
+                show_color_bar,
                 marker_size,
                 marker_style,
             )
@@ -1933,8 +1988,10 @@ class Scatter:
         y_min: float,
         y_max: float,
         label: Optional[str] = None,
-        color: str = "default",
+        face_color: str | ArrayLike | Literal["default"] = "default",
         edge_color: str = "default",
+        color_map: str | Colormap | Literal["default"] = "default",
+        show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         copy_first: bool = False,
@@ -1948,11 +2005,18 @@ class Scatter:
             The slice will be created between y_min and y_max.
         label : str, optional
             Label to be displayed in the legend.
-        color : str
-            Face color of the points.
+        face_color : str or ArrayLike
+            Face color of the points. If an array of intensities is provided, the values are mapped to the specified
+            color map.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the points.
+            Default depends on the ``figure_style`` configuration.
+        color_map : str or Colormap
+            Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+            Default depends on the ``figure_style`` configuration.
+        show_color_bar : bool
+            Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the points.
@@ -1975,10 +2039,14 @@ class Scatter:
             copy._y_data = self._y_data[mask]
             if label is not None:
                 copy._label = label
-            if color != "default":
-                copy._face_color = color
+            if face_color != "default":
+                copy._face_color = face_color
             if edge_color != "default":
                 copy._edge_color = edge_color
+            if color_map != "default":
+                copy._color_map = color_map
+            if show_color_bar != "default":
+                copy._show_color_bar = show_color_bar
             if marker_size != "default":
                 copy._marker_size = marker_size
             if marker_style != "default":
@@ -1989,8 +2057,10 @@ class Scatter:
                 self._x_data[mask],
                 self._y_data[mask],
                 label,
-                color,
+                face_color,
                 edge_color,
+                color_map,
+                show_color_bar,
                 marker_size,
                 marker_style,
             )
@@ -2226,47 +2296,49 @@ class Scatter:
         Plots the element in the specified axes.
         """
         if self._show_errorbars:
-            params = {
-                "markerfacecolor": self._face_color,
-                "markeredgecolor": self._edge_color,
-                "markersize": self._marker_size,
-                "marker": self._marker_style,
+            errorbar_params = {
+                "markerfacecolor": None,
+                "markeredgecolor": None,
                 "elinewidth": self._errorbars_line_width,
                 "capsize": self._cap_width,
                 "capthick": self._cap_thickness,
                 "ecolor": self._errorbars_color,
-                "linestyle": "none",
+                "linestyle": "none"
             }
-            if params["marker"] == "default":
-                params["marker"] = "o"
-            params = {k: v for k, v in params.items() if v != "default"}
-            self.handle = axes.errorbar(
+            errorbar_params = {k: v for k, v in errorbar_params.items() if v != "default"}
+            self.errorbars_handle = axes.errorbar(
                 self._x_data,
                 self._y_data,
                 xerr=self._x_error,
                 yerr=self._y_error,
-                label=self._label,
                 zorder=z_order,
-                **params,
+                **errorbar_params
             )
+
+        params = {
+            "edgecolors": self._edge_color,
+            "s": self._marker_size,
+            "marker": self._marker_style,
+            "cmap" : self._color_map if not isinstance(self._face_color, str) else None
+        }
+        if params["marker"] == "default":
+            params["marker"] = "o"
+        params = {k: v for k, v in params.items() if v != "default"}
+        if isinstance(self._face_color, str) and self._face_color == "default":
+            pass
         else:
-            params = {
-                "markerfacecolor": self._face_color,
-                "markeredgecolor": self._edge_color,
-                "markersize": self._marker_size,
-                "marker": self._marker_style,
-                "linestyle": "none",
-            }
-            if params["marker"] == "default":
-                params["marker"] = "o"
-            params = {k: v for k, v in params.items() if v != "default"}
-            self.handle = axes.errorbar(
-                self._x_data,
-                self._y_data,
-                label=self._label,
-                zorder=z_order,
-                **params,
-            )
+            params["c"] = self._face_color
+        self.points_handle = axes.scatter(
+            self._x_data,
+            self._y_data,
+            label=self._label,
+            zorder=z_order,
+            **params,
+        )
+        if self._show_color_bar and self._face_color is not None and not isinstance(self.face_color, str):
+            fig = axes.get_figure()
+            fig.colorbar(self.points_handle, ax=axes)
+
 
 
 @dataclass
