@@ -91,7 +91,6 @@ Histogram:
   _hist_type: stepfilled
   _line_width: 2
   _normalize: true
-  _number_of_bins: 30
   _pdf_curve_color: white
   _pdf_mean_color: r
   _pdf_show_mean: true

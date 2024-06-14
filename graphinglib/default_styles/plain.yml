@@ -25,7 +25,6 @@ Scatter:
   _cap_thickness: 1
 
 Histogram:
-  _number_of_bins: 30
   _face_color: "#3e82a0"
   _edge_color: "#3e82a0"
   _hist_type: "stepfilled"
