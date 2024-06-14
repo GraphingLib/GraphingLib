@@ -1527,7 +1527,7 @@ class Scatter:
         self._errorbars_line_width: float = 1.0
         self._cap_width: float = 3.0
         self._cap_thickness: float = 1.0
-        self._errorbars_color: str = "default"
+        self._errorbars_color: Optional[str] = None
 
     @classmethod
     def from_function(
@@ -1584,7 +1584,15 @@ class Scatter:
         x_data = np.linspace(x_min, x_max, number_of_points)
         y_data = func(x_data)
         return cls(
-            x_data, y_data, label, face_color, edge_color, color_map, show_color_bar, marker_size, marker_style
+            x_data,
+            y_data,
+            label,
+            face_color,
+            edge_color,
+            color_map,
+            show_color_bar,
+            marker_size,
+            marker_style,
         )
 
     @property
@@ -2303,23 +2311,25 @@ class Scatter:
                 "capsize": self._cap_width,
                 "capthick": self._cap_thickness,
                 "ecolor": self._errorbars_color,
-                "linestyle": "none"
+                "linestyle": "none",
             }
-            errorbar_params = {k: v for k, v in errorbar_params.items() if v != "default"}
+            errorbar_params = {
+                k: v for k, v in errorbar_params.items() if v != "default"
+            }
             self.errorbars_handle = axes.errorbar(
                 self._x_data,
                 self._y_data,
                 xerr=self._x_error,
                 yerr=self._y_error,
                 zorder=z_order,
-                **errorbar_params
+                **errorbar_params,
             )
 
         params = {
             "edgecolors": self._edge_color,
             "s": self._marker_size,
             "marker": self._marker_style,
-            "cmap" : self._color_map if not isinstance(self._face_color, str) else None
+            "cmap": self._color_map if not isinstance(self._face_color, str) else None,
         }
         if params["marker"] == "default":
             params["marker"] = "o"
@@ -2335,10 +2345,13 @@ class Scatter:
             zorder=z_order,
             **params,
         )
-        if self._show_color_bar and self._face_color is not None and not isinstance(self.face_color, str):
+        if (
+            self._show_color_bar
+            and self._face_color is not None
+            and not isinstance(self.face_color, str)
+        ):
             fig = axes.get_figure()
             fig.colorbar(self.points_handle, ax=axes)
-
 
 
 @dataclass
