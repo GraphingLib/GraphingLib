@@ -27,7 +27,7 @@ To use Graphinglib in one of your projects, you need to import it with the follo
     import graphinglib as gl
 
 What's next?
-----------
+------------
 
 Once this is done you can visit one of the links below to learn how to create your first Figure and then how to work with Curves, Scatters and Fits.
 
