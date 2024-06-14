@@ -285,7 +285,9 @@ class Figure:
             if self._title is not None:
                 self._axes.set_title(self._title, fontdict={"fontsize": "medium"})
         else:
-            self._figure, self._axes = plt.subplots(figsize=self._size)
+            self._figure, self._axes = plt.subplots(
+                figsize=self._size, layout="constrained"
+            )
             if self._title is not None:
                 self._axes.set_title(self._title)
 
@@ -435,7 +437,6 @@ class Figure:
         self._prepare_figure(
             legend=legend, legend_loc=legend_loc, legend_cols=legend_cols
         )
-        plt.tight_layout()
         plt.show()
         plt.rcParams.update(plt.rcParamsDefault)
 
@@ -469,7 +470,6 @@ class Figure:
         self._prepare_figure(
             legend=legend, legend_loc=legend_loc, legend_cols=legend_cols
         )
-        plt.tight_layout()
         plt.savefig(file_name, bbox_inches="tight")
         plt.close()
         plt.rcParams.update(plt.rcParamsDefault)
