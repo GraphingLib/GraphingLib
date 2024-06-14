@@ -2474,7 +2474,6 @@ class Histogram:
         self._bin_width = bin_width
         self._bin_centers = bin_centers
         self._bin_edges = bin_edges
-        self._create_label()
 
     @classmethod
     def from_fit_residuals(
@@ -2563,7 +2562,6 @@ class Histogram:
         self._bin_width = bin_width
         self._bin_centers = bin_centers
         self._bin_edges = bin_edges
-        self._create_label()
 
     @property
     def number_of_bins(self) -> int:
@@ -2581,7 +2579,6 @@ class Histogram:
         self._bin_width = bin_width
         self._bin_centers = bin_centers
         self._bin_edges = bin_edges
-        self._create_label()
 
     @property
     def label(self) -> str:
@@ -2590,7 +2587,6 @@ class Histogram:
     @label.setter
     def label(self, label: str) -> None:
         self._label = label
-        self._create_label()
 
     @property
     def face_color(self) -> str:
@@ -2647,7 +2643,6 @@ class Histogram:
     @show_params.setter
     def show_params(self, show_params: bool) -> None:
         self._show_params = show_params
-        self._create_label()
 
     @property
     def mean(self) -> float:
@@ -2727,10 +2722,55 @@ class Histogram:
         x = np.array(x)
         return sum(self._bin_heights) * self._bin_width * self._normal_normalized(x)
 
+    def add_pdf(
+        self,
+        type: str = "normal",
+        show_mean: bool | Literal["default"] = "default",
+        show_std: bool | Literal["default"] = "default",
+        curve_color: str | Literal["default"] = "default",
+        mean_color: str | Literal["default"] = "default",
+        std_color: str | Literal["default"] = "default",
+    ) -> None:
+        """
+        Shows the probability density function of the histogram.
+
+        Parameters
+        ----------
+        type : str
+            The type of probability density function to be shown.
+            Currently only "normal" is supported.
+            Defaults to "normal".
+        show_mean : bool
+            Whether or not to show the mean of the data.
+            Default depends on the ``figure_style`` configuration.
+        show_std : bool
+            Whether or not to show the standard deviation of the data.
+            Default depends on the ``figure_style`` configuration.
+        curve_color : str
+            Color of the probability density function curve.
+            Default depends on the ``figure_style`` configuration.
+        mean_color : str
+            Color of the mean line.
+            Default depends on the ``figure_style`` configuration.
+        std_color : str
+            Color of the standard deviation lines.
+            Default depends on the ``figure_style`` configuration.
+        """
+        if type != "normal":
+            raise ValueError("Currently, only 'normal' distribution is supported.")
+        self._show_pdf = True
+        self._pdf_type = type
+        self._pdf_show_mean = show_mean
+        self._pdf_show_std = show_std
+        self._pdf_curve_color = curve_color
+        self._pdf_mean_color = mean_color
+        self._pdf_std_color = std_color
+
     def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
         """
         Plots the element in the specified axes.
         """
+        self._create_label()
         params = {
             "facecolor": (
                 to_rgba(self._face_color, self._alpha)
@@ -2820,47 +2860,3 @@ class Histogram:
                     zorder=z_order - 1,
                     **params,
                 )
-
-    def add_pdf(
-        self,
-        type: str = "normal",
-        show_mean: bool | Literal["default"] = "default",
-        show_std: bool | Literal["default"] = "default",
-        curve_color: str | Literal["default"] = "default",
-        mean_color: str | Literal["default"] = "default",
-        std_color: str | Literal["default"] = "default",
-    ) -> None:
-        """
-        Shows the probability density function of the histogram.
-
-        Parameters
-        ----------
-        type : str
-            The type of probability density function to be shown.
-            Currently only "normal" is supported.
-            Defaults to "normal".
-        show_mean : bool
-            Whether or not to show the mean of the data.
-            Default depends on the ``figure_style`` configuration.
-        show_std : bool
-            Whether or not to show the standard deviation of the data.
-            Default depends on the ``figure_style`` configuration.
-        curve_color : str
-            Color of the probability density function curve.
-            Default depends on the ``figure_style`` configuration.
-        mean_color : str
-            Color of the mean line.
-            Default depends on the ``figure_style`` configuration.
-        std_color : str
-            Color of the standard deviation lines.
-            Default depends on the ``figure_style`` configuration.
-        """
-        if type != "normal":
-            raise ValueError("Currently, only 'normal' distribution is supported.")
-        self._show_pdf = True
-        self._pdf_type = type
-        self._pdf_show_mean = show_mean
-        self._pdf_show_std = show_std
-        self._pdf_curve_color = curve_color
-        self._pdf_mean_color = mean_color
-        self._pdf_std_color = std_color
