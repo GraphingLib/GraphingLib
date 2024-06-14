@@ -71,6 +71,7 @@ html_theme_options = {
     },
     "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
     "show_version_warning_banner": True,
+    "header_links_before_dropdown": 10,
 }
 html_context = {"default_mode": "dark"}
 html_show_sourcelink = False
@@ -100,6 +101,8 @@ autodoc_type_aliases = {
 }
 
 autosummary_generate = True
+
+numpydoc_show_class_members = False
 
 plot_include_source = True
 plot_html_show_source_link = False

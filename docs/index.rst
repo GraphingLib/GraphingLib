@@ -196,7 +196,7 @@
         If you are looking for more details on objects and their methods, visit this section.
         ++++
 
-        .. button-ref:: release_notes/index
+        .. button-ref:: api
             :expand:
             :color: primary
             :click-parent:
@@ -231,4 +231,5 @@ GraphingLib allows you to apply prepackaged or custom styles effortlessly. Our :
    handbook/index
    Gallery <examples/index>
    API <api>
+   Contributing <contributing>
    Releases <release_notes/index>

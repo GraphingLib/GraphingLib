@@ -1,6 +1,6 @@
-===============
-Getting started
-===============
+==========
+Quickstart
+==========
 
 This guide will help you to install Graphinglib and to start using it in your projects.
 

@@ -44,7 +44,7 @@ Sections in this handbook
         The Curve, Curve arithmetics and Curve calculus.
         ++++
 
-        .. button-ref:: curve
+        .. button-ref:: ./curve
             :expand:
             :color: primary
             :click-parent:
@@ -60,7 +60,7 @@ Sections in this handbook
         The Scatter plots and data fitting methods.
         ++++
 
-        .. button-ref:: scatter_fitting
+        .. button-ref:: ./scatter_fitting
             :expand:
             :color: primary
             :click-parent:
@@ -76,7 +76,7 @@ Sections in this handbook
         The Histogram and plotting fit residuals.
         ++++
 
-        .. button-ref:: histogram
+        .. button-ref:: ./histogram
             :expand:
             :color: primary
             :click-parent:
@@ -140,7 +140,7 @@ Sections in this handbook
         Heatmap, Contour, VectorField and Stream.
         ++++
 
-        .. button-ref:: 2D_plotting
+        .. button-ref:: ./2D_plotting
             :expand:
             :color: primary
             :click-parent:
@@ -156,7 +156,7 @@ Sections in this handbook
         GraphingLib's Style Editor and GraphingLib's Styles Showcase.
         ++++
 
-        .. button-ref:: figure_style_file
+        .. button-ref:: ./figure_style_file
             :expand:
             :color: primary
             :click-parent:
