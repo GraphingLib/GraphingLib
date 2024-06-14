@@ -22,3 +22,4 @@ docs/_build
 docs/example_thumbs/*.png
 docs/examples
 docs/generated
+docs/release_notes/*.rst
