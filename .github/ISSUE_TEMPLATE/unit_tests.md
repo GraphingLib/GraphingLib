@@ -7,9 +7,4 @@ assignees: ''
 
 ---
 
-### Select the subject of this issue:
-
-- [ ] GL documentation (readthedocs)
-- [ ] Docstrings and/or comments within the code
-
-### Describe the changes which need to be made
+### Describe the test/tests which need to be added

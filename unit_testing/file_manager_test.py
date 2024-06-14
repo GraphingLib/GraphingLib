@@ -50,7 +50,7 @@ class TestFileUpdater(unittest.TestCase):
         filename = "a_certain_file"
         updater = FileUpdater(filename)
 
-        expected_path = f"{updater._config_dir}/{filename}.yml"
+        expected_path = f"{updater._config_dir}/custom_styles/{filename}.yml"
         self.assertEqual(updater._file_location, expected_path)
 
 
