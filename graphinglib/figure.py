@@ -1,4 +1,5 @@
 from shutil import which
+from types import NoneType
 from typing import Literal, Optional
 from warnings import warn
 
@@ -7,6 +8,7 @@ from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.colors import to_rgba_array
+import numpy as np
 
 from .file_manager import FileLoader, FileUpdater, get_default_style
 from .graph_elements import GraphingException, Plottable
@@ -502,14 +504,20 @@ class Figure:
                                 getattr(element, curve_defaults[property]),
                             )
                         elif default_value == "same as scatter":
-                            if isinstance(element._face_color, str):
-                                element._errorbars_color = getattr(
-                                    element, "_face_color"
+                            scatter_face_color = getattr(element, "_face_color")
+                            if isinstance(
+                                scatter_face_color, (list, tuple, np.ndarray)
+                            ):
+                                ax_face_color = plt.rcParams["axes.facecolor"]
+                                new_err_face_color = self._get_contrasting_shade(
+                                    ax_face_color
                                 )
-                            else:
-                                face_color = plt.rcParams["axes.facecolor"]
-                                element._errorbars_color = self._get_contrasting_shade(
-                                    face_color
+                                setattr(element, "_errorbars_color", new_err_face_color)
+                            elif isinstance(scatter_face_color, (str, NoneType)):
+                                setattr(
+                                    element,
+                                    "_errorbars_color",
+                                    scatter_face_color,
                                 )
                         else:
                             setattr(element, property, default_value)

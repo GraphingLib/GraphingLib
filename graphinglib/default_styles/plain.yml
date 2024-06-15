@@ -13,7 +13,7 @@ Curve:
   _fill_under_color: "same as curve"
 
 Scatter:
-  _face_color: 
+  _face_color: "color cycle"
   _edge_color: "none"
   _color_map: "coolwarm"
   _show_color_bar: False
