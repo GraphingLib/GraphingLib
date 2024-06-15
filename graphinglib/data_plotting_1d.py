@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
+from types import NoneType
 from typing import Callable, Literal, Optional, Protocol
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import to_rgba, Colormap
@@ -1449,9 +1451,9 @@ class Scatter:
         Arrays of x and y values to be plotted.
     label : str, optional
         Label to be displayed in the legend.
-    face_color : str or ArrayLike
+    face_color : str or ArrayLike or None
         Face color of the points. If an array of intensities is provided, the values are mapped to the specified color
-        map.
+        map. If None, marker faces are transparent.
         Default depends on the ``figure_style`` configuration.
     edge_color : str
         Edge color of the points.
@@ -1475,7 +1477,7 @@ class Scatter:
         x_data: ArrayLike,
         y_data: ArrayLike,
         label: Optional[str] = None,
-        face_color: str | ArrayLike | Literal["default"] = "default",
+        face_color: str | ArrayLike | NoneType | Literal["default"] = "default",
         edge_color: str = "default",
         color_map: str | Colormap | Literal["default"] = "default",
         show_color_bar: bool | Literal["default"] = "default",
@@ -1491,9 +1493,9 @@ class Scatter:
             Arrays of x and y values to be plotted.
         label : str, optional
             Label to be displayed in the legend.
-        face_color : str or ArrayLike
+        face_color : str or ArrayLike or None
             Face color of the points. If an array of intensities is provided, the values are mapped to the specified
-            color map.
+            color map. If None, marker faces are transparent.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
             Edge color of the points.
@@ -1536,7 +1538,7 @@ class Scatter:
         x_min: float,
         x_max: float,
         label: Optional[str] = None,
-        face_color: str | ArrayLike | Literal["default"] = "default",
+        face_color: str | ArrayLike | NoneType | Literal["default"] = "default",
         edge_color: str = "default",
         color_map: str | Colormap | Literal["default"] = "default",
         show_color_bar: bool | Literal["default"] = "default",
@@ -1555,9 +1557,9 @@ class Scatter:
             The scatter plot will be created for x values between x_min and x_max.
         label : str, optional
             Label to be displayed in the legend.
-        face_color : str or ArrayLike
+        face_color : str or ArrayLike or None
             Face color of the points. If an array of intensities is provided, the values are mapped to the specified
-            color map.
+            color map. If None, marker faces are transparent.
         edge_color : str
             Edge color of the points.
             Default depends on the ``figure_style`` configuration.
@@ -2303,19 +2305,65 @@ class Scatter:
         """
         Plots the element in the specified axes.
         """
+        # Convert face color to matplotlib notation
+        if self._face_color is None:
+            # Set to transparent
+            mpl_face_color = "none"
+        elif isinstance(self._face_color, str) and self._face_color == "default":
+            # Use color cycle (figure uses a matplotlib style)
+            mpl_face_color = None
+        elif isinstance(self._face_color, str) and self._face_color == "color cycle":
+            # Use color cycle
+            mpl_face_color = None
+        else:
+            # Use specified color
+            mpl_face_color = self._face_color
+
+        params = {
+            "edgecolors": self._edge_color,
+            "s": self._marker_size,
+            "marker": self._marker_style if self._marker_style != "default" else "o",
+            "cmap": self._color_map if not isinstance(self._face_color, str) else None,
+            "c": mpl_face_color,
+        }
+        params = {k: v for k, v in params.items() if v != "default"}
+        self.points_handle = axes.scatter(
+            self._x_data,
+            self._y_data,
+            label=self._label,
+            zorder=z_order+1,
+            **params,
+        )
         if self._show_errorbars:
+            # Convert errorbars color to matplotlib notation
+            if self._errorbars_color is None:
+                raise ValueError(
+                    "Errorbars color cannot be None. If you haven't explicitly set it to None, maybe the style you are using has set the errorbars color to mirror the Scatter face color which you have set to None. Please set the errorbars color to a valid color."
+                )
+            elif isinstance(self._errorbars_color, str) and (
+                self._errorbars_color == "default"
+                or self._errorbars_color == "color cycle"
+            ):
+                # Use color cycle
+                mpl_errorbars_color = self.points_handle.get_facecolor()
+            elif isinstance(self._errorbars_color, str):
+                # Use specified color
+                mpl_errorbars_color = self._errorbars_color
+            else:
+                raise ValueError("Errorbars color must be a string.")
+
             errorbar_params = {
                 "markerfacecolor": None,
                 "markeredgecolor": None,
                 "elinewidth": self._errorbars_line_width,
                 "capsize": self._cap_width,
                 "capthick": self._cap_thickness,
-                "ecolor": self._errorbars_color,
                 "linestyle": "none",
             }
             errorbar_params = {
                 k: v for k, v in errorbar_params.items() if v != "default"
             }
+            errorbar_params["ecolor"] = mpl_errorbars_color
             self.errorbars_handle = axes.errorbar(
                 self._x_data,
                 self._y_data,
@@ -2325,26 +2373,6 @@ class Scatter:
                 **errorbar_params,
             )
 
-        params = {
-            "edgecolors": self._edge_color,
-            "s": self._marker_size,
-            "marker": self._marker_style,
-            "cmap": self._color_map if not isinstance(self._face_color, str) else None,
-        }
-        if params["marker"] == "default":
-            params["marker"] = "o"
-        params = {k: v for k, v in params.items() if v != "default"}
-        if isinstance(self._face_color, str) and self._face_color == "default":
-            pass
-        else:
-            params["c"] = self._face_color
-        self.points_handle = axes.scatter(
-            self._x_data,
-            self._y_data,
-            label=self._label,
-            zorder=z_order,
-            **params,
-        )
         if (
             self._show_color_bar
             and self._face_color is not None

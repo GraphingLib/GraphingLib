@@ -114,7 +114,7 @@ Point:
 Scatter:
   _cap_thickness: 2
   _cap_width: 3
-  _face_color: null
+  _face_color: color cycle
   _edge_color: none
   _color_map: RdBu
   _show_color_bar: False
