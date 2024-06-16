@@ -487,7 +487,7 @@ class Figure:
             "_errorbars_color": "_color",
             "_errorbars_line_width": "_line_width",
             "_cap_thickness": "_line_width",
-            "_fill_under_color": "_color",
+            "_fill_between_color": "_color",
             "_error_curves_line_width": "_line_width",
             "_error_curves_color": "_color",
         }

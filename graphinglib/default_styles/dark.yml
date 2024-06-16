@@ -14,7 +14,7 @@ Curve:
   _error_curves_fill_between: true
   _error_curves_line_style: --
   _error_curves_line_width: 1
-  _fill_under_color: same as curve
+  _fill_between_color: same as curve
   _line_style: '-'
   _line_width: 2
 Figure:

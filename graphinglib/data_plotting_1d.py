@@ -1174,8 +1174,7 @@ class Curve:
         else:
             if fill_between:
                 self._fill_between_bounds = (x1, x2)
-                if fill_color != "default":
-                    self._fill_between_color = fill_color
+                self._fill_between_color = fill_color
                 self._fill_between_other_curve = other_curve
             if np.array_equal(self._x_data, other_curve._x_data):
                 # No need to interpolate
