@@ -2331,7 +2331,7 @@ class Scatter:
             self._x_data,
             self._y_data,
             label=self._label,
-            zorder=z_order+1,
+            zorder=z_order,
             **params,
         )
         if self._show_errorbars:
@@ -2369,7 +2369,7 @@ class Scatter:
                 self._y_data,
                 xerr=self._x_error,
                 yerr=self._y_error,
-                zorder=z_order,
+                zorder=z_order - 1,
                 **errorbar_params,
             )
 
