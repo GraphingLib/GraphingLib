@@ -1513,7 +1513,7 @@ class Scatter:
             Style of the points.
             Default depends on the ``figure_style`` configuration.
         """
-        self.points_handle = None
+        self.handle = None
         self.errorbars_handle = None
         self._x_data = np.asarray(x_data)
         self._y_data = np.asarray(y_data)
@@ -2327,7 +2327,7 @@ class Scatter:
             "c": mpl_face_color,
         }
         params = {k: v for k, v in params.items() if v != "default"}
-        self.points_handle = axes.scatter(
+        self.handle = axes.scatter(
             self._x_data,
             self._y_data,
             label=self._label,
@@ -2345,7 +2345,7 @@ class Scatter:
                 or self._errorbars_color == "color cycle"
             ):
                 # Use color cycle
-                mpl_errorbars_color = self.points_handle.get_facecolor()
+                mpl_errorbars_color = self.handle.get_facecolor()
             elif isinstance(self._errorbars_color, str):
                 # Use specified color
                 mpl_errorbars_color = self._errorbars_color
@@ -2379,7 +2379,7 @@ class Scatter:
             and not isinstance(self.face_color, str)
         ):
             fig = axes.get_figure()
-            fig.colorbar(self.points_handle, ax=axes)
+            fig.colorbar(self.handle, ax=axes)
 
 
 @dataclass
