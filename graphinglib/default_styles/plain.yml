@@ -10,7 +10,7 @@ Curve:
   _error_curves_line_style: --
   _error_curves_line_width: same as curve
   _cap_thickness: "same as curve"
-  _fill_under_color: "same as curve"
+  _fill_between_color: "same as curve"
 
 Scatter:
   _face_color: "color cycle"
