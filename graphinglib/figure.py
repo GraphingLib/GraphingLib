@@ -356,7 +356,7 @@ class Figure:
                         self._labels.append(element.label)
                 except AttributeError:
                     continue
-                z_order += 2
+                z_order += 5
             if not self._labels:
                 legend = False
             if legend:
