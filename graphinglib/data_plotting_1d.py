@@ -2382,6 +2382,18 @@ class Scatter:
                 "Both face color and edge color cannot be None. Please set at least one of them to a valid color."
             )
 
+        # Check that either face color or edge color is not a list/array/tuple of intensities
+        if isinstance(self._face_color, (list, tuple, np.ndarray)) and isinstance(
+            self._edge_color, (list, tuple, np.ndarray)
+        ):
+            # If they're 3 or 4 element arrays, assume they're RGB or RGBA values
+            if len(self._face_color) in [3, 4] or len(self._edge_color) in [3, 4]:
+                pass
+            else:
+                raise ValueError(
+                    "Both face color and edge color cannot be lists/arrays/tuples of intensities or colors. Please set at least one of them to a valid color or set one of them to None."
+                )
+
         # Convert face color to matplotlib notation
         if self._face_color is None:
             # Set to transparent
