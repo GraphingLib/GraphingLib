@@ -14,7 +14,7 @@ Curve:
 
 Scatter:
   _face_color: "color cycle"
-  _edge_color: "none"
+  _edge_color:
   _color_map: "prism"
   _show_color_bar: False
   _marker_size: 4000

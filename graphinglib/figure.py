@@ -1,5 +1,4 @@
 from shutil import which
-from types import NoneType
 from typing import Literal, Optional
 from warnings import warn
 
@@ -7,10 +6,12 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
-from matplotlib.colors import to_rgba_array
-import numpy as np
 
-from .file_manager import FileLoader, FileUpdater, get_default_style
+from .file_manager import (
+    FileLoader,
+    FileUpdater,
+    get_default_style,
+)
 from .graph_elements import GraphingException, Plottable
 from .legend_artists import (
     HandlerMultipleLines,
@@ -341,13 +342,19 @@ class Figure:
             )
             self._handles += handles
             self._labels += labels
+        cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        num_cycle_colors = len(cycle_colors)
         if self._elements:
             z_order = 2
-            for element in self._elements:
+            for index, element in enumerate(self._elements):
                 params_to_reset = []
                 if not is_matplotlib_style:
                     params_to_reset = self._fill_in_missing_params(element)
-                element._plot_element(self._axes, z_order)
+                element._plot_element(
+                    self._axes,
+                    z_order,
+                    cycle_color=cycle_colors[index % num_cycle_colors],
+                )
                 if not is_matplotlib_style:
                     self._reset_params_to_default(element, params_to_reset)
                 try:
@@ -483,44 +490,13 @@ class Figure:
         params_to_reset = []
         object_type = type(element).__name__
         tries = 0
-        curve_defaults = {
-            "_errorbars_color": "_color",
-            "_errorbars_line_width": "_line_width",
-            "_cap_thickness": "_line_width",
-            "_fill_between_color": "_color",
-            "_error_curves_line_width": "_line_width",
-            "_error_curves_color": "_color",
-        }
         while tries < 2:
             try:
                 for property, value in vars(element).items():
                     if (type(value) == str) and (value == "default"):
                         params_to_reset.append(property)
                         default_value = self._default_params[object_type][property]
-                        if default_value == "same as curve":
-                            setattr(
-                                element,
-                                property,
-                                getattr(element, curve_defaults[property]),
-                            )
-                        elif default_value == "same as scatter":
-                            scatter_face_color = getattr(element, "_face_color")
-                            if isinstance(
-                                scatter_face_color, (list, tuple, np.ndarray)
-                            ):
-                                ax_face_color = plt.rcParams["axes.facecolor"]
-                                new_err_face_color = self._get_contrasting_shade(
-                                    ax_face_color
-                                )
-                                setattr(element, "_errorbars_color", new_err_face_color)
-                            elif isinstance(scatter_face_color, (str, NoneType)):
-                                setattr(
-                                    element,
-                                    "_errorbars_color",
-                                    scatter_face_color,
-                                )
-                        else:
-                            setattr(element, property, default_value)
+                        setattr(element, property, default_value)
                 break
             except KeyError as e:
                 tries += 1
@@ -533,49 +509,6 @@ class Figure:
                 file_loader = FileLoader(self._figure_style)
                 self._default_params = file_loader.load()
         return params_to_reset
-
-    @staticmethod
-    def _get_contrasting_shade(color: str | tuple[int, int, int]) -> str:
-        """
-        Gives the most contrasting shade (black/white) for a given color. The algorithm used comes from this Stack
-        Exchange answer : https://ux.stackexchange.com/a/82068.
-
-        Parameters
-        ----------
-        color : str or tuple[int, int, int]
-            Color that needs to be contrasted. This can either be a known matplotlib color string or a RGB code, given
-            as a tuple of integers that take 0-255.
-
-        Returns
-        -------
-        shade : str
-            Shade (black/white) that contrasts the most with the given color.
-        """
-        if isinstance(color, str):
-            color = to_rgba_array(color)[0, :3] * 255
-
-        R, G, B = color
-
-        if R <= 10:
-            Rg = R / 3294
-        else:
-            Rg = (R / 269 + 0.0513) ** 2.4
-
-        if G <= 10:
-            Gg = G / 3294
-        else:
-            Gg = (G / 269 + 0.0513) ** 2.4
-
-        if B <= 10:
-            Bg = B / 3294
-        else:
-            Bg = (B / 269 + 0.0513) ** 2.4
-
-        L = 0.2126 * Rg + 0.7152 * Gg + 0.0722 * Bg
-        if L < 0.5:
-            return "white"
-        else:
-            return "black"
 
     def _reset_params_to_default(
         self, element: Plottable, params_to_reset: list[str]

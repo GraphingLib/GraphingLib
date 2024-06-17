@@ -161,7 +161,7 @@ class Arrow:
         """
         return deepcopy(self)
 
-    def _plot_element(self, axes: plt.Axes, z_order: int):
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs):
         if self._two_sided:
             self._style = "<|-|>"
         else:
@@ -288,7 +288,7 @@ class Line:
         """
         return deepcopy(self)
 
-    def _plot_element(self, axes: plt.axes, z_order: int):
+    def _plot_element(self, axes: plt.axes, z_order: int, **kwargs):
         if self._capped_line:
             style = f"|-|, widthA={self._cap_width/2}, widthB={self._cap_width/2}"
         else:
@@ -740,7 +740,7 @@ class Polygon:
         else:
             raise TypeError("The other object must be a Polygon or a Curve")
 
-    def _plot_element(self, axes: plt.Axes, z_order: int):
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs):
         # Create a polygon patch for the fill
         if self._fill:
             kwargs = {

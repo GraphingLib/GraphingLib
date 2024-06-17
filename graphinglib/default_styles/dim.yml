@@ -115,7 +115,7 @@ Scatter:
   _cap_thickness: 2
   _cap_width: 3
   _face_color: color cycle
-  _edge_color: none
+  _edge_color:
   _color_map: RdBu
   _show_color_bar: False
   _errorbars_color: same as scatter
