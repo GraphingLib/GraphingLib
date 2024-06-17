@@ -1,7 +1,7 @@
 
 <div style="width: 100%;">
   <a href="https://www.graphinglib.org/" target="_blank">
-    <img src="html_readme.svg" style="width: 100%;" alt="Click to see the documentation website">
+    <img src="images/readme_banner.svg" style="width: 100%;" alt="Click to see the documentation website">
   </a>
 </div>
 
