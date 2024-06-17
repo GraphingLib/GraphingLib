@@ -1,0 +1,3 @@
+Added support for color cycles and colormaps with Scatter edge_color
+--------------------------------------------------------------------
+The `edge_color` attribute of Scatter objects now accepts a list of colors or intensities. When set to "color cycle" or if this is what the style's default is set to, the edge_color will cycle through the colors in the style's color cycle.
