@@ -2,14 +2,14 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="900mm"
-   height="170mm"
-   viewBox="0 0 900 170"
+   width="800mm"
+   height="70mm"
+   viewBox="0 0 800 70"
    version="1.1"
    id="svg1"
    xml:space="preserve"
    inkscape:version="1.3.1 (91b66b0783, 2023-11-16)"
-   sodipodi:docname="banner_gl.svg"
+   sodipodi:docname="readme_banner.svg"
    inkscape:export-filename="banner_gl.pdf"
    inkscape:export-xdpi="96"
    inkscape:export-ydpi="96"
@@ -27,14 +27,15 @@
      inkscape:deskcolor="#505050"
      inkscape:document-units="mm"
      inkscape:zoom="0.25"
-     inkscape:cx="1350"
+     inkscape:cx="1038"
      inkscape:cy="546"
      inkscape:window-width="1920"
      inkscape:window-height="1009"
      inkscape:window-x="1912"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" /><defs
+     inkscape:current-layer="layer1"
+     showgrid="false" /><defs
      id="defs1"><inkscape:path-effect
        effect="bend_path"
        id="path-effect6802"
@@ -61,10 +62,10 @@
        id="rect1"
        width="782.81519"
        height="52.815189"
-       x="58.592407"
-       y="58.592403" /><g
+       x="8.5923996"
+       y="8.5923996" /><g
        id="g1"
-       transform="matrix(0.38622179,0,0,0.38622179,79.953097,61.129949)"><path
+       transform="matrix(0.38622179,0,0,0.38622179,29.953089,11.129945)"><path
          style="display:inline;fill:#000000;fill-opacity:0;stroke:#5a5a5a;stroke-width:4.021;stroke-linecap:square;stroke-miterlimit:3.8;stroke-dasharray:none;stroke-opacity:1"
          d="M 11.297662,2.7992791 63.77999,78.010179 115.29611,41.916119"
          id="path2314" /><path
@@ -909,17 +910,17 @@
            inkscape:original-d="m 202.752,-60.334 c 0,1.3261 -0.527,2.5979 -1.465,3.5355 v 0 c -0.937,0.9377 -2.209,1.4645 -3.535,1.4645 v 0 c -1.326,0 -2.598,-0.527 -3.536,-1.4645 -0.937,-0.9375 -1.464,-2.2091 -1.464,-3.5355 v -10e-4 c 0,-1.326 0.527,-2.5972 1.464,-3.5345 0.938,-0.9376 2.21,-1.4645 3.536,-1.4645 h 10e-4 c 1.326,3e-4 2.597,0.527 3.534,1.4645 l 0.001,6e-4 c 0.937,0.9377 1.464,2.2091 1.464,3.5349 z" /></g></g><text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:19.4028px;line-height:1.25;font-family:'Open Sans';-inkscape-font-specification:'Open Sans';text-align:center;text-anchor:middle;fill:#004280;fill-opacity:1;stroke-width:20;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:10;paint-order:stroke markers fill"
-       x="450.13266"
-       y="90.040176"
+       x="400.13266"
+       y="40.040173"
        id="text1"><tspan
          sodipodi:role="line"
          id="tspan1"
          style="font-size:19.4028px;fill:#004280;fill-opacity:1;stroke-width:20"
-         x="450.13266"
-         y="90.040176">GraphingLib has a documentation page! Click this banner to visit!</tspan></text><g
+         x="400.13266"
+         y="40.040173">GraphingLib has a documentation page! Click this banner to visit!</tspan></text><g
        style="fill:none;fill-opacity:1;stroke:#004280;stroke-opacity:1"
        id="g2"
-       transform="matrix(1.7317433,0,0,1.7317433,783.63309,65.082926)"><path
+       transform="matrix(1.7317433,0,0,1.7317433,733.63308,15.082922)"><path
          id="Vector"
          d="m 10.0002,5 h -1.8 C 7.08009,5 6.51962,5 6.0918,5.21799 5.71547,5.40973 5.40973,5.71547 5.21799,6.0918 5,6.51962 5,7.08009 5,8.2002 v 7.6 c 0,1.1201 0,1.6799 0.21799,2.1077 0.19174,0.3763 0.49748,0.6826 0.87381,0.8743 C 6.5192,19 7.07899,19 8.19691,19 h 7.60619 c 1.1179,0 1.6769,0 2.1043,-0.2178 0.3763,-0.1917 0.6831,-0.4983 0.8748,-0.8746 C 19,17.4802 19,16.921 19,15.8031 V 14 M 20,9 V 4 m 0,0 h -5 m 5,0 -7,7"
          stroke="#000000"
