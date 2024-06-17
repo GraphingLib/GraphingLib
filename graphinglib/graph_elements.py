@@ -246,7 +246,11 @@ class Hlines:
                 "linewidths": self._line_widths,
             }
             params = {k: v for k, v in params.items() if v != "default"}
-            self.handle = axes.hlines(
+            self.handle = LineCollection(
+                [[(0, 0)]] * (len(self._y) if len(self._y) <= 3 else 3),
+                **params,
+            )
+            axes.hlines(
                 self._y,
                 self._x_min,
                 self._x_max,
@@ -458,7 +462,11 @@ class Vlines:
                 "linewidths": self._line_widths,
             }
             params = {k: v for k, v in params.items() if v != "default"}
-            self.handle = axes.vlines(
+            self.handle = VerticalLineCollection(
+                [[(0, 0)]] * (len(self._x) if len(self._x) <= 4 else 4),
+                **params,
+            )
+            axes.vlines(
                 self._x,
                 self._y_min,
                 self._y_max,
