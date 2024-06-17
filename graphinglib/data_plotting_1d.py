@@ -1479,8 +1479,9 @@ class Scatter:
         Face color of the points. If an array of intensities is provided, the values are mapped to the specified color
         map. If None, marker faces are transparent.
         Default depends on the ``figure_style`` configuration.
-    edge_color : str
-        Edge color of the points.
+    edge_color : str or ArrayLike or None
+        Edge color of the points. If an array of intensities is provided, the values are mapped to the specified color
+        map. If None, marker edges are transparent.
         Default depends on the ``figure_style`` configuration.
     color_map : str or Colormap
         Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
@@ -1501,9 +1502,9 @@ class Scatter:
         x_data: ArrayLike,
         y_data: ArrayLike,
         label: Optional[str] = None,
-        face_color: str | ArrayLike | NoneType | Literal["default"] = "default",
-        edge_color: str = "default",
-        color_map: str | Colormap | Literal["default"] = "default",
+        face_color: str | ArrayLike | NoneType = "default",
+        edge_color: str | ArrayLike | NoneType = "default",
+        color_map: str | Colormap = "default",
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -1521,8 +1522,9 @@ class Scatter:
             Face color of the points. If an array of intensities is provided, the values are mapped to the specified
             color map. If None, marker faces are transparent.
             Default depends on the ``figure_style`` configuration.
-        edge_color : str
-            Edge color of the points.
+        edge_color : str or ArrayLike or None
+            Edge color of the points. If an array of intensities is provided, the values are mapped to the specified
+            color map. If None, marker edges are transparent.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
@@ -1562,9 +1564,9 @@ class Scatter:
         x_min: float,
         x_max: float,
         label: Optional[str] = None,
-        face_color: str | ArrayLike | NoneType | Literal["default"] = "default",
-        edge_color: str = "default",
-        color_map: str | Colormap | Literal["default"] = "default",
+        face_color: str | ArrayLike | NoneType = "default",
+        edge_color: str | ArrayLike | NoneType = "default",
+        color_map: str | Colormap = "default",
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: int | Literal["default"] = "default",
         marker_style: str = "default",
@@ -1584,8 +1586,9 @@ class Scatter:
         face_color : str or ArrayLike or None
             Face color of the points. If an array of intensities is provided, the values are mapped to the specified
             color map. If None, marker faces are transparent.
-        edge_color : str
-            Edge color of the points.
+        edge_color : str or ArrayLike or None
+            Edge color of the points. If an array of intensities is provided, the values are mapped to the specified
+            color map. If None, marker edges are transparent.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
@@ -1940,9 +1943,9 @@ class Scatter:
         x_min: float,
         x_max: float,
         label: Optional[str] = None,
-        face_color: str | ArrayLike | Literal["default"] = "default",
-        edge_color: str = "default",
-        color_map: str | Colormap | Literal["default"] = "default",
+        face_color: str | ArrayLike | NoneType = "default",
+        edge_color: str | ArrayLike | NoneType = "default",
+        color_map: str | Colormap = "default",
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -1957,12 +1960,13 @@ class Scatter:
             The slice will be created between x_min and x_max.
         label : str, optional
             Label to be displayed in the legend.
-        face_color : str or ArrayLike
+        face_color : str or ArrayLike or None
             Face color of the points. If an array of intensities is provided, the values are mapped to the specified
-            color map.
+            color map. If None, marker faces are transparent.
             Default depends on the ``figure_style`` configuration.
-        edge_color : str
-            Edge color of the points.
+        edge_color : str or ArrayLike or None
+            Edge color of the points. If an array of intensities is provided, the values are mapped to the specified
+            color map. If None, marker edges are transparent.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
@@ -2022,8 +2026,8 @@ class Scatter:
         y_min: float,
         y_max: float,
         label: Optional[str] = None,
-        face_color: str | ArrayLike | Literal["default"] = "default",
-        edge_color: str = "default",
+        face_color: str | ArrayLike | NoneType = "default",
+        edge_color: str | ArrayLike | NoneType = "default",
         color_map: str | Colormap | Literal["default"] = "default",
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
@@ -2039,12 +2043,13 @@ class Scatter:
             The slice will be created between y_min and y_max.
         label : str, optional
             Label to be displayed in the legend.
-        face_color : str or ArrayLike
+        face_color : str or ArrayLike or None
             Face color of the points. If an array of intensities is provided, the values are mapped to the specified
-            color map.
+            color map. If None, marker faces are transparent.
             Default depends on the ``figure_style`` configuration.
-        edge_color : str
-            Edge color of the points.
+        edge_color : str or ArrayLike or None
+            Edge color of the points. If an array of intensities is provided, the values are mapped to the specified
+            color map. If None, marker edges are transparent.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
@@ -2408,13 +2413,11 @@ class Scatter:
         # Check whether to use color map (one of the colors is an array of intensities)
         if isinstance(self._face_color, (list, tuple, np.ndarray)):
             if all(isinstance(i, (int, float)) for i in self._face_color):
-                # Normalize intensities and convert to colors
                 color_map = plt.get_cmap(self._color_map)
                 norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
                 mpl_face_color = [color_map(norm(i)) for i in self._face_color]
         elif isinstance(self._edge_color, (list, tuple, np.ndarray)):
             if all(isinstance(i, (int, float)) for i in self._edge_color):
-                # Convert intensities to colors
                 color_map = plt.get_cmap(self._color_map)
                 norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
                 mpl_edge_color = [color_map(norm(i)) for i in self._edge_color]
