@@ -1,8 +1,7 @@
 import unittest
-from calendar import c
 from random import random
 
-from matplotlib.colors import to_hex
+from matplotlib.colors import to_hex, to_rgba
 from matplotlib.pyplot import close, subplots
 from matplotlib.collections import PathCollection
 from numpy import linspace, ndarray, pi, sin
@@ -441,15 +440,20 @@ class TestScatter(unittest.TestCase):
             face_color="k",
             edge_color="k",
             marker_size=30,
-            marker_style="o"
+            marker_style="o",
         )
         _, self.testAxes = subplots()
         self.testScatter._plot_element(self.testAxes, 0)
-        number_of_scatters = sum([isinstance(element, PathCollection) for element in list(self.testAxes.get_children())])
+        number_of_scatters = sum(
+            [
+                isinstance(element, PathCollection)
+                for element in list(self.testAxes.get_children())
+            ]
+        )
         self.assertEqual(number_of_scatters, 1)
 
     def test_scatter_is_plotted_with_errorbar(self):
-        self.testScatter.add_errorbars(linspace(0,1,200), linspace(2,3,200))
+        self.testScatter.add_errorbars(linspace(0, 1, 200), linspace(2, 3, 200))
         _, self.testAxes = subplots()
         self.testScatter._plot_element(self.testAxes, 0)
         self.assertEqual(len(self.testAxes.get_lines()), 1)
@@ -651,6 +655,251 @@ class TestScatter(unittest.TestCase):
         correct_y_data = correct_x_data**2
         self.assertListEqual(list(scatter_slice._x_data), list(correct_x_data))
         self.assertListEqual(list(scatter_slice._y_data), list(correct_y_data))
+
+    def test_no_face_colour(self):
+        scatter = Scatter.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            face_color=None,
+            edge_color="blue",
+        )
+        fig = Figure(figure_style="plain")
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        # Test that face color is not set and that edge color is set to color cycle
+        # self.assertEqual(scatter.handle.get_facecolor(), "none")
+        print(scatter.handle.get_edgecolor()[0])
+        print(to_rgba("blue"))
+        self.assertListEqual(
+            list(scatter.handle.get_edgecolor().squeeze()), list(to_rgba("blue"))
+        )
+        self.assertListEqual(list(scatter.handle.get_facecolor().squeeze()), [])
+
+    def test_no_edge_colour(self):
+        scatter = Scatter.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            face_color="red",
+            edge_color=None,
+        )
+        fig = Figure(figure_style="plain")
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        self.assertListEqual(
+            list(scatter.handle.get_facecolor().squeeze()), list(to_rgba("red"))
+        )
+        self.assertListEqual(list(scatter.handle.get_edgecolor().squeeze()), [])
+
+    def test_with_intensity_array_face_color(self):
+        scatter = Scatter.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            face_color=linspace(0, 3, 100),
+        )
+
+        fig = Figure(figure_style="plain")
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        print(scatter.handle.get_facecolor())
+        self.assertEqual(scatter.handle.get_facecolor().shape[0], 100)
+
+    def test_with_intensity_array_and_edge_color(self):
+        scatter = Scatter.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            edge_color=linspace(0, 3, 100),
+        )
+
+        fig = Figure(figure_style="plain")
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        self.assertEqual(scatter.handle.get_edgecolor().shape[0], 100)
+
+    def test_errobars_take_face_color(self):
+        scatter = Scatter.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            edge_color=None,
+            face_color="blue",
+        )
+        scatter.add_errorbars(0.1, 0.1)
+
+        fig = Figure(figure_style="plain")
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        self.assertListEqual(
+            list(scatter.errorbars_handle[2][0].get_color().squeeze()),
+            list(to_rgba("blue")),
+        )
+
+    def test_errobars_take_edge_color(self):
+        scatter = Scatter.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            edge_color="red",
+            face_color=None,
+        )
+        scatter.add_errorbars(0.1, 0.1)
+
+        fig = Figure(figure_style="plain")
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        self.assertListEqual(
+            list(scatter.errorbars_handle[2][0].get_color().squeeze()),
+            list(to_rgba("red")),
+        )
+
+    def test_errobars_become_black_from_face_color(self):
+        scatter = Scatter.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            edge_color=None,
+            face_color=linspace(0, 3, 100),
+        )
+        scatter.add_errorbars(0.1, 0.1)
+
+        fig = Figure(figure_style="plain")
+        fig.set_visual_params(axes_face_color="white")
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        self.assertListEqual(
+            list(scatter.errorbars_handle[2][0].get_color().squeeze()),
+            list(to_rgba("black")),
+        )
+
+    def test_errobars_become_black_from_edge_color(self):
+        scatter = Scatter.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            edge_color=linspace(0, 3, 100),
+            face_color=None,
+        )
+        scatter.add_errorbars(0.1, 0.1)
+
+        fig = Figure(figure_style="plain")
+        fig.set_visual_params(axes_face_color="white")
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        self.assertListEqual(
+            list(scatter.errorbars_handle[2][0].get_color().squeeze()),
+            list(to_rgba("black")),
+        )
+
+    def test_errobars_become_white_from_face_color(self):
+        scatter = Scatter.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            edge_color=None,
+            face_color=linspace(0, 3, 100),
+        )
+        scatter.add_errorbars(0.1, 0.1)
+
+        fig = Figure(figure_style="plain")
+        fig.set_visual_params(axes_face_color="black")
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        self.assertListEqual(
+            list(scatter.errorbars_handle[2][0].get_color().squeeze()),
+            list(to_rgba("white")),
+        )
+
+    def test_errobars_become_white_from_edge_color(self):
+        scatter = Scatter.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            edge_color=linspace(0, 3, 100),
+            face_color=None,
+        )
+        scatter.add_errorbars(0.1, 0.1)
+
+        fig = Figure(figure_style="plain")
+        fig.set_visual_params(axes_face_color="black")
+        fig.add_elements(scatter)
+        fig._prepare_figure()
+        self.assertListEqual(
+            list(scatter.errorbars_handle[2][0].get_color().squeeze()),
+            list(to_rgba("white")),
+        )
+
+    def test_face_color_follows_color_cycle(self):
+        cycle_colors = ["#123456", "#345678", "#0124b6"]
+        scatter = Scatter.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            face_color="color cycle",
+            edge_color=None,
+        )
+        scatter2 = scatter.copy()
+        scatter3 = scatter.copy()
+
+        fig = Figure(figure_style="plain")
+        fig.add_elements(scatter, scatter2, scatter3)
+        fig.set_visual_params(color_cycle=cycle_colors)
+        fig._prepare_figure()
+        self.assertListEqual(
+            list(scatter.handle.get_facecolor().squeeze()),
+            list(to_rgba(cycle_colors[0])),
+        )
+        self.assertListEqual(
+            list(scatter2.handle.get_facecolor().squeeze()),
+            list(to_rgba(cycle_colors[1])),
+        )
+        self.assertListEqual(
+            list(scatter3.handle.get_facecolor().squeeze()),
+            list(to_rgba(cycle_colors[2])),
+        )
+
+    def test_edge_color_follows_color_cycle(self):
+        cycle_colors = ["#123456", "#345678", "#0124b6"]
+        scatter = Scatter.from_function(
+            lambda x: x**2,
+            -10,
+            10,
+            number_of_points=100,
+            face_color=None,
+            edge_color="color cycle",
+        )
+        scatter2 = scatter.copy()
+        scatter3 = scatter.copy()
+
+        fig = Figure(figure_style="plain")
+        fig.add_elements(scatter, scatter2, scatter3)
+        fig.set_visual_params(color_cycle=cycle_colors)
+        fig._prepare_figure()
+        self.assertListEqual(
+            list(scatter.handle.get_edgecolor().squeeze()),
+            list(to_rgba(cycle_colors[0])),
+        )
+        self.assertListEqual(
+            list(scatter2.handle.get_edgecolor().squeeze()),
+            list(to_rgba(cycle_colors[1])),
+        )
+        self.assertListEqual(
+            list(scatter3.handle.get_edgecolor().squeeze()),
+            list(to_rgba(cycle_colors[2])),
+        )
 
 
 class TestHistogram(unittest.TestCase):

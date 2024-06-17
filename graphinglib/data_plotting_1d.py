@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from types import NoneType
 from typing import Callable, Literal, Optional, Protocol
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import to_rgba, Colormap
+from matplotlib.colors import Normalize, is_color_like, to_rgba, Colormap, to_rgba_array
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
 from scipy.integrate import cumtrapz
@@ -657,7 +657,6 @@ class Curve:
 
     def add_error_curves(
         self,
-        x_error: Optional[ArrayLike] = None,
         y_error: Optional[ArrayLike] = None,
         error_curves_color: str = "default",
         error_curves_line_style: str = "default",
@@ -669,8 +668,6 @@ class Curve:
 
         Parameters
         ----------
-        x_error : ArrayLike, optional
-            Array of x errors.
         y_error : ArrayLike, optional
             Array of y errors.
         error_curves_color : str
@@ -681,13 +678,12 @@ class Curve:
             Default depends on the ``figure_style`` configuration.
         error_curves_line_width : float
             Line width of the error curves.
-            Default depends on the ``figure_style`` configuration.ç
+            Default depends on the ``figure_style`` configuration.
         error_curves_fill_between : bool
             Whether or not to fill the area between the two error curves.
             Default depends on the ``figure_style`` configuration.
         """
         self._show_error_curves = True
-        self._x_error = np.array(x_error) if x_error is not None else x_error
         self._y_error = np.array(y_error) if y_error is not None else y_error
         self._error_curves_color = error_curves_color
         self._error_curves_line_style = error_curves_line_style
@@ -1163,8 +1159,7 @@ class Curve:
         if other_curve is None:
             if fill_between:
                 self._fill_between_bounds = (x1, x2)
-                if fill_color != "default":
-                    self._fill_between_color = fill_color
+                self._fill_between_color = fill_color
             y_data = self._y_data
             x_data = self._x_data
             mask = (x_data >= x1) & (x_data <= x2)
@@ -1330,7 +1325,7 @@ class Curve:
             )
         return point_objects
 
-    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified axes.
         """
@@ -1339,10 +1334,22 @@ class Curve:
                 "color": self._color,
                 "linewidth": self._line_width,
                 "linestyle": self._line_style,
-                "elinewidth": self._errorbars_line_width,
+                "elinewidth": (
+                    self._errorbars_line_width
+                    if self._errorbars_line_width != "same as curve"
+                    else self._line_width
+                ),
                 "capsize": self._cap_width,
-                "capthick": self._cap_thickness,
-                "ecolor": self._errorbars_color,
+                "capthick": (
+                    self._cap_thickness
+                    if self._cap_thickness != "same as curve"
+                    else self._line_width
+                ),
+                "ecolor": (
+                    self._errorbars_color
+                    if self._errorbars_color != "same as curve"
+                    else self._color
+                ),
             }
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
@@ -1379,35 +1386,53 @@ class Curve:
                 if self._y_error is not None
                 else self._y_data
             )
+
+            params = {
+                "color": (
+                    self._error_curves_color
+                    if self._error_curves_color != "same as curve"
+                    else self.handle[0].get_color()
+                ),
+                "linestyle": (
+                    self._error_curves_line_style
+                    if self._error_curves_line_style != "same as curve"
+                    else self._line_style
+                ),
+                "linewidth": (
+                    self._error_curves_line_width
+                    if self._error_curves_line_width != "same as curve"
+                    else self._line_width
+                ),
+            }
+
+            params = {k: v for k, v in params.items() if v != "default"}
+
             axes.plot(
                 self._x_data,
                 min_y,
-                linestyle=self._error_curves_line_style,
-                linewidth=self._error_curves_line_width,
-                color=self.handle[0].get_color(),
+                **params,
             )
             axes.plot(
                 self._x_data,
                 max_y,
-                linestyle=self._error_curves_line_style,
-                linewidth=self._error_curves_line_width,
-                color=self.handle[0].get_color(),
+                **params,
             )
             if self._error_curves_fill_between:
                 axes.fill_between(
                     self._x_data,
                     max_y,
                     min_y,
-                    color=self._error_curves_color,
+                    color=self.handle[0].get_color(),
                     alpha=0.2,
                 )
         if self._fill_between_bounds:
-            kwargs = {"alpha": 0.2}
-            if self._fill_between_color is not None:
-                kwargs["color"] = self._fill_between_color
-            else:
-                kwargs["color"] = self.handle[0].get_color()
-            kwargs = {k: v for k, v in kwargs.items() if v != "default"}
+            params = {"alpha": 0.2}
+            params["color"] = (
+                self._fill_between_color
+                if self._fill_between_color != "same as curve"
+                else self.handle[0].get_color()
+            )
+            params = {k: v for k, v in params.items() if v != "default"}
             if self._fill_between_other_curve:
                 self_y_data = self._y_data
                 self_x_data = self._x_data
@@ -1420,13 +1445,13 @@ class Curve:
                 )
                 self_y_data = interp1d(self_x_data, self_y_data)(x_data)
                 other_y_data = interp1d(other_x_data, other_y_data)(x_data)
-                kwargs["x"] = x_data
-                kwargs["y1"] = self_y_data
-                kwargs["y2"] = other_y_data
+                params["x"] = x_data
+                params["y1"] = self_y_data
+                params["y2"] = other_y_data
                 where_x_data = x_data
             else:
-                kwargs["x"] = self._x_data
-                kwargs["y1"] = self._y_data
+                params["x"] = self._x_data
+                params["y1"] = self._y_data
                 where_x_data = self._x_data
 
             axes.fill_between(
@@ -1435,7 +1460,7 @@ class Curve:
                     where_x_data <= self._fill_between_bounds[1],
                 ),
                 zorder=z_order - 2,
-                **kwargs,
+                **params,
             )
 
 
@@ -1454,8 +1479,9 @@ class Scatter:
         Face color of the points. If an array of intensities is provided, the values are mapped to the specified color
         map. If None, marker faces are transparent.
         Default depends on the ``figure_style`` configuration.
-    edge_color : str
-        Edge color of the points.
+    edge_color : str or ArrayLike or None
+        Edge color of the points. If an array of intensities is provided, the values are mapped to the specified color
+        map. If None, marker edges are transparent.
         Default depends on the ``figure_style`` configuration.
     color_map : str or Colormap
         Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
@@ -1476,9 +1502,9 @@ class Scatter:
         x_data: ArrayLike,
         y_data: ArrayLike,
         label: Optional[str] = None,
-        face_color: str | ArrayLike | NoneType | Literal["default"] = "default",
-        edge_color: str = "default",
-        color_map: str | Colormap | Literal["default"] = "default",
+        face_color: str | ArrayLike | NoneType = "default",
+        edge_color: str | ArrayLike | NoneType = "default",
+        color_map: str | Colormap = "default",
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -1496,8 +1522,9 @@ class Scatter:
             Face color of the points. If an array of intensities is provided, the values are mapped to the specified
             color map. If None, marker faces are transparent.
             Default depends on the ``figure_style`` configuration.
-        edge_color : str
-            Edge color of the points.
+        edge_color : str or ArrayLike or None
+            Edge color of the points. If an array of intensities is provided, the values are mapped to the specified
+            color map. If None, marker edges are transparent.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
@@ -1537,9 +1564,9 @@ class Scatter:
         x_min: float,
         x_max: float,
         label: Optional[str] = None,
-        face_color: str | ArrayLike | NoneType | Literal["default"] = "default",
-        edge_color: str = "default",
-        color_map: str | Colormap | Literal["default"] = "default",
+        face_color: str | ArrayLike | NoneType = "default",
+        edge_color: str | ArrayLike | NoneType = "default",
+        color_map: str | Colormap = "default",
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: int | Literal["default"] = "default",
         marker_style: str = "default",
@@ -1559,8 +1586,9 @@ class Scatter:
         face_color : str or ArrayLike or None
             Face color of the points. If an array of intensities is provided, the values are mapped to the specified
             color map. If None, marker faces are transparent.
-        edge_color : str
-            Edge color of the points.
+        edge_color : str or ArrayLike or None
+            Edge color of the points. If an array of intensities is provided, the values are mapped to the specified
+            color map. If None, marker edges are transparent.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
@@ -1915,9 +1943,9 @@ class Scatter:
         x_min: float,
         x_max: float,
         label: Optional[str] = None,
-        face_color: str | ArrayLike | Literal["default"] = "default",
-        edge_color: str = "default",
-        color_map: str | Colormap | Literal["default"] = "default",
+        face_color: str | ArrayLike | NoneType = "default",
+        edge_color: str | ArrayLike | NoneType = "default",
+        color_map: str | Colormap = "default",
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -1932,12 +1960,13 @@ class Scatter:
             The slice will be created between x_min and x_max.
         label : str, optional
             Label to be displayed in the legend.
-        face_color : str or ArrayLike
+        face_color : str or ArrayLike or None
             Face color of the points. If an array of intensities is provided, the values are mapped to the specified
-            color map.
+            color map. If None, marker faces are transparent.
             Default depends on the ``figure_style`` configuration.
-        edge_color : str
-            Edge color of the points.
+        edge_color : str or ArrayLike or None
+            Edge color of the points. If an array of intensities is provided, the values are mapped to the specified
+            color map. If None, marker edges are transparent.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
@@ -1997,8 +2026,8 @@ class Scatter:
         y_min: float,
         y_max: float,
         label: Optional[str] = None,
-        face_color: str | ArrayLike | Literal["default"] = "default",
-        edge_color: str = "default",
+        face_color: str | ArrayLike | NoneType = "default",
+        edge_color: str | ArrayLike | NoneType = "default",
         color_map: str | Colormap | Literal["default"] = "default",
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
@@ -2014,12 +2043,13 @@ class Scatter:
             The slice will be created between y_min and y_max.
         label : str, optional
             Label to be displayed in the legend.
-        face_color : str or ArrayLike
+        face_color : str or ArrayLike or None
             Face color of the points. If an array of intensities is provided, the values are mapped to the specified
-            color map.
+            color map. If None, marker faces are transparent.
             Default depends on the ``figure_style`` configuration.
-        edge_color : str
-            Edge color of the points.
+        edge_color : str or ArrayLike or None
+            Edge color of the points. If an array of intensities is provided, the values are mapped to the specified
+            color map. If None, marker edges are transparent.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
@@ -2300,10 +2330,70 @@ class Scatter:
         ]
         return points
 
-    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _get_contrasting_shade(self, color: str | tuple[int, int, int]) -> str:
+        """
+        Gives the most contrasting shade (black/white) for a given color. The algorithm used comes from this Stack
+        Exchange answer : https://ux.stackexchange.com/a/82068.
+
+        Parameters
+        ----------
+        color : str or tuple[int, int, int]
+            Color that needs to be contrasted. This can either be a known matplotlib color string or a RGB code, given
+            as a tuple of integers that take 0-255.
+
+        Returns
+        -------
+        shade : str
+            Shade (black/white) that contrasts the most with the given color.
+        """
+        if isinstance(color, str):
+            color = to_rgba_array(color)[0, :3] * 255
+
+        R, G, B = color
+
+        if R <= 10:
+            Rg = R / 3294
+        else:
+            Rg = (R / 269 + 0.0513) ** 2.4
+
+        if G <= 10:
+            Gg = G / 3294
+        else:
+            Gg = (G / 269 + 0.0513) ** 2.4
+
+        if B <= 10:
+            Bg = B / 3294
+        else:
+            Bg = (B / 269 + 0.0513) ** 2.4
+
+        L = 0.2126 * Rg + 0.7152 * Gg + 0.0722 * Bg
+        if L < 0.5:
+            return "white"
+        else:
+            return "black"
+
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified axes.
         """
+        # Check that either face color or edge color is not None
+        if self._face_color is None and self._edge_color is None:
+            raise ValueError(
+                "Both face color and edge color cannot be None. Please set at least one of them to a valid color."
+            )
+
+        # Check that either face color or edge color is not a list/array/tuple of intensities
+        if isinstance(self._face_color, (list, tuple, np.ndarray)) and isinstance(
+            self._edge_color, (list, tuple, np.ndarray)
+        ):
+            # If they're 3 or 4 element arrays, assume they're RGB or RGBA values
+            if len(self._face_color) in [3, 4] or len(self._edge_color) in [3, 4]:
+                pass
+            else:
+                raise ValueError(
+                    "Both face color and edge color cannot be lists/arrays/tuples of intensities or colors. Please set at least one of them to a valid color or set one of them to None."
+                )
+
         # Convert face color to matplotlib notation
         if self._face_color is None:
             # Set to transparent
@@ -2318,14 +2408,39 @@ class Scatter:
             # Use specified color
             mpl_face_color = self._face_color
 
+        # Convert edge color to matplotlib notation
+        if self._edge_color is None:
+            # Set to transparent
+            mpl_edge_color = "none"
+        elif isinstance(self._edge_color, str) and self._edge_color == "default":
+            # Use color cycle (figure uses a matplotlib style)
+            mpl_edge_color = None
+        elif isinstance(self._edge_color, str) and self._edge_color == "color cycle":
+            # Use color cycle
+            mpl_edge_color = kwargs["cycle_color"]
+        else:
+            # Use specified color
+            mpl_edge_color = self._edge_color
+
+        # Check whether to use color map (one of the colors is an array of intensities)
+        if isinstance(self._face_color, (list, tuple, np.ndarray)):
+            if all(isinstance(i, (int, float)) for i in self._face_color):
+                color_map = plt.get_cmap(self._color_map)
+                norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
+                mpl_face_color = [color_map(norm(i)) for i in self._face_color]
+        elif isinstance(self._edge_color, (list, tuple, np.ndarray)):
+            if all(isinstance(i, (int, float)) for i in self._edge_color):
+                color_map = plt.get_cmap(self._color_map)
+                norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
+                mpl_edge_color = [color_map(norm(i)) for i in self._edge_color]
+
         params = {
-            "edgecolors": self._edge_color,
             "s": self._marker_size,
             "marker": self._marker_style if self._marker_style != "default" else "o",
-            "cmap": self._color_map if not isinstance(self._face_color, str) else None,
-            "c": mpl_face_color,
         }
         params = {k: v for k, v in params.items() if v != "default"}
+        params["facecolors"] = mpl_face_color
+        params["edgecolors"] = mpl_edge_color
         self.handle = axes.scatter(
             self._x_data,
             self._y_data,
@@ -2337,14 +2452,26 @@ class Scatter:
             # Convert errorbars color to matplotlib notation
             if self._errorbars_color is None:
                 raise ValueError(
-                    "Errorbars color cannot be None. If you haven't explicitly set it to None, maybe the style you are using has set the errorbars color to mirror the Scatter face color which you have set to None. Please set the errorbars color to a valid color."
+                    "Errorbars color cannot be None. Please set the errorbars color to a valid color."
                 )
             elif isinstance(self._errorbars_color, str) and (
                 self._errorbars_color == "default"
-                or self._errorbars_color == "color cycle"
             ):
                 # Use color cycle
-                mpl_errorbars_color = self.handle.get_facecolor()
+                mpl_errorbars_color = None
+            elif (
+                isinstance(self._errorbars_color, str)
+                and self._errorbars_color == "same as scatter"
+            ):
+                marker_edge_color = self.handle.get_edgecolor()
+                marker_face_color = self.handle.get_facecolor()
+                if is_color_like(marker_edge_color):
+                    mpl_errorbars_color = marker_edge_color
+                elif is_color_like(marker_face_color):
+                    mpl_errorbars_color = marker_face_color
+                else:
+                    ax_face_color = plt.rcParams["axes.facecolor"]
+                    mpl_errorbars_color = self._get_contrasting_shade(ax_face_color)
             elif isinstance(self._errorbars_color, str):
                 # Use specified color
                 mpl_errorbars_color = self._errorbars_color
@@ -2377,8 +2504,24 @@ class Scatter:
             and self._face_color is not None
             and not isinstance(self.face_color, str)
         ):
-            fig = axes.get_figure()
-            fig.colorbar(self.handle, ax=axes)
+            # Create color bar from face color intensities
+            color_map = plt.get_cmap(self._color_map)
+            norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
+            sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
+            sm.set_array([])
+            plt.colorbar(sm, ax=axes)
+
+        if (
+            self._show_color_bar
+            and self._edge_color is not None
+            and not isinstance(self.edge_color, str)
+        ):
+            # Create color bar from edge color intensities
+            color_map = plt.get_cmap(self._color_map)
+            norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
+            sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
+            sm.set_array([])
+            plt.colorbar(sm, ax=axes)
 
 
 @dataclass
@@ -2793,7 +2936,7 @@ class Histogram:
         self._pdf_mean_color = mean_color
         self._pdf_std_color = std_color
 
-    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified axes.
         """

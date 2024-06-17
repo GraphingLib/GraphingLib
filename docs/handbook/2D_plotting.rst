@@ -32,23 +32,25 @@ As for the :class:`~graphinglib.data_plotting_1d.Curve` and :class:`~graphinglib
 It is also possible to create a Heatmap from a list or array of values at unevenly distributed points. Take for example the data displayed below:
 
 .. plot::
-    :include-source: false
-
-    from matplotlib import pyplot as plt
 
     def func(x, y):
         return x * (1 - x) * np.cos(4 * np.pi * x) * np.sin(4 * np.pi * y**2) ** 2
 
-    rng = np.random.default_rng()
-    points = rng.random((1000, 2))
+    generator = np.random.default_rng(seed=0)
+    points = generator.random((1000, 2))
     values = func(points[:, 0], points[:, 1])
 
-    fig, ax = plt.subplots()
-    sc = ax.scatter(points[:, 0], points[:, 1], c=values, cmap="coolwarm")
-    ax.set_xlim((0, 1))
-    ax.set_ylim((0, 1))
-    fig.colorbar(sc)
-    plt.show()
+    scatter = gl.Scatter(
+        x_data=points[:, 0],
+        y_data=points[:, 1],
+        face_color=values,
+        color_map="coolwarm",
+        show_color_bar=True,
+    )
+
+    fig = gl.Figure()
+    fig.add_elements(scatter)
+    fig.show()
 
 The :py:meth:`~graphinglib.data_plotting_2d.Heatmap.from_points` method used below will interpolate the data on a grid and create a Heatmap from this interpolated data: 
  
@@ -57,8 +59,7 @@ The :py:meth:`~graphinglib.data_plotting_2d.Heatmap.from_points` method used bel
     def func(x, y):
         return x * (1 - x) * np.cos(4 * np.pi * x) * np.sin(4 * np.pi * y**2) ** 2
 
-
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(seed=0)
     points = rng.random((1000, 2))
     values = func(points[:, 0], points[:, 1])
 
@@ -71,6 +72,7 @@ The :py:meth:`~graphinglib.data_plotting_2d.Heatmap.from_points` method used bel
         grid_interpolation="cubic",
         number_of_points=(100, 100),
         origin_position="lower",
+        color_map="coolwarm",
     )
     fig.add_elements(hm)
     fig.show()

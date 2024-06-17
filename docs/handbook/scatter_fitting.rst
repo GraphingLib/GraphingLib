@@ -91,6 +91,24 @@ Interpolation between data points is possible by calling the :meth:`~graphinglib
     fig.add_elements(scatter, point_at_4, *points_at_y_one_half)
     fig.show()
 
+You can also add a third dimension to your scatter plot by specifying the color of each point. This can be done by passing in a list of colors to the `face_color` or `edge_color` arguments. If you want to use a colormap, you can pass in a list of intensity values to the `face_color` or `edge_color` arguments and specify the colormap with the `color_map` argument. If you want to see the colorbar, you can set the `show_colorbar` argument to `True`.
+
+.. plot::
+
+    # Generate random x and y data
+    x = np.linspace(0, 10, 100)
+    y = np.random.rand(100) * 10
+
+    # Generate a list of intensity values which will be mapped to colors
+    z = np.sin(x) + np.cos(y) 
+
+    # Create scatter plot with color
+    scatter = gl.Scatter(x, y, face_color=z, color_map="Reds", show_color_bar=True)
+
+    fig = gl.Figure()
+    fig.add_elements(scatter)
+    fig.show()
+
 Curve fitting
 -------------
 

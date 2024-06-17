@@ -25,7 +25,7 @@ class Plottable(Protocol):
 
     """
 
-    def _plot_element(self, axes: plt.Axes, z_order: int):
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
         Axes
@@ -213,7 +213,7 @@ class Hlines:
         """
         return deepcopy(self)
 
-    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
         Axes
@@ -431,7 +431,7 @@ class Vlines:
         """
         return deepcopy(self)
 
-    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
@@ -712,7 +712,7 @@ class Point:
         """
         self._show_coordinates = True
 
-    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
@@ -963,7 +963,7 @@ class Text:
         if head_length is not None:
             self._arrow_properties["headlength"] = head_length
 
-    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified Axes
         """
@@ -1226,7 +1226,7 @@ class Table:
         """
         return deepcopy(self)
 
-    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.

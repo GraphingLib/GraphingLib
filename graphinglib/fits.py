@@ -238,7 +238,7 @@ class GeneralFit(Curve):
         ]
         return points
 
-    def _plot_element(self, axes: plt.Axes, z_order: int) -> None:
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
         Axes
