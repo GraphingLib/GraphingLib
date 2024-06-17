@@ -41,15 +41,11 @@ class HandlerMultipleLines(HandlerLineCollection):
                 dashes = orig_handle.get_dashes()[i]
             except IndexError:
                 dashes = orig_handle.get_dashes()[0]
-            try:
-                lw = orig_handle.get_linewidths()[i]
-            except IndexError:
-                lw = orig_handle.get_linewidths()[0]
             if dashes[1] is not None:
                 line.set_dashes(dashes[1])
             line.set_color(color)
             line.set_transform(trans)
-            line.set_linewidth(lw)
+            line.set_linewidth(2)
             lines.append(line)
         return lines
 
@@ -87,15 +83,11 @@ class HandlerMultipleVerticalLines(HandlerLineCollection):
                 dashes = orig_handle.get_dashes()[i]
             except IndexError:
                 dashes = orig_handle.get_dashes()[0]
-            try:
-                lw = orig_handle.get_linewidths()[i]
-            except IndexError:
-                lw = orig_handle.get_linewidths()[0]
             if dashes[1] is not None:
                 line.set_dashes(dashes[1])
             line.set_color(color)
             line.set_transform(trans)
-            line.set_linewidth(lw)
+            line.set_linewidth(2)
             lines.append(line)
         return lines
 
