@@ -1,0 +1,3 @@
+Use trapezoidal integration for ``create_integral_curve``
+---------------------------------------------------------
+Changed the method used for numerical integration of curves to work with uneavenly spaced data and added a parameter ``initial_value``.

@@ -1,0 +1,3 @@
+New ``aspect_ratio`` parameter for Figure
+-----------------------------------------
+The parameter ``aspect_ratio`` is used to specify an aspect ratio for the axis scaling. Can take a float, "auto" or "equal".
