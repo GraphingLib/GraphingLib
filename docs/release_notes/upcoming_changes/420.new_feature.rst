@@ -1,0 +1,3 @@
+New function ``get_styles``
+---------------------------
+The new function ``get_styles`` makes it possible to fetch all available styles.

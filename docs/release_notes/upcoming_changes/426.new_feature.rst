@@ -1,0 +1,3 @@
+Added ``add_error_curves`` method
+---------------------------------
+Added ``add_error_curves`` method to the Curve class to display error around a curve with curves instead of error bars.

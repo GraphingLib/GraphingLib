@@ -1,0 +1,3 @@
+Simplified ``VectorField`` options
+----------------------------------
+Options for ``VectorField`` arrows have been simplified and the arrows shape is now controlled only by ``arrow_width`` and ``arrow_head_size``.

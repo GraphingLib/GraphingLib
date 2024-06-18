@@ -1,0 +1,3 @@
+Added possibility to set different default style
+------------------------------------------------
+Added two new functions, ``set_default_style`` to set your default style and ``get_default_style`` to get the name of the current default style.

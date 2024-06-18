@@ -1,0 +1,3 @@
+Added ``FitFromFOTF`` (first order transfer function)
+-----------------------------------------------------
+New ``FitFromFOTF`` object to create fits using a first order transfer function.
