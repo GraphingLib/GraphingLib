@@ -6,7 +6,7 @@ Curve:
   _errorbars_color: "same as curve"
   _errorbars_line_width: "same as curve"
   _error_curves_color: same as curve
-  _error_curves_fill_between: Flase
+  _error_curves_fill_between: False
   _error_curves_line_style: ':'
   _error_curves_line_width: 0.5
   _cap_thickness: "same as curve"
