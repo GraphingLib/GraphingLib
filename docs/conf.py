@@ -19,7 +19,7 @@ copyright = f"2023-{time.strftime('%Y')}, Gustave Coulombe, Yannick Lapointe"
 author = "Gustave Coulombe and Yannick Lapointe"
 release = __version__
 
-json_url = "https://www.graphinglib.org/en/latest/_static/switcher.json"
+json_url = "https://www.graphinglib.org/latest/_static/switcher.json"
 
 if "dev" in release:
     version_match = "dev"
