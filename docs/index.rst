@@ -233,3 +233,4 @@ GraphingLib allows you to apply prepackaged or custom styles effortlessly. Our :
    API <api>
    Contributing <contributing>
    Releases <release_notes/index>
+   Style Editor <https://www.graphinglib.org/projects/graphinglibstyleeditor/>
