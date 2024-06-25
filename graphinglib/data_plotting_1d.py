@@ -5,13 +5,12 @@ from dataclasses import dataclass
 from types import NoneType
 from typing import Callable, Literal, Optional, Protocol
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import Normalize, is_color_like, to_rgba, Colormap, to_rgba_array
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
-from scipy.integrate import cumtrapz
+from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import interp1d
 
 from .graph_elements import Point
@@ -962,7 +961,9 @@ class Curve:
         A :class:`~graphinglib.data_plotting_1d.Curve` object which is the integral of the original curve.
         """
         # calculate the integral curve using cumulative trapezoidal integration
-        y_data = cumtrapz(self._y_data, self._x_data, initial=0) + initial_value
+        y_data = (
+            cumulative_trapezoid(self._y_data, self._x_data, initial=0) + initial_value
+        )
         if copy_first:
             copy = self.copy()
             copy._y_data = y_data
