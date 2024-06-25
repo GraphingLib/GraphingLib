@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from types import NoneType
 from typing import Callable, Literal, Optional, Protocol
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import Normalize, is_color_like, to_rgba, Colormap, to_rgba_array
