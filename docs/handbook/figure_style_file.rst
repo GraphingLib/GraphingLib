@@ -46,7 +46,7 @@ You will be greeted with a GUI which allows you to create, edit, and delete styl
 
 To learn more about the Style Editor, you can check out the Style Editor documentation here:
 
-.. button-ref:: https://www.graphinglib.org/projects/graphinglibstyleeditor/
+.. button-link:: https://www.graphinglib.org/projects/graphinglibstyleeditor/
    :color: primary
 
         Go to Style Editor Documentation
