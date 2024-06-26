@@ -143,21 +143,26 @@ Example gallery
 
 def create_thumbnail(infile, thumbfile):
     baseout, extout = op.splitext(thumbfile)
-
     im = matplotlib.image.imread(infile)
+
+    percent_keep = 0.92
     height, width, _ = im.shape
     if height <= width:
-        to_cut = (width - height) / 2
+        to_cut = (width - height * percent_keep) / 2
         if int(to_cut) != to_cut:
-            thumb = im[:, int(to_cut) : width - int(to_cut + 1), :]
+            thumb = im[
+                : int(percent_keep * height), int(to_cut) : width - int(to_cut + 1), :
+            ]
         else:
-            thumb = im[:, int(to_cut) : width - int(to_cut), :]
+            thumb = im[
+                : int(percent_keep * height), int(to_cut) : width - int(to_cut), :
+            ]
     else:
-        to_cut = (height - width) / 2
+        to_cut = (height * percent_keep - width) / 2
         if int(to_cut) != to_cut:
-            thumb = im[int(to_cut) : height - int(to_cut + 1), :, :]
+            thumb = im[int(to_cut) : int(height * percent_keep) - int(to_cut + 1), :, :]
         else:
-            thumb = im[int(to_cut) : height - int(to_cut), :, :]
+            thumb = im[int(to_cut) : int(height * percent_keep) - int(to_cut), :, :]
 
     border = int(np.ceil(0.02 * thumb.shape[0]))
     thumb[-border:, :, :3] = thumb[:border, :, :3] = np.array(
