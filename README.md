@@ -14,7 +14,7 @@
 # GraphingLib
 
 <div style="text-align: center;">
-  <img src="https://github.com/GraphingLib/GraphingLib/blob/master/images/GraphingLib-Logo-Bolder.svg?raw=true" alt="graphinglib logo">
+  <img src="https://github.com/GraphingLib/GraphingLib/blob/master/images/GraphingLib-Logo-Bolder.svg" alt="graphinglib logo">
 </div>
 
 GraphingLib is an open-source data visualization library in Python, designed as a wrapper for matplotlib. It integrates powerful data manipulation features from libraries such as scipy, shapely, and others.
