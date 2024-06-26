@@ -91,7 +91,8 @@
                     { src: '_static/scatter_errorbars_thumb.png', link: 'examples/scatter_errorbars.html' },
                     { src: '_static/stream_from_data_thumb.png', link: 'examples/stream_from_data.html' },
                     { src: '_static/vectorfield_from_data_thumb.png', link: 'examples/vectorfield_from_data.html' },
-                    { src: '_static/vectorfield_from_function_thumb.png', link: 'examples/vectorfield_from_function.html' }
+                    { src: '_static/vectorfield_from_function_thumb.png', link: 'examples/vectorfield_from_function.html' },
+                    { src: '_static/curve_error_curves_thumb.png', link: 'examples/curve_error_curves.html'}
                 ];
 
                 let imageElements = [
