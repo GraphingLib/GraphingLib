@@ -151,9 +151,15 @@ Text:
   _v_align: "top"
 
 Table:
-  _cell_align: "left"
-  _row_align: "right"
-  _col_align: "right"
+  _cell_colors: "lightblue"
+  _col_colors: "#bfbfbf"
+  _row_colors: "#bfbfbf"
+  _edge_color: "blue"
+  _edge_width: 3
+  _text_color: "red"
+  _cell_align: "right"
+  _row_align: "left"
+  _col_align: "center"
 
 Stream:
   _line_width: 1

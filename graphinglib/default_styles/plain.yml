@@ -151,6 +151,12 @@ Text:
   _v_align: "baseline"
 
 Table:
+  _cell_colors: "white"
+  _col_colors: "#bfbfbf"
+  _row_colors: "#bfbfbf"
+  _edge_color: "black"
+  _edge_width: 1
+  _text_color: "black"
   _cell_align: "right"
   _row_align: "left"
   _col_align: "center"

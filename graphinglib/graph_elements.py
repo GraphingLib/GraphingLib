@@ -1016,9 +1016,10 @@ class Table:
     cell_text : list[str]
         Text or data to be displayed in the table. The shape of the provided data
         determines the number of columns and rows.
-    cell_colors : list, optional
+    cell_colors : ArrayLike or str, optional
         Colors to apply to the cells' background. Must be a list of colors the same
-        shape as the cells. If none are specified, no color is applied.
+        shape as the cells.
+        Default depends on the ``figure_style`` configuration.
     cell_align : str
         Alignment of the cells' text. Must be one of the following:
         {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
@@ -1029,17 +1030,28 @@ class Table:
     col_align : str
         Alignment of the column labels' text. Must be one of the following:
         {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
-    col_colors : list, optional
+    col_colors : ArrayLike or str, optional
         Colors to apply to the column labels' background. Must be a list of colors the same
-        length as the number of columns. If none are specified, no color is applied.
+        length as the number of columns.
+        Default depends on the ``figure_style`` configuration.
     row_labels : list[str], optional
         List of labels for the rows of the table. If none are specified, no row labels are displayed.
     row_align : str
         Alignment of the row labels' text. Must be one of the following:
         {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
-    row_colors : list, optional
+    row_colors : ArrayLike or str, optional
         Colors to apply to the row labels' background. Must be a list of colors the same
-        length as the number of rows. If none are specified, no color is applied.
+        length as the number of rows.
+        Default depends on the ``figure_style`` configuration.
+    edge_width : float or str, optional
+        Width of the table's edges.
+        Default depends on the ``figure_style`` configuration.
+    edge_color : str, optional
+        Color of the table's edges.
+        Default depends on the ``figure_style`` configuration.
+    text_color : str, optional
+        Color of the text in the table.
+        Default depends on the ``figure_style`` configuration.
     scaling : tuple[float], optional
         Horizontal and vertical scaling factors to apply to the table.
         Defaults to ``(1, 1.5)``.
@@ -1054,16 +1066,19 @@ class Table:
     def __init__(
         self,
         cell_text: list[str],
-        cell_colors: Optional[list] = None,
+        cell_colors: ArrayLike | str = "default",
         cell_align: str = "default",
         col_labels: Optional[list[str]] = None,
         col_widths: Optional[list[float]] = None,
         col_align: str = "default",
-        col_colors: Optional[list] = None,
+        col_colors: ArrayLike | str = "default",
         row_labels: Optional[list[str]] = None,
         row_align: str = "default",
-        row_colors: Optional[list] = None,
-        scaling: tuple[float] = (1, 1.5),
+        row_colors: ArrayLike | str = "default",
+        edge_width: float | Literal["default"] = "default",
+        edge_color: str = "default",
+        text_color: str = "default",
+        scaling: tuple[float, float] = (1.0, 1.5),
         location: str = "best",
     ) -> None:
         """
@@ -1077,9 +1092,10 @@ class Table:
         cell_text : list[str]
             Text or data to be displayed in the table. The shape of the provided data
             determines the number of columns and rows.
-        cell_colors : list, optional
+        cell_colors : ArrayLike or str, optional
             Colors to apply to the cells' background. Must be a list of colors the same
-            shape as the cells. If none are specified, no color is applied.
+            shape as the cells.
+            Default depends on the ``figure_style`` configuration.
         cell_align : str
             Alignment of the cells' text. Must be one of the following:
             {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
@@ -1090,17 +1106,28 @@ class Table:
         col_align : str
             Alignment of the column labels' text. Must be one of the following:
             {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
-        col_colors : list, optional
+        col_colors : ArrayLike or str, optional
             Colors to apply to the column labels' background. Must be a list of colors the same
-            length as the number of columns. If none are specified, no color is applied.
+            length as the number of columns.
+            Default depends on the ``figure_style`` configuration
         row_labels : list[str], optional
             List of labels for the rows of the table. If none are specified, no row labels are displayed.
         row_align : str
             Alignment of the row labels' text. Must be one of the following:
             {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
-        row_colors : list, optional
+        row_colors : ArrayLike or str, optional
             Colors to apply to the row labels' background. Must be a list of colors the same
-            length as the number of rows. If none are specified, no color is applied.
+            length as the number of rows.
+            Default depends on the ``figure_style`` configuration.
+        edge_width : float or str, optional
+            Width of the table's edges.
+            Default depends on the ``figure_style`` configuration.
+        edge_color : str, optional
+            Color of the table's edges.
+            Default depends on the ``figure_style`` configuration.
+        text_color : str, optional
+            Color of the text within the table.
+            Default depends on the ``figure_style`` configuration.
         scaling : tuple[float], optional
             Horizontal and vertical scaling factors to apply to the table.
             Defaults to ``(1, 1.5)``.
@@ -1121,6 +1148,9 @@ class Table:
         self._row_labels = row_labels
         self._row_align = row_align
         self._row_colors = row_colors
+        self._edge_width = edge_width
+        self._edge_color = edge_color
+        self._text_color = text_color
         self._scaling = scaling
         self._location = location
 
@@ -1133,7 +1163,7 @@ class Table:
         self._cell_text = cell_text
 
     @property
-    def cell_colors(self) -> list:
+    def cell_colors(self) -> ArrayLike | str:
         return self._cell_colors
 
     @cell_colors.setter
@@ -1173,7 +1203,7 @@ class Table:
         self._col_align = col_align
 
     @property
-    def col_colors(self) -> list:
+    def col_colors(self) -> ArrayLike | str:
         return self._col_colors
 
     @col_colors.setter
@@ -1197,12 +1227,42 @@ class Table:
         self._row_align = row_align
 
     @property
-    def row_colors(self) -> list:
+    def row_colors(self) -> ArrayLike | str:
         return self._row_colors
 
     @row_colors.setter
     def row_colors(self, row_colors: list) -> None:
         self._row_colors = row_colors
+
+    @property
+    def edge_width(self) -> float:
+        return self._edge_width
+
+    @edge_width.setter
+    def edge_width(self, edge_width: float) -> None:
+        self._edge_width = edge_width
+        for (i, j), cell in self.handle.get_celld().items():
+            cell.set_linewidth(self._edge_width)
+
+    @property
+    def edge_color(self) -> str:
+        return self._edge_color
+
+    @edge_color.setter
+    def edge_color(self, edge_color: str) -> None:
+        self._edge_color = edge_color
+        for (i, j), cell in self.handle.get_celld().items():
+            cell.set_edgecolor(self._edge_color)
+
+    @property
+    def text_color(self) -> str:
+        return self._text_color
+
+    @text_color.setter
+    def text_color(self, text_color: str) -> None:
+        self._text_color = text_color
+        for (i, j), cell in self.handle.get_celld().items():
+            cell.set_text_props(color=self._text_color)
 
     @property
     def scaling(self) -> tuple[float]:
@@ -1237,7 +1297,18 @@ class Table:
             "rowLoc": self._row_align,
         }
         params = {k: v for k, v in params.items() if v != "default"}
-        table = axes.table(
+
+        # Set colors to correct shape if they are strings
+        if isinstance(self._cell_colors, str):
+            self._cell_colors = [[self._cell_colors] * len(self._cell_text[0])] * len(
+                self._cell_text
+            )
+        if isinstance(self._col_colors, str):
+            self._col_colors = [self._col_colors] * len(self._cell_text[0])
+        if isinstance(self._row_colors, str):
+            self._row_colors = [self._row_colors] * len(self._cell_text)
+
+        self.handle = axes.table(
             cellText=self._cell_text,
             cellColours=self._cell_colors,
             colLabels=self._col_labels,
@@ -1249,5 +1320,9 @@ class Table:
             zorder=z_order,
             **params,
         )
-        table.auto_set_font_size(False)
-        table.scale(self._scaling[0], self._scaling[1])
+        self.handle.auto_set_font_size(False)
+        self.handle.scale(self._scaling[0], self._scaling[1])
+        for (i, j), cell in self.handle.get_celld().items():
+            cell.set_text_props(color=self._text_color)
+            cell.set_edgecolor(self._edge_color)
+            cell.set_linewidth(self._edge_width)

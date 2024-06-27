@@ -128,9 +128,15 @@ Stream:
   _color_map: null
   _line_width: 1
 Table:
-  _cell_align: right
-  _col_align: center
-  _row_align: left
+  _cell_colors: "black"
+  _col_colors: "darkgrey"
+  _row_colors: "darkgrey"
+  _edge_color: "white"
+  _edge_width: 1
+  _text_color: "white"
+  _cell_align: "right"
+  _row_align: "left"
+  _col_align: "center"
 Text:
   _color: white
   _h_align: center
