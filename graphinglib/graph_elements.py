@@ -246,10 +246,16 @@ class Hlines:
                 "linewidths": self._line_widths,
             }
             params = {k: v for k, v in params.items() if v != "default"}
-            self.handle = LineCollection(
-                [[(0, 0)]] * (len(self._y) if len(self._y) <= 3 else 3),
-                **params,
-            )
+            if isinstance(self._y, (int, float)):
+                self.handle = LineCollection(
+                    [[(0, 0)]] * 1,
+                    **params,
+                )
+            else:
+                self.handle = LineCollection(
+                    [[(0, 0)]] * (len(self._y) if len(self._y) <= 3 else 3),
+                    **params,
+                )
             axes.hlines(
                 self._y,
                 self._x_min,
