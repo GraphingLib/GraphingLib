@@ -124,6 +124,9 @@ INDEX_TEMPLATE = """
         text-align: center !important;
     }}
     @media (max-width: 600px) {{
+        .gallery-container {{
+            padding: 10px;
+        }}
         .thumb {{
             width: 160px;
             height: 160px;
