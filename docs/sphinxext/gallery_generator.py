@@ -125,12 +125,12 @@ INDEX_TEMPLATE = """
     }}
     @media (max-width: 600px) {{
         .gallery-container {{
-            padding: 10px;
+            padding: 7px;
         }}
         .thumb {{
             width: 160px;
             height: 160px;
-            margin: 5px;
+            margin: 3px;
         }}
         .thumb img {{
             width: 150px;
