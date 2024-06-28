@@ -92,7 +92,7 @@
                     { src: '_static/stream_from_data_thumb.png', link: 'examples/stream_from_data.html' },
                     { src: '_static/vectorfield_from_data_thumb.png', link: 'examples/vectorfield_from_data.html' },
                     { src: '_static/vectorfield_from_function_thumb.png', link: 'examples/vectorfield_from_function.html' },
-                    { src: '_static/curve_error_curves_thumb.png', link: 'examples/curve_error_curves.html'}
+                    { src: '_static/curve_error_curves_thumb.png', link: 'examples/curve_error_curves.html'},
                     { src: '_static/dark_style_thumb.png', link: 'examples/dark_style.html' },
                     { src: '_static/fourier_series_thumb.png', link: 'examples/fourier_series.html' },
                     { src: '_static/infinite_square_well_thumb.png', link: 'examples/infinite_square_well.html' },
