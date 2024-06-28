@@ -126,23 +126,23 @@ INDEX_TEMPLATE = """
     }}
     @media (max-width: 600px) {{
         .thumb {{
+            width: 160px;
+            height: 160px;
+        }}
+
+        .thumb img {{
+            width: 150px;
+            height: 150px;
+        }}
+        
+        .thumb span {{
             width: 150px;
             height: 150px;
         }}
 
-        .thumb img {{
-            width: 140px;
-            height: 140px;
-        }}
-        
-        .thumb span {{
-            width: 140px;
-            height: 140px;
-        }}
-
         .caption {{
-            width: 150px;
-            top: 140px;
+            width: 160px;
+            top: 150px;
         }}
     }}
     </style>
