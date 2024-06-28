@@ -124,6 +124,27 @@ INDEX_TEMPLATE = """
         top: 170px;
         text-align: center !important;
     }}
+    @media (max-width: 600px) {{
+        .thumb {{
+            width: 150px;
+            height: 150px;
+        }}
+
+        .thumb img {{
+            width: 140px;
+            height: 140px;
+        }}
+        
+        .thumb span {{
+            width: 140px;
+            height: 140px;
+        }}
+
+        .caption {{
+            width: 150px;
+            top: 140px;
+        }}
+    }}
     </style>
 
 .. _{sphinx_tag}:
