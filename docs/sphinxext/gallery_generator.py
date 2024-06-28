@@ -51,14 +51,19 @@ INDEX_TEMPLATE = """
 .. raw:: html
 
     <style type="text/css">
+    .gallery-container {{
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        padding: 20px;
+    }}
     .thumb {{
         position: relative;
         float: left;
         width: 180px;
         height: 180px;
-        margin: 0;
+        margin: 5px;
     }}
- 
     .thumb img {{
         position: absolute;
         display: inline;
@@ -69,7 +74,6 @@ INDEX_TEMPLATE = """
         filter: alpha(opacity=100); /* For IE8 and earlier */
         transition: filter 0.3s, opacity 0.3s;
     }}
- 
     .thumb:hover img {{
         -webkit-filter: blur(3px);
         -moz-filter: blur(3px);
@@ -79,7 +83,6 @@ INDEX_TEMPLATE = """
         opacity: 1.0;
         filter: alpha(opacity=100); /* For IE8 and earlier */
     }}
- 
     html[data-theme=dark] .thumb:hover img {{
         -webkit-filter: blur(3px);
         -moz-filter: blur(3px);
@@ -89,7 +92,6 @@ INDEX_TEMPLATE = """
         opacity: 1.0;
         filter: alpha(opacity=100); /* For IE8 and earlier */
     }}
- 
     .thumb span {{
         position: absolute;
         display: flex;
@@ -105,19 +107,16 @@ INDEX_TEMPLATE = """
         z-index: 100;
         transition: visibility 0s, opacity 0.3s;
     }}
- 
     .thumb p {{
         font-size: 110%;
         color: #fff;
         margin: 0;
         text-align: center;
     }}
- 
     .thumb:hover span {{
         visibility: visible;
         opacity: 1;
     }}
- 
     .caption {{
         position: absolute;
         width: 180px;
@@ -128,18 +127,16 @@ INDEX_TEMPLATE = """
         .thumb {{
             width: 160px;
             height: 160px;
+            margin: 5px;
         }}
-
         .thumb img {{
             width: 150px;
             height: 150px;
         }}
-        
         .thumb span {{
             width: 150px;
             height: 150px;
         }}
-
         .caption {{
             width: 160px;
             top: 150px;
@@ -154,7 +151,11 @@ Example gallery
 
 {toctree}
 
-{contents}
+.. raw:: html
+
+    <div class="gallery-container">
+    {contents}
+    </div>
 
 .. raw:: html
 
