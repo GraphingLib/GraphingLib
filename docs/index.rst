@@ -101,6 +101,11 @@
                     { src: '_static/shape_unions_thumb.png', link: 'examples/shape_unions.html' },
                 ];
 
+                imageSources.forEach((image) => {
+                   const img = new Image();
+                   img.src = image.src;
+                });
+
                 let imageElements = [
                     { img: document.getElementById('img1'), link: document.getElementById('link1') },
                     { img: document.getElementById('img2'), link: document.getElementById('link2') },
