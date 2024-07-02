@@ -13,7 +13,7 @@ Creating a basic figure using the :class:`~graphinglib.figure.Figure` object is 
     figure.add_elements(sine)
     figure.show()
 
-The :py:meth:`~graphinglib.figure.Figure.show` method is used to show the figure on screen. It is also possible to use the :py:meth:`~graphinglib.figure.Figure.save` method to save the figure to a specified path.
+The :py:meth:`~graphinglib.figure.Figure.show` method is used to show the figure on screen. It is also possible to use the :py:meth:`~graphinglib.figure.Figure.save` method to save the figure to a specified path while setting certain options like the resolution.
 
 .. seealso:: 
     
