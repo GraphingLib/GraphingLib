@@ -49,6 +49,7 @@ Vlines:
   _line_widths: 2
 
 Figure:
+  _dpi: 200
   _size: [10, 7]
   _log_scale_x: False
   _log_scale_y: False

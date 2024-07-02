@@ -18,6 +18,7 @@ Curve:
   _line_style: '-'
   _line_width: 2
 Figure:
+  _dpi: 200
   _log_scale_x: false
   _log_scale_y: false
   _size:
