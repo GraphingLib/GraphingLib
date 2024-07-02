@@ -49,7 +49,6 @@ Vlines:
   _line_widths: 2
 
 Figure:
-  _dpi: 200
   _size: [6.4, 4.8]
   _log_scale_x: False
   _log_scale_y: False
@@ -204,7 +203,7 @@ Polygon:
 
 rc_params:
   figure.facecolor: "white"
-  figure.dpi: 200
+  savefig.dpi: 200
   axes.facecolor: "white"
   axes.edgecolor: "black"
   axes.labelcolor: "black"
