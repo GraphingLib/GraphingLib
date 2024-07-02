@@ -455,6 +455,7 @@ class Figure:
         legend: bool = True,
         legend_loc: str = "best",
         legend_cols: int = 1,
+        dpi: Optional[int] = None,
     ) -> None:
         """
         Saves the :class:`~graphinglib.figure.Figure`.
@@ -462,7 +463,7 @@ class Figure:
         Parameters
         ----------
         file_name : str
-            The name of the file to save the figure to.
+            The name of the file to save the figure to (including the file extension).
         legend : bool
             Wheter or not to display the legend.
             Defaults to ``True``.
@@ -475,11 +476,17 @@ class Figure:
         legend_cols : int
             Number of columns in the legend.
             Defaults to 1.
+        dpi : int
+            The resolution of the saved figure. Only used for raster formats (e.g. PNG, JPG, etc.).
+            Default depends on the ``figure_style`` configuration.
         """
         self._prepare_figure(
             legend=legend, legend_loc=legend_loc, legend_cols=legend_cols
         )
-        plt.savefig(file_name, bbox_inches="tight")
+        if dpi is not None:
+            plt.savefig(file_name, bbox_inches="tight", dpi=dpi)
+        else:
+            plt.savefig(file_name, bbox_inches="tight")
         plt.close()
         plt.rcParams.update(plt.rcParamsDefault)
 

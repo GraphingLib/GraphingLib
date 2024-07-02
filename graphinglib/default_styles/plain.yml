@@ -203,6 +203,7 @@ Polygon:
 
 rc_params:
   figure.facecolor: "white"
+  savefig.dpi: 200
   axes.facecolor: "white"
   axes.edgecolor: "black"
   axes.labelcolor: "black"

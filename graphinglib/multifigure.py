@@ -413,6 +413,7 @@ class MultiFigure:
         general_legend: bool = False,
         legend_loc: str = "outside lower center",
         legend_cols: int = 1,
+        dpi: Optional[int] = None,
     ) -> None:
         """
         Saves the :class:`~graphinglib.multifigure.MultiFigure` to a file.
@@ -430,13 +431,19 @@ class MultiFigure:
             The location of the legend in the MultiFigure. Possible placement keywords are: for vertical placement: ``{"upper", "center", "lower"}``, for horizontal placement: ``{"left", "center", "right"}``. The keyword ``"outside"`` can be added to put the legend outside of the axes. Defaults to ``"outside lower center"``.
         legend_cols : int
             Number of colums in which to arrange the legend items. Defaults to 1.
+        dpi : int, optional
+            The resolution of the saved MultiFigure. Only used for raster formats (e.g. PNG, JPG, etc.).
+            Default depends on the ``figure_style`` configuration.
         """
         self._prepare_multi_figure(
             general_legend=general_legend,
             legend_loc=legend_loc,
             legend_cols=legend_cols,
         )
-        plt.savefig(file_name, bbox_inches="tight")
+        if dpi is not None:
+            plt.savefig(file_name, dpi=dpi, bbox_inches="tight")
+        else:
+            plt.savefig(file_name, bbox_inches="tight")
         plt.close()
         plt.rcParams.update(rcParamsDefault)
 
