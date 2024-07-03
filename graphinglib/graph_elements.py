@@ -495,10 +495,10 @@ class Point:
         The x and y coordinates of the :class:`~graphinglib.graph_elements.Point`.
     label : str, optional
         Label to be attached to the :class:`~graphinglib.graph_elements.Point`.
-    color : str
+    color : str or None
         Face color of the marker.
         Default depends on the ``figure_style`` configuration.
-    edge_color : str
+    edge_color : str or None
         Edge color of the marker.
         Default depends on the ``figure_style`` configuration.
     marker_size : float
@@ -515,7 +515,7 @@ class Point:
         Default depends on the ``figure_style`` configuration.
     text_color : str
         Color of the text attached to the marker.
-        Defaults to `"k"` (black).
+        "same as point" uses the color of the point (prioritize edge color, then face color). Default depends on the ``figure_style`` configuration.
     h_align, v_align : str
         Horizontal and vertical alignment of the text attached
         to the :class:`~graphinglib.graph_elements.Point`.
@@ -569,7 +569,7 @@ class Point:
             Default depends on the ``figure_style`` configuration.
         text_color : str
             Color of the text attached to the marker.
-            Default depends on the ``figure_style`` configuration.
+            "same as point" uses the color of the point (prioritize edge color, then face color). Default depends on the ``figure_style`` configuration.
         h_align, v_align : str
             Horizontal and vertical alignment of the text attached
             to the :class:`~graphinglib.graph_elements.Point`.
