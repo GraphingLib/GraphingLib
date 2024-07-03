@@ -1,0 +1,3 @@
+More flexibility for Point colors
+---------------------------------
+Point face and edge colors can now be set to a color or None (transparent). Text color can also be set to a color or to "same as point" (the default) to match the point color, with the edge color being prioritized over the face color if both aren't None.

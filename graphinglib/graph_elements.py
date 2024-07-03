@@ -495,10 +495,10 @@ class Point:
         The x and y coordinates of the :class:`~graphinglib.graph_elements.Point`.
     label : str, optional
         Label to be attached to the :class:`~graphinglib.graph_elements.Point`.
-    color : str
+    color : str or None
         Face color of the marker.
         Default depends on the ``figure_style`` configuration.
-    edge_color : str
+    edge_color : str or None
         Edge color of the marker.
         Default depends on the ``figure_style`` configuration.
     marker_size : float
@@ -515,7 +515,7 @@ class Point:
         Default depends on the ``figure_style`` configuration.
     text_color : str
         Color of the text attached to the marker.
-        Defaults to `"k"` (black).
+        "same as point" uses the color of the point (prioritize edge color, then face color). Default depends on the ``figure_style`` configuration.
     h_align, v_align : str
         Horizontal and vertical alignment of the text attached
         to the :class:`~graphinglib.graph_elements.Point`.
@@ -527,13 +527,13 @@ class Point:
         x: float,
         y: float,
         label: Optional[str] = None,
-        color: str = "default",
-        edge_color: str = "default",
+        color: Optional[str] = "default",
+        edge_color: Optional[str] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         edge_width: float | Literal["default"] = "default",
         font_size: int | Literal["same as figure"] = "same as figure",
-        text_color: str = "k",
+        text_color: str = "default",
         h_align: str = "left",
         v_align: str = "bottom",
     ) -> None:
@@ -549,10 +549,10 @@ class Point:
             The x and y coordinates of the :class:`~graphinglib.graph_elements.Point`.
         label : str, optional
             Label to be attached to the :class:`~graphinglib.graph_elements.Point`.
-        color : str
+        color : str or None
             Face color of the marker.
             Default depends on the ``figure_style`` configuration.
-        edge_color : str
+        edge_color : str or None
             Edge color of the marker.
             Default depends on the ``figure_style`` configuration.
         marker_size : float
@@ -569,7 +569,7 @@ class Point:
             Default depends on the ``figure_style`` configuration.
         text_color : str
             Color of the text attached to the marker.
-            Defaults to ``"k"``.
+            "same as point" uses the color of the point (prioritize edge color, then face color). Default depends on the ``figure_style`` configuration.
         h_align, v_align : str
             Horizontal and vertical alignment of the text attached
             to the :class:`~graphinglib.graph_elements.Point`.
@@ -619,7 +619,7 @@ class Point:
         self._label = label
 
     @property
-    def color(self) -> str:
+    def color(self) -> str | None:
         return self._color
 
     @color.setter
@@ -627,7 +627,7 @@ class Point:
         self._color = color
 
     @property
-    def edge_color(self) -> str:
+    def edge_color(self) -> str | None:
         return self._edge_color
 
     @edge_color.setter
@@ -723,6 +723,10 @@ class Point:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
+        if self._color is None and self._edge_color is None:
+            raise GraphingException(
+                "Both the face color and edge color of the point can't be None. Set at least one of them."
+            )
         size = self._font_size if self._font_size != "same as figure" else None
         prefix = " " if self._h_align == "left" else ""
         postfix = " " if self._h_align == "right" else ""
@@ -731,8 +735,8 @@ class Point:
         else:
             point_label = None
         params = {
-            "c": self._color,
-            "edgecolors": self._edge_color,
+            "c": self._color if self._color is not None else "none",
+            "edgecolors": self._edge_color if self._edge_color is not None else "none",
             "s": self._marker_size,
             "marker": self._marker_style,
             "linewidths": self._edge_width,
@@ -744,8 +748,16 @@ class Point:
             zorder=z_order,
             **params,
         )
+        # get text color. if _text_color is "same as point", use the color of the point (prioritize edge color, then face color)
+        if self._text_color == "same as point":
+            if self._edge_color is not None:
+                text_color = self._edge_color
+            else:
+                text_color = self._color
+        else:
+            text_color = self._text_color
         params = {
-            "color": self._text_color,
+            "color": text_color,
             "fontsize": size,
             "horizontalalignment": self._h_align,
             "verticalalignment": self._v_align,
@@ -770,8 +782,15 @@ class Point:
                 )
             else:
                 point_label = prefix + f"({self._x:.3f}, {self._y:.3f})" + postfix
+            if self._text_color == "same as point":
+                if self._edge_color is not None:
+                    text_color = self._edge_color
+                else:
+                    text_color = self._color
+            else:
+                text_color = self._text_color
             params = {
-                "color": self._text_color,
+                "color": text_color,
                 "fontsize": size,
                 "horizontalalignment": self._h_align,
                 "verticalalignment": self._v_align,

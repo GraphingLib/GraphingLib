@@ -58,10 +58,11 @@ MultiFigure:
 
 Point:
   _color: "k"
-  _edge_color: "none"
+  _edge_color: null
   _marker_size: 30
   _marker_style: "o"
   _edge_width: 1.5
+  _text_color: "same as point"
 
 FitFromPolynomial:
   _color: "k"

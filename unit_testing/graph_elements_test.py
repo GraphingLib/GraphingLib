@@ -102,8 +102,8 @@ class TestPoint(unittest.TestCase):
     def test_font_size_is_same_as_figure(self):
         self.assertEqual(self.testPoint._font_size, "same as figure")
 
-    def test_text_color_is_k(self):
-        self.assertEqual(self.testPoint._text_color, "k")
+    def test_text_color_is_default(self):
+        self.assertEqual(self.testPoint._text_color, "default")
 
     def test_h_align_is_left(self):
         self.assertEqual(self.testPoint._h_align, "left")

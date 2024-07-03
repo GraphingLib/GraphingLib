@@ -62,6 +62,7 @@ Point:
   _marker_size: 200
   _edge_width: 1.5
   _marker_style: "D"
+  _text_color: "same as point"
 
 FitFromPolynomial:
   _color: "khaki"
