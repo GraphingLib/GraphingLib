@@ -107,10 +107,11 @@ MultiFigure:
   - 4.8
 Point:
   _color: white
-  _edge_color: none
+  _edge_color: null
   _edge_width: 1.5
   _marker_size: 30
   _marker_style: o
+  _text_color: same as point
 Scatter:
   _cap_thickness: 2
   _cap_width: 3
