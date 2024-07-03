@@ -5,6 +5,9 @@ import yaml
 from matplotlib import pyplot as plt
 from platformdirs import user_config_dir
 
+# Force yaml to ignore aliases when dumping
+yaml.Dumper.ignore_aliases = lambda *args: True  # type: ignore
+
 
 class FileLoader:
     """
