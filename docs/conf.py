@@ -80,7 +80,7 @@ html_sidebars = {
     "handbook/index": [],
     "installation": [],
     "examples/index": [],
-    "contributing": [],
+    "contributing/index": [],
 }
 
 # -- Extension options -------------------------------------------------------

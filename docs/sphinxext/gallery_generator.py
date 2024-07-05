@@ -283,6 +283,7 @@ class ExampleGenerator:
     def components(self):
 
         objects = re.findall(r"gl\.(\w+)\(", self.filetext)
+        objects = set(objects)
 
         refs = []
         for obj in objects:
@@ -290,6 +291,7 @@ class ExampleGenerator:
                 refs.append(f":class:`{obj}`")
             else:
                 refs.append(f":func:`{obj}`")
+        refs.sort()
         return ", ".join(refs)
 
     def extract_docstring(self):

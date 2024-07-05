@@ -152,12 +152,12 @@ def main(app):
                 output += line + "\n"
             output += f"\n(`pr-{prn} <{pr_url}>`_)\n\n"
 
-    pr_dict, contrib_list = get_github_info(pr_list)
+    pr_dict, contrib_dict = get_github_info(pr_list)
     output += (
         "Contributors\n------------\n\n"
-        + f"A total of {len(contrib_list)} people contributed to this release.\n\n"
+        + f"A total of {len(contrib_dict)} people contributed to this release.\n\n"
     )
-    for contrib in contrib_list.keys():
+    for contrib in contrib_dict.keys():
         output += f"* `@{contrib} <https://github.com/{contrib}>`_\n\n"
     output += (
         "Merged Pull Requests\n--------------------\n\n"
@@ -195,9 +195,7 @@ def main(app):
             if "dev" in v:
                 toctree += "   " + v.lstrip("v") + f" <{v}>\n"
             else:
-                toctree += (
-                    "   " + v.lstrip("v") + f" <{join('old_release_notes', v)}>\n"
-                )
+                toctree += "   " + v.lstrip("v") + f" <{'old_release_notes/'+v}>\n"
         toctree += "\n"
 
     output = RELEASE_NOTES_INDEX_TEMPLATE.format(toctree=toctree)
