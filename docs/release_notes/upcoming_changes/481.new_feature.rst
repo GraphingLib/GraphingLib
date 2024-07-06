@@ -1,3 +1,0 @@
-Manual legend placement and columns
------------------------------------
-Placement of the legend can now be controlled manually in Figures when using ``show`` and ``save``. A number of columns can also be specified.

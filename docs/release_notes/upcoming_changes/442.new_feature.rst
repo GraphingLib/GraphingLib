@@ -1,3 +1,0 @@
-Added in-place operators for Curve and Scatter
-----------------------------------------------
-Implemented in-place operators (``+=``, ``-=``, ``*=``, ``/=`` and ``**=``) for Curve and Scatter objects.
