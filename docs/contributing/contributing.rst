@@ -1,16 +1,6 @@
-===========================
-Contributing to GraphingLib
-===========================
-
-GraphingLib welcomes contributions from the coding community to enhance its features, fix bugs, and improve the overall library. Whether you are a skilled coder or just beginning, you can surely bring something to this project. Here are the broad categories of contributions you can make to GraphingLib :
-
-* Adding examples to our documentation site
-* Creating unit tests for existing features
-* Developing new features
-* Maintaining the code
-* Writing documentation (see :ref:`the section on the documentation <doccontrib>`)
-
-This page provides all the information you need to contribute. If you have any additional questions, feel free to reach out to us through GitHub issues. Simply visit our `GitHub page <https://github.com/GraphingLib/GraphingLib/>`_ and create a new issue in the "Issues" tab at the top of the page or comment on an existing, related issue.
+============================================
+New contributors and development environment
+============================================
 
 GraphingLib's Philosophy
 ------------------------
@@ -262,25 +252,3 @@ For example, when the milestone for version ``1.5.0`` is nearly completed, the `
 ``doc`` branches provide stable documentation between versions releases. This allows us to modify the documentation in the ``maintenance`` branches as we correct bugs and only update the website when a patch is released. Pull requests to ``doc`` branches are rare and typically only for correcting typos or misleading passages. A ``doc`` branch is created immediately after every release, whether major, minor or patch. It is merged into its corresponding ``maintenance`` branch just before the next release and is then replaced by a new ``doc`` branch. Every minor version always has one associated ``doc`` branch for its latest patch release.
 
 For example, after the release of ``v1.5.0``, a ``doc/1.5.0`` branch will be created from the ``maintenance/1.5.x`` branch. If a bug is detected and fixed in the ``maintenance`` branch, the ``doc/1.5.0`` branch is merged back into ``maintenance/1.5.x`` and then deleted. The ``v1.5.1`` tag is created, along with a new ``doc/1.5.1`` branch.
-
-Reviewers' Workflow
--------------------
-
-.. important::
-
-    The reviewing process is a collaboration between the contributor and the reviewer and should always be conducted with respect. All contributions are valuable, and reviewers should always explain their reasons for requesting changes or rejecting a pull request.
-
-Once a pull request is submitted, reviewers will ensures that the proposed changes adhere to the guidelines provided. As a reviewer, you will need to test the code to verify that everything is in order and request changes if necessary. To do so, create a local branch from the pull request ::
-
-    git fetch origin pull/<PULL NUMBER>/head:<BRANCH NAME>
-
-where ``<PULL NUMBER>`` is the number of the pull request and ``<BRANCH NAME>`` is the name you assign to the local branch you are creating. Here is a checklist to guide your review :
-
-* Unit tests have been added and/or modified.
-* All unit tests pass succesfully.
-* The documentation builds with no errors or warnings.
-* The relevant sections of the documentation are complete and accurate.
-* Docstrings are clear and comprehensive.
-* The pull request correctly links to the related issue, if applicable.
-
-Once the review is complete, if it has not already been done, you can ask for the PR issuer to add a short release note to the ``docs/release_notes/upcoming_changes`` directory. If everything is satisfactory, give your approval and tag one of the maintainers to merge the pull request.

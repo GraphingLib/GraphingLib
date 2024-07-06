@@ -63,7 +63,7 @@ class Arrow:
         pointB : tuple[float, float]
             Point B of the arrow. If the arrow is douple-sided, refers to the head.
         color : str
-            Color of the arrow. Default depends on the ``figure_style``configuration.
+            Color of the arrow. Default depends on the ``figure_style`` configuration.
         width : float, optional
             Arrow line width. Default depends on the ``figure_style`` configuration.
         head_size : float, optional
@@ -74,7 +74,7 @@ class Arrow:
             A value of 0.5 means the arrow is no longer visible.
             Defaults to 0.
         two_sided : bool
-            If ``True``, the arrow is double-sided. Defaults to ``False``
+            If ``True``, the arrow is double-sided. Defaults to ``False``.
         """
         self._pointA = pointA
         self._pointB = pointB
@@ -202,7 +202,7 @@ class Line:
     pointB : tuple[float, float]
         Point B of the line.
     color : str
-        Color of the line. Default depends on the ``figure_style``configuration.
+        Color of the line. Default depends on the ``figure_style`` configuration.
     width : float, optional
         Line width. Default depends on the ``figure_style`` configuration.
     capped_line : bool

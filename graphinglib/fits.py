@@ -1668,7 +1668,7 @@ class FitFromFOTF(GeneralFit):
         """
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing :class:`~graphinglib.data_plotting_1d.Curve` object using a first order transfer function (FOTF) fit.
 
-        Fits a first order transfer function of the form :math:`f(x) = K \left(1 - e^{-\frac{t}{\tau}}\right)` to the given curve. All standard :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
+        Fits a first order transfer function of the form :math:`f(x) = K \left(1 - e^{-\\frac{t}{\\tau}}\\right)` to the given curve. All standard :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
         Parameters
         ----------
