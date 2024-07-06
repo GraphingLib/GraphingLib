@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "graphinglib"
-version = "1.5.0"
+version = "1.5.1"
 description = "An object oriented wrapper combining the functionalities of Matplotlib and Scipy"
 license = "MIT"
 authors = [

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="GraphingLib",
-    version="1.5.0",
+    version="1.5.1",
     description="An object oriented wrapper combining the functionalities of Matplotlib and Scipy",
     author="Gustave Coulombe <magikgus@gmail.com>, Yannick Lapointe <yannicklapointe77@gmail.com>",
     url="https://github.com/yalap13/GraphingLib.git",
