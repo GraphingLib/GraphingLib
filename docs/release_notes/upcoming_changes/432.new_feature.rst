@@ -1,3 +1,0 @@
-Added absolute value functionality to Curve and Scatter
--------------------------------------------------------
-It is possible to get the absolute value of a Curve or Scatter by passing a Curve or Scatter object to ``abs()``.

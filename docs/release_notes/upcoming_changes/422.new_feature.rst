@@ -1,3 +1,0 @@
-Added possibility to plot the area between 2 curves
----------------------------------------------------
-The method ``get_area_between`` from the Curve class has a new parameter ``other_curve`` making it possible to get the area between two Curve objects.

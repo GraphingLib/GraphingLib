@@ -1,3 +1,0 @@
-Getters and setters for every objects' properties
--------------------------------------------------
-All properties can now be set and retrieved using ``object.property`` notation.

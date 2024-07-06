@@ -1,3 +1,0 @@
-New Curve and Scatter slicing methods
--------------------------------------
-Curve and Scatter now have ``create_slice_x`` and ``create_slice_y`` methods to create a new object from a slice of an existing object.

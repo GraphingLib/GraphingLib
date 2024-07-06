@@ -1,3 +1,0 @@
-New ``Polygon`` object
-----------------------
-A new ``Polygon`` object to plot a general polygon from a list of vertices.
