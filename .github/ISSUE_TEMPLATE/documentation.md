@@ -1,7 +1,7 @@
 ---
 name: Documentation
 about: Relating to the GL documentation and/or docstrings and comments within the code.
-title: "[Documentation]"
+title: "[DOC]"
 labels: documentation
 assignees: ''
 
