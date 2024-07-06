@@ -1,3 +1,0 @@
-Added object copying methods
-----------------------------
-All Plottables now have a ``copy`` method to create a duplicate of the object.

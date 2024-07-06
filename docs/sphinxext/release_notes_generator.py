@@ -135,7 +135,8 @@ def main(app):
     if highlights:
         output += "Highlights\n----------\n\n"
         for line in highlights:
-            output += line + "\n\n"
+            output += line + "\n"
+        output += "\n"
     present_tags = [tag for tag in TAGS if tag in upcoming.keys()]
 
     for tag in present_tags:
@@ -174,9 +175,10 @@ def main(app):
         all_v.append(f"v{__version__}")
         all_v = order_versions(all_v)
     else:
-        with open(join(old_v_path, f"v{__version__}.rst"), "w") as f:
-            f.write(output)
-            f.close()
+        if upcoming:
+            with open(join(old_v_path, f"v{__version__}.rst"), "w") as f:
+                f.write(output)
+                f.close()
         all_v = fetch_old_versions(old_v_path)
         all_v = order_versions(all_v)
 

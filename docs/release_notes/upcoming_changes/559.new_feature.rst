@@ -1,3 +1,0 @@
-DPI resolution now supported
-----------------------------
-DPI resolution is now available as a style controlled parameter and can be overridden in the Figure and MultiFigure save methods.
