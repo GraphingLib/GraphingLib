@@ -1,7 +1,7 @@
 ---
 name: Unit tests
 about: Missing unit tests
-title: "[Unit tests]"
+title: "[TEST]"
 labels: Unit tests
 assignees: ''
 
