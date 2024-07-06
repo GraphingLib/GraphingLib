@@ -5,4 +5,4 @@ try:
 except LookupError as e:
     version = "0.0.0.unknown"
 
-__version__ = "1.4.1.dev"
+__version__ = "1.5.0"

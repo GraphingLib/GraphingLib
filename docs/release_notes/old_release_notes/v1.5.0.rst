@@ -1,0 +1,214 @@
+
+.. _release_notes_1.5.0:
+
+GraphingLib 1.5.0 Release Notes
+===================================
+
+Highlights
+----------
+
+- New :class:`Polygon` object to create any given shapes from vertices and supporting set operation methods
+
+
+- New :class:`FitFromFOTF` object to fit using a first order transfer function
+
+
+- You can now set a custom style as default to replace ``plain``
+
+
+- Many new features for :class:`Curve`, :class:`Scatter` and :class:`Point` objects
+
+New Features
+------------
+
+New function ``get_styles``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The new function ``get_styles`` makes it possible to fetch all available styles.
+
+(`pr-420 <https://github.com/GraphingLib/GraphingLib/pull/420>`_)
+
+Added possibility to plot the area between 2 curves
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The method ``get_area_between`` from the Curve class has a new parameter ``other_curve`` making it possible to get the area between two Curve objects.
+
+(`pr-422 <https://github.com/GraphingLib/GraphingLib/pull/422>`_)
+
+Added ``add_error_curves`` method
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Added ``add_error_curves`` method to the Curve class to display error around a curve with curves instead of error bars.
+
+(`pr-426 <https://github.com/GraphingLib/GraphingLib/pull/426>`_)
+
+New ``aspect_ratio`` parameter for Figure
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The parameter ``aspect_ratio`` is used to specify an aspect ratio for the axis scaling. Can take a float, "auto" or "equal".
+
+(`pr-428 <https://github.com/GraphingLib/GraphingLib/pull/428>`_)
+
+Added absolute value functionality to Curve and Scatter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It is possible to get the absolute value of a Curve or Scatter by passing a Curve or Scatter object to ``abs()``.
+
+(`pr-432 <https://github.com/GraphingLib/GraphingLib/pull/432>`_)
+
+Added object copying methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All Plottables now have a ``copy`` method to create a duplicate of the object.
+
+(`pr-441 <https://github.com/GraphingLib/GraphingLib/pull/441>`_)
+
+Added in-place operators for Curve and Scatter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Implemented in-place operators (``+=``, ``-=``, ``*=``, ``/=`` and ``**=``) for Curve and Scatter objects.
+
+(`pr-442 <https://github.com/GraphingLib/GraphingLib/pull/442>`_)
+
+Added ``FitFromFOTF`` (first order transfer function)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+New ``FitFromFOTF`` object to create fits using a first order transfer function.
+
+(`pr-443 <https://github.com/GraphingLib/GraphingLib/pull/443>`_)
+
+New Curve and Scatter slicing methods
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Curve and Scatter now have ``create_slice_x`` and ``create_slice_y`` methods to create a new object from a slice of an existing object.
+
+(`pr-448 <https://github.com/GraphingLib/GraphingLib/pull/448>`_)
+
+New ``Polygon`` object
+^^^^^^^^^^^^^^^^^^^^^^
+
+A new ``Polygon`` object to plot a general polygon from a list of vertices.
+
+(`pr-450 <https://github.com/GraphingLib/GraphingLib/pull/450>`_)
+
+Added possibility to set different default style
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Added two new functions, ``set_default_style`` to set your default style and ``get_default_style`` to get the name of the current default style.
+
+(`pr-453 <https://github.com/GraphingLib/GraphingLib/pull/453>`_)
+
+Getters and setters for every objects' properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+All properties can now be set and retrieved using ``object.property`` notation.
+
+(`pr-464 <https://github.com/GraphingLib/GraphingLib/pull/464>`_)
+
+Manual legend placement and columns
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Placement of the legend can now be controlled manually in Figures when using ``show`` and ``save``. A number of columns can also be specified.
+
+(`pr-481 <https://github.com/GraphingLib/GraphingLib/pull/481>`_)
+
+Added support for color maps with Scatter
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Scatter has new parameters ``color_map`` and ``show_color_bar`` to specify a color map and display the color bar. To be used in combination with ``face_color`` to provide intensity values.
+
+
+(`pr-503 <https://github.com/GraphingLib/GraphingLib/pull/503>`_)
+
+Added support for color cycles and colormaps with Scatter edge_color
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `edge_color` attribute of Scatter objects now accepts a list of colors or intensities. When set to "color cycle" or if this is what the style's default is set to, the edge_color will cycle through the colors in the style's color cycle.
+
+(`pr-537 <https://github.com/GraphingLib/GraphingLib/pull/537>`_)
+
+DPI resolution now supported
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+DPI resolution is now available as a style controlled parameter and can be overridden in the Figure and MultiFigure save methods.
+
+(`pr-559 <https://github.com/GraphingLib/GraphingLib/pull/559>`_)
+
+More flexibility for Point colors
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Point face and edge colors can now be set to a color or None (transparent). Text color can also be set to a color or to "same as point" (the default) to match the point color, with the edge color being prioritized over the face color if both aren't None.
+
+(`pr-561 <https://github.com/GraphingLib/GraphingLib/pull/561>`_)
+
+Other Changes
+-------------
+
+Use trapezoidal integration for ``create_integral_curve``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Changed the method used for numerical integration of curves to work with uneavenly spaced data and added a parameter ``initial_value``.
+
+(`pr-433 <https://github.com/GraphingLib/GraphingLib/pull/433>`_)
+
+Simplified ``VectorField`` options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Options for ``VectorField`` arrows have been simplified and the arrows shape is now controlled only by ``arrow_width`` and ``arrow_head_size``.
+
+(`pr-476 <https://github.com/GraphingLib/GraphingLib/pull/476>`_)
+
+Contributors
+------------
+
+A total of 3 people contributed to this release.
+
+* `@Oddball777 <https://github.com/Oddball777>`_
+
+* `@yalap13 <https://github.com/yalap13>`_
+
+* `@mamar828 <https://github.com/mamar828>`_
+
+Merged Pull Requests
+--------------------
+
+A total of 19 pull requests were merged for this release.
+
+* `#420 <https://github.com/GraphingLib/GraphingLib/pull/420>`_ : Added get_styles function
+
+* `#422 <https://github.com/GraphingLib/GraphingLib/pull/422>`_ : Added possiblity to plot area between 2 curves in get_area_between
+
+* `#426 <https://github.com/GraphingLib/GraphingLib/pull/426>`_ : Added add_error_curves method and default params
+
+* `#428 <https://github.com/GraphingLib/GraphingLib/pull/428>`_ : Added aspect_ratio to Figure init
+
+* `#432 <https://github.com/GraphingLib/GraphingLib/pull/432>`_ : Add absolute value functionality to Curve and Scatter classes
+
+* `#433 <https://github.com/GraphingLib/GraphingLib/pull/433>`_ : Add cumulative trapezoidal integration for creating integral curves
+
+* `#441 <https://github.com/GraphingLib/GraphingLib/pull/441>`_ : Added object copying methods
+
+* `#442 <https://github.com/GraphingLib/GraphingLib/pull/442>`_ : Added in place operators for Curves and Scatters
+
+* `#443 <https://github.com/GraphingLib/GraphingLib/pull/443>`_ : Added FitFrom FOTF (first order transfer function)
+
+* `#448 <https://github.com/GraphingLib/GraphingLib/pull/448>`_ : 406 feature request curve slicing new curve from part of existing curve
+
+* `#450 <https://github.com/GraphingLib/GraphingLib/pull/450>`_ : 437 feature request implement arbitrary polygons
+
+* `#453 <https://github.com/GraphingLib/GraphingLib/pull/453>`_ : 452 feature request possibility to set different default style
+
+* `#464 <https://github.com/GraphingLib/GraphingLib/pull/464>`_ : 462 feature request use properties with getters and setters
+
+* `#476 <https://github.com/GraphingLib/GraphingLib/pull/476>`_ : 468 feature request reduce vector field options to be more similar to arrow
+
+* `#481 <https://github.com/GraphingLib/GraphingLib/pull/481>`_ : Added option for manual legend placement and columns
+
+* `#503 <https://github.com/GraphingLib/GraphingLib/pull/503>`_ : Added support for colour maps with Scatters
+
+* `#537 <https://github.com/GraphingLib/GraphingLib/pull/537>`_ : Curve fix fill between color cycle, Scatter flexibility
+
+* `#559 <https://github.com/GraphingLib/GraphingLib/pull/559>`_ : 558 feature request set dpi when saving
+
+* `#561 <https://github.com/GraphingLib/GraphingLib/pull/561>`_ : Added flexibility to Point class text color
+

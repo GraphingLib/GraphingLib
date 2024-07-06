@@ -1,0 +1,4 @@
+- New :class:`Polygon` object to create any given shapes from vertices and supporting set operation methods
+- New :class:`FitFromFOTF` object to fit using a first order transfer function
+- You can now set a custom style as default to replace ``plain``
+- Many new features for :class:`Curve`, :class:`Scatter` and :class:`Point` objects
