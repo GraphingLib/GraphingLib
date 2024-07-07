@@ -11,3 +11,4 @@ setuptools_scm
 git+https://github.com/GraphingLib/GraphingLib@doc/1.5.0
 numpydoc
 PyGithub
+sphinxext-opengraph

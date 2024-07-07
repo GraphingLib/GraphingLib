@@ -42,6 +42,7 @@ extensions = [
     "gallery_generator",
     "matplotlib.sphinxext.plot_directive",
     "release_notes_generator",
+    "sphinxext.opengraph",
 ]
 
 templates_path = ["_templates"]
