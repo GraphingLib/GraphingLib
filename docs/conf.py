@@ -109,4 +109,4 @@ numpydoc_show_class_members = False
 plot_include_source = True
 plot_html_show_source_link = False
 plot_pre_code = "import graphinglib as gl\nimport numpy as np"
-ogp_image = "https://github.com/GraphingLib/GraphingLib/blob/main/images/opengraph_GL.PNG"
+ogp_image = "https://raw.githubusercontent.com/GraphingLib/GraphingLib/main/images/opengraph_GL.PNG"
