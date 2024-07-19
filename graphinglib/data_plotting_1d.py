@@ -7,7 +7,8 @@ from typing import Callable, Literal, Optional, Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import Normalize, is_color_like, to_rgba, Colormap, to_rgba_array
+from matplotlib.colors import (Colormap, Normalize, is_color_like, to_rgba,
+                               to_rgba_array)
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
 from scipy.integrate import cumulative_trapezoid
@@ -1557,6 +1558,7 @@ class Scatter:
         self._cap_width: float = 3.0
         self._cap_thickness: float = 1.0
         self._errorbars_color: Optional[str] = None
+        self._color_bar_params: dict = {}
 
     @classmethod
     def from_function(
@@ -1732,6 +1734,10 @@ class Scatter:
     @property
     def errorbars_color(self) -> str:
         return self._errorbars_color
+
+    @property
+    def color_bar_params(self) -> dict:
+        return self._color_bar_params
 
     @errorbars_color.setter
     def errorbars_color(self, errorbars_color: str) -> None:
@@ -2142,6 +2148,16 @@ class Scatter:
         self._cap_thickness = cap_thickness
         self._cap_width = cap_width
 
+    def add_color_bar_params(self, **color_bar_params) -> None:
+        """
+        Adds
+
+        Parameters
+        ----------
+        **color_bar_params: Keyword arguments are passed to ``plt.colorbar`` call.
+        """
+        self._color_bar_params = color_bar_params
+
     def get_coordinates_at_x(
         self,
         x: float,
@@ -2510,7 +2526,7 @@ class Scatter:
             norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
             sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
             sm.set_array([])
-            plt.colorbar(sm, ax=axes)
+            plt.colorbar(sm, ax=axes, **self._color_bar_params)
 
         if (
             self._show_color_bar
@@ -2522,7 +2538,7 @@ class Scatter:
             norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
             sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
             sm.set_array([])
-            plt.colorbar(sm, ax=axes)
+            plt.colorbar(sm, ax=axes, **self._color_bar_params)
 
 
 @dataclass
@@ -2576,6 +2592,7 @@ class Histogram:
         alpha: float | Literal["default"] = "default",
         line_width: float | Literal["default"] = "default",
         normalize: bool | Literal["default"] = "default",
+        orientation: str = "default",
         show_params: bool | Literal["default"] = "default",
     ) -> None:
         """
@@ -2607,6 +2624,10 @@ class Histogram:
         normalize : bool
             Whether or not to normalize the histogram.
             Default depends on the ``figure_style`` configuration.
+        orientation: str
+            Whether to plot the histogram on x-axis or on y-axis.
+            Can be "vertical" or "horizontal".
+            Default depends on the ``figure_style`` configuration.
         show_pdf : str
             Whether or not to show the probability density function.
             Can be "normal" or "gaussian".
@@ -2624,6 +2645,7 @@ class Histogram:
         self._alpha = alpha
         self._line_width = line_width
         self._normalize = normalize
+        self._orientation = orientation
         self._show_params = show_params
 
         self._show_pdf = False
@@ -2658,6 +2680,7 @@ class Histogram:
         alpha: int | Literal["default"] = "default",
         line_width: int | Literal["default"] = "default",
         normalize: bool | Literal["default"] = "default",
+        orientation: str = "default",
         show_params: bool | Literal["default"] = "default",
     ) -> Self:
         """
@@ -2689,6 +2712,10 @@ class Histogram:
         normalize : bool
             Whether or not to normalize the histogram.
             Default depends on the ``figure_style`` configuration.
+        orientation: str
+            Whether to plot the histogram on x-axis or on y-axis.
+            Can be "vertical" or "horizontal".
+            Default depends on the ``figure_style`` configuration.
         show_pdf : str
             Whether or not to show the probability density function.
             Can be "normal" or "gaussian".
@@ -2712,6 +2739,7 @@ class Histogram:
             alpha,
             line_width,
             normalize,
+            orientation,
             show_params,
         )
 
@@ -2806,6 +2834,14 @@ class Histogram:
     @normalize.setter
     def normalize(self, normalize: bool) -> None:
         self._normalize = normalize
+
+    @property
+    def orientation(self) -> str:
+        return self._orientation
+
+    @orientation.setter
+    def orientation(self, orientation: str) -> None:
+        self._orientation = orientation
 
     @property
     def show_params(self) -> bool:
@@ -2974,6 +3010,7 @@ class Histogram:
             "histtype": self._hist_type,
             "linewidth": self._line_width,
             "density": self._normalize,
+            "orientation": self._orientation,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.hist(
@@ -2990,8 +3027,20 @@ class Histogram:
                 else self._normal_not_normalized
             )
             num_of_points = 500
-            x_data = np.linspace(self._bin_edges[0], self._bin_edges[-1], num_of_points)
-            y_data = normal(x_data)
+
+            # Plots pdf on the y-axis if "orientation" is "horizontal".
+            if self._orientation != "default":
+                y_data = np.linspace(
+                    self._bin_edges[0], self._bin_edges[-1], num_of_points
+                )
+                x_data = normal(y_data)
+
+            else:
+                x_data = np.linspace(
+                    self._bin_edges[0], self._bin_edges[-1], num_of_points
+                )
+                y_data = normal(x_data)
+
             params = {
                 "color": self._pdf_curve_color,
             }
@@ -3008,26 +3057,56 @@ class Histogram:
                 params = {}
                 if self._pdf_std_color != "default":
                     params["colors"] = [self._pdf_std_color, self._pdf_std_color]
-                plt.vlines(
-                    [
-                        self._mean - self._standard_deviation,
-                        self._mean + self._standard_deviation,
-                    ],
-                    [0, 0],
-                    [curve_std_y, curve_std_y],
-                    linestyles=["dashed"],
-                    zorder=z_order - 1,
-                    **params,
-                )
+
+                # Plots std on the y-axis if "orientation" is "horizontal".
+                if self._orientation != "default":
+                    plt.hlines(
+                        [
+                            self._mean - self._standard_deviation,
+                            self._mean + self._standard_deviation,
+                        ],
+                        [0, 0],
+                        [curve_std_y, curve_std_y],
+                        linestyles=["dashed"],
+                        zorder=z_order - 1,
+                        **params,
+                    )
+
+                else:
+                    plt.vlines(
+                        [
+                            self._mean - self._standard_deviation,
+                            self._mean + self._standard_deviation,
+                        ],
+                        [0, 0],
+                        [curve_std_y, curve_std_y],
+                        linestyles=["dashed"],
+                        zorder=z_order - 1,
+                        **params,
+                    )
+
             if self._pdf_show_mean:
                 params = {}
                 if self._pdf_mean_color != "default":
                     params["colors"] = [self._pdf_mean_color]
-                plt.vlines(
-                    self._mean,
-                    0,
-                    curve_max_y,
-                    linestyles=["dashed"],
-                    zorder=z_order - 1,
-                    **params,
-                )
+
+                # Plots std on the y-axis if "orientation" is "horizontal".
+                if self._orientation != "default":
+                    plt.hlines(
+                        self._mean,
+                        0,
+                        curve_max_y,
+                        linestyles=["dashed"],
+                        zorder=z_order - 1,
+                        **params,
+                    )
+
+                else:
+                    plt.vlines(
+                        self._mean,
+                        0,
+                        curve_max_y,
+                        linestyles=["dashed"],
+                        zorder=z_order - 1,
+                        **params,
+                    )
