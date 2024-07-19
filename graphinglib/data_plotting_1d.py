@@ -3027,30 +3027,30 @@ class Histogram:
                 else self._normal_not_normalized
             )
             num_of_points = 500
-
-            # Plots pdf on the y-axis if "orientation" is "horizontal".
-            if self._orientation != "default":
-                y_data = np.linspace(
-                    self._bin_edges[0], self._bin_edges[-1], num_of_points
-                )
-                x_data = normal(y_data)
-
-            else:
-                x_data = np.linspace(
-                    self._bin_edges[0], self._bin_edges[-1], num_of_points
-                )
-                y_data = normal(x_data)
-
+            x_data = np.linspace(self._bin_edges[0], self._bin_edges[-1], num_of_points)
+            y_data = normal(x_data)
             params = {
                 "color": self._pdf_curve_color,
             }
             params = {k: v for k, v in params.items() if v != "default"}
-            axes.plot(
-                x_data,
-                y_data,
-                zorder=z_order,
-                **params,
-            )
+
+            # Plots pdf on the y-axis if "orientation" is "horizontal".
+            if self._orientation != "default":
+                axes.plot(
+                    y_data,
+                    x_data,
+                    zorder=z_order,
+                    **params,
+                )
+
+            else:
+                axes.plot(
+                    x_data,
+                    y_data,
+                    zorder=z_order,
+                    **params,
+                )
+
             curve_max_y = normal(self._mean)
             curve_std_y = normal(self._mean + self._standard_deviation)
             if self._pdf_show_std:
