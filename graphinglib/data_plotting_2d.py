@@ -61,6 +61,7 @@ class Heatmap:
         x_axis_range: Optional[tuple[float, float]] = None,
         y_axis_range: Optional[tuple[float, float]] = None,
         color_map: str | Colormap = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         alpha_value: float = 1.0,
         aspect_ratio: str | float = "default",
@@ -106,11 +107,14 @@ class Heatmap:
         self._x_axis_range = x_axis_range
         self._y_axis_range = y_axis_range
         self._color_map = color_map
+        self._color_map_range = color_map_range
         self._show_color_bar = show_color_bar
         self._alpha_value = alpha_value
         self._aspect_ratio = aspect_ratio
         self._origin_position = origin_position
         self._interpolation = interpolation
+
+        self._color_bar_params: dict = {}
 
         if isinstance(self._image, str):
             self._image = imread(self._image)
@@ -127,6 +131,7 @@ class Heatmap:
         x_axis_range: tuple[float, float],
         y_axis_range: tuple[float, float],
         color_map: str | Colormap = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool = True,
         alpha_value: float = 1.0,
         aspect_ratio: str | float = "default",
@@ -186,6 +191,7 @@ class Heatmap:
             x_axis_range,
             y_axis_range,
             color_map,
+            color_map_range,
             show_color_bar,
             alpha_value,
             aspect_ratio,
@@ -203,6 +209,7 @@ class Heatmap:
         grid_interpolation: str = "nearest",
         fill_value: float = np.nan,
         color_map: str | Colormap = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool = True,
         alpha_value: float = 1.0,
         aspect_ratio: str | float = "default",
@@ -272,6 +279,7 @@ class Heatmap:
             x_axis_range,
             y_axis_range,
             color_map,
+            color_map_range,
             show_color_bar,
             alpha_value,
             aspect_ratio,
@@ -315,6 +323,14 @@ class Heatmap:
         self._color_map = color_map
 
     @property
+    def color_map_range(self) -> tuple[float, float]:
+        return self._color_map_range
+
+    @color_map_range.setter
+    def color_map_range(self, color_map_range: tuple[float, float]) -> None:
+        self._color_map_range = color_map_range
+
+    @property
     def show_color_bar(self) -> bool:
         return self._show_color_bar
 
@@ -354,11 +370,25 @@ class Heatmap:
     def interpolation(self, interpolation: str) -> None:
         self._interpolation = interpolation
 
+    @property
+    def color_bar_params(self) -> dict:
+        return self._color_bar_params
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
         """
         return deepcopy(self)
+
+    def add_color_bar_params(self, **color_bar_params) -> None:
+        """
+        Adds
+
+        Parameters
+        ----------
+        **color_bar_params: Keyword arguments are passed to ``plt.colorbar`` call.
+        """
+        self._color_bar_params = color_bar_params
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -375,6 +405,10 @@ class Heatmap:
                 "extent": self._xy_range,
             }
             params = {k: v for k, v in params.items() if v != "default"}
+            if self._color_map_range:
+                params["vmin"] = self._color_map_range[0]
+                params["vmax"] = self._color_map_range[1]
+
             image = axes.imshow(
                 self._image,
                 zorder=z_order,
@@ -389,6 +423,10 @@ class Heatmap:
                 "interpolation": self._interpolation,
             }
             params = {k: v for k, v in params.items() if v != "default"}
+            if self._color_map_range:
+                params["vmin"] = self._color_map_range[0]
+                params["vmax"] = self._color_map_range[1]
+
             image = axes.imshow(
                 self._image,
                 zorder=z_order,
@@ -396,7 +434,7 @@ class Heatmap:
             )
         fig = axes.get_figure()
         if self._show_color_bar:
-            fig.colorbar(image, ax=axes)
+            fig.colorbar(image, ax=axes, **self._color_bar_params)
 
 
 @dataclass
@@ -700,6 +738,7 @@ class Contour:
         z_data: ArrayLike,
         number_of_levels: int | Literal["default"] = "default",
         color_map: str | Colormap | Literal["default"] = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         filled: bool | Literal["default"] = "default",
         alpha: float | Literal["default"] = "default",
@@ -735,9 +774,12 @@ class Contour:
         self._z_data = np.asarray(z_data)
         self._number_of_levels = number_of_levels
         self._color_map = color_map
+        self._color_map_range = color_map_range
         self._show_color_bar = show_color_bar
         self._filled = filled
         self._alpha = alpha
+
+        self._color_bar_params: dict = {}
 
     @classmethod
     def from_function(
@@ -747,6 +789,7 @@ class Contour:
         y_axis_range: tuple[float, float],
         number_of_levels: int | Literal["default"] = "default",
         color_map: str | Colormap | Literal["default"] = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         filled: bool | Literal["default"] = "default",
         alpha: float | Literal["default"] = "default",
@@ -795,6 +838,7 @@ class Contour:
             z_data,
             number_of_levels,
             color_map,
+            color_map_range,
             show_color_bar,
             filled,
             alpha,
@@ -841,6 +885,14 @@ class Contour:
         self._color_map = color_map
 
     @property
+    def color_map_range(self) -> tuple[float, float]:
+        return self._color_map_range
+
+    @color_map_range.setter
+    def color_map_range(self, color_map_range: tuple[float, float]) -> None:
+        self._color_map_range = color_map_range
+
+    @property
     def show_color_bar(self) -> bool:
         return self._show_color_bar
 
@@ -864,11 +916,25 @@ class Contour:
     def alpha(self, alpha: float) -> None:
         self._alpha = alpha
 
+    @property
+    def color_bar_params(self) -> dict:
+        return self._color_bar_params
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Contour`.
         """
         return deepcopy(self)
+
+    def add_color_bar_params(self, **color_bar_params) -> None:
+        """
+        Adds
+
+        Parameters
+        ----------
+        **color_bar_params: Keyword arguments are passed to ``plt.colorbar`` call.
+        """
+        self._color_bar_params = color_bar_params
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -880,6 +946,9 @@ class Contour:
             "cmap": self._color_map,
             "alpha": self._alpha,
         }
+        if self._color_map_range:
+            params["vmin"] = self._color_map_range[0]
+            params["vmax"] = self._color_map_range[1]
         params = {k: v for k, v in params.items() if v != "default"}
         if self._filled:
             cont = axes.contourf(
@@ -899,7 +968,7 @@ class Contour:
             )
         if self._show_color_bar:
             fig = axes.get_figure()
-            fig.colorbar(cont, ax=axes)
+            fig.colorbar(cont, ax=axes, **self._color_bar_params)
 
 
 @dataclass

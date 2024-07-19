@@ -31,7 +31,7 @@ Histogram:
   _alpha: 1.0
   _line_width: 2
   _normalize: True
-  _orientation: "vertical"
+  _orientation: vertical
   _show_params: True
   _pdf_show_mean: True
   _pdf_show_std: True

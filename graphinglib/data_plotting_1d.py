@@ -1735,13 +1735,13 @@ class Scatter:
     def errorbars_color(self) -> str:
         return self._errorbars_color
 
-    @property
-    def color_bar_params(self) -> dict:
-        return self._color_bar_params
-
     @errorbars_color.setter
     def errorbars_color(self, errorbars_color: str) -> None:
         self._errorbars_color = errorbars_color
+
+    @property
+    def color_bar_params(self) -> dict:
+        return self._color_bar_params
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -3035,7 +3035,7 @@ class Histogram:
             params = {k: v for k, v in params.items() if v != "default"}
 
             # Plots pdf on the y-axis if "orientation" is "horizontal".
-            if self._orientation != "default":
+            if self._orientation != "vertical":
                 axes.plot(
                     y_data,
                     x_data,
@@ -3059,7 +3059,7 @@ class Histogram:
                     params["colors"] = [self._pdf_std_color, self._pdf_std_color]
 
                 # Plots std on the y-axis if "orientation" is "horizontal".
-                if self._orientation != "default":
+                if self._orientation != "vertical":
                     plt.hlines(
                         [
                             self._mean - self._standard_deviation,
@@ -3091,7 +3091,7 @@ class Histogram:
                     params["colors"] = [self._pdf_mean_color]
 
                 # Plots std on the y-axis if "orientation" is "horizontal".
-                if self._orientation != "default":
+                if self._orientation != "vertical":
                     plt.hlines(
                         self._mean,
                         0,
