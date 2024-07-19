@@ -33,6 +33,8 @@ class Heatmap:
         The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
         string (named colormap from Matplotlib) or a Colormap object.
         Default depends on the ``figure_style`` configuration.
+    color_map_range: tuple[float, float], optional
+        The data range that the color map will cover.
     show_color_bar : bool
         Whether or not to display the color bar next to the plot.
         Defaults to ``True``.
@@ -82,6 +84,8 @@ class Heatmap:
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Defaults to ``True``.
@@ -154,6 +158,8 @@ class Heatmap:
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Defaults to ``True``.
@@ -236,6 +242,8 @@ class Heatmap:
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Defaults to ``True``.
@@ -711,6 +719,8 @@ class Contour:
         The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
         string (named colormap from Matplotlib) or a Colormap object.
         Default depends on the ``figure_style`` configuration.
+    color_map_range: tuple[float, float], optional
+        The data range that the color map will cover.
     show_color_bar : bool
         Whether or not to display the color bar next to the plot.
         Default depends on the ``figure_style`` configuration.
@@ -759,6 +769,8 @@ class Contour:
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
@@ -814,6 +826,8 @@ class Contour:
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
