@@ -1488,6 +1488,8 @@ class Scatter:
     color_map : str or Colormap
         Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
         Default depends on the ``figure_style`` configuration.
+    color_map_range: tuple[float, float], optional
+        The data range that the color map will cover.
     show_color_bar : bool
         Whether or not to display the color bar next to the plot.
         Default depends on the ``figure_style`` configuration.
@@ -1507,6 +1509,7 @@ class Scatter:
         face_color: str | ArrayLike | NoneType = "default",
         edge_color: str | ArrayLike | NoneType = "default",
         color_map: str | Colormap = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -1531,6 +1534,8 @@ class Scatter:
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
@@ -1549,6 +1554,7 @@ class Scatter:
         self._face_color = face_color
         self._edge_color = edge_color
         self._color_map = color_map
+        self._color_map_range = color_map_range
         self._show_color_bar = show_color_bar
         self._marker_size = marker_size
         self._marker_style = marker_style
@@ -1570,6 +1576,7 @@ class Scatter:
         face_color: str | ArrayLike | NoneType = "default",
         edge_color: str | ArrayLike | NoneType = "default",
         color_map: str | Colormap = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: int | Literal["default"] = "default",
         marker_style: str = "default",
@@ -1596,6 +1603,8 @@ class Scatter:
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
@@ -1622,6 +1631,7 @@ class Scatter:
             face_color,
             edge_color,
             color_map,
+            color_map_range,
             show_color_bar,
             marker_size,
             marker_style,
@@ -1674,6 +1684,14 @@ class Scatter:
     @color_map.setter
     def color_map(self, color_map: str | Colormap) -> None:
         self._color_map = color_map
+
+    @property
+    def color_map_range(self) -> tuple[float, float]:
+        return self._color_map_range
+
+    @color_map_range.setter
+    def color_map_range(self, color_map_range: tuple[float, float]) -> None:
+        self._color_map_range = color_map_range
 
     @property
     def show_color_bar(self) -> bool:
@@ -1953,6 +1971,7 @@ class Scatter:
         face_color: str | ArrayLike | NoneType = "default",
         edge_color: str | ArrayLike | NoneType = "default",
         color_map: str | Colormap = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -1978,6 +1997,8 @@ class Scatter:
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
@@ -2008,6 +2029,8 @@ class Scatter:
                 copy._edge_color = edge_color
             if color_map != "default":
                 copy._color_map = color_map
+            if color_map_range:
+                copy._color_map_range = color_map_range
             if show_color_bar != "default":
                 copy._show_color_bar = show_color_bar
             if marker_size != "default":
@@ -2023,6 +2046,7 @@ class Scatter:
                 face_color,
                 edge_color,
                 color_map,
+                color_map_range,
                 show_color_bar,
                 marker_size,
                 marker_style,
@@ -2036,6 +2060,7 @@ class Scatter:
         face_color: str | ArrayLike | NoneType = "default",
         edge_color: str | ArrayLike | NoneType = "default",
         color_map: str | Colormap | Literal["default"] = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -2061,6 +2086,8 @@ class Scatter:
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
@@ -2091,6 +2118,8 @@ class Scatter:
                 copy._edge_color = edge_color
             if color_map != "default":
                 copy._color_map = color_map
+            if color_map_range:
+                copy._color_map_range = color_map_range
             if show_color_bar != "default":
                 copy._show_color_bar = show_color_bar
             if marker_size != "default":
@@ -2106,6 +2135,7 @@ class Scatter:
                 face_color,
                 edge_color,
                 color_map,
+                color_map_range,
                 show_color_bar,
                 marker_size,
                 marker_style,
@@ -2443,12 +2473,24 @@ class Scatter:
         if isinstance(self._face_color, (list, tuple, np.ndarray)):
             if all(isinstance(i, (int, float)) for i in self._face_color):
                 color_map = plt.get_cmap(self._color_map)
-                norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
+
+                # Sets the data range that the color map will cover. Otherwise, it will be calculated from the array of intensities
+                if self._color_map_range:
+                    norm = Normalize(vmin=min(self._color_map_range), vmax=max(self._color_map_range))
+                else:
+                    norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
+
                 mpl_face_color = [color_map(norm(i)) for i in self._face_color]
         elif isinstance(self._edge_color, (list, tuple, np.ndarray)):
             if all(isinstance(i, (int, float)) for i in self._edge_color):
                 color_map = plt.get_cmap(self._color_map)
-                norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
+
+                # Sets the data range that the color map will cover. Otherwise, it will be calculated from the array of intensities
+                if self._color_map_range:
+                    norm = Normalize(vmin=min(self._color_map_range), vmax=max(self._color_map_range))
+                else:
+                    norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
+
                 mpl_edge_color = [color_map(norm(i)) for i in self._edge_color]
 
         params = {
@@ -2523,7 +2565,14 @@ class Scatter:
         ):
             # Create color bar from face color intensities
             color_map = plt.get_cmap(self._color_map)
-            norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
+
+            # Sets the data range that the color map on the color bar will cover.
+            # Otherwise, it will be calculated from the array of intensities.
+            if self._color_map_range:
+                norm = Normalize(vmin=min(self._color_map_range), vmax=max(self._color_map_range))
+            else:
+                norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
+
             sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
             sm.set_array([])
             plt.colorbar(sm, ax=axes, **self._color_bar_params)
@@ -2535,7 +2584,14 @@ class Scatter:
         ):
             # Create color bar from edge color intensities
             color_map = plt.get_cmap(self._color_map)
-            norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
+
+            # Sets the data range that the color map on the color bar will cover.
+            # Otherwise, it will be calculated from the array of intensities.
+            if self._color_map_range:
+                norm = Normalize(vmin=min(self._color_map_range), vmax=max(self._color_map_range))
+            else:
+                norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
+
             sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
             sm.set_array([])
             plt.colorbar(sm, ax=axes, **self._color_bar_params)

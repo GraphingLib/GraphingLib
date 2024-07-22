@@ -414,8 +414,8 @@ class Heatmap:
             }
             params = {k: v for k, v in params.items() if v != "default"}
             if self._color_map_range:
-                params["vmin"] = self._color_map_range[0]
-                params["vmax"] = self._color_map_range[1]
+                params["vmin"] = min(self._color_map_range)
+                params["vmax"] = max(self._color_map_range)
 
             image = axes.imshow(
                 self._image,
@@ -432,8 +432,8 @@ class Heatmap:
             }
             params = {k: v for k, v in params.items() if v != "default"}
             if self._color_map_range:
-                params["vmin"] = self._color_map_range[0]
-                params["vmax"] = self._color_map_range[1]
+                params["vmin"] = min(self._color_map_range)
+                params["vmax"] = max(self._color_map_range)
 
             image = axes.imshow(
                 self._image,
@@ -961,8 +961,8 @@ class Contour:
             "alpha": self._alpha,
         }
         if self._color_map_range:
-            params["vmin"] = self._color_map_range[0]
-            params["vmax"] = self._color_map_range[1]
+            params["vmin"] = min(self._color_map_range)
+            params["vmax"] = max(self._color_map_range)
         params = {k: v for k, v in params.items() if v != "default"}
         if self._filled:
             cont = axes.contourf(
