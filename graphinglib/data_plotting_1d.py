@@ -2178,15 +2178,33 @@ class Scatter:
         self._cap_thickness = cap_thickness
         self._cap_width = cap_width
 
-    def add_color_bar_params(self, **color_bar_params) -> None:
+    def set_color_bar_params(
+        self,
+        label: Optional[str] = None,
+        position: Optional[str] = None,
+        **color_bar_params,
+    ) -> None:
         """
-        Adds
+        Sets the color bar parameters.
 
         Parameters
         ----------
-        **color_bar_params: Keyword arguments are passed to ``plt.colorbar`` call.
+        label : str, optional
+            Label of the color bar.
+        position : str, optional
+            Position of the color bar relative to the ``Figure``. It can be "left",
+            "right", "top" or "bottom". This also determines the orientation of the
+            color bar (vertical if the color bar is plotted on the "left" or "right",
+            horizontal otherwise). If None, the color bar is plotted on the right
+            side of the ``Figure``.
+        **color_bar_params:
+            Additional keyword arguments are passed to ``plt.colorbar`` call.
         """
         self._color_bar_params = color_bar_params
+        if label is not None:
+            self._color_bar_params["label"] = label
+        if position is not None:
+            self._color_bar_params["location"] = position
 
     def get_coordinates_at_x(
         self,
@@ -2476,9 +2494,13 @@ class Scatter:
 
                 # Sets the data range that the color map will cover. Otherwise, it will be calculated from the array of intensities
                 if self._color_map_range:
-                    norm = Normalize(vmin=min(self._color_map_range), vmax=max(self._color_map_range))
+                    norm = Normalize(
+                        vmin=min(self._color_map_range), vmax=max(self._color_map_range)
+                    )
                 else:
-                    norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
+                    norm = Normalize(
+                        vmin=min(self._face_color), vmax=max(self._face_color)
+                    )
 
                 mpl_face_color = [color_map(norm(i)) for i in self._face_color]
         elif isinstance(self._edge_color, (list, tuple, np.ndarray)):
@@ -2487,9 +2509,13 @@ class Scatter:
 
                 # Sets the data range that the color map will cover. Otherwise, it will be calculated from the array of intensities
                 if self._color_map_range:
-                    norm = Normalize(vmin=min(self._color_map_range), vmax=max(self._color_map_range))
+                    norm = Normalize(
+                        vmin=min(self._color_map_range), vmax=max(self._color_map_range)
+                    )
                 else:
-                    norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
+                    norm = Normalize(
+                        vmin=min(self._edge_color), vmax=max(self._edge_color)
+                    )
 
                 mpl_edge_color = [color_map(norm(i)) for i in self._edge_color]
 
@@ -2569,7 +2595,9 @@ class Scatter:
             # Sets the data range that the color map on the color bar will cover.
             # Otherwise, it will be calculated from the array of intensities.
             if self._color_map_range:
-                norm = Normalize(vmin=min(self._color_map_range), vmax=max(self._color_map_range))
+                norm = Normalize(
+                    vmin=min(self._color_map_range), vmax=max(self._color_map_range)
+                )
             else:
                 norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
 
@@ -2588,7 +2616,9 @@ class Scatter:
             # Sets the data range that the color map on the color bar will cover.
             # Otherwise, it will be calculated from the array of intensities.
             if self._color_map_range:
-                norm = Normalize(vmin=min(self._color_map_range), vmax=max(self._color_map_range))
+                norm = Normalize(
+                    vmin=min(self._color_map_range), vmax=max(self._color_map_range)
+                )
             else:
                 norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
 

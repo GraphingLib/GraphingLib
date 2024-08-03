@@ -388,15 +388,33 @@ class Heatmap:
         """
         return deepcopy(self)
 
-    def add_color_bar_params(self, **color_bar_params) -> None:
+    def set_color_bar_params(
+        self,
+        label: Optional[str] = None,
+        position: Optional[str] = None,
+        **color_bar_params,
+    ) -> None:
         """
-        Adds
+        Sets the color bar parameters.
 
         Parameters
         ----------
-        **color_bar_params: Keyword arguments are passed to ``plt.colorbar`` call.
+        label : str, optional
+            Label of the color bar.
+        position : str, optional
+            Position of the color bar relative to the ``Figure``. It can be "left",
+            "right", "top" or "bottom". This also determines the orientation of the
+            color bar (vertical if the color bar is plotted on the "left" or "right",
+            horizontal otherwise). If None, the color bar is plotted on the right
+            side of the ``Figure``.
+        **color_bar_params:
+            Additional keyword arguments are passed to ``plt.colorbar`` call.
         """
         self._color_bar_params = color_bar_params
+        if label is not None:
+            self._color_bar_params["label"] = label
+        if position is not None:
+            self._color_bar_params["location"] = position
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -940,15 +958,33 @@ class Contour:
         """
         return deepcopy(self)
 
-    def add_color_bar_params(self, **color_bar_params) -> None:
+    def set_color_bar_params(
+        self,
+        label: Optional[str] = None,
+        position: Optional[str] = None,
+        **color_bar_params,
+    ) -> None:
         """
-        Adds
+        Sets the color bar parameters.
 
         Parameters
         ----------
-        **color_bar_params: Keyword arguments are passed to ``plt.colorbar`` call.
+        label : str, optional
+            Label of the color bar.
+        position : str, optional
+            Position of the color bar relative to the ``Figure``. It can be "left",
+            "right", "top" or "bottom". This also determines the orientation of the
+            color bar (vertical if the color bar is plotted on the "left" or "right",
+            horizontal otherwise). If None, the color bar is plotted on the right
+            side of the ``Figure``.
+        **color_bar_params:
+            Additional keyword arguments are passed to ``plt.colorbar`` call.
         """
         self._color_bar_params = color_bar_params
+        if label is not None:
+            self._color_bar_params["label"] = label
+        if position is not None:
+            self._color_bar_params["location"] = position
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -960,10 +996,24 @@ class Contour:
             "cmap": self._color_map,
             "alpha": self._alpha,
         }
-        if self._color_map_range:
-            params["vmin"] = min(self._color_map_range)
-            params["vmax"] = max(self._color_map_range)
         params = {k: v for k, v in params.items() if v != "default"}
+        if self._color_map_range:
+            params["levels"] = np.linspace(
+                *self._color_map_range, self._number_of_levels
+            )
+
+            # Colors the values that are outside the color map range. The presence of
+            # values over and under the color map range is indicated by arrows at the
+            # ends of the color bar.
+            if self._filled:
+                if min(self._color_map_range) > np.min(self._z_data) and max(
+                    self._color_map_range
+                ) < np.max(self._z_data):
+                    params["extend"] = "both"
+                elif max(self._color_map_range) < np.max(self._z_data):
+                    params["extend"] = "max"
+                elif min(self._color_map_range) > np.min(self._z_data):
+                    params["extend"] = "min"
         if self._filled:
             cont = axes.contourf(
                 self._x_mesh,

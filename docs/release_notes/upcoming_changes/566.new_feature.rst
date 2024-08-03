@@ -1,3 +1,3 @@
 Color bar parameters, color map range and histogram orientation
-----------------------
-Added the color bar parameters (label, position, orientation, etc.) for `Scatter`, `Heatmap` and `Contour`. These can be specified by calling the `add_color_bar_params` method. Also, added the color map range, which can be specified with `color_map_range=(start, end)`. Added the possibility to plot a horizontal histogram with `orientation="horizontal"`.
+---------------------------------------------------------------
+Added the color bar parameters (label, position, orientation, etc.) for `Scatter`, `Heatmap` and `Contour`. These can be specified by calling the `set_color_bar_params` method. Also, added the color map range, which can be specified with `color_map_range=(start, end)`. Added the possibility to plot a horizontal histogram with `orientation="horizontal"`.
