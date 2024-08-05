@@ -1001,19 +1001,6 @@ class Contour:
             params["levels"] = np.linspace(
                 *self._color_map_range, self._number_of_levels
             )
-
-            # Colors the values that are outside the color map range. The presence of
-            # values over and under the color map range is indicated by arrows at the
-            # ends of the color bar.
-            if self._filled:
-                if min(self._color_map_range) > np.min(self._z_data) and max(
-                    self._color_map_range
-                ) < np.max(self._z_data):
-                    params["extend"] = "both"
-                elif max(self._color_map_range) < np.max(self._z_data):
-                    params["extend"] = "max"
-                elif min(self._color_map_range) > np.min(self._z_data):
-                    params["extend"] = "min"
         if self._filled:
             cont = axes.contourf(
                 self._x_mesh,
