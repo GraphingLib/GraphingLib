@@ -1,9 +1,9 @@
 import unittest
 from random import random
 
+from matplotlib.collections import PathCollection
 from matplotlib.colors import to_hex, to_rgba
 from matplotlib.pyplot import close, subplots
-from matplotlib.collections import PathCollection
 from numpy import linspace, ndarray, pi, sin
 
 from graphinglib.data_plotting_1d import Curve, Histogram, Scatter

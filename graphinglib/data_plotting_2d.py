@@ -33,6 +33,8 @@ class Heatmap:
         The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
         string (named colormap from Matplotlib) or a Colormap object.
         Default depends on the ``figure_style`` configuration.
+    color_map_range: tuple[float, float], optional
+        The data range that the color map will cover.
     show_color_bar : bool
         Whether or not to display the color bar next to the plot.
         Defaults to ``True``.
@@ -61,6 +63,7 @@ class Heatmap:
         x_axis_range: Optional[tuple[float, float]] = None,
         y_axis_range: Optional[tuple[float, float]] = None,
         color_map: str | Colormap = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         alpha_value: float = 1.0,
         aspect_ratio: str | float = "default",
@@ -81,6 +84,8 @@ class Heatmap:
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Defaults to ``True``.
@@ -106,11 +111,14 @@ class Heatmap:
         self._x_axis_range = x_axis_range
         self._y_axis_range = y_axis_range
         self._color_map = color_map
+        self._color_map_range = color_map_range
         self._show_color_bar = show_color_bar
         self._alpha_value = alpha_value
         self._aspect_ratio = aspect_ratio
         self._origin_position = origin_position
         self._interpolation = interpolation
+
+        self._color_bar_params: dict = {}
 
         if isinstance(self._image, str):
             self._image = imread(self._image)
@@ -127,6 +135,7 @@ class Heatmap:
         x_axis_range: tuple[float, float],
         y_axis_range: tuple[float, float],
         color_map: str | Colormap = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool = True,
         alpha_value: float = 1.0,
         aspect_ratio: str | float = "default",
@@ -149,6 +158,8 @@ class Heatmap:
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Defaults to ``True``.
@@ -186,6 +197,7 @@ class Heatmap:
             x_axis_range,
             y_axis_range,
             color_map,
+            color_map_range,
             show_color_bar,
             alpha_value,
             aspect_ratio,
@@ -203,6 +215,7 @@ class Heatmap:
         grid_interpolation: str = "nearest",
         fill_value: float = np.nan,
         color_map: str | Colormap = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool = True,
         alpha_value: float = 1.0,
         aspect_ratio: str | float = "default",
@@ -229,6 +242,8 @@ class Heatmap:
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Defaults to ``True``.
@@ -272,6 +287,7 @@ class Heatmap:
             x_axis_range,
             y_axis_range,
             color_map,
+            color_map_range,
             show_color_bar,
             alpha_value,
             aspect_ratio,
@@ -315,6 +331,14 @@ class Heatmap:
         self._color_map = color_map
 
     @property
+    def color_map_range(self) -> tuple[float, float]:
+        return self._color_map_range
+
+    @color_map_range.setter
+    def color_map_range(self, color_map_range: tuple[float, float]) -> None:
+        self._color_map_range = color_map_range
+
+    @property
     def show_color_bar(self) -> bool:
         return self._show_color_bar
 
@@ -354,11 +378,43 @@ class Heatmap:
     def interpolation(self, interpolation: str) -> None:
         self._interpolation = interpolation
 
+    @property
+    def color_bar_params(self) -> dict:
+        return self._color_bar_params
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
         """
         return deepcopy(self)
+
+    def set_color_bar_params(
+        self,
+        label: Optional[str] = None,
+        position: Optional[str] = None,
+        **color_bar_params,
+    ) -> None:
+        """
+        Sets the color bar parameters.
+
+        Parameters
+        ----------
+        label : str, optional
+            Label of the color bar.
+        position : str, optional
+            Position of the color bar relative to the ``Figure``. It can be "left",
+            "right", "top" or "bottom". This also determines the orientation of the
+            color bar (vertical if the color bar is plotted on the "left" or "right",
+            horizontal otherwise). If None, the color bar is plotted on the right
+            side of the ``Figure``.
+        **color_bar_params:
+            Additional keyword arguments are passed to ``plt.colorbar`` call.
+        """
+        self._color_bar_params = color_bar_params
+        if label is not None:
+            self._color_bar_params["label"] = label
+        if position is not None:
+            self._color_bar_params["location"] = position
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -375,6 +431,10 @@ class Heatmap:
                 "extent": self._xy_range,
             }
             params = {k: v for k, v in params.items() if v != "default"}
+            if self._color_map_range:
+                params["vmin"] = min(self._color_map_range)
+                params["vmax"] = max(self._color_map_range)
+
             image = axes.imshow(
                 self._image,
                 zorder=z_order,
@@ -389,6 +449,10 @@ class Heatmap:
                 "interpolation": self._interpolation,
             }
             params = {k: v for k, v in params.items() if v != "default"}
+            if self._color_map_range:
+                params["vmin"] = min(self._color_map_range)
+                params["vmax"] = max(self._color_map_range)
+
             image = axes.imshow(
                 self._image,
                 zorder=z_order,
@@ -396,7 +460,7 @@ class Heatmap:
             )
         fig = axes.get_figure()
         if self._show_color_bar:
-            fig.colorbar(image, ax=axes)
+            fig.colorbar(image, ax=axes, **self._color_bar_params)
 
 
 @dataclass
@@ -673,6 +737,8 @@ class Contour:
         The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
         string (named colormap from Matplotlib) or a Colormap object.
         Default depends on the ``figure_style`` configuration.
+    color_map_range: tuple[float, float], optional
+        The data range that the color map will cover.
     show_color_bar : bool
         Whether or not to display the color bar next to the plot.
         Default depends on the ``figure_style`` configuration.
@@ -700,6 +766,7 @@ class Contour:
         z_data: ArrayLike,
         number_of_levels: int | Literal["default"] = "default",
         color_map: str | Colormap | Literal["default"] = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         filled: bool | Literal["default"] = "default",
         alpha: float | Literal["default"] = "default",
@@ -720,6 +787,8 @@ class Contour:
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
@@ -735,9 +804,12 @@ class Contour:
         self._z_data = np.asarray(z_data)
         self._number_of_levels = number_of_levels
         self._color_map = color_map
+        self._color_map_range = color_map_range
         self._show_color_bar = show_color_bar
         self._filled = filled
         self._alpha = alpha
+
+        self._color_bar_params: dict = {}
 
     @classmethod
     def from_function(
@@ -747,6 +819,7 @@ class Contour:
         y_axis_range: tuple[float, float],
         number_of_levels: int | Literal["default"] = "default",
         color_map: str | Colormap | Literal["default"] = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         filled: bool | Literal["default"] = "default",
         alpha: float | Literal["default"] = "default",
@@ -771,6 +844,8 @@ class Contour:
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
@@ -795,6 +870,7 @@ class Contour:
             z_data,
             number_of_levels,
             color_map,
+            color_map_range,
             show_color_bar,
             filled,
             alpha,
@@ -841,6 +917,14 @@ class Contour:
         self._color_map = color_map
 
     @property
+    def color_map_range(self) -> tuple[float, float]:
+        return self._color_map_range
+
+    @color_map_range.setter
+    def color_map_range(self, color_map_range: tuple[float, float]) -> None:
+        self._color_map_range = color_map_range
+
+    @property
     def show_color_bar(self) -> bool:
         return self._show_color_bar
 
@@ -864,11 +948,43 @@ class Contour:
     def alpha(self, alpha: float) -> None:
         self._alpha = alpha
 
+    @property
+    def color_bar_params(self) -> dict:
+        return self._color_bar_params
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Contour`.
         """
         return deepcopy(self)
+
+    def set_color_bar_params(
+        self,
+        label: Optional[str] = None,
+        position: Optional[str] = None,
+        **color_bar_params,
+    ) -> None:
+        """
+        Sets the color bar parameters.
+
+        Parameters
+        ----------
+        label : str, optional
+            Label of the color bar.
+        position : str, optional
+            Position of the color bar relative to the ``Figure``. It can be "left",
+            "right", "top" or "bottom". This also determines the orientation of the
+            color bar (vertical if the color bar is plotted on the "left" or "right",
+            horizontal otherwise). If None, the color bar is plotted on the right
+            side of the ``Figure``.
+        **color_bar_params:
+            Additional keyword arguments are passed to ``plt.colorbar`` call.
+        """
+        self._color_bar_params = color_bar_params
+        if label is not None:
+            self._color_bar_params["label"] = label
+        if position is not None:
+            self._color_bar_params["location"] = position
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -881,6 +997,10 @@ class Contour:
             "alpha": self._alpha,
         }
         params = {k: v for k, v in params.items() if v != "default"}
+        if self._color_map_range:
+            params["levels"] = np.linspace(
+                *self._color_map_range, self._number_of_levels
+            )
         if self._filled:
             cont = axes.contourf(
                 self._x_mesh,
@@ -899,7 +1019,7 @@ class Contour:
             )
         if self._show_color_bar:
             fig = axes.get_figure()
-            fig.colorbar(cont, ax=axes)
+            fig.colorbar(cont, ax=axes, **self._color_bar_params)
 
 
 @dataclass

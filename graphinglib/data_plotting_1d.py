@@ -7,7 +7,8 @@ from typing import Callable, Literal, Optional, Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import Normalize, is_color_like, to_rgba, Colormap, to_rgba_array
+from matplotlib.colors import (Colormap, Normalize, is_color_like, to_rgba,
+                               to_rgba_array)
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
 from scipy.integrate import cumulative_trapezoid
@@ -1487,6 +1488,8 @@ class Scatter:
     color_map : str or Colormap
         Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
         Default depends on the ``figure_style`` configuration.
+    color_map_range: tuple[float, float], optional
+        The data range that the color map will cover.
     show_color_bar : bool
         Whether or not to display the color bar next to the plot.
         Default depends on the ``figure_style`` configuration.
@@ -1506,6 +1509,7 @@ class Scatter:
         face_color: str | ArrayLike | NoneType = "default",
         edge_color: str | ArrayLike | NoneType = "default",
         color_map: str | Colormap = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -1530,6 +1534,8 @@ class Scatter:
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
@@ -1548,6 +1554,7 @@ class Scatter:
         self._face_color = face_color
         self._edge_color = edge_color
         self._color_map = color_map
+        self._color_map_range = color_map_range
         self._show_color_bar = show_color_bar
         self._marker_size = marker_size
         self._marker_style = marker_style
@@ -1557,6 +1564,7 @@ class Scatter:
         self._cap_width: float = 3.0
         self._cap_thickness: float = 1.0
         self._errorbars_color: Optional[str] = None
+        self._color_bar_params: dict = {}
 
     @classmethod
     def from_function(
@@ -1568,6 +1576,7 @@ class Scatter:
         face_color: str | ArrayLike | NoneType = "default",
         edge_color: str | ArrayLike | NoneType = "default",
         color_map: str | Colormap = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: int | Literal["default"] = "default",
         marker_style: str = "default",
@@ -1594,6 +1603,8 @@ class Scatter:
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
@@ -1620,6 +1631,7 @@ class Scatter:
             face_color,
             edge_color,
             color_map,
+            color_map_range,
             show_color_bar,
             marker_size,
             marker_style,
@@ -1672,6 +1684,14 @@ class Scatter:
     @color_map.setter
     def color_map(self, color_map: str | Colormap) -> None:
         self._color_map = color_map
+
+    @property
+    def color_map_range(self) -> tuple[float, float]:
+        return self._color_map_range
+
+    @color_map_range.setter
+    def color_map_range(self, color_map_range: tuple[float, float]) -> None:
+        self._color_map_range = color_map_range
 
     @property
     def show_color_bar(self) -> bool:
@@ -1736,6 +1756,10 @@ class Scatter:
     @errorbars_color.setter
     def errorbars_color(self, errorbars_color: str) -> None:
         self._errorbars_color = errorbars_color
+
+    @property
+    def color_bar_params(self) -> dict:
+        return self._color_bar_params
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -1947,6 +1971,7 @@ class Scatter:
         face_color: str | ArrayLike | NoneType = "default",
         edge_color: str | ArrayLike | NoneType = "default",
         color_map: str | Colormap = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -1972,6 +1997,8 @@ class Scatter:
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
@@ -2002,6 +2029,8 @@ class Scatter:
                 copy._edge_color = edge_color
             if color_map != "default":
                 copy._color_map = color_map
+            if color_map_range:
+                copy._color_map_range = color_map_range
             if show_color_bar != "default":
                 copy._show_color_bar = show_color_bar
             if marker_size != "default":
@@ -2017,6 +2046,7 @@ class Scatter:
                 face_color,
                 edge_color,
                 color_map,
+                color_map_range,
                 show_color_bar,
                 marker_size,
                 marker_style,
@@ -2030,6 +2060,7 @@ class Scatter:
         face_color: str | ArrayLike | NoneType = "default",
         edge_color: str | ArrayLike | NoneType = "default",
         color_map: str | Colormap | Literal["default"] = "default",
+        color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -2055,6 +2086,8 @@ class Scatter:
         color_map : str or Colormap
             Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
             Default depends on the ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range that the color map will cover.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
@@ -2085,6 +2118,8 @@ class Scatter:
                 copy._edge_color = edge_color
             if color_map != "default":
                 copy._color_map = color_map
+            if color_map_range:
+                copy._color_map_range = color_map_range
             if show_color_bar != "default":
                 copy._show_color_bar = show_color_bar
             if marker_size != "default":
@@ -2100,6 +2135,7 @@ class Scatter:
                 face_color,
                 edge_color,
                 color_map,
+                color_map_range,
                 show_color_bar,
                 marker_size,
                 marker_style,
@@ -2141,6 +2177,34 @@ class Scatter:
         self._errorbars_line_width = errorbars_line_width
         self._cap_thickness = cap_thickness
         self._cap_width = cap_width
+
+    def set_color_bar_params(
+        self,
+        label: Optional[str] = None,
+        position: Optional[str] = None,
+        **color_bar_params,
+    ) -> None:
+        """
+        Sets the color bar parameters.
+
+        Parameters
+        ----------
+        label : str, optional
+            Label of the color bar.
+        position : str, optional
+            Position of the color bar relative to the ``Figure``. It can be "left",
+            "right", "top" or "bottom". This also determines the orientation of the
+            color bar (vertical if the color bar is plotted on the "left" or "right",
+            horizontal otherwise). If None, the color bar is plotted on the right
+            side of the ``Figure``.
+        **color_bar_params:
+            Additional keyword arguments are passed to ``plt.colorbar`` call.
+        """
+        self._color_bar_params = color_bar_params
+        if label is not None:
+            self._color_bar_params["label"] = label
+        if position is not None:
+            self._color_bar_params["location"] = position
 
     def get_coordinates_at_x(
         self,
@@ -2427,12 +2491,32 @@ class Scatter:
         if isinstance(self._face_color, (list, tuple, np.ndarray)):
             if all(isinstance(i, (int, float)) for i in self._face_color):
                 color_map = plt.get_cmap(self._color_map)
-                norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
+
+                # Sets the data range that the color map will cover. Otherwise, it will be calculated from the array of intensities
+                if self._color_map_range:
+                    norm = Normalize(
+                        vmin=min(self._color_map_range), vmax=max(self._color_map_range)
+                    )
+                else:
+                    norm = Normalize(
+                        vmin=min(self._face_color), vmax=max(self._face_color)
+                    )
+
                 mpl_face_color = [color_map(norm(i)) for i in self._face_color]
         elif isinstance(self._edge_color, (list, tuple, np.ndarray)):
             if all(isinstance(i, (int, float)) for i in self._edge_color):
                 color_map = plt.get_cmap(self._color_map)
-                norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
+
+                # Sets the data range that the color map will cover. Otherwise, it will be calculated from the array of intensities
+                if self._color_map_range:
+                    norm = Normalize(
+                        vmin=min(self._color_map_range), vmax=max(self._color_map_range)
+                    )
+                else:
+                    norm = Normalize(
+                        vmin=min(self._edge_color), vmax=max(self._edge_color)
+                    )
+
                 mpl_edge_color = [color_map(norm(i)) for i in self._edge_color]
 
         params = {
@@ -2507,10 +2591,19 @@ class Scatter:
         ):
             # Create color bar from face color intensities
             color_map = plt.get_cmap(self._color_map)
-            norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
+
+            # Sets the data range that the color map on the color bar will cover.
+            # Otherwise, it will be calculated from the array of intensities.
+            if self._color_map_range:
+                norm = Normalize(
+                    vmin=min(self._color_map_range), vmax=max(self._color_map_range)
+                )
+            else:
+                norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
+
             sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
             sm.set_array([])
-            plt.colorbar(sm, ax=axes)
+            plt.colorbar(sm, ax=axes, **self._color_bar_params)
 
         if (
             self._show_color_bar
@@ -2519,10 +2612,19 @@ class Scatter:
         ):
             # Create color bar from edge color intensities
             color_map = plt.get_cmap(self._color_map)
-            norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
+
+            # Sets the data range that the color map on the color bar will cover.
+            # Otherwise, it will be calculated from the array of intensities.
+            if self._color_map_range:
+                norm = Normalize(
+                    vmin=min(self._color_map_range), vmax=max(self._color_map_range)
+                )
+            else:
+                norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
+
             sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
             sm.set_array([])
-            plt.colorbar(sm, ax=axes)
+            plt.colorbar(sm, ax=axes, **self._color_bar_params)
 
 
 @dataclass
@@ -2576,6 +2678,7 @@ class Histogram:
         alpha: float | Literal["default"] = "default",
         line_width: float | Literal["default"] = "default",
         normalize: bool | Literal["default"] = "default",
+        orientation: str = "default",
         show_params: bool | Literal["default"] = "default",
     ) -> None:
         """
@@ -2607,6 +2710,10 @@ class Histogram:
         normalize : bool
             Whether or not to normalize the histogram.
             Default depends on the ``figure_style`` configuration.
+        orientation: str
+            Whether to plot the histogram on x-axis or on y-axis.
+            Can be "vertical" or "horizontal".
+            Default depends on the ``figure_style`` configuration.
         show_pdf : str
             Whether or not to show the probability density function.
             Can be "normal" or "gaussian".
@@ -2624,6 +2731,7 @@ class Histogram:
         self._alpha = alpha
         self._line_width = line_width
         self._normalize = normalize
+        self._orientation = orientation
         self._show_params = show_params
 
         self._show_pdf = False
@@ -2658,6 +2766,7 @@ class Histogram:
         alpha: int | Literal["default"] = "default",
         line_width: int | Literal["default"] = "default",
         normalize: bool | Literal["default"] = "default",
+        orientation: str = "default",
         show_params: bool | Literal["default"] = "default",
     ) -> Self:
         """
@@ -2689,6 +2798,10 @@ class Histogram:
         normalize : bool
             Whether or not to normalize the histogram.
             Default depends on the ``figure_style`` configuration.
+        orientation: str
+            Whether to plot the histogram on x-axis or on y-axis.
+            Can be "vertical" or "horizontal".
+            Default depends on the ``figure_style`` configuration.
         show_pdf : str
             Whether or not to show the probability density function.
             Can be "normal" or "gaussian".
@@ -2712,6 +2825,7 @@ class Histogram:
             alpha,
             line_width,
             normalize,
+            orientation,
             show_params,
         )
 
@@ -2806,6 +2920,14 @@ class Histogram:
     @normalize.setter
     def normalize(self, normalize: bool) -> None:
         self._normalize = normalize
+
+    @property
+    def orientation(self) -> str:
+        return self._orientation
+
+    @orientation.setter
+    def orientation(self, orientation: str) -> None:
+        self._orientation = orientation
 
     @property
     def show_params(self) -> bool:
@@ -2974,6 +3096,7 @@ class Histogram:
             "histtype": self._hist_type,
             "linewidth": self._line_width,
             "density": self._normalize,
+            "orientation": self._orientation,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.hist(
@@ -2996,38 +3119,80 @@ class Histogram:
                 "color": self._pdf_curve_color,
             }
             params = {k: v for k, v in params.items() if v != "default"}
-            axes.plot(
-                x_data,
-                y_data,
-                zorder=z_order,
-                **params,
-            )
+
+            # Plots pdf on the y-axis if "orientation" is "horizontal".
+            if self._orientation != "vertical":
+                axes.plot(
+                    y_data,
+                    x_data,
+                    zorder=z_order,
+                    **params,
+                )
+
+            else:
+                axes.plot(
+                    x_data,
+                    y_data,
+                    zorder=z_order,
+                    **params,
+                )
+
             curve_max_y = normal(self._mean)
             curve_std_y = normal(self._mean + self._standard_deviation)
             if self._pdf_show_std:
                 params = {}
                 if self._pdf_std_color != "default":
                     params["colors"] = [self._pdf_std_color, self._pdf_std_color]
-                plt.vlines(
-                    [
-                        self._mean - self._standard_deviation,
-                        self._mean + self._standard_deviation,
-                    ],
-                    [0, 0],
-                    [curve_std_y, curve_std_y],
-                    linestyles=["dashed"],
-                    zorder=z_order - 1,
-                    **params,
-                )
+
+                # Plots std on the y-axis if "orientation" is "horizontal".
+                if self._orientation != "vertical":
+                    plt.hlines(
+                        [
+                            self._mean - self._standard_deviation,
+                            self._mean + self._standard_deviation,
+                        ],
+                        [0, 0],
+                        [curve_std_y, curve_std_y],
+                        linestyles=["dashed"],
+                        zorder=z_order - 1,
+                        **params,
+                    )
+
+                else:
+                    plt.vlines(
+                        [
+                            self._mean - self._standard_deviation,
+                            self._mean + self._standard_deviation,
+                        ],
+                        [0, 0],
+                        [curve_std_y, curve_std_y],
+                        linestyles=["dashed"],
+                        zorder=z_order - 1,
+                        **params,
+                    )
+
             if self._pdf_show_mean:
                 params = {}
                 if self._pdf_mean_color != "default":
                     params["colors"] = [self._pdf_mean_color]
-                plt.vlines(
-                    self._mean,
-                    0,
-                    curve_max_y,
-                    linestyles=["dashed"],
-                    zorder=z_order - 1,
-                    **params,
-                )
+
+                # Plots std on the y-axis if "orientation" is "horizontal".
+                if self._orientation != "vertical":
+                    plt.hlines(
+                        self._mean,
+                        0,
+                        curve_max_y,
+                        linestyles=["dashed"],
+                        zorder=z_order - 1,
+                        **params,
+                    )
+
+                else:
+                    plt.vlines(
+                        self._mean,
+                        0,
+                        curve_max_y,
+                        linestyles=["dashed"],
+                        zorder=z_order - 1,
+                        **params,
+                    )
