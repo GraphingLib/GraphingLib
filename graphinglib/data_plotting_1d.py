@@ -74,9 +74,16 @@ class Plottable1D:
         sorted_indices = np.argsort(x_data)
         sorted_x_data = x_data[sorted_indices]
         sorted_y_data = y_data[sorted_indices]
+
         # Change exponential formatting to be interpretable by Desmos
+        def format_tex(num: str, exponent: str):
+            num = num.rstrip("0")
+            if exponent == "+00":
+                return str(num)
+            else:
+                return rf"{num}\cdot10^" + "{" + str(int(exponent)) + "}"
+
         formatted_points = "["
-        format_tex = lambda num, exponent : rf"{num}\cdot10^" + "{" + str(int(exponent)) + "}"
         for x, y in zip(sorted_x_data, sorted_y_data):
             x_num, x_exponent = f"{x:.{decimal_precision:d}e}".split("e")
             y_num, y_exponent = f"{y:.{decimal_precision:d}e}".split("e")
