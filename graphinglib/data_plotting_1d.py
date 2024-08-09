@@ -13,6 +13,7 @@ from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
 from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import interp1d
+from pyperclip import copy as copy_to_clipboard
 
 from .graph_elements import Point
 
@@ -46,8 +47,46 @@ class Fit(Protocol):
         pass
 
 
+class Plottable1D:
+    """
+    Dummy class to allow type hinting of Plottable1D objects.
+    """
+
+    @staticmethod
+    def to_desmos(x_data: ArrayLike, y_data: ArrayLike, decimal_precision: int=4) -> str:
+        """
+        Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
+        cell and the object's data will be displayed.
+
+        Parameters
+        ----------
+        x_data, y_data : ArrayLike
+            Arrays of x and y values to be plotted.
+        decimal_precision : int, optional
+            Specifies the number of decimals of the formatted points.
+            Defaults to 4.
+
+        Returns
+        -------
+        formatted points : str
+            A list of tuples representing every data point.
+        """
+        sorted_indices = np.argsort(x_data)
+        sorted_x_data = x_data[sorted_indices]
+        sorted_y_data = y_data[sorted_indices]
+        # Change exponential formatting to be interpretable by Desmos
+        formatted_points = "["
+        format_tex = lambda num, exponent : rf"{num}\cdot10^" + "{" + str(int(exponent)) + "}"
+        for x, y in zip(sorted_x_data, sorted_y_data):
+            x_num, x_exponent = f"{x:.{decimal_precision:d}e}".split("e")
+            y_num, y_exponent = f"{y:.{decimal_precision:d}e}".split("e")
+            formatted_points += f"({format_tex(x_num, x_exponent)},{format_tex(y_num, y_exponent)}),"
+        formatted_points = formatted_points[:-1] + "]"
+        return formatted_points
+
+
 @dataclass
-class Curve:
+class Curve(Plottable1D):
     """
     This class implements a general continuous curve.
 
@@ -1225,6 +1264,31 @@ class Curve:
             points.append((x_val, y_val))
         return points
 
+    def to_desmos(self, to_clipboard: bool=False, decimal_precision: int=4) -> str:
+        """
+        Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
+        cell and the object's data will be displayed.
+
+        Parameters
+        ----------
+        to_clipboard : bool, optional
+            Specifies whether the points should be directly copied to the user's clipboard in addition to being
+            returned as a string.
+            Defaults to False.
+        decimal_precision : int, optional
+            Specifies the number of decimals of the formatted points.
+            Defaults to 4.
+
+        Returns
+        -------
+        formatted points : str
+            A list of tuples representing every data point.
+        """
+        formatted_points = super().to_desmos(self._x_data, self._y_data, decimal_precision)
+        if to_clipboard:
+            copy_to_clipboard(formatted_points)
+        return formatted_points
+
     def create_intersection_points(
         self,
         other: Self,
@@ -1467,7 +1531,7 @@ class Curve:
 
 
 @dataclass
-class Scatter:
+class Scatter(Plottable1D):
     """
     This class implements a general scatter plot.
 
@@ -2395,6 +2459,31 @@ class Scatter:
         ]
         return points
 
+    def to_desmos(self, to_clipboard: bool=False, decimal_precision: int=4) -> str:
+        """
+        Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
+        cell and the object's data will be displayed.
+
+        Parameters
+        ----------
+        to_clipboard : bool, optional
+            Specifies whether the points should be directly copied to the user's clipboard in addition to being
+            returned as a string.
+            Defaults to False.
+        decimal_precision : int, optional
+            Specifies the number of decimals of the formatted points.
+            Defaults to 4.
+
+        Returns
+        -------
+        formatted points : str
+            A list of tuples representing every data point.
+        """
+        formatted_points = super().to_desmos(self._x_data, self._y_data, decimal_precision)
+        if to_clipboard:
+            copy_to_clipboard(formatted_points)
+        return formatted_points
+
     def _get_contrasting_shade(self, color: str | tuple[int, int, int]) -> str:
         """
         Gives the most contrasting shade (black/white) for a given color. The algorithm used comes from this Stack
@@ -2628,7 +2717,7 @@ class Scatter:
 
 
 @dataclass
-class Histogram:
+class Histogram(Plottable1D):
     """
     This class implements a general histogram.
 
@@ -3058,6 +3147,31 @@ class Histogram:
         self._pdf_curve_color = curve_color
         self._pdf_mean_color = mean_color
         self._pdf_std_color = std_color
+
+    def to_desmos(self, to_clipboard: bool=False, decimal_precision: int=4) -> str:
+        """
+        Gives the top center of the bins in a Desmos-readable format. The outputted string can then be pasted into a
+        single Desmos cell and the object's data will be displayed.
+
+        Parameters
+        ----------
+        to_clipboard : bool, optional
+            Specifies whether the points should be directly copied to the user's clipboard in addition to being
+            returned as a string.
+            Defaults to False.
+        decimal_precision : int, optional
+            Specifies the number of decimals of the formatted points.
+            Defaults to 4.
+
+        Returns
+        -------
+        formatted points : str
+            A list of tuples representing every data point.
+        """
+        formatted_points = super().to_desmos(self.bin_centers, self.bin_heights, decimal_precision)
+        if to_clipboard:
+            copy_to_clipboard(formatted_points)
+        return formatted_points
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """

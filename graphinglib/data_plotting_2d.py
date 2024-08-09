@@ -17,8 +17,15 @@ except ImportError:
     from typing_extensions import Self
 
 
+class Plottable2D:
+    """
+    Dummy class to allow type hinting of Plottable2D objects.
+    """
+    pass
+
+
 @dataclass
-class Heatmap:
+class Heatmap(Plottable2D):
     """
     The class implements heatmaps.
 
@@ -464,7 +471,7 @@ class Heatmap:
 
 
 @dataclass
-class VectorField:
+class VectorField(Plottable2D):
     """
     This class implements vector fields.
 
@@ -720,7 +727,7 @@ class VectorField:
 
 
 @dataclass
-class Contour:
+class Contour(Plottable2D):
     """
     This class implements contour plots.
 
@@ -1023,7 +1030,7 @@ class Contour:
 
 
 @dataclass
-class Stream:
+class Stream(Plottable2D):
     """
     This class implements stream plots.
 
