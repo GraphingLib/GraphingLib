@@ -751,6 +751,14 @@ class Figure:
                 raise GraphingException(
                     "Ticks position must be specified when ticks labels are specified"
                 )
+        if self._xticks is not None and self._xtick_spacing is not None:
+            raise GraphingException(
+                "Tick spacing and tick positions cannot be set simultaneously"
+            )
+        if self._yticks is not None and self._ytick_spacing is not None:
+            raise GraphingException(
+                "Tick spacing and tick positions cannot be set simultaneously"
+            )
 
     def create_twin_axis(
         self,
