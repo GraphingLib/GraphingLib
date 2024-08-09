@@ -1,0 +1,3 @@
+New custom ticks setting options
+--------------------------------
+Custom ticks can now be specified even if labels are left unspecified. In that case, labels are automatically generated. New ``xtick_spacing`` and ``ytick_spacing`` options to set the spacing between each tick without specifying the tick explicit positions.
