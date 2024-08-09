@@ -3,6 +3,7 @@ from typing import Literal, Optional
 from warnings import warn
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
@@ -309,10 +310,18 @@ class Figure:
                 self._axes.set_xticks(self._xticks, self._xticklabels)
             if self._xticklabels_rotation:
                 self._axes.tick_params("x", labelrotation=self._xticklabels_rotation)
+            if self._xtick_spacing:
+                self._axes.xaxis.set_major_locator(
+                    ticker.MultipleLocator(self._xtick_spacing)
+                )
             if self._yticks:
                 self._axes.set_yticks(self._yticks, self._yticklabels)
             if self._yticklabels_rotation:
                 self._axes.tick_params("y", labelrotation=self._yticklabels_rotation)
+            if self._ytick_spacing:
+                self._axes.yaxis.set_major_locator(
+                    ticker.MultipleLocator(self._ytick_spacing)
+                )
         if self._x_lim:
             self._axes.set_xlim(*self._x_lim)
         if self._y_lim:
@@ -696,16 +705,14 @@ class Figure:
         xticks: Optional[list[float]] = None,
         xticklabels: Optional[list[str]] = None,
         xticklabels_rotation: Optional[float] = None,
+        xtick_spacing: Optional[float] = None,
         yticks: Optional[list[float]] = None,
         yticklabels: Optional[list[str]] = None,
         yticklabels_rotation: Optional[float] = None,
+        ytick_spacing: Optional[float] = None,
     ):
         """
-        Sets custom [x/y]ticks and [x/y]ticks' labels.
-
-        ..note::
-            [x/y]ticks and [x/y]ticks' labels can be omited as long as labels are provided for
-            specified ticks.
+        Sets custom ticks and ticks labels.
 
         Parameters
         ----------
@@ -715,28 +722,34 @@ class Figure:
             Tick labels for the x axis.
         xticklabels_rotation : float, optional
             Rotation value for xtick labels.
+        xtick_spacing : float, optional
+            Spacing between ticks on the x axis.
         yticks : list[float], optional
             Tick positions for the y axis.
         yticklabels : list[str], optional
             Tick labels for the y axis.
         yticklabels_rotation : float, optional
             Rotation value for ytick labels.
+        ytick_spacing : float, optional
+            Spacing between ticks on the y axis.
         """
         self._custom_ticks = True
         self._xticks = xticks
         self._xticklabels = xticklabels
         self._xticklabels_rotation = xticklabels_rotation
+        self._xtick_spacing = xtick_spacing
         self._yticks = yticks
         self._yticklabels = yticklabels
         self._yticklabels_rotation = yticklabels_rotation
-        if self._xticks or self._yticks:
-            if self._yticks and not self._yticklabels:
+        self._ytick_spacing = ytick_spacing
+        if self._xticklabels is not None or self._yticklabels is not None:
+            if self._yticklabels and not self._yticks:
                 raise GraphingException(
-                    "Ticks position and corresponding labels must both be specified for the y axis."
+                    "Ticks position must be specified when ticks labels are specified"
                 )
-            if self._xticks and not self._xticklabels:
+            if self._xticklabels and not self._xticks:
                 raise GraphingException(
-                    "Ticks position and corresponding labels must both be specified for the x axis."
+                    "Ticks position must be specified when ticks labels are specified"
                 )
 
     def create_twin_axis(
