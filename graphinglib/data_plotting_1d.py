@@ -344,6 +344,12 @@ class Curve(Plottable1D):
     def fill_between_color(self, fill_between_color: str) -> None:
         self._fill_between_color = fill_between_color
 
+    def __eq__(self, other: Self) -> bool:
+        """
+        Defines the equality between two curves.
+        """
+        return self.x_data == other.x_data and self.y_data == other.y_data
+
     def __add__(self, other: Self | float) -> Self:
         """
         Defines the addition of two curves or a curve and a number.
@@ -1832,6 +1838,12 @@ class Scatter(Plottable1D):
     def color_bar_params(self) -> dict:
         return self._color_bar_params
 
+    def __eq__(self, other: Self) -> bool:
+        """
+        Defines the equality between two scatters.
+        """
+        return self.x_data == other.x_data and self.y_data == other.y_data
+
     def __add__(self, other: Self | float) -> Self:
         """
         Defines the addition of two scatter plots or a scatter plot and a number.
@@ -3056,6 +3068,12 @@ class Histogram(Plottable1D):
     @property
     def bin_edges(self) -> np.ndarray:
         return self._bin_edges
+
+    def __eq__(self, other: Self) -> bool:
+        """
+        Defines the equality between two histograms.
+        """
+        return self.bin_heights == other.bin_heights and self.bin_centers == other.bin_centers
 
     def _create_label(self) -> None:
         """
