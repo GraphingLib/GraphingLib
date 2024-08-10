@@ -1,0 +1,3 @@
+New behaviour for Hlines and Vlines ``x_min``/``x_max`` or ``y_min``/``y_max``
+------------------------------------------------------------------------------
+Now optional and ``None`` by default, the lines are spanning the entire axes if left to ``None``. When specified, the behaviour is unchanged. 
