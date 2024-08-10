@@ -51,8 +51,10 @@ class Hlines:
         Vertical positions at which the lines should be plotted.
     x_min : ArrayLike, optional
         Horizontal start position of the lines. Each lines can have a different start.
+        If not specified, lines will span the entire axes. Defaults to ``None``.
     x_max : ArrayLike, optional
         Horizontal end position of the lines. Each lines can habe a different end.
+        If not specified, lines will span the entire axes. Defaults to ``None``.
     label : str, optional
         Label to be displayed in the legend.
     colors : list[str]
@@ -277,8 +279,10 @@ class Vlines:
         Horizontal positions at which the lines should be plotted.
     y_min : ArrayLike, optional
         Vertical start position of the lines. Each line can have a different start.
+        If not specified, lines will span the entire axes. Defaults to ``None``.
     y_max : ArrayLike, optional
         Vertical end position of the lines. Each line can habe a different end.
+        If not specified, lines will span the entire axes. Defaults to ``None``.
     label : str, optional
         Label to be displayed in the legend.
     colors : list[str]
