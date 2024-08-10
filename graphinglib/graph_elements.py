@@ -49,9 +49,10 @@ class Hlines:
     ----------
     y : ArrayLike
         Vertical positions at which the lines should be plotted.
-    x_min, x_max : ArrayLike
-        Horizontal positions at which the lines should start and end. Different
-        positions can be specified for each line.
+    x_min : ArrayLike, optional
+        Horizontal start position of the lines. Each lines can have a different start.
+    x_max : ArrayLike, optional
+        Horizontal end position of the lines. Each lines can habe a different end.
     label : str, optional
         Label to be displayed in the legend.
     colors : list[str]
@@ -71,50 +72,29 @@ class Hlines:
     def __init__(
         self,
         y: ArrayLike,
-        x_min: ArrayLike,
-        x_max: ArrayLike,
+        x_min: Optional[ArrayLike] = None,
+        x_max: Optional[ArrayLike] = None,
         label: Optional[str] = None,
         colors: list[str] | str = "default",
         line_widths: list[float] | float = "default",
         line_styles: list[str] | str = "default",
     ) -> None:
-        """
-        This class implements simple horizontal lines.
-
-        Parameters
-        ----------
-        y : ArrayLike
-            Vertical positions at which the lines should be plotted.
-        x_min, x_max : ArrayLike
-            Horizontal positions at which the lines should start and end. Different
-            positions can be specified for each line.
-        label : str, optional
-            Label to be displayed in the legend.
-        colors : list[str]
-            Colors to use for the lines. One color for every line or a color
-            per line can be specified.
-            Default depends on the ``figure_style`` configuration.
-        line_widths : list[float]
-            Line widths to use for the lines. One width for every line or a width
-            per line can be specified.
-            Default depends on the ``figure_style`` configuration.
-        line_styles : list[str]
-            Line styles to use for the lines. One style for every line or a style
-            per line can be specified.
-            Default depends on the ``figure_style`` configuration.
-        """
-        if isinstance(y, (int, float)):
+        if isinstance(y, (list, np.ndarray)):
+            self._y = np.asarray(y)
+        else:
             self._y = y
-        elif isinstance(y, (list, np.ndarray)):
-            self._y = np.array(y)
-        if isinstance(x_min, (int, float)):
+        if isinstance(x_min, (list, np.ndarray)):
+            self._x_min = np.asarray(x_min)
+        else:
             self._x_min = x_min
-        elif isinstance(x_min, (list, np.ndarray)):
-            self._x_min = np.array(x_min)
-        if isinstance(x_max, (int, float)):
+        if isinstance(x_max, (list, np.ndarray)):
+            self._x_max = np.asarray(x_max)
+        else:
             self._x_max = x_max
-        elif isinstance(x_max, (list, np.ndarray)):
-            self._x_max = np.array(x_max)
+        if (self._x_min is None) ^ (self._x_max is None):
+            raise GraphingException(
+                "Either both x_min and x_max are specified or none of them"
+            )
         self._label = label
         self._colors = colors
         self._line_widths = line_widths
@@ -160,19 +140,19 @@ class Hlines:
         self._y = y
 
     @property
-    def x_min(self) -> ArrayLike:
+    def x_min(self) -> ArrayLike | None:
         return self._x_min
 
     @x_min.setter
-    def x_min(self, x_min: ArrayLike) -> None:
+    def x_min(self, x_min: Optional[ArrayLike]) -> None:
         self._x_min = x_min
 
     @property
-    def x_max(self) -> ArrayLike:
+    def x_max(self) -> ArrayLike | None:
         return self._x_max
 
     @x_max.setter
-    def x_max(self, x_max: ArrayLike) -> None:
+    def x_max(self, x_max: Optional[ArrayLike]) -> None:
         self._x_max = x_max
 
     @property
@@ -220,32 +200,61 @@ class Hlines:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if isinstance(self._y, list) and len(self._y) > 1:
-            params = {
-                "colors": self._colors,
-                "linestyles": self._line_styles,
-                "linewidths": self._line_widths,
-            }
-            params = {k: v for k, v in params.items() if v != "default"}
-            axes.hlines(
-                self._y,
-                self._x_min,
-                self._x_max,
-                zorder=z_order,
-                **params,
-            )
-            params.pop("linewidths")
+        if isinstance(self._y, (list, np.ndarray)) and len(self._y) > 1:
+            if self._x_max is not None and self._x_min is not None:
+                params = {
+                    "colors": self._colors,
+                    "linestyles": self._line_styles,
+                    "linewidths": self._line_widths,
+                }
+                params = {k: v for k, v in params.items() if v != "default"}
+                axes.hlines(
+                    self._y,
+                    self._x_min,
+                    self._x_max,
+                    zorder=z_order,
+                    **params,
+                )
+                params.pop("linewidths")
+            else:
+                params = {
+                    "color": self._colors,
+                    "linestyle": self._line_styles,
+                    "linewidth": self._line_widths,
+                }
+                params = {k: v for k, v in params.items() if v != "default"}
+                for y in self._y:
+                    axes.axhline(y, zorder=z_order, **params)
+                params.pop("linewidth")
             self.handle = LineCollection(
                 [[(0, 0)]] * (len(self._y) if len(self._y) <= 3 else 3),
                 **params,
             )
         else:
-            params = {
-                "colors": self._colors,
-                "linestyles": self._line_styles,
-                "linewidths": self._line_widths,
-            }
-            params = {k: v for k, v in params.items() if v != "default"}
+            if self._x_max is not None and self._x_min is not None:
+                params = {
+                    "colors": self._colors,
+                    "linestyles": self._line_styles,
+                    "linewidths": self._line_widths,
+                }
+                params = {k: v for k, v in params.items() if v != "default"}
+                axes.hlines(
+                    self._y,
+                    self._x_min,
+                    self._x_max,
+                    zorder=z_order,
+                    **params,
+                )
+                params.pop("linewidths")
+            else:
+                params = {
+                    "color": self._colors,
+                    "linestyle": self._line_styles,
+                    "linewidth": self._line_widths,
+                }
+                params = {k: v for k, v in params.items() if v != "default"}
+                axes.axhline(self._y, zorder=z_order, **params)
+                params.pop("linewidth")
             if isinstance(self._y, (int, float)):
                 self.handle = LineCollection(
                     [[(0, 0)]] * 1,
@@ -256,13 +265,6 @@ class Hlines:
                     [[(0, 0)]] * (len(self._y) if len(self._y) <= 3 else 3),
                     **params,
                 )
-            axes.hlines(
-                self._y,
-                self._x_min,
-                self._x_max,
-                zorder=z_order,
-                **params,
-            )
 
 
 class Vlines:
@@ -273,9 +275,10 @@ class Vlines:
     ----------
     x : ArrayLike
         Horizontal positions at which the lines should be plotted.
-    y_min, y_max : ArrayLike
-        Vertical positions at which the lines should start and end. Different
-        positions can be specified for each line.
+    y_min : ArrayLike, optional
+        Vertical start position of the lines. Each line can have a different start.
+    y_max : ArrayLike, optional
+        Vertical end position of the lines. Each line can habe a different end.
     label : str, optional
         Label to be displayed in the legend.
     colors : list[str]
@@ -295,50 +298,25 @@ class Vlines:
     def __init__(
         self,
         x: ArrayLike,
-        y_min: ArrayLike,
-        y_max: ArrayLike,
+        y_min: Optional[ArrayLike] = None,
+        y_max: Optional[ArrayLike] = None,
         label: Optional[str] = None,
         colors: list[str] | str = "default",
         line_widths: list[float] | float = "default",
         line_styles: list[str] | str = "default",
     ) -> None:
-        """
-        This class implements simple vertical lines.
-
-        Parameters
-        ----------
-        x : ArrayLike
-            Horizontal positions at which the lines should be plotted.
-        y_min, y_max : ArrayLike
-            Vertical positions at which the lines should start and end. Different
-            positions can be specified for each line.
-        label : str, optional
-            Label to be displayed in the legend.
-        colors : list[str]
-            Colors to use for the lines. One color for every line or a color
-            per line can be specified.
-            Default depends on the ``figure_style`` configuration.
-        line_widths : list[float]
-            Line widths to use for the lines. One width for every line or a width
-            per line can be specified.
-            Default depends on the ``figure_style`` configuration.
-        line_styles : list[str]
-            Line styles to use for the lines. One style for every line or a style
-            per line can be specified.
-            Default depends on the ``figure_style`` configuration.
-        """
-        if isinstance(x, (int, float)):
+        if isinstance(x, (list, np.ndarray)):
+            self._x = np.asarray(x)
+        else:
             self._x = x
-        elif isinstance(x, (list, np.ndarray)):
-            self._x = np.array(x)
-        if isinstance(y_min, (int, float)):
+        if isinstance(y_min, (list, np.ndarray)):
+            self._y_min = np.asarray(y_min)
+        else:
             self._y_min = y_min
-        elif isinstance(y_min, (list, np.ndarray)):
-            self._y_min = np.array(y_min)
-        if isinstance(y_max, (int, float)):
+        if isinstance(y_max, (list, np.ndarray)):
+            self._y_max = np.asarray(y_max)
+        else:
             self._y_max = y_max
-        elif isinstance(y_max, (list, np.ndarray)):
-            self._y_max = np.array(y_max)
         self._label = label
         self._colors = colors
         self._line_styles = line_styles
@@ -384,19 +362,19 @@ class Vlines:
         self._x = x
 
     @property
-    def y_min(self) -> ArrayLike:
+    def y_min(self) -> ArrayLike | None:
         return self._y_min
 
     @y_min.setter
-    def y_min(self, y_min: ArrayLike) -> None:
+    def y_min(self, y_min: Optional[ArrayLike]) -> None:
         self._y_min = y_min
 
     @property
-    def y_max(self) -> ArrayLike:
+    def y_max(self) -> ArrayLike | None:
         return self._y_max
 
     @y_max.setter
-    def y_max(self, y_max: ArrayLike) -> None:
+    def y_max(self, y_max: Optional[ArrayLike]) -> None:
         self._y_max = y_max
 
     @property
@@ -442,41 +420,67 @@ class Vlines:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if isinstance(self._x, list) and len(self._x) > 1:
-            params = {
-                "colors": self._colors,
-                "linestyles": self._line_styles,
-                "linewidths": self._line_widths,
-            }
-            params = {k: v for k, v in params.items() if v != "default"}
-            axes.vlines(
-                self._x,
-                self._y_min,
-                self._y_max,
-                zorder=z_order,
-                **params,
-            )
-            params.pop("linewidths")
+        if isinstance(self._x, (list, np.ndarray)) and len(self._x) > 1:
+            if self._y_min is not None and self._y_max is not None:
+                params = {
+                    "colors": self._colors,
+                    "linestyles": self._line_styles,
+                    "linewidths": self._line_widths,
+                }
+                params = {k: v for k, v in params.items() if v != "default"}
+                axes.vlines(
+                    self._x,
+                    self._y_min,
+                    self._y_max,
+                    zorder=z_order,
+                    **params,
+                )
+                params.pop("linewidths")
+            else:
+                params = {
+                    "color": self._colors,
+                    "linestyle": self._line_styles,
+                    "linewidth": self._line_widths,
+                }
+                params = {k: v for k, v in params.items() if v != "default"}
+                for x in self._x:
+                    axes.axvline(x, zorder=z_order, **params)
+                params.pop("linewidth")
             self.handle = VerticalLineCollection(
                 [[(0, 0)]] * (len(self._x) if len(self._x) <= 4 else 4),
                 **params,
             )
         else:
-            params = {
-                "colors": self._colors,
-                "linestyles": self._line_styles,
-                "linewidths": self._line_widths,
-            }
-            params = {k: v for k, v in params.items() if v != "default"}
+            if self._y_min is not None and self._y_max is not None:
+                params = {
+                    "colors": self._colors,
+                    "linestyles": self._line_styles,
+                    "linewidths": self._line_widths,
+                }
+                params = {k: v for k, v in params.items() if v != "default"}
+                axes.vlines(
+                    self._x,
+                    self._y_min,
+                    self._y_max,
+                    zorder=z_order,
+                    **params,
+                )
+                params.pop("linewidths")
+            else:
+                params = {
+                    "color": self._colors,
+                    "linestyle": self._line_styles,
+                    "linewidth": self._line_widths,
+                }
+                params = {k: v for k, v in params.items() if v != "default"}
+                axes.axvline(self._x, zorder=z_order, **params)
+                params.pop("linewidths")
             self.handle = VerticalLineCollection(
                 [[(0, 0)]] * (len(self._x) if len(self._x) <= 4 else 4),
                 **params,
             )
-            axes.vlines(
-                self._x,
-                self._y_min,
-                self._y_max,
-                zorder=z_order,
+            self.handle = VerticalLineCollection(
+                [[(0, 0)]] * (len(self._x) if len(self._x) <= 4 else 4),
                 **params,
             )
 
