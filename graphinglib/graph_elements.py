@@ -478,7 +478,7 @@ class Vlines:
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.axvline(self._x, zorder=z_order, **params)
-                params.pop("linewidths")
+                params.pop("linewidth")
             self.handle = VerticalLineCollection(
                 [[(0, 0)]] * (len(self._x) if len(self._x) <= 4 else 4),
                 **params,
