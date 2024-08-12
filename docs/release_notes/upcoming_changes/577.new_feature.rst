@@ -1,0 +1,3 @@
+New ``set_grid`` method for more Figure grid customization
+----------------------------------------------------------
+Added a new ``Figure.set_grid`` method to set the grid parameters and added parameter to set which grid lines to display (either ``"both"``, ``"major"`` or ``"minor"``) independently for both axes. 

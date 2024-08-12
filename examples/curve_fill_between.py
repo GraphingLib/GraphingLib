@@ -39,6 +39,7 @@ area_between_curves = curve_2.get_area_between(
     fill_between=True,
 )
 
-fig = gl.Figure(size=(8, 6), x_label="x values", y_label="y values", show_grid=True)
+fig = gl.Figure(size=(8, 6), x_label="x values", y_label="y values")
+fig.set_grid()
 fig.add_elements(curve_1, curve_2)
 fig.show()
