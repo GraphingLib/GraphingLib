@@ -1,0 +1,3 @@
+Plottable1D, Plottable2D, Plottable1D.to_desmos and Plottable1D.__eq__
+----------------------------------------------------------------------
+The new Plottable1D and Plottable2D dummy classes can be used for type hinting. Also, the Plottable1D.to_desmos method can now be used to export a Plottable1D into a list of coordinates, readable by Desmos. Every Plottable1D also now has a __eq__ method for comparing x and y data.
