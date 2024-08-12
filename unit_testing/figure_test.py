@@ -85,8 +85,9 @@ class TestFigure(unittest.TestCase):
         self.assertListEqual(list(a_figure._size), [10, 7])
 
     def test_assign_figure_params_no_grid(self):
-        a_figure = Figure(figure_style="horrible", show_grid=False)
-        self.assertFalse(a_figure._show_grid)
+        a_figure = Figure(figure_style="plain")
+        a_figure.set_grid()
+        self.assertTrue(a_figure._show_grid)
 
     def test_element_defaults_are_reset(self):
         self.testCurve._line_width = "default"
@@ -175,38 +176,28 @@ class TestFigure(unittest.TestCase):
 
     def test_customize_visual_style(self):
         a_figure = Figure()
-        a_figure.set_visual_params(
-            figure_face_color="red", axes_face_color="blue", grid_line_style="dashed"
-        )
+        a_figure.set_visual_params(figure_face_color="red", axes_face_color="blue")
         self.assertDictEqual(
             a_figure._user_rc_dict,
             {
                 "figure.facecolor": "red",
                 "axes.facecolor": "blue",
-                "grid.linestyle": "dashed",
             },
         )
-        a_figure.set_visual_params(
-            axes_face_color="yellow", grid_line_style="dotted", x_tick_color="green"
-        )
+        a_figure.set_visual_params(axes_face_color="yellow", x_tick_color="green")
         self.assertDictEqual(
             a_figure._user_rc_dict,
             {
                 "figure.facecolor": "red",
                 "axes.facecolor": "yellow",
-                "grid.linestyle": "dotted",
                 "xtick.color": "green",
             },
         )
 
     def test_customize_visual_style_reset(self):
         a_figure = Figure()
-        a_figure.set_visual_params(
-            figure_face_color="red", axes_face_color="blue", grid_line_style="dashed"
-        )
-        a_figure.set_visual_params(
-            axes_face_color="yellow", grid_line_style="dotted", x_tick_color="green"
-        )
+        a_figure.set_visual_params(figure_face_color="red", axes_face_color="blue")
+        a_figure.set_visual_params(axes_face_color="yellow", x_tick_color="green")
         a_figure.set_visual_params(reset=True)
         self.assertDictEqual(a_figure._user_rc_dict, {})
 
