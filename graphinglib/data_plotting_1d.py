@@ -53,7 +53,7 @@ class Plottable1D:
     """
 
     @staticmethod
-    def to_desmos(x_data: ArrayLike, y_data: ArrayLike, decimal_precision: int=4) -> str:
+    def to_desmos(x_data: ArrayLike, y_data: ArrayLike, decimal_precision: int=2) -> str:
         """
         Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
         cell and the object's data will be displayed.
@@ -64,7 +64,7 @@ class Plottable1D:
             Arrays of x and y values to be plotted.
         decimal_precision : int, optional
             Specifies the number of decimals of the formatted points.
-            Defaults to 4.
+            Defaults to 2.
 
         Returns
         -------
@@ -1277,20 +1277,20 @@ class Curve(Plottable1D):
             points.append((x_val, y_val))
         return points
 
-    def to_desmos(self, to_clipboard: bool=False, decimal_precision: int=4) -> str:
+    def to_desmos(self, decimal_precision: int=2, to_clipboard: bool=False) -> str:
         """
         Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
         cell and the object's data will be displayed.
 
         Parameters
         ----------
+        decimal_precision : int, optional
+            Specifies the number of decimals of the formatted points.
+            Defaults to 2.
         to_clipboard : bool, optional
             Specifies whether the points should be directly copied to the user's clipboard in addition to being
             returned as a string.
             Defaults to False.
-        decimal_precision : int, optional
-            Specifies the number of decimals of the formatted points.
-            Defaults to 4.
 
         Returns
         -------
@@ -2478,20 +2478,20 @@ class Scatter(Plottable1D):
         ]
         return points
 
-    def to_desmos(self, to_clipboard: bool=False, decimal_precision: int=4) -> str:
+    def to_desmos(self, decimal_precision: int=2, to_clipboard: bool=False) -> str:
         """
         Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
         cell and the object's data will be displayed.
 
         Parameters
         ----------
+        decimal_precision : int, optional
+            Specifies the number of decimals of the formatted points.
+            Defaults to 2.
         to_clipboard : bool, optional
             Specifies whether the points should be directly copied to the user's clipboard in addition to being
             returned as a string.
             Defaults to False.
-        decimal_precision : int, optional
-            Specifies the number of decimals of the formatted points.
-            Defaults to 4.
 
         Returns
         -------
@@ -3173,20 +3173,20 @@ class Histogram(Plottable1D):
         self._pdf_mean_color = mean_color
         self._pdf_std_color = std_color
 
-    def to_desmos(self, to_clipboard: bool=False, decimal_precision: int=4) -> str:
+    def to_desmos(self, decimal_precision: int=2, to_clipboard: bool=False) -> str:
         """
-        Gives the top center of the bins in a Desmos-readable format. The outputted string can then be pasted into a
+        Gives every bin's upper center in a Desmos-readable format. The outputted string can then be pasted into a
         single Desmos cell and the object's data will be displayed.
 
         Parameters
         ----------
+        decimal_precision : int, optional
+            Specifies the number of decimals of the formatted points.
+            Defaults to 2.
         to_clipboard : bool, optional
             Specifies whether the points should be directly copied to the user's clipboard in addition to being
             returned as a string.
             Defaults to False.
-        decimal_precision : int, optional
-            Specifies the number of decimals of the formatted points.
-            Defaults to 4.
 
         Returns
         -------
