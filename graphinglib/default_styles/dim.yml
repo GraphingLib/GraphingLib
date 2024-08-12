@@ -183,7 +183,6 @@ Line:
 rc_params:
   axes.edgecolor: white
   axes.facecolor: dimgrey
-  axes.grid: false
   axes.labelcolor: white
   axes.linewidth: 1
   axes.prop_cycle: cycler('color', ['#4796b8', '#edb73b', '#d04125', '#91bf5a', '#a766cc',

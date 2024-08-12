@@ -229,5 +229,4 @@ rc_params:
   grid.linewidth: 0.5
   grid.color: "grey"
   grid.alpha: 0.5
-  axes.grid: False
   
