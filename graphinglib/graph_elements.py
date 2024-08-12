@@ -258,10 +258,7 @@ class Hlines:
                 axes.axhline(self._y, zorder=z_order, **params)
                 params.pop("linewidth")
             if isinstance(self._y, (int, float)):
-                self.handle = LineCollection(
-                    [[(0, 0)]] * 1,
-                    **params,
-                )
+                self.handle = LineCollection([[(0, 0)]] * 1, **params)
             else:
                 self.handle = LineCollection(
                     [[(0, 0)]] * (len(self._y) if len(self._y) <= 3 else 3),
@@ -479,14 +476,13 @@ class Vlines:
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.axvline(self._x, zorder=z_order, **params)
                 params.pop("linewidth")
-            self.handle = VerticalLineCollection(
-                [[(0, 0)]] * (len(self._x) if len(self._x) <= 4 else 4),
-                **params,
-            )
-            self.handle = VerticalLineCollection(
-                [[(0, 0)]] * (len(self._x) if len(self._x) <= 4 else 4),
-                **params,
-            )
+            if isinstance(self._x, (int, float)):
+                self.handle = VerticalLineCollection([[(0, 0)]] * 1, **params)
+            else:
+                self.handle = VerticalLineCollection(
+                    [[(0, 0)]] * (len(self._x) if len(self._x) <= 4 else 4),
+                    **params,
+                )
 
 
 class Point:
