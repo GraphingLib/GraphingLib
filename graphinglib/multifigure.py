@@ -381,7 +381,7 @@ class MultiFigure:
     def show(
         self,
         general_legend: bool = False,
-        legend_loc: str = "outside lower center",
+        legend_loc: str | tuple = "outside lower center",
         legend_cols: int = 1,
     ) -> None:
         """
@@ -394,8 +394,11 @@ class MultiFigure:
             the labels of every :class:`~graphinglib.Figure.Figure` inside it. Note that enabling this option will
             disable the individual legends for every :class:`~graphinglib.multifigure.SubFigure`.
             Defaults to ``False``.
-        legend_loc : str
-            The location of the legend in the MultiFigure. Possible placement keywords are: for vertical placement: ``{"upper", "center", "lower"}``, for horizontal placement: ``{"left", "center", "right"}``. The keyword ``"outside"`` can be added to put the legend outside of the axes. Defaults to ``"outside lower center"``.
+        legend_loc : str or tuple
+            The location of the legend in the MultiFigure. Possible placement keywords are: for vertical placement:
+            ``{"upper", "center", "lower"}``, for horizontal placement: ``{"left", "center", "right"}``. The keyword
+            ``"outside"`` can be added to put the legend outside of the axes. Tuple contains floats relative to the
+            plots size; ``(1, 1)`` is equivalent to the upper right corner. Defaults to ``"outside lower center"``.
         legend_cols : int
             Number of colums in which to arrange the legend items. Defaults to 1.
         """
@@ -411,7 +414,7 @@ class MultiFigure:
         self,
         file_name: str,
         general_legend: bool = False,
-        legend_loc: str = "outside lower center",
+        legend_loc: str | tuple = "outside lower center",
         legend_cols: int = 1,
         dpi: Optional[int] = None,
     ) -> None:
@@ -427,8 +430,11 @@ class MultiFigure:
             the labels of every :class:`~graphinglib.figure.Figure` inside it. Note that enabling this option will
             disable the individual legends for every :class:`~graphinglib.figure.Figure`.
             Defaults to ``False``.
-        legend_loc : str
-            The location of the legend in the MultiFigure. Possible placement keywords are: for vertical placement: ``{"upper", "center", "lower"}``, for horizontal placement: ``{"left", "center", "right"}``. The keyword ``"outside"`` can be added to put the legend outside of the axes. Defaults to ``"outside lower center"``.
+        legend_loc : str or tuple
+            The location of the legend in the MultiFigure. Possible placement keywords are: for vertical placement:
+            ``{"upper", "center", "lower"}``, for horizontal placement: ``{"left", "center", "right"}``. The keyword
+            ``"outside"`` can be added to put the legend outside of the axes. Tuple contains floats relative to the
+            plot size; ``(1, 1)`` is equivalent to the upper right corner. Defaults to ``"outside lower center"``.
         legend_cols : int
             Number of colums in which to arrange the legend items. Defaults to 1.
         dpi : int, optional
@@ -509,7 +515,7 @@ class MultiFigure:
         self._fill_in_rc_params(is_matplotlib_style)
         if general_legend:
             try:
-                self._figure.legend(
+                _legend = self._figure.legend(
                     handles=handles,
                     labels=labels,
                     handleheight=1.3,
@@ -522,8 +528,9 @@ class MultiFigure:
                     loc=legend_loc,
                     ncols=legend_cols,
                 )
+                _legend.set_zorder(10000)
             except:
-                self._figure.legend(
+                _legend = self._figure.legend(
                     handles=handles,
                     labels=labels,
                     handleheight=1.3,
@@ -535,6 +542,7 @@ class MultiFigure:
                     loc=legend_loc,
                     ncols=legend_cols,
                 )
+                _legend.set_zorder(10000)
         self._figure.suptitle(self._title)
         self._reset_params_to_default(self, multi_figure_params_to_reset)
         self._rc_dict = {}
