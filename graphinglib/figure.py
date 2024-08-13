@@ -384,7 +384,7 @@ class Figure:
                 else:
                     legend_params = {"loc": legend_loc}
                 try:
-                    self._axes.legend(
+                    _legend = self._axes.legend(
                         handles=self._handles,
                         labels=self._labels,
                         handleheight=1.3,
@@ -397,8 +397,9 @@ class Figure:
                         **legend_params,
                         ncols=legend_cols,
                     )
+                    _legend.set_zorder(10000)
                 except:
-                    self._axes.legend(
+                    _legend = self._axes.legend(
                         handles=self._handles,
                         labels=self._labels,
                         handleheight=1.3,
@@ -410,6 +411,7 @@ class Figure:
                         **legend_params,
                         ncols=legend_cols,
                     )
+                    _legend.set_zorder(10000)
         else:
             raise GraphingException("No curves to be plotted!")
         self._reset_params_to_default(self, figure_params_to_reset)
@@ -421,7 +423,10 @@ class Figure:
         return temp_labels, temp_handles
 
     def show(
-        self, legend: bool = True, legend_loc: str = "best", legend_cols: int = 1
+        self,
+        legend: bool = True,
+        legend_loc: str | tuple = "best",
+        legend_cols: int = 1,
     ) -> None:
         """
         Displays the :class:`~graphinglib.figure.Figure`.
@@ -432,12 +437,12 @@ class Figure:
             Whether or not to display the legend. The legend is always set to be
             draggable.
             Defaults to ``True``.
-        legend_loc : str
-            Legend location keyword. Any value in {"best", "upper right", "upper left",
+        legend_loc : str or tuple
+            Legend location keyword or tuple. Any value in {"best", "upper right", "upper left",
             "lower left", "lower right", "right", "center left", "center right", "lower center",
             "upper center", "center"} or {"outside upper center", "outside center right",
-            "outside lower center"}.
-            Defaults to "best".
+            "outside lower center"}. Tuple contains floats relative to the plots size; ``(1, 1)``
+            is equivalent to the upper right corner. Defaults to "best".
         legend_cols : int
             Number of columns in the legend.
             Defaults to 1.
@@ -452,7 +457,7 @@ class Figure:
         self,
         file_name: str,
         legend: bool = True,
-        legend_loc: str = "best",
+        legend_loc: str | tuple = "best",
         legend_cols: int = 1,
         dpi: Optional[int] = None,
     ) -> None:
@@ -466,12 +471,12 @@ class Figure:
         legend : bool
             Wheter or not to display the legend.
             Defaults to ``True``.
-        legend_loc : str
-            Legend location keyword. Any value in {"best", "upper right", "upper left",
+        legend_loc : str or tuple
+            Legend location keyword or tuple. Any value in {"best", "upper right", "upper left",
             "lower left", "lower right", "right", "center left", "center right", "lower center",
             "upper center", "center"} or {"outside upper center", "outside center right",
-            "outside lower center"}.
-            Defaults to "best".
+            "outside lower center"}. Tuple contains floats relative to the plots size; ``(1, 1)``
+            is equivalent to the upper right corner. Defaults to "best".
         legend_cols : int
             Number of columns in the legend.
             Defaults to 1.
