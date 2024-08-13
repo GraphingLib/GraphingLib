@@ -515,7 +515,7 @@ class MultiFigure:
         self._fill_in_rc_params(is_matplotlib_style)
         if general_legend:
             try:
-                self._figure.legend(
+                _legend = self._figure.legend(
                     handles=handles,
                     labels=labels,
                     handleheight=1.3,
@@ -528,8 +528,9 @@ class MultiFigure:
                     loc=legend_loc,
                     ncols=legend_cols,
                 )
+                _legend.set_zorder(10000)
             except:
-                self._figure.legend(
+                _legend = self._figure.legend(
                     handles=handles,
                     labels=labels,
                     handleheight=1.3,
@@ -541,6 +542,7 @@ class MultiFigure:
                     loc=legend_loc,
                     ncols=legend_cols,
                 )
+                _legend.set_zorder(10000)
         self._figure.suptitle(self._title)
         self._reset_params_to_default(self, multi_figure_params_to_reset)
         self._rc_dict = {}
