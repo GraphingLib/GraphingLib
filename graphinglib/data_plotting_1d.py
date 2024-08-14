@@ -7,8 +7,7 @@ from typing import Callable, Literal, Optional, Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import (Colormap, Normalize, is_color_like, to_rgba,
-                               to_rgba_array)
+from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba, to_rgba_array
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
 from scipy.integrate import cumulative_trapezoid
@@ -2969,10 +2968,10 @@ class Histogram:
         if lab and self._show_params:
             lab += (
                 " :\n"
-                + f"$\mu$ = {0 if abs(self._mean) < 1e-3 else self._mean:.3f}, $\sigma$ = {self._standard_deviation:.3f}"
+                + rf"$\mu$ = {0 if abs(self._mean) < 1e-3 else self._mean:.3f}, $\sigma$ = {self._standard_deviation:.3f}"
             )
         elif self._show_params:
-            lab = f"$\mu$ = {0 if abs(self._mean) < 1e-3 else self._mean:.3f}, $\sigma$ = {self._standard_deviation:.3f}"
+            lab = rf"$\mu$ = {0 if abs(self._mean) < 1e-3 else self._mean:.3f}, $\sigma$ = {self._standard_deviation:.3f}"
         self._label = lab
 
     def copy(self) -> Self:
