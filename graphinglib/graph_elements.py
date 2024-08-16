@@ -117,20 +117,23 @@ class Hlines:
             raise GraphingException(
                 "There can't be multiple line widths for a single line!"
             )
-        if (
-            isinstance(self._y, (list, np.ndarray))
-            and isinstance(self._colors, list)
-            and isinstance(self._line_styles, list)
-            and isinstance(self._line_widths, list)
-        ):
-            if (
-                len(self._y) != len(self._colors)
-                or len(self._y) != len(self._line_styles)
-                or len(self._y) != len(self._line_widths)
+        if isinstance(self._y, (list, np.ndarray)):
+            if isinstance(self._colors, list) and len(self._y) != len(self._colors):
+                raise GraphingException(
+                    "There must be the same number of colors and lines!"
+                )
+            if isinstance(self._line_styles, list) and len(self._y) != len(
+                self._line_styles
             ):
                 raise GraphingException(
-                    "There must be the same number of colors, "
-                    + "line styles, line widths and lines!"
+                    "There must be the same number of line styles and lines!"
+                )
+
+            if isinstance(self._line_widths, list) and len(self._y) != len(
+                self._line_widths
+            ):
+                raise GraphingException(
+                    "There must be the same number of line widths and lines!"
                 )
 
     @property
@@ -225,8 +228,15 @@ class Hlines:
                     "linewidth": self._line_widths,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
-                for y in self._y:
-                    axes.axhline(y, zorder=z_order, **params)
+                for i in range(len(self._y)):
+                    axes.axhline(
+                        self._y[i],
+                        zorder=z_order,
+                        **{
+                            k: v if isinstance(v, (int, float, str)) else v[i]
+                            for k, v in params.items()
+                        },
+                    )
                 params.pop("linewidth")
             self.handle = LineCollection(
                 [[(0, 0)]] * (len(self._y) if len(self._y) <= 3 else 3),
@@ -338,20 +348,23 @@ class Vlines:
             raise GraphingException(
                 "There can't be multiple line widths for a single line!"
             )
-        if (
-            isinstance(self._x, (list, np.ndarray))
-            and isinstance(self._colors, list)
-            and isinstance(self._line_styles, list)
-            and isinstance(self._line_widths, list)
-        ):
-            if (
-                len(self._x) != len(self._colors)
-                or len(self._x) != len(self._line_styles)
-                or len(self._x) != len(self._line_widths)
+        if isinstance(self._x, (list, np.ndarray)):
+            if isinstance(self._colors, list) and len(self._x) != len(self._colors):
+                raise GraphingException(
+                    "There must be the same number of colors and lines!"
+                )
+            if isinstance(self._line_styles, list) and len(self._x) != len(
+                self._line_styles
             ):
                 raise GraphingException(
-                    "There must be the same number of colors, "
-                    + "line styles, line widths and lines!"
+                    "There must be the same number of line styles and lines!"
+                )
+
+            if isinstance(self._line_widths, list) and len(self._x) != len(
+                self._line_widths
+            ):
+                raise GraphingException(
+                    "There must be the same number of line widths and lines!"
                 )
 
     @property
@@ -444,8 +457,15 @@ class Vlines:
                     "linewidth": self._line_widths,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
-                for x in self._x:
-                    axes.axvline(x, zorder=z_order, **params)
+                for i in range(len(self._x)):
+                    axes.axvline(
+                        self._x[i],
+                        zorder=z_order,
+                        **{
+                            k: v if isinstance(v, (int, float, str)) else v[i]
+                            for k, v in params.items()
+                        },
+                    )
                 params.pop("linewidth")
             self.handle = VerticalLineCollection(
                 [[(0, 0)]] * (len(self._x) if len(self._x) <= 4 else 4),
