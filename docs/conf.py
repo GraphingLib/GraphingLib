@@ -82,6 +82,10 @@ html_sidebars = {
     "examples/index": [],
     "contributing/index": [],
 }
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
+
+if os.environ.get("READTHEDOCS", "") == "True":
+    html_context["READTHEDOCS"] = True
 
 # -- Extension options -------------------------------------------------------
 
