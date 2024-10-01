@@ -83,6 +83,10 @@ html_sidebars = {
     "examples/index": [],
     "contributing/index": [],
 }
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
+
+if os.environ.get("READTHEDOCS", "") == "True":
+    html_context["READTHEDOCS"] = True
 
 # -- Extension options -------------------------------------------------------
 
@@ -112,4 +116,6 @@ plot_pre_code = "import graphinglib as gl\nimport numpy as np"
 
 opg_site_url = "https://www.graphinglib.org/"
 ogp_image = "https://raw.githubusercontent.com/GraphingLib/GraphingLib/main/images/opengraph_GL.PNG"
-opg_description = "GraphingLib : A Python library for creating publication-quality figures with ease."
+opg_description = (
+    "GraphingLib : A Python library for creating publication-quality figures with ease."
+)
