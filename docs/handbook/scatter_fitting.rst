@@ -213,3 +213,5 @@ And here is an example of fitting a specific, user-defined function to some data
     Slit width: 3.763 microns
 
 As a bonus tip, you can use the :meth:`~graphinglib.data_plotting_1d.Scatter.create_slice_x` and :meth:`~graphinglib.data_plotting_1d.Scatter.create_slice_y` methods to create a :class:`~graphinglib.data_plotting_1d.Scatter` object that represents a slice of the original data. This can be useful for fitting a function to just part of your data if you measurements are not reliable at all x values.
+
+It is also possible to use the :meth:`~graphinglib.data_plotting_1d.Scatter.to_desmos` to export the scatter into a Desmos-readable format. This can allow easier estimation of the initial guesses for proper fitting.

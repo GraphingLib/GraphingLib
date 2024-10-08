@@ -139,3 +139,11 @@ Also available are the :meth:`~graphinglib.data_plotting_1d.Curve.create_slice_x
 
     slice_x = curve_1.create_slice_x(-3, 3)
     slice_y = curve_1.create_slice_y(1, 5)
+
+The :meth:`~graphinglib.data_plotting_1d.Curve.to_desmos` allows the curve to be exported into a Desmos-readable format that can be pasted into a single Desmos cell, enabling easy comparison between curves.
+
+.. plot::
+
+    curve_1 = gl.Curve.from_function(lambda x: x**2 - 5, x_min=-5, x_max=5, number_of_points=3)
+    print(curve_1.to_desmos())
+    # This gives: [(-5.,2.\cdot10^{1}),(0.,-5.),(5.,2.\cdot10^{1})]
