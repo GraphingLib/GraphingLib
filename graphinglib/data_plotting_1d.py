@@ -1423,7 +1423,7 @@ class Curve:
                     self._x_data,
                     max_y,
                     min_y,
-                    color=self.handle[0].get_color(),
+                    facecolor=self.handle[0].get_color(),
                     alpha=0.2,
                 )
         if self._fill_between_bounds:
