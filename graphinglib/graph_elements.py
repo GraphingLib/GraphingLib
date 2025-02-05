@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Literal, Optional, Protocol
+from typing import Literal, Optional, Protocol, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,6 +17,7 @@ except ImportError:
     from typing_extensions import Self
 
 
+@runtime_checkable
 class Plottable(Protocol):
     """
     Dummy class for a general plottable object.
