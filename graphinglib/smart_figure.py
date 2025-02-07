@@ -40,7 +40,9 @@ class SmartFigure:
         num_cols: int = 1,
         elements: Optional[list[Plottable]] = None,
         width_padding: bool = None,
-        height_padding: bool = None
+        height_padding: bool = None,
+        share_x: bool = False,
+        share_y: bool = False,
     ) -> None:
         self._x_label = x_label
         self._y_label = y_label
@@ -55,6 +57,8 @@ class SmartFigure:
         self._reference_label_i = None
         self._width_padding = width_padding
         self._height_padding = height_padding
+        self._share_x = share_x
+        self._share_y = share_y
 
     def __len__(self) -> int:
         return len(self._elements)
@@ -88,6 +92,7 @@ class SmartFigure:
         )
 
         # Plottable and subfigure plotting
+        ax = None   # keep track of the last Axis object, needed for sharing axes
         for i, element in enumerate(self._elements):
             row_i, col_i = divmod(i, self._num_cols)
 
@@ -101,7 +106,10 @@ class SmartFigure:
             elif isinstance(element, (Plottable, list)):
                 current_elements = element if isinstance(element, list) else [element]
                 subfig = self._figure.add_subfigure(gridspec[row_i, col_i])
-                ax = subfig.add_subplot()
+                ax = subfig.add_subplot(
+                    sharex=ax if self._share_x else None,
+                    sharey=ax if self._share_y else None,
+                )
                 for current_element in current_elements:
                     if isinstance(current_element, Plottable):
                         current_element._plot_element(
@@ -118,6 +126,9 @@ class SmartFigure:
                         transform=ax.transAxes + self._get_reflabel_translation(),
                     )
                     self._reference_label_i += 1
+                # ax.set_adjustable('box')  # Forces exact positioning
+                # pos = ax.get_position()  # Get the current position
+                # ax.set_position([pos.x0, pos.y0, pos.width, pos.height])
                 if self._remove_x_ticks:
                     ax.get_xaxis().set_visible(False)
                 if self._remove_y_ticks:
@@ -182,7 +193,7 @@ sf_1 = SmartFigure(num_rows=2, num_cols=1, elements=elements, x_label="xlab", y_
 
 sf_2 = SmartFigure(num_rows=1, num_cols=1, elements=[gl.Scatter([0, 1], [5, 10], label="testi")], x_label="xxx", y_label="yyy")
 
-two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, height_padding=0.5, width_padding=0.9)
+two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, height_padding=0, width_padding=0)
 
 orange_curve = gl.Curve([0, 2], [0, 1], label="first curve", color="orange")
 green_curve = gl.Curve([0, 1, 2], [2, 1, 2], label="second curve", color="green")
@@ -195,16 +206,19 @@ elements = [
     two_by_two
 ]
 sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="main mama x", y_label="main mama y", remove_x_ticks=True, remove_y_ticks=True, reference_labels=False,
-    # height_padding=0.5, width_padding=0.5,
+    height_padding=0, width_padding=0,
 )
 # two_by_two.show()
-sf.show()
+# sf.show()
 
 
 # two_by_two.show()
 # other.show()
 
 
-# remove tick spacing
+# remove tick spacing   sharex/y ?
 # add subplot weights
 # better subplot spacing conversion to account for wspace and hspace of parent figures
+
+two_by_two_2 = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], share_x=True, share_y=True, reference_labels=False, height_padding=0, width_padding=0)
+two_by_two_2.show()
