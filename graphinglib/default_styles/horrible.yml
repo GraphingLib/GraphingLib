@@ -18,7 +18,6 @@ Scatter:
   _color_map: "prism"
   _show_color_bar: False
   _marker_size: 4000
-  _marker_edge_width: 1.5
   _marker_style: "+"
   _cap_width: 10
   _errorbars_color: "same as scatter"
