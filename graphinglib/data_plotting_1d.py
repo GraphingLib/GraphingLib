@@ -7,12 +7,12 @@ from typing import Callable, Literal, Optional, Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import (Colormap, Normalize, is_color_like, to_rgba,
-                               to_rgba_array)
+from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba, to_rgba_array
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
 from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import interp1d
+from pyperclip import copy as copy_to_clipboard
 
 from .graph_elements import Point
 
@@ -46,8 +46,53 @@ class Fit(Protocol):
         pass
 
 
+class Plottable1D:
+    """
+    Dummy class to allow type hinting of Plottable1D objects.
+    """
+
+    @staticmethod
+    def to_desmos(x_data: ArrayLike, y_data: ArrayLike, decimal_precision: int=2) -> str:
+        """
+        Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
+        cell and the object's data will be displayed.
+
+        Parameters
+        ----------
+        x_data, y_data : ArrayLike
+            Arrays of x and y values to be plotted.
+        decimal_precision : int, optional
+            Specifies the number of decimals of the formatted points.
+            Defaults to 2.
+
+        Returns
+        -------
+        formatted points : str
+            A list of tuples representing every data point.
+        """
+        sorted_indices = np.argsort(x_data)
+        sorted_x_data = x_data[sorted_indices]
+        sorted_y_data = y_data[sorted_indices]
+
+        # Change exponential formatting to be interpretable by Desmos
+        def format_tex(num: str, exponent: str):
+            num = num.rstrip("0")
+            if exponent == "+00":
+                return str(num)
+            else:
+                return rf"{num}\cdot10^" + "{" + str(int(exponent)) + "}"
+
+        formatted_points = "["
+        for x, y in zip(sorted_x_data, sorted_y_data):
+            x_num, x_exponent = f"{x:.{decimal_precision:d}e}".split("e")
+            y_num, y_exponent = f"{y:.{decimal_precision:d}e}".split("e")
+            formatted_points += f"({format_tex(x_num, x_exponent)},{format_tex(y_num, y_exponent)}),"
+        formatted_points = formatted_points[:-1] + "]"
+        return formatted_points
+
+
 @dataclass
-class Curve:
+class Curve(Plottable1D):
     """
     This class implements a general continuous curve.
 
@@ -84,9 +129,6 @@ class Curve:
         self._color = color
         self._line_width = line_width
         self._line_style = line_style
-
-        self._x_error = None
-        self._y_error = None
 
         self._show_errorbars: bool = False
         self._errorbars_color = None
@@ -160,22 +202,6 @@ class Curve:
     @y_data.setter
     def y_data(self, y_data: ArrayLike) -> None:
         self._y_data = np.asarray(y_data)
-
-    @property
-    def x_error(self) -> np.ndarray | None:
-        return self._x_error
-
-    @x_error.setter
-    def x_error(self, x_error: ArrayLike) -> None:
-        self._x_error = np.asarray(x_error)
-
-    @property
-    def y_error(self) -> np.ndarray | None:
-        return self._y_error
-
-    @y_error.setter
-    def y_error(self, y_error: ArrayLike) -> None:
-        self._y_error = np.asarray(y_error)
 
     @property
     def label(self) -> Optional[str]:
@@ -316,6 +342,12 @@ class Curve:
     @fill_between_color.setter
     def fill_between_color(self, fill_between_color: str) -> None:
         self._fill_between_color = fill_between_color
+
+    def __eq__(self, other: Self) -> bool:
+        """
+        Defines the equality between two curves.
+        """
+        return self.x_data == other.x_data and self.y_data == other.y_data
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -667,13 +699,8 @@ class Curve:
             Default depends on the ``figure_style`` configuration.
         """
         self._show_errorbars = True
-
-        if x_error is not None:
-            self._x_error = np.array(x_error)
-
-        if y_error is not None:
-            self._y_error = np.array(y_error)
-
+        self._x_error = np.array(x_error) if x_error is not None else x_error
+        self._y_error = np.array(y_error) if y_error is not None else y_error
         self._errorbars_color = errorbars_color
         self._errorbars_line_width = errorbars_line_width
         self._cap_thickness = cap_thickness
@@ -708,10 +735,7 @@ class Curve:
             Default depends on the ``figure_style`` configuration.
         """
         self._show_error_curves = True
-
-        if y_error is not None:
-            self._y_error = np.array(y_error)
-
+        self._y_error = np.array(y_error) if y_error is not None else y_error
         self._error_curves_color = error_curves_color
         self._error_curves_line_style = error_curves_line_style
         self._error_curves_line_width = error_curves_line_width
@@ -1252,6 +1276,31 @@ class Curve:
             points.append((x_val, y_val))
         return points
 
+    def to_desmos(self, decimal_precision: int=2, to_clipboard: bool=False) -> str:
+        """
+        Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
+        cell and the object's data will be displayed.
+
+        Parameters
+        ----------
+        decimal_precision : int, optional
+            Specifies the number of decimals of the formatted points.
+            Defaults to 2.
+        to_clipboard : bool, optional
+            Specifies whether the points should be directly copied to the user's clipboard in addition to being
+            returned as a string.
+            Defaults to False.
+
+        Returns
+        -------
+        formatted points : str
+            A list of tuples representing every data point.
+        """
+        formatted_points = super().to_desmos(self._x_data, self._y_data, decimal_precision)
+        if to_clipboard:
+            copy_to_clipboard(formatted_points)
+        return formatted_points
+
     def create_intersection_points(
         self,
         other: Self,
@@ -1451,7 +1500,7 @@ class Curve:
                     self._x_data,
                     max_y,
                     min_y,
-                    color=self.handle[0].get_color(),
+                    facecolor=self.handle[0].get_color(),
                     alpha=0.2,
                 )
         if self._fill_between_bounds:
@@ -1494,7 +1543,7 @@ class Curve:
 
 
 @dataclass
-class Scatter:
+class Scatter(Plottable1D):
     """
     This class implements a general scatter plot.
 
@@ -2715,7 +2764,7 @@ class Scatter:
 
 
 @dataclass
-class Histogram:
+class Histogram(Plottable1D):
     """
     This class implements a general histogram.
 
@@ -3048,6 +3097,12 @@ class Histogram:
     def bin_edges(self) -> np.ndarray:
         return self._bin_edges
 
+    def __eq__(self, other: Self) -> bool:
+        """
+        Defines the equality between two histograms.
+        """
+        return self.bin_heights == other.bin_heights and self.bin_centers == other.bin_centers
+
     def _create_label(self) -> None:
         """
         Creates the label of the histogram (with or without parameters).
@@ -3145,6 +3200,31 @@ class Histogram:
         self._pdf_curve_color = curve_color
         self._pdf_mean_color = mean_color
         self._pdf_std_color = std_color
+
+    def to_desmos(self, decimal_precision: int=2, to_clipboard: bool=False) -> str:
+        """
+        Gives every bin's upper center in a Desmos-readable format. The outputted string can then be pasted into a
+        single Desmos cell and the object's data will be displayed.
+
+        Parameters
+        ----------
+        decimal_precision : int, optional
+            Specifies the number of decimals of the formatted points.
+            Defaults to 2.
+        to_clipboard : bool, optional
+            Specifies whether the points should be directly copied to the user's clipboard in addition to being
+            returned as a string.
+            Defaults to False.
+
+        Returns
+        -------
+        formatted points : str
+            A list of tuples representing every data point.
+        """
+        formatted_points = super().to_desmos(self.bin_centers, self.bin_heights, decimal_precision)
+        if to_clipboard:
+            copy_to_clipboard(formatted_points)
+        return formatted_points
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
