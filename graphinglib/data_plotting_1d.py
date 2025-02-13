@@ -13,7 +13,6 @@ from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
 from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import interp1d
-from pyperclip import copy as copy_to_clipboard
 
 from .graph_elements import Point
 
@@ -47,53 +46,8 @@ class Fit(Protocol):
         pass
 
 
-class Plottable1D:
-    """
-    Dummy class to allow type hinting of Plottable1D objects.
-    """
-
-    @staticmethod
-    def to_desmos(x_data: ArrayLike, y_data: ArrayLike, decimal_precision: int=2) -> str:
-        """
-        Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
-        cell and the object's data will be displayed.
-
-        Parameters
-        ----------
-        x_data, y_data : ArrayLike
-            Arrays of x and y values to be plotted.
-        decimal_precision : int, optional
-            Specifies the number of decimals of the formatted points.
-            Defaults to 2.
-
-        Returns
-        -------
-        formatted points : str
-            A list of tuples representing every data point.
-        """
-        sorted_indices = np.argsort(x_data)
-        sorted_x_data = x_data[sorted_indices]
-        sorted_y_data = y_data[sorted_indices]
-
-        # Change exponential formatting to be interpretable by Desmos
-        def format_tex(num: str, exponent: str):
-            num = num.rstrip("0")
-            if exponent == "+00":
-                return str(num)
-            else:
-                return rf"{num}\cdot10^" + "{" + str(int(exponent)) + "}"
-
-        formatted_points = "["
-        for x, y in zip(sorted_x_data, sorted_y_data):
-            x_num, x_exponent = f"{x:.{decimal_precision:d}e}".split("e")
-            y_num, y_exponent = f"{y:.{decimal_precision:d}e}".split("e")
-            formatted_points += f"({format_tex(x_num, x_exponent)},{format_tex(y_num, y_exponent)}),"
-        formatted_points = formatted_points[:-1] + "]"
-        return formatted_points
-
-
 @dataclass
-class Curve(Plottable1D):
+class Curve:
     """
     This class implements a general continuous curve.
 
@@ -362,12 +316,6 @@ class Curve(Plottable1D):
     @fill_between_color.setter
     def fill_between_color(self, fill_between_color: str) -> None:
         self._fill_between_color = fill_between_color
-
-    def __eq__(self, other: Self) -> bool:
-        """
-        Defines the equality between two curves.
-        """
-        return self.x_data == other.x_data and self.y_data == other.y_data
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -1304,31 +1252,6 @@ class Curve(Plottable1D):
             points.append((x_val, y_val))
         return points
 
-    def to_desmos(self, decimal_precision: int=2, to_clipboard: bool=False) -> str:
-        """
-        Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
-        cell and the object's data will be displayed.
-
-        Parameters
-        ----------
-        decimal_precision : int, optional
-            Specifies the number of decimals of the formatted points.
-            Defaults to 2.
-        to_clipboard : bool, optional
-            Specifies whether the points should be directly copied to the user's clipboard in addition to being
-            returned as a string.
-            Defaults to False.
-
-        Returns
-        -------
-        formatted points : str
-            A list of tuples representing every data point.
-        """
-        formatted_points = super().to_desmos(self._x_data, self._y_data, decimal_precision)
-        if to_clipboard:
-            copy_to_clipboard(formatted_points)
-        return formatted_points
-
     def create_intersection_points(
         self,
         other: Self,
@@ -1528,7 +1451,7 @@ class Curve(Plottable1D):
                     self._x_data,
                     max_y,
                     min_y,
-                    facecolor=self.handle[0].get_color(),
+                    color=self.handle[0].get_color(),
                     alpha=0.2,
                 )
         if self._fill_between_bounds:
@@ -1571,7 +1494,7 @@ class Curve(Plottable1D):
 
 
 @dataclass
-class Scatter(Plottable1D):
+class Scatter:
     """
     This class implements a general scatter plot.
 
@@ -1600,6 +1523,9 @@ class Scatter(Plottable1D):
     marker_size : float
         Size of the points.
         Default depends on the ``figure_style`` configuration.
+    marker_edge_width: float
+        Line width of the marker edges.
+        Default depends on the ``figure_style`` configuration.
     marker_style : str
         Style of the points.
         Default depends on the ``figure_style`` configuration.
@@ -1616,6 +1542,7 @@ class Scatter(Plottable1D):
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
+        marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
     ) -> None:
         """
@@ -1646,6 +1573,9 @@ class Scatter(Plottable1D):
         marker_size : float
             Size of the points.
             Default depends on the ``figure_style`` configuration.
+        marker_edge_width: float
+            Line width of the marker edges.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
@@ -1661,6 +1591,7 @@ class Scatter(Plottable1D):
         self._color_map_range = color_map_range
         self._show_color_bar = show_color_bar
         self._marker_size = marker_size
+        self._marker_edge_width = marker_edge_width
         self._marker_style = marker_style
 
         self._x_error = None
@@ -1686,6 +1617,7 @@ class Scatter(Plottable1D):
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: int | Literal["default"] = "default",
+        marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
         number_of_points: int = 30,
     ) -> Self:
@@ -1721,6 +1653,9 @@ class Scatter(Plottable1D):
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
+        marker_edge_width: float
+            Line width of the marker edges.
+            Default depends on the ``figure_style`` configuration.
         number_of_points : int
             Number of points to be plotted.
             Defaults to 30.
@@ -1741,6 +1676,7 @@ class Scatter(Plottable1D):
             color_map_range,
             show_color_bar,
             marker_size,
+            marker_edge_width,
             marker_style,
         )
 
@@ -1831,6 +1767,14 @@ class Scatter(Plottable1D):
     @marker_size.setter
     def marker_size(self, marker_size: float | Literal["default"]) -> None:
         self._marker_size = marker_size
+    
+    @property
+    def marker_edge_width(self) -> float:
+        return self._marker_edge_width
+
+    @marker_edge_width.setter
+    def marker_edge_width(self, value: float):
+        self._marker_edge_width = value
 
     @property
     def marker_style(self) -> str:
@@ -1883,12 +1827,6 @@ class Scatter(Plottable1D):
     @property
     def color_bar_params(self) -> dict:
         return self._color_bar_params
-
-    def __eq__(self, other: Self) -> bool:
-        """
-        Defines the equality between two scatters.
-        """
-        return self.x_data == other.x_data and self.y_data == other.y_data
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -2103,6 +2041,7 @@ class Scatter(Plottable1D):
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
+        marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
         copy_first: bool = False,
     ) -> Self:
@@ -2134,6 +2073,9 @@ class Scatter(Plottable1D):
         marker_size : float
             Size of the points.
             Default depends on the ``figure_style`` configuration.
+        marker_edge_width: float
+            Line width of the marker edges.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
@@ -2164,6 +2106,8 @@ class Scatter(Plottable1D):
                 copy._show_color_bar = show_color_bar
             if marker_size != "default":
                 copy._marker_size = marker_size
+            if marker_edge_width != "default":
+                copy._marker_edge_width = marker_edge_width
             if marker_style != "default":
                 copy._marker_style = marker_style
             return copy
@@ -2178,6 +2122,7 @@ class Scatter(Plottable1D):
                 color_map_range,
                 show_color_bar,
                 marker_size,
+                marker_edge_width,
                 marker_style,
             )
 
@@ -2192,6 +2137,7 @@ class Scatter(Plottable1D):
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         marker_size: float | Literal["default"] = "default",
+        marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
         copy_first: bool = False,
     ) -> Self:
@@ -2223,6 +2169,9 @@ class Scatter(Plottable1D):
         marker_size : float
             Size of the points.
             Default depends on the ``figure_style`` configuration.
+        marker_edge_width: float
+            Line width of the marker edges.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
@@ -2253,6 +2202,8 @@ class Scatter(Plottable1D):
                 copy._show_color_bar = show_color_bar
             if marker_size != "default":
                 copy._marker_size = marker_size
+            if marker_edge_width != "default":
+                copy._marker_edge_width = marker_edge_width
             if marker_style != "default":
                 copy._marker_style = marker_style
             return copy
@@ -2267,6 +2218,7 @@ class Scatter(Plottable1D):
                 color_map_range,
                 show_color_bar,
                 marker_size,
+                marker_edge_width,
                 marker_style,
             )
 
@@ -2377,8 +2329,8 @@ class Scatter(Plottable1D):
         color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
+        marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
-        line_width: float | Literal["default"] = "default",
     ) -> Point:
         """
         Creates a Point on the curve at a given x value.
@@ -2404,11 +2356,11 @@ class Scatter(Plottable1D):
         marker_size : float
             Size of the point.
             Default depends on the ``figure_style`` configuration.
+        marker_edge_width : float
+            Width of the point edge.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
-            Default depends on the ``figure_style`` configuration.
-        line_width : float
-            Width of the point edge.
             Default depends on the ``figure_style`` configuration.
 
         Returns
@@ -2424,7 +2376,7 @@ class Scatter(Plottable1D):
             edge_color=edge_color,
             marker_size=marker_size,
             marker_style=marker_style,
-            edge_width=line_width,
+            edge_width=marker_edge_width,
         )
         return point
 
@@ -2474,8 +2426,8 @@ class Scatter(Plottable1D):
         color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
+        marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
-        line_width: float | Literal["default"] = "default",
     ) -> list[Point]:
         """
         Creates the Points on the curve at a given y value. Can return multiple Points if the curve crosses the y value multiple times.
@@ -2501,11 +2453,11 @@ class Scatter(Plottable1D):
         marker_size : float
             Size of the point.
             Default depends on the ``figure_style`` configuration.
+        marker_edge_width : float
+            Width of the point edge.
+            Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
-            Default depends on the ``figure_style`` configuration.
-        line_width : float
-            Width of the point edge.
             Default depends on the ``figure_style`` configuration.
 
         Returns
@@ -2523,36 +2475,11 @@ class Scatter(Plottable1D):
                 edge_color=edge_color,
                 marker_size=marker_size,
                 marker_style=marker_style,
-                edge_width=line_width,
+                edge_width=marker_edge_width,
             )
             for coord in coords
         ]
         return points
-
-    def to_desmos(self, decimal_precision: int=2, to_clipboard: bool=False) -> str:
-        """
-        Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
-        cell and the object's data will be displayed.
-
-        Parameters
-        ----------
-        decimal_precision : int, optional
-            Specifies the number of decimals of the formatted points.
-            Defaults to 2.
-        to_clipboard : bool, optional
-            Specifies whether the points should be directly copied to the user's clipboard in addition to being
-            returned as a string.
-            Defaults to False.
-
-        Returns
-        -------
-        formatted points : str
-            A list of tuples representing every data point.
-        """
-        formatted_points = super().to_desmos(self._x_data, self._y_data, decimal_precision)
-        if to_clipboard:
-            copy_to_clipboard(formatted_points)
-        return formatted_points
 
     def _get_contrasting_shade(self, color: str | tuple[int, int, int]) -> str:
         """
@@ -2680,7 +2607,8 @@ class Scatter(Plottable1D):
 
         params = {
             "s": self._marker_size,
-            "marker": self._marker_style if self._marker_style != "default" else "o",
+            "marker": self._marker_style, #if self._marker_style != "default" else "o",
+            "linewidth": self._marker_edge_width
         }
         params = {k: v for k, v in params.items() if v != "default"}
         params["facecolors"] = mpl_face_color
@@ -2787,7 +2715,7 @@ class Scatter(Plottable1D):
 
 
 @dataclass
-class Histogram(Plottable1D):
+class Histogram:
     """
     This class implements a general histogram.
 
@@ -3120,12 +3048,6 @@ class Histogram(Plottable1D):
     def bin_edges(self) -> np.ndarray:
         return self._bin_edges
 
-    def __eq__(self, other: Self) -> bool:
-        """
-        Defines the equality between two histograms.
-        """
-        return self.bin_heights == other.bin_heights and self.bin_centers == other.bin_centers
-
     def _create_label(self) -> None:
         """
         Creates the label of the histogram (with or without parameters).
@@ -3223,31 +3145,6 @@ class Histogram(Plottable1D):
         self._pdf_curve_color = curve_color
         self._pdf_mean_color = mean_color
         self._pdf_std_color = std_color
-
-    def to_desmos(self, decimal_precision: int=2, to_clipboard: bool=False) -> str:
-        """
-        Gives every bin's upper center in a Desmos-readable format. The outputted string can then be pasted into a
-        single Desmos cell and the object's data will be displayed.
-
-        Parameters
-        ----------
-        decimal_precision : int, optional
-            Specifies the number of decimals of the formatted points.
-            Defaults to 2.
-        to_clipboard : bool, optional
-            Specifies whether the points should be directly copied to the user's clipboard in addition to being
-            returned as a string.
-            Defaults to False.
-
-        Returns
-        -------
-        formatted points : str
-            A list of tuples representing every data point.
-        """
-        formatted_points = super().to_desmos(self.bin_centers, self.bin_heights, decimal_precision)
-        if to_clipboard:
-            copy_to_clipboard(formatted_points)
-        return formatted_points
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """

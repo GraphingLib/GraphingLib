@@ -123,6 +123,7 @@ Scatter:
   _errorbars_color: same as scatter
   _errorbars_line_width: 2
   _marker_size: 60
+  _marker_edge_width: 1.5
   _marker_style: o
 Stream:
   _arrow_size: 1
