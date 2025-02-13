@@ -130,9 +130,6 @@ class Curve(Plottable1D):
         self._line_width = line_width
         self._line_style = line_style
 
-        self._x_error = None
-        self._y_error = None
-
         self._show_errorbars: bool = False
         self._errorbars_color = None
         self._errorbars_line_width = None
@@ -205,22 +202,6 @@ class Curve(Plottable1D):
     @y_data.setter
     def y_data(self, y_data: ArrayLike) -> None:
         self._y_data = np.asarray(y_data)
-
-    @property
-    def x_error(self) -> np.ndarray | None:
-        return self._x_error
-
-    @x_error.setter
-    def x_error(self, x_error: ArrayLike) -> None:
-        self._x_error = np.asarray(x_error)
-
-    @property
-    def y_error(self) -> np.ndarray | None:
-        return self._y_error
-
-    @y_error.setter
-    def y_error(self, y_error: ArrayLike) -> None:
-        self._y_error = np.asarray(y_error)
 
     @property
     def label(self) -> Optional[str]:
@@ -718,13 +699,8 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         """
         self._show_errorbars = True
-        
-        if x_error is not None:
-            self._x_error = np.array(x_error)
-
-        if y_error is not None:
-            self._y_error = np.array(y_error)
-        
+        self._x_error = np.array(x_error) if x_error is not None else x_error
+        self._y_error = np.array(y_error) if y_error is not None else y_error
         self._errorbars_color = errorbars_color
         self._errorbars_line_width = errorbars_line_width
         self._cap_thickness = cap_thickness
@@ -759,10 +735,7 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         """
         self._show_error_curves = True
-        
-        if y_error is not None:
-            self._y_error = np.array(y_error)
-            
+        self._y_error = np.array(y_error) if y_error is not None else y_error
         self._error_curves_color = error_curves_color
         self._error_curves_line_style = error_curves_line_style
         self._error_curves_line_width = error_curves_line_width
@@ -2328,7 +2301,7 @@ class Scatter(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         """
         self._show_errorbars = True
-        
+
         if x_error is not None:
             self._x_error = np.array(x_error)
 
