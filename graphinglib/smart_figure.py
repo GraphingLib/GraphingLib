@@ -38,9 +38,10 @@ class SmartFigure:
         reflabel_loc: str = "outside",
         num_rows: int = 1,
         num_cols: int = 1,
+        size: tuple[float, float] = None,
         elements: Optional[list[Plottable]] = None,
-        width_padding: bool = None,
-        height_padding: bool = None,
+        width_padding: float = None,
+        height_padding: float = None,
         share_x: bool = False,
         share_y: bool = False,
     ) -> None:
@@ -52,6 +53,7 @@ class SmartFigure:
         self._reflabel_loc = reflabel_loc
         self._num_rows = num_rows
         self._num_cols = num_cols
+        self._size = size
         self._elements = elements
         self._figure = None
         self._reference_label_i = None
@@ -64,17 +66,45 @@ class SmartFigure:
         return len(self._elements)
     
     def show(
-        self
+        self,
     ) -> None:
-        self._figure = plt.figure(constrained_layout=True)
-        self._reference_label_i = 0
-        self._prepare_figure()
+        self._initialize_parent_smart_figure()
         plt.show()
         plt.rcParams.update(plt.rcParamsDefault)
 
+    def save(
+            self,
+            file_name: str,
+            dpi: Optional[int] = None,
+    ) -> None:
+        self._initialize_parent_smart_figure()
+        plt.savefig(file_name, bbox_inches="tight", dpi=dpi if dpi is not None else "figure")
+        plt.close()
+        plt.rcParams.update(plt.rcParamsDefault)
+    
+    def _initialize_parent_smart_figure(
+            self,
+    ) -> None:
+        self._figure = plt.figure(constrained_layout=True, figsize=self._size)
+        self._figure.set_constrained_layout_pads(w_pad=0, h_pad=0)
+        self._reference_label_i = 0
+        main_gridspec = self._prepare_figure()
+
+        # Create an artificial axis to add padding around the figure
+        ax_dummy = self._figure.add_subplot(main_gridspec[:, :])
+        ax_dummy.tick_params(colors=(0,0,0,0), axis="both", direction="in", labelright=True, labeltop=True, labelsize=0)
+        ax_dummy.spines["top"].set_visible(False)
+        ax_dummy.spines["right"].set_visible(False)
+        ax_dummy.spines["left"].set_visible(False)
+        ax_dummy.spines["bottom"].set_visible(False)
+        ax_dummy.set_xticks([0.5])
+        ax_dummy.set_yticks([0.5])
+        ax_dummy.set_xticklabels([" "])
+        ax_dummy.set_yticklabels([" "])
+
     def _prepare_figure(
         self,
-    ) -> None:
+    ) -> GridSpec:
         if len(self) != self._num_rows*self._num_cols:
             raise GraphingException("Number of elements does not match the grid size")
         
@@ -110,6 +140,8 @@ class SmartFigure:
                     sharex=ax if self._share_x else None,
                     sharey=ax if self._share_y else None,
                 )
+
+                # Plotting loop
                 for current_element in current_elements:
                     if isinstance(current_element, Plottable):
                         current_element._plot_element(
@@ -118,6 +150,8 @@ class SmartFigure:
                         )
                     else:
                         raise GraphingException(f"Unsupported element type: {type(current_element).__name__}")
+
+                # Add reference label
                 if self._reference_labels and len(self) > 1:
                     ax.text(
                         0,
@@ -126,27 +160,31 @@ class SmartFigure:
                         transform=ax.transAxes + self._get_reflabel_translation(),
                     )
                     self._reference_label_i += 1
-                # ax.set_adjustable('box')  # Forces exact positioning
-                # pos = ax.get_position()  # Get the current position
-                # ax.set_position([pos.x0, pos.y0, pos.width, pos.height])
+                
+                # If axes are shared, manually remove ticklabels from unnecessary plots
+                if self._share_x and row_i != (self._num_rows - 1):
+                    ax.tick_params(labelbottom=False)
+                if self._share_y and col_i != 0:
+                    ax.tick_params(labelleft=False)
+
                 if self._remove_x_ticks:
                     ax.get_xaxis().set_visible(False)
                 if self._remove_y_ticks:
                     ax.get_yaxis().set_visible(False)
 
-            elif isinstance(element, list):
-                pass
             elif element is not None:
                 raise GraphingException(f"Unsupported element type: {type(element).__name__}")
         
         # Axes labels
-        if len(self._elements) == 1:
-            ax = self._figure.get_axes()[0]
-            ax.set_xlabel(self._x_label)
-            ax.set_ylabel(self._y_label)
+        if self._num_cols == 1 and self._num_rows == 1:
+            if ax is not None:  # makes sure an element was plotted and that an axis was created
+                ax.set_xlabel(self._x_label)
+                ax.set_ylabel(self._y_label)
         else:
             self._figure.supxlabel(self._x_label, fontsize=plt.rcParams["font.size"])
             self._figure.supylabel(self._y_label, fontsize=plt.rcParams["font.size"])
+        
+        return gridspec
 
     def _get_reflabel_translation(
             self,
@@ -177,7 +215,6 @@ class SmartFigure:
 
 
 
-
 import graphinglib as gl
 import numpy as np
 
@@ -187,38 +224,36 @@ def rc():
 
 # Create a random SmartFigure which has two Curve objects of any shape
 curve_1 = gl.Curve.from_function(lambda x: x**2, x_min=0, x_max=1, label="Curve 1")
-curve_2 = gl.Curve.from_function(lambda x: x**10, x_min=0, x_max=1, label="Curve 2", color="red")
+curve_2 = gl.Curve.from_function(lambda x: x**10, x_min=0, x_max=2, label="Curve 2", color="red")
 elements = [curve_1, curve_2]
-sf_1 = SmartFigure(num_rows=2, num_cols=1, elements=elements, x_label="xlab", y_label="ylab")
 
+sf_1 = SmartFigure(num_rows=2, num_cols=1, elements=elements, x_label="xlab", y_label="ylab", height_padding=0.1, share_x=True)
 sf_2 = SmartFigure(num_rows=1, num_cols=1, elements=[gl.Scatter([0, 1], [5, 10], label="testi")], x_label="xxx", y_label="yyy")
-
-two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, height_padding=0, width_padding=0)
-
+two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=False, remove_y_ticks=False, reference_labels=True, height_padding=0.07, width_padding=0.03, y_label="Two by two y", x_label="Two by two x", share_x=True, share_y=True)
+simple_sf = SmartFigure(elements=[curve_1], remove_x_ticks=False, remove_y_ticks=True)
 orange_curve = gl.Curve([0, 2], [0, 1], label="first curve", color="orange")
 green_curve = gl.Curve([0, 1, 2], [2, 1, 2], label="second curve", color="green")
 cs = [green_curve, orange_curve]
-other = SmartFigure(num_rows=3, num_cols=1, elements=[rc(), rc(), two_by_two], remove_x_ticks=True, remove_y_ticks=True, reference_labels=False)
+other = SmartFigure(num_rows=2, num_cols=1, elements=[rc(), rc()], remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, height_padding=0.1, width_padding=0.1)
 elements = [
-    cs,# two_by_two,
+    sf_1,# two_by_two,
     two_by_two,# None,
-    other,# cs,
-    two_by_two
+    cs,
+    simple_sf
 ]
-sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="main mama x", y_label="main mama y", remove_x_ticks=True, remove_y_ticks=True, reference_labels=False,
-    height_padding=0, width_padding=0,
+sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="Mama x", y_label="Mama y", remove_x_ticks=False, remove_y_ticks=True, reference_labels=False,
+    height_padding=0.05, width_padding=0.03, share_x=True,
+    # master_height_padding=0, master_width_padding=0,
+    # size=(14.5,8.1)
+    size=(7,7)
 )
 # two_by_two.show()
-# sf.show()
-
-
-# two_by_two.show()
-# other.show()
+sf.save("zdev/test5.png", dpi=300)
+sf.show()
 
 
 # remove tick spacing   sharex/y ?
 # add subplot weights
 # better subplot spacing conversion to account for wspace and hspace of parent figures
-
-two_by_two_2 = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], share_x=True, share_y=True, reference_labels=False, height_padding=0, width_padding=0)
-two_by_two_2.show()
+# axis label spacing and positionning
+# remove x/y margins
