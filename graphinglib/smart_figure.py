@@ -92,6 +92,8 @@ class SmartFigure:
 
         # Create an artificial axis to add padding around the figure
         ax_dummy = self._figure.add_subplot(main_gridspec[:, :])
+        ax_dummy.set_zorder(-1)
+        ax_dummy.set_navigate(False)
         ax_dummy.tick_params(colors=(0,0,0,0), axis="both", direction="in", labelright=True, labeltop=True, labelsize=0)
         ax_dummy.spines["top"].set_visible(False)
         ax_dummy.spines["right"].set_visible(False)
@@ -113,7 +115,7 @@ class SmartFigure:
         if isinstance(self._figure, SubFigure):
             h_scale_factor, w_scale_factor = self._get_subfigure_weight_factors(self._figure)
         else:
-            w_scale_factor, h_scale_factor = 1, 1
+            h_scale_factor, w_scale_factor = 1, 1
         gridspec = self._figure.add_gridspec(
             self._num_rows,
             self._num_cols,
@@ -227,9 +229,9 @@ curve_1 = gl.Curve.from_function(lambda x: x**2, x_min=0, x_max=1, label="Curve 
 curve_2 = gl.Curve.from_function(lambda x: x**10, x_min=0, x_max=2, label="Curve 2", color="red")
 elements = [curve_1, curve_2]
 
-sf_1 = SmartFigure(num_rows=2, num_cols=1, elements=elements, x_label="xlab", y_label="ylab", height_padding=0.1, share_x=True)
+sf_1 = SmartFigure(num_rows=2, num_cols=1, elements=elements, x_label="xlab", y_label="ylab", height_padding=0.1, share_x=False)
 sf_2 = SmartFigure(num_rows=1, num_cols=1, elements=[gl.Scatter([0, 1], [5, 10], label="testi")], x_label="xxx", y_label="yyy")
-two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=False, remove_y_ticks=False, reference_labels=True, height_padding=0.07, width_padding=0.03, y_label="Two by two y", x_label="Two by two x", share_x=True, share_y=True)
+two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, height_padding=None, width_padding=None, y_label="Two by two y", x_label="Two by two x", share_x=True, share_y=True)
 simple_sf = SmartFigure(elements=[curve_1], remove_x_ticks=False, remove_y_ticks=True)
 orange_curve = gl.Curve([0, 2], [0, 1], label="first curve", color="orange")
 green_curve = gl.Curve([0, 1, 2], [2, 1, 2], label="second curve", color="green")
@@ -248,12 +250,13 @@ sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="Mama x", y_
     size=(7,7)
 )
 # two_by_two.show()
-sf.save("zdev/test5.png", dpi=300)
+# sf.save("zdev/test5.png", dpi=300)
+two_by_two.show()
 sf.show()
 
 
 # remove tick spacing   sharex/y ?
 # add subplot weights
 # better subplot spacing conversion to account for wspace and hspace of parent figures
-# axis label spacing and positionning
+# custom axis label spacing and positionning
 # remove x/y margins
