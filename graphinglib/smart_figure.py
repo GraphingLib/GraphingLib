@@ -35,6 +35,8 @@ class SmartFigure:
         y_label: Optional[str] = None,
         size: tuple[float, float] = None,
         title: Optional[str] = None,
+        x_lim: Optional[tuple[float, float]] = None,
+        y_lim: Optional[tuple[float, float]] = None,
         remove_x_ticks: bool = False,
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
@@ -53,6 +55,8 @@ class SmartFigure:
         self._y_label = y_label
         self._size = size
         self._title = title
+        self._x_lim = x_lim
+        self._y_lim = y_lim
         self._remove_x_ticks = remove_x_ticks
         self._remove_y_ticks = remove_y_ticks
         self._reference_labels = reference_labels
@@ -172,10 +176,17 @@ class SmartFigure:
                 if self._share_y and col_i != 0:
                     ax.tick_params(labelleft=False)
 
+                # Remove ticks
                 if self._remove_x_ticks:
                     ax.get_xaxis().set_visible(False)
                 if self._remove_y_ticks:
                     ax.get_yaxis().set_visible(False)
+                
+                # Axes limits
+                if self._x_lim:
+                    ax.set_xlim(*self._x_lim)
+                if self._y_lim:
+                    ax.set_ylim(*self._y_lim)
 
             elif element is not None:
                 raise GraphingException(f"Unsupported element type: {type(element).__name__}")
@@ -219,8 +230,8 @@ def rc():
     return gl.Curve.from_function(lambda x: np.random.random()*x**(np.random.random()*5), x_min=0, x_max=np.random.randint(1, 11))
 
 # Create a random SmartFigure which has two Curve objects of any shape
-curve_1 = gl.Curve.from_function(lambda x: x**2, x_min=0, x_max=1, label="Curve 1")
-curve_2 = gl.Curve.from_function(lambda x: x**10, x_min=0, x_max=2, label="Curve 2", color="red")
+curve_1 = gl.Curve.from_function(lambda x: x**2, x_min=0, x_max=2, label="Curve 1")
+curve_2 = gl.Curve.from_function(lambda x: x**4, x_min=0, x_max=2, label="Curve 2", color="red")
 elements = [curve_1, curve_2]
 
 sf_1 = SmartFigure(num_rows=2, num_cols=1, elements=elements, x_label="xlab", y_label="ylab", height_padding=0.1, share_x=False)
@@ -232,13 +243,13 @@ green_curve = gl.Curve([0, 1, 2], [2, 1, 2], label="second curve", color="green"
 cs = [green_curve, orange_curve]
 other = SmartFigure(num_rows=2, num_cols=1, elements=[rc(), rc()], remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, height_padding=0.1, width_padding=0.1)
 elements = [
-    sf_1,# two_by_two,
+    elements,# two_by_two,
     two_by_two,# None,
     cs,
     simple_sf
 ]
 sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="Mama x", y_label="Mama y", remove_x_ticks=False, remove_y_ticks=True, reference_labels=False,
-    height_padding=0.05, width_padding=0.03, share_x=True, width_ratios=(0.5,2), title="Main Mama Figure",
+    height_padding=0.05, width_padding=0.03, share_x=True, width_ratios=(0.5,2), title="Main Mama Figure", x_lim=(-0.5,1.5),
     # master_height_padding=0, master_width_padding=0,
     # size=(14.5,8.1)
     size=(7,7)
