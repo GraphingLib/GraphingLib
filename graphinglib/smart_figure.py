@@ -115,18 +115,11 @@ class SmartFigure:
         if len(self) != self._num_rows*self._num_cols:
             raise GraphingException("Number of elements does not match the grid size")
         
-        # If nested figures are plotted, the wspace and hspace parameters must be scaled to the parent's gridspec to 
-        # appear similar to their form when they are plotted individually
-        # if isinstance(self._figure, SubFigure):
-        #     h_scale_factor, w_scale_factor = self._get_subfigure_weight_factors(self._figure)
-        # else:
-        #     h_scale_factor, w_scale_factor = 1, 1
-        h_scale_factor, w_scale_factor = 1, 1
         gridspec = self._figure.add_gridspec(
             self._num_rows,
             self._num_cols,
-            wspace=self._width_padding / w_scale_factor if self._width_padding is not None else None,
-            hspace=self._height_padding / h_scale_factor if self._height_padding is not None else None,
+            wspace=self._width_padding,
+            hspace=self._height_padding,
             width_ratios=self._width_ratios,
             height_ratios=self._height_ratios,
         )
@@ -205,19 +198,6 @@ class SmartFigure:
             return ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
         else:
             raise ValueError("Invalid reference label location. Please specify either 'inside' or 'outside'.")
-
-    @staticmethod
-    def _get_subfigure_weight_factors(
-            subfigure: SubFigure,
-    ) -> np.ndarray:
-        parent_gridspec = subfigure._subplotspec.get_gridspec()
-        if isinstance(parent_gridspec.figure, SubFigure):
-            return (
-                np.array([parent_gridspec.nrows, parent_gridspec.ncols]) 
-                * SmartFigure._get_subfigure_weight_factors(parent_gridspec.figure)
-            )
-        else:
-            return np.array([parent_gridspec.nrows, parent_gridspec.ncols])
 
 
 
