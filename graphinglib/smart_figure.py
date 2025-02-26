@@ -1,5 +1,5 @@
 from shutil import which
-from typing import Literal, Optional
+from typing import Literal, Optional, Any
 from warnings import warn
 from string import ascii_lowercase
 
@@ -31,6 +31,8 @@ from numpy.typing import ArrayLike
 class SmartFigure:
     def __init__(
         self,
+        num_rows: int = 1,
+        num_cols: int = 1,
         x_label: Optional[str] = None,
         y_label: Optional[str] = None,
         size: tuple[float, float] = None,
@@ -45,8 +47,6 @@ class SmartFigure:
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
-        num_rows: int = 1,
-        num_cols: int = 1,
         elements: Optional[list[Plottable]] = None,
         width_padding: float = None,
         height_padding: float = None,
@@ -54,7 +54,10 @@ class SmartFigure:
         height_ratios: ArrayLike = None,
         share_x: bool = False,
         share_y: bool = False,
+        projection: Any = None,
     ) -> None:
+        self._num_rows = num_rows
+        self._num_cols = num_cols
         self._x_label = x_label
         self._y_label = y_label
         self._size = size
@@ -69,17 +72,17 @@ class SmartFigure:
         self._remove_y_ticks = remove_y_ticks
         self._reference_labels = reference_labels
         self._reflabel_loc = reflabel_loc
-        self._num_rows = num_rows
-        self._num_cols = num_cols
         self._elements = elements
-        self._figure = None
-        self._reference_label_i = None
         self._width_padding = width_padding
         self._height_padding = height_padding
         self._width_ratios = width_ratios
         self._height_ratios = height_ratios
         self._share_x = share_x
         self._share_y = share_y
+        self._projection = projection
+
+        self._figure = None
+        self._reference_label_i = None
 
     def __len__(self) -> int:
         return len(self._elements)
@@ -156,6 +159,7 @@ class SmartFigure:
                 ax = subfig.add_subplot(
                     sharex=ax if self._share_x else None,
                     sharey=ax if self._share_y else None,
+                    projection=self._projection,
                 )
 
                 # Plotting loop
@@ -260,13 +264,14 @@ two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4
 simple_sf = SmartFigure(elements=[curve_1], remove_x_ticks=False, remove_y_ticks=False, aspect_ratio=2)
 orange_curve = gl.Curve([0, 2], [0, 1], label="first curve", color="orange")
 green_curve = gl.Curve([0, 1, 2], [2, 1, 2], label="second curve", color="green")
+polar = SmartFigure(1, 1, elements=[gl.Curve([0,np.pi/4,np.pi/2,3*np.pi/4,np.pi], [0,1,2,1,0.5])], projection="polar", aspect_ratio="equal", )
 cs = [green_curve, orange_curve]
 other = SmartFigure(num_rows=2, num_cols=1, elements=[rc(), rc()], remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, height_padding=0.1, width_padding=0.1)
 elements = [
     elements,# two_by_two,
     two_by_two,# None,
     cs,
-    simple_sf
+    polar
 ]
 sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="Mama x", y_label="Mama y", remove_x_ticks=False, remove_y_ticks=False, reference_labels=False,
     height_padding=0.05, width_padding=0.03, share_x=False, width_ratios=(0.5,2), title="Main Mama Figure", remove_axes=True,
@@ -274,9 +279,11 @@ sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="Mama x", y_
     # size=(14.5,8.1)
     size=(7,7)
 )
+
+
 # two_by_two.show()
 # sf.save("zdev/test5.png", dpi=300)
-two_by_two.show()
+# two_by_two.show()
 sf.show()
 
 
