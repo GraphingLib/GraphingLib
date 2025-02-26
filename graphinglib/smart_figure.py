@@ -33,13 +33,14 @@ class SmartFigure:
         self,
         x_label: Optional[str] = None,
         y_label: Optional[str] = None,
+        size: tuple[float, float] = None,
+        title: Optional[str] = None,
         remove_x_ticks: bool = False,
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
         num_rows: int = 1,
         num_cols: int = 1,
-        size: tuple[float, float] = None,
         elements: Optional[list[Plottable]] = None,
         width_padding: float = None,
         height_padding: float = None,
@@ -50,13 +51,14 @@ class SmartFigure:
     ) -> None:
         self._x_label = x_label
         self._y_label = y_label
+        self._size = size
+        self._title = title
         self._remove_x_ticks = remove_x_ticks
         self._remove_y_ticks = remove_y_ticks
         self._reference_labels = reference_labels
         self._reflabel_loc = reflabel_loc
         self._num_rows = num_rows
         self._num_cols = num_cols
-        self._size = size
         self._elements = elements
         self._figure = None
         self._reference_label_i = None
@@ -177,7 +179,7 @@ class SmartFigure:
 
             elif element is not None:
                 raise GraphingException(f"Unsupported element type: {type(element).__name__}")
-        
+
         # Axes labels
         if self._num_cols == 1 and self._num_rows == 1:
             if ax is not None:  # makes sure an element was plotted and that an axis was created
@@ -186,7 +188,11 @@ class SmartFigure:
         else:
             self._figure.supxlabel(self._x_label, fontsize=plt.rcParams["font.size"])
             self._figure.supylabel(self._y_label, fontsize=plt.rcParams["font.size"])
-        
+
+        # Title
+        if self._title:
+            self._figure.suptitle(self._title, fontdict={"fontsize": "medium"})
+
         return gridspec
 
     def _get_reflabel_translation(
@@ -219,7 +225,7 @@ elements = [curve_1, curve_2]
 
 sf_1 = SmartFigure(num_rows=2, num_cols=1, elements=elements, x_label="xlab", y_label="ylab", height_padding=0.1, share_x=False)
 sf_2 = SmartFigure(num_rows=1, num_cols=1, elements=[gl.Scatter([0, 1], [5, 10], label="testi")], x_label="xxx", y_label="yyy")
-two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, height_padding=0.05, width_padding=0.1, y_label="Two by two y", x_label="Two by two x", share_x=True, share_y=True, size=(3,3), width_ratios=[3,5], height_ratios=[1,2])
+two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=True, remove_y_ticks=True, reference_labels=True, height_padding=0.05, width_padding=0.1, y_label="Two by two y", x_label="Two by two x", share_x=True, share_y=True, size=(3,3), width_ratios=[3,5], height_ratios=[1,2], title="two by two plot")
 simple_sf = SmartFigure(elements=[curve_1], remove_x_ticks=False, remove_y_ticks=True)
 orange_curve = gl.Curve([0, 2], [0, 1], label="first curve", color="orange")
 green_curve = gl.Curve([0, 1, 2], [2, 1, 2], label="second curve", color="green")
@@ -232,7 +238,7 @@ elements = [
     simple_sf
 ]
 sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="Mama x", y_label="Mama y", remove_x_ticks=False, remove_y_ticks=True, reference_labels=False,
-    height_padding=0.05, width_padding=0.03, share_x=True, width_ratios=(0.5,2),
+    height_padding=0.05, width_padding=0.03, share_x=True, width_ratios=(0.5,2), title="Main Mama Figure",
     # master_height_padding=0, master_width_padding=0,
     # size=(14.5,8.1)
     size=(7,7)
@@ -243,8 +249,5 @@ two_by_two.show()
 sf.show()
 
 
-# remove tick spacing   sharex/y ?
-# add subplot weights
-# better subplot spacing conversion to account for wspace and hspace of parent figures
 # custom axis label spacing and positionning
 # remove x/y margins
