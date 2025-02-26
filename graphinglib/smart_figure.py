@@ -40,6 +40,7 @@ class SmartFigure:
         log_scale_x: bool = False,
         log_scale_y: bool = False,
         remove_axes: bool = False,
+        aspect_ratio: float | str = "auto",
         remove_x_ticks: bool = False,
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
@@ -63,6 +64,7 @@ class SmartFigure:
         self._log_scale_x = log_scale_x
         self._log_scale_y = log_scale_y
         self._remove_axes = remove_axes
+        self._aspect_ratio = aspect_ratio
         self._remove_x_ticks = remove_x_ticks
         self._remove_y_ticks = remove_y_ticks
         self._reference_labels = reference_labels
@@ -204,6 +206,8 @@ class SmartFigure:
                 if self._remove_axes:
                     ax.axis("off")
 
+                ax.set_aspect(self._aspect_ratio)
+
             elif element is not None:
                 raise GraphingException(f"Unsupported element type: {type(element).__name__}")
 
@@ -253,7 +257,7 @@ elements = [curve_1, curve_2]
 sf_1 = SmartFigure(num_rows=2, num_cols=1, elements=elements, x_label="xlab", y_label="ylab", height_padding=0.1, share_x=False)
 sf_2 = SmartFigure(num_rows=1, num_cols=1, elements=[gl.Scatter([0, 1], [5, 10], label="testi")], x_label="xxx", y_label="yyy")
 two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=True, remove_y_ticks=True, reference_labels=True, height_padding=0.05, width_padding=0.1, y_label="Two by two y", x_label="Two by two x", share_x=True, share_y=True, size=(3,3), width_ratios=[3,5], height_ratios=[1,2], title="two by two plot")
-simple_sf = SmartFigure(elements=[curve_1], remove_x_ticks=False, remove_y_ticks=True)
+simple_sf = SmartFigure(elements=[curve_1], remove_x_ticks=False, remove_y_ticks=False, aspect_ratio=2)
 orange_curve = gl.Curve([0, 2], [0, 1], label="first curve", color="orange")
 green_curve = gl.Curve([0, 1, 2], [2, 1, 2], label="second curve", color="green")
 cs = [green_curve, orange_curve]
