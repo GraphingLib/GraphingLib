@@ -26,6 +26,7 @@ from graphinglib.legend_artists import (
 )
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 class SmartFigure:
     def __init__(
@@ -42,6 +43,8 @@ class SmartFigure:
         elements: Optional[list[Plottable]] = None,
         width_padding: float = None,
         height_padding: float = None,
+        width_ratios: ArrayLike = None,
+        height_ratios: ArrayLike = None,
         share_x: bool = False,
         share_y: bool = False,
     ) -> None:
@@ -59,6 +62,8 @@ class SmartFigure:
         self._reference_label_i = None
         self._width_padding = width_padding
         self._height_padding = height_padding
+        self._width_ratios = width_ratios
+        self._height_ratios = height_ratios
         self._share_x = share_x
         self._share_y = share_y
 
@@ -112,15 +117,18 @@ class SmartFigure:
         
         # If nested figures are plotted, the wspace and hspace parameters must be scaled to the parent's gridspec to 
         # appear similar to their form when they are plotted individually
-        if isinstance(self._figure, SubFigure):
-            h_scale_factor, w_scale_factor = self._get_subfigure_weight_factors(self._figure)
-        else:
-            h_scale_factor, w_scale_factor = 1, 1
+        # if isinstance(self._figure, SubFigure):
+        #     h_scale_factor, w_scale_factor = self._get_subfigure_weight_factors(self._figure)
+        # else:
+        #     h_scale_factor, w_scale_factor = 1, 1
+        h_scale_factor, w_scale_factor = 1, 1
         gridspec = self._figure.add_gridspec(
             self._num_rows,
             self._num_cols,
             wspace=self._width_padding / w_scale_factor if self._width_padding is not None else None,
             hspace=self._height_padding / h_scale_factor if self._height_padding is not None else None,
+            width_ratios=self._width_ratios,
+            height_ratios=self._height_ratios,
         )
 
         # Plottable and subfigure plotting
@@ -231,7 +239,7 @@ elements = [curve_1, curve_2]
 
 sf_1 = SmartFigure(num_rows=2, num_cols=1, elements=elements, x_label="xlab", y_label="ylab", height_padding=0.1, share_x=False)
 sf_2 = SmartFigure(num_rows=1, num_cols=1, elements=[gl.Scatter([0, 1], [5, 10], label="testi")], x_label="xxx", y_label="yyy")
-two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, height_padding=None, width_padding=None, y_label="Two by two y", x_label="Two by two x", share_x=True, share_y=True)
+two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, height_padding=0.05, width_padding=0.1, y_label="Two by two y", x_label="Two by two x", share_x=True, share_y=True, size=(3,3), width_ratios=[3,5], height_ratios=[1,2])
 simple_sf = SmartFigure(elements=[curve_1], remove_x_ticks=False, remove_y_ticks=True)
 orange_curve = gl.Curve([0, 2], [0, 1], label="first curve", color="orange")
 green_curve = gl.Curve([0, 1, 2], [2, 1, 2], label="second curve", color="green")
@@ -244,7 +252,7 @@ elements = [
     simple_sf
 ]
 sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="Mama x", y_label="Mama y", remove_x_ticks=False, remove_y_ticks=True, reference_labels=False,
-    height_padding=0.05, width_padding=0.03, share_x=True,
+    height_padding=0.05, width_padding=0.03, share_x=True, width_ratios=(0.5,2),
     # master_height_padding=0, master_width_padding=0,
     # size=(14.5,8.1)
     size=(7,7)
