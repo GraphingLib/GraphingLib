@@ -37,8 +37,9 @@ class SmartFigure:
         title: Optional[str] = None,
         x_lim: Optional[tuple[float, float]] = None,
         y_lim: Optional[tuple[float, float]] = None,
-        log_scale_x: bool | Literal["default"] = "default",
-        log_scale_y: bool | Literal["default"] = "default",
+        log_scale_x: bool = False,
+        log_scale_y: bool = False,
+        remove_axes: bool = False,
         remove_x_ticks: bool = False,
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
@@ -61,6 +62,7 @@ class SmartFigure:
         self._y_lim = y_lim
         self._log_scale_x = log_scale_x
         self._log_scale_y = log_scale_y
+        self._remove_axes = remove_axes
         self._remove_x_ticks = remove_x_ticks
         self._remove_y_ticks = remove_y_ticks
         self._reference_labels = reference_labels
@@ -198,6 +200,10 @@ class SmartFigure:
                 if self._log_scale_y:
                     ax.set_yscale("log")
 
+                # Remove axes
+                if self._remove_axes:
+                    ax.axis("off")
+
             elif element is not None:
                 raise GraphingException(f"Unsupported element type: {type(element).__name__}")
 
@@ -258,8 +264,8 @@ elements = [
     cs,
     simple_sf
 ]
-sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="Mama x", y_label="Mama y", remove_x_ticks=False, remove_y_ticks=True, reference_labels=False,
-    height_padding=0.05, width_padding=0.03, share_x=True, width_ratios=(0.5,2), title="Main Mama Figure", x_lim=(-0.5,1.5), log_scale_x=True,
+sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="Mama x", y_label="Mama y", remove_x_ticks=False, remove_y_ticks=False, reference_labels=False,
+    height_padding=0.05, width_padding=0.03, share_x=False, width_ratios=(0.5,2), title="Main Mama Figure", remove_axes=True,
     # master_height_padding=0, master_width_padding=0,
     # size=(14.5,8.1)
     size=(7,7)
@@ -272,3 +278,4 @@ sf.show()
 
 # custom axis label spacing and positionning
 # remove x/y margins
+# custom ticks
