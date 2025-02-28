@@ -1,7 +1,9 @@
+from __future__ import annotations
 from shutil import which
 from typing import Literal, Optional, Any
 from warnings import warn
 from string import ascii_lowercase
+from collections import OrderedDict
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -47,14 +49,14 @@ class SmartFigure:
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
-        elements: Optional[list[Plottable]] = None,
         width_padding: float = None,
         height_padding: float = None,
         width_ratios: ArrayLike = None,
         height_ratios: ArrayLike = None,
         share_x: bool = False,
         share_y: bool = False,
-        projection: Any = None,
+        projection: str | Any = None,
+        elements: Optional[list[Plottable]] = [],
     ) -> None:
         self._num_rows = num_rows
         self._num_cols = num_cols
@@ -72,7 +74,6 @@ class SmartFigure:
         self._remove_y_ticks = remove_y_ticks
         self._reference_labels = reference_labels
         self._reflabel_loc = reflabel_loc
-        self._elements = elements
         self._width_padding = width_padding
         self._height_padding = height_padding
         self._width_ratios = width_ratios
@@ -81,12 +82,35 @@ class SmartFigure:
         self._share_y = share_y
         self._projection = projection
 
+        self._elements = {}
+        for i, element in enumerate(elements):
+            if isinstance(element, (Plottable, list, SmartFigure)):
+                self._elements[self._keys_to_slices(divmod(i, self._num_cols))] = element
+            else:
+                raise GraphingException(f"Invalid element type: {type(element).__name__}")
+
         self._figure = None
         self._reference_label_i = None
 
     def __len__(self) -> int:
         return len(self._elements)
     
+    def __setitem__(self, key: tuple[slice | int], element: Plottable | list[Plottable] | SmartFigure) -> None:
+        key_ = self._keys_to_slices(key)
+        if element is None:
+            if key_ in self._elements.keys():
+                del self._elements[key_]
+        else:
+            self._elements[key_] = element
+
+    def __getitem__(self, key: tuple[slice | int]) -> Plottable | list[Plottable] | SmartFigure:
+        key_ = self._keys_to_slices(key)
+        return self._elements.get(key_, None)
+
+    @property
+    def _ordered_elements(self) -> OrderedDict:
+        return OrderedDict(sorted(self._elements.items(), key=lambda item: (item[0][0].start, item[0][1].start)))
+
     def show(
         self,
     ) -> None:
@@ -103,7 +127,7 @@ class SmartFigure:
         plt.savefig(file_name, bbox_inches="tight", dpi=dpi if dpi is not None else "figure")
         plt.close()
         plt.rcParams.update(plt.rcParamsDefault)
-    
+
     def _initialize_parent_smart_figure(
             self,
     ) -> None:
@@ -129,9 +153,6 @@ class SmartFigure:
     def _prepare_figure(
         self,
     ) -> GridSpec:
-        if len(self) != self._num_rows*self._num_cols:
-            raise GraphingException("Number of elements does not match the grid size")
-        
         gridspec = self._figure.add_gridspec(
             self._num_rows,
             self._num_cols,
@@ -143,11 +164,9 @@ class SmartFigure:
 
         # Plottable and subfigure plotting
         ax = None   # keep track of the last Axis object, needed for sharing axes
-        for i, element in enumerate(self._elements):
-            row_i, col_i = divmod(i, self._num_cols)
-
+        for (rows, cols), element in self._ordered_elements.items():
             if isinstance(element, SmartFigure):
-                subfig = self._figure.add_subfigure(gridspec[row_i, col_i])
+                subfig = self._figure.add_subfigure(gridspec[rows, cols])
                 element._figure = subfig        # associates the current subfigure with the nested SmartFigure
                 element._reference_label_i = self._reference_label_i
                 element._prepare_figure()
@@ -155,7 +174,7 @@ class SmartFigure:
 
             elif isinstance(element, (Plottable, list)):
                 current_elements = element if isinstance(element, list) else [element]
-                subfig = self._figure.add_subfigure(gridspec[row_i, col_i])
+                subfig = self._figure.add_subfigure(gridspec[rows, cols])
                 ax = subfig.add_subplot(
                     sharex=ax if self._share_x else None,
                     sharey=ax if self._share_y else None,
@@ -173,7 +192,7 @@ class SmartFigure:
                         raise GraphingException(f"Unsupported element type: {type(current_element).__name__}")
 
                 # Add reference label
-                if self._reference_labels and len(self) > 1:
+                if self._reference_labels and (len(self) > 1 or isinstance(self._figure, SubFigure)):
                     ax.text(
                         0,
                         1,
@@ -183,9 +202,9 @@ class SmartFigure:
                     self._reference_label_i += 1
                 
                 # If axes are shared, manually remove ticklabels from unnecessary plots
-                if self._share_x and row_i != (self._num_rows - 1):
+                if self._share_x and rows.start != (self._num_rows - 1):
                     ax.tick_params(labelbottom=False)
-                if self._share_y and col_i != 0:
+                if self._share_y and cols.start != 0:
                     ax.tick_params(labelleft=False)
 
                 # Remove ticks
@@ -213,7 +232,7 @@ class SmartFigure:
                 ax.set_aspect(self._aspect_ratio)
 
             elif element is not None:
-                raise GraphingException(f"Unsupported element type: {type(element).__name__}")
+                raise GraphingException(f"Unsupported element type in list: {type(element).__name__}")
 
         # Axes labels
         if self._num_cols == 1 and self._num_rows == 1:
@@ -229,6 +248,12 @@ class SmartFigure:
             self._figure.suptitle(self._title, fontdict={"fontsize": "medium"})
 
         return gridspec
+
+    @staticmethod
+    def _keys_to_slices(keys: tuple[slice | int]) -> tuple[slice]:
+        new_slices = [k if isinstance(k, slice) else slice(k, k+1, None) for k in keys]   # convert int -> slice
+        new_slices = [s if s.start is not None else slice(0, s.stop) for s in new_slices] # convert starting None -> 0
+        return tuple(new_slices)
 
     def _get_reflabel_translation(
             self,
@@ -258,8 +283,8 @@ curve_1 = gl.Curve.from_function(lambda x: x**2, x_min=0, x_max=2, label="Curve 
 curve_2 = gl.Curve.from_function(lambda x: x**4, x_min=0, x_max=2, label="Curve 2", color="red")
 elements = [curve_1, curve_2]
 
-sf_1 = SmartFigure(num_rows=2, num_cols=1, elements=elements, x_label="xlab", y_label="ylab", height_padding=0.1, share_x=False)
-sf_2 = SmartFigure(num_rows=1, num_cols=1, elements=[gl.Scatter([0, 1], [5, 10], label="testi")], x_label="xxx", y_label="yyy")
+sf_1 = SmartFigure(num_rows=2, num_cols=1, elements=elements, x_label="xlab", y_label="ylab", height_padding=0.01, share_x=False)
+sf_2 = SmartFigure(num_rows=1, num_cols=1, elements=[gl.Scatter([0, 1], [5, 10], label="testi")], x_label="xxx", y_label="yyy", reference_labels=False)
 two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=True, remove_y_ticks=True, reference_labels=True, height_padding=0.05, width_padding=0.1, y_label="Two by two y", x_label="Two by two x", share_x=True, share_y=True, size=(3,3), width_ratios=[3,5], height_ratios=[1,2], title="two by two plot")
 simple_sf = SmartFigure(elements=[curve_1], remove_x_ticks=False, remove_y_ticks=False, aspect_ratio=2)
 orange_curve = gl.Curve([0, 2], [0, 1], label="first curve", color="orange")
@@ -279,14 +304,28 @@ sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="Mama x", y_
     # size=(14.5,8.1)
     size=(7,7)
 )
-
-
 # two_by_two.show()
 # sf.save("zdev/test5.png", dpi=300)
-# two_by_two.show()
-sf.show()
+# sf.show()
+
+sf_3x3 = SmartFigure(3, 3, "I am x", "I am y", (8,6), share_x=True, share_y=True)
+sf_3x3[1,0] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
+sf_3x3[0,1] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
+sf_3x3[1,1] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
+sf_3x3[0,0] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
+# sf_3x3[:2,:2] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
+sf_3x3[2,:] = gl.Scatter([1,2,3],[0.1,0.2,0.3])
+sf_3x3[0,2] = [green_curve, orange_curve]
+sf_3x3[1,2] = orange_curve
+sf_3x3[2,1] = sf_2
+sf_3x3[2,1]._x_label += " and xxx"
+# sf_3x3[2,:] = None
+# sf_3x3[2,1] = None
+# sf_3x3[0,2] = None
+sf_3x3.show()
 
 
+# Use methods for specific things (ticks, margins, grids, labels?)
 # custom axis label spacing and positionning
 # remove x/y margins
 # custom ticks
