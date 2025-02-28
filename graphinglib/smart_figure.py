@@ -122,9 +122,15 @@ class SmartFigure:
             self,
             file_name: str,
             dpi: Optional[int] = None,
+            transparent: bool = False,
     ) -> None:
         self._initialize_parent_smart_figure()
-        plt.savefig(file_name, bbox_inches="tight", dpi=dpi if dpi is not None else "figure")
+        plt.savefig(
+            file_name,
+            bbox_inches="tight",
+            dpi=dpi if dpi is not None else "figure",
+            transparent=transparent,
+        )
         plt.close()
         plt.rcParams.update(plt.rcParamsDefault)
 
@@ -309,9 +315,9 @@ sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="Mama x", y_
 # sf.show()
 
 sf_3x3 = SmartFigure(3, 3, "I am x", "I am y", (8,6), share_x=True, share_y=True)
-sf_3x3[1,0] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
+sf_3x3[1,:2] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
 sf_3x3[0,1] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
-sf_3x3[1,1] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
+# sf_3x3[1,1] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
 sf_3x3[0,0] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
 # sf_3x3[:2,:2] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
 sf_3x3[2,:] = gl.Scatter([1,2,3],[0.1,0.2,0.3])
@@ -322,10 +328,11 @@ sf_3x3[2,1]._x_label += " and xxx"
 # sf_3x3[2,:] = None
 # sf_3x3[2,1] = None
 # sf_3x3[0,2] = None
-sf_3x3.show()
+sf_3x3.save("beautiful.png", transparent=True)
+# sf_3x3.show()
 
 
-# Use methods for specific things (ticks, margins, grids, labels?)
-# custom axis label spacing and positionning
-# remove x/y margins
-# custom ticks
+# Use methods for specific things (ticks, margins, grids, labels?)  -
+# custom axis label spacing and positionning                        -
+# remove x/y margins                                                -
+# custom ticks                                                      -
