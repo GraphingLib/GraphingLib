@@ -306,14 +306,14 @@ class SmartFigure:
 
         return gridspec
 
-    def _fill_in_missing_params(self, element: Plottable) -> list[str]:
+    def _fill_in_missing_params(self, element: SmartFigure) -> list[str]:
         """
         Fills in the missing parameters from the specified ``figure_style``.
         """
         params_to_reset = []
         object_type = type(element).__name__
         for property, value in vars(element).items():
-            if (type(value) == str) and (value == "default"):
+            if isinstance(value, str) and (value == "default") and not (property == "_figure_style"):
                 params_to_reset.append(property)
                 element.__dict__[property] = self._default_params[object_type][property]
         return params_to_reset
