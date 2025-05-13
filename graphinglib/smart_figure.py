@@ -171,9 +171,13 @@ class SmartFigure:
         main_gridspec = self._prepare_figure(self._default_params, is_matplotlib_style)
 
         self._reset_params_to_default(self, multi_figure_params_to_reset)
+        self._rc_dict = {}
 
         # Create an artificial axis to add padding around the figure
         ax_dummy = self._figure.add_subplot(main_gridspec[:, :])
+        ax_dummy.xaxis.grid(False)
+        ax_dummy.yaxis.grid(False)
+        ax_dummy.set_facecolor((0, 0, 0, 0))
         ax_dummy.set_zorder(-1)
         ax_dummy.set_navigate(False)
         ax_dummy.tick_params(colors=(0,0,0,0), axis="both", direction="in", labelright=True, labeltop=True, labelsize=0)
@@ -216,6 +220,8 @@ class SmartFigure:
                 default_params_copy["Figure"]["_figure_style"] = self._figure_style
                 element._prepare_figure(default_params_copy, is_matplotlib_style)
                 self._reference_label_i = element._reference_label_i
+
+                self._fill_in_rc_params(is_matplotlib_style)
 
             elif isinstance(element, (Plottable, list)):
                 current_elements = element if isinstance(element, list) else [element]
@@ -297,12 +303,17 @@ class SmartFigure:
                 ax.set_xlabel(self._x_label)
                 ax.set_ylabel(self._y_label)
         else:
-            self._figure.supxlabel(self._x_label, fontsize=plt.rcParams["font.size"])
-            self._figure.supylabel(self._y_label, fontsize=plt.rcParams["font.size"])
+            suplabel_params = {
+                "fontsize" : plt.rcParams["font.size"],
+                "color" : plt.rcParams["axes.labelcolor"],
+                "fontweight" : plt.rcParams["font.weight"],
+            }
+            self._figure.supxlabel(self._x_label, **suplabel_params)
+            self._figure.supylabel(self._y_label, **suplabel_params)
 
         # Title
         if self._title:
-            self._figure.suptitle(self._title, fontdict={"fontsize": "medium"})
+            self._figure.suptitle(self._title, fontdict={"fontsize": "medium"}, fontweight=plt.rcParams["font.weight"])
 
         return gridspec
 
@@ -349,7 +360,7 @@ class SmartFigure:
         return params_to_reset
 
     def _reset_params_to_default(
-        self, element: Plottable, params_to_reset: list[str]
+        self, element: Plottable | SmartFigure, params_to_reset: list[str]
     ) -> None:
         """
         Resets the parameters that were set to default in the _fill_in_missing_params method.
@@ -423,17 +434,17 @@ class SmartFigure:
         color_cycle: list[str] | None = None,
         x_tick_color: str | None = None,
         y_tick_color: str | None = None,
-        legend_face_color: str | None = None,
-        legend_edge_color: str | None = None,
+        # legend_face_color: str | None = None,
+        # legend_edge_color: str | None = None,
         font_family: str | None = None,
         font_size: float | None = None,
         font_weight: str | None = None,
         text_color: str | None = None,
         use_latex: bool | None = None,
-        grid_line_style: str | None = None,
-        grid_line_width: float | None = None,
-        grid_color: str | None = None,
-        grid_alpha: float | None = None,
+        # grid_line_style: str | None = None,
+        # grid_line_width: float | None = None,
+        # grid_color: str | None = None,
+        # grid_alpha: float | None = None,
     ) -> None:
         """
         Customize the visual style of the :class:`~graphinglib.smart_figure.SmartFigure`.
@@ -469,12 +480,12 @@ class SmartFigure:
         y_tick_color : str
             The color of the y-axis ticks.
             Defaults to ``None``.
-        legend_face_color : str
-            The color of the legend face.
-            Defaults to ``None``.
-        legend_edge_color : str
-            The color of the legend edge.
-            Defaults to ``None``.
+        # legend_face_color : str
+        #     The color of the legend face.
+        #     Defaults to ``None``.
+        # legend_edge_color : str
+        #     The color of the legend edge.
+        #     Defaults to ``None``.
         font_family : str
             The font family to use.
             Defaults to ``None``.
@@ -490,18 +501,18 @@ class SmartFigure:
         use_latex : bool
             Whether or not to use latex.
             Defaults to ``None``.
-        grid_line_style : str
-            The style of the grid lines.
-            Defaults to ``None``.
-        grid_line_width : float
-            The width of the grid lines.
-            Defaults to ``None``.
-        grid_color : str
-            The color of the grid lines.
-            Defaults to ``None``.
-        grid_alpha : float
-            The alpha of the grid lines.
-            Defaults to ``None``.
+        # grid_line_style : str
+        #     The style of the grid lines.
+        #     Defaults to ``None``.
+        # grid_line_width : float
+        #     The width of the grid lines.
+        #     Defaults to ``None``.
+        # grid_color : str
+        #     The color of the grid lines.
+        #     Defaults to ``None``.
+        # grid_alpha : float
+        #     The alpha of the grid lines.
+        #     Defaults to ``None``.
         """
         if color_cycle is not None:
             color_cycle = plt.cycler(color=color_cycle)
@@ -515,17 +526,17 @@ class SmartFigure:
             "axes.prop_cycle": color_cycle,
             "xtick.color": x_tick_color,
             "ytick.color": y_tick_color,
-            "legend.facecolor": legend_face_color,
-            "legend.edgecolor": legend_edge_color,
+            # "legend.facecolor": legend_face_color,
+            # "legend.edgecolor": legend_edge_color,
             "font.family": font_family,
             "font.size": font_size,
             "font.weight": font_weight,
             "text.color": text_color,
             "text.usetex": use_latex,
-            "grid.linestyle": grid_line_style,
-            "grid.linewidth": grid_line_width,
-            "grid.color": grid_color,
-            "grid.alpha": grid_alpha,
+            # "grid.linestyle": grid_line_style,
+            # "grid.linewidth": grid_line_width,
+            # "grid.color": grid_color,
+            # "grid.alpha": grid_alpha,
         }
         rc_params_dict = {
             key: value for key, value in rc_params_dict.items() if value is not None
