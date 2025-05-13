@@ -37,7 +37,7 @@ class SmartFigure:
         num_cols: int = 1,
         x_label: Optional[str] = None,
         y_label: Optional[str] = None,
-        size: tuple[float, float] = None,
+        size: tuple[float, float] | Literal["default"] = "default",
         title: Optional[str] = None,
         x_lim: Optional[tuple[float, float]] = None,
         y_lim: Optional[tuple[float, float]] = None,
@@ -311,9 +311,11 @@ class SmartFigure:
         Fills in the missing parameters from the specified ``figure_style``.
         """
         params_to_reset = []
+        object_type = type(element).__name__
         for property, value in vars(element).items():
             if (type(value) == str) and (value == "default"):
                 params_to_reset.append(property)
+                element.__dict__[property] = self._default_params[object_type][property]
         return params_to_reset
 
     def _fill_in_missing_plottable_params(self, element: Plottable) -> list[str]:

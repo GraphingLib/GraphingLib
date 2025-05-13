@@ -57,6 +57,9 @@ Figure:
 MultiFigure:
   _size: [6.4, 4.8]
 
+SmartFigure:
+  _size: [6.4, 4.8]
+
 Point:
   _color: "k"
   _edge_color: null

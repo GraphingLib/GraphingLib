@@ -106,6 +106,8 @@ MultiFigure:
   _size:
   - 6.4
   - 4.8
+SmartFigure:
+  _size: [6.4, 4.8]
 Point:
   _color: white
   _edge_color: null
