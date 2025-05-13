@@ -56,6 +56,7 @@ class SmartFigure:
         share_x: bool = False,
         share_y: bool = False,
         projection: str | Any = None,
+        figure_style: str = "default",
         elements: Optional[list[Plottable]] = [],
     ) -> None:
         self._num_rows = num_rows
@@ -81,6 +82,7 @@ class SmartFigure:
         self._share_x = share_x
         self._share_y = share_y
         self._projection = projection
+        self._figure_style = figure_style
 
         self._elements = {}
         for i, element in enumerate(elements):
@@ -91,6 +93,9 @@ class SmartFigure:
 
         self._figure = None
         self._reference_label_i = None
+        self._rc_dict = {}
+        self._user_rc_dict = {}
+        self._default_params = {}
 
     def __len__(self) -> int:
         return len(self._elements)
@@ -119,10 +124,10 @@ class SmartFigure:
         plt.rcParams.update(plt.rcParamsDefault)
 
     def save(
-            self,
-            file_name: str,
-            dpi: Optional[int] = None,
-            transparent: bool = False,
+        self,
+        file_name: str,
+        dpi: Optional[int] = None,
+        transparent: bool = False,
     ) -> None:
         self._initialize_parent_smart_figure()
         plt.savefig(
@@ -135,12 +140,37 @@ class SmartFigure:
         plt.rcParams.update(plt.rcParamsDefault)
 
     def _initialize_parent_smart_figure(
-            self,
+        self,
     ) -> None:
+        if self._figure_style == "default":
+            self._figure_style = get_default_style()
+        try:
+            file_loader = FileLoader(self._figure_style)
+            self._default_params = file_loader.load()
+            is_matplotlib_style = False
+        except FileNotFoundError:
+            is_matplotlib_style = True
+            try:
+                if self._figure_style == "matplotlib":
+                    plt.style.use("default")
+                else:
+                    plt.style.use(self._figure_style)
+                file_loader = FileLoader("plain")
+                self._default_params = file_loader.load()
+            except OSError:
+                raise GraphingException(
+                    f"The figure style {self._figure_style} was not found. Please choose a different style."
+                )
+
+        multi_figure_params_to_reset = self._fill_in_missing_params(self)
+        self._fill_in_rc_params(is_matplotlib_style)
+
         self._figure = plt.figure(constrained_layout=True, figsize=self._size)
         self._figure.set_constrained_layout_pads(w_pad=0, h_pad=0)
         self._reference_label_i = 0
-        main_gridspec = self._prepare_figure()
+        main_gridspec = self._prepare_figure(self._default_params, is_matplotlib_style)
+
+        self._reset_params_to_default(self, multi_figure_params_to_reset)
 
         # Create an artificial axis to add padding around the figure
         ax_dummy = self._figure.add_subplot(main_gridspec[:, :])
@@ -158,7 +188,14 @@ class SmartFigure:
 
     def _prepare_figure(
         self,
+        default_params: dict = None,
+        is_matplotlib_style: bool = False,
     ) -> GridSpec:
+        sub_rcs = self._user_rc_dict
+        plt.rcParams.update(sub_rcs)
+        cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        num_cycle_colors = len(cycle_colors)
+
         gridspec = self._figure.add_gridspec(
             self._num_rows,
             self._num_cols,
@@ -167,7 +204,6 @@ class SmartFigure:
             width_ratios=self._width_ratios,
             height_ratios=self._height_ratios,
         )
-
         # Plottable and subfigure plotting
         ax = None   # keep track of the last Axis object, needed for sharing axes
         for (rows, cols), element in self._ordered_elements.items():
@@ -175,7 +211,10 @@ class SmartFigure:
                 subfig = self._figure.add_subfigure(gridspec[rows, cols])
                 element._figure = subfig        # associates the current subfigure with the nested SmartFigure
                 element._reference_label_i = self._reference_label_i
-                element._prepare_figure()
+                default_params_copy = default_params.copy()
+                default_params_copy.update(is_a_subfigure=True)
+                default_params_copy["Figure"]["_figure_style"] = self._figure_style
+                element._prepare_figure(default_params_copy, is_matplotlib_style)
                 self._reference_label_i = element._reference_label_i
 
             elif isinstance(element, (Plottable, list)):
@@ -186,14 +225,24 @@ class SmartFigure:
                     sharey=ax if self._share_y else None,
                     projection=self._projection,
                 )
+                self._default_params = default_params
+                figure_params_to_reset = self._fill_in_missing_params(self)
 
                 # Plotting loop
-                for current_element in current_elements:
+                z_order = 2
+                for index, current_element in enumerate(current_elements):
                     if isinstance(current_element, Plottable):
+                        params_to_reset = []
+                        if not is_matplotlib_style:
+                            params_to_reset = self._fill_in_missing_plottable_params(current_element)
                         current_element._plot_element(
                             ax,
-                            2,
+                            z_order,
+                            cycle_color=cycle_colors[index % num_cycle_colors],
                         )
+                        if not is_matplotlib_style:
+                            self._reset_params_to_default(current_element, params_to_reset)
+                        z_order += 5
                     else:
                         raise GraphingException(f"Unsupported element type: {type(current_element).__name__}")
 
@@ -237,6 +286,8 @@ class SmartFigure:
 
                 ax.set_aspect(self._aspect_ratio)
 
+                self._reset_params_to_default(self, figure_params_to_reset)
+
             elif element is not None:
                 raise GraphingException(f"Unsupported element type in list: {type(element).__name__}")
 
@@ -255,6 +306,230 @@ class SmartFigure:
 
         return gridspec
 
+    def _fill_in_missing_params(self, element: Plottable) -> list[str]:
+        """
+        Fills in the missing parameters from the specified ``figure_style``.
+        """
+        params_to_reset = []
+        for property, value in vars(element).items():
+            if (type(value) == str) and (value == "default"):
+                params_to_reset.append(property)
+        return params_to_reset
+
+    def _fill_in_missing_plottable_params(self, element: Plottable) -> list[str]:
+        """
+        Fills in the missing parameters for a plottable from the specified ``figure_style``.
+        """
+        params_to_reset = []
+        object_type = type(element).__name__
+        tries = 0
+        while tries < 2:
+            try:
+                for property, value in vars(element).items():
+                    if (type(value) == str) and (value == "default"):
+                        params_to_reset.append(property)
+                        default_value = self._default_params[object_type][property]
+                        setattr(element, property, default_value)
+                break
+            except KeyError as e:
+                tries += 1
+                if tries >= 2:
+                    raise GraphingException(
+                        f"There was an error auto updating your {self._figure_style} style file following the recent "
+                         "GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub"
+                         "page. In the meantime, you can manually add the following parameter to your "
+                        f"{self._figure_style} style file:\n {e.args[0]}"
+                    )
+                file_updater = FileUpdater(self._figure_style)
+                file_updater.update()
+                file_loader = FileLoader(self._figure_style)
+                self._default_params = file_loader.load()
+        return params_to_reset
+
+    def _reset_params_to_default(
+        self, element: Plottable, params_to_reset: list[str]
+    ) -> None:
+        """
+        Resets the parameters that were set to default in the _fill_in_missing_params method.
+        """
+        for param in params_to_reset:
+            setattr(element, param, "default")
+
+    def _fill_in_rc_params(self, is_matplotlib_style: bool = False) -> None:
+        """
+        Fills in and sets the missing rc parameters from the specified ``figure_style``.
+        If ``is_matplotlib_style`` is ``True``, the rc parameters are reset to the default values for the specified 
+        ``figure_style``. If ``is_matplotlib_style`` is ``False``, the rc parameters are updated with the missing
+        parameters from the specified ``figure_style``. In both cases, the rc parameters are then updated with the
+        user-specified parameters.
+        """
+        if is_matplotlib_style:
+            if self._figure_style == "matplotlib":
+                plt.style.use("default")
+            else:
+                plt.style.use(self._figure_style)
+            plt.rcParams.update(self._user_rc_dict)
+        else:
+            params = self._default_params["rc_params"]
+            for property, value in params.items():
+                # add to rc_dict if not already in there
+                if (property not in self._rc_dict) and (
+                    property not in self._user_rc_dict
+                ):
+                    self._rc_dict[property] = value
+            all_rc_params = {**self._rc_dict, **self._user_rc_dict}
+            try:
+                if all_rc_params["text.usetex"] and which("latex") is None:
+                    all_rc_params["text.usetex"] = False
+            except KeyError:
+                pass
+            plt.rcParams.update(all_rc_params)
+
+    def set_rc_params(
+        self,
+        rc_params_dict: dict[str, str | float] = {},
+        reset: bool = False,
+    ) -> None:
+        """
+        Customize the visual style of the :class:`~graphinglib.smart_figure.SmartFigure`.
+
+        Any rc parameter that is not specified in the dictionary will be set to the default value for the specified
+        ``figure_style``.
+
+        Parameters
+        ----------
+        rc_params_dict : dict[str, str | float]
+            Dictionary of rc parameters to update.
+            Defaults to empty dictionary.
+        reset : bool
+            Whether or not to reset the rc parameters to the default values for the specified ``figure_style``.
+            Defaults to ``False``.
+        """
+        if reset:
+            self._user_rc_dict = {}
+        for property, value in rc_params_dict.items():
+            self._user_rc_dict[property] = value
+
+    def set_visual_params(
+        self,
+        reset: bool = False,
+        figure_face_color: str | None = None,
+        axes_face_color: str | None = None,
+        axes_edge_color: str | None = None,
+        axes_label_color: str | None = None,
+        axes_line_width: float | None = None,
+        color_cycle: list[str] | None = None,
+        x_tick_color: str | None = None,
+        y_tick_color: str | None = None,
+        legend_face_color: str | None = None,
+        legend_edge_color: str | None = None,
+        font_family: str | None = None,
+        font_size: float | None = None,
+        font_weight: str | None = None,
+        text_color: str | None = None,
+        use_latex: bool | None = None,
+        grid_line_style: str | None = None,
+        grid_line_width: float | None = None,
+        grid_color: str | None = None,
+        grid_alpha: float | None = None,
+    ) -> None:
+        """
+        Customize the visual style of the :class:`~graphinglib.smart_figure.SmartFigure`.
+
+        Any parameter that is not specified (None) will be set to the default value for the specified ``figure_style``.
+
+        Parameters
+        ----------
+        reset : bool
+            Whether or not to reset the rc parameters to the default values for the specified ``figure_style``.
+            Defaults to ``False``.
+        figure_face_color : str
+            The color of the figure face.
+            Defaults to ``None``.
+        axes_face_color : str
+            The color of the axes face.
+            Defaults to ``None``.
+        axes_edge_color : str
+            The color of the axes edge.
+            Defaults to ``None``.
+        axes_label_color : str
+            The color of the axes labels.
+            Defaults to ``None``.
+        axes_line_width : float
+            The width of the axes lines.
+            Defaults to ``None``.
+        color_cycle : list[str]
+            A list of colors to use for the color cycle.
+            Defaults to ``None``.
+        x_tick_color : str
+            The color of the x-axis ticks.
+            Defaults to ``None``.
+        y_tick_color : str
+            The color of the y-axis ticks.
+            Defaults to ``None``.
+        legend_face_color : str
+            The color of the legend face.
+            Defaults to ``None``.
+        legend_edge_color : str
+            The color of the legend edge.
+            Defaults to ``None``.
+        font_family : str
+            The font family to use.
+            Defaults to ``None``.
+        font_size : float
+            The font size to use.
+            Defaults to ``None``.
+        font_weight : str
+            The font weight to use.
+            Defaults to ``None``.
+        text_color : str
+            The color of the text.
+            Defaults to ``None``.
+        use_latex : bool
+            Whether or not to use latex.
+            Defaults to ``None``.
+        grid_line_style : str
+            The style of the grid lines.
+            Defaults to ``None``.
+        grid_line_width : float
+            The width of the grid lines.
+            Defaults to ``None``.
+        grid_color : str
+            The color of the grid lines.
+            Defaults to ``None``.
+        grid_alpha : float
+            The alpha of the grid lines.
+            Defaults to ``None``.
+        """
+        if color_cycle is not None:
+            color_cycle = plt.cycler(color=color_cycle)
+
+        rc_params_dict = {
+            "figure.facecolor": figure_face_color,
+            "axes.facecolor": axes_face_color,
+            "axes.edgecolor": axes_edge_color,
+            "axes.labelcolor": axes_label_color,
+            "axes.linewidth": axes_line_width,
+            "axes.prop_cycle": color_cycle,
+            "xtick.color": x_tick_color,
+            "ytick.color": y_tick_color,
+            "legend.facecolor": legend_face_color,
+            "legend.edgecolor": legend_edge_color,
+            "font.family": font_family,
+            "font.size": font_size,
+            "font.weight": font_weight,
+            "text.color": text_color,
+            "text.usetex": use_latex,
+            "grid.linestyle": grid_line_style,
+            "grid.linewidth": grid_line_width,
+            "grid.color": grid_color,
+            "grid.alpha": grid_alpha,
+        }
+        rc_params_dict = {
+            key: value for key, value in rc_params_dict.items() if value is not None
+        }
+        self.set_rc_params(rc_params_dict, reset=reset)
+
     @staticmethod
     def _keys_to_slices(keys: tuple[slice | int]) -> tuple[slice]:
         new_slices = [k if isinstance(k, slice) else slice(k, k+1, None) for k in keys]   # convert int -> slice
@@ -270,69 +545,3 @@ class SmartFigure:
             return ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
         else:
             raise ValueError("Invalid reference label location. Please specify either 'inside' or 'outside'.")
-
-
-
-
-
-
-
-import graphinglib as gl
-import numpy as np
-
-
-def rc():
-    return gl.Curve.from_function(lambda x: np.random.random()*x**(np.random.random()*5), x_min=0, x_max=np.random.randint(1, 11))
-
-# Create a random SmartFigure which has two Curve objects of any shape
-curve_1 = gl.Curve.from_function(lambda x: x**2, x_min=0, x_max=2, label="Curve 1")
-curve_2 = gl.Curve.from_function(lambda x: x**4, x_min=0, x_max=2, label="Curve 2", color="red")
-elements = [curve_1, curve_2]
-
-sf_1 = SmartFigure(num_rows=2, num_cols=1, elements=elements, x_label="xlab", y_label="ylab", height_padding=0.01, share_x=False)
-sf_2 = SmartFigure(num_rows=1, num_cols=1, elements=[gl.Scatter([0, 1], [5, 10], label="testi")], x_label="xxx", y_label="yyy", reference_labels=False)
-two_by_two = SmartFigure(num_rows=2, num_cols=2, elements=[rc() for _ in range(4)], remove_x_ticks=True, remove_y_ticks=True, reference_labels=True, height_padding=0.05, width_padding=0.1, y_label="Two by two y", x_label="Two by two x", share_x=True, share_y=True, size=(3,3), width_ratios=[3,5], height_ratios=[1,2], title="two by two plot")
-simple_sf = SmartFigure(elements=[curve_1], remove_x_ticks=False, remove_y_ticks=False, aspect_ratio=2)
-orange_curve = gl.Curve([0, 2], [0, 1], label="first curve", color="orange")
-green_curve = gl.Curve([0, 1, 2], [2, 1, 2], label="second curve", color="green")
-polar = SmartFigure(1, 1, elements=[gl.Curve([0,np.pi/4,np.pi/2,3*np.pi/4,np.pi], [0,1,2,1,0.5])], projection="polar", aspect_ratio="equal", )
-cs = [green_curve, orange_curve]
-other = SmartFigure(num_rows=2, num_cols=1, elements=[rc(), rc()], remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, height_padding=0.1, width_padding=0.1)
-elements = [
-    elements,# two_by_two,
-    two_by_two,# None,
-    cs,
-    polar
-]
-sf = SmartFigure(num_rows=2, num_cols=2, elements=elements, x_label="Mama x", y_label="Mama y", remove_x_ticks=False, remove_y_ticks=False, reference_labels=False,
-    height_padding=0.05, width_padding=0.03, share_x=False, width_ratios=(0.5,2), title="Main Mama Figure", remove_axes=True,
-    # master_height_padding=0, master_width_padding=0,
-    # size=(14.5,8.1)
-    size=(7,7)
-)
-# two_by_two.show()
-# sf.save("zdev/test5.png", dpi=300)
-# sf.show()
-
-sf_3x3 = SmartFigure(3, 3, "I am x", "I am y", (8,6), share_x=True, share_y=True)
-sf_3x3[1,:2] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
-sf_3x3[0,1] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
-# sf_3x3[1,1] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
-sf_3x3[0,0] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
-# sf_3x3[:2,:2] = gl.Heatmap([[0,1,2,3],[1,2,3,4],[2,3,4,5],[3,4,5,6]])
-sf_3x3[2,:] = gl.Scatter([1,2,3],[0.1,0.2,0.3])
-sf_3x3[0,2] = [green_curve, orange_curve]
-sf_3x3[1,2] = orange_curve
-sf_3x3[2,1] = sf_2
-sf_3x3[2,1]._x_label += " and xxx"
-# sf_3x3[2,:] = None
-# sf_3x3[2,1] = None
-# sf_3x3[0,2] = None
-sf_3x3.save("beautiful.png", transparent=True)
-# sf_3x3.show()
-
-
-# Use methods for specific things (ticks, margins, grids, labels?)  -
-# custom axis label spacing and positionning                        -
-# remove x/y margins                                                -
-# custom ticks                                                      -
