@@ -93,6 +93,7 @@ class SmartFigure:
 
         self._figure = None
         self._reference_label_i = None
+
         self._custom_ticks = False
         self._xticks = None
         self._xticklabels = None
@@ -102,6 +103,13 @@ class SmartFigure:
         self._yticklabels = None
         self._yticklabels_rotation = None
         self._ytick_spacing = None
+
+        self._show_grid = False
+        self._grid_visible_x = None
+        self._grid_which_x = None
+        self._grid_visible_y = None
+        self._grid_which_y = None
+
         self._rc_dict = {}
         self._user_rc_dict = {}
         self._default_params = {}
@@ -234,7 +242,7 @@ class SmartFigure:
             height_ratios=self._height_ratios,
         )
         # Plottable and subfigure plotting
-        ax = None   # keep track of the last Axis object, needed for sharing axes
+        ax = None   # keep track of the last plt.Axes object, needed for sharing axes
         for (rows, cols), element in self._ordered_elements.items():
             if isinstance(element, SmartFigure):
                 subfig = self._figure.add_subfigure(gridspec[rows, cols])
@@ -286,7 +294,7 @@ class SmartFigure:
                         transform=ax.transAxes + self._get_reflabel_translation(),
                     )
                     self._reference_label_i += 1
-                
+
                 # If axes are shared, manually remove ticklabels from unnecessary plots
                 if self._share_x and rows.start != (self._num_rows - 1):
                     ax.tick_params(labelbottom=False)
@@ -298,7 +306,7 @@ class SmartFigure:
                     ax.get_xaxis().set_visible(False)
                 if self._remove_y_ticks:
                     ax.get_yaxis().set_visible(False)
-                
+
                 # Axes limits
                 if self._x_lim:
                     ax.set_xlim(*self._x_lim)
@@ -317,6 +325,7 @@ class SmartFigure:
 
                 ax.set_aspect(self._aspect_ratio)
 
+                # Customize ticks
                 if self._custom_ticks:
                     if self._xticks:
                         ax.set_xticks(self._xticks, self._xticklabels)
@@ -334,6 +343,11 @@ class SmartFigure:
                         ax.yaxis.set_major_locator(
                             ticker.MultipleLocator(self._ytick_spacing)
                         )
+
+                # Customize grid
+                if self._show_grid:
+                    ax.grid(self._grid_visible_x, self._grid_which_x, "x")
+                    ax.grid(self._grid_visible_y, self._grid_which_y, "y")
 
                 self._reset_params_to_default(self, figure_params_to_reset)
 
@@ -484,10 +498,6 @@ class SmartFigure:
         font_weight: str | None = None,
         text_color: str | None = None,
         use_latex: bool | None = None,
-        # grid_line_style: str | None = None,
-        # grid_line_width: float | None = None,
-        # grid_color: str | None = None,
-        # grid_alpha: float | None = None,
     ) -> None:
         """
         Customize the visual style of the :class:`~graphinglib.smart_figure.SmartFigure`.
@@ -544,18 +554,6 @@ class SmartFigure:
         use_latex : bool
             Whether or not to use latex.
             Defaults to ``None``.
-        # grid_line_style : str
-        #     The style of the grid lines.
-        #     Defaults to ``None``.
-        # grid_line_width : float
-        #     The width of the grid lines.
-        #     Defaults to ``None``.
-        # grid_color : str
-        #     The color of the grid lines.
-        #     Defaults to ``None``.
-        # grid_alpha : float
-        #     The alpha of the grid lines.
-        #     Defaults to ``None``.
         """
         if color_cycle is not None:
             color_cycle = plt.cycler(color=color_cycle)
@@ -576,10 +574,6 @@ class SmartFigure:
             "font.weight": font_weight,
             "text.color": text_color,
             "text.usetex": use_latex,
-            # "grid.linestyle": grid_line_style,
-            # "grid.linewidth": grid_line_width,
-            # "grid.color": grid_color,
-            # "grid.alpha": grid_alpha,
         }
         rc_params_dict = {
             key: value for key, value in rc_params_dict.items() if value is not None
@@ -645,3 +639,56 @@ class SmartFigure:
             raise GraphingException(
                 "Tick spacing and tick positions cannot be set simultaneously"
             )
+
+    def set_grid(
+        self,
+        visible_x: bool = True,
+        visible_y: bool = True,
+        which_x: Literal["both", "major", "minor"] = "both",
+        which_y: Literal["both", "major", "minor"] = "both",
+        color: str = "default",
+        alpha: float | Literal["default"] = "default",
+        line_style: str = "default",
+        line_width: float | Literal["default"] = "default",
+    ) -> None:
+        """
+        Sets the grid parameters for the figure.
+
+        Parameters
+        ----------
+        visible_x : bool, optional
+            If ``True``, sets the x-axis grid visible. Defaults to ``True``.
+        visible_y : bool, optional
+            If ``True``, sets the y-axis grid visible. Defaults to ``True``.
+        which_x : {"both", "major", "minor"}, optional
+            Sets whether both, only major or only minor grid lines are shown for the
+            x-axis. Defaults to ``"both"``.
+        which_y : {"both", "major", "minor"}, optional
+            Sets whether both, only major or only minor grid lines are shown for the
+            y-axis. Defaults to ``"both"``.
+        color : str, optional
+            sets the color of the grid lines.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float, optional
+            Sets the alpha value for the grid lines.
+            Default depends on the ``figure_style`` configuration.
+        line_style : str, optional
+            Sets the line style of the grid lines.
+            Default depends on the ``figure_style`` configuration.
+        line_width : float, optional
+            Sets the line width of the grid lines.
+            Default depends on the ``figure_style`` configuration.
+        """
+        self._show_grid = True
+        self._grid_visible_x = visible_x
+        self._grid_visible_y = visible_y
+        self._grid_which_x = which_x
+        self._grid_which_y = which_y
+        rc_params_dict = {
+            "grid.color": color,
+            "grid.alpha": alpha,
+            "grid.linestyle": line_style,
+            "grid.linewidth": line_width,
+        }
+        rc_params_dict = {k: v for k, v in rc_params_dict.items() if v is not "default"}
+        self.set_rc_params(rc_params_dict)
