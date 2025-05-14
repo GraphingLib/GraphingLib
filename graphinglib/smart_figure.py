@@ -93,6 +93,15 @@ class SmartFigure:
 
         self._figure = None
         self._reference_label_i = None
+        self._custom_ticks = False
+        self._xticks = None
+        self._xticklabels = None
+        self._xticklabels_rotation = None
+        self._xtick_spacing = None
+        self._yticks = None
+        self._yticklabels = None
+        self._yticklabels_rotation = None
+        self._ytick_spacing = None
         self._rc_dict = {}
         self._user_rc_dict = {}
         self._default_params = {}
@@ -115,6 +124,22 @@ class SmartFigure:
     @property
     def _ordered_elements(self) -> OrderedDict:
         return OrderedDict(sorted(self._elements.items(), key=lambda item: (item[0][0].start, item[0][1].start)))
+
+    @staticmethod
+    def _keys_to_slices(keys: tuple[slice | int]) -> tuple[slice]:
+        new_slices = [k if isinstance(k, slice) else slice(k, k+1, None) for k in keys]   # convert int -> slice
+        new_slices = [s if s.start is not None else slice(0, s.stop) for s in new_slices] # convert starting None -> 0
+        return tuple(new_slices)
+
+    def _get_reflabel_translation(
+            self,
+    ) -> ScaledTranslation:
+        if self._reflabel_loc == "outside":
+            return ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
+        elif self._reflabel_loc == "inside":
+            return ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
+        else:
+            raise ValueError("Invalid reference label location. Please specify either 'inside' or 'outside'.")
 
     def show(
         self,
@@ -291,6 +316,24 @@ class SmartFigure:
                     ax.axis("off")
 
                 ax.set_aspect(self._aspect_ratio)
+
+                if self._custom_ticks:
+                    if self._xticks:
+                        ax.set_xticks(self._xticks, self._xticklabels)
+                    if self._xticklabels_rotation:
+                        ax.tick_params("x", labelrotation=self._xticklabels_rotation)
+                    if self._xtick_spacing:
+                        ax.xaxis.set_major_locator(
+                            ticker.MultipleLocator(self._xtick_spacing)
+                        )
+                    if self._yticks:
+                        ax.set_yticks(self._yticks, self._yticklabels)
+                    if self._yticklabels_rotation:
+                        ax.tick_params("y", labelrotation=self._yticklabels_rotation)
+                    if self._ytick_spacing:
+                        ax.yaxis.set_major_locator(
+                            ticker.MultipleLocator(self._ytick_spacing)
+                        )
 
                 self._reset_params_to_default(self, figure_params_to_reset)
 
@@ -543,18 +586,62 @@ class SmartFigure:
         }
         self.set_rc_params(rc_params_dict, reset=reset)
 
-    @staticmethod
-    def _keys_to_slices(keys: tuple[slice | int]) -> tuple[slice]:
-        new_slices = [k if isinstance(k, slice) else slice(k, k+1, None) for k in keys]   # convert int -> slice
-        new_slices = [s if s.start is not None else slice(0, s.stop) for s in new_slices] # convert starting None -> 0
-        return tuple(new_slices)
+    def set_ticks(
+        self,
+        xticks: Optional[list[float]] = None,
+        xticklabels: Optional[list[str]] = None,
+        xticklabels_rotation: Optional[float] = None,
+        xtick_spacing: Optional[float] = None,
+        yticks: Optional[list[float]] = None,
+        yticklabels: Optional[list[str]] = None,
+        yticklabels_rotation: Optional[float] = None,
+        ytick_spacing: Optional[float] = None,
+    ) -> None:
+        """
+        Sets custom ticks and ticks labels.
 
-    def _get_reflabel_translation(
-            self,
-    ) -> ScaledTranslation:
-        if self._reflabel_loc == "outside":
-            return ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
-        elif self._reflabel_loc == "inside":
-            return ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
-        else:
-            raise ValueError("Invalid reference label location. Please specify either 'inside' or 'outside'.")
+        Parameters
+        ----------
+        xticks : list[float], optional
+            Tick positions for the x axis.
+        xticklabels : list[str], optional
+            Tick labels for the x axis.
+        xticklabels_rotation : float, optional
+            Rotation value for xtick labels.
+        xtick_spacing : float, optional
+            Spacing between ticks on the x axis.
+        yticks : list[float], optional
+            Tick positions for the y axis.
+        yticklabels : list[str], optional
+            Tick labels for the y axis.
+        yticklabels_rotation : float, optional
+            Rotation value for ytick labels.
+        ytick_spacing : float, optional
+            Spacing between ticks on the y axis.
+        """
+        self._custom_ticks = True
+        self._xticks = xticks
+        self._xticklabels = xticklabels
+        self._xticklabels_rotation = xticklabels_rotation
+        self._xtick_spacing = xtick_spacing
+        self._yticks = yticks
+        self._yticklabels = yticklabels
+        self._yticklabels_rotation = yticklabels_rotation
+        self._ytick_spacing = ytick_spacing
+        if self._xticklabels is not None or self._yticklabels is not None:
+            if self._yticklabels and not self._yticks:
+                raise GraphingException(
+                    "Ticks position must be specified when ticks labels are specified"
+                )
+            if self._xticklabels and not self._xticks:
+                raise GraphingException(
+                    "Ticks position must be specified when ticks labels are specified"
+                )
+        if self._xticks is not None and self._xtick_spacing is not None:
+            raise GraphingException(
+                "Tick spacing and tick positions cannot be set simultaneously"
+            )
+        if self._yticks is not None and self._ytick_spacing is not None:
+            raise GraphingException(
+                "Tick spacing and tick positions cannot be set simultaneously"
+            )
