@@ -103,6 +103,10 @@ class SmartFigure:
         self._yticklabels = None
         self._yticklabels_rotation = None
         self._ytick_spacing = None
+        self._minor_xticks = None
+        self._minor_xtick_spacing = None
+        self._minor_yticks = None
+        self._minor_ytick_spacing = None
 
         self._show_grid = False
         self._grid_visible_x = None
@@ -342,6 +346,18 @@ class SmartFigure:
                     if self._ytick_spacing:
                         ax.yaxis.set_major_locator(
                             ticker.MultipleLocator(self._ytick_spacing)
+                        )
+                    if self._minor_xticks:
+                        ax.set_xticks(self._minor_xticks, minor=True)
+                    if self._minor_xtick_spacing:
+                        ax.xaxis.set_minor_locator(
+                            ticker.MultipleLocator(self._minor_xtick_spacing)
+                        )
+                    if self._minor_yticks:
+                        ax.set_yticks(self._minor_yticks, minor=True)
+                    if self._minor_ytick_spacing:
+                        ax.yaxis.set_minor_locator(
+                            ticker.MultipleLocator(self._minor_ytick_spacing)
                         )
 
                 # Customize grid
@@ -590,6 +606,10 @@ class SmartFigure:
         yticklabels: Optional[list[str]] = None,
         yticklabels_rotation: Optional[float] = None,
         ytick_spacing: Optional[float] = None,
+        minor_xticks: Optional[list[float]] = None,
+        minor_xtick_spacing: Optional[float] = None,
+        minor_yticks: Optional[list[float]] = None,
+        minor_ytick_spacing: Optional[float] = None,
     ) -> None:
         """
         Sets custom ticks and ticks labels.
@@ -612,6 +632,14 @@ class SmartFigure:
             Rotation value for ytick labels.
         ytick_spacing : float, optional
             Spacing between ticks on the y axis.
+        minor_xticks : list[float], optional
+            Minor tick positions for the x axis.
+        minor_xtick_spacing : float, optional
+            Spacing between minor ticks on the x axis.
+        minor_yticks : list[float], optional
+            Minor tick positions for the y axis.
+        minor_ytick_spacing : float, optional
+            Spacing between minor ticks on the y axis.
         """
         self._custom_ticks = True
         self._xticks = xticks
@@ -622,6 +650,11 @@ class SmartFigure:
         self._yticklabels = yticklabels
         self._yticklabels_rotation = yticklabels_rotation
         self._ytick_spacing = ytick_spacing
+        self._minor_xticks = minor_xticks
+        self._minor_xtick_spacing = minor_xtick_spacing
+        self._minor_yticks = minor_yticks
+        self._minor_ytick_spacing = minor_ytick_spacing
+
         if self._xticklabels is not None or self._yticklabels is not None:
             if self._yticklabels and not self._yticks:
                 raise GraphingException(
@@ -638,6 +671,14 @@ class SmartFigure:
         if self._yticks is not None and self._ytick_spacing is not None:
             raise GraphingException(
                 "Tick spacing and tick positions cannot be set simultaneously"
+            )
+        if self._minor_xticks is not None and self._minor_xtick_spacing is not None:
+            raise GraphingException(
+                "Minor tick spacing and minor tick positions cannot be set simultaneously"
+            )
+        if self._minor_yticks is not None and self._minor_ytick_spacing is not None:
+            raise GraphingException(
+                "Minor tick spacing and minor tick positions cannot be set simultaneously"
             )
 
     def set_grid(
