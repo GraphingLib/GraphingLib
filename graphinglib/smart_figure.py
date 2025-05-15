@@ -617,30 +617,48 @@ class SmartFigure:
         Parameters
         ----------
         xticks : list[float], optional
-            Tick positions for the x axis.
+            Tick positions for the x axis. If a value is specified, the xtick_spacing parameter cannot be specified.
         xticklabels : list[str], optional
-            Tick labels for the x axis.
+            Tick labels for the x axis. If a value is specified, the xticks parameter must also be specified.
         xticklabels_rotation : float, optional
             Rotation value for xtick labels.
         xtick_spacing : float, optional
-            Spacing between ticks on the x axis.
+            Spacing between ticks on the x axis. If a value is specified, the xticks parameter cannot be specified.
         yticks : list[float], optional
-            Tick positions for the y axis.
+            Tick positions for the y axis. If a value is specified, the ytick_spacing parameter cannot be specified.
         yticklabels : list[str], optional
-            Tick labels for the y axis.
+            Tick labels for the y axis. If a value is specified, the yticks parameter must also be specified.
         yticklabels_rotation : float, optional
             Rotation value for ytick labels.
         ytick_spacing : float, optional
-            Spacing between ticks on the y axis.
+            Spacing between ticks on the y axis. If a value is specified, the yticks parameter cannot be specified.
         minor_xticks : list[float], optional
-            Minor tick positions for the x axis.
+            Minor tick positions for the x axis. If a value is specified, minor_the xtick_spacing parameter cannot be 
+            specified.
         minor_xtick_spacing : float, optional
-            Spacing between minor ticks on the x axis.
+            Spacing between minor ticks on the x axis. If a value is specified, the minor_xticks parameter cannot be
+            specified.
         minor_yticks : list[float], optional
-            Minor tick positions for the y axis.
+            Minor tick positions for the y axis. If a value is specified, the minor_ytick_spacing parameter cannot be 
+            specified.
         minor_ytick_spacing : float, optional
-            Spacing between minor ticks on the y axis.
+            Spacing between minor ticks on the y axis. If a value is specified, the minor_yticks parameter cannot be
+            specified.
         """
+        if any([
+            self._xticklabels and not self._xticks,
+            self._yticklabels and not self._yticks,
+        ]):
+            raise GraphingException("Ticks position must be specified when ticks labels are specified")
+        
+        if any([
+            self._xticks and self._xtick_spacing, 
+            self._yticks and self._ytick_spacing,
+            self._minor_xticks and self._minor_xtick_spacing, 
+            self._minor_yticks and self._minor_ytick_spacing,
+        ]):
+            raise GraphingException("Tick spacing and tick positions cannot be set simultaneously")
+
         self._custom_ticks = True
         self._xticks = xticks
         self._xticklabels = xticklabels
@@ -654,32 +672,6 @@ class SmartFigure:
         self._minor_xtick_spacing = minor_xtick_spacing
         self._minor_yticks = minor_yticks
         self._minor_ytick_spacing = minor_ytick_spacing
-
-        if self._xticklabels is not None or self._yticklabels is not None:
-            if self._yticklabels and not self._yticks:
-                raise GraphingException(
-                    "Ticks position must be specified when ticks labels are specified"
-                )
-            if self._xticklabels and not self._xticks:
-                raise GraphingException(
-                    "Ticks position must be specified when ticks labels are specified"
-                )
-        if self._xticks is not None and self._xtick_spacing is not None:
-            raise GraphingException(
-                "Tick spacing and tick positions cannot be set simultaneously"
-            )
-        if self._yticks is not None and self._ytick_spacing is not None:
-            raise GraphingException(
-                "Tick spacing and tick positions cannot be set simultaneously"
-            )
-        if self._minor_xticks is not None and self._minor_xtick_spacing is not None:
-            raise GraphingException(
-                "Minor tick spacing and minor tick positions cannot be set simultaneously"
-            )
-        if self._minor_yticks is not None and self._minor_ytick_spacing is not None:
-            raise GraphingException(
-                "Minor tick spacing and minor tick positions cannot be set simultaneously"
-            )
 
     def set_grid(
         self,
