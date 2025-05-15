@@ -92,6 +92,7 @@ class SmartFigure:
                 raise GraphingException(f"Invalid element type: {type(element).__name__}")
 
         self._figure = None
+        self._gridspec = None
         self._reference_label_i = None
 
         self._custom_ticks = False
@@ -157,6 +158,24 @@ class SmartFigure:
         self,
     ) -> None:
         self._initialize_parent_smart_figure()
+        # Create an artificial axis to add padding around the figure
+        # This is needed because the figure is created with set_constrained_layout_pads creating 0 padding
+        ax_dummy = self._figure.add_subplot(self._gridspec[:, :])
+        ax_dummy.xaxis.grid(False)
+        ax_dummy.yaxis.grid(False)
+        ax_dummy.set_facecolor((0, 0, 0, 0))
+        ax_dummy.set_zorder(-1)
+        ax_dummy.set_navigate(False)
+        ax_dummy.tick_params(colors=(0,0,0,0), axis="both", direction="in", labelright=True, labeltop=True, labelsize=0)
+        ax_dummy.spines["top"].set_visible(False)
+        ax_dummy.spines["right"].set_visible(False)
+        ax_dummy.spines["left"].set_visible(False)
+        ax_dummy.spines["bottom"].set_visible(False)
+        ax_dummy.set_xticks([0.5])
+        ax_dummy.set_yticks([0.5])
+        ax_dummy.set_xticklabels([" "])
+        ax_dummy.set_yticklabels([" "])
+
         plt.show()
         plt.rcParams.update(plt.rcParamsDefault)
 
@@ -205,27 +224,10 @@ class SmartFigure:
         self._figure = plt.figure(constrained_layout=True, figsize=self._size)
         self._figure.set_constrained_layout_pads(w_pad=0, h_pad=0)
         self._reference_label_i = 0
-        main_gridspec = self._prepare_figure(self._default_params, is_matplotlib_style)
+        self._prepare_figure(self._default_params, is_matplotlib_style)
 
         self._reset_params_to_default(self, multi_figure_params_to_reset)
         self._rc_dict = {}
-
-        # Create an artificial axis to add padding around the figure
-        ax_dummy = self._figure.add_subplot(main_gridspec[:, :])
-        ax_dummy.xaxis.grid(False)
-        ax_dummy.yaxis.grid(False)
-        ax_dummy.set_facecolor((0, 0, 0, 0))
-        ax_dummy.set_zorder(-1)
-        ax_dummy.set_navigate(False)
-        ax_dummy.tick_params(colors=(0,0,0,0), axis="both", direction="in", labelright=True, labeltop=True, labelsize=0)
-        ax_dummy.spines["top"].set_visible(False)
-        ax_dummy.spines["right"].set_visible(False)
-        ax_dummy.spines["left"].set_visible(False)
-        ax_dummy.spines["bottom"].set_visible(False)
-        ax_dummy.set_xticks([0.5])
-        ax_dummy.set_yticks([0.5])
-        ax_dummy.set_xticklabels([" "])
-        ax_dummy.set_yticklabels([" "])
 
     def _prepare_figure(
         self,
@@ -249,7 +251,7 @@ class SmartFigure:
         ax = None   # keep track of the last plt.Axes object, needed for sharing axes
         for (rows, cols), element in self._ordered_elements.items():
             if isinstance(element, SmartFigure):
-                subfig = self._figure.add_subfigure(gridspec[rows, cols])
+                subfig = self._figure.add_subfigure(self._gridspec[rows, cols])
                 element._figure = subfig        # associates the current subfigure with the nested SmartFigure
                 element._reference_label_i = self._reference_label_i
                 default_params_copy = default_params.copy()
@@ -262,7 +264,7 @@ class SmartFigure:
 
             elif isinstance(element, (Plottable, list)):
                 current_elements = element if isinstance(element, list) else [element]
-                subfig = self._figure.add_subfigure(gridspec[rows, cols])
+                subfig = self._figure.add_subfigure(self._gridspec[rows, cols])
                 ax = subfig.add_subplot(
                     sharex=ax if self._share_x else None,
                     sharey=ax if self._share_y else None,
@@ -387,8 +389,6 @@ class SmartFigure:
         # Title
         if self._title:
             self._figure.suptitle(self._title, fontdict={"fontsize": "medium"}, fontweight=plt.rcParams["font.weight"])
-
-        return gridspec
 
     def _fill_in_missing_params(self, element: SmartFigure) -> list[str]:
         """
