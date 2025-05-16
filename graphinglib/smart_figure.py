@@ -4,6 +4,8 @@ from typing import Literal, Optional, Any
 from warnings import warn
 from string import ascii_lowercase
 from collections import OrderedDict
+from typing import Self
+from copy import deepcopy
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -59,11 +61,11 @@ class SmartFigure:
         share_y: bool = False,
         projection: str | Any = None,
         general_legend: bool = False,
-        legend_loc: str | tuple = "outside lower center",
+        legend_loc: str | tuple = "best",
         legend_cols: int = 1,
         show_legend: bool = True,
         figure_style: str = "default",
-        elements: Optional[list[Plottable]] = [],
+        elements: Optional[list[list[Plottable]]] = [],
     ) -> None:
         self._num_rows = num_rows
         self._num_cols = num_cols
@@ -96,6 +98,8 @@ class SmartFigure:
         self._figure_style = figure_style
 
         self._elements = {}
+        if num_rows == 1 and num_cols == 1 and not isinstance(elements[0], list):
+            elements = [elements]
         for i, element in enumerate(elements):
             if isinstance(element, (Plottable, list, SmartFigure)):
                 self._elements[self._keys_to_slices(divmod(i, self._num_cols))] = element
@@ -137,13 +141,16 @@ class SmartFigure:
         key_ = self._keys_to_slices(key)
         if element is None:
             if key_ in self._elements.keys():
-                del self._elements[key_]
+                self._elements.pop(key_)
         else:
             self._elements[key_] = element
 
     def __getitem__(self, key: tuple[slice | int]) -> Plottable | list[Plottable] | SmartFigure:
         key_ = self._keys_to_slices(key)
         return self._elements.get(key_, None)
+
+    def copy(self) -> Self:
+        return deepcopy(self)
 
     @property
     def _ordered_elements(self) -> OrderedDict:
