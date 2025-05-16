@@ -56,6 +56,10 @@ class SmartFigure:
         share_x: bool = False,
         share_y: bool = False,
         projection: str | Any = None,
+        general_legend: bool = False,
+        legend_loc: str | tuple = "outside lower center",
+        legend_cols: int = 1,
+        show_legend: bool = True,
         figure_style: str = "default",
         elements: Optional[list[Plottable]] = [],
     ) -> None:
@@ -82,13 +86,17 @@ class SmartFigure:
         self._share_x = share_x
         self._share_y = share_y
         self._projection = projection
+        self._general_legend = general_legend
+        self._legend_loc = legend_loc
+        self._legend_cols = legend_cols
+        self._show_legend = show_legend
         self._figure_style = figure_style
 
         self._elements = {}
         for i, element in enumerate(elements):
             if isinstance(element, (Plottable, list, SmartFigure)):
                 self._elements[self._keys_to_slices(divmod(i, self._num_cols))] = element
-            else:
+            elif element is not None:
                 raise GraphingException(f"Invalid element type: {type(element).__name__}")
 
         self._figure = None
@@ -158,6 +166,7 @@ class SmartFigure:
         self,
     ) -> None:
         self._initialize_parent_smart_figure()
+
         # Create an artificial axis to add padding around the figure
         # This is needed because the figure is created with set_constrained_layout_pads creating 0 padding
         ax_dummy = self._figure.add_subplot(self._gridspec[:, :])
@@ -176,6 +185,14 @@ class SmartFigure:
         ax_dummy.set_xticklabels([" "])
         ax_dummy.set_yticklabels([" "])
 
+        if all([
+            self._show_legend,
+            self._general_legend,
+            self._legend_loc is not None and "outside" in self._legend_loc
+        ]):
+            warn("The general legend location is set to 'outside' and matplotlib windows may not be able to show it "
+                 "properly. Consider using inline figures in a jupyter notebook or saving the figure to a file instead "
+                 "to get the full figure.")
         plt.show()
         plt.rcParams.update(plt.rcParamsDefault)
 
@@ -233,13 +250,14 @@ class SmartFigure:
         self,
         default_params: dict = None,
         is_matplotlib_style: bool = False,
-    ) -> GridSpec:
+        make_legend: bool = True,
+    ) -> tuple[list[str], list[Any]]:
         sub_rcs = self._user_rc_dict
         plt.rcParams.update(sub_rcs)
         cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
         num_cycle_colors = len(cycle_colors)
 
-        gridspec = self._figure.add_gridspec(
+        self._gridspec = self._figure.add_gridspec(
             self._num_rows,
             self._num_cols,
             wspace=self._width_padding,
@@ -249,6 +267,7 @@ class SmartFigure:
         )
         # Plottable and subfigure plotting
         ax = None   # keep track of the last plt.Axes object, needed for sharing axes
+        labels, handles = [], []
         for (rows, cols), element in self._ordered_elements.items():
             if isinstance(element, SmartFigure):
                 subfig = self._figure.add_subfigure(self._gridspec[rows, cols])
@@ -257,8 +276,14 @@ class SmartFigure:
                 default_params_copy = default_params.copy()
                 default_params_copy.update(is_a_subfigure=True)
                 default_params_copy["Figure"]["_figure_style"] = self._figure_style
-                element._prepare_figure(default_params_copy, is_matplotlib_style)
+                element_labels, element_handles = element._prepare_figure(
+                    default_params=default_params_copy, 
+                    is_matplotlib_style=is_matplotlib_style,
+                    make_legend=(not self._general_legend),
+                )
                 self._reference_label_i = element._reference_label_i
+                labels += element_labels
+                handles += element_handles
 
                 self._fill_in_rc_params(is_matplotlib_style)
 
@@ -287,8 +312,14 @@ class SmartFigure:
                         )
                         if not is_matplotlib_style:
                             self._reset_params_to_default(current_element, params_to_reset)
+                        try:
+                            if current_element.label is not None:
+                                labels.append(current_element.label)
+                                handles.append(current_element.handle)
+                        except AttributeError:
+                            continue
                         z_order += 5
-                    else:
+                    elif current_element is not None:
                         raise GraphingException(f"Unsupported element type: {type(current_element).__name__}")
 
                 # Add reference label
@@ -369,6 +400,22 @@ class SmartFigure:
 
                 self._reset_params_to_default(self, figure_params_to_reset)
 
+                # Axes legend
+                if not self._general_legend and make_legend and labels:
+                    if self._show_legend:
+                        legend_params = self._get_legend_params(labels, handles, -0.1)
+                        try:
+                            _legend = ax.legend(
+                                draggable=True,
+                                **legend_params,
+                            )
+                        except:
+                            _legend = ax.legend(
+                                **legend_params,
+                            )
+                        _legend.set_zorder(10000)
+                    labels, handles = [], []
+
             elif element is not None:
                 raise GraphingException(f"Unsupported element type in list: {type(element).__name__}")
 
@@ -389,6 +436,62 @@ class SmartFigure:
         # Title
         if self._title:
             self._figure.suptitle(self._title, fontdict={"fontsize": "medium"}, fontweight=plt.rcParams["font.weight"])
+
+        # General legend
+        if self._general_legend and labels:     # making a general legend is priorized over make_legend=False
+            if self._show_legend:
+                legend_params = self._get_legend_params(labels, handles, 0)
+                try:
+                    _legend = self._figure.legend(
+                        **legend_params,
+                        draggable=True,
+                    )
+                except:
+                    _legend = self._figure.legend(
+                        **legend_params,
+                    )
+                _legend.set_zorder(10000)
+            return [], []
+        else:
+            return labels, handles
+
+    def _get_legend_params(
+        self,
+        labels: list[str],
+        handles: list[Any],
+        outside_lower_center_y_offset: float,
+    ) -> dict[str, Any]:
+        legend_params = {
+            "handles" : handles,
+            "labels" : labels,
+            "handleheight" : 1.3,
+            "handler_map" : {
+                Polygon: HandlerPatch(patch_func=histogram_legend_artist),
+                LineCollection: HandlerMultipleLines(),
+                VerticalLineCollection: HandlerMultipleVerticalLines(),
+            },
+            "ncols" : self._legend_cols,
+        }
+        if self._legend_loc is not None and "outside" in self._legend_loc:
+            outside_coords = {
+                "outside upper center": (0.5, 1),
+                "outside center right": (1, 0.5),
+                "outside lower center": (0.5, outside_lower_center_y_offset),
+                "outside center left": (0, 0.5),
+            }
+            outside_keyword = {
+                "outside upper center": "lower center",
+                "outside center right": "center left",
+                "outside lower center": "upper center",
+                "outside center left": "center right",
+            }
+            legend_params.update({
+                "loc": outside_keyword[self._legend_loc],
+                "bbox_to_anchor": outside_coords[self._legend_loc],
+            })
+        else:
+            legend_params.update({"loc": self._legend_loc})
+        return legend_params
 
     def _fill_in_missing_params(self, element: SmartFigure) -> list[str]:
         """
@@ -507,8 +610,10 @@ class SmartFigure:
         color_cycle: list[str] | None = None,
         x_tick_color: str | None = None,
         y_tick_color: str | None = None,
-        # legend_face_color: str | None = None,
-        # legend_edge_color: str | None = None,
+        legend_face_color: str | None = None,
+        legend_edge_color: str | None = None,
+        legend_font_size: float | None = None,
+        legend_handle_length: float | None = None,
         font_family: str | None = None,
         font_size: float | None = None,
         font_weight: str | None = None,
@@ -549,12 +654,18 @@ class SmartFigure:
         y_tick_color : str
             The color of the y-axis ticks.
             Defaults to ``None``.
-        # legend_face_color : str
-        #     The color of the legend face.
-        #     Defaults to ``None``.
-        # legend_edge_color : str
-        #     The color of the legend edge.
-        #     Defaults to ``None``.
+        legend_face_color : str
+            The color of the legend face.
+            Defaults to ``None``.
+        legend_edge_color : str
+            The color of the legend edge.
+            Defaults to ``None``.
+        legend_font_size : float
+            The font size of the legend.
+            Defaults to ``None``.
+        legend_handle_length : float
+            The length of the legend handles.
+            Defaults to ``None``.
         font_family : str
             The font family to use.
             Defaults to ``None``.
@@ -583,8 +694,10 @@ class SmartFigure:
             "axes.prop_cycle": color_cycle,
             "xtick.color": x_tick_color,
             "ytick.color": y_tick_color,
-            # "legend.facecolor": legend_face_color,
-            # "legend.edgecolor": legend_edge_color,
+            "legend.facecolor": legend_face_color,
+            "legend.edgecolor": legend_edge_color,
+            "legend.fontsize": legend_font_size,
+            "legend.handlelength": legend_handle_length,
             "font.family": font_family,
             "font.size": font_size,
             "font.weight": font_weight,
@@ -723,5 +836,5 @@ class SmartFigure:
             "grid.linestyle": line_style,
             "grid.linewidth": line_width,
         }
-        rc_params_dict = {k: v for k, v in rc_params_dict.items() if v is not "default"}
+        rc_params_dict = {k: v for k, v in rc_params_dict.items() if v != "default"}
         self.set_rc_params(rc_params_dict)
