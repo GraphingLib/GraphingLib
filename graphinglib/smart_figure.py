@@ -126,8 +126,9 @@ class SmartFigure:
 
         self._show_grid = False
         self._grid_visible_x = None
-        self._grid_which_x = None
         self._grid_visible_y = None
+        self._grid_show_on_top = None
+        self._grid_which_x = None
         self._grid_which_y = None
 
         self._rc_dict = {}
@@ -411,8 +412,10 @@ class SmartFigure:
 
                 # Customize grid
                 if self._show_grid:
-                    ax.grid(self._grid_visible_x, self._grid_which_x, "x")
-                    ax.grid(self._grid_visible_y, self._grid_which_y, "y")
+                    ax.grid(self._grid_visible_x, which=self._grid_which_x, axis="x")
+                    ax.grid(self._grid_visible_y, which=self._grid_which_y, axis="y")
+                    if self._grid_show_on_top:
+                        ax.set_axisbelow(False)
 
                 self._reset_params_to_default(self, figure_params_to_reset)
 
@@ -438,8 +441,10 @@ class SmartFigure:
         # Axes labels
         if self._num_cols == 1 and self._num_rows == 1:
             if ax is not None:  # makes sure an element was plotted and that an axis was created
-                ax.set_xlabel(self._x_label)
-                ax.set_ylabel(self._y_label)
+                if self._x_label is not None:       # some projection axes can not deal with empty labels
+                    ax.set_xlabel(self._x_label)
+                if self._y_label is not None:
+                    ax.set_ylabel(self._y_label)
         else:
             suplabel_params = {
                 "fontsize" : plt.rcParams["font.size"],
@@ -824,6 +829,7 @@ class SmartFigure:
         self,
         visible_x: bool = True,
         visible_y: bool = True,
+        show_on_top: bool = False,
         which_x: Literal["both", "major", "minor"] = "both",
         which_y: Literal["both", "major", "minor"] = "both",
         color: str = "default",
@@ -840,6 +846,8 @@ class SmartFigure:
             If ``True``, sets the x-axis grid visible. Defaults to ``True``.
         visible_y : bool, optional
             If ``True``, sets the y-axis grid visible. Defaults to ``True``.
+        show_on_top : bool, optional
+            If ``True``, sets the grid lines to be shown on top of the plot elements. Defaults to ``False``.
         which_x : {"both", "major", "minor"}, optional
             Sets whether both, only major or only minor grid lines are shown for the
             x-axis. Defaults to ``"both"``.
@@ -862,6 +870,7 @@ class SmartFigure:
         self._show_grid = True
         self._grid_visible_x = visible_x
         self._grid_visible_y = visible_y
+        self._grid_show_on_top = show_on_top
         self._grid_which_x = which_x
         self._grid_which_y = which_y
         rc_params_dict = {
