@@ -13,6 +13,7 @@ from matplotlib.patches import Polygon
 from matplotlib.gridspec import GridSpec
 from matplotlib.transforms import ScaledTranslation
 from matplotlib.figure import SubFigure
+from matplotlib.axes import Axes
 
 from graphinglib.file_manager import (
     FileLoader,
@@ -48,6 +49,7 @@ class SmartFigure:
         remove_x_ticks: bool = False,
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
+        global_reference_label: bool = False,
         reflabel_loc: str = "outside",
         width_padding: float = None,
         height_padding: float = None,
@@ -78,6 +80,7 @@ class SmartFigure:
         self._remove_x_ticks = remove_x_ticks
         self._remove_y_ticks = remove_y_ticks
         self._reference_labels = reference_labels
+        self._global_reference_label = global_reference_label
         self._reflabel_loc = reflabel_loc
         self._width_padding = width_padding
         self._height_padding = height_padding
@@ -153,14 +156,21 @@ class SmartFigure:
         return tuple(new_slices)
 
     def _get_reflabel_translation(
-            self,
+        self,
+        target: Axes | SubFigure,
     ) -> ScaledTranslation:
-        if self._reflabel_loc == "outside":
-            return ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
-        elif self._reflabel_loc == "inside":
-            return ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
+        if isinstance(target, Axes):
+            if self._reflabel_loc == "outside":
+                return ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
+            elif self._reflabel_loc == "inside":
+                return ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
+            else:
+                raise ValueError("Invalid reference label location. Please specify either 'inside' or 'outside'.")
+
+        elif isinstance(target, SubFigure):
+            return ScaledTranslation(7 / 72, -10 / 72, self._figure.dpi_scale_trans)
         else:
-            raise ValueError("Invalid reference label location. Please specify either 'inside' or 'outside'.")
+            raise ValueError("Target must be either an Axes or SubFigure instance.")
 
     def show(
         self,
@@ -265,6 +275,11 @@ class SmartFigure:
             width_ratios=self._width_ratios,
             height_ratios=self._height_ratios,
         )
+
+        if self._global_reference_label:
+            self._create_ref_label(self._figure)
+            self._figure.suptitle(" ")     # Create a blank title to reserve space
+
         # Plottable and subfigure plotting
         ax = None   # keep track of the last plt.Axes object, needed for sharing axes
         labels, handles = [], []
@@ -324,13 +339,7 @@ class SmartFigure:
 
                 # Add reference label
                 if self._reference_labels and (len(self) > 1 or isinstance(self._figure, SubFigure)):
-                    ax.text(
-                        0,
-                        1,
-                        ascii_lowercase[self._reference_label_i] + ")",
-                        transform=ax.transAxes + self._get_reflabel_translation(),
-                    )
-                    self._reference_label_i += 1
+                    self._create_ref_label(ax)
 
                 # If axes are shared, manually remove ticklabels from unnecessary plots
                 if self._share_x and rows.start != (self._num_rows - 1):
@@ -435,7 +444,7 @@ class SmartFigure:
 
         # Title
         if self._title:
-            self._figure.suptitle(self._title, fontdict={"fontsize": "medium"}, fontweight=plt.rcParams["font.weight"])
+            self._figure.suptitle(self._title, fontweight=plt.rcParams["font.weight"])
 
         # General legend
         if self._general_legend and labels:     # making a general legend is priorized over make_legend=False
@@ -454,6 +463,24 @@ class SmartFigure:
             return [], []
         else:
             return labels, handles
+
+    def _create_ref_label(
+        self,
+        target: Axes | SubFigure
+    ) -> None:
+        if isinstance(target, Axes):
+            trans = target.transAxes
+        elif isinstance(target, SubFigure):
+            trans = target.transSubfigure
+        else:
+            raise ValueError("Target must be either Axes or SubFigure.")
+        target.text(
+            0,
+            1,
+            ascii_lowercase[self._reference_label_i] + ")",
+            transform=trans + self._get_reflabel_translation(target)
+        )
+        self._reference_label_i += 1
 
     def _get_legend_params(
         self,
