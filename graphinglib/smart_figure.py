@@ -102,6 +102,8 @@ class SmartFigure:
             elements = [elements]
         for i, element in enumerate(elements):
             if isinstance(element, (Plottable, list, SmartFigure)):
+                if isinstance(element, Plottable):
+                    element = [element]
                 self._elements[self._keys_to_slices(divmod(i, self._num_cols))] = element
             elif element is not None:
                 raise GraphingException(f"Invalid element type: {type(element).__name__}")
@@ -110,19 +112,19 @@ class SmartFigure:
         self._gridspec = None
         self._reference_label_i = None
 
-        self._custom_ticks = False
-        self._xticks = None
-        self._xticklabels = None
-        self._xticklabels_rotation = None
-        self._xtick_spacing = None
-        self._yticks = None
-        self._yticklabels = None
-        self._yticklabels_rotation = None
-        self._ytick_spacing = None
-        self._minor_xticks = None
-        self._minor_xtick_spacing = None
-        self._minor_yticks = None
-        self._minor_ytick_spacing = None
+        self._x_ticks = None
+        self._x_tick_labels = None
+        self._x_tick_labels_rotation = None
+        self._x_tick_spacing = None
+        self._y_ticks = None
+        self._y_tick_labels = None
+        self._y_tick_labels_rotation = None
+        self._y_tick_spacing = None
+        self._minor_x_ticks = None
+        self._minor_x_tick_spacing = None
+        self._minor_y_ticks = None
+        self._minor_y_tick_spacing = None
+        self._tick_params = {"x major": {}, "y major": {}, "x minor": {}, "y minor": {}}
 
         self._show_grid = False
         self._grid_visible_x = None
@@ -380,35 +382,34 @@ class SmartFigure:
                 ax.set_aspect(self._aspect_ratio)
 
                 # Customize ticks
-                if self._custom_ticks:
-                    if self._xticks:
-                        ax.set_xticks(self._xticks, self._xticklabels)
-                    if self._xticklabels_rotation:
-                        ax.tick_params("x", labelrotation=self._xticklabels_rotation)
-                    if self._xtick_spacing:
-                        ax.xaxis.set_major_locator(
-                            ticker.MultipleLocator(self._xtick_spacing)
-                        )
-                    if self._yticks:
-                        ax.set_yticks(self._yticks, self._yticklabels)
-                    if self._yticklabels_rotation:
-                        ax.tick_params("y", labelrotation=self._yticklabels_rotation)
-                    if self._ytick_spacing:
-                        ax.yaxis.set_major_locator(
-                            ticker.MultipleLocator(self._ytick_spacing)
-                        )
-                    if self._minor_xticks:
-                        ax.set_xticks(self._minor_xticks, minor=True)
-                    if self._minor_xtick_spacing:
-                        ax.xaxis.set_minor_locator(
-                            ticker.MultipleLocator(self._minor_xtick_spacing)
-                        )
-                    if self._minor_yticks:
-                        ax.set_yticks(self._minor_yticks, minor=True)
-                    if self._minor_ytick_spacing:
-                        ax.yaxis.set_minor_locator(
-                            ticker.MultipleLocator(self._minor_ytick_spacing)
-                        )
+                if self._x_ticks:
+                    ax.set_xticks(self._x_ticks, self._x_tick_labels)
+                ax.tick_params(axis="x", which="major", **self._tick_params["x major"])
+                if self._x_tick_spacing:
+                    ax.xaxis.set_major_locator(
+                        ticker.MultipleLocator(self._x_tick_spacing)
+                    )
+                if self._y_ticks:
+                    ax.set_yticks(self._y_ticks, self._y_tick_labels)
+                ax.tick_params(axis="y", which="major", **self._tick_params["y major"])
+                if self._y_tick_spacing:
+                    ax.yaxis.set_major_locator(
+                        ticker.MultipleLocator(self._y_tick_spacing)
+                    )
+                if self._minor_x_ticks:
+                    ax.set_xticks(self._minor_x_ticks, minor=True)
+                ax.tick_params(axis="x", which="minor", **self._tick_params["x minor"])
+                if self._minor_x_tick_spacing:
+                    ax.xaxis.set_minor_locator(
+                        ticker.MultipleLocator(self._minor_x_tick_spacing)
+                    )
+                if self._minor_y_ticks:
+                    ax.set_yticks(self._minor_y_ticks, minor=True)
+                ax.tick_params(axis="y", which="minor", **self._tick_params["y minor"])
+                if self._minor_y_tick_spacing:
+                    ax.yaxis.set_minor_locator(
+                        ticker.MultipleLocator(self._minor_y_tick_spacing)
+                    )
 
                 # Customize grid
                 if self._show_grid:
@@ -647,8 +648,6 @@ class SmartFigure:
         axes_label_color: str | None = None,
         axes_line_width: float | None = None,
         color_cycle: list[str] | None = None,
-        x_tick_color: str | None = None,
-        y_tick_color: str | None = None,
         legend_face_color: str | None = None,
         legend_edge_color: str | None = None,
         legend_font_size: float | None = None,
@@ -686,12 +685,6 @@ class SmartFigure:
             Defaults to ``None``.
         color_cycle : list[str]
             A list of colors to use for the color cycle.
-            Defaults to ``None``.
-        x_tick_color : str
-            The color of the x-axis ticks.
-            Defaults to ``None``.
-        y_tick_color : str
-            The color of the y-axis ticks.
             Defaults to ``None``.
         legend_face_color : str
             The color of the legend face.
@@ -731,8 +724,6 @@ class SmartFigure:
             "axes.labelcolor": axes_label_color,
             "axes.linewidth": axes_line_width,
             "axes.prop_cycle": color_cycle,
-            "xtick.color": x_tick_color,
-            "ytick.color": y_tick_color,
             "legend.facecolor": legend_face_color,
             "legend.edgecolor": legend_edge_color,
             "legend.fontsize": legend_font_size,
@@ -750,80 +741,119 @@ class SmartFigure:
 
     def set_ticks(
         self,
-        xticks: Optional[list[float]] = None,
-        xticklabels: Optional[list[str]] = None,
-        xticklabels_rotation: Optional[float] = None,
-        xtick_spacing: Optional[float] = None,
-        yticks: Optional[list[float]] = None,
-        yticklabels: Optional[list[str]] = None,
-        yticklabels_rotation: Optional[float] = None,
-        ytick_spacing: Optional[float] = None,
-        minor_xticks: Optional[list[float]] = None,
-        minor_xtick_spacing: Optional[float] = None,
-        minor_yticks: Optional[list[float]] = None,
-        minor_ytick_spacing: Optional[float] = None,
+        x_ticks: Optional[list[float]] = None,
+        x_tick_labels: Optional[list[str]] = None,
+        x_tick_spacing: Optional[float] = None,
+        y_ticks: Optional[list[float]] = None,
+        y_tick_labels: Optional[list[str]] = None,
+        y_tick_spacing: Optional[float] = None,
+        minor_x_ticks: Optional[list[float]] = None,
+        minor_x_tick_spacing: Optional[float] = None,
+        minor_y_ticks: Optional[list[float]] = None,
+        minor_y_tick_spacing: Optional[float] = None,
     ) -> None:
         """
         Sets custom ticks and ticks labels.
 
         Parameters
         ----------
-        xticks : list[float], optional
-            Tick positions for the x axis. If a value is specified, the xtick_spacing parameter cannot be specified.
-        xticklabels : list[str], optional
-            Tick labels for the x axis. If a value is specified, the xticks parameter must also be specified.
-        xticklabels_rotation : float, optional
-            Rotation value for xtick labels.
-        xtick_spacing : float, optional
-            Spacing between ticks on the x axis. If a value is specified, the xticks parameter cannot be specified.
-        yticks : list[float], optional
-            Tick positions for the y axis. If a value is specified, the ytick_spacing parameter cannot be specified.
-        yticklabels : list[str], optional
-            Tick labels for the y axis. If a value is specified, the yticks parameter must also be specified.
-        yticklabels_rotation : float, optional
-            Rotation value for ytick labels.
-        ytick_spacing : float, optional
-            Spacing between ticks on the y axis. If a value is specified, the yticks parameter cannot be specified.
-        minor_xticks : list[float], optional
-            Minor tick positions for the x axis. If a value is specified, minor_the xtick_spacing parameter cannot be 
-            specified.
-        minor_xtick_spacing : float, optional
-            Spacing between minor ticks on the x axis. If a value is specified, the minor_xticks parameter cannot be
-            specified.
-        minor_yticks : list[float], optional
-            Minor tick positions for the y axis. If a value is specified, the minor_ytick_spacing parameter cannot be 
-            specified.
-        minor_ytick_spacing : float, optional
-            Spacing between minor ticks on the y axis. If a value is specified, the minor_yticks parameter cannot be
-            specified.
+        x_ticks : list[float], optional
+            Tick positions for the x axis. If a value is specified, the x_tick_spacing parameter must be None.
+        x_tick_labels : list[str], optional
+            Tick labels for the x axis. If a value is specified, the x_ticks parameter must also be given.
+        x_tick_spacing : float, optional
+            Spacing between ticks on the x axis. If a value is specified, the x_ticks parameter must be None.
+        y_ticks : list[float], optional
+            Tick positions for the y axis. If a value is specified, the y_tick_spacing parameter must be None.
+        y_tick_labels : list[str], optional
+            Tick labels for the y axis. If a value is specified, the y_ticks parameter must also be given.
+        y_tick_spacing : float, optional
+            Spacing between ticks on the y axis. If a value is specified, the y_ticks parameter must be None.
+        minor_x_ticks : list[float], optional
+            Minor tick positions for the x axis. If a value is specified, minor_the x_tick_spacing parameter must be 
+            None.
+        minor_x_tick_spacing : float, optional
+            Spacing between minor ticks on the x axis. If a value is specified, the minor_x_ticks parameter must be
+            None.
+        minor_y_ticks : list[float], optional
+            Minor tick positions for the y axis. If a value is specified, the minor_y_tick_spacing parameter must be 
+            None.
+        minor_y_tick_spacing : float, optional
+            Spacing between minor ticks on the y axis. If a value is specified, the minor_y_ticks parameter must be
+            None.
         """
         if any([
-            self._xticklabels and not self._xticks,
-            self._yticklabels and not self._yticks,
+            x_tick_labels and not x_ticks,
+            y_tick_labels and not y_ticks,
         ]):
             raise GraphingException("Ticks position must be specified when ticks labels are specified")
         
         if any([
-            self._xticks and self._xtick_spacing, 
-            self._yticks and self._ytick_spacing,
-            self._minor_xticks and self._minor_xtick_spacing, 
-            self._minor_yticks and self._minor_ytick_spacing,
+            x_ticks and x_tick_spacing, 
+            y_ticks and y_tick_spacing,
+            minor_x_ticks and minor_x_tick_spacing, 
+            minor_y_ticks and minor_y_tick_spacing,
         ]):
             raise GraphingException("Tick spacing and tick positions cannot be set simultaneously")
 
-        self._custom_ticks = True
-        self._xticks = xticks
-        self._xticklabels = xticklabels
-        self._xticklabels_rotation = xticklabels_rotation
-        self._xtick_spacing = xtick_spacing
-        self._yticks = yticks
-        self._yticklabels = yticklabels
-        self._yticklabels_rotation = yticklabels_rotation
-        self._ytick_spacing = ytick_spacing
-        self._minor_xticks = minor_xticks
-        self._minor_xtick_spacing = minor_xtick_spacing
-        self._minor_yticks = minor_yticks
-        self._minor_ytick_spacing = minor_ytick_spacing
+        self._x_ticks = x_ticks
+        self._x_tick_labels = x_tick_labels
+        self._x_tick_spacing = x_tick_spacing
+        self._y_ticks = y_ticks
+        self._y_tick_labels = y_tick_labels
+        self._y_tick_spacing = y_tick_spacing
+        self._minor_x_ticks = minor_x_ticks
+        self._minor_x_tick_spacing = minor_x_tick_spacing
+        self._minor_y_ticks = minor_y_ticks
+        self._minor_y_tick_spacing = minor_y_tick_spacing
+    
+    def set_tick_params(
+        self,
+        axis: Optional[Literal["x", "y", "both"]] = "both",
+        which: Optional[Literal["major", "minor", "both"]] = "major",
+        reset: Optional[bool] = False,
+        direction: Optional[Literal["in", "out", "inout"]] = None,
+        length: Optional[float] = None,
+        width: Optional[float] = None,
+        color: Optional[str] = None,
+        pad: Optional[float] = None,
+        label_size: Optional[float | str] = None,
+        label_color: Optional[str] = None,
+        label_rotation: Optional[float] = None,
+        draw_bottom_tick: Optional[bool] = None,
+        draw_top_tick: Optional[bool] = None,
+        draw_left_tick: Optional[bool] = None,
+        draw_right_tick: Optional[bool] = None,
+        draw_bottom_label: Optional[bool] = None,
+        draw_top_label: Optional[bool] = None,
+        draw_left_label: Optional[bool] = None,
+        draw_right_label: Optional[bool] = None,
+    ) -> None:
+        new_tick_params = {
+            "direction": direction,
+            "length": length,
+            "width": width,
+            "color": color,
+            "pad": pad,
+            "labelsize": label_size,
+            "labelcolor": label_color,
+            "labelrotation": label_rotation,
+            "bottom": draw_bottom_tick,
+            "top": draw_top_tick,
+            "left": draw_left_tick,
+            "right": draw_right_tick,
+            "labelbottom": draw_bottom_label,
+            "labeltop": draw_top_label,
+            "labelleft": draw_left_label,
+            "labelright": draw_right_label
+        }
+        for axis_i in [axis] if axis != "both" else ["x", "y"]:
+            for which_i in [which] if which != "both" else ["major", "minor"]:
+                if reset:
+                    self._tick_params[f"{axis_i} {which_i}"] = {}
+                for param, value in new_tick_params.items():
+                    if value is not None:
+                        self._tick_params[f"{axis_i} {which_i}"][param] = value
 
     def set_grid(
         self,
