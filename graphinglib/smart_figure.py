@@ -98,15 +98,16 @@ class SmartFigure:
         self._figure_style = figure_style
 
         self._elements = {}
-        if num_rows == 1 and num_cols == 1 and not isinstance(elements[0], list):
-            elements = [elements]
-        for i, element in enumerate(elements):
-            if isinstance(element, (Plottable, list, SmartFigure)):
-                if isinstance(element, Plottable):
-                    element = [element]
-                self._elements[self._keys_to_slices(divmod(i, self._num_cols))] = element
-            elif element is not None:
-                raise GraphingException(f"Invalid element type: {type(element).__name__}")
+        if elements:
+            if num_rows == 1 and num_cols == 1 and not isinstance(elements[0], list):
+                elements = [elements]
+            for i, element in enumerate(elements):
+                if isinstance(element, (Plottable, list, SmartFigure)):
+                    if isinstance(element, Plottable):
+                        element = [element]
+                    self._elements[self._keys_to_slices(divmod(i, self._num_cols))] = element
+                elif element is not None:
+                    raise GraphingException(f"Invalid element type: {type(element).__name__}")
 
         self._figure = None
         self._gridspec = None
@@ -150,7 +151,7 @@ class SmartFigure:
 
     def __getitem__(self, key: tuple[slice | int]) -> Plottable | list[Plottable] | SmartFigure:
         key_ = self._keys_to_slices(key)
-        return self._elements.get(key_, None)
+        return self._elements.get(key_, [])
 
     def copy(self) -> Self:
         return deepcopy(self)
@@ -181,6 +182,21 @@ class SmartFigure:
             return ScaledTranslation(7 / 72, -10 / 72, self._figure.dpi_scale_trans)
         else:
             raise ValueError("Target must be either an Axes or SubFigure instance.")
+    
+    def add_elements(self, *elements: Plottable) -> None:
+        """
+        Adds one or more :class:`~graphinglib.graph_elements.Plottable` elements to the 
+        :class:`~graphinglib.smart_figure.SmartFigure`. This convenience method is equivalent to using __setitem__, but
+        only works if the SmartFigure contains a single plot (1x1).
+
+        Parameters
+        ----------
+        elements : :class:`~graphinglib.graph_elements.Plottable`
+            Elements to plot in the :class:`~graphinglib.smart_figure.SmartFigure`.
+        """
+        if self._num_rows != 1 or self._num_cols != 1:
+            raise GraphingException("The add_elements() method only works for 1x1 SmartFigures.")
+        self[0,0] += elements
 
     def show(
         self,
