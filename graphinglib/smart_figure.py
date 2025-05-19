@@ -6,6 +6,7 @@ from string import ascii_lowercase
 from collections import OrderedDict
 from typing import Self
 from copy import deepcopy
+from dataclasses import dataclass
 from difflib import get_close_matches
 
 import matplotlib.pyplot as plt
@@ -13,15 +14,16 @@ import matplotlib.ticker as ticker
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
-from matplotlib.gridspec import GridSpec
 from matplotlib.transforms import ScaledTranslation
 from matplotlib.figure import SubFigure
 from matplotlib.axes import Axes
+from matplotlib.projections import get_projection_names
 
 from graphinglib.file_manager import (
     FileLoader,
     FileUpdater,
     get_default_style,
+    get_styles,
 )
 from graphinglib.graph_elements import GraphingException, Plottable
 from graphinglib.legend_artists import (
@@ -31,10 +33,41 @@ from graphinglib.legend_artists import (
     histogram_legend_artist,
 )
 
-import numpy as np
 from numpy.typing import ArrayLike
 
+
+@dataclass
 class SmartFigure:
+    _num_rows: int
+    _num_cols: int
+    _x_label: Optional[str]
+    _y_label: Optional[str]
+    _size: tuple[float, float] | Literal["default"]
+    _title: Optional[str]
+    _x_lim: Optional[tuple[float, float]]
+    _y_lim: Optional[tuple[float, float]]
+    _log_scale_x: bool
+    _log_scale_y: bool
+    _remove_axes: bool
+    _aspect_ratio: float | Literal["auto", "equal"]
+    _remove_x_ticks: bool
+    _remove_y_ticks: bool
+    _reference_labels: bool
+    _global_reference_label: bool
+    _reflabel_loc: Literal["inside", "outside"]
+    _width_padding: float
+    _height_padding: float
+    _width_ratios: ArrayLike
+    _height_ratios: ArrayLike
+    _share_x: bool
+    _share_y: bool
+    _projection: Any
+    _general_legend: bool
+    _legend_loc: str | tuple
+    _legend_cols: int
+    _show_legend: bool
+    _figure_style: str
+
     def __init__(
         self,
         num_rows: int = 1,
@@ -48,12 +81,12 @@ class SmartFigure:
         log_scale_x: bool = False,
         log_scale_y: bool = False,
         remove_axes: bool = False,
-        aspect_ratio: float | str = "auto",
+        aspect_ratio: float | Literal["auto", "equal"] = "auto",
         remove_x_ticks: bool = False,
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
         global_reference_label: bool = False,
-        reflabel_loc: str = "outside",
+        reflabel_loc: Literal["inside", "outside"] = "outside",
         width_padding: float = None,
         height_padding: float = None,
         width_ratios: ArrayLike = None,
@@ -68,35 +101,35 @@ class SmartFigure:
         figure_style: str = "default",
         elements: Optional[list[list[Plottable]]] = [],
     ) -> None:
-        self._num_rows = num_rows
-        self._num_cols = num_cols
-        self._x_label = x_label
-        self._y_label = y_label
-        self._size = size
-        self._title = title
-        self._x_lim = x_lim
-        self._y_lim = y_lim
-        self._log_scale_x = log_scale_x
-        self._log_scale_y = log_scale_y
-        self._remove_axes = remove_axes
-        self._aspect_ratio = aspect_ratio
-        self._remove_x_ticks = remove_x_ticks
-        self._remove_y_ticks = remove_y_ticks
-        self._reference_labels = reference_labels
-        self._global_reference_label = global_reference_label
-        self._reflabel_loc = reflabel_loc
-        self._width_padding = width_padding
-        self._height_padding = height_padding
-        self._width_ratios = width_ratios
-        self._height_ratios = height_ratios
-        self._share_x = share_x
-        self._share_y = share_y
-        self._projection = projection
-        self._general_legend = general_legend
-        self._legend_loc = legend_loc
-        self._legend_cols = legend_cols
-        self._show_legend = show_legend
-        self._figure_style = figure_style
+        self.num_rows = num_rows
+        self.num_cols = num_cols
+        self.x_label = x_label
+        self.y_label = y_label
+        self.size = size
+        self.title = title
+        self.x_lim = x_lim
+        self.y_lim = y_lim
+        self.log_scale_x = log_scale_x
+        self.log_scale_y = log_scale_y
+        self.remove_axes = remove_axes
+        self.aspect_ratio = aspect_ratio
+        self.remove_x_ticks = remove_x_ticks
+        self.remove_y_ticks = remove_y_ticks
+        self.reference_labels = reference_labels
+        self.global_reference_label = global_reference_label
+        self.reflabel_loc = reflabel_loc
+        self.width_padding = width_padding
+        self.height_padding = height_padding
+        self.width_ratios = width_ratios
+        self.height_ratios = height_ratios
+        self.share_x = share_x
+        self.share_y = share_y
+        self.projection = projection
+        self.general_legend = general_legend
+        self.legend_loc = legend_loc
+        self.legend_cols = legend_cols
+        self.show_legend = show_legend
+        self.figure_style = figure_style
 
         self._elements = {}
         if elements:
@@ -145,6 +178,10 @@ class SmartFigure:
 
     @num_rows.setter
     def num_rows(self, value: int) -> None:
+        if not isinstance(value, int):
+            raise TypeError("num_rows must be an integer.")
+        if value < 1:
+            raise ValueError("num_rows must be greater than 0.")
         self._num_rows = value
 
     @property
@@ -153,6 +190,10 @@ class SmartFigure:
     
     @num_cols.setter
     def num_cols(self, value: int) -> None:
+        if not isinstance(value, int):
+            raise TypeError("num_cols must be an integer.")
+        if value < 1:
+            raise ValueError("num_cols must be greater than 0.")
         self._num_cols = value
 
     @property
@@ -177,6 +218,12 @@ class SmartFigure:
     
     @size.setter
     def size(self, value: tuple[float, float] | Literal["default"]):
+        if not isinstance(value, tuple) and value != "default":
+            raise TypeError("size must be a tuple or 'default'.")
+        if isinstance(value, tuple) and len(value) != 2:
+            raise ValueError("size must be a tuple of length 2.")
+        if isinstance(value, tuple) and (value[0] <= 0 or value[1] <= 0):
+            raise ValueError("size values must be greater than 0.")
         self._size = value
 
     @property
@@ -193,6 +240,11 @@ class SmartFigure:
     
     @x_lim.setter
     def x_lim(self, value: tuple[float, float]) -> None:
+        if value is not None:
+            if not isinstance(value, tuple):
+                raise TypeError("x_lim must be a tuple.")
+            if len(value) != 2:
+                raise ValueError("x_lim must be a tuple of length 2.")
         self._x_lim = value
 
     @property
@@ -201,6 +253,11 @@ class SmartFigure:
     
     @y_lim.setter
     def y_lim(self, value: tuple[float, float]) -> None:
+        if value is not None:
+            if not isinstance(value, tuple):
+                raise TypeError("y_lim must be a tuple.")
+            if len(value) != 2:
+                raise ValueError("y_lim must be a tuple of length 2.")
         self._y_lim = value
 
     @property
@@ -209,6 +266,8 @@ class SmartFigure:
     
     @log_scale_x.setter
     def log_scale_x(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("log_scale_x must be a bool.")
         self._log_scale_x = value
 
     @property
@@ -217,6 +276,8 @@ class SmartFigure:
     
     @log_scale_y.setter
     def log_scale_y(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("log_scale_y must be a bool.")
         self._log_scale_y = value
 
     @property
@@ -225,14 +286,20 @@ class SmartFigure:
     
     @remove_axes.setter
     def remove_axes(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("remove_axes must be a bool.")
         self._remove_axes = value
 
     @property
-    def aspect_ratio(self) -> float | str:
+    def aspect_ratio(self) -> float | Literal["auto", "equal"]:
         return self._aspect_ratio
     
     @aspect_ratio.setter
-    def aspect_ratio(self, value: float | str) -> None:
+    def aspect_ratio(self, value: float | Literal["auto", "equal"]) -> None:
+        if not isinstance(value, (float, int)) and value != "auto" and value != "equal":
+            raise TypeError("aspect_ratio must be a float or 'auto'.")
+        if isinstance(value, (float, int)) and value <= 0:
+            raise ValueError("aspect_ratio must be greater than 0.")
         self._aspect_ratio = value
 
     @property
@@ -241,6 +308,8 @@ class SmartFigure:
     
     @remove_x_ticks.setter
     def remove_x_ticks(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("remove_x_ticks must be a bool.")
         self._remove_x_ticks = value
 
     @property
@@ -249,6 +318,8 @@ class SmartFigure:
     
     @remove_y_ticks.setter
     def remove_y_ticks(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("remove_y_ticks must be a bool.")
         self._remove_y_ticks = value
 
     @property
@@ -257,6 +328,8 @@ class SmartFigure:
     
     @reference_labels.setter
     def reference_labels(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("reference_labels must be a bool.")
         self._reference_labels = value
 
     @property
@@ -265,14 +338,18 @@ class SmartFigure:
     
     @global_reference_label.setter
     def global_reference_label(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("global_reference_label must be a bool.")
         self._global_reference_label = value
 
     @property
-    def reflabel_loc(self) -> str:
+    def reflabel_loc(self) -> Literal["inside", "outside"]:
         return self._reflabel_loc
     
     @reflabel_loc.setter
-    def reflabel_loc(self, value: str) -> None:
+    def reflabel_loc(self, value: Literal["inside", "outside"]) -> None:
+        if value not in ["inside", "outside"]:
+            raise ValueError("reflabel_loc must be either 'inside' or 'outside'.")
         self._reflabel_loc = value
 
     @property
@@ -281,6 +358,11 @@ class SmartFigure:
     
     @width_padding.setter
     def width_padding(self, value: float) -> None:
+        if value is not None:
+            if not isinstance(value, (float, int)):
+                raise TypeError("width_padding must be a number.")
+            if value < 0:
+                raise ValueError("width_padding must be greater than or equal to 0.")
         self._width_padding = value
 
     @property
@@ -289,6 +371,11 @@ class SmartFigure:
     
     @height_padding.setter
     def height_padding(self, value: float) -> None:
+        if value is not None:
+            if not isinstance(value, (float, int)):
+                raise TypeError("height_padding must be a number.")
+            if value < 0:
+                raise ValueError("height_padding must be greater than or equal to 0.")
         self._height_padding = value
 
     @property
@@ -297,6 +384,11 @@ class SmartFigure:
     
     @width_ratios.setter
     def width_ratios(self, value: ArrayLike) -> None:
+        if value is not None:
+            if not hasattr(value, "__len__"):
+                raise TypeError("width_ratios must be a sequence.")
+            if len(value) != self._num_cols:
+                raise ValueError("width_ratios must have the same length as num_cols.")
         self._width_ratios = value
 
     @property
@@ -305,6 +397,11 @@ class SmartFigure:
     
     @height_ratios.setter
     def height_ratios(self, value: ArrayLike) -> None:
+        if value is not None:
+            if not hasattr(value, "__len__"):
+                raise TypeError("height_ratios must be a sequence.")
+            if len(value) != self._num_rows:
+                raise ValueError("height_ratios must have the same length as num_rows.")
         self._height_ratios = value
 
     @property
@@ -313,6 +410,8 @@ class SmartFigure:
     
     @share_x.setter
     def share_x(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("share_x must be a bool.")
         self._share_x = value
 
     @property
@@ -321,6 +420,8 @@ class SmartFigure:
     
     @share_y.setter
     def share_y(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("share_y must be a bool.")
         self._share_y = value
 
     @property
@@ -329,6 +430,15 @@ class SmartFigure:
     
     @projection.setter
     def projection(self, value: Any) -> None:
+        if value is not None:
+            valid_projections = get_projection_names()
+            if "3d" in valid_projections:
+                valid_projections.remove("3d")
+            if isinstance(value, str):
+                if value == "3d":
+                    raise ValueError("3D projection is not supported.")
+                if value not in valid_projections:
+                    raise ValueError(f"projection must be one of {valid_projections} or a valid object.")
         self._projection = value
 
     @property
@@ -337,6 +447,8 @@ class SmartFigure:
     
     @general_legend.setter
     def general_legend(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("general_legend must be a bool.")
         self._general_legend = value
 
     @property
@@ -345,6 +457,19 @@ class SmartFigure:
     
     @legend_loc.setter
     def legend_loc(self, value: str | tuple) -> None:
+        if isinstance(value, str):
+            choices = ["best", "upper right", "upper left", "lower left", "lower right", "right", 
+                        "center left", "center right", "lower center", "upper center", "center",
+                        "outside upper center", "outside center right", "outside lower center", "outside center left"]
+            if value not in choices:
+                raise ValueError(f"legend_loc must be one of {choices}.")
+            if self._general_legend and value == "best":
+                raise ValueError("legend_loc cannot be 'best' when general_legend is True.")
+        elif isinstance(value, tuple):
+            if len(value) != 2:
+                raise ValueError("legend_loc must be a string or a tuple of length 2.")
+        else:
+            raise TypeError("legend_loc must be a string or tuple.")
         self._legend_loc = value
 
     @property
@@ -353,6 +478,10 @@ class SmartFigure:
     
     @legend_cols.setter
     def legend_cols(self, value: int) -> None:
+        if not isinstance(value, int):
+            raise TypeError("legend_cols must be an integer.")
+        if value < 1:
+            raise ValueError("legend_cols must be greater than 0.")
         self._legend_cols = value
 
     @property
@@ -361,6 +490,8 @@ class SmartFigure:
     
     @show_legend.setter
     def show_legend(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("show_legend must be a bool.")
         self._show_legend = value
 
     @property
@@ -369,15 +500,12 @@ class SmartFigure:
     
     @figure_style.setter
     def figure_style(self, value: str) -> None:
+        if not isinstance(value, str):
+            raise TypeError("figure_style must be a string.")
+        available_styles = ["default"] + get_styles(matplotlib=True)
+        if value not in available_styles:
+            raise ValueError(f"figure_style must be one of {available_styles}.")
         self._figure_style = value
-
-    @property
-    def show_grid(self) -> bool:
-        return self._show_grid
-    
-    @show_grid.setter
-    def show_grid(self, value: bool) -> None:
-        self._show_grid = value
 
     def __len__(self) -> int:
         return len(self._elements)
