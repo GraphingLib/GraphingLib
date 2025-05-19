@@ -6,6 +6,7 @@ from string import ascii_lowercase
 from collections import OrderedDict
 from typing import Self
 from copy import deepcopy
+from difflib import get_close_matches
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -59,7 +60,7 @@ class SmartFigure:
         height_ratios: ArrayLike = None,
         share_x: bool = False,
         share_y: bool = False,
-        projection: str | Any = None,
+        projection: Any = None,
         general_legend: bool = False,
         legend_loc: str | tuple = "best",
         legend_cols: int = 1,
@@ -138,6 +139,246 @@ class SmartFigure:
         self._user_rc_dict = {}
         self._default_params = {}
 
+    @property
+    def num_rows(self) -> int:
+        return self._num_rows
+
+    @num_rows.setter
+    def num_rows(self, value: int) -> None:
+        self._num_rows = value
+
+    @property
+    def num_cols(self) -> int:
+        return self._num_cols
+    
+    @num_cols.setter
+    def num_cols(self, value: int) -> None:
+        self._num_cols = value
+
+    @property
+    def x_label(self) -> str:
+        return self._x_label
+    
+    @x_label.setter
+    def x_label(self, value: str) -> None:
+        self._x_label = value
+
+    @property
+    def y_label(self) -> str:
+        return self._y_label
+    
+    @y_label.setter
+    def y_label(self, value: str) -> None:
+        self._y_label = value
+
+    @property
+    def size(self) -> tuple[float, float] | Literal["default"]:
+        return self._size
+    
+    @size.setter
+    def size(self, value: tuple[float, float] | Literal["default"]):
+        self._size = value
+
+    @property
+    def title(self) -> str:
+        return self._title
+    
+    @title.setter
+    def title(self, value: str) -> None:
+        self._title = value
+
+    @property
+    def x_lim(self) -> tuple[float, float]:
+        return self._x_lim
+    
+    @x_lim.setter
+    def x_lim(self, value: tuple[float, float]) -> None:
+        self._x_lim = value
+
+    @property
+    def y_lim(self) -> tuple[float, float]:
+        return self._y_lim
+    
+    @y_lim.setter
+    def y_lim(self, value: tuple[float, float]) -> None:
+        self._y_lim = value
+
+    @property
+    def log_scale_x(self) -> bool:
+        return self._log_scale_x
+    
+    @log_scale_x.setter
+    def log_scale_x(self, value: bool) -> None:
+        self._log_scale_x = value
+
+    @property
+    def log_scale_y(self) -> bool:
+        return self._log_scale_y
+    
+    @log_scale_y.setter
+    def log_scale_y(self, value: bool) -> None:
+        self._log_scale_y = value
+
+    @property
+    def remove_axes(self) -> bool:
+        return self._remove_axes
+    
+    @remove_axes.setter
+    def remove_axes(self, value: bool) -> None:
+        self._remove_axes = value
+
+    @property
+    def aspect_ratio(self) -> float | str:
+        return self._aspect_ratio
+    
+    @aspect_ratio.setter
+    def aspect_ratio(self, value: float | str) -> None:
+        self._aspect_ratio = value
+
+    @property
+    def remove_x_ticks(self) -> bool:
+        return self._remove_x_ticks
+    
+    @remove_x_ticks.setter
+    def remove_x_ticks(self, value: bool) -> None:
+        self._remove_x_ticks = value
+
+    @property
+    def remove_y_ticks(self) -> bool:
+        return self._remove_y_ticks
+    
+    @remove_y_ticks.setter
+    def remove_y_ticks(self, value: bool) -> None:
+        self._remove_y_ticks = value
+
+    @property
+    def reference_labels(self) -> bool:
+        return self._reference_labels
+    
+    @reference_labels.setter
+    def reference_labels(self, value: bool) -> None:
+        self._reference_labels = value
+
+    @property
+    def global_reference_label(self) -> bool:
+        return self._global_reference_label
+    
+    @global_reference_label.setter
+    def global_reference_label(self, value: bool) -> None:
+        self._global_reference_label = value
+
+    @property
+    def reflabel_loc(self) -> str:
+        return self._reflabel_loc
+    
+    @reflabel_loc.setter
+    def reflabel_loc(self, value: str) -> None:
+        self._reflabel_loc = value
+
+    @property
+    def width_padding(self) -> float:
+        return self._width_padding
+    
+    @width_padding.setter
+    def width_padding(self, value: float) -> None:
+        self._width_padding = value
+
+    @property
+    def height_padding(self) -> float:
+        return self._height_padding
+    
+    @height_padding.setter
+    def height_padding(self, value: float) -> None:
+        self._height_padding = value
+
+    @property
+    def width_ratios(self) -> ArrayLike:
+        return self._width_ratios
+    
+    @width_ratios.setter
+    def width_ratios(self, value: ArrayLike) -> None:
+        self._width_ratios = value
+
+    @property
+    def height_ratios(self) -> ArrayLike:
+        return self._height_ratios
+    
+    @height_ratios.setter
+    def height_ratios(self, value: ArrayLike) -> None:
+        self._height_ratios = value
+
+    @property
+    def share_x(self) -> bool:
+        return self._share_x
+    
+    @share_x.setter
+    def share_x(self, value: bool) -> None:
+        self._share_x = value
+
+    @property
+    def share_y(self) -> bool:
+        return self._share_y
+    
+    @share_y.setter
+    def share_y(self, value: bool) -> None:
+        self._share_y = value
+
+    @property
+    def projection(self) -> Any:
+        return self._projection
+    
+    @projection.setter
+    def projection(self, value: Any) -> None:
+        self._projection = value
+
+    @property
+    def general_legend(self) -> bool:
+        return self._general_legend
+    
+    @general_legend.setter
+    def general_legend(self, value: bool) -> None:
+        self._general_legend = value
+
+    @property
+    def legend_loc(self) -> str | tuple:
+        return self._legend_loc
+    
+    @legend_loc.setter
+    def legend_loc(self, value: str | tuple) -> None:
+        self._legend_loc = value
+
+    @property
+    def legend_cols(self) -> int:
+        return self._legend_cols
+    
+    @legend_cols.setter
+    def legend_cols(self, value: int) -> None:
+        self._legend_cols = value
+
+    @property
+    def show_legend(self) -> bool:
+        return self._show_legend
+    
+    @show_legend.setter
+    def show_legend(self, value: bool) -> None:
+        self._show_legend = value
+
+    @property
+    def figure_style(self) -> str:
+        return self._figure_style
+    
+    @figure_style.setter
+    def figure_style(self, value: str) -> None:
+        self._figure_style = value
+
+    @property
+    def show_grid(self) -> bool:
+        return self._show_grid
+    
+    @show_grid.setter
+    def show_grid(self, value: bool) -> None:
+        self._show_grid = value
+
     def __len__(self) -> int:
         return len(self._elements)
     
@@ -155,6 +396,33 @@ class SmartFigure:
 
     def copy(self) -> Self:
         return deepcopy(self)
+
+    def copy_with(self, **kwargs) -> Self:
+        """
+        Returns a deep copy of the SmartFigure with specified attributes overridden.
+
+        Parameters
+        ----------
+        kwargs
+            Attributes to override in the copied SmartFigure. The keys should be attribute names to modify and the
+            values are the new values for those attributes.
+
+        Example usage:
+            fig2 = fig1.copy_with(x_label=None, y_label=None)
+        """
+        properties = [attr for attr in dir(self.__class__) if isinstance(getattr(self.__class__, attr, None), property)]
+        properties = list(filter(lambda x: x[0] != "_", properties))      # filter out hidden properties
+        new_copy = self.copy()
+        for key, value in kwargs.items():
+            if hasattr(new_copy, key):
+                setattr(new_copy, key, value)
+            else:
+                close_match = get_close_matches(key, properties, n=1, cutoff=0.6)
+                if close_match:
+                    raise AttributeError(f"SmartFigure has no attribute '{key}'. Did you mean '{close_match[0]}'?")
+                else:
+                    raise AttributeError(f"SmartFigure has no attribute '{key}'.")
+        return new_copy
 
     @property
     def _ordered_elements(self) -> OrderedDict:
