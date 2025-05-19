@@ -6,7 +6,6 @@ from string import ascii_lowercase
 from collections import OrderedDict
 from typing import Self
 from copy import deepcopy
-from dataclasses import dataclass
 from difflib import get_close_matches
 
 import matplotlib.pyplot as plt
@@ -36,38 +35,7 @@ from graphinglib.legend_artists import (
 from numpy.typing import ArrayLike
 
 
-@dataclass
 class SmartFigure:
-    _num_rows: int
-    _num_cols: int
-    _x_label: Optional[str]
-    _y_label: Optional[str]
-    _size: tuple[float, float] | Literal["default"]
-    _title: Optional[str]
-    _x_lim: Optional[tuple[float, float]]
-    _y_lim: Optional[tuple[float, float]]
-    _log_scale_x: bool
-    _log_scale_y: bool
-    _remove_axes: bool
-    _aspect_ratio: float | Literal["auto", "equal"]
-    _remove_x_ticks: bool
-    _remove_y_ticks: bool
-    _reference_labels: bool
-    _global_reference_label: bool
-    _reflabel_loc: Literal["inside", "outside"]
-    _width_padding: float
-    _height_padding: float
-    _width_ratios: ArrayLike
-    _height_ratios: ArrayLike
-    _share_x: bool
-    _share_y: bool
-    _projection: Any
-    _general_legend: bool
-    _legend_loc: str | tuple
-    _legend_cols: int
-    _show_legend: bool
-    _figure_style: str
-
     def __init__(
         self,
         num_rows: int = 1,
