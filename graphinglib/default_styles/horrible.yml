@@ -213,8 +213,12 @@ rc_params:
   axes.edgecolor: "black"
   axes.labelcolor: "black"
   axes.linewidth: 1
+  axes.titlesize: 30
+  axes.titleweight: "bold"
   axes.prop_cycle: cycler('color', ['#a1d0ff', '#730127', '#789146', '#8800ff', '#00b3a7', '#dbc00f', '#8a8a8a', '#28301c'])
   axes.grid: True
+  figure.titlesize: 30
+  figure.titleweight: "bold"
   xtick.color: "black"
   ytick.color: "black"
   xtick.direction: "in"

@@ -213,7 +213,11 @@ rc_params:
   axes.edgecolor: "black"
   axes.labelcolor: "black"
   axes.linewidth: 1
+  axes.titlesize: 12
+  axes.titleweight: "normal"
   axes.prop_cycle: cycler('color', ['#3e82a0', '#edb73b', '#b9503b', '#8aba4e', '#695178', '#ed893b', '#34a893', '#616161'])
+  figure.titlesize: 12
+  figure.titleweight: "normal"
   xtick.color: "black"
   ytick.color: "black"
   xtick.direction: "in"
@@ -232,4 +236,5 @@ rc_params:
   grid.linewidth: 0.5
   grid.color: "grey"
   grid.alpha: 0.5
-  
+
+

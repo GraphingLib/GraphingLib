@@ -434,8 +434,6 @@ class SmartFigure:
                     if self._grid_show_on_top:
                         ax.set_axisbelow(False)
 
-                self._reset_params_to_default(self, figure_params_to_reset)
-
                 # Axes legend
                 if not self._general_legend and make_legend and labels:
                     if self._show_legend:
@@ -451,6 +449,12 @@ class SmartFigure:
                             )
                         _legend.set_zorder(10000)
                     labels, handles = [], []
+
+                # Axes title (if the geometry is 1x1)
+                if self._title and (self._num_cols == 1 and self._num_rows == 1):
+                    ax.set_title(self._title)
+
+                self._reset_params_to_default(self, figure_params_to_reset)
 
             elif element is not None:
                 raise GraphingException(f"Unsupported element type in list: {type(element).__name__}")
@@ -471,9 +475,9 @@ class SmartFigure:
             self._figure.supxlabel(self._x_label, **suplabel_params)
             self._figure.supylabel(self._y_label, **suplabel_params)
 
-        # Title
-        if self._title:
-            self._figure.suptitle(self._title, fontweight=plt.rcParams["font.weight"])
+        # Title (if the geometry is not 1x1)
+        if self._title and not (self._num_cols == 1 and self._num_rows == 1):
+            self._figure.suptitle(self._title)
 
         # General legend
         if self._general_legend and labels:     # making a general legend is priorized over make_legend=False
@@ -671,6 +675,8 @@ class SmartFigure:
         font_family: str | None = None,
         font_size: float | None = None,
         font_weight: str | None = None,
+        title_font_size: float | None = None,
+        title_font_weight: str | None = None,
         text_color: str | None = None,
         use_latex: bool | None = None,
     ) -> None:
@@ -723,6 +729,12 @@ class SmartFigure:
         font_weight : str
             The font weight to use.
             Defaults to ``None``.
+        title_font_size : float
+            The font size of the title.
+            Defaults to ``None``.
+        title_font_weight : str
+            The font weight of the title.
+            Defaults to ``None``.
         text_color : str
             The color of the text.
             Defaults to ``None``.
@@ -747,6 +759,10 @@ class SmartFigure:
             "font.family": font_family,
             "font.size": font_size,
             "font.weight": font_weight,
+            "axes.titlesize": title_font_size,
+            "figure.titlesize": title_font_size,
+            "axes.titleweight": title_font_weight,
+            "figure.titleweight": title_font_weight,
             "text.color": text_color,
             "text.usetex": use_latex,
         }

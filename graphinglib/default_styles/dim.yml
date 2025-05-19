@@ -187,8 +187,11 @@ rc_params:
   axes.facecolor: dimgrey
   axes.labelcolor: white
   axes.linewidth: 1
-  axes.prop_cycle: cycler('color', ['#4796b8', '#edb73b', '#d04125', '#91bf5a', '#a766cc',
-    '#ed893b', '#26b59b', '#cccccc'])
+  axes.titlesize: 12
+  axes.titleweight: "normal"
+  axes.prop_cycle: cycler('color', ['#4796b8', '#edb73b', '#d04125', '#91bf5a', '#a766cc', '#ed893b', '#26b59b', '#cccccc'])
+  figure.titlesize: 12
+  figure.titleweight: "normal"
   figure.facecolor: dimgrey
   savefig.dpi: 200
   font.family: sans-serif
