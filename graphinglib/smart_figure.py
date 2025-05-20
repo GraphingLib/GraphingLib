@@ -479,10 +479,11 @@ class SmartFigure:
         return len(self._elements)
     
     def __setitem__(self, key: tuple[slice | int], element: Plottable | list[Plottable] | SmartFigure) -> None:
+        if not isinstance(element, (Plottable, list, SmartFigure)) and element is not None:
+            raise TypeError("element must be a Plottable, list of Plottable, or SmartFigure.")
         key_ = self._keys_to_slices(key)
         if element is None:
-            if key_ in self._elements.keys():
-                self._elements.pop(key_)
+            self._elements.pop(key_, None)
         else:
             self._elements[key_] = element
 
@@ -564,6 +565,7 @@ class SmartFigure:
 
     def show(
         self,
+        fullscreen: bool = False,
     ) -> None:
         self._initialize_parent_smart_figure()
 
@@ -593,6 +595,10 @@ class SmartFigure:
             warn("The general legend location is set to 'outside' and matplotlib windows may not be able to show it "
                  "properly. Consider using inline figures in a jupyter notebook or saving the figure to a file instead "
                  "to get the full figure.")
+
+        if fullscreen:
+            plt.get_current_fig_manager().full_screen_toggle()
+
         plt.show()
         plt.rcParams.update(plt.rcParamsDefault)
 
