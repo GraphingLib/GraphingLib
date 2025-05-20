@@ -129,7 +129,7 @@ class SmartFigure:
         self._minor_y_tick_spacing = None
         self._tick_params = {"x major": {}, "y major": {}, "x minor": {}, "y minor": {}}
 
-        self._show_grid = False
+        self.show_grid = False
         self._grid_visible_x = None
         self._grid_visible_y = None
         self._grid_show_on_top = None
@@ -461,6 +461,16 @@ class SmartFigure:
         if not isinstance(value, bool):
             raise TypeError("show_legend must be a bool.")
         self._show_legend = value
+
+    @property
+    def show_grid(self) -> bool:
+        return self._show_grid
+    
+    @show_grid.setter
+    def show_grid(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("show_grid must be a bool.")
+        self._show_grid = value
 
     @property
     def figure_style(self) -> str:
