@@ -17,6 +17,7 @@ from matplotlib.transforms import ScaledTranslation
 from matplotlib.figure import SubFigure
 from matplotlib.axes import Axes
 from matplotlib.projections import get_projection_names
+from matplotlib.artist import Artist
 
 from graphinglib.file_manager import (
     FileLoader,
@@ -63,7 +64,7 @@ class SmartFigure:
         share_y: bool = False,
         projection: Any = None,
         general_legend: bool = False,
-        legend_loc: str | tuple = "best",
+        legend_loc: Optional[str | tuple] = None,
         legend_cols: int = 1,
         show_legend: bool = True,
         figure_style: str = "default",
@@ -135,6 +136,11 @@ class SmartFigure:
         self._grid_show_on_top = None
         self._grid_which_x = None
         self._grid_which_y = None
+
+        self.hide_default_legend_elements = False
+        self.hide_custom_legend_elements = False
+        self._custom_legend_handles = []
+        self._custom_legend_labels = []
 
         self._rc_dict = {}
         self._user_rc_dict = {}
@@ -425,19 +431,20 @@ class SmartFigure:
     
     @legend_loc.setter
     def legend_loc(self, value: str | tuple) -> None:
-        if isinstance(value, str):
-            choices = ["best", "upper right", "upper left", "lower left", "lower right", "right", 
-                        "center left", "center right", "lower center", "upper center", "center",
-                        "outside upper center", "outside center right", "outside lower center", "outside center left"]
-            if value not in choices:
-                raise ValueError(f"legend_loc must be one of {choices}.")
-            if self._general_legend and value == "best":
-                raise ValueError("legend_loc cannot be 'best' when general_legend is True.")
-        elif isinstance(value, tuple):
-            if len(value) != 2:
-                raise ValueError("legend_loc must be a string or a tuple of length 2.")
-        else:
-            raise TypeError("legend_loc must be a string or tuple.")
+        if value is not None:
+            if isinstance(value, str):
+                choices = ["best", "upper right", "upper left", "lower left", "lower right", "right", "center left",
+                           "center right", "lower center", "upper center", "center", "outside upper center",
+                           "outside center right", "outside lower center", "outside center left"]
+                if value not in choices:
+                    raise ValueError(f"legend_loc must be one of {choices}.")
+                if self._general_legend and value == "best":
+                    raise ValueError("legend_loc cannot be 'best' when general_legend is True.")
+            elif isinstance(value, tuple):
+                if len(value) != 2:
+                    raise ValueError("legend_loc must be a string or a tuple of length 2.")
+            else:
+                raise TypeError("legend_loc must be a string or tuple.")
         self._legend_loc = value
 
     @property
@@ -463,16 +470,6 @@ class SmartFigure:
         self._show_legend = value
 
     @property
-    def show_grid(self) -> bool:
-        return self._show_grid
-    
-    @show_grid.setter
-    def show_grid(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise TypeError("show_grid must be a bool.")
-        self._show_grid = value
-
-    @property
     def figure_style(self) -> str:
         return self._figure_style
     
@@ -484,6 +481,36 @@ class SmartFigure:
         if value not in available_styles:
             raise ValueError(f"figure_style must be one of {available_styles}.")
         self._figure_style = value
+
+    @property
+    def show_grid(self) -> bool:
+        return self._show_grid
+    
+    @show_grid.setter
+    def show_grid(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("show_grid must be a bool.")
+        self._show_grid = value
+
+    @property
+    def hide_custom_legend_elements(self) -> bool:
+        return self._hide_custom_legend_elements
+
+    @hide_custom_legend_elements.setter
+    def hide_custom_legend_elements(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("hide_custom_legend_elements must be a bool.")
+        self._hide_custom_legend_elements = value
+
+    @property
+    def hide_default_legend_elements(self) -> bool:
+        return self._hide_default_legend_elements
+
+    @hide_default_legend_elements.setter
+    def hide_default_legend_elements(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("hide_default_legend_elements must be a bool.")
+        self._hide_default_legend_elements = value
 
     def __len__(self) -> int:
         return len(self._elements)
@@ -688,7 +715,8 @@ class SmartFigure:
 
         # Plottable and subfigure plotting
         ax = None   # keep track of the last plt.Axes object, needed for sharing axes
-        labels, handles = [], []
+        default_labels, default_handles = [], []
+        custom_labels, custom_handles = [], []
         for (rows, cols), element in self._ordered_elements.items():
             if isinstance(element, SmartFigure):
                 subfig = self._figure.add_subfigure(self._gridspec[rows, cols])
@@ -697,14 +725,16 @@ class SmartFigure:
                 default_params_copy = default_params.copy()
                 default_params_copy.update(is_a_subfigure=True)
                 default_params_copy["Figure"]["_figure_style"] = self._figure_style
-                element_labels, element_handles = element._prepare_figure(
+                legend_info = element._prepare_figure(
                     default_params=default_params_copy, 
                     is_matplotlib_style=is_matplotlib_style,
                     make_legend=(not self._general_legend),
                 )
                 self._reference_label_i = element._reference_label_i
-                labels += element_labels
-                handles += element_handles
+                default_labels += legend_info["labels"]["default"]
+                default_handles += legend_info["handles"]["default"]
+                custom_labels += legend_info["labels"]["custom"]
+                custom_handles += legend_info["handles"]["custom"]
 
                 self._fill_in_rc_params(is_matplotlib_style)
 
@@ -735,8 +765,8 @@ class SmartFigure:
                             self._reset_params_to_default(current_element, params_to_reset)
                         try:
                             if current_element.label is not None:
-                                labels.append(current_element.label)
-                                handles.append(current_element.handle)
+                                default_labels.append(current_element.label)
+                                default_handles.append(current_element.handle)
                         except AttributeError:
                             continue
                         z_order += 5
@@ -815,9 +845,9 @@ class SmartFigure:
                         ax.set_axisbelow(False)
 
                 # Axes legend
-                if not self._general_legend and make_legend and labels:
+                if not self._general_legend and make_legend and default_labels:
                     if self._show_legend:
-                        legend_params = self._get_legend_params(labels, handles, -0.1)
+                        legend_params = self._get_legend_params(default_labels, default_handles, -0.1)
                         try:
                             _legend = ax.legend(
                                 draggable=True,
@@ -828,7 +858,7 @@ class SmartFigure:
                                 **legend_params,
                             )
                         _legend.set_zorder(10000)
-                    labels, handles = [], []
+                    default_labels, default_handles = [], []
 
                 # Axes title (if the geometry is 1x1)
                 if self._title and (self._num_cols == 1 and self._num_rows == 1):
@@ -860,6 +890,16 @@ class SmartFigure:
             self._figure.suptitle(self._title)
 
         # General legend
+        custom_labels += self._custom_legend_labels
+        custom_handles += self._custom_legend_handles
+        if self._hide_default_legend_elements:
+            default_labels = []
+            default_handles = []
+        if self._hide_custom_legend_elements:
+            custom_labels = []
+            custom_handles = []
+        labels = default_labels + custom_labels
+        handles = default_handles + custom_handles
         if self._general_legend and labels:     # making a general legend is priorized over make_legend=False
             if self._show_legend:
                 legend_params = self._get_legend_params(labels, handles, 0)
@@ -873,9 +913,15 @@ class SmartFigure:
                         **legend_params,
                     )
                 _legend.set_zorder(10000)
-            return [], []
+            return {
+                "labels": {"default": [], "custom": []},
+                "handles": {"default": [], "custom": []},
+            }
         else:
-            return labels, handles
+            return {
+                "labels": {"default": default_labels, "custom": custom_labels},
+                "handles": {"default": default_handles, "custom": custom_handles},
+            }
 
     def _create_ref_label(
         self,
@@ -912,25 +958,31 @@ class SmartFigure:
             },
             "ncols" : self._legend_cols,
         }
-        if self._legend_loc is not None and "outside" in self._legend_loc:
-            outside_coords = {
-                "outside upper center": (0.5, 1),
-                "outside center right": (1, 0.5),
-                "outside lower center": (0.5, outside_lower_center_y_offset),
-                "outside center left": (0, 0.5),
-            }
-            outside_keyword = {
-                "outside upper center": "lower center",
-                "outside center right": "center left",
-                "outside lower center": "upper center",
-                "outside center left": "center right",
-            }
-            legend_params.update({
-                "loc": outside_keyword[self._legend_loc],
-                "bbox_to_anchor": outside_coords[self._legend_loc],
-            })
+        if self._legend_loc is None:
+            if self._general_legend:
+                legend_params.update({"loc": "lower center"})
+            else:
+                legend_params.update({"loc": "best"})
         else:
-            legend_params.update({"loc": self._legend_loc})
+            if "outside" in self._legend_loc:
+                outside_coords = {
+                    "outside upper center": (0.5, 1),
+                    "outside center right": (1, 0.5),
+                    "outside lower center": (0.5, outside_lower_center_y_offset),
+                    "outside center left": (0, 0.5),
+                }
+                outside_keyword = {
+                    "outside upper center": "lower center",
+                    "outside center right": "center left",
+                    "outside lower center": "upper center",
+                    "outside center left": "center right",
+                }
+                legend_params.update({
+                    "loc": outside_keyword[self._legend_loc],
+                    "bbox_to_anchor": outside_coords[self._legend_loc],
+                })
+            else:
+                legend_params.update({"loc": self._legend_loc})
         return legend_params
 
     def _fill_in_missing_params(self, element: SmartFigure) -> list[str]:
@@ -1323,3 +1375,48 @@ class SmartFigure:
         }
         rc_params_dict = {k: v for k, v in rc_params_dict.items() if v != "default"}
         self.set_rc_params(rc_params_dict)
+
+    def set_custom_legend(
+        self,
+        handles: Optional[list[Artist]] = [],
+        labels: Optional[list[str]] = [],
+        reset: bool = False,
+    ) -> None:
+        """
+        Sets a custom legend for the figure. Custom legends only work if the ``general_legend`` parameter is set to 
+        ``True``. The visibility of default or custom legend elements individually can be controlled with the
+        ``hide_default_legend_elements`` and ``hide_custom_legend_elements`` properties.
+
+        Parameters
+        ----------
+        handles : list[Artist], optional
+            Handles to add to the legend. Any object accepted by the matplotlib.pyplot.legend function can be used.
+            These can be for example :class:`~matplotlib.lines.Line2D` or :class:`~matplotlib.patches.Patch` objects.
+            See the matplotlib documentation for details:
+            https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html#matplotlib.pyplot.legend
+        labels : list[str], optional
+            List of labels for the legend. If the handles directly contain the labels, this parameter can be set to
+            None. However, if given, the length of the labels list must match the length of the handles list. 
+            
+            .. note::
+                If labels are given, the handles must also be given.
+        reset : bool, optional
+            Whether or not to reset the custom handles and labels before adding the new ones.
+            Defaults to ``False``.
+        """
+        if labels and not handles:
+            raise GraphingException("Handles must be specified if labels are given.")
+
+        if not labels:
+            new_labels = [handle.get_label() for handle in handles]
+        else:
+            new_labels = labels.copy()
+            if len(handles) != len(labels):
+                raise GraphingException("If labels are given, their number must match the number of handles.")
+        
+        if reset:
+            self._custom_legend_handles = []
+            self._custom_legend_labels = []
+        
+        self._custom_legend_handles += handles
+        self._custom_legend_labels += new_labels
