@@ -1,7 +1,7 @@
 from __future__ import annotations
 from shutil import which
 from typing import Literal, Optional, Any
-from warnings import warn
+from logging import warning
 from string import ascii_lowercase
 from collections import OrderedDict
 from typing import Self
@@ -629,9 +629,9 @@ class SmartFigure:
             self._general_legend,
             self._legend_loc is not None and "outside" in self._legend_loc
         ]):
-            warn("The general legend location is set to 'outside' and matplotlib windows may not be able to show it "
-                 "properly. Consider using inline figures in a jupyter notebook or saving the figure to a file instead "
-                 "to get the full figure.")
+            warning("The general legend location is set to 'outside' and matplotlib windows may not be able to show it "
+                    "properly. Consider using inline figures in a jupyter notebook or saving the figure to a file "
+                    "instead to get the full figure.")
 
         if fullscreen:
             plt.get_current_fig_manager().full_screen_toggle()
