@@ -638,6 +638,8 @@ class SmartFigure:
 
         plt.show()
         plt.rcParams.update(plt.rcParamsDefault)
+        self._figure = None
+        self._gridspec = None
 
     def save(
         self,
@@ -654,6 +656,8 @@ class SmartFigure:
         )
         plt.close()
         plt.rcParams.update(plt.rcParamsDefault)
+        self._figure = None
+        self._gridspec = None
 
     def _initialize_parent_smart_figure(
         self,
@@ -681,10 +685,15 @@ class SmartFigure:
         multi_figure_params_to_reset = self._fill_in_missing_params(self)
         self._fill_in_rc_params(is_matplotlib_style)
 
-        self._figure = plt.figure(constrained_layout=True, figsize=self._size)
-        self._figure.set_constrained_layout_pads(w_pad=0, h_pad=0)
-        self._reference_label_i = 0
-        self._prepare_figure(self._default_params, is_matplotlib_style)
+        # The following try/except removes lingering figures when errors occur during the plotting process
+        try:
+            self._figure = plt.figure(constrained_layout=True, figsize=self._size)
+            self._figure.set_constrained_layout_pads(w_pad=0, h_pad=0)
+            self._reference_label_i = 0
+            self._prepare_figure(self._default_params, is_matplotlib_style)
+        except Exception as e:
+            plt.close()
+            raise e
 
         self._reset_params_to_default(self, multi_figure_params_to_reset)
         self._rc_dict = {}
