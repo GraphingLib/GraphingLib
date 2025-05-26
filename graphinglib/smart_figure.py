@@ -14,7 +14,7 @@ from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.transforms import ScaledTranslation
-from matplotlib.figure import SubFigure
+from matplotlib.figure import Figure, SubFigure
 from matplotlib.axes import Axes
 from matplotlib.projections import get_projection_names
 from matplotlib.artist import Artist
@@ -421,7 +421,7 @@ class SmartFigure:
     @aspect_ratio.setter
     def aspect_ratio(self, value: float | Literal["auto", "equal"]) -> None:
         if not isinstance(value, (float, int)) and value != "auto" and value != "equal":
-            raise TypeError("aspect_ratio must be a float or 'auto'.")
+            raise TypeError("aspect_ratio must be a float, 'auto' or 'equal'.")
         if isinstance(value, (float, int)) and value <= 0:
             raise ValueError("aspect_ratio must be greater than 0.")
         self._aspect_ratio = value
@@ -560,7 +560,7 @@ class SmartFigure:
                 valid_projections.remove("3d")
             if isinstance(value, str):
                 if value == "3d":
-                    raise ValueError("3D projection is not supported.")
+                    raise GraphingException("3D projection is not supported.")
                 if value not in valid_projections:
                     raise ValueError(f"projection must be one of {valid_projections} or a valid object.")
         self._projection = value
@@ -771,6 +771,9 @@ class SmartFigure:
             | 1,0        | 1,1        |
             +------------+------------+
         """
+        if element is not None and not isinstance(element, (Plottable, list, SmartFigure)):
+            raise TypeError("Element must be a Plottable, a list of Plottables, or a SmartFigure, not "
+                           f"{type(element).__name__}.")
         key_ = self._keys_to_slices(self._validate_and_normalize_key(key))
         if element is None:
             self._elements.pop(key_, None)
@@ -779,7 +782,7 @@ class SmartFigure:
                 element = [element]
             self._elements[key_] = element
 
-    def __getitem__(self, key: tuple[int | slice]) -> list[Plottable] | SmartFigure:
+    def __getitem__(self, key: int | slice | tuple[int | slice]) -> list[Plottable] | SmartFigure:
         """
         Gives the element(s) at the specified key in the SmartFigure. This can be used to modify directly an element
         in the SmartFigure.
@@ -913,27 +916,6 @@ class SmartFigure:
 
         return key
 
-    def _get_reflabel_translation(
-        self,
-        target: Axes | SubFigure,
-    ) -> ScaledTranslation:
-        """
-        Gives the translation to apply to the reference label to position it correctly relative to an Axes or SubFigure.
-        The translation varies depending on the location of the reference label.
-        """
-        if isinstance(target, Axes):
-            if self._reflabel_loc == "outside":
-                return ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
-            elif self._reflabel_loc == "inside":
-                return ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
-            else:
-                raise ValueError("Invalid reference label location. Please specify either 'inside' or 'outside'.")
-
-        elif isinstance(target, SubFigure):
-            return ScaledTranslation(7 / 72, -10 / 72, self._figure.dpi_scale_trans)
-        else:
-            raise ValueError("Target must be either an Axes or SubFigure instance.")
-    
     def add_elements(self, *elements: Plottable) -> None:
         """
         Adds one or more :class:`~graphinglib.graph_elements.Plottable` elements to the 
@@ -978,7 +960,7 @@ class SmartFigure:
         self._initialize_parent_smart_figure()
 
         # Create an artificial axis to add padding around the figure
-        # This is needed because the figure is created with set_constrained_layout_pads creating 0 padding
+        # This is needed because the figure is created with h_pad=0 and w_pad=0 creating 0 padding
         ax_dummy = self._figure.add_subplot(self._gridspec[:, :])
         ax_dummy.xaxis.grid(False)
         ax_dummy.yaxis.grid(False)
@@ -1077,7 +1059,7 @@ class SmartFigure:
         # The following try/except removes lingering figures when errors occur during the plotting process
         try:
             self._figure = plt.figure(constrained_layout=True, figsize=self._size)
-            self._figure.set_constrained_layout_pads(w_pad=0, h_pad=0)
+            self._figure.get_layout_engine().set(w_pad=0, h_pad=0)
             self._reference_label_i = 0
             self._prepare_figure(self._default_params, is_matplotlib_style)
         except Exception as e:
@@ -1355,18 +1337,18 @@ class SmartFigure:
 
     def _create_ref_label(
         self,
-        target: Axes | SubFigure
+        target: Axes | Figure | SubFigure
     ) -> None:
         """
-        Creates a reference label for the specified target (either an Axes or SubFigure). The label is positioned
-        according to the specified location and is incremented for each reference label created.
+        Creates a reference label for the specified target (either an Axes, Figure or SubFigure). The label is
+        positioned according to the specified location and is incremented for each reference label created.
         """
         if isinstance(target, Axes):
             trans = target.transAxes
-        elif isinstance(target, SubFigure):
+        elif isinstance(target, (Figure, SubFigure)):
             trans = target.transSubfigure
         else:
-            raise ValueError("Target must be either Axes or SubFigure.")
+            raise ValueError("Target must be either Axes, Figure or SubFigure.")
         target.text(
             0,
             1,
@@ -1375,6 +1357,27 @@ class SmartFigure:
         )
         self._reference_label_i += 1
 
+    def _get_reflabel_translation(
+        self,
+        target: Axes | Figure | SubFigure,
+    ) -> ScaledTranslation:
+        """
+        Gives the translation to apply to the reference label to position it correctly relative to an Axes, Figure or
+        SubFigure. The translation varies depending on the location of the reference label.
+        """
+        if isinstance(target, Axes):
+            if self._reflabel_loc == "outside":
+                return ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
+            elif self._reflabel_loc == "inside":
+                return ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
+            else:
+                raise ValueError("Invalid reference label location. Please specify either 'inside' or 'outside'.")
+
+        elif isinstance(target, (Figure, SubFigure)):
+            return ScaledTranslation(7 / 72, -10 / 72, self._figure.dpi_scale_trans)
+        else:
+            raise ValueError("Target must be either an Axes, Figure or SubFigure instance.")
+    
     def _get_legend_params(
         self,
         labels: list[str],

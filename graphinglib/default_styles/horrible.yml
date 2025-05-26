@@ -58,7 +58,7 @@ MultiFigure:
   _size: [10, 7]
 
 SmartFigure:
-  _size: [6.4, 4.8]
+  _size: [10, 7]
 
 Point:
   _color: "cyan"
