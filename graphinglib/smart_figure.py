@@ -19,14 +19,14 @@ from matplotlib.axes import Axes
 from matplotlib.projections import get_projection_names
 from matplotlib.artist import Artist
 
-from graphinglib.file_manager import (
+from .file_manager import (
     FileLoader,
     FileUpdater,
     get_default_style,
     get_styles,
 )
-from graphinglib.graph_elements import GraphingException, Plottable, Text
-from graphinglib.legend_artists import (
+from .graph_elements import GraphingException, Plottable, Text
+from .legend_artists import (
     HandlerMultipleLines,
     HandlerMultipleVerticalLines,
     VerticalLineCollection,
