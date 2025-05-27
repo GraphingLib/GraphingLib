@@ -528,6 +528,8 @@ class TestSmartFigure(unittest.TestCase):
         self.fig._initialize_parent_smart_figure()
         self.fig[0] = Text(1, 1, "Test")
         self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Text(1, 1, "Test", relative_to="figure")
+        self.fig._initialize_parent_smart_figure()
         self.fig[0] = Table(["Header1", "Header2"])
         self.fig._initialize_parent_smart_figure()
         self.fig[0] = Arrow((0, 1), (1, 0))

@@ -25,7 +25,7 @@ from graphinglib.file_manager import (
     get_default_style,
     get_styles,
 )
-from graphinglib.graph_elements import GraphingException, Plottable
+from graphinglib.graph_elements import GraphingException, Plottable, Text
 from graphinglib.legend_artists import (
     HandlerMultipleLines,
     HandlerMultipleVerticalLines,
@@ -1168,8 +1168,12 @@ class SmartFigure:
                         params_to_reset = []
                         if not is_matplotlib_style:
                             params_to_reset = self._fill_in_missing_plottable_params(current_element)
+                        if isinstance(current_element, Text) and current_element.relative_to == "figure":
+                            target = subfig
+                        else:
+                            target = ax
                         current_element._plot_element(
-                            ax,
+                            target,
                             z_order,
                             cycle_color=cycle_colors[index % num_cycle_colors],
                         )
@@ -1185,96 +1189,100 @@ class SmartFigure:
                     elif current_element is not None:
                         raise GraphingException(f"Unsupported element type: {type(current_element).__name__}")
 
-                # Add reference label
-                if self._reference_labels and (len(self) > 1 or isinstance(self._figure, SubFigure)):
-                    self._create_ref_label(ax)
-
-                # If axes are shared, manually remove ticklabels from unnecessary plots
-                if self._share_x and rows.start != (self._num_rows - 1):
-                    ax.tick_params(labelbottom=False)
-                if self._share_y and cols.start != 0:
-                    ax.tick_params(labelleft=False)
-
-                # Remove ticks
-                if self._remove_x_ticks:
-                    ax.get_xaxis().set_visible(False)
-                if self._remove_y_ticks:
-                    ax.get_yaxis().set_visible(False)
-
-                # Axes limits
-                if self._x_lim:
-                    ax.set_xlim(*self._x_lim)
-                if self._y_lim:
-                    ax.set_ylim(*self._y_lim)
-
-                # Logarithmic scale
-                if self._log_scale_x:
-                    ax.set_xscale("log")
-                if self._log_scale_y:
-                    ax.set_yscale("log")
-
-                # Remove axes
-                if self._remove_axes:
+                # If only text objects were plotted, the axes is hidden and the other properties are not set
+                if all(isinstance(element_i, Text) for element_i in element):
                     ax.axis("off")
+                else:
+                    # Add reference label
+                    if self._reference_labels and (len(self) > 1 or isinstance(self._figure, SubFigure)):
+                        self._create_ref_label(ax)
 
-                ax.set_aspect(self._aspect_ratio)
+                    # If axes are shared, manually remove ticklabels from unnecessary plots
+                    if self._share_x and rows.start != (self._num_rows - 1):
+                        ax.tick_params(labelbottom=False)
+                    if self._share_y and cols.start != 0:
+                        ax.tick_params(labelleft=False)
 
-                # Customize ticks
-                if self._x_ticks:
-                    ax.set_xticks(self._x_ticks, self._x_tick_labels)
-                ax.tick_params(axis="x", which="major", **self._tick_params["x major"])
-                if self._x_tick_spacing:
-                    ax.xaxis.set_major_locator(
-                        ticker.MultipleLocator(self._x_tick_spacing)
-                    )
-                if self._y_ticks:
-                    ax.set_yticks(self._y_ticks, self._y_tick_labels)
-                ax.tick_params(axis="y", which="major", **self._tick_params["y major"])
-                if self._y_tick_spacing:
-                    ax.yaxis.set_major_locator(
-                        ticker.MultipleLocator(self._y_tick_spacing)
-                    )
-                if self._minor_x_ticks:
-                    ax.set_xticks(self._minor_x_ticks, minor=True)
-                ax.tick_params(axis="x", which="minor", **self._tick_params["x minor"])
-                if self._minor_x_tick_spacing:
-                    ax.xaxis.set_minor_locator(
-                        ticker.MultipleLocator(self._minor_x_tick_spacing)
-                    )
-                if self._minor_y_ticks:
-                    ax.set_yticks(self._minor_y_ticks, minor=True)
-                ax.tick_params(axis="y", which="minor", **self._tick_params["y minor"])
-                if self._minor_y_tick_spacing:
-                    ax.yaxis.set_minor_locator(
-                        ticker.MultipleLocator(self._minor_y_tick_spacing)
-                    )
+                    # Remove ticks
+                    if self._remove_x_ticks:
+                        ax.get_xaxis().set_visible(False)
+                    if self._remove_y_ticks:
+                        ax.get_yaxis().set_visible(False)
 
-                # Customize grid
-                if self._show_grid:
-                    ax.grid(self._grid_visible_x, which=self._grid_which_x, axis="x")
-                    ax.grid(self._grid_visible_y, which=self._grid_which_y, axis="y")
-                    if self._grid_show_on_top:
-                        ax.set_axisbelow(False)
+                    # Axes limits
+                    if self._x_lim:
+                        ax.set_xlim(*self._x_lim)
+                    if self._y_lim:
+                        ax.set_ylim(*self._y_lim)
 
-                # Axes legend
-                if not self._general_legend and make_legend and default_labels:
-                    if self._show_legend:
-                        legend_params = self._get_legend_params(default_labels, default_handles, -0.1)
-                        try:
-                            _legend = ax.legend(
-                                draggable=True,
-                                **legend_params,
-                            )
-                        except:
-                            _legend = ax.legend(
-                                **legend_params,
-                            )
-                        _legend.set_zorder(10000)
-                    default_labels, default_handles = [], []
+                    # Logarithmic scale
+                    if self._log_scale_x:
+                        ax.set_xscale("log")
+                    if self._log_scale_y:
+                        ax.set_yscale("log")
 
-                # Axes title (if the geometry is 1x1)
-                if self._title and (self._num_cols == 1 and self._num_rows == 1):
-                    ax.set_title(self._title)
+                    # Remove axes
+                    if self._remove_axes:
+                        ax.axis("off")
+
+                    ax.set_aspect(self._aspect_ratio)
+
+                    # Customize ticks
+                    if self._x_ticks:
+                        ax.set_xticks(self._x_ticks, self._x_tick_labels)
+                    ax.tick_params(axis="x", which="major", **self._tick_params["x major"])
+                    if self._x_tick_spacing:
+                        ax.xaxis.set_major_locator(
+                            ticker.MultipleLocator(self._x_tick_spacing)
+                        )
+                    if self._y_ticks:
+                        ax.set_yticks(self._y_ticks, self._y_tick_labels)
+                    ax.tick_params(axis="y", which="major", **self._tick_params["y major"])
+                    if self._y_tick_spacing:
+                        ax.yaxis.set_major_locator(
+                            ticker.MultipleLocator(self._y_tick_spacing)
+                        )
+                    if self._minor_x_ticks:
+                        ax.set_xticks(self._minor_x_ticks, minor=True)
+                    ax.tick_params(axis="x", which="minor", **self._tick_params["x minor"])
+                    if self._minor_x_tick_spacing:
+                        ax.xaxis.set_minor_locator(
+                            ticker.MultipleLocator(self._minor_x_tick_spacing)
+                        )
+                    if self._minor_y_ticks:
+                        ax.set_yticks(self._minor_y_ticks, minor=True)
+                    ax.tick_params(axis="y", which="minor", **self._tick_params["y minor"])
+                    if self._minor_y_tick_spacing:
+                        ax.yaxis.set_minor_locator(
+                            ticker.MultipleLocator(self._minor_y_tick_spacing)
+                        )
+
+                    # Customize grid
+                    if self._show_grid:
+                        ax.grid(self._grid_visible_x, which=self._grid_which_x, axis="x")
+                        ax.grid(self._grid_visible_y, which=self._grid_which_y, axis="y")
+                        if self._grid_show_on_top:
+                            ax.set_axisbelow(False)
+
+                    # Axes legend
+                    if not self._general_legend and make_legend and default_labels:
+                        if self._show_legend:
+                            legend_params = self._get_legend_params(default_labels, default_handles, -0.1)
+                            try:
+                                _legend = ax.legend(
+                                    draggable=True,
+                                    **legend_params,
+                                )
+                            except:
+                                _legend = ax.legend(
+                                    **legend_params,
+                                )
+                            _legend.set_zorder(10000)
+                        default_labels, default_handles = [], []
+
+                    # Axes title (if the geometry is 1x1)
+                    if self._title and (self._num_cols == 1 and self._num_rows == 1):
+                        ax.set_title(self._title)
 
                 self._reset_params_to_default(self, figure_params_to_reset)
 
