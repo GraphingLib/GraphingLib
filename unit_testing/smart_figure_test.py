@@ -9,10 +9,13 @@ matplotlib_use("Agg")  # Use non-GUI backend for tests
 from matplotlib import pyplot as plt
 from numpy import linspace, sin, pi
 
-from graphinglib.data_plotting_1d import Curve
-from graphinglib.smart_figure import SmartFigure
 from graphinglib.file_manager import FileLoader
-from graphinglib.graph_elements import Plottable, GraphingException
+from graphinglib.smart_figure import SmartFigure
+from graphinglib.data_plotting_1d import Curve, Scatter, Histogram
+from graphinglib.data_plotting_2d import Heatmap, VectorField, Contour, Stream
+from graphinglib.fits import FitFromFunction
+from graphinglib.graph_elements import Plottable, GraphingException, Hlines, Vlines, Point, Text, Table
+from graphinglib.shapes import Arrow, Line, Polygon, Circle, Rectangle
 
 
 class DummyPlottable(Plottable):
@@ -497,6 +500,46 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(GraphingException):
             fig2 = SmartFigure(num_rows=2, num_cols=2)
             fig2.add_elements(dummy)
+    
+    def test_add_all_elements(self):
+        self.fig[0] = SmartFigure()
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Curve([0, 1], [0, 1])
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Scatter([0, 1], [0, 1])
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Histogram([0, 1, 2, 3], 4)
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Heatmap([[0, 1], [2, 3]])
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = VectorField([0, 1], [0, 1], [1, 0], [0, 1])
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Contour([[0, 1], [0, 1]], [[0, 1], [0, 1]], [[0, 1], [2, 3]])
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Stream([0, 1], [0, 1], [[1, 0], [1, 0]], [[0, 1], [0, 1]])
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = FitFromFunction(lambda x, a: a*x, Curve([0, 1, 2], [0, 1, 2]))
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Hlines([0, 1, 2])
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Vlines([0, 1, 2])
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Point(1, 1)
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Text(1, 1, "Test")
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Table(["Header1", "Header2"])
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Arrow((0, 1), (1, 0))
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Line((0, 1), (1, 0))
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Polygon([(0, 0), (1, 1), (1, 0)])
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Circle(0, 0, 1)
+        self.fig._initialize_parent_smart_figure()
+        self.fig[0] = Rectangle(0, 0, 1, 2)
+        self.fig._initialize_parent_smart_figure()
 
     def test_copy_and_copy_with(self):
         self.fig.x_label = "X"

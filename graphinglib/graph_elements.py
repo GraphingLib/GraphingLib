@@ -42,7 +42,7 @@ class GraphingException(Exception):
     pass
 
 
-class Hlines:
+class Hlines(Plottable):
     """
     This class implements simple horizontal lines.
 
@@ -277,7 +277,7 @@ class Hlines:
                 )
 
 
-class Vlines:
+class Vlines(Plottable):
     """
     This class implements simple vertical lines.
 
@@ -506,7 +506,7 @@ class Vlines:
                 )
 
 
-class Point:
+class Point(Plottable):
     """
     This class implements a point object.
 
@@ -830,7 +830,7 @@ class Point:
 
 
 @dataclass
-class Text:
+class Text(Plottable):
     """
     This class allows text to be plotted.
 
@@ -1054,7 +1054,7 @@ class Text:
 
 
 @dataclass
-class Table:
+class Table(Plottable):
     """
     This class allows to plot a table inside a Figure or MultiFigure.
 
