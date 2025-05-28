@@ -1,10 +1,9 @@
 from __future__ import annotations
 from shutil import which
-from typing import Literal, Optional, Any
+from typing import Literal, Optional, Any, Self, Callable
 from logging import warning
 from string import ascii_lowercase
 from collections import OrderedDict
-from typing import Self
 from copy import deepcopy
 from difflib import get_close_matches
 
@@ -110,7 +109,7 @@ class SmartFigure:
             axes sharing will not be applied to the nested SmartFigure. Instead, the nested SmartFigure will have its
             own axes sharing settings.
 
-    projection : Any
+    projection : Any, optional
         Projection type for the subfigures. This can be a string of a matplotlib projection (e.g., "polar") or an object
         capable of creating a projection (e.g. astropy.wcs.WCS).
         
@@ -188,7 +187,7 @@ class SmartFigure:
         height_ratios: ArrayLike = None,
         share_x: bool = False,
         share_y: bool = False,
-        projection: Any = None,
+        projection: Optional[Any] = None,
         general_legend: bool = False,
         legend_loc: Optional[str | tuple] = None,
         legend_cols: int = 1,
@@ -1228,35 +1227,7 @@ class SmartFigure:
 
                     ax.set_aspect(self._aspect_ratio)
 
-                    # Customize ticks
-                    if self._x_ticks:
-                        ax.set_xticks(self._x_ticks, self._x_tick_labels)
-                    ax.tick_params(axis="x", which="major", **self._tick_params["x major"])
-                    if self._x_tick_spacing:
-                        ax.xaxis.set_major_locator(
-                            ticker.MultipleLocator(self._x_tick_spacing)
-                        )
-                    if self._y_ticks:
-                        ax.set_yticks(self._y_ticks, self._y_tick_labels)
-                    ax.tick_params(axis="y", which="major", **self._tick_params["y major"])
-                    if self._y_tick_spacing:
-                        ax.yaxis.set_major_locator(
-                            ticker.MultipleLocator(self._y_tick_spacing)
-                        )
-                    if self._minor_x_ticks:
-                        ax.set_xticks(self._minor_x_ticks, minor=True)
-                    ax.tick_params(axis="x", which="minor", **self._tick_params["x minor"])
-                    if self._minor_x_tick_spacing:
-                        ax.xaxis.set_minor_locator(
-                            ticker.MultipleLocator(self._minor_x_tick_spacing)
-                        )
-                    if self._minor_y_ticks:
-                        ax.set_yticks(self._minor_y_ticks, minor=True)
-                    ax.tick_params(axis="y", which="minor", **self._tick_params["y minor"])
-                    if self._minor_y_tick_spacing:
-                        ax.yaxis.set_minor_locator(
-                            ticker.MultipleLocator(self._minor_y_tick_spacing)
-                        )
+                    self._customize_ticks(ax)
 
                     # Customize grid
                     if self._show_grid:
@@ -1343,6 +1314,43 @@ class SmartFigure:
                 "labels": {"default": default_labels, "custom": custom_labels},
                 "handles": {"default": default_handles, "custom": custom_handles},
             }
+
+    def _customize_ticks(
+        self,
+        ax: Axes,
+    ) -> None:
+        """
+        Customizes the ticks of the specified Axes according to the SmartFigure's tick parameters. This method is useful
+        for inheritance to allow each SmartFigure class to customize the ticks their way.
+        """
+        if self._x_ticks is not None:
+            ax.set_xticks(self._x_ticks, self._x_tick_labels)
+        ax.tick_params(axis="x", which="major", **self._tick_params["x major"])
+        if self._x_tick_spacing is not None:
+            ax.xaxis.set_major_locator(
+                ticker.MultipleLocator(self._x_tick_spacing)
+            )
+        if self._y_ticks is not None:
+            ax.set_yticks(self._y_ticks, self._y_tick_labels)
+        ax.tick_params(axis="y", which="major", **self._tick_params["y major"])
+        if self._y_tick_spacing is not None:
+            ax.yaxis.set_major_locator(
+                ticker.MultipleLocator(self._y_tick_spacing)
+            )
+        if self._minor_x_ticks is not None:
+            ax.set_xticks(self._minor_x_ticks, minor=True)
+        ax.tick_params(axis="x", which="minor", **self._tick_params["x minor"])
+        if self._minor_x_tick_spacing is not None:
+            ax.xaxis.set_minor_locator(
+                ticker.MultipleLocator(self._minor_x_tick_spacing)
+            )
+        if self._minor_y_ticks is not None:
+            ax.set_yticks(self._minor_y_ticks, minor=True)
+        ax.tick_params(axis="y", which="minor", **self._tick_params["y minor"])
+        if self._minor_y_tick_spacing is not None:
+            ax.yaxis.set_minor_locator(
+                ticker.MultipleLocator(self._minor_y_tick_spacing)
+            )
 
     def _create_ref_label(
         self,
@@ -1566,6 +1574,7 @@ class SmartFigure:
         axes_face_color: str | None = None,
         axes_edge_color: str | None = None,
         axes_label_color: str | None = None,
+        axes_label_pad: float | None = None,
         axes_line_width: float | None = None,
         color_cycle: list[str] | None = None,
         legend_face_color: str | None = None,
@@ -1598,6 +1607,8 @@ class SmartFigure:
             The color of the axes edge.
         axes_label_color : str, optional
             The color of the axes labels.
+        axes_label_pad : float, optional
+            The padding between the axes labels and the axes.
         axes_line_width : float, optional
             The width of the axes lines.
         color_cycle : list[str], optional
@@ -1633,6 +1644,7 @@ class SmartFigure:
             "axes.facecolor": axes_face_color,
             "axes.edgecolor": axes_edge_color,
             "axes.labelcolor": axes_label_color,
+            "axes.labelpad": axes_label_pad,
             "axes.linewidth": axes_line_width,
             "axes.prop_cycle": color_cycle,
             "legend.facecolor": legend_face_color,
