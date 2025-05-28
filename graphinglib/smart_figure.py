@@ -93,7 +93,7 @@ class SmartFigure:
         Location of the reference labels of the SubFigures, either "inside" or "outside".
         Defaults to ``"outside"``.
     width_padding, height_padding : float
-        Padding between the subfigures in the x and y directions, respectively. The default value of None results in a
+        Padding between the subfigures in the x and y directions, respectively. The default value of ``None`` results in a
         default small amount of padding. This may be set to 0 to completely remove the space between subfigures, but
         note that axes labels may need to be removed to delete additional space.
     width_ratios, height_ratios : ArrayLike
@@ -858,12 +858,12 @@ class SmartFigure:
     def _keys_to_slices(self, keys: tuple[slice | int]) -> tuple[slice]:
         """
         Converts a given two-tuple of integers or slices into a tuple of slices for normalization. The starting or
-        ending None values of slices, if present, are replaced with 0 or the size of the axis respectively.
+        ending ``None`` values of slices, if present, are replaced with 0 or the size of the axis respectively.
         """
         new_slices = [k if isinstance(k, slice) else slice(k, k+1, None) for k in keys]   # convert int -> slice
         new_slices = [s if s.start is not None else slice(0, s.stop) for s in new_slices] # convert starting None -> 0
         new_slices = [s if s.stop is not None else slice(s.start, stop)
-                      for s, stop in zip(new_slices, (self._num_rows, self._num_cols))]    # convert stop None -> size
+                      for s, stop in zip(new_slices, (self._num_rows, self._num_cols))]   # convert stop None -> size
         return tuple(new_slices)
 
     def _validate_and_normalize_key(self, key: int | slice | tuple[int | slice]) -> tuple[int | slice]:
@@ -991,6 +991,7 @@ class SmartFigure:
 
         plt.show()
         plt.rcParams.update(plt.rcParamsDefault)
+        self._figure.clear()
         self._figure = None
         self._gridspec = None
 
@@ -1199,15 +1200,15 @@ class SmartFigure:
 
                     # If axes are shared, manually remove ticklabels from unnecessary plots
                     if self._share_x and rows.start != (self._num_rows - 1):
-                        ax.tick_params(labelbottom=False)
+                        ax.tick_params(axis="x", labelbottom=False)
                     if self._share_y and cols.start != 0:
-                        ax.tick_params(labelleft=False)
+                        ax.tick_params(axis="y", labelleft=False)
 
                     # Remove ticks
                     if self._remove_x_ticks:
-                        ax.get_xaxis().set_visible(False)
+                        ax.tick_params(axis="x", labelbottom=False, labeltop=False, bottom=False, top=False)
                     if self._remove_y_ticks:
-                        ax.get_yaxis().set_visible(False)
+                        ax.tick_params(axis="y", labelleft=False, labelright=False, left=False, right=False)
 
                     # Axes limits
                     if self._x_lim:
@@ -1667,46 +1668,37 @@ class SmartFigure:
         minor_y_tick_spacing: Optional[float] = None,
     ) -> None:
         """
-        Sets custom ticks and ticks labels.
+        Sets custom ticks and tick labels.
 
         Parameters
         ----------
-        x_ticks : list[float], optional
-            Tick positions for the x axis. If a value is specified, the x_tick_spacing parameter must be None.
-        x_tick_labels : list[str], optional
-            Tick labels for the x axis. If a value is specified, the x_ticks parameter must also be given.
-        x_tick_spacing : float, optional
-            Spacing between ticks on the x axis. If a value is specified, the x_ticks parameter must be None.
-        y_ticks : list[float], optional
-            Tick positions for the y axis. If a value is specified, the y_tick_spacing parameter must be None.
-        y_tick_labels : list[str], optional
-            Tick labels for the y axis. If a value is specified, the y_ticks parameter must also be given.
-        y_tick_spacing : float, optional
-            Spacing between ticks on the y axis. If a value is specified, the y_ticks parameter must be None.
-        minor_x_ticks : list[float], optional
-            Minor tick positions for the x axis. If a value is specified, minor_the x_tick_spacing parameter must be 
-            None.
-        minor_x_tick_spacing : float, optional
-            Spacing between minor ticks on the x axis. If a value is specified, the minor_x_ticks parameter must be
-            None.
-        minor_y_ticks : list[float], optional
-            Minor tick positions for the y axis. If a value is specified, the minor_y_tick_spacing parameter must be 
-            None.
-        minor_y_tick_spacing : float, optional
-            Spacing between minor ticks on the y axis. If a value is specified, the minor_y_ticks parameter must be
-            None.
+        x_ticks, y_ticks : list[float], optional
+            Tick positions for the x or y axis. If a value is specified, the corresponding ``x_tick_spacing`` or
+            ``y_tick_spacing`` parameter must be ``None``.
+        x_tick_labels, y_tick_labels : list[str], optional
+            Tick labels for the x or y axis. If a value is specified, the corresponding ``x_ticks`` or ``y_ticks``
+            parameter must also be given.
+        x_tick_spacing, y_tick_spacing : float, optional
+            Spacing between ticks on the x or y axis. If a value is specified, the corresponding ``x_ticks`` or
+            ``y_ticks`` parameter must be ``None``.
+        minor_x_ticks, minor_y_ticks : list[float], optional
+            Minor tick positions for the x or y axis. If a value is specified, the corresponding
+            ``minor_x_tick_spacing`` or ``minor_y_tick_spacing`` parameter must be ``None``.
+        minor_x_tick_spacing, minor_y_tick_spacing : float, optional
+            Spacing between minor ticks on the x or y axis. If a value is specified, the corresponding ``minor_x_ticks``
+            or ``minor_y_ticks`` parameter must be ``None``.
         """
         if any([
-            x_tick_labels and not x_ticks,
-            y_tick_labels and not y_ticks,
+            (x_tick_labels is not None) and x_ticks is None,
+            (y_tick_labels is not None) and y_ticks is None,
         ]):
             raise GraphingException("Ticks position must be specified when ticks labels are specified")
         
         if any([
-            x_ticks and x_tick_spacing, 
-            y_ticks and y_tick_spacing,
-            minor_x_ticks and minor_x_tick_spacing, 
-            minor_y_ticks and minor_y_tick_spacing,
+            (x_ticks is not None) and (x_tick_spacing is not None), 
+            (y_ticks is not None) and (y_tick_spacing is not None),
+            (minor_x_ticks is not None) and (minor_x_tick_spacing is not None), 
+            (minor_y_ticks is not None) and (minor_y_tick_spacing is not None),
         ]):
             raise GraphingException("Tick spacing and tick positions cannot be set simultaneously")
 
@@ -1890,7 +1882,7 @@ class SmartFigure:
             https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html#matplotlib.pyplot.legend
         labels : list[str], optional
             List of labels for the legend. If the handles directly contain the labels, this parameter can be set to
-            None. However, if given, the length of the labels list must match the length of the handles list. 
+            ``None``. However, if given, the length of the labels list must match the length of the handles list. 
             
             .. note::
                 If labels are given, the handles must also be given.
