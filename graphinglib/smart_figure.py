@@ -6,6 +6,8 @@ from string import ascii_lowercase
 from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
+from astropy.wcs import WCS
+from astropy.units import Quantity
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -560,6 +562,9 @@ class SmartFigure:
                     raise GraphingException("3D projection is not supported.")
                 if value not in valid_projections:
                     raise ValueError(f"projection must be one of {valid_projections} or a valid object.")
+            elif isinstance(value, WCS):
+                warning("WCS projection should be used with the SmartFigureWCS object. This class may not offer all "
+                        "needed functionalities.")
         self._projection = value
 
     @property
@@ -1475,7 +1480,7 @@ class SmartFigure:
         Fills in the missing parameters from the specified ``figure_style``.
         """
         params_to_reset = []
-        object_type = type(element).__name__
+        object_type = "SmartFigure" if isinstance(element, SmartFigure) else type(element).__name__
         for property, value in vars(element).items():
             if isinstance(value, str) and (value == "default") and not (property == "_figure_style"):
                 params_to_reset.append(property)
@@ -1923,3 +1928,534 @@ class SmartFigure:
         
         self._custom_legend_handles += handles
         self._custom_legend_labels += new_labels
+
+
+class SmartFigureWCS(SmartFigure):
+    """
+    This class implements a figure object for plotting :class:`~graphinglib.graph_elements.Plottable` elements. It
+    allows for the creation of complex figures recursively, where each :class:`~graphinglib.smart_figure.SmartFigure`
+    can contain other :class:`~graphinglib.smart_figure.SmartFigure` objects. The class supports a variety of 
+    customization options as well as the ability to use styles and themes for consistent visual appearance across
+    different figures. The idea behind this class is that every SmartFigure contains a single x_label, y_label, title, 
+    projection, etc. and that nested SmartFigures can be inserted into the main SmartFigure to create complex figures
+    with more parameters.
+
+    Parameters
+    ----------
+    projection : WCS
+        The World Coordinate System (WCS) object to use for the figure. This is used to plot data in a coordinate system
+        that is not Cartesian, such as celestial coordinates.
+    num_rows, num_cols : int
+        Number of rows and columns for the base grid. These parameters determine the number of "squares" on which the
+        plots can be placed.
+    x_label, y_label : str, optional
+        Labels for the x and y axes of the figure.
+    size : tuple[float, float]
+        Overall size of the multifigure.
+        Default depends on the ``figure_style`` configuration.
+    title : str, optional
+        General title of the figure.
+    x_lim, y_lim : tuple[float, float], optional
+        Limits for the x and y axes of the figure.
+    log_scale_x, log_scale_y : bool
+        Whether to use a logarithmic scale for the x and y axes, respectively.
+        Defaults to ``False``.
+    remove_axes : bool
+        Whether to remove the axes from the figure.
+        Defaults to ``False``.
+    aspect_ratio : float | Literal["auto", "equal"]
+        Aspect ratio of the figure. If set to "auto", the aspect ratio is determined automatically to fill the available
+        space. If set to "equal", the aspect ratio is set to 1:1. If set to a float, the aspect ratio represents the
+        ratio of the height to the width of the figure.
+        Defaults to "auto".
+    remove_x_ticks, remove_y_ticks : bool
+        Whether to remove the x and y ticks from the figure, respectively.
+        Defaults to ``False``.
+    reference_labels : bool
+        Whether or not to add reference labels to the subfigures. If set to ``True``, each subfigure will be labeled
+        alphabetically in the form of "a)", "b)", etc.
+        Defaults to ``True``.
+        
+        .. note::
+            For nested figures, each subfigure controls its own reference labels. This means that if a nested 
+            SmartFigure turns off reference labels, the plots in it will not be labeled, even if the parent SmartFigure
+            has reference labels turned on.
+
+    global_reference_label : bool
+        Whether to use a single reference label for the entire figure instead of individual labels for each subfigure.
+        If set to ``True``, the reference label will be placed in the top left corner of the global SmartFigure. This is
+        useful for labeling the entire figure rather than individual subfigures.
+        Defaults to ``False``.
+    reflabel_loc : Literal["inside", "outside"]
+        Location of the reference labels of the SubFigures, either "inside" or "outside".
+        Defaults to ``"outside"``.
+    width_padding, height_padding : float
+        Padding between the subfigures in the x and y directions, respectively. The default value of ``None`` results in a
+        default small amount of padding. This may be set to 0 to completely remove the space between subfigures, but
+        note that axes labels may need to be removed to delete additional space.
+    width_ratios, height_ratios : ArrayLike
+        Ratios of the widths and heights of the subfigures, respectively. These ratios determine how much space each
+        column and row of subfigures will take up in the overall figure. The length of these arrays must match the
+        number of columns and rows, respectively. By default, all subfigures are given equal space.
+    share_x, share_y : bool
+        Whether to share the x and y axes between subfigures, respectively. This means that all subfigures will have
+        the same x and y limits, and the ticks will be shared as well. This is useful for comparing data across
+        subfigures.
+
+        .. note::
+            Sharing axes only works for plots directly inside the SmartFigure. If a nested SmartFigure is used, the
+            axes sharing will not be applied to the nested SmartFigure. Instead, the nested SmartFigure will have its
+            own axes sharing settings.
+
+    general_legend : bool
+        Whether to create a general legend for the entire figure. If set to ``True``, a single legend will be created
+        to regroup all the legends from the subplots. If set to ``False``, all subplots will have their own legend. If
+        nested SmartFigures set this parameter to ``False``, their legend is added to the parent's general legend. 
+        However, if a nested SmartFigure sets its general legend to ``True``, it will be created separately and will not
+        be added to the parent's general legend.
+        Defaults to ``False``.
+    legend_loc : str | tuple, optional
+        Location of the legend. This can be a string (e.g., "upper right") or a tuple of (x, y) relative coordinates.
+        The supported string locations are: {"upper right", "upper left", "lower left", "lower right", "right", 
+        "center left", "center right", "lower center", "upper center", "center", "outside upper center",
+        "outside center right", "outside lower center", "outside center left"}. Additionally, only if ``general_legend``
+        is set to ``False``, the legend location can also be set to "best".
+        Defaults to ``"best"`` if ``general_legend`` is set to ``False``, otherwise it defaults to ``"lower center"``.
+
+        .. warning::
+            If ``general_legend`` is set to ``True`` and the legend location is set to a position containing "outside",
+            the legend may not be displayed correctly in some matplotlib backends. In such cases, it is recommended to
+            use inline figures in a Jupyter notebook or save the figure to a file to ensure proper display of the
+            legend outside the figure.
+
+    legend_cols : int
+        Number of columns to display the labels in the legend. This is only used if the legend is displayed.
+        Defaults to ``1``.
+    show_legend : bool
+        Whether to show the legend for the figure. This allows to easily toggle the visibility of the legend.
+        Defaults to ``True``.
+    figure_style : str
+        The figure style to use for the figure. The default style can be set using ``gl.set_default_style()``.
+        Defaults to ``"default"``.
+    elements : list[Plottable | SmartFigure] | list[list[Plottable | SmartFigure]], optional
+        The elements to plot in the figure.
+        If a list of depth 1 is provided and the figure is 1x1, all the elements are added to the unique plot. For other
+        geometries, the elements are added one by one in the order they are provided to each subplot, and the list
+        should not be longer than the number of subplots.
+        If a list of depth 2 is provided, each sublist is added to the corresponding subplot, in the order they are
+        provided. The number of sublists should be equal to the number of subplots.
+        If ``None`` elements are present in the list, the corresponding subplots are not drawn and a blank space is left
+        in the figure. If empty lists or list containing only ``None`` are given in the list, the corresponding subplots
+        are drawn but empty.
+
+        .. note::
+            This method for adding elements only allows to add elements to single subplots. If you want to add elements
+            that span multiple subplots, you should use the __setitem__ method instead.
+            For example, to add an element spanning the complete first row , use ``fig[0,:] = element``.
+    """
+    def __init__(
+        self,
+        projection: WCS,
+        num_rows: int = 1,
+        num_cols: int = 1,
+        x_label: Optional[str] = None,
+        y_label: Optional[str] = None,
+        size: tuple[float, float] | Literal["default"] = "default",
+        title: Optional[str] = None,
+        x_lim: Optional[tuple[float, float]] = None,
+        y_lim: Optional[tuple[float, float]] = None,
+        log_scale_x: bool = False,
+        log_scale_y: bool = False,
+        remove_axes: bool = False,
+        aspect_ratio: float | Literal["auto", "equal"] = "auto",
+        remove_x_ticks: bool = False,
+        remove_y_ticks: bool = False,
+        reference_labels: bool = True,
+        global_reference_label: bool = False,
+        reflabel_loc: Literal["inside", "outside"] = "outside",
+        width_padding: float = None,
+        height_padding: float = None,
+        width_ratios: ArrayLike = None,
+        height_ratios: ArrayLike = None,
+        share_x: bool = False,
+        share_y: bool = False,
+        general_legend: bool = False,
+        legend_loc: Optional[str | tuple] = None,
+        legend_cols: int = 1,
+        show_legend: bool = True,
+        figure_style: str = "default",
+        elements: Optional[list[Plottable | SmartFigure] | list[list[Plottable | SmartFigure]]] = [],
+    ) -> None:
+        super().__init__(
+            num_rows=num_rows,
+            num_cols=num_cols,
+            x_label=x_label,
+            y_label=y_label,
+            size=size,
+            title=title,
+            x_lim=x_lim,
+            y_lim=y_lim,
+            log_scale_x=log_scale_x,
+            log_scale_y=log_scale_y,
+            remove_axes=remove_axes,
+            aspect_ratio=aspect_ratio,
+            remove_x_ticks=remove_x_ticks,
+            remove_y_ticks=remove_y_ticks,
+            reference_labels=reference_labels,
+            global_reference_label=global_reference_label,
+            reflabel_loc=reflabel_loc,
+            width_padding=width_padding,
+            height_padding=height_padding,
+            width_ratios=width_ratios,
+            height_ratios=height_ratios,
+            share_x=share_x,
+            share_y=share_y,
+            projection=projection,
+            general_legend=general_legend,
+            legend_loc=legend_loc,
+            legend_cols=legend_cols,
+            show_legend=show_legend,
+            figure_style=figure_style,
+            elements=elements,
+        )
+
+        self._number_of_x_ticks = None
+        self._number_of_y_ticks = None
+        self._x_tick_formatter = None
+        self._y_tick_formatter = None
+        self._minor_x_tick_frequency = None
+        self._minor_y_tick_frequency = None
+        self._default_tick_params = {       # The following are the default parameters of WCSAxes objects
+            "x major": {"bottom" : True, "top" : True, "labelbottom" : True}, 
+            "y major": {"left" : True, "right" : True, "labelleft" : True}, 
+            "x minor": {}, 
+            "y minor": {}
+        }
+        self._tick_params = deepcopy(self._default_tick_params)
+
+    @property
+    def projection(self) -> Any:
+        return self._projection
+
+    @projection.setter
+    def projection(self, value: WCS) -> None:
+        if not isinstance(value, WCS):
+            raise GraphingException("The projection of a SmartFigureWCS must be a WCS object.")
+        self._projection = value
+
+    def _customize_ticks(
+        self,
+        ax: Axes,
+    ) -> None:
+        """
+        Customizes the ticks of the specified Axes according to the SmartFigure's tick parameters. This method is useful
+        for inheritance to allow each SmartFigure class to customize the ticks their way.
+        """
+        x_axis, y_axis = ax.coords
+        x_axis.set_auto_axislabel(False)
+        y_axis.set_auto_axislabel(False)
+
+        if self._x_tick_formatter is not None:
+            x_axis.set_major_formatter(self._x_tick_formatter)
+        if self._y_tick_formatter is not None:
+            y_axis.set_major_formatter(self._y_tick_formatter)
+
+        x_axis.set_ticks(values=self._x_ticks, spacing=self._x_tick_spacing, number=self._number_of_x_ticks)
+        y_axis.set_ticks(values=self._y_ticks, spacing=self._y_tick_spacing, number=self._number_of_y_ticks)
+
+        if self._minor_x_tick_frequency is not None:
+            x_axis.display_minor_ticks(True)
+            x_axis.set_minor_frequency(self._minor_x_tick_frequency)
+        if self._minor_y_tick_frequency is not None:
+            y_axis.display_minor_ticks(True)
+            y_axis.set_minor_frequency(self._minor_y_tick_frequency)
+
+        # Manually set the tick_params using the recommended API
+        for i, axis, ax_params in zip(
+            ["x", "y"], [x_axis, y_axis], [self._tick_params["x major"], self._tick_params["y major"]]
+        ):
+            axis.set_ticks(
+                size=ax_params.get("length"),
+                width=ax_params.get("width"),
+                color=ax_params.get("color"),
+                direction=ax_params.get("direction"),
+            )
+            axis.set_ticklabel(
+                size=ax_params.get("labelsize"),
+                color=ax_params.get("labelcolor"),
+                pad=ax_params.get("pad"),
+                rotation=ax_params.get("labelrotation"),
+            )
+
+            # Only allow valid positions for each axis
+            if i == "x":
+                valid_tick_pos = ["bottom", "top"]
+                valid_label_pos = ["labelbottom", "labeltop"]
+                tick_pos_str = "".join(pos[0] for pos in valid_tick_pos if ax_params.get(pos))
+                label_pos_str = "".join(pos[5] for pos in valid_label_pos if ax_params.get(pos))
+            else:  # i == "y"
+                valid_tick_pos = ["left", "right"]
+                valid_label_pos = ["labelleft", "labelright"]
+                tick_pos_str = "".join(pos[0] for pos in valid_tick_pos if ax_params.get(pos))
+                label_pos_str = "".join(pos[5] for pos in valid_label_pos if ax_params.get(pos))
+
+            if tick_pos_str:
+                axis.set_ticks_position(tick_pos_str)
+            else:
+                axis.set_ticks_visible(False)
+
+            if label_pos_str:
+                axis.set_ticklabel_position(label_pos_str)
+            else:
+                axis.set_ticklabel_visible(False)
+
+        if self._tick_params[f"x minor"].get("length") is not None:
+            ax.tick_params(axis="x", which="minor", length=self._tick_params[f"x minor"].get("length"))
+        if self._tick_params[f"y minor"].get("length") is not None:
+            ax.tick_params(axis="y", which="minor", length=self._tick_params[f"y minor"].get("length"))
+
+    def _customize_ax_label(
+        self,
+        ax: Axes,
+    ) -> None:
+        """
+        Customizes the x and y labels of the specified Axes according to the SmartFigure's label parameters. This method
+        is useful for inheritance to allow each SmartFigure class to customize the labels their way.
+
+        .. note::
+            This method converts the given ``axes.labelpad`` value so the default value of matplotlib (``4.0``) is
+            converted to the default value of class:`astropy.visualization.wcsaxes.WCSAxes` (``1.0``). The given 
+            ``axes.labelpad`` value is divided by ``4`` to achieve this conversion.
+        """
+        x_axis, y_axis = ax.coords
+        if self._x_label is not None:
+            x_axis.set_axislabel(self._x_label, minpad=plt.rcParams["axes.labelpad"] / 4)
+        if self._y_label is not None:
+            y_axis.set_axislabel(self._y_label, minpad=plt.rcParams["axes.labelpad"] / 4)
+
+    def set_ticks(
+        self,
+        x_ticks: Optional[list[Quantity]] = None,
+        y_ticks: Optional[list[Quantity]] = None,
+        x_tick_spacing: Optional[Quantity] = None,
+        y_tick_spacing: Optional[Quantity] = None,
+        number_of_x_ticks: Optional[int] = None,
+        number_of_y_ticks: Optional[int] = None,
+        x_tick_formatter: Optional[Callable | str] = None,
+        y_tick_formatter: Optional[Callable | str] = None,
+        minor_x_tick_frequency: Optional[int] = None,
+        minor_y_tick_frequency: Optional[int] = None,
+    ) -> None:
+        """
+        Sets custom ticks and tick labels.
+
+        x_ticks, y_ticks : list[Quantity], optional
+            Tick positions for the x or y axis. If a value is specified, the corresponding ``x_tick_spacing`` and
+            ``number_of_x_ticks`` or ``y_tick_spacing`` and ``number_of_y_ticks`` parameters must be ``None``.
+        x_tick_spacing, y_tick_spacing : Quantity, optional
+            Spacing between ticks on the x or y axis. If a value is specified, the corresponding ``x_ticks`` and
+            ``number_of_x_ticks`` or ``y_ticks`` and ``number_of_y_ticks`` parameters must be ``None``.
+        number_of_x_ticks, number_of_y_ticks : int, optional
+            Number of ticks to display on the x or y axis. If specified, the ``x_ticks`` and ``x_tick_spacing`` or
+            ``y_ticks`` and ``y_tick_spacing`` parameters must be ``None``.
+
+            .. note::
+                This value is not absolute, but rather a suggestion to the WCSAxes. The actual number of ticks
+                displayed may vary depending on the data and limits of the axes.
+
+        x_tick_formatter, y_tick_formatter : Callable | str, optional
+            A function or a string format to apply to the x or y tick labels. If a function is provided, it should take
+            a single argument (the tick value) and return a formatted string. If a string is provided, it should be a
+            format string that will be applied to each tick value. See the astropy documentation for more details:
+            https://docs.astropy.org/en/latest/visualization/wcsaxes/ticks_labels_grid.html
+
+            .. example::
+                >>> x_tick_formatter = "hh:mm:ss.s"
+                
+                ``1h01m34.1s``
+
+                >>> x_tick_formatter = lambda x: f"{x:.2f} s"
+                
+                ``1.23 s``
+
+        minor_x_tick_frequency, minor_y_tick_frequency : float, optional
+            Frequency of minor ticks on the x or y axis. This gives the number of minor ticks between each major tick.
+
+            .. note::
+                The frequency includes the major tick, so a frequency of 2 means that there is one minor tick between
+                each major tick.
+        """
+        super().set_ticks(
+            x_ticks=x_ticks,
+            y_ticks=y_ticks,
+            x_tick_spacing=x_tick_spacing,
+            y_tick_spacing=y_tick_spacing,
+        )
+        if any([
+            (x_ticks is not None) and (number_of_x_ticks is not None), 
+            (y_ticks is not None) and (number_of_y_ticks is not None),
+        ]):
+            raise GraphingException("Number of ticks and tick positions cannot be set simultaneously")
+
+        if any([
+            (x_tick_spacing is not None) and (number_of_x_ticks is not None), 
+            (y_tick_spacing is not None) and (number_of_y_ticks is not None),
+        ]):
+            raise GraphingException("Number of ticks and tick spacing cannot be set simultaneously")
+
+        self._number_of_x_ticks = number_of_x_ticks
+        self._number_of_y_ticks = number_of_y_ticks
+        self._x_tick_formatter = x_tick_formatter
+        self._y_tick_formatter = y_tick_formatter
+        self._minor_x_tick_frequency = minor_x_tick_frequency
+        self._minor_y_tick_frequency = minor_y_tick_frequency
+
+    def set_tick_params(
+        self,
+        axis: Optional[Literal["x", "y", "both"]] = "both",
+        reset: Optional[bool] = False,
+        direction: Optional[Literal["in", "out"]] = None,
+        length: Optional[float] = None,
+        minor_length: Optional[float] = None,
+        width: Optional[float] = None,
+        color: Optional[str] = None,
+        pad: Optional[float] = None,
+        label_size: Optional[float | str] = None,
+        label_color: Optional[str] = None,
+        label_rotation: Optional[float] = None,
+        draw_bottom_tick: Optional[bool] = None,
+        draw_top_tick: Optional[bool] = None,
+        draw_left_tick: Optional[bool] = None,
+        draw_right_tick: Optional[bool] = None,
+        draw_bottom_label: Optional[bool] = None,
+        draw_top_label: Optional[bool] = None,
+        draw_left_label: Optional[bool] = None,
+        draw_right_label: Optional[bool] = None,
+    ) -> None:
+        """
+        Sets the tick parameters for the figure. These parameters are given to the
+        :meth:`astropy.visualization.wcsaxes.coordinate_helpers.tick_params` method.
+
+        .. warning::
+            Due to how the :class:`astropy.visualization.wcsaxes.WCSAxes` are implemented, only the length of the minor
+            ticks can be controlled independently from the major ticks. The other parameters are applied to both major
+            and minor ticks for a specified axis.
+
+        Parameters
+        ----------
+        axis : {"x", "y", "both"}, optional
+            The axis to set the tick parameters for. This method can be called multiple times to set the tick
+            parameters specifically for each axes.
+            Defaults to ``"both"``.
+        reset : bool, optional
+            If ``True``, all previously given tick parameters are reset to their default values before applying the new
+            parameters.
+            Defaults to ``False``.
+        direction : {"in", "out"}, optional
+            The direction of the ticks.
+
+            .. warning::
+                Contrary to the :meth:`~graphinglib.smart_figure.SmartFigure.set_tick_params` method, the ``direction``
+                parameter cannot be set to ``"inout"`` due to how :class:`astropy.visualization.wcsaxes.WCSAxes` work.
+        length : float, optional
+            The length of the ticks.
+        minor_length : float, optional
+            The length of the minor ticks. This is the only parameter that can be set independently from the major ticks
+            due to the way the :class:`astropy.visualization.wcsaxes.WCSAxes` are implemented.
+        width : float, optional
+            The width of the ticks.
+        color : str, optional
+            The color of the ticks.
+        pad : float, optional
+            The padding to add between the tick labels and the ticks themselves.
+        label_size : float | str, optional
+            The font size of the tick labels. This can be a float or a string (e.g. "large").
+        label_color : str, optional
+            The color of the tick labels.
+        label_rotation : float, optional
+            The rotation of the tick labels, in degrees.
+        draw_bottom_tick, draw_top_tick, draw_left_tick, draw_right_tick : bool, optional
+            Whether to draw the ticks on the bottom, top, left or right side of the axes respectively.
+        draw_bottom_label, draw_top_label, draw_left_label, draw_right_label : bool, optional
+            Whether to draw the tick labels on the bottom, top, left or right side of the axes respectively.
+        """
+        new_tick_params = {
+            "direction": direction,
+            "length": length,
+            "width": width,
+            "color": color,
+            "pad": pad,
+            "labelsize": label_size,
+            "labelcolor": label_color,
+            "labelrotation": label_rotation,
+            "bottom": draw_bottom_tick,
+            "top": draw_top_tick,
+            "left": draw_left_tick,
+            "right": draw_right_tick,
+            "labelbottom": draw_bottom_label,
+            "labeltop": draw_top_label,
+            "labelleft": draw_left_label,
+            "labelright": draw_right_label
+        }
+        for axis_i in [axis] if axis != "both" else ["x", "y"]:
+            if reset:
+                self._tick_params[f"{axis_i} major"] = deepcopy(self._default_tick_params[f"{axis_i} major"])
+                self._tick_params[f"{axis_i} minor"] = deepcopy(self._default_tick_params[f"{axis_i} minor"])
+            for param, value in new_tick_params.items():
+                if value is not None:
+                    self._tick_params[f"{axis_i} major"][param] = value
+            if minor_length is not None:
+                self._tick_params[f"{axis_i} minor"]["length"] = minor_length
+
+    def set_grid(
+        self,
+        visible_x: bool = True,
+        visible_y: bool = True,
+        show_on_top: bool = False,
+        color: str | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
+        line_style: str | Literal["default"] = "default",
+        line_width: float | Literal["default"] = "default",
+    ) -> None:
+        """
+        Sets the grid parameters for the figure.
+
+        .. note::
+            Contrary to the :class:`~graphinglib.smart_figure.SmartFigure` class, this method does not support plotting
+            grid lines for minor ticks. This is because the :class:`astropy.visualization.wcsaxes.WCSAxes` do not
+            support minor ticks for the grid lines.
+
+        Parameters
+        ----------
+        visible_x, visible_y : bool, optional
+            If ``True``, sets the x-axis or y-axis grid visible. If ``False``, the grid is not shown for the respective
+            axis.
+            Defaults to ``True`` for both axes.
+        show_on_top : bool, optional
+            If ``True``, sets the grid lines to be shown on top of the plot elements. This can be useful to see the grid
+            lines above a plotted :class:`~graphinglib.data_plotting_2d.Heatmap` for example.
+            Defaults to ``False``.
+        color : str, optional
+            Sets the color of the grid lines.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float, optional
+            Sets the alpha value for the grid lines.
+            Default depends on the ``figure_style`` configuration.
+        line_style : str, optional
+            Sets the line style of the grid lines.
+            Default depends on the ``figure_style`` configuration.
+        line_width : float, optional
+            Sets the line width of the grid lines.
+            Default depends on the ``figure_style`` configuration.
+        """
+        super().set_grid(
+            visible_x=visible_x,
+            visible_y=visible_y,
+            show_on_top=show_on_top,
+            which_x="major",
+            which_y="major",
+            color=color,
+            alpha=alpha,
+            line_style=line_style,
+            line_width=line_width,
+        )
