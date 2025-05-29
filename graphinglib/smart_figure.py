@@ -244,16 +244,14 @@ class SmartFigure:
         self._reference_label_i = None
 
         self._x_ticks = None
-        self._x_tick_labels = None
-        self._x_tick_labels_rotation = None
-        self._x_tick_spacing = None
         self._y_ticks = None
+        self._x_tick_labels = None
         self._y_tick_labels = None
-        self._y_tick_labels_rotation = None
+        self._x_tick_spacing = None
         self._y_tick_spacing = None
         self._minor_x_ticks = None
-        self._minor_x_tick_spacing = None
         self._minor_y_ticks = None
+        self._minor_x_tick_spacing = None
         self._minor_y_tick_spacing = None
         self._tick_params = {"x major": {}, "y major": {}, "x minor": {}, "y minor": {}}
 
@@ -1726,14 +1724,14 @@ class SmartFigure:
             raise GraphingException("Tick spacing and tick positions cannot be set simultaneously")
 
         self._x_ticks = x_ticks
-        self._x_tick_labels = x_tick_labels
-        self._x_tick_spacing = x_tick_spacing
         self._y_ticks = y_ticks
+        self._x_tick_labels = x_tick_labels
         self._y_tick_labels = y_tick_labels
+        self._x_tick_spacing = x_tick_spacing
         self._y_tick_spacing = y_tick_spacing
         self._minor_x_ticks = minor_x_ticks
-        self._minor_x_tick_spacing = minor_x_tick_spacing
         self._minor_y_ticks = minor_y_ticks
+        self._minor_x_tick_spacing = minor_x_tick_spacing
         self._minor_y_tick_spacing = minor_y_tick_spacing
     
     def set_tick_params(
