@@ -1264,10 +1264,7 @@ class SmartFigure:
         # Axes labels
         if self._num_cols == 1 and self._num_rows == 1:
             if ax is not None:  # makes sure an element was plotted and that an axis was created
-                if self._x_label is not None:       # some projection axes can not deal with empty labels
-                    ax.set_xlabel(self._x_label)
-                if self._y_label is not None:
-                    ax.set_ylabel(self._y_label)
+                self._customize_ax_label(ax)
         else:
             suplabel_params = {
                 "fontsize" : plt.rcParams["font.size"],
@@ -1330,6 +1327,7 @@ class SmartFigure:
             ax.xaxis.set_major_locator(
                 ticker.MultipleLocator(self._x_tick_spacing)
             )
+
         if self._y_ticks is not None:
             ax.set_yticks(self._y_ticks, self._y_tick_labels)
         ax.tick_params(axis="y", which="major", **self._tick_params["y major"])
@@ -1337,6 +1335,7 @@ class SmartFigure:
             ax.yaxis.set_major_locator(
                 ticker.MultipleLocator(self._y_tick_spacing)
             )
+
         if self._minor_x_ticks is not None:
             ax.set_xticks(self._minor_x_ticks, minor=True)
         ax.tick_params(axis="x", which="minor", **self._tick_params["x minor"])
@@ -1344,6 +1343,7 @@ class SmartFigure:
             ax.xaxis.set_minor_locator(
                 ticker.MultipleLocator(self._minor_x_tick_spacing)
             )
+
         if self._minor_y_ticks is not None:
             ax.set_yticks(self._minor_y_ticks, minor=True)
         ax.tick_params(axis="y", which="minor", **self._tick_params["y minor"])
@@ -1351,6 +1351,17 @@ class SmartFigure:
             ax.yaxis.set_minor_locator(
                 ticker.MultipleLocator(self._minor_y_tick_spacing)
             )
+
+    def _customize_ax_label(
+        self,
+        ax: Axes,
+    ) -> None:
+        """
+        Customizes the x and y labels of the specified Axes according to the SmartFigure's label parameters. This method
+        is useful for inheritance to allow each SmartFigure class to customize the labels their way.
+        """
+        ax.set_xlabel(self._x_label)
+        ax.set_ylabel(self._y_label)
 
     def _create_ref_label(
         self,
@@ -1669,14 +1680,14 @@ class SmartFigure:
     def set_ticks(
         self,
         x_ticks: Optional[list[float]] = None,
-        x_tick_labels: Optional[list[str]] = None,
-        x_tick_spacing: Optional[float] = None,
         y_ticks: Optional[list[float]] = None,
+        x_tick_labels: Optional[list[str]] = None,
         y_tick_labels: Optional[list[str]] = None,
+        x_tick_spacing: Optional[float] = None,
         y_tick_spacing: Optional[float] = None,
         minor_x_ticks: Optional[list[float]] = None,
-        minor_x_tick_spacing: Optional[float] = None,
         minor_y_ticks: Optional[list[float]] = None,
+        minor_x_tick_spacing: Optional[float] = None,
         minor_y_tick_spacing: Optional[float] = None,
     ) -> None:
         """
@@ -1829,22 +1840,17 @@ class SmartFigure:
 
         Parameters
         ----------
-        visible_x : bool, optional
-            If ``True``, sets the x-axis grid visible. 
-            Defaults to ``True``.
-        visible_y : bool, optional
-            If ``True``, sets the y-axis grid visible. 
-            Defaults to ``True``.
+        visible_x, visible_y : bool, optional
+            If ``True``, sets the x-axis or y-axis grid visible. If ``False``, the grid is not shown for the respective
+            axis.
+            Defaults to ``True`` for both axes.
         show_on_top : bool, optional
             If ``True``, sets the grid lines to be shown on top of the plot elements. This can be useful to see the grid
             lines above a plotted :class:`~graphinglib.data_plotting_2d.Heatmap` for example.
             Defaults to ``False``.
-        which_x : {"major", "minor", "both"}, optional
-            Sets whether major, minor or both grid lines are shown for the x-axis. 
-            Defaults to ``"both"``.
-        which_y : {"major", "minor", "both"}, optional
-            Sets whether major, minor or both grid lines are shown for the y-axis. 
-            Defaults to ``"both"``.
+        which_x, which_y : Literal["major", "minor", "both"], optional
+            Sets whether major, minor or both grid lines are shown for the x-axis and y-axis respectively.
+            Defaults to ``"both"`` for both axes.
         color : str, optional
             Sets the color of the grid lines.
             Default depends on the ``figure_style`` configuration.
