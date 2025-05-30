@@ -229,10 +229,10 @@ class SmartFigure:
 
         self._elements = {}
         if elements:
-            if len(elements) > num_cols * num_rows:
-                raise ValueError("Too many elements provided for the number of subplots.")
             if num_rows == 1 and num_cols == 1 and not isinstance(elements[0], list):
                 elements = [elements]
+            if len(elements) > num_cols * num_rows:
+                raise ValueError("Too many elements provided for the number of subplots.")
             for i, element in enumerate(elements):
                 if isinstance(element, (Plottable, list, SmartFigure)):
                     if isinstance(element, Plottable):
