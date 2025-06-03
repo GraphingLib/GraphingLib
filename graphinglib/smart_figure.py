@@ -41,9 +41,9 @@ class SmartFigure:
     """
     This class implements a figure object for plotting :class:`~graphinglib.graph_elements.Plottable` elements. It
     allows for the creation of complex figures recursively, where each :class:`~graphinglib.smart_figure.SmartFigure`
-    can contain other :class:`~graphinglib.smart_figure.SmartFigure` objects. The class supports a variety of 
+    can contain other :class:`~graphinglib.smart_figure.SmartFigure` objects. The class supports a variety of
     customization options as well as the ability to use styles and themes for consistent visual appearance across
-    different figures. The idea behind this class is that every SmartFigure contains a single x_label, y_label, title, 
+    different figures. The idea behind this class is that every SmartFigure contains a single x_label, y_label, title,
     projection, etc. and that nested SmartFigures can be inserted into the main SmartFigure to create complex figures
     with more parameters.
 
@@ -79,9 +79,9 @@ class SmartFigure:
         Whether or not to add reference labels to the subfigures. If set to ``True``, each subfigure will be labeled
         alphabetically in the form of "a)", "b)", etc.
         Defaults to ``True``.
-        
+
         .. note::
-            For nested figures, each subfigure controls its own reference labels. This means that if a nested 
+            For nested figures, each subfigure controls its own reference labels. This means that if a nested
             SmartFigure turns off reference labels, the plots in it will not be labeled, even if the parent SmartFigure
             has reference labels turned on.
 
@@ -114,20 +114,20 @@ class SmartFigure:
     projection : Any, optional
         Projection type for the subfigures. This can be a string of a matplotlib projection (e.g., "polar") or an object
         capable of creating a projection (e.g. astropy.wcs.WCS).
-        
+
         .. note::
             3D projections are not supported at the moment.
 
     general_legend : bool
         Whether to create a general legend for the entire figure. If set to ``True``, a single legend will be created
         to regroup all the legends from the subplots. If set to ``False``, all subplots will have their own legend. If
-        nested SmartFigures set this parameter to ``False``, their legend is added to the parent's general legend. 
+        nested SmartFigures set this parameter to ``False``, their legend is added to the parent's general legend.
         However, if a nested SmartFigure sets its general legend to ``True``, it will be created separately and will not
         be added to the parent's general legend.
         Defaults to ``False``.
     legend_loc : str | tuple, optional
         Location of the legend. This can be a string (e.g., "upper right") or a tuple of (x, y) relative coordinates.
-        The supported string locations are: {"upper right", "upper left", "lower left", "lower right", "right", 
+        The supported string locations are: {"upper right", "upper left", "lower left", "lower right", "right",
         "center left", "center right", "lower center", "upper center", "center", "outside upper center",
         "outside center right", "outside lower center", "outside center left"}. Additionally, only if ``general_legend``
         is set to ``False``, the legend location can also be set to "best".
@@ -299,7 +299,7 @@ class SmartFigure:
     @property
     def num_cols(self) -> int:
         return self._num_cols
-    
+
     @num_cols.setter
     def num_cols(self, value: int) -> None:
         if not isinstance(value, int):
@@ -322,7 +322,7 @@ class SmartFigure:
     @property
     def x_label(self) -> str:
         return self._x_label
-    
+
     @x_label.setter
     def x_label(self, value: str) -> None:
         self._x_label = value
@@ -330,7 +330,7 @@ class SmartFigure:
     @property
     def y_label(self) -> str:
         return self._y_label
-    
+
     @y_label.setter
     def y_label(self, value: str) -> None:
         self._y_label = value
@@ -338,7 +338,7 @@ class SmartFigure:
     @property
     def size(self) -> tuple[float, float] | Literal["default"]:
         return self._size
-    
+
     @size.setter
     def size(self, value: tuple[float, float] | Literal["default"]):
         if not isinstance(value, tuple) and value != "default":
@@ -352,7 +352,7 @@ class SmartFigure:
     @property
     def title(self) -> str:
         return self._title
-    
+
     @title.setter
     def title(self, value: str) -> None:
         self._title = value
@@ -360,7 +360,7 @@ class SmartFigure:
     @property
     def x_lim(self) -> tuple[float, float]:
         return self._x_lim
-    
+
     @x_lim.setter
     def x_lim(self, value: tuple[float, float]) -> None:
         if value is not None:
@@ -373,7 +373,7 @@ class SmartFigure:
     @property
     def y_lim(self) -> tuple[float, float]:
         return self._y_lim
-    
+
     @y_lim.setter
     def y_lim(self, value: tuple[float, float]) -> None:
         if value is not None:
@@ -386,7 +386,7 @@ class SmartFigure:
     @property
     def log_scale_x(self) -> bool:
         return self._log_scale_x
-    
+
     @log_scale_x.setter
     def log_scale_x(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -396,7 +396,7 @@ class SmartFigure:
     @property
     def log_scale_y(self) -> bool:
         return self._log_scale_y
-    
+
     @log_scale_y.setter
     def log_scale_y(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -406,7 +406,7 @@ class SmartFigure:
     @property
     def remove_axes(self) -> bool:
         return self._remove_axes
-    
+
     @remove_axes.setter
     def remove_axes(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -416,7 +416,7 @@ class SmartFigure:
     @property
     def aspect_ratio(self) -> float | Literal["auto", "equal"]:
         return self._aspect_ratio
-    
+
     @aspect_ratio.setter
     def aspect_ratio(self, value: float | Literal["auto", "equal"]) -> None:
         if not isinstance(value, (float, int)) and value != "auto" and value != "equal":
@@ -428,7 +428,7 @@ class SmartFigure:
     @property
     def remove_x_ticks(self) -> bool:
         return self._remove_x_ticks
-    
+
     @remove_x_ticks.setter
     def remove_x_ticks(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -438,7 +438,7 @@ class SmartFigure:
     @property
     def remove_y_ticks(self) -> bool:
         return self._remove_y_ticks
-    
+
     @remove_y_ticks.setter
     def remove_y_ticks(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -448,7 +448,7 @@ class SmartFigure:
     @property
     def reference_labels(self) -> bool:
         return self._reference_labels
-    
+
     @reference_labels.setter
     def reference_labels(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -458,7 +458,7 @@ class SmartFigure:
     @property
     def global_reference_label(self) -> bool:
         return self._global_reference_label
-    
+
     @global_reference_label.setter
     def global_reference_label(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -468,7 +468,7 @@ class SmartFigure:
     @property
     def reflabel_loc(self) -> Literal["inside", "outside"]:
         return self._reflabel_loc
-    
+
     @reflabel_loc.setter
     def reflabel_loc(self, value: Literal["inside", "outside"]) -> None:
         if value not in ["inside", "outside"]:
@@ -478,7 +478,7 @@ class SmartFigure:
     @property
     def width_padding(self) -> float:
         return self._width_padding
-    
+
     @width_padding.setter
     def width_padding(self, value: float) -> None:
         if value is not None:
@@ -491,7 +491,7 @@ class SmartFigure:
     @property
     def height_padding(self) -> float:
         return self._height_padding
-    
+
     @height_padding.setter
     def height_padding(self, value: float) -> None:
         if value is not None:
@@ -504,7 +504,7 @@ class SmartFigure:
     @property
     def width_ratios(self) -> ArrayLike:
         return self._width_ratios
-    
+
     @width_ratios.setter
     def width_ratios(self, value: ArrayLike) -> None:
         if value is not None:
@@ -517,7 +517,7 @@ class SmartFigure:
     @property
     def height_ratios(self) -> ArrayLike:
         return self._height_ratios
-    
+
     @height_ratios.setter
     def height_ratios(self, value: ArrayLike) -> None:
         if value is not None:
@@ -530,7 +530,7 @@ class SmartFigure:
     @property
     def share_x(self) -> bool:
         return self._share_x
-    
+
     @share_x.setter
     def share_x(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -540,7 +540,7 @@ class SmartFigure:
     @property
     def share_y(self) -> bool:
         return self._share_y
-    
+
     @share_y.setter
     def share_y(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -550,7 +550,7 @@ class SmartFigure:
     @property
     def projection(self) -> Any:
         return self._projection
-    
+
     @projection.setter
     def projection(self, value: Any) -> None:
         if value is not None:
@@ -570,7 +570,7 @@ class SmartFigure:
     @property
     def general_legend(self) -> bool:
         return self._general_legend
-    
+
     @general_legend.setter
     def general_legend(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -580,7 +580,7 @@ class SmartFigure:
     @property
     def legend_loc(self) -> str | tuple:
         return self._legend_loc
-    
+
     @legend_loc.setter
     def legend_loc(self, value: str | tuple) -> None:
         if value is not None:
@@ -602,7 +602,7 @@ class SmartFigure:
     @property
     def legend_cols(self) -> int:
         return self._legend_cols
-    
+
     @legend_cols.setter
     def legend_cols(self, value: int) -> None:
         if not isinstance(value, int):
@@ -614,7 +614,7 @@ class SmartFigure:
     @property
     def show_legend(self) -> bool:
         return self._show_legend
-    
+
     @show_legend.setter
     def show_legend(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -624,7 +624,7 @@ class SmartFigure:
     @property
     def figure_style(self) -> str:
         return self._figure_style
-    
+
     @figure_style.setter
     def figure_style(self, value: str) -> None:
         if not isinstance(value, str):
@@ -637,12 +637,12 @@ class SmartFigure:
     @property
     def show_grid(self) -> bool:
         """
-        Whether to show the grid lines on the figure. A grid first needs to be created using the 
+        Whether to show the grid lines on the figure. A grid first needs to be created using the
         :meth: `~graphinglib.smart_figure.SmartFigure.set_grid` method. This can be used to easily toggle the visibility
         of a previously created grid.
         """
         return self._show_grid
-    
+
     @show_grid.setter
     def show_grid(self, value: bool) -> None:
         if not isinstance(value, bool):
@@ -673,7 +673,7 @@ class SmartFigure:
         Whether to hide default legend elements. This is useful if a custom legend was previously created using the
         :meth:`~graphinglib.smart_figure.SmartFigure.set_custom_legend` method and you want to hide the default labels
         created with each :class:`~graphinglib.graph_elements.Plottable` element's label. Each SmartFigure controls its
-        own default legend elements, so if this property is set to True in a nested SmartFigure, the default 
+        own default legend elements, so if this property is set to True in a nested SmartFigure, the default
         elements will be hidden even if the parent SmartFigure attempts to create a general legend. However, both the
         nested and parent SmartFigures need to set this property to False to display the default elements of a nested
         SmartFigure in a global general legend.
@@ -696,7 +696,7 @@ class SmartFigure:
         Gives the number of elements in the SmartFigure.
         """
         return len(self._elements)
-    
+
     def __setitem__(
             self,
             key: int | slice | tuple[int | slice],
@@ -811,6 +811,9 @@ class SmartFigure:
         return self._elements.get(key_, [])
 
     def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.smart_figure.SmartFigure` object.
+        """
         return deepcopy(self)
 
     def copy_with(self, **kwargs) -> Self:
@@ -832,7 +835,7 @@ class SmartFigure:
         Examples
         --------
         Copy an existing SmartFigure to remove the x and y labels::
-            
+
             fig2 = fig1.copy_with(x_label=None, y_label=None)
         """
         properties = [attr for attr in dir(self.__class__) if isinstance(getattr(self.__class__, attr, None), property)]
@@ -878,7 +881,7 @@ class SmartFigure:
         ----------
         key : int | slice | tuple[int | slice]
             The key to validate and normalize.
-        
+
         Returns
         -------
         tuple[int | slice]
@@ -920,7 +923,7 @@ class SmartFigure:
 
     def add_elements(self, *elements: Plottable) -> None:
         """
-        Adds one or more :class:`~graphinglib.graph_elements.Plottable` elements to the 
+        Adds one or more :class:`~graphinglib.graph_elements.Plottable` elements to the
         :class:`~graphinglib.smart_figure.SmartFigure`. This convenience method is equivalent to using __setitem__, but
         only works if the SmartFigure contains a single plot (1x1). Otherwise, the __setitem__ method should be used.
 
@@ -943,7 +946,7 @@ class SmartFigure:
         fullscreen: bool = False,
     ) -> None:
         """
-        Plots and displays the :class:`~graphinglib.smart_figure.SmartFigure`. The 
+        Plots and displays the :class:`~graphinglib.smart_figure.SmartFigure`. The
         :meth:`~graphinglib.smart_figure.SmartFigure.save` method is recommended to see properly what the figure looks
         like, as the display may not show the full figure or the appropriate spacings in some cases.
 
@@ -1104,7 +1107,7 @@ class SmartFigure:
             A dictionary containing the legend information for the figure. The keys are "default" and "custom", and
             the values are dictionaries with the "labels" and "handles" keys, which give the list of each type of
             element. The "default" elements are the ones created by the Plottable elements' labels, while the "custom"
-            elements are the ones created by the user using the 
+            elements are the ones created by the user using the
             :meth:`~graphinglib.smart_figure.SmartFigure.set_custom_legend` method. This is used to create a general
             legend for the entire SmartFigure and keeping trach of the default and custom elements to use the
             :attr:`~graphinglib.smart_figure.SmartFigure.hide_default_legend_elements` and
@@ -1141,7 +1144,7 @@ class SmartFigure:
                 default_params_copy.update(is_a_subfigure=True)
                 default_params_copy["Figure"]["_figure_style"] = self._figure_style
                 legend_info = element._prepare_figure(
-                    default_params=default_params_copy, 
+                    default_params=default_params_copy,
                     is_matplotlib_style=is_matplotlib_style,
                     make_legend=(not self._general_legend),
                 )
@@ -1408,7 +1411,7 @@ class SmartFigure:
             return ScaledTranslation(7 / 72, -10 / 72, self._figure.dpi_scale_trans)
         else:
             raise ValueError("Target must be either an Axes, Figure or SubFigure instance.")
-    
+
     def _get_legend_params(
         self,
         labels: list[str],
@@ -1529,7 +1532,7 @@ class SmartFigure:
     def _fill_in_rc_params(self, is_matplotlib_style: bool = False) -> None:
         """
         Fills in and sets the missing rc parameters from the specified ``figure_style``.
-        If ``is_matplotlib_style`` is ``True``, the rc parameters are reset to the default values for the specified 
+        If ``is_matplotlib_style`` is ``True``, the rc parameters are reset to the default values for the specified
         ``figure_style``. If ``is_matplotlib_style`` is ``False``, the rc parameters are updated with the missing
         parameters from the specified ``figure_style``. In both cases, the rc parameters are then updated with the
         user-specified parameters.
@@ -1719,11 +1722,11 @@ class SmartFigure:
             (y_tick_labels is not None) and y_ticks is None,
         ]):
             raise GraphingException("Ticks position must be specified when ticks labels are specified")
-        
+
         if any([
-            (x_ticks is not None) and (x_tick_spacing is not None), 
+            (x_ticks is not None) and (x_tick_spacing is not None),
             (y_ticks is not None) and (y_tick_spacing is not None),
-            (minor_x_ticks is not None) and (minor_x_tick_spacing is not None), 
+            (minor_x_ticks is not None) and (minor_x_tick_spacing is not None),
             (minor_y_ticks is not None) and (minor_y_tick_spacing is not None),
         ]):
             raise GraphingException("Tick spacing and tick positions cannot be set simultaneously")
@@ -1738,7 +1741,7 @@ class SmartFigure:
         self._minor_y_ticks = minor_y_ticks
         self._minor_x_tick_spacing = minor_x_tick_spacing
         self._minor_y_tick_spacing = minor_y_tick_spacing
-    
+
     def set_tick_params(
         self,
         axis: Optional[Literal["x", "y", "both"]] = "both",
@@ -1889,7 +1892,7 @@ class SmartFigure:
         reset: bool = False,
     ) -> None:
         """
-        Sets a custom legend for the figure. Custom legends only work if the ``general_legend`` parameter is set to 
+        Sets a custom legend for the figure. Custom legends only work if the ``general_legend`` parameter is set to
         ``True``. The visibility of default or custom legend elements can be controlled individually with the
         :attr:`~graphinglib.smart_figure.SmartFigure.hide_default_legend_elements` and
         :attr:`~graphinglib.smart_figure.SmartFigure.hide_custom_legend_elements` properties.
@@ -1903,8 +1906,8 @@ class SmartFigure:
             https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html#matplotlib.pyplot.legend
         labels : list[str], optional
             List of labels for the legend. If the handles directly contain the labels, this parameter can be set to
-            ``None``. However, if given, the length of the labels list must match the length of the handles list. 
-            
+            ``None``. However, if given, the length of the labels list must match the length of the handles list.
+
             .. note::
                 If labels are given, the handles must also be given.
         reset : bool, optional
@@ -1921,11 +1924,11 @@ class SmartFigure:
             new_labels = labels.copy()
             if len(handles) != len(labels):
                 raise GraphingException("If labels are given, their number must match the number of handles.")
-        
+
         if reset:
             self._custom_legend_handles = []
             self._custom_legend_labels = []
-        
+
         self._custom_legend_handles += handles
         self._custom_legend_labels += new_labels
 
@@ -1934,9 +1937,9 @@ class SmartFigureWCS(SmartFigure):
     """
     This class implements a figure object for plotting :class:`~graphinglib.graph_elements.Plottable` elements. It
     allows for the creation of complex figures recursively, where each :class:`~graphinglib.smart_figure.SmartFigure`
-    can contain other :class:`~graphinglib.smart_figure.SmartFigure` objects. The class supports a variety of 
+    can contain other :class:`~graphinglib.smart_figure.SmartFigure` objects. The class supports a variety of
     customization options as well as the ability to use styles and themes for consistent visual appearance across
-    different figures. The idea behind this class is that every SmartFigure contains a single x_label, y_label, title, 
+    different figures. The idea behind this class is that every SmartFigure contains a single x_label, y_label, title,
     projection, etc. and that nested SmartFigures can be inserted into the main SmartFigure to create complex figures
     with more parameters.
 
@@ -1975,9 +1978,9 @@ class SmartFigureWCS(SmartFigure):
         Whether or not to add reference labels to the subfigures. If set to ``True``, each subfigure will be labeled
         alphabetically in the form of "a)", "b)", etc.
         Defaults to ``True``.
-        
+
         .. note::
-            For nested figures, each subfigure controls its own reference labels. This means that if a nested 
+            For nested figures, each subfigure controls its own reference labels. This means that if a nested
             SmartFigure turns off reference labels, the plots in it will not be labeled, even if the parent SmartFigure
             has reference labels turned on.
 
@@ -2010,13 +2013,13 @@ class SmartFigureWCS(SmartFigure):
     general_legend : bool
         Whether to create a general legend for the entire figure. If set to ``True``, a single legend will be created
         to regroup all the legends from the subplots. If set to ``False``, all subplots will have their own legend. If
-        nested SmartFigures set this parameter to ``False``, their legend is added to the parent's general legend. 
+        nested SmartFigures set this parameter to ``False``, their legend is added to the parent's general legend.
         However, if a nested SmartFigure sets its general legend to ``True``, it will be created separately and will not
         be added to the parent's general legend.
         Defaults to ``False``.
     legend_loc : str | tuple, optional
         Location of the legend. This can be a string (e.g., "upper right") or a tuple of (x, y) relative coordinates.
-        The supported string locations are: {"upper right", "upper left", "lower left", "lower right", "right", 
+        The supported string locations are: {"upper right", "upper left", "lower left", "lower right", "right",
         "center left", "center right", "lower center", "upper center", "center", "outside upper center",
         "outside center right", "outside lower center", "outside center left"}. Additionally, only if ``general_legend``
         is set to ``False``, the legend location can also be set to "best".
@@ -2126,9 +2129,9 @@ class SmartFigureWCS(SmartFigure):
         self._minor_x_tick_frequency = None
         self._minor_y_tick_frequency = None
         self._default_tick_params = {       # The following are the default parameters of WCSAxes objects
-            "x major": {"bottom" : True, "top" : True, "labelbottom" : True}, 
-            "y major": {"left" : True, "right" : True, "labelleft" : True}, 
-            "x minor": {}, 
+            "x major": {"bottom" : True, "top" : True, "labelbottom" : True},
+            "y major": {"left" : True, "right" : True, "labelleft" : True},
+            "x minor": {},
             "y minor": {}
         }
         self._tick_params = deepcopy(self._default_tick_params)
@@ -2224,7 +2227,7 @@ class SmartFigureWCS(SmartFigure):
 
         .. note::
             This method converts the given ``axes.labelpad`` value so the default value of matplotlib (``4.0``) is
-            converted to the default value of class:`astropy.visualization.wcsaxes.WCSAxes` (``1.0``). The given 
+            converted to the default value of class:`astropy.visualization.wcsaxes.WCSAxes` (``1.0``). The given
             ``axes.labelpad`` value is divided by ``4`` to achieve this conversion.
         """
         x_axis, y_axis = ax.coords
@@ -2271,11 +2274,11 @@ class SmartFigureWCS(SmartFigure):
 
             .. example::
                 >>> x_tick_formatter = "hh:mm:ss.s"
-                
+
                 ``1h01m34.1s``
 
                 >>> x_tick_formatter = lambda x: f"{x:.2f} s"
-                
+
                 ``1.23 s``
 
         minor_x_tick_frequency, minor_y_tick_frequency : float, optional
@@ -2292,13 +2295,13 @@ class SmartFigureWCS(SmartFigure):
             y_tick_spacing=y_tick_spacing,
         )
         if any([
-            (x_ticks is not None) and (number_of_x_ticks is not None), 
+            (x_ticks is not None) and (number_of_x_ticks is not None),
             (y_ticks is not None) and (number_of_y_ticks is not None),
         ]):
             raise GraphingException("Number of ticks and tick positions cannot be set simultaneously")
 
         if any([
-            (x_tick_spacing is not None) and (number_of_x_ticks is not None), 
+            (x_tick_spacing is not None) and (number_of_x_ticks is not None),
             (y_tick_spacing is not None) and (number_of_y_ticks is not None),
         ]):
             raise GraphingException("Number of ticks and tick spacing cannot be set simultaneously")
