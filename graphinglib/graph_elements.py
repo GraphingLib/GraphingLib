@@ -910,8 +910,8 @@ class Text(Plottable):
             Default depends on the ``figure_style`` configuration.
         relative_to : str
             The coordinate system in which the text is plotted. If ``"axes"``, the text position corresponds to the
-            physical coordinates of the axes (e.g. ``(1,1)`` would place the text at ``x=1`` and ``y=1``). If 
-            ``"figure"``, the text position corresponds to the relative position in the figure (e.g. ``(1,1)`` would 
+            physical coordinates of the axes (e.g. ``(1,1)`` would place the text at ``x=1`` and ``y=1``). If
+            ``"figure"``, the text position corresponds to the relative position in the figure (e.g. ``(1,1)`` would
             place the text at the top right corner of the figure). Practically, this tells if the text should be plotted
             on the Figure or on the Axes.
             Defaults to ``"axes"``.
@@ -989,7 +989,7 @@ class Text(Plottable):
     @property
     def relative_to(self) -> str:
         return self._relative_to
-    
+
     @relative_to.setter
     def relative_to(self, relative_to: str) -> None:
         if relative_to not in ["axes", "figure"]:

@@ -1160,8 +1160,8 @@ class SmartFigure:
                 current_elements = element if isinstance(element, list) else [element]
                 subfig = self._figure.add_subfigure(self._gridspec[rows, cols])
                 ax = subfig.add_subplot(
-                    sharex=ax if self._share_x else None,
-                    sharey=ax if self._share_y else None,
+                    sharex=ax if self._share_x else None,  # This enables the coherent zoom and pan of the axes
+                    sharey=ax if self._share_y else None,  # but it does not remove the ticklabels
                     projection=self._projection,
                 )
                 self._default_params = default_params
@@ -1203,12 +1203,6 @@ class SmartFigure:
                     if self._reference_labels and (len(self) > 1 or isinstance(self._figure, SubFigure)):
                         self._create_ref_label(ax)
 
-                    # If axes are shared, manually remove ticklabels from unnecessary plots
-                    if self._share_x and rows.start != (self._num_rows - 1):
-                        ax.tick_params(axis="x", labelbottom=False)
-                    if self._share_y and cols.start != 0:
-                        ax.tick_params(axis="y", labelleft=False)
-
                     # Remove ticks
                     if self._remove_x_ticks:
                         ax.tick_params(axis="x", labelbottom=False, labeltop=False, bottom=False, top=False)
@@ -1234,6 +1228,19 @@ class SmartFigure:
                     ax.set_aspect(self._aspect_ratio)
 
                     self._customize_ticks(ax)
+
+                    # If axes are shared, manually remove ticklabels from unnecessary plots as it is not done
+                    # automatically when adding subplots
+                    if self._share_x:
+                        if rows.start != 0:
+                            ax.tick_params(axis="x", labeltop=False)
+                        if rows.stop != self._num_rows:
+                            ax.tick_params(axis="x", labelbottom=False)
+                    if self._share_y:
+                        if cols.start != 0:
+                            ax.tick_params(axis="y", labelleft=False)
+                        if cols.stop != self._num_cols:
+                            ax.tick_params(axis="y", labelright=False)
 
                     # Customize grid
                     if self._show_grid:
