@@ -691,6 +691,18 @@ class SmartFigure:
             raise TypeError("hide_default_legend_elements must be a bool.")
         self._hide_default_legend_elements = value
 
+    @property
+    def is_single_subplot(self) -> bool:
+        """
+        Whether the SmartFigure is a single subplot (1x1). This is useful to determine if the SmartFigure can be used
+        as a single plot or if it contains multiple subplots.
+
+        .. note::
+            This property is used to verify if custom legend elements can be added to the SmartFigure even if the
+            :attr:`~graphinglib.smart_figure.SmartFigure.general_legend` is set to ``False``.
+        """
+        return self.num_rows == 1 and self.num_cols == 1
+
     def __len__(self) -> int:
         """
         Gives the number of elements in the SmartFigure.
@@ -698,12 +710,14 @@ class SmartFigure:
         return len(self._elements)
 
     def __setitem__(
-            self,
-            key: int | slice | tuple[int | slice],
-            element: Plottable | list[Plottable] | SmartFigure
+        self,
+        key: int | slice | tuple[int | slice],
+        element: Plottable | list[Plottable] | SmartFigure
     ) -> None:
         """
         Assigns a Plottable, a list of Plottable objects, or a SmartFigure to a specified position in the SmartFigure.
+        The indexing follows classical 2D numpy-like indexing, where the first element corresponds to the row and the
+        second element corresponds to the column.
 
         Parameters
         ----------
@@ -1250,9 +1264,21 @@ class SmartFigure:
                             ax.set_axisbelow(False)
 
                     # Axes legend
-                    if not self._general_legend and make_legend and default_labels:
-                        if self._show_legend:
-                            legend_params = self._get_legend_params(default_labels, default_handles, -0.1)
+                    if not self._general_legend and make_legend:
+                        if self._hide_default_legend_elements:
+                            default_labels = []
+                            default_handles = []
+                        if self.is_single_subplot:
+                            custom_labels += self._custom_legend_labels
+                            custom_handles += self._custom_legend_handles
+                        if self._hide_custom_legend_elements or not self.is_single_subplot:
+                            custom_labels = []
+                            custom_handles = []
+                        labels = default_labels + custom_labels
+                        handles = default_handles + custom_handles
+
+                        if self._show_legend and labels:
+                            legend_params = self._get_legend_params(labels, handles, -0.1)
                             try:
                                 _legend = ax.legend(
                                     draggable=True,
@@ -1264,6 +1290,7 @@ class SmartFigure:
                                 )
                             _legend.set_zorder(10000)
                         default_labels, default_handles = [], []
+                        custom_labels, custom_handles = [], []
 
                     # Axes title (if the geometry is 1x1)
                     if self._title and (self._num_cols == 1 and self._num_rows == 1):
@@ -1899,10 +1926,15 @@ class SmartFigure:
         reset: bool = False,
     ) -> None:
         """
-        Sets a custom legend for the figure. Custom legends only work if the ``general_legend`` parameter is set to
-        ``True``. The visibility of default or custom legend elements can be controlled individually with the
-        :attr:`~graphinglib.smart_figure.SmartFigure.hide_default_legend_elements` and
-        :attr:`~graphinglib.smart_figure.SmartFigure.hide_custom_legend_elements` properties.
+        Sets a custom legend for the figure. If the SmartFigure contains multiple subfigures, custom legends only work
+        if the ``general_legend`` parameter is set to ``True``. Otherwise, custom legends can be added for non-general
+        legends if the SmartFigure is a single subplot (see the
+        :attr:`~graphinglib.smart_figure.SmartFigure.is_single_subplot` property).
+
+        .. note::
+            The visibility of default or custom legend elements can be controlled individually with the
+            :attr:`~graphinglib.smart_figure.SmartFigure.hide_default_legend_elements` and
+            :attr:`~graphinglib.smart_figure.SmartFigure.hide_custom_legend_elements` properties.
 
         Parameters
         ----------

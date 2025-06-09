@@ -339,7 +339,7 @@ class TestSmartFigure(unittest.TestCase):
             self.fig.legend_loc = 1
         # Valid
         for pos in [
-            "upper right", "upper left", "lower left", "lower right", "right", 
+            "upper right", "upper left", "lower left", "lower right", "right",
             "center left", "center right", "lower center", "upper center", "center", "outside upper center",
             "outside center right", "outside lower center", "outside center left", (0.5, 0.5)
         ]:
@@ -500,7 +500,7 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(GraphingException):
             fig2 = SmartFigure(num_rows=2, num_cols=2)
             fig2.add_elements(dummy)
-    
+
     def test_add_all_elements(self):
         self.fig[0] = SmartFigure()
         self.fig._initialize_parent_smart_figure()
