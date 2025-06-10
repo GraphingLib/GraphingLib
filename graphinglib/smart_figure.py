@@ -11,6 +11,7 @@ from astropy.units import Quantity
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from matplotlib import is_interactive
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
@@ -800,8 +801,9 @@ class SmartFigure:
 
     def __getitem__(self, key: int | slice | tuple[int | slice]) -> list[Plottable] | SmartFigure:
         """
-        Gives the element(s) at the specified key in the SmartFigure. This can be used to modify directly an element
-        in the SmartFigure.
+        Gives the element(s) at the specified key in the SmartFigure. This can be used to modify or extract directly an
+        element in the SmartFigure. The indexing follows classical 2D numpy-like indexing, where the first element
+        corresponds to the row and the second element corresponds to the column.
 
         Parameters
         ----------
@@ -809,11 +811,12 @@ class SmartFigure:
             The key specifying the location(s) in the SmartFigure to access. If a tuple of ints is provided, the element
             is accessed in the corresponding square of the grid, following classical 2D numpy-like indexing. If slices
             are provided, an element spanning multiple squares in the grid can be retrieved. If ``num_rows`` or
-            ``num_cols`` is set to 1, the key can be a single int or slice. Otherwise, the key must be a two-tuple.
+            ``num_cols`` is set to 1, the key can be a single int or slice to index into the single row or column.
+            Otherwise, the key must be a two-tuple.
 
             .. note::
-                The exact slice of the element must be provided to access it. This means that if an element spans multiple
-                subplots, the given slice also needs to span these subplots.
+                The exact slice of the element must be provided to access it. This means that if an element spans
+                multiple subplots, the given slice also needs to span these subplots.
 
         Returns
         -------
@@ -828,7 +831,14 @@ class SmartFigure:
         """
         Returns a deep copy of the :class:`~graphinglib.smart_figure.SmartFigure` object.
         """
-        return deepcopy(self)
+        try:
+            return deepcopy(self)
+        except TypeError as e:
+            if "cannot pickle" in str(e):
+                raise GraphingException("Cannot copy a SmartFigure that is currently plotted. Please copy it before "
+                                        "calling show.")
+            else:
+                raise e
 
     def copy_with(self, **kwargs) -> Self:
         """
@@ -1009,10 +1019,11 @@ class SmartFigure:
             plt.get_current_fig_manager().full_screen_toggle()
 
         plt.show()
-        plt.rcParams.update(plt.rcParamsDefault)
-        self._figure.clear()
-        self._figure = None
-        self._gridspec = None
+        if not is_interactive():        # some backends do not close the figure automatically
+            plt.rcParams.update(plt.rcParamsDefault)
+            self._figure.clear()
+            self._figure = None
+            self._gridspec = None
 
     def save(
         self,
@@ -1042,6 +1053,7 @@ class SmartFigure:
         )
         plt.close()
         plt.rcParams.update(plt.rcParamsDefault)
+        self._figure.clear()
         self._figure = None
         self._gridspec = None
 
@@ -1292,8 +1304,8 @@ class SmartFigure:
                         default_labels, default_handles = [], []
                         custom_labels, custom_handles = [], []
 
-                    # Axes title (if the geometry is 1x1)
-                    if self._title and (self._num_cols == 1 and self._num_rows == 1):
+                    # Axes title (if the SmartFigure is a single subplot)
+                    if self._title and self.is_single_subplot:
                         ax.set_title(self._title)
 
                 self._reset_params_to_default(self, figure_params_to_reset)
@@ -1302,7 +1314,7 @@ class SmartFigure:
                 raise GraphingException(f"Unsupported element type in list: {type(element).__name__}")
 
         # Axes labels
-        if self._num_cols == 1 and self._num_rows == 1:
+        if self.is_single_subplot:
             if ax is not None:  # makes sure an element was plotted and that an axis was created
                 self._customize_ax_label(ax)
         else:
@@ -1314,8 +1326,8 @@ class SmartFigure:
             self._figure.supxlabel(self._x_label, **suplabel_params)
             self._figure.supylabel(self._y_label, **suplabel_params)
 
-        # Title (if the geometry is not 1x1)
-        if self._title and not (self._num_cols == 1 and self._num_rows == 1):
+        # Title (if the SmartFigure is not a single subplot)
+        if self._title and not self.is_single_subplot:
             self._figure.suptitle(self._title)
 
         # General legend
