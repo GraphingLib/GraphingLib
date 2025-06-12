@@ -230,7 +230,9 @@ class SmartFigure:
 
         self._elements = {}
         if elements:
-            if num_rows == 1 and num_cols == 1 and not isinstance(elements[0], list):
+            if not isinstance(elements, list):
+                raise TypeError("elements must be a list of Plottable objects or SmartFigures.")
+            if self.is_single_subplot and not isinstance(elements[0], list):
                 elements = [elements]
             if len(elements) > num_cols * num_rows:
                 raise ValueError("Too many elements provided for the number of subplots.")
@@ -1143,6 +1145,7 @@ class SmartFigure:
         plt.rcParams.update(sub_rcs)
         cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
         num_cycle_colors = len(cycle_colors)
+        self._default_params = default_params
 
         self._gridspec = self._figure.add_gridspec(
             self._num_rows,
@@ -1172,7 +1175,7 @@ class SmartFigure:
                 legend_info = element._prepare_figure(
                     default_params=default_params_copy,
                     is_matplotlib_style=is_matplotlib_style,
-                    make_legend=(not self._general_legend),
+                    make_legend=(not self._general_legend and make_legend),
                 )
                 self._reference_label_i = element._reference_label_i
                 default_labels += legend_info["labels"]["default"]
@@ -1190,7 +1193,6 @@ class SmartFigure:
                     sharey=ax if self._share_y else None,  # but it does not remove the ticklabels
                     projection=self._projection,
                 )
-                self._default_params = default_params
                 figure_params_to_reset = self._fill_in_missing_params(self)
 
                 # Plotting loop
