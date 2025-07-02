@@ -1,6 +1,6 @@
 from __future__ import annotations
 from shutil import which
-from typing import Literal, Optional, Any, Self, Callable
+from typing import Literal, Optional, Any, Self, Callable, Iterable
 from logging import warning
 from string import ascii_lowercase
 from collections import OrderedDict
@@ -95,8 +95,8 @@ class SmartFigure:
         Location of the reference labels of the SubFigures, either "inside" or "outside".
         Defaults to ``"outside"``.
     width_padding, height_padding : float
-        Padding between the subfigures in the x and y directions, respectively. The default value of ``None`` results in a
-        default small amount of padding. This may be set to 0 to completely remove the space between subfigures, but
+        Padding between the subfigures in the x and y directions, respectively. The default value of ``None`` results in
+        a default small amount of padding. This may be set to 0 to completely remove the space between subfigures, but
         note that axes labels may need to be removed to delete additional space.
     width_ratios, height_ratios : ArrayLike
         Ratios of the widths and heights of the subfigures, respectively. These ratios determine how much space each
@@ -149,16 +149,16 @@ class SmartFigure:
     figure_style : str
         The figure style to use for the figure. The default style can be set using ``gl.set_default_style()``.
         Defaults to ``"default"``.
-    elements : list[Plottable | SmartFigure] | list[list[Plottable | SmartFigure]], optional
+    elements : Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]], optional
         The elements to plot in the figure.
-        If a list of depth 1 is provided and the figure is 1x1, all the elements are added to the unique plot. For other
-        geometries, the elements are added one by one in the order they are provided to each subplot, and the list
-        should not be longer than the number of subplots.
-        If a list of depth 2 is provided, each sublist is added to the corresponding subplot, in the order they are
-        provided. The number of sublists should be equal to the number of subplots.
-        If ``None`` elements are present in the list, the corresponding subplots are not drawn and a blank space is left
-        in the figure. If empty lists or list containing only ``None`` are given in the list, the corresponding subplots
-        are drawn but empty.
+        If an iterable of depth 1 is provided and the figure is 1x1, all the elements are added to the unique plot. For
+        other geometries, the elements are added one by one in the order they are provided to each subplot, and the
+        iterable should not be longer than the number of subplots.
+        If an iterable of depth 2 is provided, each sub-iterable is added to the corresponding subplot, in the order
+        they are provided. The number of sub-iterables should be equal to the number of subplots.
+        If ``None`` elements are present in the iterable, the corresponding subplots are not drawn and a blank space is
+        left in the figure. If empty lists or iterables containing only ``None`` are given in the list, the
+        corresponding subplots are drawn but empty.
 
         .. note::
             This method for adding elements only allows to add elements to single subplots. If you want to add elements
@@ -196,7 +196,7 @@ class SmartFigure:
         legend_cols: int = 1,
         show_legend: bool = True,
         figure_style: str = "default",
-        elements: Optional[list[Plottable | SmartFigure] | list[list[Plottable | SmartFigure]]] = [],
+        elements: Optional[Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]]] = [],
     ) -> None:
         self.num_rows = num_rows
         self.num_cols = num_cols
@@ -229,20 +229,26 @@ class SmartFigure:
         self.figure_style = figure_style
 
         self._elements = {}
-        if elements:
-            if not isinstance(elements, list):
-                raise TypeError("elements must be a list of Plottable objects or SmartFigures.")
-            if self.is_single_subplot and not isinstance(elements[0], list):
+        if any(elements):
+            if not (isinstance(elements, Iterable)
+                    and all(isinstance(el, (Plottable, SmartFigure, Iterable, type(None))) for el in elements)):
+                raise TypeError(
+                    f"Elements must be an iterable of Plottable objects or SmartFigures, not {type(elements).__name__}."
+                )
+            if self.is_single_subplot and not isinstance(elements[0], Iterable):
                 elements = [elements]
+            for i, element in enumerate(elements):
+                if not any([
+                    isinstance(element, (Plottable, SmartFigure, type(None))),
+                    isinstance(element, Iterable) and all(isinstance(el, (Plottable, type(None))) for el in element),
+                ]):
+                    raise TypeError(
+                        f"Element at index {i} must be a Plottable, an iterable of Plottables, or a SmartFigure."
+                    )
             if len(elements) > num_cols * num_rows:
                 raise ValueError("Too many elements provided for the number of subplots.")
             for i, element in enumerate(elements):
-                if isinstance(element, (Plottable, list, SmartFigure)):
-                    if isinstance(element, Plottable):
-                        element = [element]
-                    self._elements[self._keys_to_slices(divmod(i, self._num_cols))] = element
-                elif element is not None:
-                    raise TypeError(f"Invalid element type: {type(element).__name__}")
+                self[divmod(i, self._num_cols)] = element
 
         self._figure = None
         self._gridspec = None
@@ -512,7 +518,9 @@ class SmartFigure:
     def width_ratios(self, value: ArrayLike) -> None:
         if value is not None:
             if not hasattr(value, "__len__"):
-                raise TypeError("width_ratios must be a sequence.")
+                raise TypeError("width_ratios must be an ArrayLike.")
+            if not all(isinstance(x, (float, int)) for x in value):
+                raise TypeError("width_ratios must contain only numbers.")
             if len(value) != self._num_cols:
                 raise ValueError("width_ratios must have the same length as num_cols.")
         self._width_ratios = value
@@ -525,7 +533,9 @@ class SmartFigure:
     def height_ratios(self, value: ArrayLike) -> None:
         if value is not None:
             if not hasattr(value, "__len__"):
-                raise TypeError("height_ratios must be a sequence.")
+                raise TypeError("height_ratios must be an ArrayLike.")
+            if not all(isinstance(x, (float, int)) for x in value):
+                raise TypeError("height_ratios must contain only numbers.")
             if len(value) != self._num_rows:
                 raise ValueError("height_ratios must have the same length as num_rows.")
         self._height_ratios = value
@@ -715,7 +725,7 @@ class SmartFigure:
     def __setitem__(
         self,
         key: int | slice | tuple[int | slice],
-        element: Plottable | list[Plottable] | SmartFigure
+        element: Plottable | Iterable[Plottable] | SmartFigure
     ) -> None:
         """
         Assigns a Plottable, a list of Plottable objects, or a SmartFigure to a specified position in the SmartFigure.
@@ -729,10 +739,10 @@ class SmartFigure:
             provided, the element is placed in the corresponding square of the grid, following classical 2D numpy-like
             indexing. If slices are provided, the element can span multiple squares in the grid. If ``num_rows`` or
             ``num_cols`` is set to 1, the key can be a single int or slice. Otherwise, the key must be a two-tuple.
-        element : Plottable | list[Plottable] | SmartFigure
-            The element(s) to assign. Must be a Plottable, a list of Plottable objects, or a SmartFigure. If None, the
-            element at the specified key will be removed. Note that the exact slice used for inserting a list of
-            Plottables must be provided to remove it.
+        element : Plottable | Iterable[Plottable] | SmartFigure
+            The element(s) to assign. Must be a Plottable, an iterable of Plottable objects, or a SmartFigure. If None,
+            the element at the specified key will be removed. Note that the exact slice used for inserting Plottables or
+            a SmartFigure must be provided to remove it.
 
             .. note::
                 It is also possible to add a list of Plottables to a subplot already containing Plottables using the
@@ -790,16 +800,24 @@ class SmartFigure:
             | 1,0        | 1,1        |
             +------------+------------+
         """
-        if element is not None and not isinstance(element, (Plottable, list, SmartFigure)):
-            raise TypeError("Element must be a Plottable, a list of Plottables, or a SmartFigure, not "
-                           f"{type(element).__name__}.")
+        if not any([
+            element is None,
+            isinstance(element, (Plottable, SmartFigure)),
+            isinstance(element, Iterable) and all(isinstance(el, (Plottable, type(None))) for el in element),
+        ]):
+            raise TypeError("Element must be a Plottable, an iterable of Plottables, or a SmartFigure.")
         key_ = self._keys_to_slices(self._validate_and_normalize_key(key))
         if element is None:
             self._elements.pop(key_, None)
         else:
+            # Normalize all iterables to lists for consistency
             if isinstance(element, Plottable):
-                element = [element]
-            self._elements[key_] = element
+                el = [element]
+            elif isinstance(element, Iterable):
+                el = list(element)
+            else:
+                el = element
+            self._elements[key_] = el
 
     def __getitem__(self, key: int | slice | tuple[int | slice]) -> list[Plottable] | SmartFigure:
         """
@@ -998,7 +1016,8 @@ class SmartFigure:
         ax_dummy.set_facecolor((0, 0, 0, 0))
         ax_dummy.set_zorder(-1)
         ax_dummy.set_navigate(False)
-        ax_dummy.tick_params(colors=(0,0,0,0), axis="both", direction="in", labelright=True, labeltop=True, labelsize=0)
+        ax_dummy.tick_params(colors=(0,0,0,0), axis="both", direction="in",
+                             labelright=True, labeltop=True, labelsize=0.01)
         ax_dummy.spines["top"].set_visible(False)
         ax_dummy.spines["right"].set_visible(False)
         ax_dummy.spines["left"].set_visible(False)
@@ -1215,8 +1234,8 @@ class SmartFigure:
                             self._reset_params_to_default(current_element, params_to_reset)
                         try:
                             if current_element.label is not None:
-                                default_labels.append(current_element.label)
                                 default_handles.append(current_element.handle)
+                                default_labels.append(current_element.label)
                         except AttributeError:
                             continue
                         z_order += 5
@@ -2046,8 +2065,8 @@ class SmartFigureWCS(SmartFigure):
         Location of the reference labels of the SubFigures, either "inside" or "outside".
         Defaults to ``"outside"``.
     width_padding, height_padding : float
-        Padding between the subfigures in the x and y directions, respectively. The default value of ``None`` results in a
-        default small amount of padding. This may be set to 0 to completely remove the space between subfigures, but
+        Padding between the subfigures in the x and y directions, respectively. The default value of ``None`` results in
+        a default small amount of padding. This may be set to 0 to completely remove the space between subfigures, but
         note that axes labels may need to be removed to delete additional space.
     width_ratios, height_ratios : ArrayLike
         Ratios of the widths and heights of the subfigures, respectively. These ratios determine how much space each
@@ -2093,16 +2112,16 @@ class SmartFigureWCS(SmartFigure):
     figure_style : str
         The figure style to use for the figure. The default style can be set using ``gl.set_default_style()``.
         Defaults to ``"default"``.
-    elements : list[Plottable | SmartFigure] | list[list[Plottable | SmartFigure]], optional
+    elements : Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]], optional
         The elements to plot in the figure.
-        If a list of depth 1 is provided and the figure is 1x1, all the elements are added to the unique plot. For other
-        geometries, the elements are added one by one in the order they are provided to each subplot, and the list
-        should not be longer than the number of subplots.
-        If a list of depth 2 is provided, each sublist is added to the corresponding subplot, in the order they are
-        provided. The number of sublists should be equal to the number of subplots.
-        If ``None`` elements are present in the list, the corresponding subplots are not drawn and a blank space is left
-        in the figure. If empty lists or list containing only ``None`` are given in the list, the corresponding subplots
-        are drawn but empty.
+        If an iterable of depth 1 is provided and the figure is 1x1, all the elements are added to the unique plot. For
+        other geometries, the elements are added one by one in the order they are provided to each subplot, and the
+        iterable should not be longer than the number of subplots.
+        If an iterable of depth 2 is provided, each sub-iterable is added to the corresponding subplot, in the order
+        they are provided. The number of sub-iterables should be equal to the number of subplots.
+        If ``None`` elements are present in the iterable, the corresponding subplots are not drawn and a blank space is
+        left in the figure. If empty lists or iterables containing only ``None`` are given in the list, the
+        corresponding subplots are drawn but empty.
 
         .. note::
             This method for adding elements only allows to add elements to single subplots. If you want to add elements
@@ -2140,7 +2159,7 @@ class SmartFigureWCS(SmartFigure):
         legend_cols: int = 1,
         show_legend: bool = True,
         figure_style: str = "default",
-        elements: Optional[list[Plottable | SmartFigure] | list[list[Plottable | SmartFigure]]] = [],
+        elements: Optional[Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]]] = [],
     ) -> None:
         super().__init__(
             num_rows=num_rows,
@@ -2185,7 +2204,7 @@ class SmartFigureWCS(SmartFigure):
             "x major": {"bottom" : True, "top" : True, "labelbottom" : True},
             "y major": {"left" : True, "right" : True, "labelleft" : True},
             "x minor": {},
-            "y minor": {}
+            "y minor": {},
         }
         self._tick_params = deepcopy(self._default_tick_params)
 
@@ -2451,7 +2470,7 @@ class SmartFigureWCS(SmartFigure):
             "labelbottom": draw_bottom_label,
             "labeltop": draw_top_label,
             "labelleft": draw_left_label,
-            "labelright": draw_right_label
+            "labelright": draw_right_label,
         }
         for axis_i in [axis] if axis != "both" else ["x", "y"]:
             if reset:

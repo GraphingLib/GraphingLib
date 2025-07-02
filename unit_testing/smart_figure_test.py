@@ -7,7 +7,7 @@ from matplotlib import use as matplotlib_use
 matplotlib_use("Agg")  # Use non-GUI backend for tests
 
 from matplotlib import pyplot as plt
-from numpy import linspace, sin, pi
+from numpy import linspace, sin, pi, array
 
 from graphinglib.file_manager import FileLoader
 from graphinglib.smart_figure import SmartFigure
@@ -492,6 +492,28 @@ class TestSmartFigure(unittest.TestCase):
             fig[1:0, 2] = DummyPlottable()
         with self.assertRaises(ValueError):
             fig[1::2, :] = DummyPlottable()
+
+    def test_elements_in_init(self):
+        # Invalid formats
+        with self.assertRaises(TypeError):
+            SmartFigure(elements=[1])
+        with self.assertRaises(TypeError):
+            SmartFigure(elements=(DummyPlottable()))
+        with self.assertRaises(TypeError):
+            SmartFigure(elements=DummyPlottable())
+        with self.assertRaises(TypeError):
+            SmartFigure(elements=[[[DummyPlottable()]]])
+        with self.assertRaises(TypeError):
+            SmartFigure(elements="invalid")
+        with self.assertRaises(TypeError):
+            SmartFigure(elements=["invalid"])
+        with self.assertRaises(TypeError):
+            SmartFigure(elements=[["invalid"]])
+
+        # Valid
+        SmartFigure(elements=(DummyPlottable(),))
+        SmartFigure(2, elements=[(DummyPlottable(),), [None]])
+        SmartFigure(2, elements=array([(DummyPlottable(),), [None]]))
 
     def test_add_elements(self):
         dummy = DummyPlottable()
