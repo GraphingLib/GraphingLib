@@ -235,12 +235,12 @@ class SmartFigure:
                 raise TypeError(
                     f"Elements must be an iterable of Plottable objects or SmartFigures, not {type(elements).__name__}."
                 )
-            if self.is_single_subplot and not isinstance(elements[0], Iterable):
+            if self.is_single_subplot and not SmartFigure._is_iterable_of_elements(elements[0]):
                 elements = [elements]
             for i, element in enumerate(elements):
                 if not any([
                     isinstance(element, (Plottable, SmartFigure, type(None))),
-                    isinstance(element, Iterable) and all(isinstance(el, (Plottable, type(None))) for el in element),
+                    SmartFigure._is_iterable_of_elements(element),
                 ]):
                     raise TypeError(
                         f"Element at index {i} must be a Plottable, an iterable of Plottables, or a SmartFigure."
@@ -803,7 +803,7 @@ class SmartFigure:
         if not any([
             element is None,
             isinstance(element, (Plottable, SmartFigure)),
-            isinstance(element, Iterable) and all(isinstance(el, (Plottable, type(None))) for el in element),
+            SmartFigure._is_iterable_of_elements(element),
         ]):
             raise TypeError("Element must be a Plottable, an iterable of Plottables, or a SmartFigure.")
         key_ = self._keys_to_slices(self._validate_and_normalize_key(key))
@@ -961,6 +961,24 @@ class SmartFigure:
                 raise TypeError(f"Key element {k} for axis {i} must be an int or a slice.")
 
         return key
+
+    @staticmethod
+    def _is_iterable_of_elements(item: Any) -> bool:
+        """
+        Checks if the given item is an iterable of Plottable elements or None. This is used to determine if the item can
+        be added to the SmartFigure as a list of elements.
+
+        Parameters
+        ----------
+        item : Any
+            The item to check.
+
+        Returns
+        -------
+        bool
+            True if the item is an iterable of Plottable elements or None, False otherwise.
+        """
+        return isinstance(item, Iterable) and all(isinstance(el, (Plottable, type(None))) for el in item)
 
     def add_elements(self, *elements: Plottable) -> None:
         """

@@ -514,6 +514,9 @@ class TestSmartFigure(unittest.TestCase):
         SmartFigure(elements=(DummyPlottable(),))
         SmartFigure(2, elements=[(DummyPlottable(),), [None]])
         SmartFigure(2, elements=array([(DummyPlottable(),), [None]]))
+        SmartFigure(2, elements=(DummyPlottable(), DummyPlottable()))
+        SmartFigure(elements=((DummyPlottable(), DummyPlottable())))
+        SmartFigure(elements=(DummyPlottable(), DummyPlottable()))
 
     def test_add_elements(self):
         dummy = DummyPlottable()
