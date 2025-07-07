@@ -854,11 +854,8 @@ class SmartFigure:
         try:
             return deepcopy(self)
         except TypeError as e:
-            if "cannot pickle" in str(e):
-                raise GraphingException("Cannot copy a SmartFigure that is currently plotted. Please copy it before "
-                                        "calling show.")
-            else:
-                raise e
+            raise GraphingException("Cannot copy a SmartFigure that is currently plotted. Please copy it before "
+                                    "calling show.")
 
     def copy_with(self, **kwargs) -> Self:
         """
@@ -1551,10 +1548,10 @@ class SmartFigure:
         """
         params_to_reset = []
         object_type = "SmartFigure" if isinstance(element, SmartFigure) else type(element).__name__
-        for property, value in vars(element).items():
-            if isinstance(value, str) and (value == "default") and not (property == "_figure_style"):
-                params_to_reset.append(property)
-                element.__dict__[property] = self._default_params[object_type][property]
+        for property_, value in vars(element).items():
+            if isinstance(value, str) and (value == "default") and not (property_ == "_figure_style"):
+                params_to_reset.append(property_)
+                element.__dict__[property_] = self._default_params[object_type][property_]
         return params_to_reset
 
     def _fill_in_missing_plottable_params(self, element: Plottable) -> list[str]:
@@ -1566,11 +1563,11 @@ class SmartFigure:
         tries = 0
         while tries < 2:
             try:
-                for property, value in vars(element).items():
+                for property_, value in vars(element).items():
                     if (type(value) == str) and (value == "default"):
-                        params_to_reset.append(property)
-                        default_value = self._default_params[object_type][property]
-                        setattr(element, property, default_value)
+                        params_to_reset.append(property_)
+                        default_value = self._default_params[object_type][property_]
+                        setattr(element, property_, default_value)
                 break
             except KeyError as e:
                 tries += 1
@@ -1591,7 +1588,9 @@ class SmartFigure:
         self, element: Plottable | SmartFigure, params_to_reset: list[str]
     ) -> None:
         """
-        Resets the parameters that were set to default in the _fill_in_missing_params method.
+        Resets the parameters that were set to default in the
+        :meth:`~graphinglib.smart_figure.SmartFigure._fill_in_missing_params` or
+        :meth:`~graphinglib.smart_figure.SmartFigure._fill_in_missing_plottable_params` methods.
         """
         for param in params_to_reset:
             setattr(element, param, "default")
@@ -1612,12 +1611,12 @@ class SmartFigure:
             plt.rcParams.update(self._user_rc_dict)
         else:
             params = self._default_params["rc_params"]
-            for property, value in params.items():
+            for property_, value in params.items():
                 # add to rc_dict if not already in there
-                if (property not in self._rc_dict) and (
-                    property not in self._user_rc_dict
+                if (property_ not in self._rc_dict) and (
+                    property_ not in self._user_rc_dict
                 ):
-                    self._rc_dict[property] = value
+                    self._rc_dict[property_] = value
             all_rc_params = {**self._rc_dict, **self._user_rc_dict}
             try:
                 if all_rc_params["text.usetex"] and which("latex") is None:
@@ -1648,8 +1647,8 @@ class SmartFigure:
         """
         if reset:
             self._user_rc_dict = {}
-        for property, value in rc_params_dict.items():
-            self._user_rc_dict[property] = value
+        for property_, value in rc_params_dict.items():
+            self._user_rc_dict[property_] = value
 
     def set_visual_params(
         self,
