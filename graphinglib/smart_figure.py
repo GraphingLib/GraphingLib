@@ -847,15 +847,28 @@ class SmartFigure:
         key_ = self._keys_to_slices(self._validate_and_normalize_key(key))
         return self._elements.get(key_, [])
 
+    def __deepcopy__(self, memo: dict) -> Self:
+        """
+        Creates a deep copy of the SmartFigure instance, intentionally excluding the '_figure' and '_gridspec'
+        attributes from the copy. These attributes are matplotlib objects and are not duplicated to avoid issues with
+        copying live figure state.
+        """
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        excluded_attrs = ["_figure", "_gridspec"]
+        for property_, value in self.__dict__.items():
+            if property_ not in excluded_attrs:
+                result.__dict__[property_] = deepcopy(value, memo)
+        for attr in excluded_attrs:
+            setattr(result, attr, None)
+        return result
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.smart_figure.SmartFigure` object.
         """
-        try:
-            return deepcopy(self)
-        except TypeError as e:
-            raise GraphingException("Cannot copy a SmartFigure that is currently plotted. Please copy it before "
-                                    "calling show.")
+        return deepcopy(self)
 
     def copy_with(self, **kwargs) -> Self:
         """
@@ -881,7 +894,7 @@ class SmartFigure:
         """
         properties = [attr for attr in dir(self.__class__) if isinstance(getattr(self.__class__, attr, None), property)]
         properties = list(filter(lambda x: x[0] != "_", properties))      # filter out hidden properties
-        new_copy = self.copy()
+        new_copy = deepcopy(self)
         for key, value in kwargs.items():
             if hasattr(new_copy, key):
                 setattr(new_copy, key, value)
@@ -1136,6 +1149,7 @@ class SmartFigure:
 
         self._reset_params_to_default(self, multi_figure_params_to_reset)
         self._rc_dict = {}
+        self._default_params = {}
 
     def _prepare_figure(
         self,

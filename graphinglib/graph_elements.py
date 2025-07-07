@@ -27,6 +27,23 @@ class Plottable(Protocol):
 
     """
 
+    def __deepcopy__(self, memo: dict) -> Self:
+        """
+        Creates a deep copy of the Plottable instance, intentionally excluding the 'handle' attribute from the copy.
+        This avoids issues when copying a Plottable that has been previously drawn and stored.
+        """
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        excluded_attrs = ["handle"]
+        for property_, value in self.__dict__.items():
+            if property_ not in excluded_attrs:
+                result.__dict__[property_] = deepcopy(value, memo)
+        for attr in excluded_attrs:
+            if hasattr(self, attr):
+                setattr(result, attr, None)
+        return result
+
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
