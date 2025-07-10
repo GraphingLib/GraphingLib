@@ -992,7 +992,7 @@ class SmartFigure:
         """
         return isinstance(item, Iterable) and all(isinstance(el, (Plottable, type(None))) for el in item)
 
-    def add_elements(self, *elements: Plottable) -> None:
+    def add_elements(self, *elements: Plottable) -> Self:
         """
         Adds one or more :class:`~graphinglib.graph_elements.Plottable` elements to the
         :class:`~graphinglib.smart_figure.SmartFigure`. This convenience method is equivalent to using __setitem__, but
@@ -1003,6 +1003,11 @@ class SmartFigure:
         elements : :class:`~graphinglib.graph_elements.Plottable`
             Elements to plot in the :class:`~graphinglib.smart_figure.SmartFigure`.
 
+        Returns
+        -------
+        Self
+            For convenience, the same SmartFigure with the added elements.
+
         See Also
         --------
         :meth:`~graphinglib.smart_figure.SmartFigure.__setitem__`
@@ -1011,11 +1016,12 @@ class SmartFigure:
         if self._num_rows != 1 or self._num_cols != 1:
             raise GraphingException("The add_elements() method only works for 1x1 SmartFigures.")
         self[0,0] += elements
+        return self
 
     def show(
         self,
         fullscreen: bool = False,
-    ) -> None:
+    ) -> Self:
         """
         Plots and displays the :class:`~graphinglib.smart_figure.SmartFigure`. The
         :meth:`~graphinglib.smart_figure.SmartFigure.save` method is recommended to see properly what the figure looks
@@ -1032,6 +1038,11 @@ class SmartFigure:
         fullscreen : bool, optional
             If True, the figure will be displayed in fullscreen mode.
             Defaults to ``False``.
+
+        Returns
+        -------
+        Self
+            The same SmartFigure instance, allowing for method chaining.
         """
         self._initialize_parent_smart_figure()
 
@@ -1072,13 +1083,14 @@ class SmartFigure:
             self._figure.clear()
             self._figure = None
             self._gridspec = None
+        return self
 
     def save(
         self,
         file_name: str,
         dpi: Optional[int] = None,
         transparent: bool = False,
-    ) -> None:
+    ) -> Self:
         """
         Saves the :class:`~graphinglib.smart_figure.SmartFigure` to a file.
 
@@ -1091,6 +1103,11 @@ class SmartFigure:
         transparent : bool, optional
             Whether to save the figure with a transparent background.
             Defaults to ``False``.
+
+        Returns
+        -------
+        Self
+            The same SmartFigure instance, allowing for method chaining.
         """
         self._initialize_parent_smart_figure()
         plt.savefig(
@@ -1104,6 +1121,7 @@ class SmartFigure:
         self._figure.clear()
         self._figure = None
         self._gridspec = None
+        return self
 
     def _initialize_parent_smart_figure(
         self,
@@ -1636,7 +1654,7 @@ class SmartFigure:
         self,
         rc_params_dict: dict[str, str | float] = {},
         reset: bool = False,
-    ) -> None:
+    ) -> Self:
         """
         Customize the visual style of the :class:`~graphinglib.smart_figure.SmartFigure`.
 
@@ -1651,11 +1669,17 @@ class SmartFigure:
         reset : bool
             Whether or not to reset the rc parameters to the default values for the specified ``figure_style``.
             Defaults to ``False``.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartFigure with the updated rc parameters.
         """
         if reset:
             self._user_rc_dict = {}
         for property_, value in rc_params_dict.items():
             self._user_rc_dict[property_] = value
+        return self
 
     def set_visual_params(
         self,
@@ -1678,7 +1702,7 @@ class SmartFigure:
         title_font_weight: str | None = None,
         text_color: str | None = None,
         use_latex: bool | None = None,
-    ) -> None:
+    ) -> Self:
         """
         Customize the visual style of the :class:`~graphinglib.smart_figure.SmartFigure`.
 
@@ -1725,6 +1749,11 @@ class SmartFigure:
             The color of the text.
         use_latex : bool, optional
             Whether or not to use latex.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartFigure with the updated visual parameters.
         """
         if color_cycle is not None:
             color_cycle = plt.cycler(color=color_cycle)
@@ -1755,6 +1784,7 @@ class SmartFigure:
             key: value for key, value in rc_params_dict.items() if value is not None
         }
         self.set_rc_params(rc_params_dict, reset=reset)
+        return self
 
     def set_ticks(
         self,
@@ -1768,7 +1798,7 @@ class SmartFigure:
         minor_y_ticks: Optional[list[float]] = None,
         minor_x_tick_spacing: Optional[float] = None,
         minor_y_tick_spacing: Optional[float] = None,
-    ) -> None:
+    ) -> Self:
         """
         Sets custom ticks and tick labels.
 
@@ -1789,6 +1819,11 @@ class SmartFigure:
         minor_x_tick_spacing, minor_y_tick_spacing : float, optional
             Spacing between minor ticks on the x or y axis. If a value is specified, the corresponding ``minor_x_ticks``
             or ``minor_y_ticks`` parameter must be ``None``.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartFigure with the updated ticks.
         """
         if any([
             (x_tick_labels is not None) and x_ticks is None,
@@ -1814,6 +1849,7 @@ class SmartFigure:
         self._minor_y_ticks = minor_y_ticks
         self._minor_x_tick_spacing = minor_x_tick_spacing
         self._minor_y_tick_spacing = minor_y_tick_spacing
+        return self
 
     def set_tick_params(
         self,
@@ -1836,7 +1872,7 @@ class SmartFigure:
         draw_top_label: Optional[bool] = None,
         draw_left_label: Optional[bool] = None,
         draw_right_label: Optional[bool] = None,
-    ) -> None:
+    ) -> Self:
         """
         Sets the tick parameters for the figure. These parameters are given to the
         :meth:`matplotlib.axes.Axes.tick_params` method.
@@ -1875,6 +1911,11 @@ class SmartFigure:
             Whether to draw the ticks on the bottom, top, left or right side of the axes respectively.
         draw_bottom_label, draw_top_label, draw_left_label, draw_right_label : bool, optional
             Whether to draw the tick labels on the bottom, top, left or right side of the axes respectively.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartFigure with the updated tick parameters.
         """
         new_tick_params = {
             "direction": direction,
@@ -1901,6 +1942,7 @@ class SmartFigure:
                 for param, value in new_tick_params.items():
                     if value is not None:
                         self._tick_params[f"{axis_i} {which_i}"][param] = value
+        return self
 
     def set_grid(
         self,
@@ -1913,7 +1955,7 @@ class SmartFigure:
         alpha: float | Literal["default"] = "default",
         line_style: str | Literal["default"] = "default",
         line_width: float | Literal["default"] = "default",
-    ) -> None:
+    ) -> Self:
         """
         Sets the grid parameters for the figure.
 
@@ -1942,6 +1984,11 @@ class SmartFigure:
         line_width : float, optional
             Sets the line width of the grid lines.
             Default depends on the ``figure_style`` configuration.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartFigure with the updated grid parameters.
         """
         self._show_grid = True
         self._grid_visible_x = visible_x
@@ -1957,13 +2004,14 @@ class SmartFigure:
         }
         rc_params_dict = {k: v for k, v in rc_params_dict.items() if v != "default"}
         self.set_rc_params(rc_params_dict)
+        return self
 
     def set_custom_legend(
         self,
         handles: Optional[list[Artist]] = [],
         labels: Optional[list[str]] = [],
         reset: bool = False,
-    ) -> None:
+    ) -> Self:
         """
         Sets a custom legend for the figure. If the SmartFigure contains multiple subfigures, custom legends only work
         if the ``general_legend`` parameter is set to ``True``. Otherwise, custom legends can be added for non-general
@@ -1992,6 +2040,11 @@ class SmartFigure:
             Whether or not to reset the custom handles and labels previously added with this method before adding the
             new ones.
             Defaults to ``False``.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartFigure with the updated custom legend.
         """
         if labels and not handles:
             raise GraphingException("Handles must be specified if labels are given.")
@@ -2009,6 +2062,7 @@ class SmartFigure:
 
         self._custom_legend_handles += handles
         self._custom_legend_labels += new_labels
+        return self
 
 
 class SmartFigureWCS(SmartFigure):
@@ -2334,7 +2388,7 @@ class SmartFigureWCS(SmartFigure):
         y_tick_formatter: Optional[Callable | str] = None,
         minor_x_tick_frequency: Optional[int] = None,
         minor_y_tick_frequency: Optional[int] = None,
-    ) -> None:
+    ) -> Self:
         """
         Sets custom ticks and tick labels.
 
@@ -2373,6 +2427,11 @@ class SmartFigureWCS(SmartFigure):
             .. note::
                 The frequency includes the major tick, so a frequency of 2 means that there is one minor tick between
                 each major tick.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartFigure with the updated ticks.
         """
         super().set_ticks(
             x_ticks=x_ticks,
@@ -2398,6 +2457,7 @@ class SmartFigureWCS(SmartFigure):
         self._y_tick_formatter = y_tick_formatter
         self._minor_x_tick_frequency = minor_x_tick_frequency
         self._minor_y_tick_frequency = minor_y_tick_frequency
+        return self
 
     def set_tick_params(
         self,
@@ -2420,7 +2480,7 @@ class SmartFigureWCS(SmartFigure):
         draw_top_label: Optional[bool] = None,
         draw_left_label: Optional[bool] = None,
         draw_right_label: Optional[bool] = None,
-    ) -> None:
+    ) -> Self:
         """
         Sets the tick parameters for the figure. These parameters are given to the
         :meth:`astropy.visualization.wcsaxes.coordinate_helpers.tick_params` method.
@@ -2467,6 +2527,11 @@ class SmartFigureWCS(SmartFigure):
             Whether to draw the ticks on the bottom, top, left or right side of the axes respectively.
         draw_bottom_label, draw_top_label, draw_left_label, draw_right_label : bool, optional
             Whether to draw the tick labels on the bottom, top, left or right side of the axes respectively.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartFigure with the updated tick parameters.
         """
         new_tick_params = {
             "direction": direction,
@@ -2495,6 +2560,7 @@ class SmartFigureWCS(SmartFigure):
                     self._tick_params[f"{axis_i} major"][param] = value
             if minor_length is not None:
                 self._tick_params[f"{axis_i} minor"]["length"] = minor_length
+        return self
 
     def set_grid(
         self,
@@ -2505,7 +2571,7 @@ class SmartFigureWCS(SmartFigure):
         alpha: float | Literal["default"] = "default",
         line_style: str | Literal["default"] = "default",
         line_width: float | Literal["default"] = "default",
-    ) -> None:
+    ) -> Self:
         """
         Sets the grid parameters for the figure.
 
@@ -2536,8 +2602,13 @@ class SmartFigureWCS(SmartFigure):
         line_width : float, optional
             Sets the line width of the grid lines.
             Default depends on the ``figure_style`` configuration.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartFigure with the updated grid parameters.
         """
-        super().set_grid(
+        return super().set_grid(
             visible_x=visible_x,
             visible_y=visible_y,
             show_on_top=show_on_top,

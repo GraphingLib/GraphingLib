@@ -786,6 +786,21 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(GraphingException):
             self.fig.set_custom_legend(handles=[line], labels=["a", "b"])
 
+    def test_methods_return_self(self):
+        # Test that methods return self for method chaining
+        self.assertIs(self.fig.add_elements(), self.fig)
+        self.assertIs(self.fig.set_ticks(x_ticks=[0, 1]), self.fig)
+        self.assertIs(self.fig.set_tick_params(label_color="green"), self.fig)
+        self.assertIs(self.fig.set_grid(visible_x=True), self.fig)
+        self.assertIs(self.fig.set_custom_legend(handles=[]), self.fig)
+        self.assertIs(self.fig.set_visual_params(figure_face_color="red"), self.fig)
+        self.assertIs(self.fig.set_rc_params({"lines.linewidth": 2}), self.fig)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.assertIs(self.fig.show(), self.fig)
+        self.assertIs(self.fig.save("test_smart_figure_output.png"), self.fig)
+        os.remove("test_smart_figure_output.png")
+
 
 if __name__ == "__main__":
     unittest.main()
