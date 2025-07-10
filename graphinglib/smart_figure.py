@@ -1275,12 +1275,6 @@ class SmartFigure:
                     if self._reference_labels and (len(self) > 1 or isinstance(self._figure, SubFigure)):
                         self._create_ref_label(ax)
 
-                    # Remove ticks
-                    if self._remove_x_ticks:
-                        ax.tick_params(axis="x", labelbottom=False, labeltop=False, bottom=False, top=False)
-                    if self._remove_y_ticks:
-                        ax.tick_params(axis="y", labelleft=False, labelright=False, left=False, right=False)
-
                     # Axes limits
                     if self._x_lim:
                         ax.set_xlim(*self._x_lim)
@@ -1448,6 +1442,12 @@ class SmartFigure:
             ax.yaxis.set_minor_locator(
                 ticker.MultipleLocator(self._minor_y_tick_spacing)
             )
+
+        # Remove ticks
+        if self._remove_x_ticks:
+            ax.tick_params("x", which="both", labelbottom=False, labeltop=False, bottom=False, top=False)
+        if self._remove_y_ticks:
+            ax.tick_params("y", which="both", labelleft=False, labelright=False, left=False, right=False)
 
     def _customize_ax_label(
         self,
@@ -2294,6 +2294,14 @@ class SmartFigureWCS(SmartFigure):
             ax.tick_params(axis="x", which="minor", length=self._tick_params[f"x minor"].get("length"))
         if self._tick_params[f"y minor"].get("length") is not None:
             ax.tick_params(axis="y", which="minor", length=self._tick_params[f"y minor"].get("length"))
+
+        # Remove ticks
+        if self._remove_x_ticks:
+            x_axis.set_ticks_visible(False)
+            x_axis.set_ticklabel_visible(False)
+        if self._remove_y_ticks:
+            y_axis.set_ticks_visible(False)
+            y_axis.set_ticklabel_visible(False)
 
     def _customize_ax_label(
         self,
