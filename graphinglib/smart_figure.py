@@ -53,6 +53,7 @@ class SmartFigure:
     num_rows, num_cols : int
         Number of rows and columns for the base grid. These parameters determine the number of "squares" on which the
         plots can be placed.
+        Defaults to ``1``.
     x_label, y_label : str, optional
         Labels for the x and y axes of the figure.
     size : tuple[float, float]
@@ -91,9 +92,13 @@ class SmartFigure:
         If set to ``True``, the reference label will be placed in the top left corner of the global SmartFigure. This is
         useful for labeling the entire figure rather than individual subfigures.
         Defaults to ``False``.
-    reflabel_loc : Literal["inside", "outside"]
+    reference_label_loc : Literal["inside", "outside"]
         Location of the reference labels of the SubFigures, either "inside" or "outside".
         Defaults to ``"outside"``.
+    reference_label_start_index : int
+        Starting index for the reference labels. This allows to customize the starting label, for example, to start
+        labeling from "b)" instead of "a)" by giving ``reference_label_start_index = 1``.
+        Defaults to ``0``.
     width_padding, height_padding : float
         Padding between the subfigures in the x and y directions, respectively. The default value of ``None`` results in
         a default small amount of padding. This may be set to 0 to completely remove the space between subfigures, but
@@ -183,7 +188,8 @@ class SmartFigure:
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
         global_reference_label: bool = False,
-        reflabel_loc: Literal["inside", "outside"] = "outside",
+        reference_label_loc: Literal["inside", "outside"] = "outside",
+        reference_label_start_index: int = 0,
         width_padding: float = None,
         height_padding: float = None,
         width_ratios: ArrayLike = None,
@@ -214,7 +220,8 @@ class SmartFigure:
         self.remove_y_ticks = remove_y_ticks
         self.reference_labels = reference_labels
         self.global_reference_label = global_reference_label
-        self.reflabel_loc = reflabel_loc
+        self.reference_label_loc = reference_label_loc
+        self.reference_label_start_index = reference_label_start_index
         self.width_padding = width_padding
         self.height_padding = height_padding
         self.width_ratios = width_ratios
@@ -474,14 +481,26 @@ class SmartFigure:
         self._global_reference_label = value
 
     @property
-    def reflabel_loc(self) -> Literal["inside", "outside"]:
-        return self._reflabel_loc
+    def reference_label_loc(self) -> Literal["inside", "outside"]:
+        return self._reference_label_loc
 
-    @reflabel_loc.setter
-    def reflabel_loc(self, value: Literal["inside", "outside"]) -> None:
+    @reference_label_loc.setter
+    def reference_label_loc(self, value: Literal["inside", "outside"]) -> None:
         if value not in ["inside", "outside"]:
-            raise ValueError("reflabel_loc must be either 'inside' or 'outside'.")
-        self._reflabel_loc = value
+            raise ValueError("reference_label_loc must be either 'inside' or 'outside'.")
+        self._reference_label_loc = value
+
+    @property
+    def reference_label_start_index(self) -> int:
+        return self._reference_label_start_index
+
+    @reference_label_start_index.setter
+    def reference_label_start_index(self, value: int) -> None:
+        if not isinstance(value, int):
+            raise TypeError("reference_label_start_index must be an integer.")
+        if value < 0:
+            raise ValueError("reference_label_start_index must be greater than or equal to 0.")
+        self._reference_label_start_index = value
 
     @property
     def width_padding(self) -> float:
@@ -1159,7 +1178,7 @@ class SmartFigure:
         try:
             self._figure = plt.figure(constrained_layout=True, figsize=self._size)
             self._figure.get_layout_engine().set(w_pad=0, h_pad=0)
-            self._reference_label_i = 0
+            self._reference_label_i = self._reference_label_start_index
             self._prepare_figure(is_matplotlib_style)
         except Exception as e:
             plt.close()
@@ -1496,11 +1515,11 @@ class SmartFigure:
             0,
             1,
             ascii_lowercase[self._reference_label_i] + ")",
-            transform=trans + self._get_reflabel_translation(target)
+            transform=trans + self._get_reference_label_translation(target)
         )
         self._reference_label_i += 1
 
-    def _get_reflabel_translation(
+    def _get_reference_label_translation(
         self,
         target: Axes | Figure | SubFigure,
     ) -> ScaledTranslation:
@@ -1509,9 +1528,9 @@ class SmartFigure:
         SubFigure. The translation varies depending on the location of the reference label.
         """
         if isinstance(target, Axes):
-            if self._reflabel_loc == "outside":
+            if self._reference_label_loc == "outside":
                 return ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
-            elif self._reflabel_loc == "inside":
+            elif self._reference_label_loc == "inside":
                 return ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
             else:
                 raise ValueError("Invalid reference label location. Please specify either 'inside' or 'outside'.")
@@ -2083,6 +2102,7 @@ class SmartFigureWCS(SmartFigure):
     num_rows, num_cols : int
         Number of rows and columns for the base grid. These parameters determine the number of "squares" on which the
         plots can be placed.
+        Defaults to ``1``.
     x_label, y_label : str, optional
         Labels for the x and y axes of the figure.
     size : tuple[float, float]
@@ -2121,9 +2141,13 @@ class SmartFigureWCS(SmartFigure):
         If set to ``True``, the reference label will be placed in the top left corner of the global SmartFigure. This is
         useful for labeling the entire figure rather than individual subfigures.
         Defaults to ``False``.
-    reflabel_loc : Literal["inside", "outside"]
+    reference_label_loc : Literal["inside", "outside"]
         Location of the reference labels of the SubFigures, either "inside" or "outside".
         Defaults to ``"outside"``.
+    reference_label_start_index : int
+        Starting index for the reference labels. This allows to customize the starting label, for example, to start
+        labeling from "b)" instead of "a)" by giving ``reference_label_start_index = 1``.
+        Defaults to ``0``.
     width_padding, height_padding : float
         Padding between the subfigures in the x and y directions, respectively. The default value of ``None`` results in
         a default small amount of padding. This may be set to 0 to completely remove the space between subfigures, but
@@ -2207,7 +2231,8 @@ class SmartFigureWCS(SmartFigure):
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
         global_reference_label: bool = False,
-        reflabel_loc: Literal["inside", "outside"] = "outside",
+        reference_label_loc: Literal["inside", "outside"] = "outside",
+        reference_label_start_index: int = 0,
         width_padding: float = None,
         height_padding: float = None,
         width_ratios: ArrayLike = None,
@@ -2238,7 +2263,8 @@ class SmartFigureWCS(SmartFigure):
             remove_y_ticks=remove_y_ticks,
             reference_labels=reference_labels,
             global_reference_label=global_reference_label,
-            reflabel_loc=reflabel_loc,
+            reference_label_loc=reference_label_loc,
+            reference_label_start_index=reference_label_start_index,
             width_padding=width_padding,
             height_padding=height_padding,
             width_ratios=width_ratios,

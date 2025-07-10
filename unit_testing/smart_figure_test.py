@@ -48,10 +48,10 @@ class TestSmartFigure(unittest.TestCase):
         fig = SmartFigure(num_rows=2, num_cols=3, x_label="X", y_label="Y", size=(8, 6), title="Test Figure",
                           x_lim=(0, 10), y_lim=(-5, 5), log_scale_x=True, log_scale_y=True, remove_axes=True,
                           aspect_ratio=1.5, remove_x_ticks=True, remove_y_ticks=True, reference_labels=False,
-                          global_reference_label=True, reflabel_loc="inside", width_padding=0.5, height_padding=0,
-                          width_ratios=[1,2,3], height_ratios=[1,2], share_x=True, share_y=True, projection="polar",
-                          general_legend=True, legend_loc="upper right", legend_cols=2, show_legend=False,
-                          figure_style="dark", elements=elements)
+                          global_reference_label=True, reference_label_loc="inside", reference_label_start_index=3,
+                          width_padding=0.5, height_padding=0, width_ratios=[1,2,3], height_ratios=[1,2], share_x=True,
+                          share_y=True, projection="polar", general_legend=True, legend_loc="upper right",
+                          legend_cols=2, show_legend=False, figure_style="dark", elements=elements)
         self.assertEqual(fig.num_rows, 2)
         self.assertEqual(fig.num_cols, 3)
         self.assertEqual(fig.x_label, "X")
@@ -68,7 +68,8 @@ class TestSmartFigure(unittest.TestCase):
         self.assertTrue(fig.remove_y_ticks)
         self.assertFalse(fig.reference_labels)
         self.assertTrue(fig.global_reference_label)
-        self.assertEqual(fig.reflabel_loc, "inside")
+        self.assertEqual(fig.reference_label_loc, "inside")
+        self.assertEqual(fig.reference_label_start_index, 3)
         self.assertEqual(fig.width_padding, 0.5)
         self.assertEqual(fig.height_padding, 0)
         self.assertEqual(fig.width_ratios, [1, 2, 3])
@@ -236,17 +237,27 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.global_reference_label = True
         self.assertTrue(self.fig.global_reference_label)
 
-    def test_reflabel_loc(self):
+    def test_reference_label_loc(self):
         # Invalid
         with self.assertRaises(ValueError):
-            self.fig.reflabel_loc = "top"
+            self.fig.reference_label_loc = "top"
         with self.assertRaises(ValueError):
-            self.fig.reflabel_loc = True
+            self.fig.reference_label_loc = True
         # Valid
-        self.fig.reflabel_loc = "inside"
-        self.assertEqual(self.fig.reflabel_loc, "inside")
-        self.fig.reflabel_loc = "outside"
-        self.assertEqual(self.fig.reflabel_loc, "outside")
+        self.fig.reference_label_loc = "inside"
+        self.assertEqual(self.fig.reference_label_loc, "inside")
+        self.fig.reference_label_loc = "outside"
+        self.assertEqual(self.fig.reference_label_loc, "outside")
+
+    def test_reference_label_start_index(self):
+        # Invalid
+        with self.assertRaises(TypeError):
+            self.fig.reference_label_start_index = "a"
+        with self.assertRaises(ValueError):
+            self.fig.reference_label_start_index = -1
+        # Valid
+        self.fig.reference_label_start_index = 2
+        self.assertEqual(self.fig.reference_label_start_index, 2)
 
     def test_width_padding(self):
         # Invalid
