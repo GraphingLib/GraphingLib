@@ -278,7 +278,6 @@ class SmartFigure:
         self._custom_legend_handles = []
         self._custom_legend_labels = []
 
-        self._rc_dict = {}
         self._user_rc_dict = {}
         self._default_params = {}
 
@@ -1068,7 +1067,7 @@ class SmartFigure:
             plt.get_current_fig_manager().full_screen_toggle()
 
         plt.show()
-        if not is_interactive():        # some backends do not close the figure automatically
+        if not any(plt.fignum_exists(num) for num in plt.get_fignums()):    # check if the parameters can be reset
             plt.rcParams.update(plt.rcParamsDefault)
             self._figure.clear()
             self._figure = None
@@ -1134,7 +1133,8 @@ class SmartFigure:
                     f"The figure style {self._figure_style} was not found. Please choose a different style."
                 )
 
-        multi_figure_params_to_reset = self._fill_in_missing_params(self)
+        parent_figure_params_to_reset = self._fill_in_missing_params(self)  # Fill "default" parameters
+        self._default_params["rc_params"].update(self._user_rc_dict)  # Custom rc parameters supersede the defaults
         self._fill_in_rc_params(is_matplotlib_style)
 
         # The following try/except removes lingering figures when errors occur during the plotting process
@@ -1142,18 +1142,16 @@ class SmartFigure:
             self._figure = plt.figure(constrained_layout=True, figsize=self._size)
             self._figure.get_layout_engine().set(w_pad=0, h_pad=0)
             self._reference_label_i = 0
-            self._prepare_figure(self._default_params, is_matplotlib_style)
+            self._prepare_figure(is_matplotlib_style)
         except Exception as e:
             plt.close()
             raise e
 
-        self._reset_params_to_default(self, multi_figure_params_to_reset)
-        self._rc_dict = {}
+        self._reset_params_to_default(self, parent_figure_params_to_reset)
         self._default_params = {}
 
     def _prepare_figure(
         self,
-        default_params: dict = None,
         is_matplotlib_style: bool = False,
         make_legend: bool = True,
     ) -> dict[str, dict[str, list[str | Any]]]:
@@ -1164,8 +1162,6 @@ class SmartFigure:
 
         Parameters
         ----------
-        default_params : dict, optional
-            The default parameters to use for the figure. These are used when filling parameters for plotting.
         is_matplotlib_style : bool, optional
             Whether the figure style is a matplotlib style, which allows the use of the plt.style.use function. This
             argument is passed to the :meth:`~graphinglib.smart_figure.SmartFigure._fill_in_rc_params` method, and
@@ -1189,11 +1185,8 @@ class SmartFigure:
             :attr:`~graphinglib.smart_figure.SmartFigure.hide_default_legend_elements` and
             :attr:`~graphinglib.smart_figure.SmartFigure.hide_custom_legend_elements` properties.
         """
-        sub_rcs = self._user_rc_dict
-        plt.rcParams.update(sub_rcs)
         cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
         num_cycle_colors = len(cycle_colors)
-        self._default_params = default_params
 
         self._gridspec = self._figure.add_gridspec(
             self._num_rows,
@@ -1214,24 +1207,28 @@ class SmartFigure:
         custom_labels, custom_handles = [], []
         for (rows, cols), element in self._ordered_elements.items():
             if isinstance(element, SmartFigure):
+                element._default_params = deepcopy(self._default_params)
+                element._default_params["rc_params"].update(element._user_rc_dict)
+                plt.rcParams.update(element._default_params["rc_params"])
+                subfig_params_to_reset = element._fill_in_missing_params(element)  # Fill "default" parameters
+
                 subfig = self._figure.add_subfigure(self._gridspec[rows, cols])
                 element._figure = subfig        # associates the current subfigure with the nested SmartFigure
                 element._reference_label_i = self._reference_label_i
-                default_params_copy = default_params.copy()
-                default_params_copy.update(is_a_subfigure=True)
-                default_params_copy["Figure"]["_figure_style"] = self._figure_style
                 legend_info = element._prepare_figure(
-                    default_params=default_params_copy,
                     is_matplotlib_style=is_matplotlib_style,
                     make_legend=(not self._general_legend and make_legend),
                 )
+
                 self._reference_label_i = element._reference_label_i
                 default_labels += legend_info["labels"]["default"]
                 default_handles += legend_info["handles"]["default"]
                 custom_labels += legend_info["labels"]["custom"]
                 custom_handles += legend_info["handles"]["custom"]
 
-                self._fill_in_rc_params(is_matplotlib_style)
+                plt.rcParams.update(self._default_params["rc_params"])  # Return to the parent SmartFigure's rc params
+                element._reset_params_to_default(element, subfig_params_to_reset)
+                element._default_params = {}
 
             elif isinstance(element, (Plottable, list)):
                 current_elements = element if isinstance(element, list) else [element]
@@ -1241,7 +1238,6 @@ class SmartFigure:
                     sharey=ax if self._share_y else None,  # but it does not remove the ticklabels
                     projection=self._projection,
                 )
-                figure_params_to_reset = self._fill_in_missing_params(self)
 
                 # Plotting loop
                 z_order = 2
@@ -1249,7 +1245,7 @@ class SmartFigure:
                     if isinstance(current_element, Plottable):
                         params_to_reset = []
                         if not is_matplotlib_style:
-                            params_to_reset = self._fill_in_missing_plottable_params(current_element)
+                            params_to_reset = self._fill_in_missing_params(current_element)
                         if isinstance(current_element, Text) and current_element.relative_to == "figure":
                             target = subfig
                         else:
@@ -1358,8 +1354,6 @@ class SmartFigure:
                     if self._title and self.is_single_subplot:
                         ax.set_title(self._title)
 
-                self._reset_params_to_default(self, figure_params_to_reset)
-
             elif element is not None:
                 raise GraphingException(f"Unsupported element type in list: {type(element).__name__}")
 
@@ -1404,15 +1398,16 @@ class SmartFigure:
                         **legend_params,
                     )
                 _legend.set_zorder(10000)
-            return {
+            legend_info = {
                 "labels": {"default": [], "custom": []},
                 "handles": {"default": [], "custom": []},
             }
         else:
-            return {
+            legend_info = {
                 "labels": {"default": default_labels, "custom": custom_labels},
                 "handles": {"default": default_handles, "custom": custom_handles},
             }
+        return legend_info
 
     def _customize_ticks(
         self,
@@ -1574,36 +1569,23 @@ class SmartFigure:
                 legend_params.update({"loc": self._legend_loc})
         return legend_params
 
-    def _fill_in_missing_params(self, element: SmartFigure) -> list[str]:
+    def _fill_in_missing_params(self, element: SmartFigure | Plottable) -> list[str]:
         """
-        Fills in the missing parameters from the specified ``figure_style``.
+        Fills in the missing parameters for a ``SmartFigure``or a ``Plottable`` from the specified ``figure_style``.
         """
         params_to_reset = []
+        # The following logic enables figures that inherit from SmartFigure to use the same default parameters
         object_type = "SmartFigure" if isinstance(element, SmartFigure) else type(element).__name__
-        for property_, value in vars(element).items():
-            if isinstance(value, str) and (value == "default") and not (property_ == "_figure_style"):
-                params_to_reset.append(property_)
-                element.__dict__[property_] = self._default_params[object_type][property_]
-        return params_to_reset
-
-    def _fill_in_missing_plottable_params(self, element: Plottable) -> list[str]:
-        """
-        Fills in the missing parameters for a plottable from the specified ``figure_style``.
-        """
-        params_to_reset = []
-        object_type = type(element).__name__
-        tries = 0
-        while tries < 2:
+        for try_i in range(2):
             try:
                 for property_, value in vars(element).items():
-                    if (type(value) == str) and (value == "default"):
+                    if (type(value) == str) and (value == "default") and not (property_ == "_figure_style"):
                         params_to_reset.append(property_)
                         default_value = self._default_params[object_type][property_]
                         setattr(element, property_, default_value)
                 break
             except KeyError as e:
-                tries += 1
-                if tries >= 2:
+                if try_i == 1:
                     raise GraphingException(
                         f"There was an error auto updating your {self._figure_style} style file following the recent "
                          "GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub"
@@ -1613,7 +1595,8 @@ class SmartFigure:
                 file_updater = FileUpdater(self._figure_style)
                 file_updater.update()
                 file_loader = FileLoader(self._figure_style)
-                self._default_params = file_loader.load()
+                new_defaults = file_loader.load()
+                self._default_params.update((k, v) for k, v in new_defaults.items() if k not in self._default_params)
         return params_to_reset
 
     def _reset_params_to_default(
@@ -1621,8 +1604,7 @@ class SmartFigure:
     ) -> None:
         """
         Resets the parameters that were set to default in the
-        :meth:`~graphinglib.smart_figure.SmartFigure._fill_in_missing_params` or
-        :meth:`~graphinglib.smart_figure.SmartFigure._fill_in_missing_plottable_params` methods.
+        :meth:`~graphinglib.smart_figure.SmartFigure._fill_in_missing_params` method.
         """
         for param in params_to_reset:
             setattr(element, param, "default")
@@ -1643,19 +1625,12 @@ class SmartFigure:
             plt.rcParams.update(self._user_rc_dict)
         else:
             params = self._default_params["rc_params"]
-            for property_, value in params.items():
-                # add to rc_dict if not already in there
-                if (property_ not in self._rc_dict) and (
-                    property_ not in self._user_rc_dict
-                ):
-                    self._rc_dict[property_] = value
-            all_rc_params = {**self._rc_dict, **self._user_rc_dict}
             try:
-                if all_rc_params["text.usetex"] and which("latex") is None:
-                    all_rc_params["text.usetex"] = False
+                if params["text.usetex"] and which("latex") is None:
+                    params["text.usetex"] = False
             except KeyError:
                 pass
-            plt.rcParams.update(all_rc_params)
+            plt.rcParams.update(params)
 
     def set_rc_params(
         self,

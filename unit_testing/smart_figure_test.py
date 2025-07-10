@@ -645,6 +645,7 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.add_elements(self.testCurve)
         self.fig._initialize_parent_smart_figure()
         self.assertEqual(self.testCurve._line_width, "default")
+        self.fig._default_params = self.plainDefaults
         self.fig._fill_in_missing_params(self.testCurve)
         self.assertEqual(self.testCurve._line_width, 2)
         plt.close("all")
@@ -683,7 +684,6 @@ class TestSmartFigure(unittest.TestCase):
             "rc_params": {
                 "axes.grid": False,
                 "axes.facecolor": "dimgrey",
-                "legend.edgecolor": "blue",
             }
         }
         # Fill in rc params
@@ -691,7 +691,7 @@ class TestSmartFigure(unittest.TestCase):
         # Check axes fill color is updated
         self.assertEqual(plt.rcParams["axes.grid"], False)
         self.assertEqual(plt.rcParams["axes.facecolor"], "dimgrey")
-        self.assertEqual(plt.rcParams["legend.edgecolor"], "red")  # Overridden by user
+        self.assertEqual(self.fig._user_rc_dict["legend.edgecolor"], "red")
 
     def test_update_rc_params(self):
         params = {
