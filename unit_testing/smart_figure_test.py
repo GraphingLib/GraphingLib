@@ -533,9 +533,20 @@ class TestSmartFigure(unittest.TestCase):
         dummy = DummyPlottable()
         self.fig.add_elements(dummy)
         self.assertIsInstance(self.fig[0, 0][0], DummyPlottable)
-        with self.assertRaises(GraphingException):
-            fig2 = SmartFigure(num_rows=2, num_cols=2)
-            fig2.add_elements(dummy)
+        self.fig.add_elements([dummy, dummy], [dummy, dummy])
+        self.fig.add_elements()
+        with self.assertRaises(TypeError):
+            self.fig.add_elements([dummy, [dummy]], dummy)
+        with self.assertRaises(TypeError):
+            self.fig.add_elements([dummy, SmartFigure()], dummy)
+        new_fig = SmartFigure(num_rows=2, num_cols=2)
+        new_fig.add_elements(dummy, dummy, dummy, dummy)
+        new_fig.add_elements(dummy, dummy, dummy, SmartFigure())
+        new_fig.add_elements([None], [dummy, dummy], None, SmartFigure())
+        with self.assertRaises(ValueError):
+            new_fig.add_elements(dummy, dummy, dummy, dummy, dummy)
+        with self.assertRaises(ValueError):
+            new_fig.add_elements(None, None, [dummy, dummy, None, dummy, dummy], None, None)
 
     def test_add_all_elements(self):
         self.fig[0] = SmartFigure()

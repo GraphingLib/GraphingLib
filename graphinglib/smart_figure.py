@@ -162,8 +162,8 @@ class SmartFigure:
         If an iterable of depth 2 is provided, each sub-iterable is added to the corresponding subplot, in the order
         they are provided. The number of sub-iterables should be equal to the number of subplots.
         If ``None`` elements are present in the iterable, the corresponding subplots are not drawn and a blank space is
-        left in the figure. If empty lists or iterables containing only ``None`` are given in the list, the
-        corresponding subplots are drawn but empty.
+        left in the figure. If iterables containing only ``None`` are given in the main iterable, the corresponding
+        subplots are drawn but empty.
 
         .. note::
             This method for adding elements only allows to add elements to single subplots. If you want to add elements
@@ -236,26 +236,7 @@ class SmartFigure:
         self.figure_style = figure_style
 
         self._elements = {}
-        if any(elements):
-            if not (isinstance(elements, Iterable)
-                    and all(isinstance(el, (Plottable, SmartFigure, Iterable, type(None))) for el in elements)):
-                raise TypeError(
-                    f"Elements must be an iterable of Plottable objects or SmartFigures, not {type(elements).__name__}."
-                )
-            if self.is_single_subplot and not SmartFigure._is_iterable_of_elements(elements[0]):
-                elements = [elements]
-            for i, element in enumerate(elements):
-                if not any([
-                    isinstance(element, (Plottable, SmartFigure, type(None))),
-                    SmartFigure._is_iterable_of_elements(element),
-                ]):
-                    raise TypeError(
-                        f"Element at index {i} must be a Plottable, an iterable of Plottables, or a SmartFigure."
-                    )
-            if len(elements) > num_cols * num_rows:
-                raise ValueError("Too many elements provided for the number of subplots.")
-            for i, element in enumerate(elements):
-                self[divmod(i, self._num_cols)] = element
+        self.add_elements(*elements)
 
         self._figure = None
         self._gridspec = None
@@ -821,7 +802,7 @@ class SmartFigure:
         if not any([
             element is None,
             isinstance(element, (Plottable, SmartFigure)),
-            SmartFigure._is_iterable_of_elements(element),
+            SmartFigure._is_iterable_of_plottables(element),
         ]):
             raise TypeError("Element must be a Plottable, an iterable of Plottables, or a SmartFigure.")
         key_ = self._keys_to_slices(self._validate_and_normalize_key(key))
@@ -994,7 +975,7 @@ class SmartFigure:
         return key
 
     @staticmethod
-    def _is_iterable_of_elements(item: Any) -> bool:
+    def _is_iterable_of_plottables(item: Any) -> bool:
         """
         Checks if the given item is an iterable of Plottable elements or None. This is used to determine if the item can
         be added to the SmartFigure as a list of elements.
@@ -1011,30 +992,59 @@ class SmartFigure:
         """
         return isinstance(item, Iterable) and all(isinstance(el, (Plottable, type(None))) for el in item)
 
-    def add_elements(self, *elements: Plottable) -> Self:
+    def add_elements(
+        self,
+        *elements: Plottable | SmartFigure | Iterable[Plottable | SmartFigure],
+    ) -> Self:
         """
-        Adds one or more :class:`~graphinglib.graph_elements.Plottable` elements to the
-        :class:`~graphinglib.smart_figure.SmartFigure`. This convenience method is equivalent to using __setitem__, but
-        only works if the SmartFigure contains a single plot (1x1). Otherwise, the __setitem__ method should be used.
+        Adds :class:`~graphinglib.graph_elements.Plottable` or :class:`~graphinglib.smart_figure.SmartFigure` to the
+        :class:`~graphinglib.smart_figure.SmartFigure`. This method is equivalent to using the
+        :meth:`~graphinglib.smart_figure.SmartFigure.__setitem__` method, but can only add elements in single subplots.
 
         Parameters
         ----------
-        elements : :class:`~graphinglib.graph_elements.Plottable`
-            Elements to plot in the :class:`~graphinglib.smart_figure.SmartFigure`.
+        elements : Plottable | SmartFigure | Iterable[Plottable | SmartFigure]
+            Elements to plot in the :class:`~graphinglib.smart_figure.SmartFigure`. Each given element is added in turn
+            to each subplot in the order they are provided. Iterables of :class:`~graphinglib.graph_elements.Plottable`
+            objects can be provided to add multiple elements in the same subplot. The number of provided elements must
+            be at most the number of subplots unless the :class:`~graphinglib.smart_figure.SmartFigure` is a single
+            subplot, in which case all elements are added to the unique plot. If ``None`` elements are present, the
+            corresponding subplot is skipped and not drawn. If iterables containing only ``None`` are given, the
+            corresponding subplots are drawn but will appear empty.
+
+            .. note::
+                This method for adding elements only allows to add elements to single subplots. If you want to add
+                elements that span multiple subplots, you should use the
+                :meth:`~graphinglib.smart_figure.SmartFigure.__setitem__` method instead.
 
         Returns
         -------
         Self
-            For convenience, the same SmartFigure with the added elements.
+            For convenience, the same :class:`~graphinglib.smart_figure.SmartFigure` with the added elements.
 
         See Also
         --------
         :meth:`~graphinglib.smart_figure.SmartFigure.__setitem__`
-            For more information on how to use the __setitem__ method to add elements to the SmartFigure.
+            For more information on how to use the ``__setitem__`` method to add elements that span multiple columns or
+            rows to the :class:`~graphinglib.smart_figure.SmartFigure`.
         """
-        if self._num_rows != 1 or self._num_cols != 1:
-            raise GraphingException("The add_elements() method only works for 1x1 SmartFigures.")
-        self[0,0] += elements
+        if any(elements):
+            if len(elements) > self._num_cols * self._num_rows and not self.is_single_subplot:
+                raise ValueError("Too many elements provided for the number of subplots.")
+            # Check the type of each element
+            for i, element in enumerate(elements):
+                index = (0, 0) if self.is_single_subplot else divmod(i, self._num_cols)
+                if isinstance(element, Plottable):
+                    self[index] += [element]
+                elif SmartFigure._is_iterable_of_plottables(element):
+                    self[index] += list(element)
+                elif isinstance(element, SmartFigure):
+                    self[index] = element
+                elif element is not None:
+                    raise TypeError(
+                        f"Element at index {i} must be a Plottable, an iterable of Plottables, or a SmartFigure, "
+                        f"not {type(element).__name__}."
+                    )
         return self
 
     def show(
@@ -2204,8 +2214,8 @@ class SmartFigureWCS(SmartFigure):
         If an iterable of depth 2 is provided, each sub-iterable is added to the corresponding subplot, in the order
         they are provided. The number of sub-iterables should be equal to the number of subplots.
         If ``None`` elements are present in the iterable, the corresponding subplots are not drawn and a blank space is
-        left in the figure. If empty lists or iterables containing only ``None`` are given in the list, the
-        corresponding subplots are drawn but empty.
+        left in the figure. If iterables containing only ``None`` are given in the main iterable, the corresponding
+        subplots are drawn but empty.
 
         .. note::
             This method for adding elements only allows to add elements to single subplots. If you want to add elements
