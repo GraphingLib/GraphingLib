@@ -33,6 +33,7 @@ from .legend_artists import (
     HandlerMultipleVerticalLines,
     VerticalLineCollection,
     histogram_legend_artist,
+    LegendElement,
 )
 
 from numpy.typing import ArrayLike
@@ -2037,8 +2038,7 @@ class SmartFigure:
 
     def set_custom_legend(
         self,
-        handles: Optional[list[Artist]] = [],
-        labels: Optional[list[str]] = [],
+        elements: Optional[Iterable[LegendElement]] = None,
         reset: bool = False,
     ) -> Self:
         """
@@ -2054,17 +2054,8 @@ class SmartFigure:
 
         Parameters
         ----------
-        handles : list[Artist], optional
-            Handles to add to the legend. Any object accepted by the :function:`~matplotlib.pyplot.legend` function can
-            be used. These can be for example :class:`~matplotlib.lines.Line2D` or :class:`~matplotlib.patches.Patch`
-            objects. See the matplotlib documentation for details:
-            https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.legend.html#matplotlib.pyplot.legend
-        labels : list[str], optional
-            List of labels for the legend. If the handles directly contain the labels, this parameter can be set to
-            ``None``. However, if given, the length of the labels list must match the length of the handles list.
-
-            .. note::
-                If labels are given, the handles must also be given.
+        elements : Iterable[LegendElement], optional
+            Iterable of :class:`~graphinglib.smart_figure.LegendElement` objects to add to the legend.
         reset : bool, optional
             Whether or not to reset the custom handles and labels previously added with this method before adding the
             new ones.
@@ -2075,22 +2066,16 @@ class SmartFigure:
         Self
             For convenience, the same SmartFigure with the updated custom legend.
         """
-        if labels and not handles:
-            raise GraphingException("Handles must be specified if labels are given.")
-
-        if not labels:
-            new_labels = [handle.get_label() for handle in handles]
-        else:
-            new_labels = labels.copy()
-            if len(handles) != len(labels):
-                raise GraphingException("If labels are given, their number must match the number of handles.")
-
         if reset:
             self._custom_legend_handles = []
             self._custom_legend_labels = []
 
-        self._custom_legend_handles += handles
-        self._custom_legend_labels += new_labels
+        if isinstance(elements, Iterable) and all(isinstance(el, LegendElement) for el in elements):
+            self._custom_legend_handles += [el.handle for el in elements]
+            self._custom_legend_labels += [el.label for el in elements]
+        elif elements is not None:
+            raise TypeError("Elements must be an iterable of LegendElement objects.")
+
         return self
 
 

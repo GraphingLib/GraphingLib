@@ -15,6 +15,7 @@ from graphinglib.data_plotting_1d import Curve, Scatter, Histogram
 from graphinglib.data_plotting_2d import Heatmap, VectorField, Contour, Stream
 from graphinglib.fits import FitFromFunction
 from graphinglib.graph_elements import Plottable, GraphingException, Hlines, Vlines, Point, Text, Table
+from graphinglib.legend_artists import LegendElement, LegendLine, LegendMarker, LegendPatch
 from graphinglib.shapes import Arrow, Line, Polygon, Circle, Rectangle
 
 
@@ -799,14 +800,21 @@ class TestSmartFigure(unittest.TestCase):
         self.assertTrue(self.fig.show_grid)
 
     def test_set_custom_legend(self):
-        self.fig.set_custom_legend(handles=[], labels=[], reset=True)
-        self.fig.set_custom_legend(handles=[], labels=[])
-        with self.assertRaises(GraphingException):
-            self.fig.set_custom_legend(labels=["a"], handles=[])
-        line, = plt.plot([0, 1], [0, 1], label="line")
-        self.fig.set_custom_legend(handles=[line], labels=["line"], reset=True)
-        with self.assertRaises(GraphingException):
-            self.fig.set_custom_legend(handles=[line], labels=["a", "b"])
+        with self.assertRaises(TypeError):
+            self.fig.set_custom_legend(elements=["Not a LegendElement"])
+        with self.assertRaises(TypeError):
+            self.fig.set_custom_legend(elements="Not a good iterable")
+        self.fig.set_custom_legend()
+        line = LegendLine(label="Test line", color="green")
+        self.fig.set_custom_legend(elements=[line])
+        self.fig.set_custom_legend(elements=(line,))
+        self.assertEqual(len(self.fig._custom_legend_handles), 2)
+        self.assertEqual(self.fig._custom_legend_labels, ["Test line", "Test line"])
+        self.fig.set_custom_legend(reset=True)
+        self.assertEqual(self.fig._custom_legend_handles, [])
+        self.assertEqual(self.fig._custom_legend_labels, [])
+        with self.assertRaises(TypeError):
+            self.fig.set_custom_legend(elements=[line, "Still not a LegendElement..."])
 
     def test_methods_return_self(self):
         # Test that methods return self for method chaining
@@ -814,7 +822,7 @@ class TestSmartFigure(unittest.TestCase):
         self.assertIs(self.fig.set_ticks(x_ticks=[0, 1]), self.fig)
         self.assertIs(self.fig.set_tick_params(label_color="green"), self.fig)
         self.assertIs(self.fig.set_grid(visible_x=True), self.fig)
-        self.assertIs(self.fig.set_custom_legend(handles=[]), self.fig)
+        self.assertIs(self.fig.set_custom_legend(elements=[]), self.fig)
         self.assertIs(self.fig.set_visual_params(figure_face_color="red"), self.fig)
         self.assertIs(self.fig.set_rc_params({"lines.linewidth": 2}), self.fig)
         with warnings.catch_warnings():
