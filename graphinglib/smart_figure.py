@@ -1166,7 +1166,6 @@ class SmartFigure:
         plt.show()
         if not any(plt.fignum_exists(num) for num in plt.get_fignums()):    # check if the parameters can be reset
             plt.rcParams.update(plt.rcParamsDefault)
-            self._figure.clear()
             self._figure = None
             self._gridspec = None
         return self
@@ -1204,7 +1203,6 @@ class SmartFigure:
         )
         plt.close()
         plt.rcParams.update(plt.rcParamsDefault)
-        self._figure.clear()
         self._figure = None
         self._gridspec = None
         return self
