@@ -8,9 +8,11 @@ matplotlib_use("Agg")  # Use non-GUI backend for tests
 
 from matplotlib import pyplot as plt
 from numpy import linspace, sin, pi, array
+from astropy.wcs import WCS
+import astropy.units as u
 
 from graphinglib.file_manager import FileLoader
-from graphinglib.smart_figure import SmartFigure
+from graphinglib.smart_figure import SmartFigure, SmartFigureWCS
 from graphinglib.data_plotting_1d import Curve, Scatter, Histogram
 from graphinglib.data_plotting_2d import Heatmap, VectorField, Contour, Stream
 from graphinglib.fits import FitFromFunction
@@ -710,7 +712,7 @@ class TestSmartFigure(unittest.TestCase):
         self.fig[0] = Histogram([0, 1, 2, 3], 4)
         self.fig._initialize_parent_smart_figure()
         plt.close()
-        self.fig[0] = Heatmap([[0, 1], [2, 3]])
+        self.fig[0] = Heatmap([[0, 1], [2, 3]], origin_position="lower")
         self.fig._initialize_parent_smart_figure()
         plt.close()
         self.fig[0] = VectorField([0, 1], [0, 1], [1, 0], [0, 1])
@@ -978,6 +980,265 @@ class TestSmartFigure(unittest.TestCase):
             self.assertIs(self.fig.show(), self.fig)
         self.assertIs(self.fig.save("test_smart_figure_output.png"), self.fig)
         os.remove("test_smart_figure_output.png")
+
+
+# Test suite for SmartFigureWCS, inheriting from TestSmartFigure to avoid code duplication
+class TestSmartFigureWCS(TestSmartFigure):
+    """
+    Test class for SmartFigureWCS that inherits from TestSmartFigure to avoid code duplication.
+    Only tests the specific differences and additions of SmartFigureWCS.
+    """
+
+    def setUp(self):
+        # Create a simple WCS object for testing
+        self.wcs = WCS(naxis=2)
+        self.wcs.wcs.crpix = [1, 1]
+        self.wcs.wcs.cdelt = [1, 1]
+        self.wcs.wcs.crval = [0, 0]
+        self.wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+
+        # Create SmartFigureWCS instances
+        self.fig = SmartFigureWCS(projection=self.wcs)
+        self.fig_2x3 = SmartFigureWCS(projection=self.wcs, num_rows=2, num_cols=3)
+        self.fig_1x4 = SmartFigureWCS(projection=self.wcs, num_rows=1, num_cols=4)
+        self.fig_3x1 = SmartFigureWCS(projection=self.wcs, num_rows=3, num_cols=1)
+
+        # Set up test data
+        x = linspace(0, 3 * pi, 200)
+        self.testCurve = Curve(x, sin(x), "Test Curve", color="k")
+        self.plainDefaults = FileLoader("plain").load()
+        self.horribleDefaults = FileLoader("horrible").load()
+
+    def test_init_requires_wcs_projection(self):
+        """Test that SmartFigureWCS requires a WCS projection object."""
+        # Valid WCS projection
+        fig = SmartFigureWCS(projection=self.wcs)
+        self.assertIsInstance(fig, SmartFigureWCS)
+        self.assertEqual(fig.projection, self.wcs)
+
+        # Invalid projection types should raise exception
+        with self.assertRaises(GraphingException):
+            SmartFigureWCS(projection="polar")
+
+        with self.assertRaises(GraphingException):
+            SmartFigureWCS(projection=None)
+
+        with self.assertRaises(GraphingException):
+            SmartFigureWCS(projection=123)
+
+    def test_projection(self):
+        """Test the projection property getter and setter."""
+        # Valid WCS projection
+        new_wcs = WCS(naxis=2)
+        new_wcs.wcs.crpix = [2, 2]
+        new_wcs.wcs.cdelt = [0.5, 0.5]
+        new_wcs.wcs.crval = [10, 10]
+        new_wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+
+        self.fig.projection = new_wcs
+        self.assertEqual(self.fig.projection, new_wcs)
+
+        # Invalid projection types should raise exception
+        with self.assertRaises(GraphingException):
+            self.fig.projection = "polar"
+
+        with self.assertRaises(GraphingException):
+            self.fig.projection = None
+
+    def test_wcs_specific_attributes(self):
+        """Test that SmartFigureWCS has WCS-specific attributes."""
+        self.assertIsNone(self.fig._number_of_x_ticks)
+        self.assertIsNone(self.fig._number_of_y_ticks)
+        self.assertIsNone(self.fig._x_tick_formatter)
+        self.assertIsNone(self.fig._y_tick_formatter)
+        self.assertIsNone(self.fig._minor_x_tick_frequency)
+        self.assertIsNone(self.fig._minor_y_tick_frequency)
+
+        # Check default tick params
+        expected_default_tick_params = {
+            "x major": {"bottom": True, "top": True, "labelbottom": True},
+            "y major": {"left": True, "right": True, "labelleft": True},
+            "x minor": {},
+            "y minor": {},
+        }
+        self.assertEqual(self.fig._default_tick_params, expected_default_tick_params)
+        self.assertEqual(self.fig._tick_params, expected_default_tick_params)
+
+    def test_set_ticks_wcs_specific(self):
+        """Test the WCS-specific set_ticks method."""
+        # Test with Quantity objects
+        x_ticks = [0, 1, 2] * u.deg
+        y_ticks = [0, 1, 2] * u.deg
+        x_spacing = 0.5 * u.deg
+        y_spacing = 0.5 * u.deg
+
+        # Valid usage
+        result = self.fig.set_ticks(
+            number_of_x_ticks=5,
+            number_of_y_ticks=5,
+            x_tick_formatter="hh:mm:ss",
+            y_tick_formatter=lambda x: f"{x:.2f}",
+            minor_x_tick_frequency=2,
+            minor_y_tick_frequency=3
+        )
+
+        # Should return self
+        self.assertIs(result, self.fig)
+
+        # Check that attributes are set
+        self.assertEqual(self.fig._number_of_x_ticks, 5)
+        self.assertEqual(self.fig._number_of_y_ticks, 5)
+        self.assertEqual(self.fig._x_tick_formatter, "hh:mm:ss")
+        self.assertTrue(callable(self.fig._y_tick_formatter))
+        self.assertEqual(self.fig._minor_x_tick_frequency, 2)
+        self.assertEqual(self.fig._minor_y_tick_frequency, 3)
+
+        # Test invalid combinations - ticks and number of ticks
+        with self.assertRaises(GraphingException):
+            self.fig.set_ticks(x_ticks=x_ticks, number_of_x_ticks=5)
+
+        with self.assertRaises(GraphingException):
+            self.fig.set_ticks(y_ticks=y_ticks, number_of_y_ticks=5)
+
+        # Test invalid combinations - spacing and number of ticks
+        with self.assertRaises(GraphingException):
+            self.fig.set_ticks(x_tick_spacing=x_spacing, number_of_x_ticks=5)
+
+        with self.assertRaises(GraphingException):
+            self.fig.set_ticks(y_tick_spacing=y_spacing, number_of_y_ticks=5)
+
+    def test_set_ticks_and_tick_params(self):
+        """Test the WCS-specific set_tick_params method."""
+        # Test setting parameters for both axes
+        result = self.fig.set_tick_params(
+            axis="both",
+            direction="in",
+            length=10,
+            minor_length=5,
+            width=2,
+            color="red",
+            pad=5,
+            label_size=12,
+            label_color="blue",
+            label_rotation=45,
+            draw_bottom_tick=False,
+            draw_top_tick=True,
+            draw_left_tick=False,
+            draw_right_tick=True,
+            draw_bottom_label=False,
+            draw_top_label=True,
+            draw_left_label=False,
+            draw_right_label=True,
+        )
+
+        # Should return self
+        self.assertIs(result, self.fig)
+
+        # Check that parameters are set for both axes
+        expected_major_params = {
+            "bottom": False, "top": True, "labelbottom": False, "labeltop": True,
+            "left": False, "right": True, "labelleft": False, "labelright": True,
+            "direction": "in", "length": 10, "width": 2, "color": "red",
+            "pad": 5, "labelsize": 12, "labelcolor": "blue", "labelrotation": 45
+        }
+
+        self.assertEqual(self.fig._tick_params["x major"], expected_major_params)
+        self.assertEqual(self.fig._tick_params["y major"], expected_major_params)
+        self.assertEqual(self.fig._tick_params["x minor"], {"length": 5})
+        self.assertEqual(self.fig._tick_params["y minor"], {"length": 5})
+
+        # Test setting parameters for individual axes
+        self.fig.set_tick_params(axis="x", length=15)
+        self.assertEqual(self.fig._tick_params["x major"]["length"], 15)
+        self.assertEqual(self.fig._tick_params["y major"]["length"], 10)  # Should remain unchanged
+
+        # Test reset functionality
+        self.fig.set_tick_params(axis="x", reset=True, length=20)
+        expected_reset_params = {
+            "bottom": True, "top": True, "labelbottom": True,
+            "length": 20
+        }
+        self.assertEqual(self.fig._tick_params["x major"], expected_reset_params)
+        self.assertEqual(self.fig._tick_params["x minor"], {})
+
+    def test_set_grid_wcs_specific(self):
+        """Test the WCS-specific set_grid method."""
+        # Test that it calls the parent method with major ticks only
+        result = self.fig.set_grid(
+            visible_x=True,
+            visible_y=False,
+            show_on_top=True,
+            color="red",
+            alpha=0.5,
+            line_style="--",
+            line_width=2
+        )
+
+        # Should return self
+        self.assertIs(result, self.fig)
+
+        # Check that grid parameters are set (inherited behavior)
+        self.assertTrue(self.fig._show_grid)
+
+    def test_inheritance_behavior(self):
+        """Test that SmartFigureWCS inherits all SmartFigure functionality."""
+        # Test that all inherited properties work
+        self.fig.x_label = "RA"
+        self.fig.y_label = "Dec"
+        self.fig.title = "WCS Test Figure"
+
+        self.assertEqual(self.fig.x_label, "RA")
+        self.assertEqual(self.fig.y_label, "Dec")
+        self.assertEqual(self.fig.title, "WCS Test Figure")
+
+        # Test that plotting still works
+        dummy = DummyPlottable()
+        self.fig.add_elements(dummy)
+        self.assertEqual(len(self.fig), 1)
+
+    def test_init_with_all_parameters(self):
+        """Test SmartFigureWCS initialization with all parameters."""
+        elements = [DummyPlottable(), DummyPlottable()]
+        fig = SmartFigureWCS(
+            projection=self.wcs,
+            num_rows=2, num_cols=2,
+            x_label="RA", y_label="Dec",
+            size=(10, 8), title="Test WCS Figure",
+            x_lim=(0, 10), y_lim=(-5, 5),
+            sub_x_labels=["RA1", "RA2"], sub_y_labels=["Dec1", "Dec2"],
+            subtitles=["Title 1", "Title 2", "Title 3", "Title 4"],
+            log_scale_x=False, log_scale_y=False,
+            remove_axes=False, aspect_ratio="equal",
+            remove_x_ticks=False, remove_y_ticks=False,
+            reference_labels=True, global_reference_label=False,
+            reference_label_loc="outside", reference_label_start_index=0,
+            width_padding=0.1, height_padding=0.1,
+            width_ratios=[1, 2], height_ratios=[1, 2],
+            share_x=False, share_y=False,
+            general_legend=False, legend_loc="best",
+            legend_cols=1, show_legend=True,
+            figure_style="default", elements=elements
+        )
+
+        # Test that WCS-specific attributes are properly initialized
+        self.assertEqual(fig.projection, self.wcs)
+        self.assertIsNone(fig._number_of_x_ticks)
+        self.assertIsNone(fig._number_of_y_ticks)
+
+        # Test that inherited attributes work
+        self.assertEqual(fig.num_rows, 2)
+        self.assertEqual(fig.num_cols, 2)
+        self.assertEqual(fig.x_label, "RA")
+        self.assertEqual(fig.y_label, "Dec")
+
+    def test_methods_return_self_wcs(self):
+        """Test that WCS-specific methods return self for method chaining."""
+        result = (self.fig
+                 .set_ticks(number_of_x_ticks=5)
+                 .set_tick_params(direction="in")
+                 .set_grid(visible_x=True))
+
+        self.assertIs(result, self.fig)
 
 
 if __name__ == "__main__":
