@@ -443,6 +443,20 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.figure_style = "dark"
         self.assertEqual(self.fig.figure_style, "dark")
 
+    def test_elements(self):
+        # Invalid
+        with self.assertRaises(TypeError):
+            self.fig.elements = "not_a_list"
+        with self.assertRaises(TypeError):
+            self.fig.elements = [1, 2, 3]
+        # Valid
+        self.fig_1x4.elements = [DummyPlottable(), DummyPlottable()]
+        self.assertEqual(len(self.fig_1x4.elements), 2)
+
+        # Setting new elements will clear existing ones
+        self.fig_3x1.elements = [[DummyPlottable(), DummyPlottable()], [None], DummyPlottable()]
+        self.assertEqual(len(self.fig_3x1.elements), 3)
+
     def test_show_grid(self):
         # Invalid
         with self.assertRaises(TypeError):

@@ -248,9 +248,7 @@ class SmartFigure:
         self.legend_cols = legend_cols
         self.show_legend = show_legend
         self.figure_style = figure_style
-
-        self._elements = {}
-        self.add_elements(*elements)
+        self.elements = elements
 
         self._figure = None
         self._gridspec = None
@@ -692,6 +690,23 @@ class SmartFigure:
         if value not in available_styles:
             raise ValueError(f"figure_style must be one of {available_styles}.")
         self._figure_style = value
+
+    @property
+    def elements(self) -> dict[tuple[slice, slice], Plottable | SmartFigure]:
+        return self._elements
+
+    @elements.setter
+    def elements(
+        self,
+        value: Optional[Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]]]
+    ) -> None:
+        """
+        Sets the elements of the SmartFigure with the same rules as the constructor. For adding elements instead of
+        replacing them, use the :meth:`~graphinglib.smart_figure.SmartFigure.add_elements` or
+        :meth:`~graphinglib.smart_figure.SmartFigure.__setitem__` methods.
+        """
+        self._elements = {}        # systematically reset the elements when setting them with the property
+        self.add_elements(*value)
 
     @property
     def show_grid(self) -> bool:
