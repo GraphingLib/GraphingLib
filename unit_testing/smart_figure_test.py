@@ -32,6 +32,10 @@ class DummyPlottable(Plottable):
 class TestSmartFigure(unittest.TestCase):
     def setUp(self):
         self.fig = SmartFigure()
+        # Set up figures for testing indexing and slicing
+        self.fig_2x3 = SmartFigure(num_rows=2, num_cols=3)  # 2 rows, 3 columns
+        self.fig_1x4 = SmartFigure(num_rows=1, num_cols=4)  # 1 row, 4 columns (1D)
+        self.fig_3x1 = SmartFigure(num_rows=3, num_cols=1)  # 3 rows, 1 column (1D)
         x = linspace(0, 3 * pi, 200)
         self.testCurve = Curve(x, sin(x), "Test Curve", color="k")
         self.plainDefaults = FileLoader("plain").load()
@@ -455,6 +459,11 @@ class TestSmartFigure(unittest.TestCase):
         fig_v[:] = DummyPlottable()
         fig[1] = [DummyPlottable(), DummyPlottable()]
         fig[1] = fig_v
+
+        # Test negative indexing
+        fig[-1] = DummyPlottable()  # Should work
+        fig_v[-1] = DummyPlottable()  # Should work
+
         with self.assertRaises(TypeError):
             fig[1] = "not a plottable"
         with self.assertRaises(IndexError):
@@ -464,13 +473,11 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(IndexError):
             fig[3] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[-1] = DummyPlottable()
+            fig[-4] = DummyPlottable()  # Out of bounds negative
         with self.assertRaises(TypeError):
             fig[1.5] = DummyPlottable()
         with self.assertRaises(IndexError):
             fig[0:4] = DummyPlottable()
-        with self.assertRaises(IndexError):
-            fig[-1:] = DummyPlottable()
         with self.assertRaises(IndexError):
             fig[1:0] = DummyPlottable()
         with self.assertRaises(ValueError):
@@ -478,6 +485,11 @@ class TestSmartFigure(unittest.TestCase):
 
     def test_2d_setitem(self):
         fig = SmartFigure(num_rows=2, num_cols=3)
+
+        # Test valid negative indexing
+        fig[-1, -1] = DummyPlottable()  # Should work
+        fig[-2, -3] = DummyPlottable()  # Should work
+
         with self.assertRaises(ValueError):
             fig[1] = DummyPlottable()
         with self.assertRaises(ValueError):
@@ -487,7 +499,9 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(IndexError):
             fig[0, 3] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[0, -1] = DummyPlottable()
+            fig[-3, 0] = DummyPlottable()  # Out of bounds negative
+        with self.assertRaises(IndexError):
+            fig[0, -4] = DummyPlottable()  # Out of bounds negative
         with self.assertRaises(TypeError):
             fig[1.5, 0] = DummyPlottable()
         with self.assertRaises(ValueError):
@@ -499,11 +513,84 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(IndexError):
             fig[:, 3:4] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[-1:, 2] = DummyPlottable()
-        with self.assertRaises(IndexError):
             fig[1:0, 2] = DummyPlottable()
         with self.assertRaises(ValueError):
             fig[1::2, :] = DummyPlottable()
+
+    def test_negative_integer_indexing(self):
+        mock_element = DummyPlottable("test_element")
+
+        # Test 2D negative integer indexing
+        self.fig_2x3[-1, -1] = mock_element  # Last row, last column (1, 2)
+        self.assertEqual(len(self.fig_2x3[1, 2]), 1)
+
+        self.fig_2x3[-2, -3] = mock_element  # First row, first column (0, 0)
+        self.assertEqual(len(self.fig_2x3[0, 0]), 1)
+
+        self.fig_2x3[-1, -2] = mock_element  # Last row, second-to-last column (1, 1)
+        self.assertEqual(len(self.fig_2x3[1, 1]), 1)
+
+        # Test 1D negative indexing (single row)
+        self.fig_1x4[-1] = mock_element  # Last column (0, 3)
+        self.assertEqual(len(self.fig_1x4[0, 3]), 1)
+
+        self.fig_1x4[-4] = mock_element  # First column (0, 0)
+        self.assertEqual(len(self.fig_1x4[0, 0]), 1)
+
+        # Test 1D negative indexing (single column)
+        self.fig_3x1[-1] = mock_element  # Last row (2, 0)
+        self.assertEqual(len(self.fig_3x1[2, 0]), 1)
+
+        self.fig_3x1[-3] = mock_element  # First row (0, 0)
+        self.assertEqual(len(self.fig_3x1[0, 0]), 1)
+
+    def test_negative_slice_indexing(self):
+        mock_element = DummyPlottable("test_element")
+
+        # Test negative slice indexing
+        self.fig_2x3[-2:, -3:-1] = mock_element  # Should span (0:2, 0:2)
+        key = (slice(0, 2), slice(0, 2))
+        self.assertIn(key, self.fig_2x3._elements)
+
+        # Test slice with only negative start
+        self.fig_2x3[-1:, :] = DummyPlottable("test2")  # Last row, all columns
+        key = (slice(1, 2), slice(0, 3))
+        self.assertIn(key, self.fig_2x3._elements)
+
+    def test_negative_indexing_errors(self):
+        """Test error conditions for negative indexing."""
+        mock_element = DummyPlottable("test")
+
+        # Test negative index out of bounds
+        with self.assertRaises(IndexError):
+            self.fig_2x3[-3, 0] = mock_element  # -3 is out of bounds for 2 rows
+
+        with self.assertRaises(IndexError):
+            self.fig_2x3[0, -4] = mock_element  # -4 is out of bounds for 3 columns
+
+        # Test negative slice out of bounds
+        with self.assertRaises(IndexError):
+            self.fig_2x3[-3:, :] = mock_element  # -3 is out of bounds for 2 rows
+
+        # Test negative slice out of bounds
+        with self.assertRaises(IndexError):
+            self.fig_2x3[-3:, -2:1] = mock_element  # start = stop
+
+    def test_validate_and_normalize_key_negative_indices(self):
+        """Test the _validate_and_normalize_key method directly with negative indices."""
+        # Test negative integer normalization
+        result = self.fig_2x3._validate_and_normalize_key((-1, -1))
+        expected = (slice(1, 2), slice(2, 3))  # Should convert to slice objects
+        self.assertEqual(result, expected)
+
+        result = self.fig_2x3._validate_and_normalize_key((-2, -3))
+        expected = (slice(0, 1), slice(0, 1))
+        self.assertEqual(result, expected)
+
+        # Test negative slice normalization
+        result = self.fig_2x3._validate_and_normalize_key((slice(-2, None), slice(-3, -1)))
+        expected = (slice(0, 2), slice(0, 2))
+        self.assertEqual(result, expected)
 
     def test_elements_in_init(self):
         # Invalid formats

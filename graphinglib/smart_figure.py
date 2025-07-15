@@ -11,7 +11,6 @@ from astropy.units import Quantity
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-from matplotlib import is_interactive
 from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
@@ -19,7 +18,6 @@ from matplotlib.transforms import ScaledTranslation
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.axes import Axes
 from matplotlib.projections import get_projection_names
-from matplotlib.artist import Artist
 
 from .file_manager import (
     FileLoader,
@@ -806,7 +804,7 @@ class SmartFigure:
             SmartFigure._is_iterable_of_plottables(element),
         ]):
             raise TypeError("Element must be a Plottable, an iterable of Plottables, or a SmartFigure.")
-        key_ = self._keys_to_slices(self._validate_and_normalize_key(key))
+        key_ = self._validate_and_normalize_key(key)
         if element is None:
             self._elements.pop(key_, None)
         else:
@@ -844,7 +842,7 @@ class SmartFigure:
             The element(s) at the specified key, which can be a list of Plottables or a SmartFigure. If there is no
             elements at the given key, an empty list is returned.
         """
-        key_ = self._keys_to_slices(self._validate_and_normalize_key(key))
+        key_ = self._validate_and_normalize_key(key)
         return self._elements.get(key_, [])
 
     def __deepcopy__(self, memo: dict) -> Self:
@@ -914,22 +912,12 @@ class SmartFigure:
         """
         return OrderedDict(sorted(self._elements.items(), key=lambda item: (item[0][0].start, item[0][1].start)))
 
-    def _keys_to_slices(self, keys: tuple[slice | int]) -> tuple[slice]:
-        """
-        Converts a given two-tuple of integers or slices into a tuple of slices for normalization. The starting or
-        ending ``None`` values of slices, if present, are replaced with 0 or the size of the axis respectively.
-        """
-        new_slices = [k if isinstance(k, slice) else slice(k, k+1, None) for k in keys]   # convert int -> slice
-        new_slices = [s if s.start is not None else slice(0, s.stop) for s in new_slices] # convert starting None -> 0
-        new_slices = [s if s.stop is not None else slice(s.start, stop)
-                      for s, stop in zip(new_slices, (self._num_rows, self._num_cols))]   # convert stop None -> size
-        return tuple(new_slices)
-
-    def _validate_and_normalize_key(self, key: int | slice | tuple[int | slice]) -> tuple[int | slice]:
+    def _validate_and_normalize_key(self, key: int | slice | tuple[int | slice]) -> tuple[slice]:
         """
         Validates and normalizes the key for indexing into the SmartFigure. This method ensures that the key is
         either a single integer, a slice, or a tuple of integers/slices. It also checks for out-of-bounds indices and
-        raises appropriate exceptions if the key is invalid. The returned key is always a tuple of integers or slices.
+        raises appropriate exceptions if the key is invalid. The returned key is always a tuple of two slices without
+        None or negative indices..
 
         Parameters
         ----------
@@ -938,8 +926,8 @@ class SmartFigure:
 
         Returns
         -------
-        tuple[int | slice]
-            The normalized key as a tuple of integers or slices.
+        tuple[slice]
+            The normalized key as a two-tuple of slices.
         """
         if not isinstance(key, tuple):
             key = (key,)
@@ -957,23 +945,28 @@ class SmartFigure:
                 raise ValueError("2D indexing must use a tuple of length 2.")
 
         # Bounds check
+        new_keys = []
         for i, (k, axis_size) in enumerate(zip(key, (self._num_rows, self._num_cols))):
             if isinstance(k, int):
-                if not (0 <= k < axis_size):
+                new_k = k + axis_size if k < 0 else k
+                if not (0 <= new_k < axis_size):
                     raise IndexError(f"Index {k} out of bounds for axis {i} with size {axis_size}.")
+                new_keys.append(slice(new_k, new_k + 1, None))
             elif isinstance(k, slice):
                 start = k.start if k.start is not None else 0
+                start = start + axis_size if start < 0 else start
                 stop = k.stop if k.stop is not None else axis_size
+                stop = stop + axis_size if stop < 0 else stop
                 if start < 0 or stop > axis_size:
                     raise IndexError(f"{k} out of bounds for axis {i} with size {axis_size}.")
                 if start >= stop:
                     raise IndexError(f"{k} for axis {i} must have stop larger than start.")
                 if k.step is not None:
                     raise ValueError(f"{k} step for axis {i} must be None.")
+                new_keys.append(slice(start, stop, None))
             else:
                 raise TypeError(f"Key element {k} for axis {i} must be an int or a slice.")
-
-        return key
+        return tuple(new_keys)
 
     @staticmethod
     def _is_iterable_of_plottables(item: Any) -> bool:
