@@ -51,12 +51,14 @@ class TestSmartFigure(unittest.TestCase):
         elements = [[DummyPlottable(), DummyPlottable()], None, DummyPlottable(),
                     [None], [DummyPlottable(), DummyPlottable(), DummyPlottable()], []]
         fig = SmartFigure(num_rows=2, num_cols=3, x_label="X", y_label="Y", size=(8, 6), title="Test Figure",
-                          x_lim=(0, 10), y_lim=(-5, 5), log_scale_x=True, log_scale_y=True, remove_axes=True,
-                          aspect_ratio=1.5, remove_x_ticks=True, remove_y_ticks=True, reference_labels=False,
-                          global_reference_label=True, reference_label_loc="inside", reference_label_start_index=3,
-                          width_padding=0.5, height_padding=0, width_ratios=[1,2,3], height_ratios=[1,2], share_x=True,
-                          share_y=True, projection="polar", general_legend=True, legend_loc="upper right",
-                          legend_cols=2, show_legend=False, figure_style="dark", elements=elements)
+                          x_lim=(0, 10), y_lim=(-5, 5), sub_x_labels=["X1", "X2", "X3"], sub_y_labels=["Y1", "Y2"],
+                          subtitles=["Title 1", "Title 2", "Title 3", "Title 4", "Title 5", "Title 6"],
+                          log_scale_x=True, log_scale_y=True, remove_axes=True, aspect_ratio=1.5, remove_x_ticks=True,
+                          remove_y_ticks=True, reference_labels=False, global_reference_label=True,
+                          reference_label_loc="inside", reference_label_start_index=3, width_padding=0.5,
+                          height_padding=0, width_ratios=[1,2,3], height_ratios=[1,2], share_x=True, share_y=True,
+                          projection="polar", general_legend=True, legend_loc="upper right", legend_cols=2,
+                          show_legend=False, figure_style="dark", elements=elements)
         self.assertEqual(fig.num_rows, 2)
         self.assertEqual(fig.num_cols, 3)
         self.assertEqual(fig.x_label, "X")
@@ -65,6 +67,9 @@ class TestSmartFigure(unittest.TestCase):
         self.assertEqual(fig.title, "Test Figure")
         self.assertEqual(fig.x_lim, (0, 10))
         self.assertEqual(fig.y_lim, (-5, 5))
+        self.assertEqual(fig.sub_x_labels, ["X1", "X2", "X3"])
+        self.assertEqual(fig.sub_y_labels, ["Y1", "Y2"])
+        self.assertEqual(fig.subtitles, ["Title 1", "Title 2", "Title 3", "Title 4", "Title 5", "Title 6"])
         self.assertTrue(fig.log_scale_x)
         self.assertTrue(fig.log_scale_y)
         self.assertTrue(fig.remove_axes)
@@ -155,6 +160,48 @@ class TestSmartFigure(unittest.TestCase):
         # Valid
         self.fig.y_lim = (-5, 5)
         self.assertEqual(self.fig.y_lim, (-5, 5))
+
+    def test_sub_x_labels(self):
+        # Test with None (default)
+        self.assertIsNone(self.fig.sub_x_labels)
+
+        # Test with valid list of strings
+        valid_labels = ("X1", "X2", "X3")
+        self.fig.sub_x_labels = valid_labels
+        self.assertEqual(self.fig.sub_x_labels, valid_labels)
+        self.fig.sub_x_labels = [None, "valid"]
+
+        # Test invalid types
+        with self.assertRaises(TypeError):
+            self.fig.sub_x_labels = 123
+
+    def test_sub_y_labels(self):
+        # Test with None (default)
+        self.assertIsNone(self.fig.sub_y_labels)
+
+        # Test with valid list of strings
+        valid_labels = ("Y1", "Y2", "Y3")
+        self.fig.sub_y_labels = valid_labels
+        self.assertEqual(self.fig.sub_y_labels, valid_labels)
+        self.fig.sub_y_labels = [None, "valid"]
+
+        # Test invalid types
+        with self.assertRaises(TypeError):
+            self.fig.sub_y_labels = 123
+
+    def test_subtitles(self):
+        # Test with None (default)
+        self.assertIsNone(self.fig.subtitles)
+
+        # Test with valid list of strings
+        valid_titles = ("Title 1", "Title 2", "Title 3")
+        self.fig.subtitles = valid_titles
+        self.assertEqual(self.fig.subtitles, valid_titles)
+        self.fig.subtitles = [None, "valid"]
+
+        # Test invalid types
+        with self.assertRaises(TypeError):
+            self.fig.subtitles = 123
 
     def test_log_scale_x(self):
         # Invalid

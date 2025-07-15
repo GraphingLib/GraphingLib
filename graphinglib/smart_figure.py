@@ -62,6 +62,15 @@ class SmartFigure:
         General title of the figure.
     x_lim, y_lim : tuple[float, float], optional
         Limits for the x and y axes of the figure.
+    sub_x_labels, sub_y_labels : Iterable[str], optional
+        Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
+        single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
+        :class:`~graphinglib.smart_figure.SmartFigure` objects for each subfigure only to set the x and y labels.
+    subtitles : Iterable[str], optional
+        Labels for the subtitles of each subfigure, respectively. Similarly to `sub_x_labels` and `sub_y_labels`, this
+        allows to set subtitles for each subfigure without needing to create nested
+        :class:`~graphinglib.smart_figure.SmartFigure` objects. It is only useful for figures that are not a single
+        subplot and when each subfigure needs its own subtitle.
     log_scale_x, log_scale_y : bool
         Whether to use a logarithmic scale for the x and y axes, respectively.
         Defaults to ``False``.
@@ -179,6 +188,9 @@ class SmartFigure:
         title: Optional[str] = None,
         x_lim: Optional[tuple[float, float]] = None,
         y_lim: Optional[tuple[float, float]] = None,
+        sub_x_labels: Optional[Iterable[str]] = None,
+        sub_y_labels: Optional[Iterable[str]] = None,
+        subtitles: Optional[Iterable[str]] = None,
         log_scale_x: bool = False,
         log_scale_y: bool = False,
         remove_axes: bool = False,
@@ -211,6 +223,9 @@ class SmartFigure:
         self.title = title
         self.x_lim = x_lim
         self.y_lim = y_lim
+        self.sub_x_labels = sub_x_labels
+        self.sub_y_labels = sub_y_labels
+        self.subtitles = subtitles
         self.log_scale_x = log_scale_x
         self.log_scale_y = log_scale_y
         self.remove_axes = remove_axes
@@ -377,6 +392,39 @@ class SmartFigure:
             if len(value) != 2:
                 raise ValueError("y_lim must be a tuple of length 2.")
         self._y_lim = value
+
+    @property
+    def sub_x_labels(self) -> Optional[Iterable[str]]:
+        return self._sub_x_labels
+
+    @sub_x_labels.setter
+    def sub_x_labels(self, value: Optional[Iterable[str]]) -> None:
+        if value is not None:
+            if not isinstance(value, Iterable):
+                raise TypeError("sub_x_labels must be an iterable of strings.")
+        self._sub_x_labels = value
+
+    @property
+    def sub_y_labels(self) -> Optional[Iterable[str]]:
+        return self._sub_y_labels
+
+    @sub_y_labels.setter
+    def sub_y_labels(self, value: Optional[Iterable[str]]) -> None:
+        if value is not None:
+            if not isinstance(value, Iterable):
+                raise TypeError("sub_y_labels must be an iterable of strings.")
+        self._sub_y_labels = value
+
+    @property
+    def subtitles(self) -> Optional[Iterable[str]]:
+        return self._subtitles
+
+    @subtitles.setter
+    def subtitles(self, value: Optional[Iterable[str]]) -> None:
+        if value is not None:
+            if not isinstance(value, Iterable):
+                raise TypeError("subtitles must be an iterable of strings.")
+        self._subtitles = value
 
     @property
     def log_scale_x(self) -> bool:
@@ -1246,12 +1294,26 @@ class SmartFigure:
         ax = None   # keep track of the last plt.Axes object, needed for sharing axes
         default_labels, default_handles = [], []
         custom_labels, custom_handles = [], []
-        for (rows, cols), element in self._ordered_elements.items():
+        for subplot_i, ((rows, cols), element) in enumerate(self._ordered_elements.items()):
             if isinstance(element, SmartFigure):
                 element._default_params = deepcopy(self._default_params)
                 element._default_params["rc_params"].update(element._user_rc_dict)
                 plt.rcParams.update(element._default_params["rc_params"])
                 subfig_params_to_reset = element._fill_in_missing_params(element)  # Fill "default" parameters
+
+                # Check whether sub_x_labels/sub_y_labels/sub_titles are set and can be given as the main
+                # x_label/y_label/title of the nested SmartFigure
+                sub_params = [
+                    sub_param[subplot_i] if sub_param is not None and len(sub_param) > subplot_i else None
+                    for sub_param in [self._sub_x_labels, self._sub_y_labels, self._subtitles]
+                ]       # list containing the sub_x_label, sub_y_label and subtitle for the current subplot
+                # subfig_none_params contains True if the corresponding parameter is None in the nested SmartFigure
+                subfig_none_params = [getattr(element, param) is None for param in ["x_label", "y_label", "title"]]
+                for attr, param_is_none, sub_param in zip(
+                    ["x_label", "y_label", "title"], subfig_none_params, sub_params
+                ):
+                    if param_is_none and sub_param is not None:
+                        setattr(element, attr, sub_param)
 
                 subfig = self._figure.add_subfigure(self._gridspec[rows, cols])
                 element._figure = subfig        # associates the current subfigure with the nested SmartFigure
@@ -1270,6 +1332,9 @@ class SmartFigure:
                 plt.rcParams.update(self._default_params["rc_params"])  # Return to the parent SmartFigure's rc params
                 element._reset_params_to_default(element, subfig_params_to_reset)
                 element._default_params = {}
+                for param, param_was_none in zip(["x_label", "y_label", "title"], subfig_none_params):
+                    if param_was_none:
+                        setattr(element, param, None)
 
             elif isinstance(element, (Plottable, list)):
                 current_elements = element if isinstance(element, list) else [element]
@@ -1385,9 +1450,20 @@ class SmartFigure:
                         default_labels, default_handles = [], []
                         custom_labels, custom_handles = [], []
 
-                    # Axes title (if the SmartFigure is a single subplot)
+                    # Axes title
                     if self._title and self.is_single_subplot:
                         ax.set_title(self._title)
+                    elif self._subtitles is not None and len(self._subtitles) > subplot_i:
+                        ax.set_title(self._subtitles[subplot_i])
+
+                    # Axes sub_labels
+                    sub_x = self._sub_x_labels
+                    sub_y = self._sub_y_labels
+                    self._customize_ax_label(
+                        ax,
+                        sub_x[subplot_i] if sub_x and len(sub_x) > subplot_i else None,
+                        sub_y[subplot_i] if sub_y and len(sub_y) > subplot_i else None,
+                    )
 
             elif element is not None:
                 raise GraphingException(f"Unsupported element type in list: {type(element).__name__}")
@@ -1395,7 +1471,7 @@ class SmartFigure:
         # Axes labels
         if self.is_single_subplot:
             if ax is not None:  # makes sure an element was plotted and that an axis was created
-                self._customize_ax_label(ax)
+                self._customize_ax_label(ax, self._x_label, self._y_label)
         else:
             suplabel_params = {
                 "fontsize" : plt.rcParams["font.size"],
@@ -1493,13 +1569,15 @@ class SmartFigure:
     def _customize_ax_label(
         self,
         ax: Axes,
+        x_label: Optional[str] = None,
+        y_label: Optional[str] = None,
     ) -> None:
         """
         Customizes the x and y labels of the specified Axes according to the SmartFigure's label parameters. This method
         is useful for inheritance to allow each SmartFigure class to customize the labels their way.
         """
-        ax.set_xlabel(self._x_label)
-        ax.set_ylabel(self._y_label)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
 
     def _create_ref_label(
         self,
@@ -2100,6 +2178,15 @@ class SmartFigureWCS(SmartFigure):
         General title of the figure.
     x_lim, y_lim : tuple[float, float], optional
         Limits for the x and y axes of the figure.
+    sub_x_labels, sub_y_labels : Iterable[str], optional
+        Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
+        single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
+        :class:`~graphinglib.smart_figure.SmartFigure` objects for each subfigure only to set the x and y labels.
+    subtitles : Iterable[str], optional
+        Labels for the subtitles of each subfigure, respectively. Similarly to `sub_x_labels` and `sub_y_labels`, this
+        allows to set subtitles for each subfigure without needing to create nested
+        :class:`~graphinglib.smart_figure.SmartFigure` objects. It is only useful for figures that are not a single
+        subplot and when each subfigure needs its own subtitle.
     log_scale_x, log_scale_y : bool
         Whether to use a logarithmic scale for the x and y axes, respectively.
         Defaults to ``False``.
@@ -2211,6 +2298,9 @@ class SmartFigureWCS(SmartFigure):
         title: Optional[str] = None,
         x_lim: Optional[tuple[float, float]] = None,
         y_lim: Optional[tuple[float, float]] = None,
+        sub_x_labels: Optional[Iterable[str]] = None,
+        sub_y_labels: Optional[Iterable[str]] = None,
+        subtitles: Optional[Iterable[str]] = None,
         log_scale_x: bool = False,
         log_scale_y: bool = False,
         remove_axes: bool = False,
@@ -2243,6 +2333,9 @@ class SmartFigureWCS(SmartFigure):
             title=title,
             x_lim=x_lim,
             y_lim=y_lim,
+            sub_x_labels=sub_x_labels,
+            sub_y_labels=sub_y_labels,
+            subtitles=subtitles,
             log_scale_x=log_scale_x,
             log_scale_y=log_scale_y,
             remove_axes=remove_axes,
@@ -2374,6 +2467,8 @@ class SmartFigureWCS(SmartFigure):
     def _customize_ax_label(
         self,
         ax: Axes,
+        x_label: Optional[str] = None,
+        y_label: Optional[str] = None,
     ) -> None:
         """
         Customizes the x and y labels of the specified Axes according to the SmartFigure's label parameters. This method
@@ -2385,10 +2480,10 @@ class SmartFigureWCS(SmartFigure):
             ``axes.labelpad`` value is divided by ``4`` to achieve this conversion.
         """
         x_axis, y_axis = ax.coords
-        if self._x_label is not None:
-            x_axis.set_axislabel(self._x_label, minpad=plt.rcParams["axes.labelpad"] / 4)
-        if self._y_label is not None:
-            y_axis.set_axislabel(self._y_label, minpad=plt.rcParams["axes.labelpad"] / 4)
+        if x_label is not None:
+            x_axis.set_axislabel(x_label, minpad=plt.rcParams["axes.labelpad"] / 4)
+        if y_label is not None:
+            y_axis.set_axislabel(y_label, minpad=plt.rcParams["axes.labelpad"] / 4)
 
     def set_ticks(
         self,
