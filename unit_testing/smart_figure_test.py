@@ -33,12 +33,14 @@ class DummyPlottable(Plottable):
 
 class TestSmartFigure(unittest.TestCase):
     def setUp(self):
+        self.cls = SmartFigure
         self.fig = SmartFigure()
         self.twin_axis = SmartTwinAxis()
         # Set up figures for testing indexing and slicing
         self.fig_2x3 = SmartFigure(num_rows=2, num_cols=3)  # 2 rows, 3 columns
         self.fig_1x4 = SmartFigure(num_rows=1, num_cols=4)  # 1 row, 4 columns (1D)
         self.fig_3x1 = SmartFigure(num_rows=3, num_cols=1)  # 3 rows, 1 column (1D)
+        self.fig_2x2 = SmartFigure(num_rows=2, num_cols=2)  # 2 rows, 2 columns
         x = linspace(0, 3 * pi, 200)
         self.testCurve = Curve(x, sin(x), "Test Curve", color="k")
         self.plainDefaults = FileLoader("plain").load()
@@ -49,21 +51,23 @@ class TestSmartFigure(unittest.TestCase):
         self.assertEqual(self.fig.num_rows, 1)
         self.assertEqual(self.fig.num_cols, 1)
         self.assertEqual(self.fig.figure_style, "default")
-        self.assertIsInstance(self.fig, SmartFigure)
+        self.assertIsInstance(self.fig, self.cls)
 
     def test_init_custom_args(self):
         """Test SmartFigure initialization with custom arguments."""
         elements = [[DummyPlottable(), DummyPlottable()], None, DummyPlottable(),
                     [None], [DummyPlottable(), DummyPlottable(), DummyPlottable()], []]
-        fig = SmartFigure(num_rows=2, num_cols=3, x_label="X", y_label="Y", size=(8, 6), title="Test Figure",
-                          x_lim=(0, 10), y_lim=(-5, 5), sub_x_labels=["X1", "X2", "X3"], sub_y_labels=["Y1", "Y2"],
-                          subtitles=["Title 1", "Title 2", "Title 3", "Title 4", "Title 5", "Title 6"],
-                          log_scale_x=True, log_scale_y=True, remove_axes=True, aspect_ratio=1.5, box_aspect_ratio=0.7,
-                          remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, global_reference_label=True,
-                          reference_label_loc="inside", reference_label_start_index=3, width_padding=0.5,
-                          height_padding=0, width_ratios=[1,2,3], height_ratios=[1,2], share_x=True, share_y=True,
-                          projection="polar", general_legend=True, legend_loc="upper right", legend_cols=2,
-                          show_legend=False, twin_x_axis=None, twin_y_axis=None, figure_style="dark", elements=elements)
+        fig = self.cls(
+            num_rows=2, num_cols=3, x_label="X", y_label="Y", size=(8, 6), title="Test Figure", x_lim=(0, 10),
+            y_lim=(-5, 5), sub_x_labels=["X1", "X2", "X3"], sub_y_labels=["Y1", "Y2"],
+            subtitles=["Title 1", "Title 2", "Title 3", "Title 4", "Title 5", "Title 6"], log_scale_x=True,
+            log_scale_y=True, remove_axes=True, aspect_ratio=1.5, box_aspect_ratio=0.7, remove_x_ticks=True,
+            remove_y_ticks=True, reference_labels=False, global_reference_label=True, reference_label_loc="inside",
+            reference_label_start_index=3, width_padding=0.5, height_padding=0, width_ratios=[1,2,3],
+            height_ratios=[1,2], share_x=True, share_y=True, projection="polar", general_legend=True,
+            legend_loc="upper right", legend_cols=2, show_legend=False, twin_x_axis=None, twin_y_axis=None,
+            figure_style="dark", elements=elements
+        )
         self.assertEqual(fig.num_rows, 2)
         self.assertEqual(fig.num_cols, 3)
         self.assertEqual(fig.x_label, "X")
@@ -106,6 +110,32 @@ class TestSmartFigure(unittest.TestCase):
         self.assertEqual(fig[1, 0], elements[3])
         self.assertEqual(fig[1, 1], elements[4])
         self.assertEqual(fig[1, 2], elements[5])
+
+    def test_elements_in_init(self):
+        """Test elements initialization in constructor."""
+        # Invalid formats
+        with self.assertRaises(TypeError):
+            SmartFigure(elements=[1])
+        with self.assertRaises(TypeError):
+            SmartFigure(elements=(DummyPlottable()))
+        with self.assertRaises(TypeError):
+            SmartFigure(elements=DummyPlottable())
+        with self.assertRaises(TypeError):
+            SmartFigure(elements=[[[DummyPlottable()]]])
+        with self.assertRaises(TypeError):
+            SmartFigure(elements="invalid")
+        with self.assertRaises(TypeError):
+            SmartFigure(elements=["invalid"])
+        with self.assertRaises(TypeError):
+            SmartFigure(elements=[["invalid"]])
+
+        # Valid
+        SmartFigure(elements=(DummyPlottable(),))
+        SmartFigure(2, elements=[(DummyPlottable(),), [None]])
+        SmartFigure(2, elements=array([(DummyPlottable(),), [None]]))
+        SmartFigure(2, elements=(DummyPlottable(), DummyPlottable()))
+        SmartFigure(elements=((DummyPlottable(), DummyPlottable())))
+        SmartFigure(elements=(DummyPlottable(), DummyPlottable()))
 
     def test_num_rows_and_num_cols(self):
         """Test num_rows and num_cols property validation and assignment."""
@@ -544,97 +574,93 @@ class TestSmartFigure(unittest.TestCase):
 
     def test_len_and_setitem_getitem(self):
         """Test length calculation and item assignment/retrieval."""
-        fig = SmartFigure(num_rows=2, num_cols=2)
         dummy = DummyPlottable()
-        fig[0, 0] = dummy
-        self.assertEqual(len(fig), 1)
-        self.assertIsInstance(fig[0, 0][0], DummyPlottable)
-        fig[0, 0] = None
-        self.assertEqual(len(fig), 0)
-        self.assertEqual(fig[0, 0], [])
+        self.fig_2x2[0, 0] = dummy
+        self.assertEqual(len(self.fig_2x2), 1)
+        self.assertIsInstance(self.fig_2x2[0, 0][0], DummyPlottable)
+        self.fig_2x2[0, 0] = None
+        self.assertEqual(len(self.fig_2x2), 0)
+        self.assertEqual(self.fig_2x2[0, 0], [])
         with self.assertRaises(TypeError):
-            fig[0, 0] = 123  # not Plottable or SmartFigure
-        fig[0, :] = dummy
-        self.assertIsInstance(fig[0, :][0], DummyPlottable)
-        fig[0, :] = None
-        self.assertEqual(len(fig), 0)
+            self.fig_2x2[0, 0] = 123  # not Plottable or SmartFigure
+        self.fig_2x2[0, :] = dummy
+        self.assertIsInstance(self.fig_2x2[0, :][0], DummyPlottable)
+        self.fig_2x2[0, :] = None
+        self.assertEqual(len(self.fig_2x2), 0)
         dummy1 = DummyPlottable("a")
         dummy2 = DummyPlottable("b")
-        fig[0, 1] = [dummy1, dummy2]
-        self.assertEqual(len(fig[0, 1]), 2)
-        self.assertEqual(fig[0, 1][0].label, "a")
-        self.assertEqual(fig[0, 1][1].label, "b")
+        self.fig_2x2[0, 1] = [dummy1, dummy2]
+        self.assertEqual(len(self.fig_2x2[0, 1]), 2)
+        self.assertEqual(self.fig_2x2[0, 1][0].label, "a")
+        self.assertEqual(self.fig_2x2[0, 1][1].label, "b")
 
     def test_1d_setitem(self):
         """Test 1D item assignment for single row/column figures."""
-        fig = SmartFigure(num_rows=1, num_cols=3)
-        fig[1] = DummyPlottable()
-        fig[0, 1] = DummyPlottable()
-        fig[:] = DummyPlottable()
-        fig_v = SmartFigure(num_rows=3, num_cols=1)
-        fig_v[1] = DummyPlottable()
-        fig_v[1, 0] = DummyPlottable()
-        fig_v[:] = DummyPlottable()
-        fig[1] = [DummyPlottable(), DummyPlottable()]
-        fig[1] = fig_v
+        self.fig_1x4[1] = DummyPlottable()
+        self.fig_1x4[0, 1] = DummyPlottable()
+        self.fig_1x4[:] = DummyPlottable()
+        self.fig_3x1 = self.fig_3x1.copy()
+        self.fig_3x1[1] = DummyPlottable()
+        self.fig_3x1[1, 0] = DummyPlottable()
+        self.fig_3x1[:] = DummyPlottable()
+        self.fig_1x4[1] = [DummyPlottable(), DummyPlottable()]
+        self.fig_1x4[1] = self.fig_3x1
 
         # Test negative indexing
-        fig[-1] = DummyPlottable()  # Should work
-        fig_v[-1] = DummyPlottable()  # Should work
+        self.fig_1x4[-1] = DummyPlottable()  # Should work
+        self.fig_3x1[-1] = DummyPlottable()  # Should work
 
         with self.assertRaises(TypeError):
-            fig[1] = "not a plottable"
+            self.fig_1x4[1] = "not a plottable"
         with self.assertRaises(IndexError):
-            fig[1, 0] = DummyPlottable()
+            self.fig_1x4[1, 0] = DummyPlottable()
         with self.assertRaises(ValueError):
-            fig[1, 1, 1] = DummyPlottable()
+            self.fig_1x4[1, 1, 1] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[3] = DummyPlottable()
+            self.fig_1x4[4] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[-4] = DummyPlottable()  # Out of bounds negative
+            self.fig_1x4[-5] = DummyPlottable()  # Out of bounds negative
         with self.assertRaises(TypeError):
-            fig[1.5] = DummyPlottable()
+            self.fig_1x4[1.5] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[0:4] = DummyPlottable()
+            self.fig_1x4[0:5] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[1:0] = DummyPlottable()
+            self.fig_1x4[1:0] = DummyPlottable()
         with self.assertRaises(ValueError):
-            fig[1::2] = DummyPlottable()
+            self.fig_1x4[1::2] = DummyPlottable()
 
     def test_2d_setitem(self):
         """Test 2D item assignment for multi-row/column figures."""
-        fig = SmartFigure(num_rows=2, num_cols=3)
-
         # Test valid negative indexing
-        fig[-1, -1] = DummyPlottable()  # Should work
-        fig[-2, -3] = DummyPlottable()  # Should work
+        self.fig_2x3[-1, -1] = DummyPlottable()  # Should work
+        self.fig_2x3[-2, -3] = DummyPlottable()  # Should work
 
         with self.assertRaises(ValueError):
-            fig[1] = DummyPlottable()
+            self.fig_2x3[1] = DummyPlottable()
         with self.assertRaises(ValueError):
-            fig[1, 1, 1] = DummyPlottable()
+            self.fig_2x3[1, 1, 1] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[2, 0] = DummyPlottable()
+            self.fig_2x3[2, 0] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[0, 3] = DummyPlottable()
+            self.fig_2x3[0, 3] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[-3, 0] = DummyPlottable()  # Out of bounds negative
+            self.fig_2x3[-3, 0] = DummyPlottable()  # Out of bounds negative
         with self.assertRaises(IndexError):
-            fig[0, -4] = DummyPlottable()  # Out of bounds negative
+            self.fig_2x3[0, -4] = DummyPlottable()  # Out of bounds negative
         with self.assertRaises(TypeError):
-            fig[1.5, 0] = DummyPlottable()
+            self.fig_2x3[1.5, 0] = DummyPlottable()
         with self.assertRaises(ValueError):
-            fig[0:2] = DummyPlottable()
+            self.fig_2x3[0:2] = DummyPlottable()
         with self.assertRaises(ValueError):
-            fig[1:2, :, :] = DummyPlottable()
+            self.fig_2x3[1:2, :, :] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[1:4, 0] = DummyPlottable()
+            self.fig_2x3[1:4, 0] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[:, 3:4] = DummyPlottable()
+            self.fig_2x3[:, 3:4] = DummyPlottable()
         with self.assertRaises(IndexError):
-            fig[1:0, 2] = DummyPlottable()
+            self.fig_2x3[1:0, 2] = DummyPlottable()
         with self.assertRaises(ValueError):
-            fig[1::2, :] = DummyPlottable()
+            self.fig_2x3[1::2, :] = DummyPlottable()
 
     def test_negative_integer_indexing(self):
         """Test negative integer indexing for element access."""
@@ -713,32 +739,6 @@ class TestSmartFigure(unittest.TestCase):
         expected = (slice(0, 2), slice(0, 2))
         self.assertEqual(result, expected)
 
-    def test_elements_in_init(self):
-        """Test elements initialization in constructor."""
-        # Invalid formats
-        with self.assertRaises(TypeError):
-            SmartFigure(elements=[1])
-        with self.assertRaises(TypeError):
-            SmartFigure(elements=(DummyPlottable()))
-        with self.assertRaises(TypeError):
-            SmartFigure(elements=DummyPlottable())
-        with self.assertRaises(TypeError):
-            SmartFigure(elements=[[[DummyPlottable()]]])
-        with self.assertRaises(TypeError):
-            SmartFigure(elements="invalid")
-        with self.assertRaises(TypeError):
-            SmartFigure(elements=["invalid"])
-        with self.assertRaises(TypeError):
-            SmartFigure(elements=[["invalid"]])
-
-        # Valid
-        SmartFigure(elements=(DummyPlottable(),))
-        SmartFigure(2, elements=[(DummyPlottable(),), [None]])
-        SmartFigure(2, elements=array([(DummyPlottable(),), [None]]))
-        SmartFigure(2, elements=(DummyPlottable(), DummyPlottable()))
-        SmartFigure(elements=((DummyPlottable(), DummyPlottable())))
-        SmartFigure(elements=(DummyPlottable(), DummyPlottable()))
-
     def test_add_elements(self):
         """Test adding elements to the figure."""
         dummy = DummyPlottable()
@@ -749,19 +749,18 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.fig.add_elements([dummy, [dummy]], dummy)
         with self.assertRaises(TypeError):
-            self.fig.add_elements([dummy, SmartFigure()], dummy)
-        new_fig = SmartFigure(num_rows=2, num_cols=2)
-        new_fig.add_elements(dummy, dummy, dummy, dummy)
-        new_fig.add_elements(dummy, dummy, dummy, SmartFigure())
-        new_fig.add_elements([None], [dummy, dummy], None, SmartFigure())
+            self.fig.add_elements([dummy, self.fig], dummy)
+        self.fig_2x2.add_elements(dummy, dummy, dummy, dummy)
+        self.fig_2x2.add_elements(dummy, dummy, dummy, self.fig)
+        self.fig_2x2.add_elements([None], [dummy, dummy], None, self.fig)
         with self.assertRaises(ValueError):
-            new_fig.add_elements(dummy, dummy, dummy, dummy, dummy)
+            self.fig_2x2.add_elements(dummy, dummy, dummy, dummy, dummy)
         with self.assertRaises(ValueError):
-            new_fig.add_elements(None, None, [dummy, dummy, None, dummy, dummy], None, None)
+            self.fig_2x2.add_elements(None, None, [dummy, dummy, None, dummy, dummy], None, None)
 
     def test_add_all_elements(self):
         """Test adding all types of elements to the figure."""
-        self.fig[0] = SmartFigure()
+        self.fig[0] = self.fig.copy()
         self.fig._initialize_parent_smart_figure()
         plt.close()
         self.fig[0] = Curve([0, 1], [0, 1])
@@ -858,7 +857,7 @@ class TestSmartFigure(unittest.TestCase):
         """Test automatic assignment of default parameters with horrible style."""
         x = linspace(0, 3 * pi, 200)
         a_curve = Curve(x, sin(x), label="Test Curve")
-        a_figure = SmartFigure(figure_style="horrible")
+        a_figure = self.fig.copy_with(figure_style="horrible")
         a_figure.add_elements(a_curve)
         a_figure._default_params = self.horribleDefaults
         a_figure._fill_in_missing_params(a_curve)
@@ -875,7 +874,7 @@ class TestSmartFigure(unittest.TestCase):
 
     def test_assign_figure_params_horrible(self):
         """Test figure parameter assignment with horrible style."""
-        a_figure = SmartFigure(figure_style="horrible")
+        a_figure = self.fig.copy_with(figure_style="horrible")
         a_figure.add_elements(self.testCurve)
         a_figure._default_params = self.horribleDefaults
         a_figure._fill_in_missing_params(a_figure)
@@ -1000,7 +999,7 @@ class TestSmartFigure(unittest.TestCase):
 
     def test_matplotlib_style_functional(self):
         """Test matplotlib style functionality."""
-        a_figure = SmartFigure(figure_style="_mpl-gallery")
+        a_figure = self.fig.copy_with(figure_style="_mpl-gallery")
         a_figure.add_elements(self.testCurve)
         a_figure._initialize_parent_smart_figure()
         plt.close("all")
@@ -1108,22 +1107,21 @@ class TestSmartFigure(unittest.TestCase):
         self.assertIs(self.fig._twin_x_axis, twin_x)
 
         # Test creating in the __init__
-        new_fig = SmartFigure(twin_x_axis=twin_x)
+        new_fig = self.fig.copy_with(twin_x_axis=twin_x)
         self.assertIsInstance(new_fig.twin_x_axis, SmartTwinAxis)
         self.assertEqual(new_fig.twin_x_axis.label, "Twin X")
 
     def test_create_twin_axis_validation(self):
         """Test twin axis creation validation."""
         # Test with multi-subplot figure
-        multi_fig = SmartFigure(num_rows=2, num_cols=2)
         with self.assertRaises(GraphingException):
-            multi_fig.create_twin_axis()
+            self.fig_2x2.create_twin_axis()
 
         with self.assertRaises(GraphingException):
-            multi_fig.twin_x_axis = self.twin_axis
+            self.fig_2x2.twin_x_axis = self.twin_axis
 
         with self.assertRaises(GraphingException):
-            multi_fig.twin_y_axis = self.twin_axis
+            self.fig_2x2.twin_y_axis = self.twin_axis
 
         # Test duplicate twin axis creation
         self.fig.create_twin_axis(is_y=True)
@@ -1196,10 +1194,12 @@ class TestSmartFigureWCS(TestSmartFigure):
         self.wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
 
         # Create SmartFigureWCS instances
+        self.cls = SmartFigureWCS
         self.fig = SmartFigureWCS(projection=self.wcs)
         self.fig_2x3 = SmartFigureWCS(projection=self.wcs, num_rows=2, num_cols=3)
         self.fig_1x4 = SmartFigureWCS(projection=self.wcs, num_rows=1, num_cols=4)
         self.fig_3x1 = SmartFigureWCS(projection=self.wcs, num_rows=3, num_cols=1)
+        self.fig_2x2 = SmartFigureWCS(projection=self.wcs, num_rows=2, num_cols=2)
         self.twin_axis = SmartTwinAxis()
 
         # Set up test data
@@ -1211,19 +1211,44 @@ class TestSmartFigureWCS(TestSmartFigure):
     def test_init_requires_wcs_projection(self):
         """Test that SmartFigureWCS requires a WCS projection object."""
         # Valid WCS projection
-        fig = SmartFigureWCS(projection=self.wcs)
-        self.assertIsInstance(fig, SmartFigureWCS)
-        self.assertEqual(fig.projection, self.wcs)
+        self.assertIsInstance(self.fig, self.cls)
+        self.assertEqual(self.fig.projection, self.wcs)
 
         # Invalid projection types should raise exception
         with self.assertRaises(GraphingException):
-            SmartFigureWCS(projection="polar")
+            self.cls(projection="polar")
 
         with self.assertRaises(GraphingException):
-            SmartFigureWCS(projection=None)
+            self.cls(projection=None)
 
         with self.assertRaises(GraphingException):
-            SmartFigureWCS(projection=123)
+            self.cls(projection=123)
+
+    def test_elements_in_init(self):
+        """Test elements initialization in constructor."""
+        # Invalid formats
+        with self.assertRaises(TypeError):
+            SmartFigureWCS(self.wcs, elements=[1])
+        with self.assertRaises(TypeError):
+            SmartFigureWCS(self.wcs, elements=(DummyPlottable()))
+        with self.assertRaises(TypeError):
+            SmartFigureWCS(self.wcs, elements=DummyPlottable())
+        with self.assertRaises(TypeError):
+            SmartFigureWCS(self.wcs, elements=[[[DummyPlottable()]]])
+        with self.assertRaises(TypeError):
+            SmartFigureWCS(self.wcs, elements="invalid")
+        with self.assertRaises(TypeError):
+            SmartFigureWCS(self.wcs, elements=["invalid"])
+        with self.assertRaises(TypeError):
+            SmartFigureWCS(self.wcs, elements=[["invalid"]])
+
+        # Valid
+        SmartFigureWCS(self.wcs, elements=(DummyPlottable(),))
+        SmartFigureWCS(self.wcs, 2, elements=[(DummyPlottable(),), [None]])
+        SmartFigureWCS(self.wcs, 2, elements=array([(DummyPlottable(),), [None]]))
+        SmartFigureWCS(self.wcs, 2, elements=(DummyPlottable(), DummyPlottable()))
+        SmartFigureWCS(self.wcs, elements=((DummyPlottable(), DummyPlottable())))
+        SmartFigureWCS(self.wcs, elements=(DummyPlottable(), DummyPlottable()))
 
     def test_projection(self):
         """Test the projection property getter and setter."""
@@ -1395,28 +1420,18 @@ class TestSmartFigureWCS(TestSmartFigure):
         self.fig.add_elements(dummy)
         self.assertEqual(len(self.fig), 1)
 
-    def test_init_with_all_parameters(self):
+    def test_init_custom_args(self):
         """Test SmartFigureWCS initialization with all parameters."""
         elements = [DummyPlottable(), DummyPlottable()]
-        fig = SmartFigureWCS(
-            projection=self.wcs,
-            num_rows=2, num_cols=2,
-            x_label="RA", y_label="Dec",
-            size=(10, 8), title="Test WCS Figure",
-            x_lim=(0, 10), y_lim=(-5, 5),
-            sub_x_labels=["RA1", "RA2"], sub_y_labels=["Dec1", "Dec2"],
-            subtitles=["Title 1", "Title 2", "Title 3", "Title 4"],
-            log_scale_x=False, log_scale_y=False,
-            remove_axes=False, aspect_ratio="equal", box_aspect_ratio=0.7,
-            remove_x_ticks=False, remove_y_ticks=False,
-            reference_labels=True, global_reference_label=False,
-            reference_label_loc="outside", reference_label_start_index=0,
-            width_padding=0.1, height_padding=0.1,
-            width_ratios=[1, 2], height_ratios=[1, 2],
-            share_x=False, share_y=False,
-            general_legend=False, legend_loc="best",
-            legend_cols=1, show_legend=True,
-            figure_style="default", elements=elements
+        fig = self.cls(
+            projection=self.wcs, num_rows=2, num_cols=2, x_label="RA", y_label="Dec", size=(10, 8),
+            title="Test WCS Figure", x_lim=(0, 10), y_lim=(-5, 5), sub_x_labels=["RA1", "RA2"],
+            sub_y_labels=["Dec1", "Dec2"], subtitles=["Title 1", "Title 2", "Title 3", "Title 4"], log_scale_x=False,
+            log_scale_y=False, remove_axes=False, aspect_ratio="equal", box_aspect_ratio=0.7, remove_x_ticks=False,
+            remove_y_ticks=False, reference_labels=True, global_reference_label=False, reference_label_loc="outside",
+            reference_label_start_index=0, width_padding=0.1, height_padding=0.1, width_ratios=[1, 2],
+            height_ratios=[1, 2], share_x=False, share_y=False, general_legend=False, legend_loc="best", legend_cols=1,
+            show_legend=True, figure_style="default", elements=elements
         )
 
         # Test that WCS-specific attributes are properly initialized
@@ -1449,19 +1464,17 @@ class TestSmartFigureWCS(TestSmartFigure):
         wcs.wcs.cdelt = [0.1, 0.1]
         wcs.wcs.cunit = ["deg", "deg"]
 
-        wcs_fig = SmartFigureWCS(projection=wcs)
-
         # Test creating twin axis
-        twin_y = wcs_fig.create_twin_axis(is_y=True, label="WCS Twin")
+        twin_y = self.fig.create_twin_axis(is_y=True, label="WCS Twin")
         twin_y.add_elements(self.testCurve)
-        wcs_fig.add_elements(self.testCurve)
+        self.fig.add_elements(self.testCurve)
 
         # Test integration
-        wcs_fig._default_params = FileLoader("plain").load()
-        wcs_fig._figure = plt.figure()
-        wcs_fig._prepare_figure()
+        self.fig._default_params = FileLoader("plain").load()
+        self.fig._figure = plt.figure()
+        self.fig._prepare_figure()
 
-        plt.close(wcs_fig._figure)
+        plt.close(self.fig._figure)
 
 
 class TestSmartTwinAxis(unittest.TestCase):
