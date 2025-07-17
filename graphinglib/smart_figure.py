@@ -159,6 +159,12 @@ class SmartFigure:
     show_legend : bool
         Whether to show the legend for the figure. This allows to easily toggle the visibility of the legend.
         Defaults to ``True``.
+    twin_x_axis, twin_y_axis : SmartTwinAxis, optional
+        Twin axes for the x and y axes, respectively. This allows to attach additional axes to the main axes of the
+        SmartFigure, which can be useful for displaying additional information or data on the same plot without
+        cluttering the main axes. The twin axes can be used to plot additional data with different scales or units. See
+        the :class:`~graphinglib.smart_figure.SmartTwinAxis` class for more details on how to use twin axes and the
+        :meth:`~graphinglib.smart_figure.SmartFigure.create_twin_axis` method for wrapping the creation of twin axes.
     figure_style : str
         The figure style to use for the figure. The default style can be set using ``gl.set_default_style()``.
         Defaults to ``"default"``.
@@ -178,6 +184,7 @@ class SmartFigure:
             that span multiple subplots, you should use the __setitem__ method instead.
             For example, to add an element spanning the complete first row , use ``fig[0,:] = element``.
     """
+
     def __init__(
         self,
         num_rows: int = 1,
@@ -212,6 +219,8 @@ class SmartFigure:
         legend_loc: Optional[str | tuple] = None,
         legend_cols: int = 1,
         show_legend: bool = True,
+        twin_x_axis: Optional[SmartTwinAxis] = None,
+        twin_y_axis: Optional[SmartTwinAxis] = None,
         figure_style: str = "default",
         elements: Optional[Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]]] = [],
     ) -> None:
@@ -247,6 +256,8 @@ class SmartFigure:
         self.legend_loc = legend_loc
         self.legend_cols = legend_cols
         self.show_legend = show_legend
+        self.twin_x_axis = twin_x_axis
+        self.twin_y_axis = twin_y_axis
         self.figure_style = figure_style
         self.elements = elements
 
@@ -679,6 +690,32 @@ class SmartFigure:
         self._show_legend = value
 
     @property
+    def twin_x_axis(self) -> SmartTwinAxis:
+        return self._twin_x_axis
+
+    @twin_x_axis.setter
+    def twin_x_axis(self, value: SmartTwinAxis) -> None:
+        if value is not None:
+            if not self.is_single_subplot:
+                raise GraphingException("Twin axes can only be created for single subplot SmartFigures.")
+            if not isinstance(value, SmartTwinAxis):
+                raise TypeError("twin_x_axis must be a SmartTwinAxis instance.")
+        self._twin_x_axis = value
+
+    @property
+    def twin_y_axis(self) -> SmartTwinAxis:
+        return self._twin_y_axis
+
+    @twin_y_axis.setter
+    def twin_y_axis(self, value: SmartTwinAxis) -> None:
+        if value is not None:
+            if not self.is_single_subplot:
+                raise GraphingException("Twin axes can only be created for single subplot SmartFigures.")
+            if not isinstance(value, SmartTwinAxis):
+                raise TypeError("twin_y_axis must be a SmartTwinAxis instance.")
+        self._twin_y_axis = value
+
+    @property
     def figure_style(self) -> str:
         return self._figure_style
 
@@ -779,7 +816,7 @@ class SmartFigure:
 
     def __len__(self) -> int:
         """
-        Gives the number of elements in the SmartFigure.
+        Gives the number of elements in the :class:`~graphinglib.smart_figure.SmartFigure`.
         """
         return len(self._elements)
 
@@ -1054,9 +1091,10 @@ class SmartFigure:
         *elements: Plottable | SmartFigure | Iterable[Plottable | SmartFigure],
     ) -> Self:
         """
-        Adds :class:`~graphinglib.graph_elements.Plottable` or :class:`~graphinglib.smart_figure.SmartFigure` to the
-        :class:`~graphinglib.smart_figure.SmartFigure`. This method is equivalent to using the
-        :meth:`~graphinglib.smart_figure.SmartFigure.__setitem__` method, but can only add elements in single subplots.
+        Adds one or more :class:`~graphinglib.graph_elements.Plottable` or
+        :class:`~graphinglib.smart_figure.SmartFigure` to the :class:`~graphinglib.smart_figure.SmartFigure`. This
+        method is equivalent to using the :meth:`~graphinglib.smart_figure.SmartFigure.__setitem__` method, but can only
+        add elements in single subplots.
 
         Parameters
         ----------
@@ -1300,7 +1338,7 @@ class SmartFigure:
         )
 
         if self._global_reference_label:
-            self._create_ref_label(self._figure)
+            self._create_reference_label(self._figure)
             self._figure.suptitle(" ")     # Create a blank title to reserve space
 
         # Plottable and subfigure plotting
@@ -1384,7 +1422,7 @@ class SmartFigure:
                             continue
                         z_order += 5
                     elif current_element is not None:
-                        raise GraphingException(f"Unsupported element type: {type(current_element).__name__}")
+                        raise GraphingException(f"Unsupported element type: {type(current_element).__name__}.")
 
                 # If only text objects were plotted, the axes is hidden and the other properties are not set
                 if all(isinstance(element_i, Text) for element_i in element):
@@ -1392,7 +1430,7 @@ class SmartFigure:
                 else:
                     # Add reference label
                     if self._reference_labels and (len(self) > 1 or isinstance(self._figure, SubFigure)):
-                        self._create_ref_label(ax)
+                        self._create_reference_label(ax)
 
                     # Axes limits
                     if self._x_lim:
@@ -1434,6 +1472,44 @@ class SmartFigure:
                         if self._grid_show_on_top:
                             ax.set_axisbelow(False)
 
+                    # Axes title
+                    if self._title and self.is_single_subplot:
+                        ax.set_title(self._title)
+                    elif self._subtitles is not None and len(self._subtitles) > subplot_i:
+                        ax.set_title(self._subtitles[subplot_i])
+
+                    # Axes sub_labels
+                    sub_x = self._sub_x_labels
+                    sub_y = self._sub_y_labels
+                    self._customize_ax_label(
+                        ax,
+                        sub_x[subplot_i] if sub_x and len(sub_x) > subplot_i else None,
+                        sub_y[subplot_i] if sub_y and len(sub_y) > subplot_i else None,
+                    )
+
+                    # Prepare twin axes
+                    for i, twin_axis in enumerate([self._twin_x_axis, self._twin_y_axis], start=1):
+                        if twin_axis is not None:
+                            twin_axis._default_params = deepcopy(self._default_params)
+                            twin_axis._default_params["rc_params"].update(twin_axis._user_rc_dict)
+                            plt.rcParams.update(twin_axis._default_params["rc_params"])
+                            twin_axis_params_to_reset = twin_axis._fill_in_missing_params(twin_axis, self._figure_style)
+
+                            twin_labels, twin_handles = twin_axis._prepare_twin_axis(
+                                fig_axes=ax,
+                                is_matplotlib_style=is_matplotlib_style,
+                                cycle_colors=cycle_colors,
+                                is_y=(i == 2),
+                                z_order=200*i,      # increment z_order to avoid overlap with the main axes
+                                figure_style=self._figure_style,
+                            )
+                            default_labels.extend(twin_labels)
+                            default_handles.extend(twin_handles)
+
+                            plt.rcParams.update(self._default_params["rc_params"])  # Return to the original rc params
+                            twin_axis._reset_params_to_default(twin_axis, twin_axis_params_to_reset)
+                            twin_axis._default_params = {}
+
                     # Axes legend
                     if not self._general_legend and make_legend:
                         if self._hide_default_legend_elements:
@@ -1450,33 +1526,25 @@ class SmartFigure:
 
                         if self._show_legend and labels:
                             legend_params = self._get_legend_params(labels, handles, -0.1)
+                            # Set legend_ax to the uppermost drawn axis to avoid overlapping with any elements
+                            if self._twin_y_axis is not None:
+                                legend_ax = self._twin_y_axis._axes
+                            elif self._twin_x_axis is not None:
+                                legend_ax = self._twin_x_axis._axes
+                            else:
+                                legend_ax = ax
                             try:
-                                _legend = ax.legend(
+                                _legend = legend_ax.legend(
                                     draggable=True,
                                     **legend_params,
                                 )
                             except:
-                                _legend = ax.legend(
+                                _legend = legend_ax.legend(
                                     **legend_params,
                                 )
                             _legend.set_zorder(10000)
                         default_labels, default_handles = [], []
                         custom_labels, custom_handles = [], []
-
-                    # Axes title
-                    if self._title and self.is_single_subplot:
-                        ax.set_title(self._title)
-                    elif self._subtitles is not None and len(self._subtitles) > subplot_i:
-                        ax.set_title(self._subtitles[subplot_i])
-
-                    # Axes sub_labels
-                    sub_x = self._sub_x_labels
-                    sub_y = self._sub_y_labels
-                    self._customize_ax_label(
-                        ax,
-                        sub_x[subplot_i] if sub_x and len(sub_x) > subplot_i else None,
-                        sub_y[subplot_i] if sub_y and len(sub_y) > subplot_i else None,
-                    )
 
             elif element is not None:
                 raise GraphingException(f"Unsupported element type in list: {type(element).__name__}")
@@ -1592,7 +1660,7 @@ class SmartFigure:
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
 
-    def _create_ref_label(
+    def _create_reference_label(
         self,
         target: Axes | Figure | SubFigure
     ) -> None:
@@ -1703,7 +1771,8 @@ class SmartFigure:
 
     def _fill_in_missing_params(self, element: SmartFigure | Plottable) -> list[str]:
         """
-        Fills in the missing parameters for a ``SmartFigure``or a ``Plottable`` from the specified ``figure_style``.
+        Fills in the missing parameters for a :class:`~graphinglib.smart_figure.SmartFigure` or a
+        :class:`~graphinglib.plottable.Plottable` from the specified ``figure_style``.
         """
         params_to_reset = []
         # The following logic enables figures that inherit from SmartFigure to use the same default parameters
@@ -1722,7 +1791,7 @@ class SmartFigure:
                         f"There was an error auto updating your {self._figure_style} style file following the recent "
                          "GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub"
                          " page. In the meantime, you can manually add the following parameter to your "
-                        f"{self._figure_style} style file:\n {e.args[0]}"
+                        f"{self._figure_style} style file:\n {e.args[0]}."
                     )
                 file_updater = FileUpdater(self._figure_style)
                 file_updater.update()
@@ -1798,24 +1867,24 @@ class SmartFigure:
     def set_visual_params(
         self,
         reset: bool = False,
-        figure_face_color: str | None = None,
-        axes_face_color: str | None = None,
-        axes_edge_color: str | None = None,
-        axes_label_color: str | None = None,
-        axes_label_pad: float | None = None,
-        axes_line_width: float | None = None,
-        color_cycle: list[str] | None = None,
-        legend_face_color: str | None = None,
-        legend_edge_color: str | None = None,
-        legend_font_size: float | None = None,
-        legend_handle_length: float | None = None,
-        font_family: str | None = None,
-        font_size: float | None = None,
-        font_weight: str | None = None,
-        title_font_size: float | None = None,
-        title_font_weight: str | None = None,
-        text_color: str | None = None,
-        use_latex: bool | None = None,
+        figure_face_color: Optional[str] = None,
+        axes_face_color: Optional[str] = None,
+        axes_edge_color: Optional[str] = None,
+        axes_label_color: Optional[str] = None,
+        axes_label_pad: Optional[float] = None,
+        axes_line_width: Optional[float] = None,
+        color_cycle: Optional[list[str]] = None,
+        legend_face_color: Optional[str] = None,
+        legend_edge_color: Optional[str] = None,
+        legend_font_size: Optional[float] = None,
+        legend_handle_length: Optional[float] = None,
+        font_family: Optional[str] = None,
+        font_size: Optional[float] = None,
+        font_weight: Optional[str] = None,
+        title_font_size: Optional[float] = None,
+        title_font_weight: Optional[str] = None,
+        text_color: Optional[str] = None,
+        use_latex: Optional[bool] = None,
     ) -> Self:
         """
         Customize the visual style of the :class:`~graphinglib.smart_figure.SmartFigure`.
@@ -1902,14 +1971,14 @@ class SmartFigure:
 
     def set_ticks(
         self,
-        x_ticks: Optional[list[float]] = None,
-        y_ticks: Optional[list[float]] = None,
-        x_tick_labels: Optional[list[str]] = None,
-        y_tick_labels: Optional[list[str]] = None,
+        x_ticks: Optional[Iterable[float]] = None,
+        y_ticks: Optional[Iterable[float]] = None,
+        x_tick_labels: Optional[Iterable[str]] = None,
+        y_tick_labels: Optional[Iterable[str]] = None,
         x_tick_spacing: Optional[float] = None,
         y_tick_spacing: Optional[float] = None,
-        minor_x_ticks: Optional[list[float]] = None,
-        minor_y_ticks: Optional[list[float]] = None,
+        minor_x_ticks: Optional[Iterable[float]] = None,
+        minor_y_ticks: Optional[Iterable[float]] = None,
         minor_x_tick_spacing: Optional[float] = None,
         minor_y_tick_spacing: Optional[float] = None,
     ) -> Self:
@@ -1918,16 +1987,16 @@ class SmartFigure:
 
         Parameters
         ----------
-        x_ticks, y_ticks : list[float], optional
+        x_ticks, y_ticks : Iterable[float], optional
             Tick positions for the x or y axis. If a value is specified, the corresponding ``x_tick_spacing`` or
             ``y_tick_spacing`` parameter must be ``None``.
-        x_tick_labels, y_tick_labels : list[str], optional
+        x_tick_labels, y_tick_labels : Iterable[str], optional
             Tick labels for the x or y axis. If a value is specified, the corresponding ``x_ticks`` or ``y_ticks``
-            parameter must also be given.
+            parameter must also be given. The number of tick labels must match the number of ticks.
         x_tick_spacing, y_tick_spacing : float, optional
-            Spacing between ticks on the x or y axis. If a value is specified, the corresponding ``x_ticks`` or
+            Spacing between major ticks on the x or y axis. If a value is specified, the corresponding ``x_ticks`` or
             ``y_ticks`` parameter must be ``None``.
-        minor_x_ticks, minor_y_ticks : list[float], optional
+        minor_x_ticks, minor_y_ticks : Iterable[float], optional
             Minor tick positions for the x or y axis. If a value is specified, the corresponding
             ``minor_x_tick_spacing`` or ``minor_y_tick_spacing`` parameter must be ``None``.
         minor_x_tick_spacing, minor_y_tick_spacing : float, optional
@@ -1953,14 +2022,27 @@ class SmartFigure:
         ]):
             raise GraphingException("Tick spacing and tick positions cannot be set simultaneously")
 
-        self._x_ticks = x_ticks
-        self._y_ticks = y_ticks
-        self._x_tick_labels = x_tick_labels
-        self._y_tick_labels = y_tick_labels
+        if x_ticks is not None and x_tick_labels is not None:
+            if len(x_ticks) != len(x_tick_labels):
+                raise GraphingException(
+                    f"Number of x ticks ({len(x_ticks)}) and number of x tick labels "
+                    f"({len(x_tick_labels)}) must be the same."
+                )
+        if y_ticks is not None and y_tick_labels is not None:
+            if len(y_ticks) != len(y_tick_labels):
+                raise GraphingException(
+                    f"Number of y ticks ({len(y_ticks)}) and number of y tick labels "
+                    f"({len(y_tick_labels)}) must be the same."
+                )
+
+        self._x_ticks = list(x_ticks) if x_ticks is not None else None
+        self._y_ticks = list(y_ticks) if y_ticks is not None else None
+        self._x_tick_labels = list(x_tick_labels) if x_tick_labels is not None else None
+        self._y_tick_labels = list(y_tick_labels) if y_tick_labels is not None else None
         self._x_tick_spacing = x_tick_spacing
         self._y_tick_spacing = y_tick_spacing
-        self._minor_x_ticks = minor_x_ticks
-        self._minor_y_ticks = minor_y_ticks
+        self._minor_x_ticks = list(minor_x_ticks) if minor_x_ticks is not None else None
+        self._minor_y_ticks = list(minor_y_ticks) if minor_y_ticks is not None else None
         self._minor_x_tick_spacing = minor_x_tick_spacing
         self._minor_y_tick_spacing = minor_y_tick_spacing
         return self
@@ -1978,14 +2060,14 @@ class SmartFigure:
         label_size: Optional[float | str] = None,
         label_color: Optional[str] = None,
         label_rotation: Optional[float] = None,
-        draw_bottom_tick: Optional[bool] = None,
-        draw_top_tick: Optional[bool] = None,
-        draw_left_tick: Optional[bool] = None,
-        draw_right_tick: Optional[bool] = None,
-        draw_bottom_label: Optional[bool] = None,
-        draw_top_label: Optional[bool] = None,
-        draw_left_label: Optional[bool] = None,
-        draw_right_label: Optional[bool] = None,
+        draw_bottom_ticks: Optional[bool] = None,
+        draw_top_ticks: Optional[bool] = None,
+        draw_left_ticks: Optional[bool] = None,
+        draw_right_ticks: Optional[bool] = None,
+        draw_bottom_labels: Optional[bool] = None,
+        draw_top_labels: Optional[bool] = None,
+        draw_left_labels: Optional[bool] = None,
+        draw_right_labels: Optional[bool] = None,
     ) -> Self:
         """
         Sets the tick parameters for the figure. These parameters are given to the
@@ -2021,9 +2103,9 @@ class SmartFigure:
             The color of the tick labels.
         label_rotation : float, optional
             The rotation of the tick labels, in degrees.
-        draw_bottom_tick, draw_top_tick, draw_left_tick, draw_right_tick : bool, optional
+        draw_bottom_ticks, draw_top_ticks, draw_left_ticks, draw_right_ticks : bool, optional
             Whether to draw the ticks on the bottom, top, left or right side of the axes respectively.
-        draw_bottom_label, draw_top_label, draw_left_label, draw_right_label : bool, optional
+        draw_bottom_labels, draw_top_labels, draw_left_labels, draw_right_labels : bool, optional
             Whether to draw the tick labels on the bottom, top, left or right side of the axes respectively.
 
         Returns
@@ -2040,14 +2122,14 @@ class SmartFigure:
             "labelsize": label_size,
             "labelcolor": label_color,
             "labelrotation": label_rotation,
-            "bottom": draw_bottom_tick,
-            "top": draw_top_tick,
-            "left": draw_left_tick,
-            "right": draw_right_tick,
-            "labelbottom": draw_bottom_label,
-            "labeltop": draw_top_label,
-            "labelleft": draw_left_label,
-            "labelright": draw_right_label
+            "bottom": draw_bottom_ticks,
+            "top": draw_top_ticks,
+            "left": draw_left_ticks,
+            "right": draw_right_ticks,
+            "labelbottom": draw_bottom_labels,
+            "labeltop": draw_top_labels,
+            "labelleft": draw_left_labels,
+            "labelright": draw_right_labels
         }
         for axis_i in [axis] if axis != "both" else ["x", "y"]:
             for which_i in [which] if which != "both" else ["major", "minor"]:
@@ -2161,6 +2243,70 @@ class SmartFigure:
             raise TypeError("Elements must be an iterable of LegendElement objects.")
 
         return self
+
+    def create_twin_axis(
+        self,
+        is_y: bool = True,
+        label: Optional[str] = None,
+        axis_lim: Optional[tuple[float, float]] = None,
+        log_scale: bool = False,
+        remove_axes: bool = False,
+        remove_ticks: bool = False,
+        elements: Optional[Iterable[Plottable]] = [],
+    ) -> SmartTwinAxis:
+        """
+        Creates a twin axis for the SmartFigure. This method creates a :class:`~graphinglib.smart_figure.SmartTwinAxis`
+        object that can be used to plot elements on a secondary axis in the same subplot.
+
+        Parameters
+        ----------
+        is_y : bool
+            If ``True``, the twin axis will be a y-axis, otherwise it will be an x-axis.
+            Defaults to ``True``.
+        label : str, optional
+            Label for the twin axis.
+        axis_lim : tuple[float, float], optional
+            Limits for the twin axis.
+        log_scale : bool
+            Whether to use a logarithmic scale for the twin axis.
+            Defaults to ``False``.
+        remove_axes : bool
+            Whether to remove the axes from the twin axis.
+            Defaults to ``False``.
+        remove_ticks : bool
+            Whether to remove the ticks from the twin axis.
+            Defaults to ``False``.
+        elements : Iterable[Plottable], optional
+            Elements to plot in the twin axis. This must be an iterable of
+            :class:`~graphinglib.graph_elements.Plottable` objects. If ``None`` elements are present, they are ignored.
+
+        Returns
+        -------
+        SmartTwinAxis
+            The created twin axis object. The twin axis can also be accessed through the
+            :attr:`~graphinglib.smart_figure.SmartFigure.twin_x_axis` or
+            :attr:`~graphinglib.smart_figure.SmartFigure.twin_y_axis` properties.
+        """
+        if is_y and self._twin_y_axis is not None:
+            raise GraphingException("A twin y-axis already exists for this SmartFigure.")
+        elif not is_y and self._twin_x_axis is not None:
+            raise GraphingException("A twin x-axis already exists for this SmartFigure.")
+
+        twin_axis = SmartTwinAxis(
+            label=label,
+            axis_lim=axis_lim,
+            log_scale=log_scale,
+            remove_axes=remove_axes,
+            remove_ticks=remove_ticks,
+            elements=elements,
+        )
+
+        if is_y:
+            self.twin_y_axis = twin_axis
+        else:
+            self.twin_x_axis = twin_axis
+
+        return twin_axis
 
 
 class SmartFigureWCS(SmartFigure):
@@ -2281,6 +2427,12 @@ class SmartFigureWCS(SmartFigure):
     show_legend : bool
         Whether to show the legend for the figure. This allows to easily toggle the visibility of the legend.
         Defaults to ``True``.
+    twin_x_axis, twin_y_axis : SmartTwinAxis, optional
+        Twin axes for the x and y axes, respectively. This allows to attach additional axes to the main axes of the
+        SmartFigure, which can be useful for displaying additional information or data on the same plot without
+        cluttering the main axes. The twin axes can be used to plot additional data with different scales or units. See
+        the :class:`~graphinglib.smart_figure.SmartTwinAxis` class for more details on how to use twin axes and the
+        :meth:`~graphinglib.smart_figure.SmartFigure.create_twin_axis` method for wrapping the creation of twin axes.
     figure_style : str
         The figure style to use for the figure. The default style can be set using ``gl.set_default_style()``.
         Defaults to ``"default"``.
@@ -2300,6 +2452,7 @@ class SmartFigureWCS(SmartFigure):
             that span multiple subplots, you should use the __setitem__ method instead.
             For example, to add an element spanning the complete first row , use ``fig[0,:] = element``.
     """
+
     def __init__(
         self,
         projection: WCS,
@@ -2334,6 +2487,8 @@ class SmartFigureWCS(SmartFigure):
         legend_loc: Optional[str | tuple] = None,
         legend_cols: int = 1,
         show_legend: bool = True,
+        twin_x_axis: Optional[SmartTwinAxis] = None,
+        twin_y_axis: Optional[SmartTwinAxis] = None,
         figure_style: str = "default",
         elements: Optional[Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]]] = [],
     ) -> None:
@@ -2370,6 +2525,8 @@ class SmartFigureWCS(SmartFigure):
             legend_loc=legend_loc,
             legend_cols=legend_cols,
             show_legend=show_legend,
+            twin_x_axis=twin_x_axis,
+            twin_y_axis=twin_y_axis,
             figure_style=figure_style,
             elements=elements,
         )
@@ -2518,7 +2675,7 @@ class SmartFigureWCS(SmartFigure):
             Tick positions for the x or y axis. If a value is specified, the corresponding ``x_tick_spacing`` and
             ``number_of_x_ticks`` or ``y_tick_spacing`` and ``number_of_y_ticks`` parameters must be ``None``.
         x_tick_spacing, y_tick_spacing : Quantity, optional
-            Spacing between ticks on the x or y axis. If a value is specified, the corresponding ``x_ticks`` and
+            Spacing between major ticks on the x or y axis. If a value is specified, the corresponding ``x_ticks`` and
             ``number_of_x_ticks`` or ``y_ticks`` and ``number_of_y_ticks`` parameters must be ``None``.
         number_of_x_ticks, number_of_y_ticks : int, optional
             Number of ticks to display on the x or y axis. If specified, the ``x_ticks`` and ``x_tick_spacing`` or
@@ -2594,14 +2751,14 @@ class SmartFigureWCS(SmartFigure):
         label_size: Optional[float | str] = None,
         label_color: Optional[str] = None,
         label_rotation: Optional[float] = None,
-        draw_bottom_tick: Optional[bool] = None,
-        draw_top_tick: Optional[bool] = None,
-        draw_left_tick: Optional[bool] = None,
-        draw_right_tick: Optional[bool] = None,
-        draw_bottom_label: Optional[bool] = None,
-        draw_top_label: Optional[bool] = None,
-        draw_left_label: Optional[bool] = None,
-        draw_right_label: Optional[bool] = None,
+        draw_bottom_ticks: Optional[bool] = None,
+        draw_top_ticks: Optional[bool] = None,
+        draw_left_ticks: Optional[bool] = None,
+        draw_right_ticks: Optional[bool] = None,
+        draw_bottom_labels: Optional[bool] = None,
+        draw_top_labels: Optional[bool] = None,
+        draw_left_labels: Optional[bool] = None,
+        draw_right_labels: Optional[bool] = None,
     ) -> Self:
         """
         Sets the tick parameters for the figure. These parameters are given to the
@@ -2645,9 +2802,9 @@ class SmartFigureWCS(SmartFigure):
             The color of the tick labels.
         label_rotation : float, optional
             The rotation of the tick labels, in degrees.
-        draw_bottom_tick, draw_top_tick, draw_left_tick, draw_right_tick : bool, optional
+        draw_bottom_ticks, draw_top_ticks, draw_left_ticks, draw_right_ticks : bool, optional
             Whether to draw the ticks on the bottom, top, left or right side of the axes respectively.
-        draw_bottom_label, draw_top_label, draw_left_label, draw_right_label : bool, optional
+        draw_bottom_labels, draw_top_labels, draw_left_labels, draw_right_labels : bool, optional
             Whether to draw the tick labels on the bottom, top, left or right side of the axes respectively.
 
         Returns
@@ -2664,14 +2821,14 @@ class SmartFigureWCS(SmartFigure):
             "labelsize": label_size,
             "labelcolor": label_color,
             "labelrotation": label_rotation,
-            "bottom": draw_bottom_tick,
-            "top": draw_top_tick,
-            "left": draw_left_tick,
-            "right": draw_right_tick,
-            "labelbottom": draw_bottom_label,
-            "labeltop": draw_top_label,
-            "labelleft": draw_left_label,
-            "labelright": draw_right_label,
+            "bottom": draw_bottom_ticks,
+            "top": draw_top_ticks,
+            "left": draw_left_ticks,
+            "right": draw_right_ticks,
+            "labelbottom": draw_bottom_labels,
+            "labeltop": draw_top_labels,
+            "labelleft": draw_left_labels,
+            "labelright": draw_right_labels,
         }
         for axis_i in [axis] if axis != "both" else ["x", "y"]:
             if reset:
@@ -2741,3 +2898,610 @@ class SmartFigureWCS(SmartFigure):
             line_style=line_style,
             line_width=line_width,
         )
+
+
+class SmartTwinAxis:
+    """
+    This class implements a twin axis for the :class:`~graphinglib.smart_figure.SmartFigure` and
+    :class:`~graphinglib.smart_figure.SmartFigureWCS` classes.
+
+    Behaves like a :class:`~graphinglib.smart_figure.SmartFigure` object, but is not meant to be used on its own.
+    Elements can be added to the twin axis using the :meth:`~graphinglib.smart_figure.SmartTwinAxis.add_elements`
+    method and the same methods as for the :class:`~graphinglib.smart_figure.SmartFigure` class can be used to customize
+    the twin axis.
+
+    Parameters
+    ----------
+    label : str, optional
+        Label for the twin axis.
+    axis_lim : tuple[float, float], optional
+        Limits for the twin axis.
+    log_scale : bool
+        Whether to use a logarithmic scale for the twin axis.
+        Defaults to ``False``.
+    remove_axes : bool
+        Whether to remove the axes from the twin axis.
+        Defaults to ``False``.
+    remove_ticks : bool
+        Whether to remove the ticks from the twin axis.
+        Defaults to ``False``.
+    elements : Iterable[Plottable], optional
+        Elements to plot in the twin axis. This must be an iterable of :class:`~graphinglib.graph_elements.Plottable`
+        objects. If ``None`` elements are present, they are ignored.
+    """
+
+    def __init__(
+        self,
+        label: Optional[str] = None,
+        axis_lim: Optional[tuple[float, float]] = None,
+        log_scale: bool = False,
+        remove_axes: bool = False,
+        remove_ticks: bool = False,
+        elements: Optional[Iterable[Plottable]] = [],
+    ) -> None:
+        self.label = label
+        self.axis_lim = axis_lim
+        self.log_scale = log_scale
+        self.remove_axes = remove_axes
+        self.remove_ticks = remove_ticks
+        self.elements = elements
+
+        self._ticks = None
+        self._tick_labels = None
+        self._tick_spacing = None
+        self._minor_ticks = None
+        self._minor_tick_spacing = None
+        self._tick_params = {"major": {}, "minor": {}}
+
+        self._axes_edge_color = None
+        self._axes_line_width = None
+        self._user_rc_dict = {}
+        self._default_params = {}
+        self._axes = None       # used for keeping a reference to the axes which enables drawing the legend on top
+
+    @property
+    def label(self) -> Optional[str]:
+        return self._label
+
+    @label.setter
+    def label(self, value: Optional[str]) -> None:
+        self._label = value
+
+    @property
+    def axis_lim(self) -> Optional[tuple[float, float]]:
+        return self._axis_lim
+
+    @axis_lim.setter
+    def axis_lim(self, value: Optional[tuple[float, float]]) -> None:
+        if value is not None:
+            if not isinstance(value, tuple):
+                raise TypeError("axis_lim must be a tuple.")
+            if len(value) != 2:
+                raise ValueError("axis_lim must be a tuple of length 2.")
+        self._axis_lim = value
+
+    @property
+    def log_scale(self) -> bool:
+        return self._log_scale
+
+    @log_scale.setter
+    def log_scale(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("log_scale must be a boolean.")
+        self._log_scale = value
+
+    @property
+    def remove_axes(self) -> bool:
+        return self._remove_axes
+
+    @remove_axes.setter
+    def remove_axes(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("remove_axes must be a bool.")
+        self._remove_axes = value
+
+    @property
+    def remove_ticks(self) -> bool:
+        return self._remove_ticks
+
+    @remove_ticks.setter
+    def remove_ticks(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("remove_ticks must be a bool.")
+        self._remove_ticks = value
+
+    @property
+    def elements(self) -> list[Plottable]:
+        return self._elements
+
+    @elements.setter
+    def elements(self, value: Optional[Iterable[Plottable]]) -> None:
+        """
+        Sets the elements of the SmartTwinAxis with the same rules as the constructor. For adding elements instead of
+        replacing them, use the :meth:`~graphinglib.smart_figure.SmartTwinAxis.add_elements` method.
+        """
+        self._elements = []        # systematically reset the elements when setting them with the property
+        self.add_elements(*value)
+
+    def __len__(self) -> int:
+        """
+        Gives the number of elements in the :class:`~graphinglib.smart_figure.SmartTwinAxis`.
+        """
+        return len(self._elements)
+
+    def __getitem__(self, key: int) -> Plottable:
+        """
+        Gives the element(s) at the specified key in the SmartTwinAxis's list of elements.
+
+        Parameters
+        ----------
+        key : int
+            The key specifying the location in the SmartTwinAxis to access.
+
+        Returns
+        -------
+        Plottable
+            The element at the specified key. If there is no element at the given key, an empty list is returned.
+        """
+        if not isinstance(key, int):
+            raise TypeError(f"Key must be an integer, not {type(key).__name__}.")
+        key_ = key + len(self._elements) if key < 0 else key
+        if key_ >= len(self._elements) or key_ < 0:
+            raise IndexError(f"Key {key} is out of bounds for the SmartTwinAxis with {len(self._elements)} elements.")
+        return self._elements[key_]
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.smart_figure.SmartTwinAxis` object.
+        """
+        return deepcopy(self)
+
+    def copy_with(self, **kwargs) -> Self:
+        """
+        Returns a deep copy of the SmartTwinAxis with specified attributes overridden.
+
+        Parameters
+        ----------
+        kwargs
+            Properties to override in the copied SmartTwinAxis. The keys should be property names to modify and the
+            values are the new values for those properties.
+
+        Returns
+        -------
+        SmartTwinAxis
+            A new SmartTwinAxis instance with the specified attributes overridden.
+
+        Examples
+        --------
+        Copy an existing SmartTwinAxis to remove change its label::
+
+            twin_ax_2 = twin_ax_1.copy_with(label="New Label")
+        """
+        properties = [attr for attr in dir(self.__class__) if isinstance(getattr(self.__class__, attr, None), property)]
+        properties = list(filter(lambda x: x[0] != "_", properties))      # filter out hidden properties
+        new_copy = deepcopy(self)
+        for key, value in kwargs.items():
+            if hasattr(new_copy, key):
+                setattr(new_copy, key, value)
+            else:
+                close_match = get_close_matches(key, properties, n=1, cutoff=0.6)
+                if close_match:
+                    raise AttributeError(f"SmartTwinAxis has no attribute '{key}'. Did you mean '{close_match[0]}'?")
+                else:
+                    raise AttributeError(f"SmartTwinAxis has no attribute '{key}'.")
+        return new_copy
+
+    def add_elements(self, *elements: Plottable) -> Self:
+        """
+        Adds one or more :class:`~graphinglib.graph_elements.Plottable` elements to the twin axis.
+
+        Parameters
+        ----------
+        elements : :class:`~graphinglib.graph_elements.Plottable`
+            Elements to plot in the :class:`~graphinglib.smart_figure.SmartTwinAxis`. If ``None`` elements are present,
+            they are ignored and not added to the twin axis.
+
+        Returns
+        -------
+        Self
+            For convenience, the same :class:`graphinglib.smart_figure.SmartTwinAxis` with the added elements.
+        """
+        if not SmartFigure._is_iterable_of_plottables(elements):
+            raise TypeError("Elements must be an iterable of Plottable objects.")
+        self._elements += [el for el in elements if el is not None]
+        return self
+
+    def _prepare_twin_axis(
+        self,
+        fig_axes: Axes,
+        is_matplotlib_style: bool,
+        cycle_colors: list[str],
+        is_y: bool,
+        z_order: int,
+        figure_style: str,
+    ) -> tuple[list[str], list[Any]]:
+        """
+        Prepares the twin axis to be displayed.
+
+        Parameters
+        ----------
+        fig_axes : matplotlib.axes.Axes
+            The parent axes to create the twin axis from.
+        is_matplotlib_style : bool
+            Whether the figure style is a matplotlib style.
+        cycle_colors : list[str]
+            Color cycle for plotting elements.
+        is_y : bool
+            Whether the twin axis is a y-axis (``True``) or an x-axis (``False``).
+        z_order : int
+            The z-order for the elements plotted on the twin axis. This is used to ensure that the elements on the twin
+            axis are drawn above the elements of the original axis.
+        figure_style : str
+            The figure style to use for the twin axis. This is used for the
+            :meth:`~graphinglib.smart_figure.SmartTwinAxis._fill_in_missing_params` method.
+
+        Returns
+        -------
+        tuple[list[str], list[Any]]
+            A tuple containing the labels and handles for legend creation.
+        """
+        # Create the twin axis
+        if is_y:
+            ax = fig_axes.twinx()
+            ax_set_label, ax_set_lim, ax_set_scale, spine_str = ax.set_ylabel, ax.set_ylim, ax.set_yscale, "right"
+        else:
+            ax = fig_axes.twiny()
+            ax_set_label, ax_set_lim, ax_set_scale, spine_str = ax.set_xlabel, ax.set_xlim, ax.set_xscale, "top"
+
+        self._axes = ax
+
+        if self._label:
+            ax_set_label(self._label)
+        if self._axis_lim:
+            ax_set_lim(*self._axis_lim)
+
+        # Artificially modify the axes edge color and line width to modify only a single spine
+        if self._axes_edge_color:
+            ax.spines[spine_str].set_color(self._axes_edge_color)
+        if self._axes_line_width:
+            ax.spines[spine_str].set_linewidth(self._axes_line_width)
+
+        self._customize_ticks(is_y)
+
+        # Logarithmic scale
+        if self._log_scale:
+            ax_set_scale("log")
+
+        # Remove axes
+        if self._remove_axes:
+            ax.axis("off")
+
+        # Plotting loop
+        num_cycle_colors = len(cycle_colors)
+        labels, handles = [], []
+        for index, element in enumerate(self._elements):
+            if isinstance(element, Plottable):
+                params_to_reset = []
+                if not is_matplotlib_style:
+                    params_to_reset = self._fill_in_missing_params(element, figure_style)
+
+                element._plot_element(
+                    ax,
+                    z_order,
+                    cycle_color=cycle_colors[index % num_cycle_colors],
+                )
+                if not is_matplotlib_style:
+                    self._reset_params_to_default(element, params_to_reset)
+                try:
+                    if element.label is not None:
+                        handles.append(element.handle)
+                        labels.append(element.label)
+                except AttributeError:
+                    continue
+                z_order += 5
+            elif element is not None:
+                raise GraphingException(f"Unsupported element type: {type(element).__name__}.")
+
+        return labels, handles
+
+    def _customize_ticks(
+        self,
+        is_y: bool,
+    ) -> None:
+        """
+        Customizes the ticks of the specified Axes according to the SmartTwinAxis's tick parameters.
+        """
+        if is_y:
+            ax_set_ticks, axis_str, ax_axis = self._axes.set_yticks, "y", self._axes.yaxis
+        else:
+            ax_set_ticks, axis_str, ax_axis = self._axes.set_xticks, "x", self._axes.xaxis
+
+        if self._ticks is not None:
+            ax_set_ticks(self._ticks, self._tick_labels)
+        self._axes.tick_params(axis=axis_str, which="major", **self._tick_params["major"])
+        if self._tick_spacing is not None:
+            ax_axis.set_major_locator(
+                ticker.MultipleLocator(self._tick_spacing)
+            )
+
+        if self._minor_ticks is not None:
+            ax_set_ticks(self._minor_ticks, minor=True)
+        self._axes.tick_params(axis=axis_str, which="minor", **self._tick_params["minor"])
+        if self._minor_tick_spacing is not None:
+            ax_axis.set_minor_locator(
+                ticker.MultipleLocator(self._minor_tick_spacing)
+            )
+
+        # Remove ticks
+        if self._remove_ticks:
+            self._axes.tick_params(axis_str, which="both", labelbottom=False, labelleft=False, labelright=False,
+                                   labeltop=False, bottom=False, left=False, right=False, top=False)
+
+    def _fill_in_missing_params(self, element: SmartFigure | Plottable, figure_style: str) -> list[str]:
+        """
+        Fills in the missing parameters for a :class:`~graphinglib.graph_elements.Plottable` from the parent's
+        ``figure_style``.
+        """
+        params_to_reset = []
+        object_type = type(element).__name__
+        for try_i in range(2):
+            try:
+                for property_, value in vars(element).items():
+                    if (type(value) == str) and (value == "default") and not (property_ == "_figure_style"):
+                        params_to_reset.append(property_)
+                        default_value = self._default_params[object_type][property_]
+                        setattr(element, property_, default_value)
+                break
+            except KeyError as e:
+                if try_i == 1:
+                    raise GraphingException(
+                        f"There was an error auto updating your {figure_style} style file following the recent "
+                         "GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub"
+                         " page. In the meantime, you can manually add the following parameter to your "
+                        f"{figure_style} style file:\n {e.args[0]}."
+                    )
+                file_updater = FileUpdater(figure_style)
+                file_updater.update()
+                file_loader = FileLoader(figure_style)
+                new_defaults = file_loader.load()
+                self._default_params.update((k, v) for k, v in new_defaults.items() if k not in self._default_params)
+        return params_to_reset
+
+    def _reset_params_to_default(
+        self, element: Plottable, params_to_reset: list[str]
+    ) -> None:
+        """
+        Resets the parameters that were set to default in the
+        :meth:`~graphinglib.smart_figure.SmartTwinAxis._fill_in_missing_params` method.
+        """
+        for param in params_to_reset:
+            setattr(element, param, "default")
+
+    def set_rc_params(
+        self,
+        rc_params_dict: dict[str, str | float] = {},
+        reset: bool = False,
+    ) -> Self:
+        """
+        Customize the visual style of the :class:`~graphinglib.smart_figure.SmartTwinAxis`.
+
+        Any rc parameter that is not specified in the dictionary will be set to the default value for the specified
+        ``figure_style`` from the parent :class:`~graphinglib.smart_figure.SmartFigure`.
+
+        Parameters
+        ----------
+        rc_params_dict : dict[str, str | float]
+            Dictionary of rc parameters to update.
+            Defaults to empty dictionary.
+        reset : bool
+            Whether or not to reset the rc parameters to the default values.
+            Defaults to ``False``.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartTwinAxis with the updated rc parameters.
+        """
+        if reset:
+            self._user_rc_dict = {}
+        for property_, value in rc_params_dict.items():
+            self._user_rc_dict[property_] = value
+        return self
+
+    def set_visual_params(
+        self,
+        reset: bool = False,
+        axes_edge_color: Optional[str] = None,
+        axes_label_color: Optional[str] = None,
+        axes_label_pad: Optional[float] = None,
+        axes_line_width: Optional[float] = None,
+        font_family: Optional[str] = None,
+        font_size: Optional[float] = None,
+        font_weight: Optional[str] = None,
+        use_latex: Optional[bool] = None,
+    ) -> Self:
+        """
+        Customize the visual style of the twin axis.
+
+        Parameters
+        ----------
+        reset : bool
+            Whether or not to reset the rc parameters to the default values for the specified ``figure_style``.
+            Defaults to ``False``.
+        axes_edge_color : str, optional
+            The color of the axes edge.
+        axes_label_color : str, optional
+            The color of the axes labels.
+        axes_label_pad : float, optional
+            The padding between the axes labels and the axes.
+        axes_line_width : float, optional
+            The width of the axes lines.
+        font_family : str, optional
+            The font family to use.
+        font_size : float, optional
+            The font size to use.
+        font_weight : str, optional
+            The font weight to use.
+        use_latex : bool, optional
+            Whether or not to use latex.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartTwinAxis with the updated visual parameters.
+        """
+        if reset:
+            self._axes_edge_color = axes_edge_color
+            self._axes_line_width = axes_line_width
+        else:
+            if axes_edge_color is not None:
+                self._axes_edge_color = axes_edge_color
+            if axes_line_width is not None:
+                self._axes_line_width = axes_line_width
+
+        rc_params_dict = {
+            "axes.labelcolor": axes_label_color,
+            "axes.labelpad": axes_label_pad,
+            "font.family": font_family,
+            "font.size": font_size,
+            "font.weight": font_weight,
+            "text.usetex": use_latex,
+        }
+        rc_params_dict = {
+            key: value for key, value in rc_params_dict.items() if value is not None
+        }
+        self.set_rc_params(rc_params_dict, reset=reset)
+        return self
+
+    def set_ticks(
+        self,
+        ticks: Optional[Iterable[float]] = None,
+        tick_labels: Optional[Iterable[str]] = None,
+        tick_spacing: Optional[float] = None,
+        minor_ticks: Optional[Iterable[float]] = None,
+        minor_tick_spacing: Optional[float] = None,
+    ) -> Self:
+        """
+        Sets custom ticks and tick labels.
+
+        Parameters
+        ----------
+        ticks : Iterable[float], optional
+            Tick positions for the axis. If a value is specified, the ``tick_spacing`` parameter must be ``None``.
+        tick_labels : Iterable[str], optional
+            Tick labels for the axis. If a value is specified, the ``ticks`` parameter must also be given. The number of
+            tick labels must match the number of ticks.
+        tick_spacing : float, optional
+            Spacing between major ticks on the axis.
+        minor_ticks : Iterable[float], optional
+            Minor tick positions for the axis.
+        minor_tick_spacing : float, optional
+            Spacing between minor ticks on the axis.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartTwinAxis with the updated ticks.
+        """
+        if (tick_labels is not None) and ticks is None:
+            raise GraphingException("Ticks position must be specified when ticks labels are specified.")
+
+        if any([
+            (ticks is not None) and (tick_spacing is not None),
+            (minor_ticks is not None) and (minor_tick_spacing is not None),
+        ]):
+            raise GraphingException("Tick spacing and tick positions cannot be set simultaneously.")
+
+        if ticks is not None and tick_labels is not None:
+            if len(ticks) != len(tick_labels):
+                raise GraphingException(
+                    f"Number of ticks ({len(ticks)}) and number of tick labels ({len(tick_labels)}) must be the same."
+                )
+
+        self._custom_ticks = True
+        self._ticks = list(ticks) if ticks is not None else None
+        self._tick_labels = list(tick_labels) if tick_labels is not None else None
+        self._tick_spacing = tick_spacing
+        self._minor_ticks = list(minor_ticks) if minor_ticks is not None else None
+        self._minor_tick_spacing = minor_tick_spacing
+        return self
+
+    def set_tick_params(
+        self,
+        which: Optional[Literal["major", "minor", "both"]] = "major",
+        reset: Optional[bool] = False,
+        direction: Optional[Literal["in", "out", "inout"]] = None,
+        length: Optional[float] = None,
+        width: Optional[float] = None,
+        color: Optional[str] = None,
+        pad: Optional[float] = None,
+        label_size: Optional[float | str] = None,
+        label_color: Optional[str] = None,
+        label_rotation: Optional[float] = None,
+        draw_ticks: Optional[bool] = None,
+        draw_labels: Optional[bool] = None,
+    ) -> Self:
+        """
+        Sets the tick parameters. These parameters are given to the :meth:`matplotlib.axes.Axes.tick_params` method.
+
+        Parameters
+        ----------
+        which : {"major", "minor", "both"}, optional
+            The ticks to set the parameters for. This method can be called multiple times to set the tick parameters
+            specifically for each ticks type.
+            Defaults to ``"major"``.
+        reset : bool, optional
+            If ``True``, all previously given tick parameters are reset to their default values before applying the new
+            parameters.
+            Defaults to ``False``.
+        direction : {"in", "out", "inout"}, optional
+            The direction of the ticks.
+        length : float, optional
+            The length of the ticks.
+        width : float, optional
+            The width of the ticks.
+        color : str, optional
+            The color of the ticks.
+        pad : float, optional
+            The padding to add between the tick labels and the ticks themselves.
+        label_size : float | str, optional
+            The font size of the tick labels. This can be a float or a string (e.g. "large").
+        label_color : str, optional
+            The color of the tick labels.
+        label_rotation : float, optional
+            The rotation of the tick labels, in degrees.
+        draw_ticks : bool, optional
+            Whether to draw the ticks of the axis.
+        draw_labels : bool, optional
+            Whether to draw the tick labels of the axis.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartFigure with the updated tick parameters.
+        """
+        new_tick_params = {
+            "direction": direction,
+            "length": length,
+            "width": width,
+            "color": color,
+            "pad": pad,
+            "labelsize": label_size,
+            "labelcolor": label_color,
+            "labelrotation": label_rotation,
+            "bottom": draw_ticks,
+            "top": draw_ticks,
+            "left": draw_ticks,
+            "right": draw_ticks,
+            "labelbottom": draw_labels,
+            "labeltop": draw_labels,
+            "labelleft": draw_labels,
+            "labelright": draw_labels
+        }
+        for which_i in [which] if which != "both" else ["major", "minor"]:
+            if reset:
+                self._tick_params[which_i] = {}
+            for param, value in new_tick_params.items():
+                if value is not None:
+                    self._tick_params[which_i][param] = value
+        return self
