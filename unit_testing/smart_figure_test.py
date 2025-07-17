@@ -58,8 +58,8 @@ class TestSmartFigure(unittest.TestCase):
         fig = SmartFigure(num_rows=2, num_cols=3, x_label="X", y_label="Y", size=(8, 6), title="Test Figure",
                           x_lim=(0, 10), y_lim=(-5, 5), sub_x_labels=["X1", "X2", "X3"], sub_y_labels=["Y1", "Y2"],
                           subtitles=["Title 1", "Title 2", "Title 3", "Title 4", "Title 5", "Title 6"],
-                          log_scale_x=True, log_scale_y=True, remove_axes=True, aspect_ratio=1.5, remove_x_ticks=True,
-                          remove_y_ticks=True, reference_labels=False, global_reference_label=True,
+                          log_scale_x=True, log_scale_y=True, remove_axes=True, aspect_ratio=1.5, box_aspect_ratio=0.7,
+                          remove_x_ticks=True, remove_y_ticks=True, reference_labels=False, global_reference_label=True,
                           reference_label_loc="inside", reference_label_start_index=3, width_padding=0.5,
                           height_padding=0, width_ratios=[1,2,3], height_ratios=[1,2], share_x=True, share_y=True,
                           projection="polar", general_legend=True, legend_loc="upper right", legend_cols=2,
@@ -79,6 +79,7 @@ class TestSmartFigure(unittest.TestCase):
         self.assertTrue(fig.log_scale_y)
         self.assertTrue(fig.remove_axes)
         self.assertEqual(fig.aspect_ratio, 1.5)
+        self.assertEqual(fig.box_aspect_ratio, 0.7)
         self.assertTrue(fig.remove_x_ticks)
         self.assertTrue(fig.remove_y_ticks)
         self.assertFalse(fig.reference_labels)
@@ -266,6 +267,21 @@ class TestSmartFigure(unittest.TestCase):
         self.assertEqual(self.fig.aspect_ratio, "equal")
         self.fig.aspect_ratio = 1.5
         self.assertEqual(self.fig.aspect_ratio, 1.5)
+
+    def test_box_aspect_ratio(self):
+        """Test box_aspect_ratio property validation and assignment."""
+        # Invalid
+        with self.assertRaises(TypeError):
+            self.fig.box_aspect_ratio = "yes"
+        with self.assertRaises(TypeError):
+            self.fig.box_aspect_ratio = [1]
+        with self.assertRaises(ValueError):
+            self.fig.box_aspect_ratio = -1
+        # Valid
+        self.fig.box_aspect_ratio = 0.5
+        self.assertEqual(self.fig.box_aspect_ratio, 0.5)
+        self.fig.box_aspect_ratio = 3
+        self.assertEqual(self.fig.box_aspect_ratio, 3)
 
     def test_remove_x_ticks(self):
         """Test remove_x_ticks property validation and assignment."""
@@ -1369,7 +1385,7 @@ class TestSmartFigureWCS(TestSmartFigure):
             sub_x_labels=["RA1", "RA2"], sub_y_labels=["Dec1", "Dec2"],
             subtitles=["Title 1", "Title 2", "Title 3", "Title 4"],
             log_scale_x=False, log_scale_y=False,
-            remove_axes=False, aspect_ratio="equal",
+            remove_axes=False, aspect_ratio="equal", box_aspect_ratio=0.7,
             remove_x_ticks=False, remove_y_ticks=False,
             reference_labels=True, global_reference_label=False,
             reference_label_loc="outside", reference_label_start_index=0,

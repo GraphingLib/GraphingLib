@@ -80,8 +80,22 @@ class SmartFigure:
     aspect_ratio : float | Literal["auto", "equal"]
         Aspect ratio of the figure. If set to "auto", the aspect ratio is determined automatically to fill the available
         space. If set to "equal", the aspect ratio is set to 1:1. If set to a float, the aspect ratio represents the
-        ratio of the height to the width of the figure.
+        ratio of the height to the width of the data.
         Defaults to "auto".
+
+        .. warning::
+            This parameter must not be confused with the `box_aspect_ratio` parameter, which is the aspect ratio of the
+            box containing the elements. The `aspect_ratio` parameter is the aspect ratio of the data itself, which
+            does not change the size of the plot but rather how the data is displayed within the plot.
+
+    box_aspect_ratio : float, optional
+        Aspect ratio of the box containing the elements, i.e. the ratio of the height to the width of the plot.
+
+        .. warning::
+            This parameter must not be confused with the `aspect_ratio` parameter, which is the aspect ratio of the
+            data itself. The `box_aspect_ratio` parameter changes the size of the plot, which does not affect the
+            figure's axes.
+
     remove_x_ticks, remove_y_ticks : bool
         Whether to remove the x and y ticks from the figure, respectively.
         Defaults to ``False``.
@@ -202,6 +216,7 @@ class SmartFigure:
         log_scale_y: bool = False,
         remove_axes: bool = False,
         aspect_ratio: float | Literal["auto", "equal"] = "auto",
+        box_aspect_ratio: Optional[float] = None,
         remove_x_ticks: bool = False,
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
@@ -239,6 +254,7 @@ class SmartFigure:
         self.log_scale_y = log_scale_y
         self.remove_axes = remove_axes
         self.aspect_ratio = aspect_ratio
+        self.box_aspect_ratio = box_aspect_ratio
         self.remove_x_ticks = remove_x_ticks
         self.remove_y_ticks = remove_y_ticks
         self.reference_labels = reference_labels
@@ -476,6 +492,19 @@ class SmartFigure:
         if isinstance(value, (float, int)) and value <= 0:
             raise ValueError("aspect_ratio must be greater than 0.")
         self._aspect_ratio = value
+
+    @property
+    def box_aspect_ratio(self) -> float:
+        return self._box_aspect_ratio
+
+    @box_aspect_ratio.setter
+    def box_aspect_ratio(self, value: Optional[float]) -> None:
+        if value is not None:
+            if not isinstance(value, (float, int)):
+                raise TypeError("box_aspect_ratio must be a number.")
+            if value <= 0:
+                raise ValueError("box_aspect_ratio must be greater than 0.")
+        self._box_aspect_ratio = value
 
     @property
     def remove_x_ticks(self) -> bool:
@@ -1449,6 +1478,7 @@ class SmartFigure:
                         ax.axis("off")
 
                     ax.set_aspect(self._aspect_ratio)
+                    ax.set_box_aspect(self._box_aspect_ratio)
 
                     self._customize_ticks(ax)
 
@@ -2355,8 +2385,22 @@ class SmartFigureWCS(SmartFigure):
     aspect_ratio : float | Literal["auto", "equal"]
         Aspect ratio of the figure. If set to "auto", the aspect ratio is determined automatically to fill the available
         space. If set to "equal", the aspect ratio is set to 1:1. If set to a float, the aspect ratio represents the
-        ratio of the height to the width of the figure.
+        ratio of the height to the width of the data.
         Defaults to "auto".
+
+        .. warning::
+            This parameter must not be confused with the `box_aspect_ratio` parameter, which is the aspect ratio of the
+            box containing the elements. The `aspect_ratio` parameter is the aspect ratio of the data itself, which
+            does not change the size of the plot but rather how the data is displayed within the plot.
+
+    box_aspect_ratio : float, optional
+        Aspect ratio of the box containing the elements, i.e. the ratio of the height to the width of the plot.
+
+        .. warning::
+            This parameter must not be confused with the `aspect_ratio` parameter, which is the aspect ratio of the
+            data itself. The `box_aspect_ratio` parameter changes the size of the plot, which does not affect the
+            figure's axes.
+
     remove_x_ticks, remove_y_ticks : bool
         Whether to remove the x and y ticks from the figure, respectively.
         Defaults to ``False``.
@@ -2471,6 +2515,7 @@ class SmartFigureWCS(SmartFigure):
         log_scale_y: bool = False,
         remove_axes: bool = False,
         aspect_ratio: float | Literal["auto", "equal"] = "auto",
+        box_aspect_ratio: Optional[float] = None,
         remove_x_ticks: bool = False,
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
@@ -2508,6 +2553,7 @@ class SmartFigureWCS(SmartFigure):
             log_scale_y=log_scale_y,
             remove_axes=remove_axes,
             aspect_ratio=aspect_ratio,
+            box_aspect_ratio=box_aspect_ratio,
             remove_x_ticks=remove_x_ticks,
             remove_y_ticks=remove_y_ticks,
             reference_labels=reference_labels,
