@@ -305,6 +305,7 @@ class SmartFigure:
         self._custom_legend_handles = []
         self._custom_legend_labels = []
 
+        self._hidden_spines = None
         self._user_rc_dict = {}
         self._default_params = {}
 
@@ -1517,6 +1518,11 @@ class SmartFigure:
                         sub_y[subplot_i] if sub_y and len(sub_y) > subplot_i else None,
                     )
 
+                    # Hide spines
+                    if self._hidden_spines is not None:
+                        for spine in set(self._hidden_spines):
+                            ax.spines[spine].set_visible(False)
+
                     # Prepare twin axes
                     for i, twin_axis in enumerate([self._twin_x_axis, self._twin_y_axis], start=1):
                         if twin_axis is not None:
@@ -1915,6 +1921,7 @@ class SmartFigure:
         title_font_weight: Optional[str] = None,
         text_color: Optional[str] = None,
         use_latex: Optional[bool] = None,
+        hidden_spines: Optional[Iterable[Literal["right", "left", "top", "bottom"]]] = None,
     ) -> Self:
         """
         Customize the visual style of the :class:`~graphinglib.smart_figure.SmartFigure`.
@@ -1962,6 +1969,9 @@ class SmartFigure:
             The color of the text.
         use_latex : bool, optional
             Whether or not to use latex.
+        hidden_spines : Iterable[Literal["right", "left", "top", "bottom"]], optional
+            The spines to hide. If specified, the corresponding spines will be hidden in the figure. This corresponds to
+            the lines that form the borders of the plot.
 
         Returns
         -------
@@ -1997,6 +2007,15 @@ class SmartFigure:
             key: value for key, value in rc_params_dict.items() if value is not None
         }
         self.set_rc_params(rc_params_dict, reset=reset)
+
+        if hidden_spines is not None:
+            if not isinstance(hidden_spines, Iterable):
+                raise TypeError("hidden_spines must be an iterable of spine names.")
+            for spine in hidden_spines:
+                if spine not in ["right", "left", "top", "bottom"]:
+                    raise ValueError(f"Invalid spine name: {spine}. Must be one of 'right', 'left', 'top' or 'bottom'.")
+            self._hidden_spines = hidden_spines
+
         return self
 
     def set_ticks(
@@ -3001,6 +3020,7 @@ class SmartTwinAxis:
 
         self._axes_edge_color = None
         self._axes_line_width = None
+        self._hide_spine = None
         self._user_rc_dict = {}
         self._default_params = {}
         self._axes = None       # used for keeping a reference to the axes which enables drawing the legend on top
@@ -3211,6 +3231,9 @@ class SmartTwinAxis:
             ax.spines[spine_str].set_color(self._axes_edge_color)
         if self._axes_line_width:
             ax.spines[spine_str].set_linewidth(self._axes_line_width)
+        for spine in ax.spines:
+            ax.spines[spine].set_visible(False)
+        ax.spines[spine_str].set_visible(not self._hide_spine)
 
         self._customize_ticks(is_y)
 
@@ -3365,6 +3388,7 @@ class SmartTwinAxis:
         font_size: Optional[float] = None,
         font_weight: Optional[str] = None,
         use_latex: Optional[bool] = None,
+        hide_spine: Optional[bool] = None,
     ) -> Self:
         """
         Customize the visual style of the twin axis.
@@ -3390,6 +3414,8 @@ class SmartTwinAxis:
             The font weight to use.
         use_latex : bool, optional
             Whether or not to use latex.
+        hide_spine : bool, optional
+            Whether to hide the spine of the axes. This corresponds to the line that forms the border of the plot.
 
         Returns
         -------
@@ -3417,6 +3443,12 @@ class SmartTwinAxis:
             key: value for key, value in rc_params_dict.items() if value is not None
         }
         self.set_rc_params(rc_params_dict, reset=reset)
+
+        if hide_spine is not None:
+            if not isinstance(hide_spine, bool):
+                raise TypeError("hide_spine must be a boolean or an iterable of spine names.")
+            self._hide_spine = hide_spine
+
         return self
 
     def set_ticks(

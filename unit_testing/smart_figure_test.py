@@ -1072,6 +1072,28 @@ class TestSmartFigure(unittest.TestCase):
         self.assertIs(self.fig.save("test_smart_figure_output.png"), self.fig)
         os.remove("test_smart_figure_output.png")
 
+    def test_hide_spines(self):
+        """Test hiding spines."""
+        self.assertIsNone(self.fig._hidden_spines)
+
+        # Invalid
+        with self.assertRaises(TypeError):
+            self.fig.set_visual_params(hidden_spines=123)
+        with self.assertRaises(ValueError):
+            self.fig.set_visual_params(hidden_spines="right")
+        with self.assertRaises(ValueError):
+            self.fig.set_visual_params(hidden_spines=["I am not a direction"])
+        with self.assertRaises(ValueError):
+            self.fig.set_visual_params(hidden_spines=["left", "I am still not a direction", "right"])
+
+        # Valid
+        self.fig.set_visual_params(hidden_spines=["left", "right"])
+        self.assertListEqual(self.fig._hidden_spines, ["left", "right"])
+        self.fig.set_visual_params()
+        self.assertListEqual(self.fig._hidden_spines, ["left", "right"])
+        self.fig.set_visual_params(hidden_spines=["top"])
+        self.assertListEqual(self.fig._hidden_spines, ["top"])
+
     def test_create_twin_axis_from_smart_figure(self):
         """Test creating twin axis from SmartFigure."""
         twin_y = self.fig.create_twin_axis(is_y=True, label="Twin Y")
@@ -1742,12 +1764,26 @@ class TestSmartTwinAxis(unittest.TestCase):
             self.twin_axis.set_ticks(ticks=[0, 1, 2, 3], tick_labels=["only one label but 4 ticks"])
 
     def test_methods_return_self(self):
-        """Test that methods return self for method chaining."""
+        """Test that twin axis methods return self for method chaining."""
         self.assertIs(self.twin_axis.add_elements(), self.twin_axis)
         self.assertIs(self.twin_axis.set_ticks(ticks=[0, 1]), self.twin_axis)
         self.assertIs(self.twin_axis.set_tick_params(label_color="green"), self.twin_axis)
         self.assertIs(self.twin_axis.set_visual_params(axes_edge_color="red"), self.twin_axis)
         self.assertIs(self.twin_axis.set_rc_params({"lines.linewidth": 2}), self.twin_axis)
+
+    def test_hide_spines(self):
+        """Test hiding the twin axis's spine."""
+        self.assertIsNone(self.twin_axis._hide_spine)
+
+        # Invalid
+        with self.assertRaises(TypeError):
+            self.twin_axis.set_visual_params(hide_spine=["right"])
+
+        # Valid
+        self.twin_axis.set_visual_params(hide_spine=True)
+        self.assertTrue(self.twin_axis._hide_spine)
+        self.twin_axis.set_visual_params(hide_spine=False)
+        self.assertFalse(self.twin_axis._hide_spine)
 
 
 if __name__ == "__main__":
