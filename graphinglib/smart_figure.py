@@ -1935,6 +1935,7 @@ class SmartFigure:
         legend_edge_color: Optional[str] = None,
         legend_font_size: Optional[float] = None,
         legend_handle_length: Optional[float] = None,
+        legend_handle_text_pad: Optional[float] = None,
         font_family: Optional[str] = None,
         font_size: Optional[float] = None,
         font_weight: Optional[str] = None,
@@ -1976,6 +1977,8 @@ class SmartFigure:
             The font size of the legend.
         legend_handle_length : float, optional
             The length of the legend handles.
+        legend_handle_text_pad : float, optional
+            The padding between the legend handles and the legend text.
         font_family : str, optional
             The font family to use.
         font_size : float, optional
@@ -2014,6 +2017,7 @@ class SmartFigure:
             "legend.edgecolor": legend_edge_color,
             "legend.fontsize": legend_font_size,
             "legend.handlelength": legend_handle_length,
+            "legend.handletextpad": legend_handle_text_pad,
             "font.family": font_family,
             "font.size": font_size,
             "font.weight": font_weight,
