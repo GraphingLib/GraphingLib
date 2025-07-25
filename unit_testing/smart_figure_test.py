@@ -213,10 +213,16 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.sub_x_labels = valid_labels
         self.assertEqual(self.fig.sub_x_labels, valid_labels)
         self.fig.sub_x_labels = [None, "valid"]
+        with self.assertRaises(GraphingException):  # different number of sub labels and subplots
+            self.fig._initialize_parent_smart_figure()
 
         # Test invalid types
         with self.assertRaises(TypeError):
             self.fig.sub_x_labels = 123
+
+        self.fig_2x2.sub_x_labels = ["X1", "X2", "X3", "X4"]
+        self.fig_2x2.add_elements(*[DummyPlottable() for _ in range(4)])
+        self.fig_2x2._initialize_parent_smart_figure()
 
     def test_sub_y_labels(self):
         """Test sub_y_labels property validation and assignment."""
@@ -228,10 +234,16 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.sub_y_labels = valid_labels
         self.assertEqual(self.fig.sub_y_labels, valid_labels)
         self.fig.sub_y_labels = [None, "valid"]
+        with self.assertRaises(GraphingException):  # different number of sub labels and subplots
+            self.fig._initialize_parent_smart_figure()
 
         # Test invalid types
         with self.assertRaises(TypeError):
             self.fig.sub_y_labels = 123
+
+        self.fig_2x2.sub_y_labels = ["Y1", "Y2", "Y3", "Y4"]
+        self.fig_2x2.add_elements(*[DummyPlottable() for _ in range(4)])
+        self.fig_2x2._initialize_parent_smart_figure()
 
     def test_subtitles(self):
         """Test subtitles property validation and assignment."""
@@ -243,10 +255,16 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.subtitles = valid_titles
         self.assertEqual(self.fig.subtitles, valid_titles)
         self.fig.subtitles = [None, "valid"]
+        with self.assertRaises(GraphingException):  # different number of subtitles and subplots
+            self.fig._initialize_parent_smart_figure()
 
         # Test invalid types
         with self.assertRaises(TypeError):
             self.fig.subtitles = 123
+
+        self.fig_2x2.subtitles = ["Sub 1", "Sub 2", "Sub 3", "Sub 4"]
+        self.fig_2x2.add_elements(*[DummyPlottable() for _ in range(4)])
+        self.fig_2x2._initialize_parent_smart_figure()
 
     def test_log_scale_x(self):
         """Test log_scale_x property validation and assignment."""
@@ -1056,6 +1074,75 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.fig.set_custom_legend(elements=[line, "Still not a LegendElement..."])
 
+    def test_set_text_padding_params(self):
+        """Test setting text padding parameters."""
+        # Test initial state (empty _pad_params)
+        self.assertEqual(self.fig_2x2._pad_params, {})
+
+        # Test setting individual padding parameters
+        self.fig_2x2.set_text_padding_params(x_label_pad=10.0)
+        self.assertEqual(self.fig_2x2._pad_params["x_label_pad"], 10.0)
+
+        self.fig_2x2.set_text_padding_params(y_label_pad=15.5, title_pad=1.0)
+        self.assertEqual(self.fig_2x2._pad_params["y_label_pad"], 15.5)
+        self.assertEqual(self.fig_2x2._pad_params["x_label_pad"], 10.0)  # Should preserve previous value
+        self.assertEqual(self.fig_2x2._pad_params["title_pad"], 1.0)
+
+        # Test setting multiple parameters at once
+        self.fig_2x2.set_text_padding_params(
+            x_label_pad=5.0,
+            y_label_pad=7.5,
+            title_pad=12.0
+        )
+        self.assertEqual(self.fig_2x2._pad_params["x_label_pad"], 5.0)
+        self.assertEqual(self.fig_2x2._pad_params["y_label_pad"], 7.5)
+        self.assertEqual(self.fig_2x2._pad_params["title_pad"], 12.0)
+
+        # Test setting iterable padding parameters
+        self.fig_2x2.set_text_padding_params(
+            sub_x_labels_pad=[1.0, 2.0, 3.0, 4.0],
+            sub_y_labels_pad=(4.5, 5.5, None, None),
+            subtitles_pad=array([6.0, 7.0, 8.0, 9.0]),
+        )
+        self.assertEqual(self.fig_2x2._pad_params["sub_x_labels_pad"], [1.0, 2.0, 3.0, 4.0])
+        self.assertEqual(self.fig_2x2._pad_params["sub_y_labels_pad"], (4.5, 5.5, None, None))
+        self.assertEqual(list(self.fig_2x2._pad_params["subtitles_pad"]), [6, 7, 8, 9])
+
+        # Test reset functionality
+        self.fig_2x2.set_text_padding_params(reset=True, x_label_pad=25.0)
+        self.assertEqual(self.fig_2x2._pad_params["x_label_pad"], 25.0)
+        self.fig_2x2.set_text_padding_params(reset=True)
+        self.assertEqual(self.fig_2x2._pad_params, {})
+
+        # Test invalid types for single padding parameters
+        with self.assertRaises(TypeError):
+            self.fig_2x2.set_text_padding_params(x_label_pad="invalid")
+
+        with self.assertRaises(TypeError):
+            self.fig_2x2.set_text_padding_params(y_label_pad=[1, 2])  # Should be float/int, not list
+
+        # Test invalid types for iterable padding parameters
+        with self.assertRaises(TypeError):
+            self.fig_2x2.set_text_padding_params(sub_x_labels_pad="invalid")  # String not iterable of numbers
+
+        with self.assertRaises(TypeError):
+            self.fig_2x2.set_text_padding_params(sub_y_labels_pad=[1, 2, "invalid"])  # Invalid element in iterable
+
+        with self.assertRaises(TypeError):
+            self.fig_2x2.set_text_padding_params(sub_x_labels_pad=123)  # Not iterable
+
+        # Test empty iterables are valid
+        self.fig_2x2.set_text_padding_params(sub_x_labels_pad=[])
+        self.assertEqual(self.fig_2x2._pad_params["sub_x_labels_pad"], [])
+
+        # Test raises error when plotting if the padding parameters length are inconsistent
+        with self.assertRaises(GraphingException):
+            self.fig_2x2.set_text_padding_params(sub_x_labels_pad=[1.0, 2.0])
+            self.fig_2x2._prepare_figure()
+        with self.assertRaises(GraphingException):
+            self.fig_2x2.set_text_padding_params(sub_x_labels_pad=[1.0, 2.0, 3.0, 4.0, 5.0])
+            self.fig_2x2._prepare_figure()
+
     def test_methods_return_self(self):
         """Test that methods return self for method chaining."""
         self.assertIs(self.fig.add_elements(), self.fig)
@@ -1063,6 +1150,7 @@ class TestSmartFigure(unittest.TestCase):
         self.assertIs(self.fig.set_tick_params(label_color="green"), self.fig)
         self.assertIs(self.fig.set_grid(visible_x=True), self.fig)
         self.assertIs(self.fig.set_custom_legend(elements=[]), self.fig)
+        self.assertIs(self.fig.set_text_padding_params(x_label_pad=5.0), self.fig)
         self.assertIs(self.fig.set_visual_params(figure_face_color="red"), self.fig)
         self.assertIs(self.fig.set_rc_params({"lines.linewidth": 2}), self.fig)
         with warnings.catch_warnings():
@@ -1450,7 +1538,8 @@ class TestSmartFigureWCS(TestSmartFigure):
         result = (self.fig
                  .set_ticks(number_of_x_ticks=5)
                  .set_tick_params(direction="in")
-                 .set_grid(visible_x=True))
+                 .set_grid(visible_x=True)
+                 .set_text_padding_params(x_label_pad=5.0))
 
         self.assertIs(result, self.fig)
 
@@ -1502,8 +1591,8 @@ class TestSmartTwinAxis(unittest.TestCase):
         self.assertIsNone(self.twin_axis._tick_spacing)
         self.assertIsNone(self.twin_axis._minor_tick_spacing)
         self.assertEqual(self.twin_axis._tick_params, {"major": {}, "minor": {}})
-        self.assertIsNone(self.twin_axis._axes_edge_color)
-        self.assertIsNone(self.twin_axis._axes_line_width)
+        self.assertIsNone(self.twin_axis._edge_color)
+        self.assertIsNone(self.twin_axis._line_width)
         self.assertEqual(self.twin_axis._user_rc_dict, {})
         self.assertEqual(self.twin_axis._default_params, {})
 
@@ -1714,7 +1803,7 @@ class TestSmartTwinAxis(unittest.TestCase):
 
     def test_customize_visual_style(self):
         """Test customizing visual style parameters for twin axis."""
-        self.twin_axis.set_visual_params(axes_edge_color="blue", font_size=12, font_weight="bold")
+        self.twin_axis.set_visual_params(edge_color="blue", font_size=12, font_weight="bold")
         self.twin_axis.set_visual_params()
         self.assertDictEqual(
             self.twin_axis._user_rc_dict,
@@ -1723,8 +1812,8 @@ class TestSmartTwinAxis(unittest.TestCase):
                 "font.weight": "bold",
             },
         )
-        self.assertEqual(self.twin_axis._axes_edge_color, "blue")
-        self.twin_axis.set_visual_params(axes_edge_color="yellow", font_size=19)
+        self.assertEqual(self.twin_axis._edge_color, "blue")
+        self.twin_axis.set_visual_params(edge_color="yellow", font_size=19)
         self.assertDictEqual(
             self.twin_axis._user_rc_dict,
             {
@@ -1732,16 +1821,16 @@ class TestSmartTwinAxis(unittest.TestCase):
                 "font.weight": "bold",
             },
         )
-        self.assertEqual(self.twin_axis._axes_edge_color, "yellow")
+        self.assertEqual(self.twin_axis._edge_color, "yellow")
 
     def test_customize_visual_style_reset(self):
         """Test resetting visual style parameters for twin axis."""
-        self.twin_axis.set_visual_params(axes_label_color="red", axes_line_width=3, axes_edge_color="orange")
-        self.twin_axis.set_visual_params(axes_label_color="yellow", font_size=1)
-        self.twin_axis.set_visual_params(reset=True, axes_edge_color="black")
+        self.twin_axis.set_visual_params(label_color="red", line_width=3, edge_color="orange")
+        self.twin_axis.set_visual_params(label_color="yellow", font_size=1)
+        self.twin_axis.set_visual_params(reset=True, edge_color="black")
         self.assertDictEqual(self.twin_axis._user_rc_dict, {})
-        self.assertEqual(self.twin_axis._axes_edge_color, "black")
-        self.assertIsNone(self.twin_axis._axes_line_width)
+        self.assertEqual(self.twin_axis._edge_color, "black")
+        self.assertIsNone(self.twin_axis._line_width)
 
     def test_matplotlib_style_functional(self):
         """Test matplotlib style functionality for twin axis."""
@@ -1781,7 +1870,7 @@ class TestSmartTwinAxis(unittest.TestCase):
         self.assertIs(self.twin_axis.add_elements(), self.twin_axis)
         self.assertIs(self.twin_axis.set_ticks(ticks=[0, 1]), self.twin_axis)
         self.assertIs(self.twin_axis.set_tick_params(label_color="green"), self.twin_axis)
-        self.assertIs(self.twin_axis.set_visual_params(axes_edge_color="red"), self.twin_axis)
+        self.assertIs(self.twin_axis.set_visual_params(edge_color="red"), self.twin_axis)
         self.assertIs(self.twin_axis.set_rc_params({"lines.linewidth": 2}), self.twin_axis)
 
     def test_hide_spines(self):

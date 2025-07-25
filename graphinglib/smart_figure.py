@@ -292,6 +292,7 @@ class SmartFigure:
         self._minor_x_tick_spacing = None
         self._minor_y_tick_spacing = None
         self._tick_params = {"x major": {}, "y major": {}, "x minor": {}, "y minor": {}}
+        self._pad_params = {}
 
         self.show_grid = False
         self._grid_visible_x = None
@@ -1153,7 +1154,7 @@ class SmartFigure:
             For more information on how to use the ``__setitem__`` method to add elements that span multiple columns or
             rows to the :class:`~graphinglib.smart_figure.SmartFigure`.
         """
-        if any(elements):
+        if len(elements) > 0:
             if len(elements) > self._num_cols * self._num_rows and not self.is_single_subplot:
                 raise ValueError("Too many elements provided for the number of subplots.")
             # Check the type of each element
@@ -1203,17 +1204,14 @@ class SmartFigure:
         # Create an artificial axis to add padding around the figure
         # This is needed because the figure is created with h_pad=0 and w_pad=0 creating 0 padding
         ax_dummy = self._figure.add_subplot(self._gridspec[:, :])
-        ax_dummy.xaxis.grid(False)
-        ax_dummy.yaxis.grid(False)
+        ax_dummy.grid(False)
         ax_dummy.set_facecolor((0, 0, 0, 0))
         ax_dummy.set_zorder(-1)
         ax_dummy.set_navigate(False)
         ax_dummy.tick_params(colors=(0,0,0,0), axis="both", direction="in",
                              labelright=True, labeltop=True, labelsize=0.01)
-        ax_dummy.spines["top"].set_visible(False)
-        ax_dummy.spines["right"].set_visible(False)
-        ax_dummy.spines["left"].set_visible(False)
-        ax_dummy.spines["bottom"].set_visible(False)
+        for spine in ax_dummy.spines:
+            ax_dummy.spines[spine].set_visible(False)
         ax_dummy.set_xticks([0.5])
         ax_dummy.set_yticks([0.5])
         ax_dummy.set_xticklabels([" "])
@@ -1355,6 +1353,17 @@ class SmartFigure:
             :attr:`~graphinglib.smart_figure.SmartFigure.hide_default_legend_elements` and
             :attr:`~graphinglib.smart_figure.SmartFigure.hide_custom_legend_elements` properties.
         """
+        # If given, check the consistency of the sub_x_labels, sub_y_labels and subtitles, as well as their padding
+        num_subplots = len(self)
+        for param in ["sub_x_labels", "sub_y_labels", "subtitles"]:
+            value = getattr(self, param)
+            if value is not None and len(value) != num_subplots:
+                raise GraphingException(f"Number of {param} exceeds the number of subplots.")
+        for param in ["sub_x_labels_pad", "sub_y_labels_pad", "subtitles_pad"]:
+            value = self._pad_params.get(param)
+            if value is not None and len(value) != num_subplots:
+                raise GraphingException(f"Number of {param} exceeds the number of subplots.")
+
         cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
         num_cycle_colors = len(cycle_colors)
 
@@ -1370,6 +1379,8 @@ class SmartFigure:
         if self._global_reference_label:
             self._create_reference_label(self._figure)
             self._figure.suptitle(" ")     # Create a blank title to reserve space
+
+        subtitles_pad = self._pad_params.get("subtitles_pad")
 
         # Plottable and subfigure plotting
         ax = None   # keep track of the last plt.Axes object, needed for sharing axes
@@ -1503,27 +1514,20 @@ class SmartFigure:
                         if self._grid_show_on_top:
                             ax.set_axisbelow(False)
 
-                    # Axes title
-                    if self._title and self.is_single_subplot:
-                        ax.set_title(self._title)
-                    elif self._subtitles is not None and len(self._subtitles) > subplot_i:
-                        ax.set_title(self._subtitles[subplot_i])
+                    # Axes subtitles
+                    if self._subtitles is not None:
+                        pad = subtitles_pad[subplot_i] if subtitles_pad is not None else None
+                        ax.set_title(self._subtitles[subplot_i], pad=pad)
 
                     # Axes sub_labels
-                    sub_x = self._sub_x_labels
-                    sub_y = self._sub_y_labels
-                    self._customize_ax_label(
-                        ax,
-                        sub_x[subplot_i] if sub_x and len(sub_x) > subplot_i else None,
-                        sub_y[subplot_i] if sub_y and len(sub_y) > subplot_i else None,
-                    )
+                    self._customize_ax_label(ax, subplot_i)
 
-                    # Hide spines
+                    # Hidden spines
                     if self._hidden_spines is not None:
                         for spine in set(self._hidden_spines):
                             ax.spines[spine].set_visible(False)
 
-                    # Prepare twin axes
+                    # Twin axes
                     for i, twin_axis in enumerate([self._twin_x_axis, self._twin_y_axis], start=1):
                         if twin_axis is not None:
                             twin_axis._default_params = deepcopy(self._default_params)
@@ -1585,22 +1589,29 @@ class SmartFigure:
             elif element is not None:
                 raise GraphingException(f"Unsupported element type in list: {type(element).__name__}")
 
-        # Axes labels
+        # Set a general axis for adding general labels/title and controlling padding
+        general_ax = self._figure.add_subplot(self._gridspec[:, :])
+        general_ax.grid(False)
+        general_ax.set_facecolor((0, 0, 0, 0))
+        general_ax.set_zorder(-1)
+        general_ax.set_navigate(False)
+        general_ax.tick_params(
+            axis="both", which="both", labelbottom=False, labeltop=False, labelleft=False, labelright=False,
+            bottom=False, top=False, left=False, right=False,
+        )
+        for spine in general_ax.spines:
+            general_ax.spines[spine].set_visible(False)
+
+        # General labels
         if self.is_single_subplot:
             if ax is not None:  # makes sure an element was plotted and that an axis was created
-                self._customize_ax_label(ax, self._x_label, self._y_label)
+                self._customize_ax_label(ax)
         else:
-            suplabel_params = {
-                "fontsize" : plt.rcParams["font.size"],
-                "color" : plt.rcParams["axes.labelcolor"],
-                "fontweight" : plt.rcParams["font.weight"],
-            }
-            self._figure.supxlabel(self._x_label, **suplabel_params)
-            self._figure.supylabel(self._y_label, **suplabel_params)
+            self._customize_ax_label(general_ax)
 
         # Title (if the SmartFigure is not a single subplot)
-        if self._title and not self.is_single_subplot:
-            self._figure.suptitle(self._title)
+        if self._title:
+            general_ax.set_title(self._title, pad=self._pad_params.get("title_pad"))
 
         # General legend
         custom_labels += self._custom_legend_labels
@@ -1686,15 +1697,25 @@ class SmartFigure:
     def _customize_ax_label(
         self,
         ax: Axes,
-        x_label: Optional[str] = None,
-        y_label: Optional[str] = None,
+        subplot_i: Optional[int] = None,
     ) -> None:
         """
         Customizes the x and y labels of the specified Axes according to the SmartFigure's label parameters. This method
         is useful for inheritance to allow each SmartFigure class to customize the labels their way.
         """
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
+        if subplot_i is None:
+            x_label, x_pad = self._x_label, self._pad_params.get("x_label_pad")
+            y_label, y_pad = self._y_label, self._pad_params.get("y_label_pad")
+        else:
+            x_label, x_pad = [None if val is None else val[subplot_i]
+                              for val in [self._sub_x_labels, self._pad_params.get("sub_x_labels_pad")]]
+            y_label, y_pad = [None if val is None else val[subplot_i]
+                              for val in [self._sub_y_labels, self._pad_params.get("sub_y_labels_pad")]]
+
+        if x_label is not None:
+            ax.set_xlabel(x_label, labelpad=x_pad)
+        if y_label is not None:
+            ax.set_ylabel(y_label, labelpad=y_pad)
 
     def _create_reference_label(
         self,
@@ -2293,6 +2314,60 @@ class SmartFigure:
 
         return self
 
+    def set_text_padding_params(
+        self,
+        reset: bool = False,
+        x_label_pad: Optional[float] = None,
+        y_label_pad: Optional[float] = None,
+        title_pad: Optional[float] = None,
+        sub_x_labels_pad: Optional[Iterable[float]] = None,
+        sub_y_labels_pad: Optional[Iterable[float]] = None,
+        subtitles_pad: Optional[Iterable[float]] = None,
+    ) -> Self:
+        """
+        Sets the padding parameters for the figure's text elements. These parameters are used to set the padding between
+        the axes and the labels and titles.
+
+        Parameters
+        ----------
+        reset : bool, optional
+            Whether to reset all previously set padding parameters to their default values before applying the new
+            parameters.
+            Defaults to ``False``.
+        x_label_pad, y_label_pad : float, optional
+            Padding between the main x-axis or y-axis label and the respective axis.
+        title_pad : float, optional
+            Padding between the main title and the top of the axes.
+        sub_x_labels_pad, sub_y_labels_pad : Iterable[float], optional
+            Padding for each subfigure's x-axis and y-axis labels.
+        subtitles_pad : Iterable[float], optional
+            Padding for each subfigure's subtitle.
+
+        Returns
+        -------
+        Self
+            For convenience, the same SmartFigure with the updated text padding parameters.
+        """
+        for pad_param in [x_label_pad, y_label_pad, title_pad]:
+            if pad_param is not None and not isinstance(pad_param, (int, float)):
+                raise TypeError(f"Padding parameters must be of type int or float, got {type(pad_param).__name__}.")
+        for sub_pad_param in [sub_x_labels_pad, sub_y_labels_pad, subtitles_pad]:
+            if sub_pad_param is not None and (not isinstance(sub_pad_param, Iterable) or not all(
+                isinstance(p, (int, float, type(None))) for p in sub_pad_param
+            )):
+                raise TypeError(f"Subfigure padding parameters must be an iterable of ints or floats.")
+
+        if reset:
+            self._pad_params = {}
+
+        params = ["x_label_pad", "y_label_pad", "title_pad", "sub_x_labels_pad", "sub_y_labels_pad", "subtitles_pad"]
+        for param in params:
+            value = locals()[param]
+            if value is not None:
+                self._pad_params[param] = value
+
+        return self
+
     def create_twin_axis(
         self,
         is_y: bool = True,
@@ -2699,27 +2774,6 @@ class SmartFigureWCS(SmartFigure):
             y_axis.set_ticks_visible(False)
             y_axis.set_ticklabel_visible(False)
 
-    def _customize_ax_label(
-        self,
-        ax: Axes,
-        x_label: Optional[str] = None,
-        y_label: Optional[str] = None,
-    ) -> None:
-        """
-        Customizes the x and y labels of the specified Axes according to the SmartFigure's label parameters. This method
-        is useful for inheritance to allow each SmartFigure class to customize the labels their way.
-
-        .. note::
-            This method converts the given ``axes.labelpad`` value so the default value of matplotlib (``4.0``) is
-            converted to the default value of class:`astropy.visualization.wcsaxes.WCSAxes` (``1.0``). The given
-            ``axes.labelpad`` value is divided by ``4`` to achieve this conversion.
-        """
-        x_axis, y_axis = ax.coords
-        if x_label is not None:
-            x_axis.set_axislabel(x_label, minpad=plt.rcParams["axes.labelpad"] / 4)
-        if y_label is not None:
-            y_axis.set_axislabel(y_label, minpad=plt.rcParams["axes.labelpad"] / 4)
-
     def set_ticks(
         self,
         x_ticks: Optional[list[Quantity]] = None,
@@ -3018,12 +3072,12 @@ class SmartTwinAxis:
         self._minor_tick_spacing = None
         self._tick_params = {"major": {}, "minor": {}}
 
-        self._axes_edge_color = None
-        self._axes_line_width = None
+        self._edge_color = None
+        self._line_width = None
         self._hide_spine = None
         self._user_rc_dict = {}
         self._default_params = {}
-        self._axes = None       # used for keeping a reference to the axes which enables drawing the legend on top
+        self._axes = None       # used for keeping a reference to the Axes which enables drawing the legend on top
 
     @property
     def label(self) -> Optional[str]:
@@ -3227,10 +3281,10 @@ class SmartTwinAxis:
             ax_set_lim(*self._axis_lim)
 
         # Artificially modify the axes edge color and line width to modify only a single spine
-        if self._axes_edge_color:
-            ax.spines[spine_str].set_color(self._axes_edge_color)
-        if self._axes_line_width:
-            ax.spines[spine_str].set_linewidth(self._axes_line_width)
+        if self._edge_color:
+            ax.spines[spine_str].set_color(self._edge_color)
+        if self._line_width:
+            ax.spines[spine_str].set_linewidth(self._line_width)
         for spine in ax.spines:
             ax.spines[spine].set_visible(False)
         ax.spines[spine_str].set_visible(not self._hide_spine)
@@ -3380,10 +3434,10 @@ class SmartTwinAxis:
     def set_visual_params(
         self,
         reset: bool = False,
-        axes_edge_color: Optional[str] = None,
-        axes_label_color: Optional[str] = None,
-        axes_label_pad: Optional[float] = None,
-        axes_line_width: Optional[float] = None,
+        edge_color: Optional[str] = None,
+        label_color: Optional[str] = None,
+        label_pad: Optional[float] = None,
+        line_width: Optional[float] = None,
         font_family: Optional[str] = None,
         font_size: Optional[float] = None,
         font_weight: Optional[str] = None,
@@ -3398,14 +3452,14 @@ class SmartTwinAxis:
         reset : bool
             Whether or not to reset the rc parameters to the default values for the specified ``figure_style``.
             Defaults to ``False``.
-        axes_edge_color : str, optional
-            The color of the axes edge.
-        axes_label_color : str, optional
-            The color of the axes labels.
-        axes_label_pad : float, optional
-            The padding between the axes labels and the axes.
-        axes_line_width : float, optional
-            The width of the axes lines.
+        edge_color : str, optional
+            The color of the spine.
+        label_color : str, optional
+            The color of the label.
+        label_pad : float, optional
+            The padding between the axis and the label.
+        line_width : float, optional
+            The width of the spine.
         font_family : str, optional
             The font family to use.
         font_size : float, optional
@@ -3423,17 +3477,17 @@ class SmartTwinAxis:
             For convenience, the same SmartTwinAxis with the updated visual parameters.
         """
         if reset:
-            self._axes_edge_color = axes_edge_color
-            self._axes_line_width = axes_line_width
+            self._edge_color = edge_color
+            self._line_width = line_width
         else:
-            if axes_edge_color is not None:
-                self._axes_edge_color = axes_edge_color
-            if axes_line_width is not None:
-                self._axes_line_width = axes_line_width
+            if edge_color is not None:
+                self._edge_color = edge_color
+            if line_width is not None:
+                self._line_width = line_width
 
         rc_params_dict = {
-            "axes.labelcolor": axes_label_color,
-            "axes.labelpad": axes_label_pad,
+            "axes.labelcolor": label_color,
+            "axes.labelpad": label_pad,
             "font.family": font_family,
             "font.size": font_size,
             "font.weight": font_weight,
