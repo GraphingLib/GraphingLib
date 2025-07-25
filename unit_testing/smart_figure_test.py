@@ -1359,12 +1359,12 @@ class TestSmartFigureWCS(TestSmartFigure):
 
     def test_wcs_specific_attributes(self):
         """Test that SmartFigureWCS has WCS-specific attributes."""
-        self.assertIsNone(self.fig._number_of_x_ticks)
-        self.assertIsNone(self.fig._number_of_y_ticks)
-        self.assertIsNone(self.fig._x_tick_formatter)
-        self.assertIsNone(self.fig._y_tick_formatter)
-        self.assertIsNone(self.fig._minor_x_tick_frequency)
-        self.assertIsNone(self.fig._minor_y_tick_frequency)
+        self.assertIsNone(self.fig._ticks.get("number_of_x_ticks"))
+        self.assertIsNone(self.fig._ticks.get("number_of_y_ticks"))
+        self.assertIsNone(self.fig._ticks.get("x_tick_formatter"))
+        self.assertIsNone(self.fig._ticks.get("y_tick_formatter"))
+        self.assertIsNone(self.fig._ticks.get("minor_x_tick_frequency"))
+        self.assertIsNone(self.fig._ticks.get("minor_y_tick_frequency"))
 
         # Check default tick params
         expected_default_tick_params = {
@@ -1398,12 +1398,12 @@ class TestSmartFigureWCS(TestSmartFigure):
         self.assertIs(result, self.fig)
 
         # Check that attributes are set
-        self.assertEqual(self.fig._number_of_x_ticks, 5)
-        self.assertEqual(self.fig._number_of_y_ticks, 5)
-        self.assertEqual(self.fig._x_tick_formatter, "hh:mm:ss")
-        self.assertTrue(callable(self.fig._y_tick_formatter))
-        self.assertEqual(self.fig._minor_x_tick_frequency, 2)
-        self.assertEqual(self.fig._minor_y_tick_frequency, 3)
+        self.assertEqual(self.fig._ticks.get("number_of_x_ticks"), 5)
+        self.assertEqual(self.fig._ticks.get("number_of_y_ticks"), 5)
+        self.assertEqual(self.fig._ticks.get("x_tick_formatter"), "hh:mm:ss")
+        self.assertTrue(callable(self.fig._ticks.get("y_tick_formatter")))
+        self.assertEqual(self.fig._ticks.get("minor_x_tick_frequency"), 2)
+        self.assertEqual(self.fig._ticks.get("minor_y_tick_frequency"), 3)
 
         # Test invalid combinations - ticks and number of ticks
         with self.assertRaises(GraphingException):
@@ -1524,8 +1524,8 @@ class TestSmartFigureWCS(TestSmartFigure):
 
         # Test that WCS-specific attributes are properly initialized
         self.assertEqual(fig.projection, self.wcs)
-        self.assertIsNone(fig._number_of_x_ticks)
-        self.assertIsNone(fig._number_of_y_ticks)
+        self.assertIsNone(fig._ticks.get("number_of_x_ticks"))
+        self.assertIsNone(fig._ticks.get("number_of_y_ticks"))
 
         # Test that inherited attributes work
         self.assertEqual(fig.num_rows, 2)
@@ -1586,10 +1586,11 @@ class TestSmartTwinAxis(unittest.TestCase):
         self.assertFalse(self.twin_axis.remove_axes)
         self.assertFalse(self.twin_axis.remove_ticks)
         self.assertEqual(len(self.twin_axis._elements), 0)
-        self.assertIsNone(self.twin_axis._ticks)
-        self.assertIsNone(self.twin_axis._tick_labels)
-        self.assertIsNone(self.twin_axis._tick_spacing)
-        self.assertIsNone(self.twin_axis._minor_tick_spacing)
+        self.assertIsNone(self.twin_axis._ticks.get("ticks"))
+        self.assertIsNone(self.twin_axis._ticks.get("tick_labels"))
+        self.assertIsNone(self.twin_axis._ticks.get("tick_spacing"))
+        self.assertIsNone(self.twin_axis._ticks.get("minor_ticks"))
+        self.assertIsNone(self.twin_axis._ticks.get("minor_tick_spacing"))
         self.assertEqual(self.twin_axis._tick_params, {"major": {}, "minor": {}})
         self.assertIsNone(self.twin_axis._edge_color)
         self.assertIsNone(self.twin_axis._line_width)

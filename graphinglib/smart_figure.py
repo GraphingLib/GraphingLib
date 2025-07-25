@@ -281,25 +281,12 @@ class SmartFigure:
         self._gridspec = None
         self._reference_label_i = None
 
-        self._x_ticks = None
-        self._y_ticks = None
-        self._x_tick_labels = None
-        self._y_tick_labels = None
-        self._x_tick_spacing = None
-        self._y_tick_spacing = None
-        self._minor_x_ticks = None
-        self._minor_y_ticks = None
-        self._minor_x_tick_spacing = None
-        self._minor_y_tick_spacing = None
+        self._ticks = {}
         self._tick_params = {"x major": {}, "y major": {}, "x minor": {}, "y minor": {}}
         self._pad_params = {}
 
         self.show_grid = False
-        self._grid_visible_x = None
-        self._grid_visible_y = None
-        self._grid_show_on_top = None
-        self._grid_which_x = None
-        self._grid_which_y = None
+        self._grid = {}
 
         self.hide_custom_legend_elements = False
         self.hide_default_legend_elements = False
@@ -1509,9 +1496,9 @@ class SmartFigure:
 
                     # Customize grid
                     if self._show_grid:
-                        ax.grid(self._grid_visible_x, which=self._grid_which_x, axis="x")
-                        ax.grid(self._grid_visible_y, which=self._grid_which_y, axis="y")
-                        if self._grid_show_on_top:
+                        ax.grid(self._grid.get("visible_x"), which=self._grid.get("which_x"), axis="x")
+                        ax.grid(self._grid.get("visible_y"), which=self._grid.get("which_y"), axis="y")
+                        if self._grid.get("show_on_top"):
                             ax.set_axisbelow(False)
 
                     # Axes subtitles
@@ -1656,36 +1643,36 @@ class SmartFigure:
         Customizes the ticks of the specified Axes according to the SmartFigure's tick parameters. This method is useful
         for inheritance to allow each SmartFigure class to customize the ticks their way.
         """
-        if self._x_ticks is not None:
-            ax.set_xticks(self._x_ticks, self._x_tick_labels)
+        if self._ticks.get("x_ticks") is not None:
+            ax.set_xticks(self._ticks.get("x_ticks"), self._ticks.get("x_tick_labels"))
         ax.tick_params(axis="x", which="major", **self._tick_params["x major"])
-        if self._x_tick_spacing is not None:
+        if self._ticks.get("x_tick_spacing") is not None:
             ax.xaxis.set_major_locator(
-                ticker.MultipleLocator(self._x_tick_spacing)
+                ticker.MultipleLocator(self._ticks.get("x_tick_spacing"))
             )
 
-        if self._y_ticks is not None:
-            ax.set_yticks(self._y_ticks, self._y_tick_labels)
+        if self._ticks.get("y_ticks") is not None:
+            ax.set_yticks(self._ticks.get("y_ticks"), self._ticks.get("y_tick_labels"))
         ax.tick_params(axis="y", which="major", **self._tick_params["y major"])
-        if self._y_tick_spacing is not None:
+        if self._ticks.get("y_tick_spacing") is not None:
             ax.yaxis.set_major_locator(
-                ticker.MultipleLocator(self._y_tick_spacing)
+                ticker.MultipleLocator(self._ticks.get("y_tick_spacing"))
             )
 
-        if self._minor_x_ticks is not None:
-            ax.set_xticks(self._minor_x_ticks, minor=True)
+        if self._ticks.get("minor_x_ticks") is not None:
+            ax.set_xticks(self._ticks.get("minor_x_ticks"), minor=True)
         ax.tick_params(axis="x", which="minor", **self._tick_params["x minor"])
-        if self._minor_x_tick_spacing is not None:
+        if self._ticks.get("minor_x_tick_spacing") is not None:
             ax.xaxis.set_minor_locator(
-                ticker.MultipleLocator(self._minor_x_tick_spacing)
+                ticker.MultipleLocator(self._ticks.get("minor_x_tick_spacing"))
             )
 
-        if self._minor_y_ticks is not None:
-            ax.set_yticks(self._minor_y_ticks, minor=True)
+        if self._ticks.get("minor_y_ticks") is not None:
+            ax.set_yticks(self._ticks.get("minor_y_ticks"), minor=True)
         ax.tick_params(axis="y", which="minor", **self._tick_params["y minor"])
-        if self._minor_y_tick_spacing is not None:
+        if self._ticks.get("minor_y_tick_spacing") is not None:
             ax.yaxis.set_minor_locator(
-                ticker.MultipleLocator(self._minor_y_tick_spacing)
+                ticker.MultipleLocator(self._ticks.get("minor_y_tick_spacing"))
             )
 
         # Remove ticks
@@ -1916,7 +1903,7 @@ class SmartFigure:
             For convenience, the same SmartFigure with the updated rc parameters.
         """
         if reset:
-            self._user_rc_dict = {}
+            self._user_rc_dict.clear()
         for property_, value in rc_params_dict.items():
             self._user_rc_dict[property_] = value
         return self
@@ -2028,10 +2015,14 @@ class SmartFigure:
             "text.color": text_color,
             "text.usetex": use_latex,
         }
+        if reset:
+            for key in rc_params_dict.keys():
+                self._user_rc_dict.pop(key, None)
+
         rc_params_dict = {
             key: value for key, value in rc_params_dict.items() if value is not None
         }
-        self.set_rc_params(rc_params_dict, reset=reset)
+        self.set_rc_params(rc_params_dict)
 
         if hidden_spines is not None:
             if not isinstance(hidden_spines, Iterable):
@@ -2045,6 +2036,7 @@ class SmartFigure:
 
     def set_ticks(
         self,
+        reset: bool = False,
         x_ticks: Optional[Iterable[float]] = None,
         y_ticks: Optional[Iterable[float]] = None,
         x_tick_labels: Optional[Iterable[str]] = None,
@@ -2061,6 +2053,9 @@ class SmartFigure:
 
         Parameters
         ----------
+        reset : bool, optional
+            Whether to reset the ticks to their default values.
+            Defaults to ``False``.
         x_ticks, y_ticks : Iterable[float], optional
             Tick positions for the x or y axis. If a value is specified, the corresponding ``x_tick_spacing`` or
             ``y_tick_spacing`` parameter must be ``None``.
@@ -2109,16 +2104,18 @@ class SmartFigure:
                     f"({len(y_tick_labels)}) must be the same."
                 )
 
-        self._x_ticks = list(x_ticks) if x_ticks is not None else None
-        self._y_ticks = list(y_ticks) if y_ticks is not None else None
-        self._x_tick_labels = list(x_tick_labels) if x_tick_labels is not None else None
-        self._y_tick_labels = list(y_tick_labels) if y_tick_labels is not None else None
-        self._x_tick_spacing = x_tick_spacing
-        self._y_tick_spacing = y_tick_spacing
-        self._minor_x_ticks = list(minor_x_ticks) if minor_x_ticks is not None else None
-        self._minor_y_ticks = list(minor_y_ticks) if minor_y_ticks is not None else None
-        self._minor_x_tick_spacing = minor_x_tick_spacing
-        self._minor_y_tick_spacing = minor_y_tick_spacing
+        if reset:
+            self._ticks.clear()
+
+        params = [
+            "x_ticks", "y_ticks", "x_tick_labels", "y_tick_labels", "x_tick_spacing", "y_tick_spacing",
+            "minor_x_ticks", "minor_y_ticks", "minor_x_tick_spacing", "minor_y_tick_spacing",
+        ]
+        for param in params:
+            value = locals()[param]
+            if value is not None:
+                self._ticks[param] = value
+
         return self
 
     def set_tick_params(
@@ -2158,8 +2155,8 @@ class SmartFigure:
             specifically for each ticks type.
             Defaults to ``"major"``.
         reset : bool, optional
-            If ``True``, all previously given tick parameters are reset to their default values before applying the new
-            parameters.
+            If ``True``, all previously given tick parameters for this axis and tick type are reset to their default
+            values before applying the new parameters.
             Defaults to ``False``.
         direction : {"in", "out", "inout"}, optional
             The direction of the ticks.
@@ -2208,7 +2205,7 @@ class SmartFigure:
         for axis_i in [axis] if axis != "both" else ["x", "y"]:
             for which_i in [which] if which != "both" else ["major", "minor"]:
                 if reset:
-                    self._tick_params[f"{axis_i} {which_i}"] = {}
+                    self._tick_params[f"{axis_i} {which_i}"].clear()
                 for param, value in new_tick_params.items():
                     if value is not None:
                         self._tick_params[f"{axis_i} {which_i}"][param] = value
@@ -2216,6 +2213,7 @@ class SmartFigure:
 
     def set_grid(
         self,
+        reset: bool = False,
         visible_x: bool = True,
         visible_y: bool = True,
         show_on_top: bool = False,
@@ -2231,6 +2229,10 @@ class SmartFigure:
 
         Parameters
         ----------
+        reset : bool, optional
+            If ``True``, resets all previously set grid parameters to their default values before applying the new
+            parameters.
+            Defaults to ``False``.
         visible_x, visible_y : bool, optional
             If ``True``, sets the x-axis or y-axis grid visible. If ``False``, the grid is not shown for the respective
             axis.
@@ -2260,12 +2262,22 @@ class SmartFigure:
         Self
             For convenience, the same SmartFigure with the updated grid parameters.
         """
+        if reset:
+            self._grid.clear()
+            self._user_rc_dict.update({
+                "grid.color": "default",
+                "grid.alpha": "default",
+                "grid.linestyle": "default",
+                "grid.linewidth": "default",
+            })
+
         self._show_grid = True
-        self._grid_visible_x = visible_x
-        self._grid_visible_y = visible_y
-        self._grid_show_on_top = show_on_top
-        self._grid_which_x = which_x
-        self._grid_which_y = which_y
+        params = ["visible_x", "visible_y", "show_on_top", "which_x", "which_y"]
+        for param in params:
+            value = locals()[param]
+            if value is not None:
+                self._grid[param] = value
+
         rc_params_dict = {
             "grid.color": color,
             "grid.alpha": alpha,
@@ -2362,7 +2374,7 @@ class SmartFigure:
                 raise TypeError(f"Subfigure padding parameters must be an iterable of ints or floats.")
 
         if reset:
-            self._pad_params = {}
+            self._pad_params.clear()
 
         params = ["x_label_pad", "y_label_pad", "title_pad", "sub_x_labels_pad", "sub_y_labels_pad", "subtitles_pad"]
         for param in params:
@@ -2675,12 +2687,6 @@ class SmartFigureWCS(SmartFigure):
             elements=elements,
         )
 
-        self._number_of_x_ticks = None
-        self._number_of_y_ticks = None
-        self._x_tick_formatter = None
-        self._y_tick_formatter = None
-        self._minor_x_tick_frequency = None
-        self._minor_y_tick_frequency = None
         self._default_tick_params = {       # The following are the default parameters of WCSAxes objects
             "x major": {"bottom" : True, "top" : True, "labelbottom" : True},
             "y major": {"left" : True, "right" : True, "labelleft" : True},
@@ -2711,20 +2717,22 @@ class SmartFigureWCS(SmartFigure):
         x_axis.set_auto_axislabel(False)
         y_axis.set_auto_axislabel(False)
 
-        if self._x_tick_formatter is not None:
-            x_axis.set_major_formatter(self._x_tick_formatter)
-        if self._y_tick_formatter is not None:
-            y_axis.set_major_formatter(self._y_tick_formatter)
+        if self._ticks.get("x_tick_formatter") is not None:
+            x_axis.set_major_formatter(self._ticks.get("x_tick_formatter"))
+        if self._ticks.get("y_tick_formatter") is not None:
+            y_axis.set_major_formatter(self._ticks.get("y_tick_formatter"))
 
-        x_axis.set_ticks(values=self._x_ticks, spacing=self._x_tick_spacing, number=self._number_of_x_ticks)
-        y_axis.set_ticks(values=self._y_ticks, spacing=self._y_tick_spacing, number=self._number_of_y_ticks)
+        x_axis.set_ticks(values=self._ticks.get("x_ticks"), spacing=self._ticks.get("x_tick_spacing"),
+                         number=self._ticks.get("number_of_x_ticks"))
+        y_axis.set_ticks(values=self._ticks.get("y_ticks"), spacing=self._ticks.get("y_tick_spacing"),
+                         number=self._ticks.get("number_of_y_ticks"))
 
-        if self._minor_x_tick_frequency is not None:
+        if self._ticks.get("minor_x_tick_frequency") is not None:
             x_axis.display_minor_ticks(True)
-            x_axis.set_minor_frequency(self._minor_x_tick_frequency)
-        if self._minor_y_tick_frequency is not None:
+            x_axis.set_minor_frequency(self._ticks.get("minor_x_tick_frequency"))
+        if self._ticks.get("minor_y_tick_frequency") is not None:
             y_axis.display_minor_ticks(True)
-            y_axis.set_minor_frequency(self._minor_y_tick_frequency)
+            y_axis.set_minor_frequency(self._ticks.get("minor_y_tick_frequency"))
 
         # Manually set the tick_params using the recommended API
         for i, axis, ax_params in zip(
@@ -2765,10 +2773,10 @@ class SmartFigureWCS(SmartFigure):
             else:
                 axis.set_ticklabel_visible(False)
 
-        if self._tick_params[f"x minor"].get("length") is not None:
-            ax.tick_params(axis="x", which="minor", length=self._tick_params[f"x minor"].get("length"))
-        if self._tick_params[f"y minor"].get("length") is not None:
-            ax.tick_params(axis="y", which="minor", length=self._tick_params[f"y minor"].get("length"))
+        if self._tick_params["x minor"].get("length") is not None:
+            ax.tick_params(axis="x", which="minor", length=self._tick_params["x minor"].get("length"))
+        if self._tick_params["y minor"].get("length") is not None:
+            ax.tick_params(axis="y", which="minor", length=self._tick_params["y minor"].get("length"))
 
         # Remove ticks
         if self._remove_x_ticks:
@@ -2780,6 +2788,7 @@ class SmartFigureWCS(SmartFigure):
 
     def set_ticks(
         self,
+        reset: bool = False,
         x_ticks: Optional[list[Quantity]] = None,
         y_ticks: Optional[list[Quantity]] = None,
         x_tick_spacing: Optional[Quantity] = None,
@@ -2794,6 +2803,11 @@ class SmartFigureWCS(SmartFigure):
         """
         Sets custom ticks and tick labels.
 
+        Parameters
+        ----------
+        reset : bool, optional
+            Whether to reset the ticks to their default values.
+            Defaults to ``False``.
         x_ticks, y_ticks : list[Quantity], optional
             Tick positions for the x or y axis. If a value is specified, the corresponding ``x_tick_spacing`` and
             ``number_of_x_ticks`` or ``y_tick_spacing`` and ``number_of_y_ticks`` parameters must be ``None``.
@@ -2836,6 +2850,7 @@ class SmartFigureWCS(SmartFigure):
             For convenience, the same SmartFigure with the updated ticks.
         """
         super().set_ticks(
+            reset=reset,
             x_ticks=x_ticks,
             y_ticks=y_ticks,
             x_tick_spacing=x_tick_spacing,
@@ -2853,12 +2868,15 @@ class SmartFigureWCS(SmartFigure):
         ]):
             raise GraphingException("Number of ticks and tick spacing cannot be set simultaneously")
 
-        self._number_of_x_ticks = number_of_x_ticks
-        self._number_of_y_ticks = number_of_y_ticks
-        self._x_tick_formatter = x_tick_formatter
-        self._y_tick_formatter = y_tick_formatter
-        self._minor_x_tick_frequency = minor_x_tick_frequency
-        self._minor_y_tick_frequency = minor_y_tick_frequency
+        params = [
+            "number_of_x_ticks", "number_of_y_ticks", "x_tick_formatter", "y_tick_formatter",
+            "minor_x_tick_frequency", "minor_y_tick_frequency",
+        ]
+        for param in params:
+            value = locals()[param]
+            if value is not None:
+                self._ticks[param] = value
+
         return self
 
     def set_tick_params(
@@ -3069,11 +3087,7 @@ class SmartTwinAxis:
         self.remove_ticks = remove_ticks
         self.elements = elements
 
-        self._ticks = None
-        self._tick_labels = None
-        self._tick_spacing = None
-        self._minor_ticks = None
-        self._minor_tick_spacing = None
+        self._ticks = {}
         self._tick_params = {"major": {}, "minor": {}}
 
         self._edge_color = None
@@ -3343,20 +3357,20 @@ class SmartTwinAxis:
         else:
             ax_set_ticks, axis_str, ax_axis = self._axes.set_xticks, "x", self._axes.xaxis
 
-        if self._ticks is not None:
-            ax_set_ticks(self._ticks, self._tick_labels)
+        if self._ticks.get("ticks") is not None:
+            ax_set_ticks(self._ticks.get("ticks"), self._ticks.get("tick_labels"))
         self._axes.tick_params(axis=axis_str, which="major", **self._tick_params["major"])
-        if self._tick_spacing is not None:
+        if self._ticks.get("tick_spacing") is not None:
             ax_axis.set_major_locator(
-                ticker.MultipleLocator(self._tick_spacing)
+                ticker.MultipleLocator(self._ticks.get("tick_spacing"))
             )
 
-        if self._minor_ticks is not None:
-            ax_set_ticks(self._minor_ticks, minor=True)
+        if self._ticks.get("minor_ticks") is not None:
+            ax_set_ticks(self._ticks.get("minor_ticks"), minor=True)
         self._axes.tick_params(axis=axis_str, which="minor", **self._tick_params["minor"])
-        if self._minor_tick_spacing is not None:
+        if self._ticks.get("minor_tick_spacing") is not None:
             ax_axis.set_minor_locator(
-                ticker.MultipleLocator(self._minor_tick_spacing)
+                ticker.MultipleLocator(self._ticks.get("minor_tick_spacing"))
             )
 
         # Remove ticks
@@ -3430,7 +3444,9 @@ class SmartTwinAxis:
             For convenience, the same SmartTwinAxis with the updated rc parameters.
         """
         if reset:
-            self._user_rc_dict = {}
+            self._user_rc_dict.clear()
+            self._edge_color = None
+            self._line_width = None
         for property_, value in rc_params_dict.items():
             self._user_rc_dict[property_] = value
         return self
@@ -3480,15 +3496,6 @@ class SmartTwinAxis:
         Self
             For convenience, the same SmartTwinAxis with the updated visual parameters.
         """
-        if reset:
-            self._edge_color = edge_color
-            self._line_width = line_width
-        else:
-            if edge_color is not None:
-                self._edge_color = edge_color
-            if line_width is not None:
-                self._line_width = line_width
-
         rc_params_dict = {
             "axes.labelcolor": label_color,
             "axes.labelpad": label_pad,
@@ -3497,10 +3504,22 @@ class SmartTwinAxis:
             "font.weight": font_weight,
             "text.usetex": use_latex,
         }
+
+        if reset:
+            self._edge_color = edge_color
+            self._line_width = line_width
+            for key in rc_params_dict.keys():
+                self._user_rc_dict.pop(key, None)
+        else:
+            if edge_color is not None:
+                self._edge_color = edge_color
+            if line_width is not None:
+                self._line_width = line_width
+
         rc_params_dict = {
             key: value for key, value in rc_params_dict.items() if value is not None
         }
-        self.set_rc_params(rc_params_dict, reset=reset)
+        self.set_rc_params(rc_params_dict)
 
         if hide_spine is not None:
             if not isinstance(hide_spine, bool):
@@ -3511,6 +3530,7 @@ class SmartTwinAxis:
 
     def set_ticks(
         self,
+        reset: bool = False,
         ticks: Optional[Iterable[float]] = None,
         tick_labels: Optional[Iterable[str]] = None,
         tick_spacing: Optional[float] = None,
@@ -3522,6 +3542,9 @@ class SmartTwinAxis:
 
         Parameters
         ----------
+        reset : bool, optional
+            Whether to reset the tick parameters to their default values.
+            Defaults to ``False``.
         ticks : Iterable[float], optional
             Tick positions for the axis. If a value is specified, the ``tick_spacing`` parameter must be ``None``.
         tick_labels : Iterable[str], optional
@@ -3554,12 +3577,15 @@ class SmartTwinAxis:
                     f"Number of ticks ({len(ticks)}) and number of tick labels ({len(tick_labels)}) must be the same."
                 )
 
-        self._custom_ticks = True
-        self._ticks = list(ticks) if ticks is not None else None
-        self._tick_labels = list(tick_labels) if tick_labels is not None else None
-        self._tick_spacing = tick_spacing
-        self._minor_ticks = list(minor_ticks) if minor_ticks is not None else None
-        self._minor_tick_spacing = minor_tick_spacing
+        if reset:
+            self._ticks.clear()
+
+        params = ["ticks", "tick_labels", "tick_spacing", "minor_ticks", "minor_tick_spacing"]
+        for param in params:
+            value = locals()[param]
+            if value is not None:
+                self._ticks[param] = value
+
         return self
 
     def set_tick_params(
@@ -3636,7 +3662,7 @@ class SmartTwinAxis:
         }
         for which_i in [which] if which != "both" else ["major", "minor"]:
             if reset:
-                self._tick_params[which_i] = {}
+                self._tick_params[which_i].clear()
             for param, value in new_tick_params.items():
                 if value is not None:
                     self._tick_params[which_i][param] = value
