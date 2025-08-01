@@ -872,11 +872,9 @@ class TestSmartFigure(unittest.TestCase):
         self.assertTrue(os.path.exists("test_smart_figure_output.pdf"))
         os.remove("test_smart_figure_output.pdf")
         # Test saving with split_pdf and a non-PDF extension
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
+        with self.assertLogs(level='WARNING') as log:
             self.fig.save("test_smart_figure_output.png", split_pdf=True)
-            self.assertTrue(len(w) > 0)
-            self.assertTrue(any("File extension" in str(warning.message) for warning in w))
+            self.assertTrue(any("File extension" in record for record in log.output))
         self.assertTrue(os.path.exists("test_smart_figure_output.pdf"))
         os.remove("test_smart_figure_output.pdf")
 
