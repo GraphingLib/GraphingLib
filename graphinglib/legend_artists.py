@@ -347,7 +347,7 @@ class LegendMarker(LegendElement):
     def marker_style(self, value: Any) -> None:
         try:
             MarkerStyle(value)  # Validate the marker style
-        except:
+        except Exception:
             raise ValueError(f"'{value}' is not a valid marker style.")
         self._marker_style = value
 

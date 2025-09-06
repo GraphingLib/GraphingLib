@@ -114,6 +114,11 @@ class SmartFigure:
         If set to ``True``, the reference label will be placed in the top left corner of the global SmartFigure. This is
         useful for labeling the entire figure rather than individual subfigures.
         Defaults to ``False``.
+
+        .. warning::
+            As the global reference label is placed more left than the reference label, this forces the horizontal shift
+            of the axes, which may lead to overlapping between axes. Consider modifying the `size` or `width_padding`
+            parameters to avoid this issue.
     reference_label_loc : Literal["inside", "outside"]
         Location of the reference labels of the SubFigures, either "inside" or "outside".
         Defaults to ``"outside"``.
@@ -1190,15 +1195,13 @@ class SmartFigure:
 
         # Create an artificial axis to add padding around the figure
         # This is needed because the figure is created with h_pad=0 and w_pad=0 creating 0 padding
-        ax_dummy = self._figure.add_subplot(self._gridspec[:, :])
+        ax_dummy = self._figure.add_subplot(self._gridspec[:, :], frameon=False)
         ax_dummy.grid(False)
         ax_dummy.set_facecolor((0, 0, 0, 0))
         ax_dummy.set_zorder(-1)
         ax_dummy.set_navigate(False)
         ax_dummy.tick_params(colors=(0,0,0,0), axis="both", direction="in",
                              labelright=True, labeltop=True, labelsize=0.01)
-        for spine in ax_dummy.spines:
-            ax_dummy.spines[spine].set_visible(False)
         ax_dummy.set_xticks([0.5])
         ax_dummy.set_yticks([0.5])
         ax_dummy.set_xticklabels([" "])
@@ -1298,6 +1301,8 @@ class SmartFigure:
             self._figure.get_layout_engine().set(w_pad=0, h_pad=0)
             self._reference_label_i = self._reference_label_start_index
             self._prepare_figure(is_matplotlib_style)
+            self._figure.canvas.draw()
+            self._align_shared_spines()
         except Exception as e:
             plt.close()
             raise e
@@ -1345,14 +1350,15 @@ class SmartFigure:
         for param in ["sub_x_labels", "sub_y_labels", "subtitles"]:
             value = getattr(self, param)
             if value is not None and len(value) != num_subplots:
-                raise GraphingException(f"Number of {param} exceeds the number of subplots.")
+                raise GraphingException(f"Number of {param} must be equal to the number of subplots.")
         for param in ["sub_x_labels_pad", "sub_y_labels_pad", "subtitles_pad"]:
             value = self._pad_params.get(param)
             if value is not None and len(value) != num_subplots:
-                raise GraphingException(f"Number of {param} exceeds the number of subplots.")
+                raise GraphingException(f"Number of {param} must be equal to the number of subplots.")
 
         cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
         num_cycle_colors = len(cycle_colors)
+        subtitles_pad = self._pad_params.get("subtitles_pad")
 
         self._gridspec = self._figure.add_gridspec(
             self._num_rows,
@@ -1367,12 +1373,11 @@ class SmartFigure:
             self._create_reference_label(self._figure)
             self._figure.suptitle(" ")     # Create a blank title to reserve space
 
-        subtitles_pad = self._pad_params.get("subtitles_pad")
-
-        # Plottable and subfigure plotting
         ax = None   # keep track of the last plt.Axes object, needed for sharing axes
         default_labels, default_handles = [], []
         custom_labels, custom_handles = [], []
+
+        # Plottable and subfigure plotting
         for subplot_i, ((rows, cols), element) in enumerate(self._ordered_elements.items()):
             if isinstance(element, SmartFigure):
                 element._default_params = deepcopy(self._default_params)
@@ -1565,7 +1570,7 @@ class SmartFigure:
                                     draggable=True,
                                     **legend_params,
                                 )
-                            except:
+                            except Exception:
                                 _legend = legend_ax.legend(
                                     **legend_params,
                                 )
@@ -1577,7 +1582,7 @@ class SmartFigure:
                 raise GraphingException(f"Unsupported element type in list: {type(element).__name__}")
 
         # Set a general axis for adding general labels/title and controlling padding
-        general_ax = self._figure.add_subplot(self._gridspec[:, :])
+        general_ax = self._figure.add_subplot(self._gridspec[:, :], frameon=False)
         general_ax.grid(False)
         general_ax.set_facecolor((0, 0, 0, 0))
         general_ax.set_zorder(-1)
@@ -1586,8 +1591,6 @@ class SmartFigure:
             axis="both", which="both", labelbottom=False, labeltop=False, labelleft=False, labelright=False,
             bottom=False, top=False, left=False, right=False,
         )
-        for spine in general_ax.spines:
-            general_ax.spines[spine].set_visible(False)
 
         # General labels
         if self.is_single_subplot:
@@ -1619,7 +1622,7 @@ class SmartFigure:
                         **legend_params,
                         draggable=True,
                     )
-                except:
+                except Exception:
                     _legend = self._figure.legend(
                         **legend_params,
                     )
@@ -1634,6 +1637,91 @@ class SmartFigure:
                 "handles": {"default": default_handles, "custom": custom_handles},
             }
         return legend_info
+
+    def _get_all_axes_recursive(self, figure_or_subfigure: Figure | SubFigure) -> list[Axes]:
+        """
+        Recursively collect all axes from a figure and its subfigures, avoiding duplicates. This is used for aligning
+        the spines when sharing axes.
+        """
+        all_axes = []
+        previous_axes = set()
+
+        # Get direct axes from this figure/subfigure
+        direct_axes = figure_or_subfigure.get_axes()
+        for ax in direct_axes:
+            ax_id = id(ax)
+            if ax_id not in previous_axes:
+                all_axes.append(ax)
+                previous_axes.add(ax_id)
+
+        # Recursively get axes from subfigures if they exist
+        if hasattr(figure_or_subfigure, "subfigs"):
+            for subfig in figure_or_subfigure.subfigs:
+                subfig_axes = self._get_all_axes_recursive(subfig)  # only axes in subfigures are extracted
+                for ax in subfig_axes:
+                    ax_id = id(ax)
+                    if ax_id not in previous_axes:
+                        all_axes.append(ax)
+                        previous_axes.add(ax_id)
+
+        return all_axes
+
+    def _align_shared_spines(self) -> None:
+        """
+        Aligns subplot spines when sharing x or y axes. This method solves the constrained_layout behavior of
+        misaligning the edge of subplots to fill the entire grid space, which leads to misaligned spines even when
+        sharing the x or y axes.
+        """
+        for element in self._ordered_elements.values():
+            if isinstance(element, SmartFigure):
+                element._align_shared_spines()
+
+        if not self.is_single_subplot:
+            tolerance = 0.2  # allowed difference between axes to consider them in the same column/row
+            for axis, pos_0_kw, size_kw in zip("xy", ["x0", "y0"],  ["width", "height"]):
+                if getattr(self, f"_share_{axis}"):  # the axis is shared
+                    try:
+                        plot_axes = self._get_all_axes_recursive(self._figure)  # gives all the axes in the figure
+                        if len(plot_axes) <= 1:
+                            continue
+
+                        # Group axes by row/column by looking at their center positions with get_position()
+                        groups = []
+                        for ax in plot_axes:
+                            pos = ax.get_position()
+                            center =  getattr(pos, pos_0_kw) + getattr(pos, size_kw) / 2
+
+                            ax_placed = False  # whether the axis has been found close enough to an existing group
+                            for group in groups:
+                                ref_pos = group[0].get_position()
+                                ref_center = getattr(ref_pos, pos_0_kw) + getattr(ref_pos, size_kw) / 2
+
+                                if abs(center - ref_center) < tolerance:
+                                    group.append(ax)
+                                    ax_placed = True
+                                    break
+
+                            if not ax_placed:
+                                groups.append([ax])
+
+                        for group in groups:
+                            if len(group) <= 1:
+                                continue
+
+                            positions = [ax.get_position() for ax in group]
+                            lower_edge = max(getattr(pos, pos_0_kw) for pos in positions)
+                            upper_edge = min(getattr(pos, pos_0_kw) + getattr(pos, size_kw) for pos in positions)
+                            aligned_size = upper_edge - lower_edge
+                            for ax in group:
+                                current_pos = ax.get_position()
+                                if axis == "x":
+                                    new_bbox = [lower_edge, current_pos.y0, aligned_size, current_pos.height]
+                                else:
+                                    new_bbox = [current_pos.x0, lower_edge, current_pos.width, aligned_size]
+                                ax.set_position(new_bbox)
+
+                    except Exception:
+                        continue
 
     def _customize_ticks(
         self,
@@ -3658,7 +3746,7 @@ class SmartTwinAxis:
             "labelbottom": draw_labels,
             "labeltop": draw_labels,
             "labelleft": draw_labels,
-            "labelright": draw_labels
+            "labelright": draw_labels,
         }
         for which_i in [which] if which != "both" else ["major", "minor"]:
             if reset:
