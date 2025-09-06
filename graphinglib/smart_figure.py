@@ -1302,7 +1302,7 @@ class SmartFigure:
             self._reference_label_i = self._reference_label_start_index
             self._prepare_figure(is_matplotlib_style)
             self._figure.canvas.draw()
-            self._align_shared_spines()
+            self._align_shared_x_spines()
         except Exception as e:
             plt.close()
             raise e
@@ -1666,62 +1666,55 @@ class SmartFigure:
 
         return all_axes
 
-    def _align_shared_spines(self) -> None:
+    def _align_shared_x_spines(self) -> None:
         """
-        Aligns subplot spines when sharing x or y axes. This method solves the constrained_layout behavior of
-        misaligning the edge of subplots to fill the entire grid space, which leads to misaligned spines even when
-        sharing the x or y axes.
+        Aligns subplot spines when sharing x axes. This method solves the constrained_layout behavior of misaligning the
+        edge of subplots to fill the entire grid space, which leads to misaligned spines even when sharing the x axes.
         """
         for element in self._ordered_elements.values():
             if isinstance(element, SmartFigure):
-                element._align_shared_spines()
+                element._align_shared_x_spines()
 
-        if not self.is_single_subplot:
-            tolerance = 0.2  # allowed difference between axes to consider them in the same column/row
-            for axis, pos_0_kw, size_kw in zip("xy", ["x0", "y0"],  ["width", "height"]):
-                if getattr(self, f"_share_{axis}"):  # the axis is shared
-                    try:
-                        plot_axes = self._get_all_axes_recursive(self._figure)  # gives all the axes in the figure
-                        if len(plot_axes) <= 1:
-                            continue
+        tolerance = 0.3  # allowed difference between axes to consider them to be in the same column
+        if self._share_x and self._num_rows > 1:
+            try:
+                plot_axes = self._get_all_axes_recursive(self._figure)  # gives all the axes in the figure
+                if len(plot_axes) <= 1:
+                    return
 
-                        # Group axes by row/column by looking at their center positions with get_position()
-                        groups = []
-                        for ax in plot_axes:
-                            pos = ax.get_position()
-                            center =  getattr(pos, pos_0_kw) + getattr(pos, size_kw) / 2
+                # Group axes by column by looking at their center positions with get_position()
+                groups = []
+                for ax in plot_axes:
+                    pos = ax.get_position()
+                    center = pos.x0 + pos.width / 2
 
-                            ax_placed = False  # whether the axis has been found close enough to an existing group
-                            for group in groups:
-                                ref_pos = group[0].get_position()
-                                ref_center = getattr(ref_pos, pos_0_kw) + getattr(ref_pos, size_kw) / 2
+                    ax_placed = False  # whether the axis has been found close enough to an existing group
+                    for group in groups:
+                        ref_pos = group[0].get_position()
+                        ref_center = ref_pos.x0 + ref_pos.width / 2
 
-                                if abs(center - ref_center) < tolerance:
-                                    group.append(ax)
-                                    ax_placed = True
-                                    break
+                        if abs(center - ref_center) < tolerance:
+                            group.append(ax)
+                            ax_placed = True
+                            break
 
-                            if not ax_placed:
-                                groups.append([ax])
+                    if not ax_placed:
+                        groups.append([ax])
 
-                        for group in groups:
-                            if len(group) <= 1:
-                                continue
-
-                            positions = [ax.get_position() for ax in group]
-                            lower_edge = max(getattr(pos, pos_0_kw) for pos in positions)
-                            upper_edge = min(getattr(pos, pos_0_kw) + getattr(pos, size_kw) for pos in positions)
-                            aligned_size = upper_edge - lower_edge
-                            for ax in group:
-                                current_pos = ax.get_position()
-                                if axis == "x":
-                                    new_bbox = [lower_edge, current_pos.y0, aligned_size, current_pos.height]
-                                else:
-                                    new_bbox = [current_pos.x0, lower_edge, current_pos.width, aligned_size]
-                                ax.set_position(new_bbox)
-
-                    except Exception:
+                for group in groups:
+                    if len(group) <= 1:
                         continue
+
+                    positions = [ax.get_position() for ax in group]
+                    rightmost_left_edge = max(pos.x0 for pos in positions)
+                    leftmost_right_edge = min(pos.x0 + pos.width for pos in positions)
+                    aligned_size = leftmost_right_edge - rightmost_left_edge
+                    for ax in group:
+                        current_pos = ax.get_position()
+                        ax.set_position([rightmost_left_edge, current_pos.y0, aligned_size, current_pos.height])
+
+            except Exception:
+                return
 
     def _customize_ticks(
         self,
