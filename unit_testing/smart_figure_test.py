@@ -166,6 +166,41 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(GraphingException):
             new_fig.num_cols = 1
 
+    def test_shape(self):
+        """Test shape property."""
+        self.assertEqual(self.fig.shape, (1, 1))
+        self.assertEqual(self.fig_2x3.shape, (2, 3))
+        self.assertEqual(self.fig_1x4.shape, (1, 4))
+        self.assertEqual(self.fig_3x1.shape, (3, 1))
+        self.assertEqual(self.fig_2x2.shape, (2, 2))
+        # Invalid types
+        with self.assertRaises(TypeError):
+            self.fig.shape = "a", 2
+        with self.assertRaises(TypeError):
+            self.fig.shape = 2, "a"
+        with self.assertRaises(TypeError):
+            self.fig.shape = 0.5, 2
+        with self.assertRaises(TypeError):
+            self.fig.shape = 2, 0.5
+        # Invalid values
+        with self.assertRaises(ValueError):
+            self.fig.shape = 0, 1
+        with self.assertRaises(ValueError):
+            self.fig.shape = 1, 0
+        # Valid set/get
+        self.fig.shape = 2, 2
+        self.assertEqual(self.fig.num_rows, 2)
+        self.assertEqual(self.fig.num_cols, 2)
+        # Changing shape with elements present
+        new_fig = self.fig.copy_with(num_rows=2, num_cols=2)
+        new_fig[:, :] = DummyPlottable()
+        with self.assertRaises(GraphingException):
+            new_fig.shape = 1, 3
+        with self.assertRaises(GraphingException):
+            new_fig.shape = 3, 1
+        new_fig.shape = 3, 3
+        self.assertEqual(new_fig.shape, (3, 3))
+
     def test_size(self):
         """Test size property validation and assignment."""
         # Invalid

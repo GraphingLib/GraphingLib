@@ -349,6 +349,14 @@ class SmartFigure:
         self._num_cols = value
 
     @property
+    def shape(self) -> tuple[int, int]:
+        return self._num_rows, self._num_cols
+
+    @shape.setter
+    def shape(self, value: tuple[int, int]) -> None:
+        self.num_rows, self.num_cols = value
+
+    @property
     def x_label(self) -> str:
         return self._x_label
 
