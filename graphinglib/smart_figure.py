@@ -1247,17 +1247,20 @@ class SmartFigure:
 
         Parameters
         ----------
-        file_name : str
-            The name of the file to save the figure to. The file extension determines the format (e.g., .png, .pdf).
-            If a :class:`~matplotlib.backends.backend_pdf.PdfPages` object is provided, the figure will be saved to
-            that PDF file instead.
+        file_name : str | PdfPages
+            The name of the file or the PdfPages object to save the figure to. The file extension determines the format
+            (e.g., .png, .pdf). If a :class:`~matplotlib.backends.backend_pdf.PdfPages` object is provided, the figure
+            will be saved to that PDF file instead. Note that the provided PdfPages object must be opened by the user,
+            preferably using a context manager (``with PdfPages(...) as pdf:``).
         dpi : int, optional
             The resolution in dots per inch. If None, the figure's DPI is used.
         transparent : bool, optional
-            Whether to save the figure with a transparent background.
+            Whether to save the figure with a transparent background. A file extension that supports transparency (e.g.
+            .png) should be used.
             Defaults to ``False``.
         split_pdf : bool, optional
-            If True, the subplots of the SmartFigure will be saved as separate pages in a PDF file.
+            Whether to save each subplot of the SmartFigure as a separate page in a PDF file.
+            Defaults to ``False``.
 
         Returns
         -------

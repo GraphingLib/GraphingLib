@@ -897,15 +897,19 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.save("test_smart_figure_output.png")
         self.assertTrue(os.path.exists("test_smart_figure_output.png"))
         os.remove("test_smart_figure_output.png")
+
         # Test saving with PdfPages
         with PdfPages("test_smart_figure_output.pdf") as pdf:
             self.fig.save(pdf)
+            self.fig.save(pdf, split_pdf=True)
         self.assertTrue(os.path.exists("test_smart_figure_output.pdf"))
         os.remove("test_smart_figure_output.pdf")
+
         # Test saving with split_pdf
         self.fig.save("test_smart_figure_output.pdf", split_pdf=True)
         self.assertTrue(os.path.exists("test_smart_figure_output.pdf"))
         os.remove("test_smart_figure_output.pdf")
+
         # Test saving with split_pdf and a non-PDF extension
         with self.assertLogs(level='WARNING') as log:
             self.fig.save("test_smart_figure_output.png", split_pdf=True)
