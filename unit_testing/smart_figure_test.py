@@ -7,6 +7,7 @@ from matplotlib import use as matplotlib_use
 matplotlib_use("Agg")  # Use non-GUI backend for tests
 
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 from numpy import linspace, sin, pi, array
 from astropy.wcs import WCS
 import astropy.units as u
@@ -896,6 +897,21 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.save("test_smart_figure_output.png")
         self.assertTrue(os.path.exists("test_smart_figure_output.png"))
         os.remove("test_smart_figure_output.png")
+        # Test saving with PdfPages
+        with PdfPages("test_smart_figure_output.pdf") as pdf:
+            self.fig.save(pdf)
+        self.assertTrue(os.path.exists("test_smart_figure_output.pdf"))
+        os.remove("test_smart_figure_output.pdf")
+        # Test saving with split_pdf
+        self.fig.save("test_smart_figure_output.pdf", split_pdf=True)
+        self.assertTrue(os.path.exists("test_smart_figure_output.pdf"))
+        os.remove("test_smart_figure_output.pdf")
+        # Test saving with split_pdf and a non-PDF extension
+        with self.assertLogs(level='WARNING') as log:
+            self.fig.save("test_smart_figure_output.png", split_pdf=True)
+            self.assertTrue(any("File extension" in record for record in log.output))
+        self.assertTrue(os.path.exists("test_smart_figure_output.pdf"))
+        os.remove("test_smart_figure_output.pdf")
 
     def test_auto_assign_default_params(self):
         """Test automatic assignment of default parameters."""

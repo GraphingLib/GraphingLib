@@ -18,6 +18,7 @@ from matplotlib.transforms import ScaledTranslation
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.axes import Axes
 from matplotlib.projections import get_projection_names
+from matplotlib.backends.backend_pdf import PdfPages
 
 from .file_manager import (
     FileLoader,
@@ -1236,9 +1237,10 @@ class SmartFigure:
 
     def save(
         self,
-        file_name: str,
+        file_name: str | PdfPages,
         dpi: Optional[int] = None,
         transparent: bool = False,
+        split_pdf: bool = False,
     ) -> Self:
         """
         Saves the :class:`~graphinglib.smart_figure.SmartFigure` to a file.
@@ -1247,11 +1249,15 @@ class SmartFigure:
         ----------
         file_name : str
             The name of the file to save the figure to. The file extension determines the format (e.g., .png, .pdf).
+            If a :class:`~matplotlib.backends.backend_pdf.PdfPages` object is provided, the figure will be saved to
+            that PDF file instead.
         dpi : int, optional
             The resolution in dots per inch. If None, the figure's DPI is used.
         transparent : bool, optional
             Whether to save the figure with a transparent background.
             Defaults to ``False``.
+        split_pdf : bool, optional
+            If True, the subplots of the SmartFigure will be saved as separate pages in a PDF file.
 
         Returns
         -------
@@ -1259,12 +1265,32 @@ class SmartFigure:
             The same SmartFigure instance, allowing for method chaining.
         """
         self._initialize_parent_smart_figure()
-        plt.savefig(
-            file_name,
-            bbox_inches="tight",
-            dpi=dpi if dpi is not None else "figure",
-            transparent=transparent,
-        )
+
+        if isinstance(file_name, PdfPages) or split_pdf:
+            name = file_name if not isinstance(file_name, PdfPages) else file_name._filename
+            if not name.endswith(".pdf"):
+                name = f"{''.join(name.split('.')[:-1])}.pdf"
+                file_name = name if not isinstance(file_name, PdfPages) else PdfPages(name)
+                warning("File extension was changed to '.pdf' to allow for splitting the figure into PdfPages.")
+
+        if isinstance(file_name, PdfPages):
+            file_name.savefig(self._figure, bbox_inches="tight", dpi=dpi if dpi is not None else "figure")
+        elif split_pdf:
+            with PdfPages(file_name) as pdf:
+                for element in self._ordered_elements.values():
+                    if isinstance(element, (Plottable, list)):
+                        subfig = self.copy_with(elements=[element], num_rows=1, num_cols=1)
+                    elif isinstance(element, SmartFigure):
+                        subfig = element
+                    subfig.save(pdf, dpi)
+        else:
+            plt.savefig(
+                file_name,
+                bbox_inches="tight",
+                dpi=dpi if dpi is not None else "figure",
+                transparent=transparent,
+            )
+        
         plt.close()
         plt.rcParams.update(plt.rcParamsDefault)
         self._figure = None
