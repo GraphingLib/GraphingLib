@@ -917,6 +917,13 @@ class TestSmartFigure(unittest.TestCase):
         self.assertTrue(os.path.exists("test_smart_figure_output.pdf"))
         os.remove("test_smart_figure_output.pdf")
 
+        # Test saving with split_pdf and no extension
+        with self.assertLogs(level='WARNING') as log:
+            self.fig.save("figure", split_pdf=True)
+            self.assertTrue(any("File extension" in record for record in log.output))
+        self.assertTrue(os.path.exists("figure.pdf"))
+        os.remove("figure.pdf")
+
     def test_auto_assign_default_params(self):
         """Test automatic assignment of default parameters."""
         x = linspace(0, 3 * pi, 200)

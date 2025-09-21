@@ -1267,33 +1267,45 @@ class SmartFigure:
         Self
             The same SmartFigure instance, allowing for method chaining.
         """
+        def recursive_save(pdf_file: PdfPages) -> None:
+            """ Recursively saves each element of a SmartFigure to a separate page in the provided PdfPages object. """
+            for element in self._ordered_elements.values():
+                if isinstance(element, (Plottable, list)):
+                    subfig = self.copy_with(elements=[element], num_rows=1, num_cols=1)
+                elif isinstance(element, SmartFigure):
+                    subfig = element
+                subfig.save(pdf_file, dpi, transparent)
+
         self._initialize_parent_smart_figure()
 
-        if isinstance(file_name, PdfPages) or split_pdf:
-            name = file_name if not isinstance(file_name, PdfPages) else file_name._filename
-            if not name.endswith(".pdf"):
-                name = f"{''.join(name.split('.')[:-1])}.pdf"
-                file_name = name if not isinstance(file_name, PdfPages) else PdfPages(name)
+        if not isinstance(file_name, PdfPages) and split_pdf:
+            if not file_name.endswith(".pdf"):
+                dot_pos = file_name.rfind(".")
+                if dot_pos == -1:  # no extension
+                    file_name += ".pdf"
+                else:  # wrong extension
+                    file_name = f"{file_name[:dot_pos]}.pdf"
                 warning("File extension was changed to '.pdf' to allow for splitting the figure into PdfPages.")
 
-        if isinstance(file_name, PdfPages):
-            file_name.savefig(self._figure, bbox_inches="tight", dpi=dpi if dpi is not None else "figure")
-        elif split_pdf:
-            with PdfPages(file_name) as pdf:
-                for element in self._ordered_elements.values():
-                    if isinstance(element, (Plottable, list)):
-                        subfig = self.copy_with(elements=[element], num_rows=1, num_cols=1)
-                    elif isinstance(element, SmartFigure):
-                        subfig = element
-                    subfig.save(pdf, dpi)
+        if split_pdf:
+            if isinstance(file_name, PdfPages):
+                recursive_save(file_name)
+            else:
+                pdf_file = PdfPages(file_name)
+                with pdf_file as pdf:
+                    recursive_save(pdf)
+
         else:
-            plt.savefig(
-                file_name,
-                bbox_inches="tight",
-                dpi=dpi if dpi is not None else "figure",
-                transparent=transparent,
-            )
-        
+            save_kwargs = {
+                "bbox_inches": "tight",
+                "dpi": dpi if dpi is not None else "figure",
+                "transparent": transparent,
+            }
+            if isinstance(file_name, PdfPages):
+                file_name.savefig(self._figure, **save_kwargs)
+            else:
+                plt.savefig(file_name, **save_kwargs)
+
         plt.close()
         plt.rcParams.update(plt.rcParamsDefault)
         self._figure = None
