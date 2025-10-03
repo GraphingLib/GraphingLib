@@ -1699,7 +1699,7 @@ class SmartFigure:
         direct_axes = figure_or_subfigure.get_axes()
         for ax in direct_axes:
             ax_id = id(ax)
-            if ax_id not in previous_axes:
+            if ax_id not in previous_axes and ax.get_navigate():  # skip dummy axes which are not navigable
                 all_axes.append(ax)
                 previous_axes.add(ax_id)
 
