@@ -781,7 +781,7 @@ class SmartFigure:
         replacing them, use the :meth:`~graphinglib.smart_figure.SmartFigure.add_elements` or
         :meth:`~graphinglib.smart_figure.SmartFigure.__setitem__` methods.
         """
-        self._elements = {}        # systematically reset the elements when setting them with the property
+        self._elements = {}  # systematically reset the elements when setting them with the property
         self.add_elements(*value)
 
     @property
@@ -1041,7 +1041,7 @@ class SmartFigure:
             fig2 = fig1.copy_with(x_label=None, y_label=None)
         """
         properties = [attr for attr in dir(self.__class__) if isinstance(getattr(self.__class__, attr, None), property)]
-        properties = list(filter(lambda x: x[0] != "_", properties))      # filter out hidden properties
+        properties = list(filter(lambda x: x[0] != "_", properties))  # filter out hidden properties
         new_copy = deepcopy(self)
         for key, value in kwargs.items():
             if hasattr(new_copy, key):
@@ -1247,7 +1247,7 @@ class SmartFigure:
             plt.get_current_fig_manager().full_screen_toggle()
 
         plt.show()
-        if not any(plt.fignum_exists(num) for num in plt.get_fignums()):    # check if the parameters can be reset
+        if not any(plt.fignum_exists(num) for num in plt.get_fignums()):  # check if the parameters can be reset
             plt.rcParams.update(plt.rcParamsDefault)
             self._figure = None
             self._gridspec = None
@@ -1438,9 +1438,9 @@ class SmartFigure:
 
         if self._global_reference_label:
             self._create_reference_label(self._figure)
-            self._figure.suptitle(" ")     # Create a blank title to reserve space
+            self._figure.suptitle(" ")  # Create a blank title to reserve space
 
-        ax = None   # keep track of the last plt.Axes object, needed for sharing axes
+        ax = None  # keep track of the last plt.Axes object, needed for sharing axes
         default_labels, default_handles = [], []
         custom_labels, custom_handles = [], []
 
@@ -1457,7 +1457,7 @@ class SmartFigure:
                 sub_params = [
                     sub_param[subplot_i] if sub_param is not None and len(sub_param) > subplot_i else None
                     for sub_param in [self._sub_x_labels, self._sub_y_labels, self._subtitles]
-                ]       # list containing the sub_x_label, sub_y_label and subtitle for the current subplot
+                ]  # list containing the sub_x_label, sub_y_label and subtitle for the current subplot
                 # subfig_none_params contains True if the corresponding parameter is None in the nested SmartFigure
                 subfig_none_params = [getattr(element, param) is None for param in ["x_label", "y_label", "title"]]
                 for attr, param_is_none, sub_param in zip(
@@ -1467,7 +1467,7 @@ class SmartFigure:
                         setattr(element, attr, sub_param)
 
                 subfig = self._figure.add_subfigure(self._gridspec[rows, cols])
-                element._figure = subfig        # associates the current subfigure with the nested SmartFigure
+                element._figure = subfig  # associates the current subfigure with the nested SmartFigure
                 element._reference_label_i = self._reference_label_i
                 legend_info = element._prepare_figure(
                     is_matplotlib_style=is_matplotlib_style,
@@ -1596,7 +1596,7 @@ class SmartFigure:
                             is_matplotlib_style=is_matplotlib_style,
                             cycle_colors=cycle_colors,
                             is_y=(i == 2),
-                            z_order=200*i,      # increment z_order to avoid overlap with the main axes
+                            z_order=200*i,  # increment z_order to avoid overlap with the main axes
                             figure_style=self._figure_style,
                         )
                         default_labels.extend(twin_labels)
@@ -1678,7 +1678,7 @@ class SmartFigure:
             custom_handles = []
         labels = default_labels + custom_labels
         handles = default_handles + custom_handles
-        if self._general_legend and labels:     # making a general legend is priorized over make_legend=False
+        if self._general_legend and labels:  # making a general legend is priorized over make_legend=False
             if self._show_legend:
                 legend_params = self._get_legend_params(labels, handles, 0)
                 try:
@@ -2839,7 +2839,7 @@ class SmartFigureWCS(SmartFigure):
             annotations=annotations,
         )
 
-        self._default_tick_params = {       # The following are the default parameters of WCSAxes objects
+        self._default_tick_params = {  # The following are the default parameters of WCSAxes objects
             "x major": {"bottom" : True, "top" : True, "labelbottom" : True},
             "y major": {"left" : True, "right" : True, "labelleft" : True},
             "x minor": {},
@@ -3247,7 +3247,7 @@ class SmartTwinAxis:
         self._hide_spine = None
         self._user_rc_dict = {}
         self._default_params = {}
-        self._axes = None       # used for keeping a reference to the Axes which enables drawing the legend on top
+        self._axes = None  # used for keeping a reference to the Axes which enables drawing the legend on top
 
     @property
     def label(self) -> Optional[str]:
@@ -3310,7 +3310,7 @@ class SmartTwinAxis:
         Sets the elements of the SmartTwinAxis with the same rules as the constructor. For adding elements instead of
         replacing them, use the :meth:`~graphinglib.smart_figure.SmartTwinAxis.add_elements` method.
         """
-        self._elements = []        # systematically reset the elements when setting them with the property
+        self._elements = []  # systematically reset the elements when setting them with the property
         self.add_elements(*value)
 
     def __len__(self) -> int:
@@ -3368,7 +3368,7 @@ class SmartTwinAxis:
             twin_ax_2 = twin_ax_1.copy_with(label="New Label")
         """
         properties = [attr for attr in dir(self.__class__) if isinstance(getattr(self.__class__, attr, None), property)]
-        properties = list(filter(lambda x: x[0] != "_", properties))      # filter out hidden properties
+        properties = list(filter(lambda x: x[0] != "_", properties))  # filter out hidden properties
         new_copy = deepcopy(self)
         for key, value in kwargs.items():
             if hasattr(new_copy, key):
