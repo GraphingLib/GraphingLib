@@ -58,6 +58,7 @@ class TestSmartFigure(unittest.TestCase):
         """Test SmartFigure initialization with custom arguments."""
         elements = [[DummyPlottable(), DummyPlottable()], None, DummyPlottable(),
                     [None], [DummyPlottable(), DummyPlottable(), DummyPlottable()], []]
+        annotations = (Text(0.5, 0.5, "Center"), Text(0.1, 0.1, "Corner"))
         fig = self.cls(
             num_rows=2, num_cols=3, x_label="X", y_label="Y", size=(8, 6), title="Test Figure", x_lim=(0, 10),
             y_lim=(-5, 5), sub_x_labels=["X1", "X2", "X3"], sub_y_labels=["Y1", "Y2"],
@@ -67,7 +68,7 @@ class TestSmartFigure(unittest.TestCase):
             reference_label_start_index=3, width_padding=0.5, height_padding=0, width_ratios=[1,2,3],
             height_ratios=[1,2], share_x=True, share_y=True, projection="polar", general_legend=True,
             legend_loc="upper right", legend_cols=2, show_legend=False, twin_x_axis=None, twin_y_axis=None,
-            figure_style="dark", elements=elements
+            figure_style="dark", elements=elements, annotations=annotations,
         )
         self.assertEqual(fig.num_rows, 2)
         self.assertEqual(fig.num_cols, 3)
@@ -111,6 +112,7 @@ class TestSmartFigure(unittest.TestCase):
         self.assertEqual(fig[1, 0], elements[3])
         self.assertEqual(fig[1, 1], elements[4])
         self.assertEqual(fig[1, 2], elements[5])
+        self.assertEqual(fig.annotations, annotations)
 
     def test_elements_in_init(self):
         """Test elements initialization in constructor."""
@@ -593,6 +595,20 @@ class TestSmartFigure(unittest.TestCase):
         self.fig_3x1.elements = [[DummyPlottable(), DummyPlottable()], [None], DummyPlottable()]
         self.assertEqual(len(self.fig_3x1.elements), 3)
 
+    def test_annotations(self):
+        """Test annotations property validation and assignment."""
+        # Invalid
+        with self.assertRaises(TypeError):
+            self.fig.annotations = "not_a_list"
+        with self.assertRaises(TypeError):
+            self.fig.annotations = [1, 2, 3]
+        with self.assertRaises(TypeError):
+            self.fig.annotations = [Text(1, 1, "s"), Arrow(0, 0, 1, 1)]
+        # Valid
+        annotations = [Text(0.5, 0.5, "Center"), Text(0.1, 0.9, "Top Left", h_align="left", v_align="top")]
+        self.fig.annotations = annotations
+        self.assertEqual(self.fig.annotations, annotations)
+
     def test_show_grid(self):
         """Test show_grid property validation and assignment."""
         # Invalid
@@ -853,7 +869,7 @@ class TestSmartFigure(unittest.TestCase):
         self.fig[0] = Text(1, 1, "Test")
         self.fig._initialize_parent_smart_figure()
         plt.close()
-        self.fig[0] = Text(1, 1, "Test", relative_to="figure")
+        self.fig[0] = Text(1, 1, "Test")
         self.fig._initialize_parent_smart_figure()
         plt.close()
         self.fig[0] = Table(["Header1", "Header2"])
@@ -1454,7 +1470,7 @@ class TestSmartFigureWCS(TestSmartFigure):
         self.fig[0] = Text(1, 1, "Test")
         self.fig._initialize_parent_smart_figure()
         plt.close()
-        self.fig[0] = Text(1, 1, "Test", relative_to="figure")
+        self.fig[0] = Text(1, 1, "Test")
         self.fig._initialize_parent_smart_figure()
         plt.close()
         self.fig[0] = Table(["Header1", "Header2"])

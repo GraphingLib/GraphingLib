@@ -871,16 +871,6 @@ class Text(Plottable):
     h_align, v_align : str
         Horizontal and vertical alignment of the text.
         Default depends on the ``figure_style`` configuration.
-    relative_to : str
-        The coordinate system in which the text is plotted. If ``"axes"``, the text position corresponds to the physical
-        coordinates of the axes (e.g. ``(1,1)`` would place the text at ``x=1`` and ``y=1``). If ``"figure"``, the text
-        position corresponds to the relative position in the figure (e.g. ``(1,1)`` would place the text at the top
-        right corner of the figure). Practically, this tells if the text should be plotted on the Figure or on the Axes.
-        Defaults to ``"axes"``.
-
-        .. note::
-            As annotations on SubFigures are not supported, arrows attached to the
-            :class:`~graphinglib.graph_elements.Text` will not be visible if ``relative_to="figure"``.
     """
 
     _x: float
@@ -901,7 +891,6 @@ class Text(Plottable):
         font_size: float | Literal["same as figure"] = "same as figure",
         h_align: str = "default",
         v_align: str = "default",
-        relative_to: str = "axes",
     ) -> None:
         """
         This class allows text to be plotted.
@@ -925,17 +914,6 @@ class Text(Plottable):
         h_align, v_align : str
             Horizontal and vertical alignment of the text.
             Default depends on the ``figure_style`` configuration.
-        relative_to : str
-            The coordinate system in which the text is plotted. If ``"axes"``, the text position corresponds to the
-            physical coordinates of the axes (e.g. ``(1,1)`` would place the text at ``x=1`` and ``y=1``). If
-            ``"figure"``, the text position corresponds to the relative position in the figure (e.g. ``(1,1)`` would
-            place the text at the top right corner of the figure). Practically, this tells if the text should be plotted
-            on the Figure or on the Axes.
-            Defaults to ``"axes"``.
-
-            .. note::
-                As annotations on SubFigures are not supported, arrows attached to the
-                :class:`~graphinglib.graph_elements.Text` will not be visible if ``relative_to="figure"``.
         """
         self._x = x
         self._y = y
@@ -944,7 +922,6 @@ class Text(Plottable):
         self._font_size = font_size
         self._h_align = h_align
         self._v_align = v_align
-        self.relative_to = relative_to
         self._arrow_pointing_to = None
 
     @property
@@ -1004,16 +981,6 @@ class Text(Plottable):
         self._v_align = v_align
 
     @property
-    def relative_to(self) -> str:
-        return self._relative_to
-
-    @relative_to.setter
-    def relative_to(self, relative_to: str) -> None:
-        if relative_to not in ["axes", "figure"]:
-            raise GraphingException("The 'relative_to' parameter must be either 'axes' or 'figure'.")
-        self._relative_to = relative_to
-
-    @property
     def arrow_pointing_to(self) -> Optional[tuple[float]]:
         return self._arrow_pointing_to
 
@@ -1067,9 +1034,6 @@ class Text(Plottable):
     def _plot_element(self, target: plt.Axes | Figure, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified target, which can be either an Axes or a Figure.
-
-        .. warning::
-            Plotting on a Figure is only supported for the :class:`~graphinglib.smart_figure.SmartFigure`.
         """
         size = self._font_size if self._font_size != "same as figure" else None
         params = {
@@ -1086,7 +1050,7 @@ class Text(Plottable):
             zorder=z_order,
             **params,
         )
-        if self._arrow_pointing_to is not None and self._relative_to == "axes":
+        if self._arrow_pointing_to is not None and isinstance(target, plt.Axes):
             self._arrow_properties["color"] = self._color
             params = {
                 "color": self._color,

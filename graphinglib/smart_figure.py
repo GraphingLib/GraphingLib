@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations as _annotations_
 from shutil import which
 from typing import Literal, Optional, Any, Self, Callable, Iterable
 from logging import warning
@@ -203,6 +203,11 @@ class SmartFigure:
             This method for adding elements only allows to add elements to single subplots. If you want to add elements
             that span multiple subplots, you should use the __setitem__ method instead.
             For example, to add an element spanning the complete first row , use ``fig[0,:] = element``.
+
+    annotations : Iterable[Text], optional
+        Text annotations to add on the figure. The provided Text elements must have figure-relative coordinates, i.e.
+        in the range [0, 1] for both x and y. This allows to add annotations that are not tied to a specific subplot,
+        for example, to add general notes or labels on the figure.
     """
 
     def __init__(
@@ -244,6 +249,7 @@ class SmartFigure:
         twin_y_axis: Optional[SmartTwinAxis] = None,
         figure_style: str = "default",
         elements: Optional[Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]]] = [],
+        annotations: Optional[Iterable[Text]] = None,
     ) -> None:
         self.num_rows = num_rows
         self.num_cols = num_cols
@@ -282,6 +288,7 @@ class SmartFigure:
         self.twin_y_axis = twin_y_axis
         self.figure_style = figure_style
         self.elements = elements
+        self.annotations = annotations
 
         self._figure = None
         self._gridspec = None
@@ -776,6 +783,17 @@ class SmartFigure:
         """
         self._elements = {}        # systematically reset the elements when setting them with the property
         self.add_elements(*value)
+
+    @property
+    def annotations(self) -> Optional[Iterable[Text]]:
+        return self._annotations
+
+    @annotations.setter
+    def annotations(self, value: Optional[Iterable[Text]]) -> None:
+        if value is not None:
+            if not isinstance(value, Iterable) or not all(isinstance(t, Text) for t in value):
+                raise TypeError("annotations must be an iterable of Text elements.")
+        self._annotations = value
 
     @property
     def show_grid(self) -> bool:
@@ -1481,16 +1499,12 @@ class SmartFigure:
                 # Plotting loop
                 z_order = 2
                 for index, current_element in enumerate(current_elements):
-                    if isinstance(current_element, Plottable):
+                    if current_element is not None:
                         params_to_reset = []
                         if not is_matplotlib_style:
                             params_to_reset = self._fill_in_missing_params(current_element)
-                        if isinstance(current_element, Text) and current_element.relative_to == "figure":
-                            target = subfig
-                        else:
-                            target = ax
                         current_element._plot_element(
-                            target,
+                            ax,
                             z_order,
                             cycle_color=cycle_colors[index % num_cycle_colors],
                         )
@@ -1503,129 +1517,130 @@ class SmartFigure:
                         except AttributeError:
                             continue
                         z_order += 5
-                    elif current_element is not None:
-                        raise GraphingException(f"Unsupported element type: {type(current_element).__name__}.")
 
-                # If only text objects were plotted, the axes is hidden and the other properties are not set
-                if all(isinstance(element_i, Text) for element_i in element):
+                # Annotations
+                if self._annotations is not None:
+                    z_order = 5000
+                    for annotation in self._annotations:
+                        annotation._plot_element(self._figure, z_order)
+                        z_order += 5
+
+                # Add reference label
+                if self._reference_labels and (len(self) > 1 or isinstance(self._figure, SubFigure)):
+                    self._create_reference_label(ax)
+
+                # Axes limits
+                if self._x_lim:
+                    ax.set_xlim(*self._x_lim)
+                if self._y_lim:
+                    ax.set_ylim(*self._y_lim)
+
+                # Logarithmic scale
+                if self._log_scale_x:
+                    ax.set_xscale("log")
+                if self._log_scale_y:
+                    ax.set_yscale("log")
+
+                # Remove axes
+                if self._remove_axes:
                     ax.axis("off")
-                else:
-                    # Add reference label
-                    if self._reference_labels and (len(self) > 1 or isinstance(self._figure, SubFigure)):
-                        self._create_reference_label(ax)
 
-                    # Axes limits
-                    if self._x_lim:
-                        ax.set_xlim(*self._x_lim)
-                    if self._y_lim:
-                        ax.set_ylim(*self._y_lim)
+                ax.set_aspect(self._aspect_ratio)
+                ax.set_box_aspect(self._box_aspect_ratio)
 
-                    # Logarithmic scale
-                    if self._log_scale_x:
-                        ax.set_xscale("log")
-                    if self._log_scale_y:
-                        ax.set_yscale("log")
+                self._customize_ticks(ax)
 
-                    # Remove axes
-                    if self._remove_axes:
-                        ax.axis("off")
+                # If axes are shared, manually remove ticklabels from unnecessary plots as it is not done automatically
+                # when adding subplots
+                if self._share_x:
+                    if rows.start != 0:
+                        ax.tick_params(axis="x", labeltop=False)
+                    if rows.stop != self._num_rows:
+                        ax.tick_params(axis="x", labelbottom=False)
+                if self._share_y:
+                    if cols.start != 0:
+                        ax.tick_params(axis="y", labelleft=False)
+                    if cols.stop != self._num_cols:
+                        ax.tick_params(axis="y", labelright=False)
 
-                    ax.set_aspect(self._aspect_ratio)
-                    ax.set_box_aspect(self._box_aspect_ratio)
+                # Customize grid
+                if self._show_grid:
+                    ax.grid(self._grid.get("visible_x"), which=self._grid.get("which_x"), axis="x")
+                    ax.grid(self._grid.get("visible_y"), which=self._grid.get("which_y"), axis="y")
+                    if self._grid.get("show_on_top"):
+                        ax.set_axisbelow(False)
 
-                    self._customize_ticks(ax)
+                # Axes subtitles
+                if self._subtitles is not None:
+                    pad = subtitles_pad[subplot_i] if subtitles_pad is not None else None
+                    ax.set_title(self._subtitles[subplot_i], pad=pad)
 
-                    # If axes are shared, manually remove ticklabels from unnecessary plots as it is not done
-                    # automatically when adding subplots
-                    if self._share_x:
-                        if rows.start != 0:
-                            ax.tick_params(axis="x", labeltop=False)
-                        if rows.stop != self._num_rows:
-                            ax.tick_params(axis="x", labelbottom=False)
-                    if self._share_y:
-                        if cols.start != 0:
-                            ax.tick_params(axis="y", labelleft=False)
-                        if cols.stop != self._num_cols:
-                            ax.tick_params(axis="y", labelright=False)
+                # Axes sub_labels
+                self._customize_ax_label(ax, subplot_i)
 
-                    # Customize grid
-                    if self._show_grid:
-                        ax.grid(self._grid.get("visible_x"), which=self._grid.get("which_x"), axis="x")
-                        ax.grid(self._grid.get("visible_y"), which=self._grid.get("which_y"), axis="y")
-                        if self._grid.get("show_on_top"):
-                            ax.set_axisbelow(False)
+                # Hidden spines
+                if self._hidden_spines is not None:
+                    for spine in set(self._hidden_spines):
+                        ax.spines[spine].set_visible(False)
 
-                    # Axes subtitles
-                    if self._subtitles is not None:
-                        pad = subtitles_pad[subplot_i] if subtitles_pad is not None else None
-                        ax.set_title(self._subtitles[subplot_i], pad=pad)
+                # Twin axes
+                for i, twin_axis in enumerate([self._twin_x_axis, self._twin_y_axis], start=1):
+                    if twin_axis is not None:
+                        twin_axis._default_params = deepcopy(self._default_params)
+                        twin_axis._default_params["rc_params"].update(twin_axis._user_rc_dict)
+                        plt.rcParams.update(twin_axis._default_params["rc_params"])
+                        twin_axis_params_to_reset = twin_axis._fill_in_missing_params(twin_axis, self._figure_style)
 
-                    # Axes sub_labels
-                    self._customize_ax_label(ax, subplot_i)
+                        twin_labels, twin_handles = twin_axis._prepare_twin_axis(
+                            fig_axes=ax,
+                            is_matplotlib_style=is_matplotlib_style,
+                            cycle_colors=cycle_colors,
+                            is_y=(i == 2),
+                            z_order=200*i,      # increment z_order to avoid overlap with the main axes
+                            figure_style=self._figure_style,
+                        )
+                        default_labels.extend(twin_labels)
+                        default_handles.extend(twin_handles)
 
-                    # Hidden spines
-                    if self._hidden_spines is not None:
-                        for spine in set(self._hidden_spines):
-                            ax.spines[spine].set_visible(False)
+                        plt.rcParams.update(self._default_params["rc_params"])  # Return to the original rc params
+                        twin_axis._reset_params_to_default(twin_axis, twin_axis_params_to_reset)
+                        twin_axis._default_params = {}
 
-                    # Twin axes
-                    for i, twin_axis in enumerate([self._twin_x_axis, self._twin_y_axis], start=1):
-                        if twin_axis is not None:
-                            twin_axis._default_params = deepcopy(self._default_params)
-                            twin_axis._default_params["rc_params"].update(twin_axis._user_rc_dict)
-                            plt.rcParams.update(twin_axis._default_params["rc_params"])
-                            twin_axis_params_to_reset = twin_axis._fill_in_missing_params(twin_axis, self._figure_style)
+                # Axes legend
+                if not self._general_legend and make_legend:
+                    if self._hide_default_legend_elements:
+                        default_labels = []
+                        default_handles = []
+                    if self.is_single_subplot:
+                        custom_labels += self._custom_legend_labels
+                        custom_handles += self._custom_legend_handles
+                    if self._hide_custom_legend_elements or not self.is_single_subplot:
+                        custom_labels = []
+                        custom_handles = []
+                    labels = default_labels + custom_labels
+                    handles = default_handles + custom_handles
 
-                            twin_labels, twin_handles = twin_axis._prepare_twin_axis(
-                                fig_axes=ax,
-                                is_matplotlib_style=is_matplotlib_style,
-                                cycle_colors=cycle_colors,
-                                is_y=(i == 2),
-                                z_order=200*i,      # increment z_order to avoid overlap with the main axes
-                                figure_style=self._figure_style,
+                    if self._show_legend and labels:
+                        legend_params = self._get_legend_params(labels, handles, -0.1)
+                        # Set legend_ax to the uppermost drawn axis to avoid overlapping with any elements
+                        if self._twin_y_axis is not None:
+                            legend_ax = self._twin_y_axis._axes
+                        elif self._twin_x_axis is not None:
+                            legend_ax = self._twin_x_axis._axes
+                        else:
+                            legend_ax = ax
+                        try:
+                            _legend = legend_ax.legend(
+                                draggable=True,
+                                **legend_params,
                             )
-                            default_labels.extend(twin_labels)
-                            default_handles.extend(twin_handles)
-
-                            plt.rcParams.update(self._default_params["rc_params"])  # Return to the original rc params
-                            twin_axis._reset_params_to_default(twin_axis, twin_axis_params_to_reset)
-                            twin_axis._default_params = {}
-
-                    # Axes legend
-                    if not self._general_legend and make_legend:
-                        if self._hide_default_legend_elements:
-                            default_labels = []
-                            default_handles = []
-                        if self.is_single_subplot:
-                            custom_labels += self._custom_legend_labels
-                            custom_handles += self._custom_legend_handles
-                        if self._hide_custom_legend_elements or not self.is_single_subplot:
-                            custom_labels = []
-                            custom_handles = []
-                        labels = default_labels + custom_labels
-                        handles = default_handles + custom_handles
-
-                        if self._show_legend and labels:
-                            legend_params = self._get_legend_params(labels, handles, -0.1)
-                            # Set legend_ax to the uppermost drawn axis to avoid overlapping with any elements
-                            if self._twin_y_axis is not None:
-                                legend_ax = self._twin_y_axis._axes
-                            elif self._twin_x_axis is not None:
-                                legend_ax = self._twin_x_axis._axes
-                            else:
-                                legend_ax = ax
-                            try:
-                                _legend = legend_ax.legend(
-                                    draggable=True,
-                                    **legend_params,
-                                )
-                            except Exception:
-                                _legend = legend_ax.legend(
-                                    **legend_params,
-                                )
-                            _legend.set_zorder(10000)
-                        default_labels, default_handles = [], []
-                        custom_labels, custom_handles = [], []
+                        except Exception:
+                            _legend = legend_ax.legend(
+                                **legend_params,
+                            )
+                        _legend.set_zorder(10000)
+                    default_labels, default_handles = [], []
+                    custom_labels, custom_handles = [], []
 
             elif element is not None:
                 raise GraphingException(f"Unsupported element type in list: {type(element).__name__}")
@@ -2735,6 +2750,11 @@ class SmartFigureWCS(SmartFigure):
             This method for adding elements only allows to add elements to single subplots. If you want to add elements
             that span multiple subplots, you should use the __setitem__ method instead.
             For example, to add an element spanning the complete first row , use ``fig[0,:] = element``.
+
+    annotations : Iterable[Text], optional
+        Text annotations to add on the figure. The provided Text elements must have figure-relative coordinates, i.e.
+        in the range [0, 1] for both x and y. This allows to add annotations that are not tied to a specific subplot,
+        for example, to add general notes or labels on the figure.
     """
 
     def __init__(
@@ -2776,6 +2796,7 @@ class SmartFigureWCS(SmartFigure):
         twin_y_axis: Optional[SmartTwinAxis] = None,
         figure_style: str = "default",
         elements: Optional[Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]]] = [],
+        annotations: Optional[Iterable[Text]] = None,
     ) -> None:
         super().__init__(
             num_rows=num_rows,
@@ -2815,6 +2836,7 @@ class SmartFigureWCS(SmartFigure):
             twin_y_axis=twin_y_axis,
             figure_style=figure_style,
             elements=elements,
+            annotations=annotations,
         )
 
         self._default_tick_params = {       # The following are the default parameters of WCSAxes objects
