@@ -1227,12 +1227,12 @@ class SmartFigure:
         ax_dummy.set_facecolor((0, 0, 0, 0))
         ax_dummy.set_zorder(-1)
         ax_dummy.set_navigate(False)
-        ax_dummy.tick_params(colors=(0,0,0,0), axis="both", direction="in",
+        ax_dummy.tick_params(colors=(0, 0, 0, 0), axis="both", direction="in",
                              labelright=True, labeltop=True, labelsize=0.01)
         ax_dummy.set_xticks([0.5])
         ax_dummy.set_yticks([0.5])
-        ax_dummy.set_xticklabels([" "])
-        ax_dummy.set_yticklabels([" "])
+        ax_dummy.set_xticklabels(["."])
+        ax_dummy.set_yticklabels(["."])
 
         if all([
             self._show_legend,
