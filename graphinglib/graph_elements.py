@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Literal, Optional, Protocol, runtime_checkable
+from typing import Literal, Optional, Protocol, runtime_checkable, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -1033,7 +1033,9 @@ class Text(Plottable):
 
     def _plot_element(self, target: plt.Axes | Figure, z_order: int, **kwargs) -> None:
         """
-        Plots the element in the specified target, which can be either an Axes or a Figure.
+        Plots the element in the specified target, which can be either an
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_ or a
+        `Figure <https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html>`.
         """
         size = self._font_size if self._font_size != "same as figure" else None
         params = {
@@ -1394,3 +1396,32 @@ class Table(Plottable):
             cell.set_text_props(color=self._text_color)
             cell.set_edgecolor(self._edge_color)
             cell.set_linewidth(self._edge_width)
+
+class AxFunc(Plottable):
+    """
+    This experimental class allows to call any matplotlib Axes function as a plottable element in a
+    :class:`~graphinglib.smart_figure.SmartFigure`. This object can be used to access functionality that is not yet
+    implemented in GraphingLib.
+
+    Parameters
+    ----------
+    func : str
+        Name of the matplotlib Axes function to call. The function will be called as ``axes.func(*args, **kwargs)``. For
+        example, this can be "pcolormesh" or "bar".
+    *args : Any
+        Positional arguments to pass to ``axes.func``.
+    **kwargs : Any
+        Keyword arguments to pass to ``axes.func``.
+    """
+
+    def __init__(self, func: str, *args: Any, **kwargs: Any) -> None:
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
+        """
+        Plots the element in the specified
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
+        """
+        getattr(axes, self.func)(*self.args, zorder=z_order, **self.kwargs)
