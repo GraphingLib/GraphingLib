@@ -120,8 +120,9 @@ class SmartFigure:
             As the global reference label is placed more left than the reference label, this forces the horizontal shift
             of the axes, which may lead to overlapping between axes. Consider modifying the `size` or `width_padding`
             parameters to avoid this issue.
-    reference_label_loc : Literal["inside", "outside"]
-        Location of the reference labels of the SubFigures, either "inside" or "outside".
+    reference_label_loc : Literal["inside", "outside"] | tuple[float, float]
+        Location of the reference labels of the SubFigures, which can be either "inside", "outside" or a tuple of
+        (x, y) relative coordinates to the top-left corner of each subfigure.
         Defaults to ``"outside"``.
     reference_label_start_index : int
         Starting index for the reference labels. This allows to customize the starting label, for example, to start
@@ -232,7 +233,7 @@ class SmartFigure:
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
         global_reference_label: bool = False,
-        reference_label_loc: Literal["inside", "outside"] = "outside",
+        reference_label_loc: Literal["inside", "outside"] | tuple[float, float] = "outside",
         reference_label_start_index: int = 0,
         width_padding: float = None,
         height_padding: float = None,
@@ -557,12 +558,15 @@ class SmartFigure:
         self._global_reference_label = value
 
     @property
-    def reference_label_loc(self) -> Literal["inside", "outside"]:
+    def reference_label_loc(self) -> Literal["inside", "outside"] | tuple[float, float]:
         return self._reference_label_loc
 
     @reference_label_loc.setter
-    def reference_label_loc(self, value: Literal["inside", "outside"]) -> None:
-        if value not in ["inside", "outside"]:
+    def reference_label_loc(self, value: Literal["inside", "outside"] | tuple[float, float]) -> None:
+        if isinstance(value, tuple):
+            if len(value) != 2:
+                raise ValueError("If reference_label_loc is a tuple, it must be of length 2.")
+        elif value not in ["inside", "outside"]:
             raise ValueError("reference_label_loc must be either 'inside' or 'outside'.")
         self._reference_label_loc = value
 
@@ -1880,7 +1884,9 @@ class SmartFigure:
         SubFigure. The translation varies depending on the location of the reference label.
         """
         if isinstance(target, Axes):
-            if self._reference_label_loc == "outside":
+            if isinstance(self._reference_label_loc, tuple):
+                return ScaledTranslation(*self.reference_label_loc, self._figure.dpi_scale_trans)
+            elif self._reference_label_loc == "outside":
                 return ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
             elif self._reference_label_loc == "inside":
                 return ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
@@ -2674,8 +2680,9 @@ class SmartFigureWCS(SmartFigure):
         If set to ``True``, the reference label will be placed in the top left corner of the global SmartFigure. This is
         useful for labeling the entire figure rather than individual subfigures.
         Defaults to ``False``.
-    reference_label_loc : Literal["inside", "outside"]
-        Location of the reference labels of the SubFigures, either "inside" or "outside".
+    reference_label_loc : Literal["inside", "outside"] | tuple[float, float]
+        Location of the reference labels of the SubFigures, which can be either "inside", "outside" or a tuple of
+        (x, y) relative coordinates to the top-left corner of each subfigure.
         Defaults to ``"outside"``.
     reference_label_start_index : int
         Starting index for the reference labels. This allows to customize the starting label, for example, to start
@@ -2780,7 +2787,7 @@ class SmartFigureWCS(SmartFigure):
         remove_y_ticks: bool = False,
         reference_labels: bool = True,
         global_reference_label: bool = False,
-        reference_label_loc: Literal["inside", "outside"] = "outside",
+        reference_label_loc: Literal["inside", "outside"] | tuple[float, float] = "outside",
         reference_label_start_index: int = 0,
         width_padding: float = None,
         height_padding: float = None,
