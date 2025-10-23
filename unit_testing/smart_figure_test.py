@@ -64,11 +64,10 @@ class TestSmartFigure(unittest.TestCase):
             y_lim=(-5, 5), sub_x_labels=["X1", "X2", "X3"], sub_y_labels=["Y1", "Y2"],
             subtitles=["Title 1", "Title 2", "Title 3", "Title 4", "Title 5", "Title 6"], log_scale_x=True,
             log_scale_y=True, remove_axes=True, aspect_ratio=1.5, box_aspect_ratio=0.7, remove_x_ticks=True,
-            remove_y_ticks=True, reference_labels=False, global_reference_label=True, reference_label_loc="inside",
-            reference_label_start_index=3, width_padding=0.5, height_padding=0, width_ratios=[1,2,3],
-            height_ratios=[1,2], share_x=True, share_y=True, projection="polar", general_legend=True,
-            legend_loc="upper right", legend_cols=2, show_legend=False, twin_x_axis=None, twin_y_axis=None,
-            figure_style="dark", elements=elements, annotations=annotations,
+            remove_y_ticks=True, reference_labels=False, global_reference_label=True, reference_labels_loc="inside",
+            width_padding=0.5, height_padding=0, width_ratios=[1,2,3], height_ratios=[1,2], share_x=True, share_y=True,
+            projection="polar", general_legend=True, legend_loc="upper right", legend_cols=2, show_legend=False,
+            twin_x_axis=None, twin_y_axis=None, figure_style="dark", elements=elements, annotations=annotations,
         )
         self.assertEqual(fig.num_rows, 2)
         self.assertEqual(fig.num_cols, 3)
@@ -90,8 +89,7 @@ class TestSmartFigure(unittest.TestCase):
         self.assertTrue(fig.remove_y_ticks)
         self.assertFalse(fig.reference_labels)
         self.assertTrue(fig.global_reference_label)
-        self.assertEqual(fig.reference_label_loc, "inside")
-        self.assertEqual(fig.reference_label_start_index, 3)
+        self.assertEqual(fig.reference_labels_loc, "inside")
         self.assertEqual(fig.width_padding, 0.5)
         self.assertEqual(fig.height_padding, 0)
         self.assertEqual(fig.width_ratios, [1, 2, 3])
@@ -413,29 +411,22 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.global_reference_label = True
         self.assertTrue(self.fig.global_reference_label)
 
-    def test_reference_label_loc(self):
-        """Test reference_label_loc property validation and assignment."""
+    def test_reference_labels_loc(self):
+        """Test reference_labels_loc property validation and assignment."""
         # Invalid
         with self.assertRaises(ValueError):
-            self.fig.reference_label_loc = "top"
+            self.fig.reference_labels_loc = "top"
         with self.assertRaises(ValueError):
-            self.fig.reference_label_loc = True
-        # Valid
-        self.fig.reference_label_loc = "inside"
-        self.assertEqual(self.fig.reference_label_loc, "inside")
-        self.fig.reference_label_loc = "outside"
-        self.assertEqual(self.fig.reference_label_loc, "outside")
-
-    def test_reference_label_start_index(self):
-        """Test reference_label_start_index property validation and assignment."""
-        # Invalid
-        with self.assertRaises(TypeError):
-            self.fig.reference_label_start_index = "a"
+            self.fig.reference_labels_loc = True
         with self.assertRaises(ValueError):
-            self.fig.reference_label_start_index = -1
+            self.fig.reference_labels_loc = 1, 3, 4
         # Valid
-        self.fig.reference_label_start_index = 2
-        self.assertEqual(self.fig.reference_label_start_index, 2)
+        self.fig.reference_labels_loc = "inside"
+        self.assertEqual(self.fig.reference_labels_loc, "inside")
+        self.fig.reference_labels_loc = "outside"
+        self.assertEqual(self.fig.reference_labels_loc, "outside")
+        self.fig.reference_labels_loc = 0.5, -0.5
+        self.assertEqual(self.fig.reference_labels_loc, (0.5, -0.5))
 
     def test_width_padding(self):
         """Test width_padding property validation and assignment."""
@@ -1224,6 +1215,33 @@ class TestSmartFigure(unittest.TestCase):
             self.fig_2x2.set_text_padding_params(sub_x_labels_pad=[1.0, 2.0, 3.0, 4.0, 5.0])
             self.fig_2x2._prepare_figure()
 
+    def test_set_reference_labels_params(self):
+        """Test setting reference labels parameters."""
+        # Test initial state (empty _reference_labels_params)
+        self.assertEqual(self.fig_2x2._reference_labels_params, {})
+
+        # Test setting individual reference label parameters
+        self.fig_2x2.set_reference_labels_params(font_size=12.0)
+        self.assertEqual(self.fig_2x2._reference_labels_params["font_size"], 12.0)
+
+        self.fig_2x2.set_reference_labels_params(color="red", font_weight="bold", start_index=2)
+        self.assertEqual(self.fig_2x2._reference_labels_params["color"], "red")
+        self.assertEqual(self.fig_2x2._reference_labels_params["font_weight"], "bold")
+        self.assertEqual(self.fig_2x2._reference_labels_params["start_index"], 2)
+        self.assertEqual(self.fig_2x2._reference_labels_params["font_size"], 12.0)  # Should preserve previous value
+
+        # Test reset functionality
+        self.fig_2x2.set_reference_labels_params(reset=True, font_size=20.0)
+        self.assertEqual(self.fig_2x2._reference_labels_params["font_size"], 20.0)
+        self.fig_2x2.set_reference_labels_params(reset=True)
+        self.assertEqual(self.fig_2x2._reference_labels_params, {})
+
+        # Test invalid types for start index
+        with self.assertRaises(TypeError):
+            self.fig_2x2.set_reference_labels_params(start_index="invalid")
+        with self.assertRaises(ValueError):
+            self.fig_2x2.set_reference_labels_params(start_index=-1)
+
     def test_methods_return_self(self):
         """Test that methods return self for method chaining."""
         self.assertIs(self.fig.add_elements(), self.fig)
@@ -1232,6 +1250,7 @@ class TestSmartFigure(unittest.TestCase):
         self.assertIs(self.fig.set_grid(visible_x=True), self.fig)
         self.assertIs(self.fig.set_custom_legend(elements=[]), self.fig)
         self.assertIs(self.fig.set_text_padding_params(x_label_pad=5.0), self.fig)
+        self.assertIs(self.fig.set_reference_labels_params(font_size=5.0), self.fig)
         self.assertIs(self.fig.set_visual_params(figure_face_color="red"), self.fig)
         self.assertIs(self.fig.set_rc_params({"lines.linewidth": 2}), self.fig)
         with warnings.catch_warnings():
@@ -1654,10 +1673,10 @@ class TestSmartFigureWCS(TestSmartFigure):
             title="Test WCS Figure", x_lim=(0, 10), y_lim=(-5, 5), sub_x_labels=["RA1", "RA2"],
             sub_y_labels=["Dec1", "Dec2"], subtitles=["Title 1", "Title 2", "Title 3", "Title 4"], log_scale_x=False,
             log_scale_y=False, remove_axes=False, aspect_ratio="equal", box_aspect_ratio=0.7, remove_x_ticks=False,
-            remove_y_ticks=False, reference_labels=True, global_reference_label=False, reference_label_loc="outside",
-            reference_label_start_index=0, width_padding=0.1, height_padding=0.1, width_ratios=[1, 2],
-            height_ratios=[1, 2], share_x=False, share_y=False, general_legend=False, legend_loc="best", legend_cols=1,
-            show_legend=True, figure_style="default", elements=elements
+            remove_y_ticks=False, reference_labels=True, global_reference_label=False, reference_labels_loc="outside",
+            width_padding=0.1, height_padding=0.1, width_ratios=[1, 2], height_ratios=[1, 2], share_x=False,
+            share_y=False, general_legend=False, legend_loc="best", legend_cols=1, show_legend=True,
+            figure_style="default", elements=elements
         )
 
         # Test that WCS-specific attributes are properly initialized
@@ -1677,7 +1696,8 @@ class TestSmartFigureWCS(TestSmartFigure):
                  .set_ticks(number_of_x_ticks=5)
                  .set_tick_params(direction="in")
                  .set_grid(visible_x=True)
-                 .set_text_padding_params(x_label_pad=5.0))
+                 .set_text_padding_params(x_label_pad=5.0)
+                 .set_reference_labels_params(color="green"))
 
         self.assertIs(result, self.fig)
 
