@@ -100,6 +100,9 @@ class SmartFigure:
     remove_x_ticks, remove_y_ticks : bool
         Whether to remove the x and y ticks from the figure, respectively.
         Defaults to ``False``.
+    invert_x_axis, invert_y_axis : bool
+        Whether to invert the x and y axes, respectively.
+        Defaults to ``False``.
     reference_labels : bool
         Whether or not to add reference labels to the subfigures. If set to ``True``, each subfigure will be labeled
         alphabetically in the form of "a)", "b)", etc.
@@ -227,6 +230,8 @@ class SmartFigure:
         box_aspect_ratio: Optional[float] = None,
         remove_x_ticks: bool = False,
         remove_y_ticks: bool = False,
+        invert_x_axis: bool = False,
+        invert_y_axis: bool = False,
         reference_labels: bool = True,
         global_reference_label: bool = False,
         reference_labels_loc: Literal["inside", "outside"] | tuple[float, float] = "outside",
@@ -265,6 +270,8 @@ class SmartFigure:
         self.box_aspect_ratio = box_aspect_ratio
         self.remove_x_ticks = remove_x_ticks
         self.remove_y_ticks = remove_y_ticks
+        self.invert_x_axis = invert_x_axis
+        self.invert_y_axis = invert_y_axis
         self.reference_labels = reference_labels
         self.global_reference_label = global_reference_label
         self.reference_labels_loc = reference_labels_loc
@@ -531,6 +538,26 @@ class SmartFigure:
         if not isinstance(value, bool):
             raise TypeError("remove_y_ticks must be a bool.")
         self._remove_y_ticks = value
+
+    @property
+    def invert_x_axis(self) -> bool:
+        return self._invert_x_axis
+
+    @invert_x_axis.setter
+    def invert_x_axis(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("invert_x_axis must be a bool.")
+        self._invert_x_axis = value
+
+    @property
+    def invert_y_axis(self) -> bool:
+        return self._invert_y_axis
+
+    @invert_y_axis.setter
+    def invert_y_axis(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("invert_y_axis must be a bool.")
+        self._invert_y_axis = value
 
     @property
     def reference_labels(self) -> bool:
@@ -1534,6 +1561,12 @@ class SmartFigure:
 
                 ax.set_aspect(self._aspect_ratio)
                 ax.set_box_aspect(self._box_aspect_ratio)
+
+                # Invert axes
+                if self._invert_x_axis:
+                    ax.invert_xaxis()
+                if self._invert_y_axis:
+                    ax.invert_yaxis()
 
                 self._customize_ticks(ax)
 
@@ -2715,6 +2748,9 @@ class SmartFigureWCS(SmartFigure):
     remove_x_ticks, remove_y_ticks : bool
         Whether to remove the x and y ticks from the figure, respectively.
         Defaults to ``False``.
+    invert_x_axis, invert_y_axis : bool
+        Whether to invert the x and y axes, respectively.
+        Defaults to ``False``.
     reference_labels : bool
         Whether or not to add reference labels to the subfigures. If set to ``True``, each subfigure will be labeled
         alphabetically in the form of "a)", "b)", etc.
@@ -2831,6 +2867,8 @@ class SmartFigureWCS(SmartFigure):
         box_aspect_ratio: Optional[float] = None,
         remove_x_ticks: bool = False,
         remove_y_ticks: bool = False,
+        invert_x_axis: bool = False,
+        invert_y_axis: bool = False,
         reference_labels: bool = True,
         global_reference_label: bool = False,
         reference_labels_loc: Literal["inside", "outside"] | tuple[float, float] = "outside",
@@ -2869,6 +2907,8 @@ class SmartFigureWCS(SmartFigure):
             box_aspect_ratio=box_aspect_ratio,
             remove_x_ticks=remove_x_ticks,
             remove_y_ticks=remove_y_ticks,
+            invert_x_axis=invert_x_axis,
+            invert_y_axis=invert_y_axis,
             reference_labels=reference_labels,
             global_reference_label=global_reference_label,
             reference_labels_loc=reference_labels_loc,
@@ -3269,6 +3309,9 @@ class SmartTwinAxis:
     remove_ticks : bool
         Whether to remove the ticks from the twin axis.
         Defaults to ``False``.
+    invert_axis : bool
+        Whether to invert the twin axis.
+        Defaults to ``False``.
     elements : Iterable[Plottable], optional
         Elements to plot in the twin axis. This must be an iterable of :class:`~graphinglib.graph_elements.Plottable`
         objects. If ``None`` elements are present, they are ignored.
@@ -3281,6 +3324,7 @@ class SmartTwinAxis:
         log_scale: bool = False,
         remove_axes: bool = False,
         remove_ticks: bool = False,
+        invert_axis: bool = False,
         elements: Optional[Iterable[Plottable]] = [],
     ) -> None:
         self.label = label
@@ -3288,6 +3332,7 @@ class SmartTwinAxis:
         self.log_scale = log_scale
         self.remove_axes = remove_axes
         self.remove_ticks = remove_ticks
+        self.invert_axis = invert_axis
         self.elements = elements
 
         self._ticks = {}
@@ -3350,6 +3395,16 @@ class SmartTwinAxis:
         if not isinstance(value, bool):
             raise TypeError("remove_ticks must be a bool.")
         self._remove_ticks = value
+
+    @property
+    def invert_axis(self) -> bool:
+        return self._invert_axis
+
+    @invert_axis.setter
+    def invert_axis(self, value: bool) -> None:
+        if not isinstance(value, bool):
+            raise TypeError("invert_axis must be a bool.")
+        self._invert_axis = value
 
     @property
     def elements(self) -> list[Plottable]:
@@ -3519,6 +3574,13 @@ class SmartTwinAxis:
         # Remove axes
         if self._remove_axes:
             ax.axis("off")
+
+        # Invert axis
+        if self.invert_axis:
+            if is_y:
+                ax.invert_yaxis()
+            else:
+                ax.invert_xaxis()
 
         # Plotting loop
         num_cycle_colors = len(cycle_colors)

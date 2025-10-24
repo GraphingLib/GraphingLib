@@ -64,10 +64,11 @@ class TestSmartFigure(unittest.TestCase):
             y_lim=(-5, 5), sub_x_labels=["X1", "X2", "X3"], sub_y_labels=["Y1", "Y2"],
             subtitles=["Title 1", "Title 2", "Title 3", "Title 4", "Title 5", "Title 6"], log_scale_x=True,
             log_scale_y=True, remove_axes=True, aspect_ratio=1.5, box_aspect_ratio=0.7, remove_x_ticks=True,
-            remove_y_ticks=True, reference_labels=False, global_reference_label=True, reference_labels_loc="inside",
-            width_padding=0.5, height_padding=0, width_ratios=[1,2,3], height_ratios=[1,2], share_x=True, share_y=True,
-            projection="polar", general_legend=True, legend_loc="upper right", legend_cols=2, show_legend=False,
-            twin_x_axis=None, twin_y_axis=None, figure_style="dark", elements=elements, annotations=annotations,
+            remove_y_ticks=True, invert_x_axis=True, invert_y_axis=True, reference_labels=False,
+            global_reference_label=True, reference_labels_loc="inside", width_padding=0.5, height_padding=0,
+            width_ratios=[1,2,3], height_ratios=[1,2], share_x=True, share_y=True, projection="polar",
+            general_legend=True, legend_loc="upper right", legend_cols=2, show_legend=False, twin_x_axis=None,
+            twin_y_axis=None, figure_style="dark", elements=elements, annotations=annotations,
         )
         self.assertEqual(fig.num_rows, 2)
         self.assertEqual(fig.num_cols, 3)
@@ -87,6 +88,8 @@ class TestSmartFigure(unittest.TestCase):
         self.assertEqual(fig.box_aspect_ratio, 0.7)
         self.assertTrue(fig.remove_x_ticks)
         self.assertTrue(fig.remove_y_ticks)
+        self.assertTrue(fig.invert_x_axis)
+        self.assertTrue(fig.invert_y_axis)
         self.assertFalse(fig.reference_labels)
         self.assertTrue(fig.global_reference_label)
         self.assertEqual(fig.reference_labels_loc, "inside")
@@ -388,6 +391,32 @@ class TestSmartFigure(unittest.TestCase):
         # Valid
         self.fig.remove_y_ticks = True
         self.assertTrue(self.fig.remove_y_ticks)
+
+    def test_invert_x_axis(self):
+        """Test invert_x_axis property validation and assignment."""
+        # Invalid
+        with self.assertRaises(TypeError):
+            self.fig.invert_x_axis = "yes"
+        with self.assertRaises(TypeError):
+            self.fig.invert_x_axis = 1
+        # Valid
+        self.fig.invert_x_axis = True
+        self.assertTrue(self.fig.invert_x_axis)
+        self.fig.invert_x_axis = False
+        self.assertFalse(self.fig.invert_x_axis)
+
+    def test_invert_y_axis(self):
+        """Test invert_y_axis property validation and assignment."""
+        # Invalid
+        with self.assertRaises(TypeError):
+            self.fig.invert_y_axis = "yes"
+        with self.assertRaises(TypeError):
+            self.fig.invert_y_axis = 1
+        # Valid
+        self.fig.invert_y_axis = True
+        self.assertTrue(self.fig.invert_y_axis)
+        self.fig.invert_y_axis = False
+        self.assertFalse(self.fig.invert_y_axis)
 
     def test_reference_labels(self):
         """Test reference_labels property validation and assignment."""
@@ -1189,17 +1218,14 @@ class TestSmartFigure(unittest.TestCase):
         # Test invalid types for single padding parameters
         with self.assertRaises(TypeError):
             self.fig_2x2.set_text_padding_params(x_label_pad="invalid")
-
         with self.assertRaises(TypeError):
             self.fig_2x2.set_text_padding_params(y_label_pad=[1, 2])  # Should be float/int, not list
 
         # Test invalid types for iterable padding parameters
         with self.assertRaises(TypeError):
             self.fig_2x2.set_text_padding_params(sub_x_labels_pad="invalid")  # String not iterable of numbers
-
         with self.assertRaises(TypeError):
             self.fig_2x2.set_text_padding_params(sub_y_labels_pad=[1, 2, "invalid"])  # Invalid element in iterable
-
         with self.assertRaises(TypeError):
             self.fig_2x2.set_text_padding_params(sub_x_labels_pad=123)  # Not iterable
 
@@ -1673,10 +1699,10 @@ class TestSmartFigureWCS(TestSmartFigure):
             title="Test WCS Figure", x_lim=(0, 10), y_lim=(-5, 5), sub_x_labels=["RA1", "RA2"],
             sub_y_labels=["Dec1", "Dec2"], subtitles=["Title 1", "Title 2", "Title 3", "Title 4"], log_scale_x=False,
             log_scale_y=False, remove_axes=False, aspect_ratio="equal", box_aspect_ratio=0.7, remove_x_ticks=False,
-            remove_y_ticks=False, reference_labels=True, global_reference_label=False, reference_labels_loc="outside",
-            width_padding=0.1, height_padding=0.1, width_ratios=[1, 2], height_ratios=[1, 2], share_x=False,
-            share_y=False, general_legend=False, legend_loc="best", legend_cols=1, show_legend=True,
-            figure_style="default", elements=elements
+            remove_y_ticks=False, invert_x_axis=True, invert_y_axis=True, reference_labels=True,
+            global_reference_label=False, reference_labels_loc="outside", width_padding=0.1, height_padding=0.1,
+            width_ratios=[1, 2], height_ratios=[1, 2], share_x=False, share_y=False, general_legend=False,
+            legend_loc="best", legend_cols=1, show_legend=True, figure_style="default", elements=elements,
         )
 
         # Test that WCS-specific attributes are properly initialized
@@ -1743,6 +1769,7 @@ class TestSmartTwinAxis(unittest.TestCase):
         self.assertFalse(self.twin_axis.log_scale)
         self.assertFalse(self.twin_axis.remove_axes)
         self.assertFalse(self.twin_axis.remove_ticks)
+        self.assertFalse(self.twin_axis.invert_axis)
         self.assertEqual(len(self.twin_axis._elements), 0)
         self.assertIsNone(self.twin_axis._ticks.get("ticks"))
         self.assertIsNone(self.twin_axis._ticks.get("tick_labels"))
@@ -1763,6 +1790,7 @@ class TestSmartTwinAxis(unittest.TestCase):
             log_scale=True,
             remove_axes=True,
             remove_ticks=True,
+            invert_axis=True,
             elements=[self.curve1, self.curve2],
         )
 
@@ -1771,6 +1799,7 @@ class TestSmartTwinAxis(unittest.TestCase):
         self.assertTrue(twin_axis.log_scale)
         self.assertTrue(twin_axis._remove_axes)
         self.assertTrue(twin_axis._remove_ticks)
+        self.assertTrue(twin_axis.invert_axis)
         self.assertEqual(len(twin_axis._elements), 2)
 
     def test_axis_lim(self):
@@ -1816,6 +1845,17 @@ class TestSmartTwinAxis(unittest.TestCase):
         # Valid
         self.twin_axis.remove_ticks = True
         self.assertTrue(self.twin_axis.remove_ticks)
+
+    def test_invert_axis(self):
+        """Test invert_axis property validation and assignment."""
+        # Invalid
+        with self.assertRaises(TypeError):
+            self.twin_axis.invert_axis = "yes"
+        with self.assertRaises(TypeError):
+            self.twin_axis.invert_axis = 1
+        # Valid
+        self.twin_axis.invert_axis = True
+        self.assertTrue(self.twin_axis.invert_axis)
 
     def test_elements(self):
         """Test elements property validation and assignment."""
