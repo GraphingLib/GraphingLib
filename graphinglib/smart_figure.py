@@ -1563,9 +1563,10 @@ class SmartFigure:
                 ax.set_box_aspect(self._box_aspect_ratio)
 
                 # Invert axes
-                if self._invert_x_axis:
+                # When axes are shared, check if already inverted to avoid double-toggling
+                if self._invert_x_axis and not ax.xaxis_inverted():
                     ax.invert_xaxis()
-                if self._invert_y_axis:
+                if self._invert_y_axis and not ax.yaxis_inverted():
                     ax.invert_yaxis()
 
                 self._customize_ticks(ax)
