@@ -40,13 +40,12 @@ from numpy.typing import ArrayLike
 
 class SmartFigure:
     """
-    This class implements a figure object for plotting :class:`~graphinglib.graph_elements.Plottable` elements. It
-    allows for the creation of complex figures recursively, where each :class:`~graphinglib.smart_figure.SmartFigure`
-    can contain other :class:`~graphinglib.smart_figure.SmartFigure` objects. The class supports a variety of
-    customization options as well as the ability to use styles and themes for consistent visual appearance across
-    different figures. The idea behind this class is that every SmartFigure contains a single x_label, y_label, title,
-    projection, etc. and that nested SmartFigures can be inserted into the main SmartFigure to create complex figures
-    with more parameters.
+    This class implements a figure object for plotting :class:`~graphinglib.Plottable` elements. It allows for the
+    creation of complex figures recursively, where each :class:`~graphinglib.SmartFigure` can contain other
+    :class:`~graphinglib.SmartFigure` objects. The class supports a variety of customization options as well as the
+    ability to use styles and themes for consistent visual appearance across different figures. The idea behind this
+    class is that every SmartFigure contains a single x_label, y_label, title, projection, etc. and that nested
+    SmartFigures can be inserted into the main SmartFigure to create complex figures with more parameters.
 
     Parameters
     ----------
@@ -57,7 +56,8 @@ class SmartFigure:
     x_label, y_label : str, optional
         Labels for the x and y axes of the figure.
     size : tuple[float, float]
-        Overall size of the multifigure.
+        Overall size of the figure. Note that this option is useless if the SmartFigure is nested inside another
+        SmartFigure, as the size is then determined by the parent SmartFigure and the available space.
         Default depends on the ``figure_style`` configuration.
     title : str, optional
         General title of the figure.
@@ -66,12 +66,12 @@ class SmartFigure:
     sub_x_labels, sub_y_labels : Iterable[str], optional
         Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
         single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
-        :class:`~graphinglib.smart_figure.SmartFigure` objects for each subfigure only to set the x and y labels.
+        :class:`~graphinglib.SmartFigure` objects for each subfigure only to set the x and y labels.
     subtitles : Iterable[str], optional
         Labels for the subtitles of each subfigure, respectively. Similarly to `sub_x_labels` and `sub_y_labels`, this
         allows to set subtitles for each subfigure without needing to create nested
-        :class:`~graphinglib.smart_figure.SmartFigure` objects. It is only useful for figures that are not a single
-        subplot and when each subfigure needs its own subtitle.
+        :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
+        each subfigure needs its own subtitle.
     log_scale_x, log_scale_y : bool
         Whether to use a logarithmic scale for the x and y axes, respectively.
         Defaults to ``False``.
@@ -183,8 +183,8 @@ class SmartFigure:
         Twin axes for the x and y axes, respectively. This allows to attach additional axes to the main axes of the
         SmartFigure, which can be useful for displaying additional information or data on the same plot without
         cluttering the main axes. The twin axes can be used to plot additional data with different scales or units. See
-        the :class:`~graphinglib.smart_figure.SmartTwinAxis` class for more details on how to use twin axes and the
-        :meth:`~graphinglib.smart_figure.SmartFigure.create_twin_axis` method for wrapping the creation of twin axes.
+        the :class:`~graphinglib.SmartTwinAxis` class for more details on how to use twin axes and the
+        :meth:`~graphinglib.SmartFigure.create_twin_axis` method for wrapping the creation of twin axes.
     figure_style : str
         The figure style to use for the figure. The default style can be set using ``gl.set_default_style()``.
         Defaults to ``"default"``.
@@ -792,8 +792,8 @@ class SmartFigure:
     ) -> None:
         """
         Sets the elements of the SmartFigure with the same rules as the constructor. For adding elements instead of
-        replacing them, use the :meth:`~graphinglib.smart_figure.SmartFigure.add_elements` or
-        :meth:`~graphinglib.smart_figure.SmartFigure.__setitem__` methods.
+        replacing them, use the :meth:`~graphinglib.SmartFigure.add_elements` or the
+        :meth:`~graphinglib.SmartFigure.__setitem__` methods.
         """
         self._elements = {}  # systematically reset the elements when setting them with the property
         self.add_elements(*value)
@@ -813,8 +813,8 @@ class SmartFigure:
     def show_grid(self) -> bool:
         """
         Whether to show the grid lines on the figure. A grid first needs to be created using the
-        :meth: `~graphinglib.smart_figure.SmartFigure.set_grid` method. This can be used to easily toggle the visibility
-        of a previously created grid.
+        :meth: `~graphinglib.SmartFigure.set_grid` method. This can be used to easily toggle the visibility of a
+        previously created grid.
         """
         return self._show_grid
 
@@ -828,11 +828,11 @@ class SmartFigure:
     def hide_custom_legend_elements(self) -> bool:
         """
         Whether to hide custom legend elements. This is useful if a custom legend was previously created using the
-        :meth:`~graphinglib.smart_figure.SmartFigure.set_custom_legend` method and you want to hide these elements. Each
-        SmartFigure controls its own custom legend elements, so if this property is set to True in a nested SmartFigure,
-        the custom legend elements will be hidden even if the parent SmartFigure attempts to create a general legend.
-        However, both the nested and parent SmartFigures need to set this property to False to display the custom
-        elements of a nested SmartFigure in a global general legend.
+        :meth:`~graphinglib.SmartFigure.set_custom_legend` method and you want to hide these elements. Each SmartFigure
+        controls its own custom legend elements, so if this property is set to True in a nested SmartFigure, the custom
+        legend elements will be hidden even if the parent SmartFigure attempts to create a general legend. However, both
+        the nested and parent SmartFigures need to set this property to False to display the custom elements of a nested
+        SmartFigure in a global general legend.
         """
         return self._hide_custom_legend_elements
 
@@ -846,17 +846,16 @@ class SmartFigure:
     def hide_default_legend_elements(self) -> bool:
         """
         Whether to hide default legend elements. This is useful if a custom legend was previously created using the
-        :meth:`~graphinglib.smart_figure.SmartFigure.set_custom_legend` method and you want to hide the default labels
-        created with each :class:`~graphinglib.graph_elements.Plottable` element's label. Each SmartFigure controls its
-        own default legend elements, so if this property is set to True in a nested SmartFigure, the default
-        elements will be hidden even if the parent SmartFigure attempts to create a general legend. However, both the
-        nested and parent SmartFigures need to set this property to False to display the default elements of a nested
-        SmartFigure in a global general legend.
+        :meth:`~graphinglib.SmartFigure.set_custom_legend` method and you want to hide the default labels created with
+        each :class:`~graphinglib.Plottable` element's label. Each SmartFigure controls its own default legend elements,
+        so if this property is set to True in a nested SmartFigure, the default elements will be hidden even if the
+        parent SmartFigure attempts to create a general legend. However, both the nested and parent SmartFigures need to
+        set this property to False to display the default elements of a nested SmartFigure in a global general legend.
 
         .. warning::
             The use of this property for simply toggling the visibility of the legend is discouraged. Instead, use the
-            :meth:`~graphinglib.smart_figure.SmartFigure.show_legend` property to show or hide all the legend elements.
-            This should only be used if a custom legend was created.
+            :meth:`~graphinglib.SmartFigure.show_legend` property to show or hide all the legend elements. This should
+            only be used if a custom legend was created.
         """
         return self._hide_default_legend_elements
 
@@ -874,13 +873,13 @@ class SmartFigure:
 
         .. note::
             This property is used to verify if custom legend elements can be added to the SmartFigure even if the
-            :attr:`~graphinglib.smart_figure.SmartFigure.general_legend` is set to ``False``.
+            :attr:`~graphinglib.SmartFigure.general_legend` is set to ``False``.
         """
         return self.num_rows == 1 and self.num_cols == 1
 
     def __len__(self) -> int:
         """
-        Gives the number of elements in the :class:`~graphinglib.smart_figure.SmartFigure`.
+        Gives the number of elements in the :class:`~graphinglib.SmartFigure`.
         """
         return len(self._elements)
 
@@ -948,7 +947,8 @@ class SmartFigure:
 
         We can also insert a nested SmartFigure into a specific region of the SmartFigure and remove the bottom plot::
 
-            subfigure = SmartFigure(num_rows=2, num_cols=1, elements=[gl.Heatmap(data1), gl.Heatmap(data2)])
+            subfigure = SmartFigure(num_rows=2, num_cols=1)
+            subfigure.add_elements(gl.Heatmap(data1), gl.Heatmap(data2))
             fig[0, 1] = subfigure
             fig[1, :] = None
 
@@ -1028,7 +1028,7 @@ class SmartFigure:
 
     def copy(self) -> Self:
         """
-        Returns a deep copy of the :class:`~graphinglib.smart_figure.SmartFigure` object.
+        Returns a deep copy of the :class:`~graphinglib.SmartFigure` object.
         """
         return deepcopy(self)
 
@@ -1155,37 +1155,36 @@ class SmartFigure:
         *elements: Plottable | SmartFigure | Iterable[Plottable | SmartFigure],
     ) -> Self:
         """
-        Adds one or more :class:`~graphinglib.graph_elements.Plottable` or
-        :class:`~graphinglib.smart_figure.SmartFigure` to the :class:`~graphinglib.smart_figure.SmartFigure`. This
-        method is equivalent to using the :meth:`~graphinglib.smart_figure.SmartFigure.__setitem__` method, but can only
-        add elements in single subplots.
+        Adds one or more :class:`~graphinglib.Plottable` or :class:`~graphinglib.SmartFigure` to the current
+        SmartFigure. This method is equivalent to using the :meth:`~graphinglib.SmartFigure.__setitem__` method, but can
+        only add elements spanning single subplots.
 
         Parameters
         ----------
         elements : Plottable | SmartFigure | Iterable[Plottable | SmartFigure]
-            Elements to plot in the :class:`~graphinglib.smart_figure.SmartFigure`. Each given element is added in turn
-            to each subplot in the order they are provided. Iterables of :class:`~graphinglib.graph_elements.Plottable`
-            objects can be provided to add multiple elements in the same subplot. The number of provided elements must
-            be at most the number of subplots unless the :class:`~graphinglib.smart_figure.SmartFigure` is a single
-            subplot, in which case all elements are added to the unique plot. If ``None`` elements are present, the
-            corresponding subplot is skipped and not drawn. If iterables containing only ``None`` are given, the
-            corresponding subplots are drawn but will appear empty.
+            Elements to plot in the :class:`~graphinglib.SmartFigure`. Each given element is added in turn to each
+            subplot in the order they are provided. Iterables of :class:`~graphinglib.Plottable` objects can be provided
+            to add multiple elements in the same subplot. The number of provided elements must be at most the number of
+            subplots unless the :class:`~graphinglib.SmartFigure` is a single subplot, in which case all elements are
+            added to the unique plot. If ``None`` elements are present, the corresponding subplot is skipped and not
+            drawn. If iterables containing only ``None`` are given, the corresponding subplots are drawn but will appear
+            empty.
 
             .. note::
                 This method for adding elements only allows to add elements to single subplots. If you want to add
-                elements that span multiple subplots, you should use the
-                :meth:`~graphinglib.smart_figure.SmartFigure.__setitem__` method instead.
+                elements that span multiple subplots, you should use the :meth:`~graphinglib.SmartFigure.__setitem__`
+                method instead.
 
         Returns
         -------
         Self
-            For convenience, the same :class:`~graphinglib.smart_figure.SmartFigure` with the added elements.
+            For convenience, the same :class:`~graphinglib.SmartFigure` with the added elements.
 
         See Also
         --------
-        :meth:`~graphinglib.smart_figure.SmartFigure.__setitem__`
+        :meth:`~graphinglib.SmartFigure.__setitem__`
             For more information on how to use the ``__setitem__`` method to add elements that span multiple columns or
-            rows to the :class:`~graphinglib.smart_figure.SmartFigure`.
+            rows to the :class:`~graphinglib.SmartFigure`.
         """
         if len(elements) > 0:
             if len(elements) > self._num_cols * self._num_rows and not self.is_single_subplot:
@@ -1211,15 +1210,15 @@ class SmartFigure:
         fullscreen: bool = False,
     ) -> Self:
         """
-        Plots and displays the :class:`~graphinglib.smart_figure.SmartFigure`. The
-        :meth:`~graphinglib.smart_figure.SmartFigure.save` method is recommended to see properly what the figure looks
-        like, as the display may not show the full figure or the appropriate spacings in some cases.
+        Plots and displays the :class:`~graphinglib.SmartFigure`. The :meth:`~graphinglib.SmartFigure.save` method is
+        recommended to see properly what the figure looks like, as the display may not show the full figure or the
+        appropriate spacings in some cases.
 
         .. warning::
             If the SmartFigure contains a general legend and the legend location is set to an "outside" position, it may
             not be displayed correctly in matplotlib windows. Inline figures in a Jupyter notebook or saving the figure
-            to a file using the :meth:`~graphinglib.smart_figure.SmartFigure.save` method are recommended to get the
-            figure properly displayed.
+            to a file using the :meth:`~graphinglib.SmartFigure.save` method are recommended to get the figure properly
+            displayed.
 
         Parameters
         ----------
@@ -1275,15 +1274,16 @@ class SmartFigure:
         split_pdf: bool = False,
     ) -> Self:
         """
-        Saves the :class:`~graphinglib.smart_figure.SmartFigure` to a file.
+        Saves the :class:`~graphinglib.SmartFigure` to a file.
 
         Parameters
         ----------
         file_name : str | PdfPages
-            The name of the file or the PdfPages object to save the figure to. The file extension determines the format
-            (e.g., .png, .pdf). If a :class:`~matplotlib.backends.backend_pdf.PdfPages` object is provided, the figure
-            will be saved to that PDF file instead. Note that the provided PdfPages object must be opened by the user,
-            preferably using a context manager (``with PdfPages(...) as pdf:``).
+            The name of the file or the :class:`~matplotlib.backends.backend_pdf.PdfPages` object to save the figure to.
+            The file extension determines the format (e.g., .png, .pdf). If a
+            :class:`~matplotlib.backends.backend_pdf.PdfPages` object is provided, the figure will be saved to that PDF
+            file instead. Note that the provided PdfPages object must be opened by the user, preferably using a context
+            manager (``with PdfPages(...) as pdf:``).
         dpi : int, optional
             The resolution in dots per inch. If None, the figure's DPI is used.
         transparent : bool, optional
@@ -1348,9 +1348,9 @@ class SmartFigure:
         self,
     ) -> None:
         """
-        Initializes the parent :class:`~graphinglib.smart_figure.SmartFigure` for plotting. This method initializes the
-        appropriate figure style, parameters and matplotlib figure and calls the
-        :meth:`~graphinglib.smart_figure.SmartFigure._prepare_figure` method.
+        Initializes the parent :class:`~graphinglib.SmartFigure` for plotting. This method initializes the appropriate
+        figure style, parameters and matplotlib figure and calls the :meth:`~graphinglib.SmartFigure._prepare_figure`
+        method.
         """
         if self._figure_style == "default":
             self._figure_style = get_default_style()
@@ -1405,8 +1405,8 @@ class SmartFigure:
         ----------
         is_matplotlib_style : bool, optional
             Whether the figure style is a matplotlib style, which allows the use of the plt.style.use function. This
-            argument is passed to the :meth:`~graphinglib.smart_figure.SmartFigure._fill_in_rc_params` method, and
-            determines if missing plottable parameters should be filled in.
+            argument is passed to the :meth:`~graphinglib.SmartFigure._fill_in_rc_params` method, and determines if
+            missing plottable parameters should be filled in.
         make_legend : bool, optional
             Whether to create a legend for the figure. This parameter is set to ``False`` when the parent SmartFigure
             is generating a general legend for all subfigures, and this tells the nested SmartFigures to not create
@@ -1421,10 +1421,10 @@ class SmartFigure:
             the values are dictionaries with the "labels" and "handles" keys, which give the list of each type of
             element. The "default" elements are the ones created by the Plottable elements' labels, while the "custom"
             elements are the ones created by the user using the
-            :meth:`~graphinglib.smart_figure.SmartFigure.set_custom_legend` method. This is used to create a general
-            legend for the entire SmartFigure and keeping trach of the default and custom elements to use the
-            :attr:`~graphinglib.smart_figure.SmartFigure.hide_default_legend_elements` and
-            :attr:`~graphinglib.smart_figure.SmartFigure.hide_custom_legend_elements` properties.
+            :meth:`~graphinglib.SmartFigure.set_custom_legend` method. This is used to create a general legend for the
+            entire SmartFigure and keeping trach of the default and custom elements to use the
+            :attr:`~graphinglib.SmartFigure.hide_default_legend_elements` and
+            :attr:`~graphinglib.SmartFigure.hide_custom_legend_elements` properties.
         """
         # If given, check the consistency of the sub_x_labels, sub_y_labels and subtitles, as well as their padding
         num_subplots = len(self)
@@ -1990,8 +1990,8 @@ class SmartFigure:
 
     def _fill_in_missing_params(self, element: SmartFigure | Plottable) -> list[str]:
         """
-        Fills in the missing parameters for a :class:`~graphinglib.smart_figure.SmartFigure` or a
-        :class:`~graphinglib.plottable.Plottable` from the specified ``figure_style``.
+        Fills in the missing parameters for a :class:`~graphinglib.SmartFigure` or a :class:`~graphinglib.Plottable`
+        from the specified ``figure_style``.
         """
         params_to_reset = []
         # The following logic enables figures that inherit from SmartFigure to use the same default parameters
@@ -2023,8 +2023,8 @@ class SmartFigure:
         self, element: Plottable | SmartFigure, params_to_reset: list[str]
     ) -> None:
         """
-        Resets the parameters that were set to default in the
-        :meth:`~graphinglib.smart_figure.SmartFigure._fill_in_missing_params` method.
+        Resets the parameters that were set to default in the :meth:`~graphinglib.SmartFigure._fill_in_missing_params`
+        method.
         """
         for param in params_to_reset:
             setattr(element, param, "default")
@@ -2058,7 +2058,7 @@ class SmartFigure:
         reset: bool = False,
     ) -> Self:
         """
-        Customize the visual style of the :class:`~graphinglib.smart_figure.SmartFigure`.
+        Customize the visual style of the :class:`~graphinglib.SmartFigure`.
 
         Any rc parameter that is not specified in the dictionary will be set to the default value for the specified
         ``figure_style``.
@@ -2108,7 +2108,7 @@ class SmartFigure:
         hidden_spines: Optional[Iterable[Literal["right", "left", "top", "bottom"]]] = None,
     ) -> Self:
         """
-        Customize the visual style of the :class:`~graphinglib.smart_figure.SmartFigure`.
+        Customize the visual style of the :class:`~graphinglib.SmartFigure`.
 
         Any parameter that is not specified (None) will be set to the default value for the specified ``figure_style``.
 
@@ -2414,7 +2414,7 @@ class SmartFigure:
             Defaults to ``True`` for both axes.
         show_on_top : bool, optional
             If ``True``, sets the grid lines to be shown on top of the plot elements. This can be useful to see the grid
-            lines above a plotted :class:`~graphinglib.data_plotting_2d.Heatmap` for example.
+            lines above a plotted :class:`~graphinglib.Heatmap` for example.
             Defaults to ``False``.
         which_x, which_y : Literal["major", "minor", "both"], optional
             Sets whether major, minor or both grid lines are shown for the x-axis and y-axis respectively.
@@ -2471,18 +2471,18 @@ class SmartFigure:
         """
         Sets a custom legend for the figure. If the SmartFigure contains multiple subfigures, custom legends only work
         if the ``general_legend`` parameter is set to ``True``. Otherwise, custom legends can be added for non-general
-        legends if the SmartFigure is a single subplot (see the
-        :attr:`~graphinglib.smart_figure.SmartFigure.is_single_subplot` property).
+        legends if the SmartFigure is a single subplot (see the :attr:`~graphinglib.SmartFigure.is_single_subplot`
+        property).
 
         .. note::
             The visibility of default or custom legend elements can be controlled individually with the
-            :attr:`~graphinglib.smart_figure.SmartFigure.hide_default_legend_elements` and
-            :attr:`~graphinglib.smart_figure.SmartFigure.hide_custom_legend_elements` properties.
+            :attr:`~graphinglib.SmartFigure.hide_default_legend_elements` and
+            :attr:`~graphinglib.SmartFigure.hide_custom_legend_elements` properties.
 
         Parameters
         ----------
         elements : Iterable[LegendElement], optional
-            Iterable of :class:`~graphinglib.smart_figure.LegendElement` objects to add to the legend.
+            Iterable of :class:`~graphinglib.LegendElement` objects to add to the legend.
         reset : bool, optional
             Whether or not to reset the custom handles and labels previously added with this method before adding the
             new ones.
@@ -2630,7 +2630,7 @@ class SmartFigure:
         elements: Optional[Iterable[Plottable]] = [],
     ) -> SmartTwinAxis:
         """
-        Creates a twin axis for the SmartFigure. This method creates a :class:`~graphinglib.smart_figure.SmartTwinAxis`
+        Creates a twin axis for the SmartFigure. This method creates a :class:`~graphinglib.SmartTwinAxis`
         object that can be used to plot elements on a secondary axis in the same subplot.
 
         Parameters
@@ -2653,14 +2653,13 @@ class SmartFigure:
             Defaults to ``False``.
         elements : Iterable[Plottable], optional
             Elements to plot in the twin axis. This must be an iterable of
-            :class:`~graphinglib.graph_elements.Plottable` objects. If ``None`` elements are present, they are ignored.
+            :class:`~graphinglib.Plottable` objects. If ``None`` elements are present, they are ignored.
 
         Returns
         -------
         SmartTwinAxis
             The created twin axis object. The twin axis can also be accessed through the
-            :attr:`~graphinglib.smart_figure.SmartFigure.twin_x_axis` or
-            :attr:`~graphinglib.smart_figure.SmartFigure.twin_y_axis` properties.
+            :attr:`~graphinglib.SmartFigure.twin_x_axis` or :attr:`~graphinglib.SmartFigure.twin_y_axis` properties.
         """
         if is_y and self._twin_y_axis is not None:
             raise GraphingException("A twin y-axis already exists for this SmartFigure.")
@@ -2686,19 +2685,19 @@ class SmartFigure:
 
 class SmartFigureWCS(SmartFigure):
     """
-    This class implements a figure object for plotting :class:`~graphinglib.graph_elements.Plottable` elements. It
-    allows for the creation of complex figures recursively, where each :class:`~graphinglib.smart_figure.SmartFigure`
-    can contain other :class:`~graphinglib.smart_figure.SmartFigure` objects. The class supports a variety of
-    customization options as well as the ability to use styles and themes for consistent visual appearance across
-    different figures. The idea behind this class is that every SmartFigure contains a single x_label, y_label, title,
-    projection, etc. and that nested SmartFigures can be inserted into the main SmartFigure to create complex figures
-    with more parameters.
+    This class implements a figure object for plotting :class:`~graphinglib.Plottable` elements with a
+    `astropy.wcs.WCS <https://docs.astropy.org/en/stable/wcs/index.html>`_ projection. It allows for the creation of
+    complex figures recursively, where each :class:`~graphinglib.SmartFigure` can contain other
+    :class:`~graphinglib.SmartFigure` objects. The class supports a variety of customization options as well as the
+    ability to use styles and themes for consistent visual appearance across different figures. The idea behind this
+    class is that every SmartFigure contains a single x_label, y_label, title, projection, etc. and that nested
+    SmartFigures can be inserted into the main SmartFigure to create complex figures with more parameters.
 
     Parameters
     ----------
     projection : WCS
-        The World Coordinate System (WCS) object to use for the figure. This is used to plot data in a coordinate system
-        that is not Cartesian, such as celestial coordinates.
+        The `World Coordinate System (WCS) <https://docs.astropy.org/en/stable/wcs/index.html>`_ object to use for the
+        figure. This is used to plot data in a coordinate system that is not Cartesian, such as celestial coordinates.
     num_rows, num_cols : int
         Number of rows and columns for the base grid. These parameters determine the number of "squares" on which the
         plots can be placed.
@@ -2706,7 +2705,8 @@ class SmartFigureWCS(SmartFigure):
     x_label, y_label : str, optional
         Labels for the x and y axes of the figure.
     size : tuple[float, float]
-        Overall size of the multifigure.
+        Overall size of the figure. Note that this option is useless if the SmartFigure is nested inside another
+        SmartFigure, as the size is then determined by the parent SmartFigure and the available space.
         Default depends on the ``figure_style`` configuration.
     title : str, optional
         General title of the figure.
@@ -2715,12 +2715,12 @@ class SmartFigureWCS(SmartFigure):
     sub_x_labels, sub_y_labels : Iterable[str], optional
         Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
         single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
-        :class:`~graphinglib.smart_figure.SmartFigure` objects for each subfigure only to set the x and y labels.
+        :class:`~graphinglib.SmartFigure` objects for each subfigure only to set the x and y labels.
     subtitles : Iterable[str], optional
         Labels for the subtitles of each subfigure, respectively. Similarly to `sub_x_labels` and `sub_y_labels`, this
         allows to set subtitles for each subfigure without needing to create nested
-        :class:`~graphinglib.smart_figure.SmartFigure` objects. It is only useful for figures that are not a single
-        subplot and when each subfigure needs its own subtitle.
+        :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
+        each subfigure needs its own subtitle.
     log_scale_x, log_scale_y : bool
         Whether to use a logarithmic scale for the x and y axes, respectively.
         Defaults to ``False``.
@@ -2820,8 +2820,8 @@ class SmartFigureWCS(SmartFigure):
         Twin axes for the x and y axes, respectively. This allows to attach additional axes to the main axes of the
         SmartFigure, which can be useful for displaying additional information or data on the same plot without
         cluttering the main axes. The twin axes can be used to plot additional data with different scales or units. See
-        the :class:`~graphinglib.smart_figure.SmartTwinAxis` class for more details on how to use twin axes and the
-        :meth:`~graphinglib.smart_figure.SmartFigure.create_twin_axis` method for wrapping the creation of twin axes.
+        the :class:`~graphinglib.SmartTwinAxis` class for more details on how to use twin axes and the
+        :meth:`~graphinglib.SmartFigure.create_twin_axis` method for wrapping the creation of twin axes.
     figure_style : str
         The figure style to use for the figure. The default style can be set using ``gl.set_default_style()``.
         Defaults to ``"default"``.
@@ -3069,10 +3069,11 @@ class SmartFigureWCS(SmartFigure):
         x_tick_formatter, y_tick_formatter : Callable | str, optional
             A function or a string format to apply to the x or y tick labels. If a function is provided, it should take
             a single argument (the tick value) and return a formatted string. If a string is provided, it should be a
-            format string that will be applied to each tick value. See the astropy documentation for more details:
-            https://docs.astropy.org/en/latest/visualization/wcsaxes/ticks_labels_grid.html
+            format string that will be applied to each tick value. See the `astropy documentation
+            <https://docs.astropy.org/en/latest/visualization/wcsaxes/ticks_labels_grid.html>`_ for more details.
 
-            .. example::
+            Examples::
+
                 >>> x_tick_formatter = "hh:mm:ss.s"
 
                 ``1h01m34.1s``
@@ -3146,11 +3147,12 @@ class SmartFigureWCS(SmartFigure):
         draw_right_labels: Optional[bool] = None,
     ) -> Self:
         """
-        Sets the tick parameters for the figure. These parameters are given to the
-        :meth:`astropy.visualization.wcsaxes.coordinate_helpers.tick_params` method.
+        Sets the tick parameters for the figure. These parameters are given to the ``tick_params`` method of the
+        `astropy.visualization.wcsaxes.WCSAxes
+        <https://docs.astropy.org/en/stable/api/astropy.visualization.wcsaxes.WCSAxes.html>`_.
 
         .. warning::
-            Due to how the :class:`astropy.visualization.wcsaxes.WCSAxes` are implemented, only the length of the minor
+            Due to how the :class:`~astropy.visualization.wcsaxes.WCSAxes` are implemented, only the length of the minor
             ticks can be controlled independently from the major ticks. The other parameters are applied to both major
             and minor ticks for a specified axis.
 
@@ -3168,8 +3170,9 @@ class SmartFigureWCS(SmartFigure):
             The direction of the ticks.
 
             .. warning::
-                Contrary to the :meth:`~graphinglib.smart_figure.SmartFigure.set_tick_params` method, the ``direction``
-                parameter cannot be set to ``"inout"`` due to how :class:`astropy.visualization.wcsaxes.WCSAxes` work.
+                Contrary to the :meth:`~graphinglib.SmartFigure.set_tick_params` method, the ``direction`` parameter
+                cannot be set to ``"inout"`` since they are not supported by `astropy.visualization.wcsaxes.WCSAxes
+                <https://docs.astropy.org/en/stable/api/astropy.visualization.wcsaxes.WCSAxes.html>`_.
         length : float, optional
             The length of the ticks.
         minor_length : float, optional
@@ -3240,9 +3243,9 @@ class SmartFigureWCS(SmartFigure):
         Sets the grid parameters for the figure.
 
         .. note::
-            Contrary to the :class:`~graphinglib.smart_figure.SmartFigure` class, this method does not support plotting
-            grid lines for minor ticks. This is because the :class:`astropy.visualization.wcsaxes.WCSAxes` do not
-            support minor ticks for the grid lines.
+            Contrary to the :class:`~graphinglib.SmartFigure` class, this method does not support plotting grid lines
+            for minor ticks. This is because the :class:`astropy.visualization.wcsaxes.WCSAxes` do not support minor
+            ticks for the grid lines.
 
         Parameters
         ----------
@@ -3252,7 +3255,7 @@ class SmartFigureWCS(SmartFigure):
             Defaults to ``True`` for both axes.
         show_on_top : bool, optional
             If ``True``, sets the grid lines to be shown on top of the plot elements. This can be useful to see the grid
-            lines above a plotted :class:`~graphinglib.data_plotting_2d.Heatmap` for example.
+            lines above a plotted :class:`~graphinglib.Heatmap` for example.
             Defaults to ``False``.
         color : str, optional
             Sets the color of the grid lines.
@@ -3287,13 +3290,12 @@ class SmartFigureWCS(SmartFigure):
 
 class SmartTwinAxis:
     """
-    This class implements a twin axis for the :class:`~graphinglib.smart_figure.SmartFigure` and
-    :class:`~graphinglib.smart_figure.SmartFigureWCS` classes.
+    This class implements a twin axis for the :class:`~graphinglib.SmartFigure` and :class:`~graphinglib.SmartFigureWCS`
+    classes.
 
-    Behaves like a :class:`~graphinglib.smart_figure.SmartFigure` object, but is not meant to be used on its own.
-    Elements can be added to the twin axis using the :meth:`~graphinglib.smart_figure.SmartTwinAxis.add_elements`
-    method and the same methods as for the :class:`~graphinglib.smart_figure.SmartFigure` class can be used to customize
-    the twin axis.
+    Behaves like a :class:`~graphinglib.SmartFigure` object, but is not meant to be used on its own. Elements can be
+    added to the twin axis using the :meth:`~graphinglib.SmartTwinAxis.add_elements` method and the same methods as for
+    the :class:`~graphinglib.SmartFigure` class can be used to customize the twin axis.
 
     Parameters
     ----------
@@ -3314,8 +3316,8 @@ class SmartTwinAxis:
         Whether to invert the twin axis.
         Defaults to ``False``.
     elements : Iterable[Plottable], optional
-        Elements to plot in the twin axis. This must be an iterable of :class:`~graphinglib.graph_elements.Plottable`
-        objects. If ``None`` elements are present, they are ignored.
+        Elements to plot in the twin axis. This must be an iterable of :class:`~graphinglib.Plottable` objects. If
+        ``None`` values are present, they are ignored.
     """
 
     def __init__(
@@ -3415,14 +3417,14 @@ class SmartTwinAxis:
     def elements(self, value: Optional[Iterable[Plottable]]) -> None:
         """
         Sets the elements of the SmartTwinAxis with the same rules as the constructor. For adding elements instead of
-        replacing them, use the :meth:`~graphinglib.smart_figure.SmartTwinAxis.add_elements` method.
+        replacing them, use the :meth:`~graphinglib.SmartTwinAxis.add_elements` method.
         """
         self._elements = []  # systematically reset the elements when setting them with the property
         self.add_elements(*value)
 
     def __len__(self) -> int:
         """
-        Gives the number of elements in the :class:`~graphinglib.smart_figure.SmartTwinAxis`.
+        Gives the number of elements in the :class:`~graphinglib.SmartTwinAxis`.
         """
         return len(self._elements)
 
@@ -3449,7 +3451,7 @@ class SmartTwinAxis:
 
     def copy(self) -> Self:
         """
-        Returns a deep copy of the :class:`~graphinglib.smart_figure.SmartTwinAxis` object.
+        Returns a deep copy of the :class:`~graphinglib.SmartTwinAxis` object.
         """
         return deepcopy(self)
 
@@ -3490,18 +3492,18 @@ class SmartTwinAxis:
 
     def add_elements(self, *elements: Plottable) -> Self:
         """
-        Adds one or more :class:`~graphinglib.graph_elements.Plottable` elements to the twin axis.
+        Adds one or more :class:`~graphinglib.Plottable` elements to the twin axis.
 
         Parameters
         ----------
-        elements : :class:`~graphinglib.graph_elements.Plottable`
-            Elements to plot in the :class:`~graphinglib.smart_figure.SmartTwinAxis`. If ``None`` elements are present,
-            they are ignored and not added to the twin axis.
+        elements : :class:`~graphinglib.Plottable`
+            Elements to plot in the :class:`~graphinglib.SmartTwinAxis`. If ``None`` values are present, they are
+            ignored and not added to the twin axis.
 
         Returns
         -------
         Self
-            For convenience, the same :class:`graphinglib.smart_figure.SmartTwinAxis` with the added elements.
+            For convenience, the same :class:`~graphinglib.SmartTwinAxis` with the added elements.
         """
         if not SmartFigure._is_iterable_of_plottables(elements):
             raise TypeError("Elements must be an iterable of Plottable objects.")
@@ -3535,7 +3537,7 @@ class SmartTwinAxis:
             axis are drawn above the elements of the original axis.
         figure_style : str
             The figure style to use for the twin axis. This is used for the
-            :meth:`~graphinglib.smart_figure.SmartTwinAxis._fill_in_missing_params` method.
+            :meth:`~graphinglib.SmartTwinAxis._fill_in_missing_params` method.
 
         Returns
         -------
@@ -3646,8 +3648,7 @@ class SmartTwinAxis:
 
     def _fill_in_missing_params(self, element: SmartFigure | Plottable, figure_style: str) -> list[str]:
         """
-        Fills in the missing parameters for a :class:`~graphinglib.graph_elements.Plottable` from the parent's
-        ``figure_style``.
+        Fills in the missing parameters for a :class:`~graphinglib.Plottable` from the parent's ``figure_style``.
         """
         params_to_reset = []
         object_type = type(element).__name__
@@ -3678,8 +3679,8 @@ class SmartTwinAxis:
         self, element: Plottable, params_to_reset: list[str]
     ) -> None:
         """
-        Resets the parameters that were set to default in the
-        :meth:`~graphinglib.smart_figure.SmartTwinAxis._fill_in_missing_params` method.
+        Resets the parameters that were set to default in the :meth:`~graphinglib.SmartTwinAxis._fill_in_missing_params`
+        method.
         """
         for param in params_to_reset:
             setattr(element, param, "default")
@@ -3690,10 +3691,10 @@ class SmartTwinAxis:
         reset: bool = False,
     ) -> Self:
         """
-        Customize the visual style of the :class:`~graphinglib.smart_figure.SmartTwinAxis`.
+        Customize the visual style of the :class:`~graphinglib.SmartTwinAxis`.
 
         Any rc parameter that is not specified in the dictionary will be set to the default value for the specified
-        ``figure_style`` from the parent :class:`~graphinglib.smart_figure.SmartFigure`.
+        ``figure_style`` from the parent :class:`~graphinglib.SmartFigure`.
 
         Parameters
         ----------
