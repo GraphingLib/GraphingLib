@@ -18,6 +18,15 @@ Figure and MultiFigure
     Figure
     MultiFigure
 
+.. autosummary::
+    :toctree: generated/
+    :template: smart_figure_classes
+    :nosignatures:
+
+    SmartFigure
+    SmartFigureWCS
+    SmartTwinAxis
+
 Plottables
 ----------
 

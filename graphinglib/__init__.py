@@ -41,7 +41,7 @@ from .fits import (
     FitFromSine,
     FitFromSquareRoot,
 )
-from .graph_elements import GraphingException, Hlines, Point, Table, Text, Vlines, AxFunc
+from .graph_elements import Plottable, GraphingException, Hlines, Point, Table, Text, Vlines, AxFunc
 from .legend_artists import LegendLine, LegendMarker, LegendPatch
 from .multifigure import MultiFigure
 from .shapes import Arrow, Circle, Line, Polygon, Rectangle

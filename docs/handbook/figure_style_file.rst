@@ -28,7 +28,7 @@ If no style is specified, the user's default style is used. This default style c
 
 .. plot::
     :include-source: false
-    
+
     gl.set_default_style("plain")
 
 When you install GraphingLib for the first time, the default style is the "plain" style. You can also create your own styles or modify existing ones. To do this, you can use GraphingLib's Style Editor as described below.
@@ -51,6 +51,7 @@ To learn more about the Style Editor, you can check out the Style Editor documen
 
         Go to Style Editor Documentation
 
+.. _graphinglib_styles_showcase:
 
 GraphingLib Styles Showcase
 ---------------------------
