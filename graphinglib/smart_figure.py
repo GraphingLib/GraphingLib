@@ -1532,13 +1532,6 @@ class SmartFigure:
                             continue
                         z_order += 5
 
-                # Annotations
-                if self._annotations is not None:
-                    z_order = 5000
-                    for annotation in self._annotations:
-                        annotation._plot_element(self._figure, z_order)
-                        z_order += 5
-
                 # Add reference label
                 if self._reference_labels and (len(self) > 1 or isinstance(self._figure, SubFigure)):
                     self._create_reference_label(ax)
@@ -1686,7 +1679,17 @@ class SmartFigure:
 
         # Title (if the SmartFigure is not a single subplot)
         if self._title:
-            general_ax.set_title(self._title, pad=self._pad_params.get("title_pad"))
+            if self.is_single_subplot and ax is not None:
+                ax.set_title(self._title, pad=self._pad_params.get("title_pad"))
+            else:
+                general_ax.set_title(self._title, pad=self._pad_params.get("title_pad"))
+
+        # Annotations
+        if self._annotations is not None:
+            z_order = 5000
+            for annotation in self._annotations:
+                annotation._plot_element(self._figure, z_order)
+                z_order += 5
 
         # General legend
         custom_labels += self._custom_legend_labels
