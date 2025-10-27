@@ -8,7 +8,7 @@ Quickstart
 Creating a basic figure using the :class:`~graphinglib.SmartFigure` object is easy. The example below shows how to create a sine curve and display it.
 
 .. plot::
-    :context:
+    :context: close-figs
 
     sine = gl.Curve.from_function(lambda x: np.sin(x), 0, 2 * np.pi)
 
@@ -190,3 +190,10 @@ In short, the ``figure_style`` chosen in a parent :class:`~graphinglib.SmartFigu
     # Display figure1 separately
     # This shows figure1 with the "dark" style and with no axes edge color customization
     figure1.show()
+
+
+See Also
+--------
+
+- :doc:`/handbook/smart_figure_advanced` - More advanced SmartFigure features
+- :doc:`/generated/graphinglib.SmartFigure` - SmartFigure API reference
