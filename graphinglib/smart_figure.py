@@ -40,10 +40,11 @@ from numpy.typing import ArrayLike
 
 class SmartFigure:
     """
-    This class implements a figure object for plotting :class:`~graphinglib.Plottable` elements. It allows for the
-    creation of complex figures recursively, where each :class:`~graphinglib.SmartFigure` can contain other
-    :class:`~graphinglib.SmartFigure` objects. The class supports a variety of customization options as well as the
-    ability to use styles and themes for consistent visual appearance across different figures. The idea behind this
+    This class implements a figure object for plotting :class:`~graphinglib.Plottable` elements.
+
+    It allows for the creation of complex figures recursively, where each :class:`~graphinglib.SmartFigure` can contain
+    other :class:`~graphinglib.SmartFigure` objects. The class supports a variety of customization options as well as
+    the ability to use styles and themes for consistent visual appearance across different figures. The idea behind this
     class is that every SmartFigure contains a single x_label, y_label, title, projection, etc. and that nested
     SmartFigures can be inserted into the main SmartFigure to create complex figures with more parameters.
 
@@ -684,8 +685,7 @@ class SmartFigure:
                 if value not in valid_projections:
                     raise ValueError(f"projection must be one of {valid_projections} or a valid object.")
             elif isinstance(value, WCS):
-                warning("WCS projection should be used with the SmartFigureWCS object. This class may not offer all "
-                        "needed functionalities.")
+                raise GraphingException("WCS projection should be used with the SmartFigureWCS object.")
         self._projection = value
 
     @property
@@ -2689,10 +2689,11 @@ class SmartFigure:
 class SmartFigureWCS(SmartFigure):
     """
     This class implements a figure object for plotting :class:`~graphinglib.Plottable` elements with a
-    `astropy.wcs.WCS <https://docs.astropy.org/en/stable/wcs/index.html>`_ projection. It allows for the creation of
-    complex figures recursively, where each :class:`~graphinglib.SmartFigure` can contain other
-    :class:`~graphinglib.SmartFigure` objects. The class supports a variety of customization options as well as the
-    ability to use styles and themes for consistent visual appearance across different figures. The idea behind this
+    `astropy.wcs.WCS <https://docs.astropy.org/en/stable/wcs/index.html>`_ projection.
+
+    It allows for the creation of complex figures recursively, where each :class:`~graphinglib.SmartFigure` can contain
+    other :class:`~graphinglib.SmartFigure` objects. The class supports a variety of customization options as well as
+    the ability to use styles and themes for consistent visual appearance across different figures. The idea behind this
     class is that every SmartFigure contains a single x_label, y_label, title, projection, etc. and that nested
     SmartFigures can be inserted into the main SmartFigure to create complex figures with more parameters.
 
