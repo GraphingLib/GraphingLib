@@ -42,7 +42,7 @@ from .fits import (
     FitFromSquareRoot,
 )
 from .graph_elements import Plottable, GraphingException, Hlines, Point, Table, Text, Vlines, AxFunc
-from .legend_artists import LegendLine, LegendMarker, LegendPatch
+from .legend_artists import LegendElement, LegendLine, LegendMarker, LegendPatch
 from .multifigure import MultiFigure
 from .shapes import Arrow, Circle, Line, Polygon, Rectangle
 from .smart_figure import SmartFigure, SmartFigureWCS, SmartTwinAxis

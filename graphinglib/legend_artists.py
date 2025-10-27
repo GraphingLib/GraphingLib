@@ -129,8 +129,8 @@ def histogram_legend_artist(
 class LegendElement(Protocol):
     """
     This class implements a legend element that can be used to create custom legend entries for the
-    :meth:`~graphinglib.smart_figure.SmartFigure.set_custom_legend` method. It must be subclassed to create specific
-    legend elements that implement the `handle` property, which returns a Matplotlib artist.
+    :meth:`~graphinglib.SmartFigure.set_custom_legend` method. It should not be used on its own and must be subclassed
+    to create specific legend elements that implement the `handle` property, which returns a Matplotlib artist.
     """
     @property
     def handle(self) -> Artist:
@@ -192,7 +192,28 @@ class LegendLine(LegendElement):
     """
     This class implements a legend line wrapping the
     `Line2D <https://matplotlib.org/stable/api/_as_gen/matplotlib.lines.Line2D.html#matplotlib.lines.Line2D>`_ object
-    for creating custom legend entries with the :meth:`:~graphinglib.smart_figure.SmartFigure.set_custom_legend` method.
+    for creating custom legend entries with the :meth:`:~graphinglib.SmartFigure.set_custom_legend` method.
+
+    Parameters
+    ----------
+    label : str
+        The label for the legend line.
+    color : ColorType
+        The color of the line, which can be `any color format supported by Matplotlib 
+        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+    gap_color : ColorType, optional
+        The color of the gaps in the line (for dashed lines), which can be `any color format supported by Matplotlib 
+        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+    line_width : float, optional
+        The width of the line in points.
+        Defaults to ``2.0``.
+    line_style : {"-", "--", "-.", ":", "solid", "dashed", "dashdot", "dotted"} or tuple of float and sequence, optional
+        The style of the line, which can be `any pattern supported by Matplotlib
+        <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Patch.html#matplotlib.patches.Patch.set_linestyle>`_.
+        Defaults to ``"-"`` (solid line).
+    alpha : float, optional
+        The transparency level of the line, between ``0`` (fully transparent) and ``1`` (fully opaque).
+        Defaults to ``1.0``.
     """
 
     def __init__(
@@ -257,10 +278,41 @@ class LegendLine(LegendElement):
 
 class LegendMarker(LegendElement):
     """
-    This class implements a legend marker wrapping the
-    `Line2D <https://matplotlib.org/stable/api/_as_gen/matplotlib.lines.Line2D.html#matplotlib.lines.Line2D>`_ object
-    with a marker style set for creating custom legend entries with the
-    :meth:`:~graphinglib.smart_figure.SmartFigure.set_custom_legend` method.
+    This class implements a legend marker wrapping the `Line2D
+    <https://matplotlib.org/stable/api/_as_gen/matplotlib.lines.Line2D.html#matplotlib.lines.Line2D>`_ object with a
+    marker style set for creating custom legend entries with the :meth:`:~graphinglib.SmartFigure.set_custom_legend`
+    method.
+
+    Parameters
+    ----------
+    label : str
+        The label for the legend line.
+    face_color : ColorType
+        The color of the marker, which can be `any color format supported by Matplotlib 
+        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+    face_color_alt : ColorType, optional
+        The alternative face color of the marker (for markers with two colors), which can be `any color format
+        supported by Matplotlib 
+        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+    edge_color : ColorType, optional
+        The color of the marker edge, which can be `any color format supported by Matplotlib 
+        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+    edge_width : float, optional
+        The width of the marker edge in points.
+        Defaults to ``1.0``.
+    marker_size : float, optional
+        The size of the marker in points.
+        Defaults to ``6.0``.
+    marker_style : Any, optional
+        The style of the marker, which can be `any marker style supported by Matplotlib
+        <https://matplotlib.org/stable/api/markers_api.html#matplotlib.markers.MarkerStyle>`_.
+        Defaults to ``"o"`` (circle).
+    fill_style : {"full", "left", "right", "bottom", "top"}, optional
+        The fill style of the marker.
+        Defaults to ``"full"``.
+    alpha : float, optional
+        The transparency level of the marker, between ``0`` (fully transparent) and ``1`` (fully opaque).
+        Defaults to ``1.0``.
     """
 
     def __init__(
@@ -367,7 +419,31 @@ class LegendPatch(LegendElement):
     """
     This class implements a legend patch wrapping the
     `Patch <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Patch.html#matplotlib.patches.Patch>`_ object
-    for creating custom legend entries with the :meth:`:~graphinglib.smart_figure.SmartFigure.set_custom_legend` method.
+    for creating custom legend entries with the :meth:`:~graphinglib.SmartFigure.set_custom_legend` method.
+
+    Parameters
+    ----------
+    label : str
+        The label for the legend patch.
+    face_color : ColorType
+        The face color of the patch, which can be `any color format supported by Matplotlib 
+        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+    edge_color : ColorType, optional
+        The edge color of the patch, which can be `any color format supported by Matplotlib 
+        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+    line_width : float, optional
+        The width of the patch edge and hatch (if present) in points.
+        Defaults to ``1.0``.
+    line_style : {"-", "--", "-.", ":", "solid", "dashed", "dashdot", "dotted"} or tuple of float and sequence, optional
+        The style of the patch edge, which can be `any pattern supported by Matplotlib
+        <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Patch.html#matplotlib.patches.Patch.set_linestyle>`_.
+        Defaults to ``"-"`` (solid line).
+    hatch : {"/", "\\", "|", "-", "+", "x", "o", "O", ".", "*"}, optional
+        The hatch pattern of the patch, which can be `any hatch pattern supported by Matplotlib
+        <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Patch.html#matplotlib.patches.Patch.set_hatch>`_.
+    alpha : float, optional
+        The transparency level of the patch, between ``0`` (fully transparent) and ``1`` (fully opaque).
+        Defaults to ``1.0``.
     """
 
     def __init__(
@@ -394,11 +470,16 @@ class LegendPatch(LegendElement):
         """
         Returns the Matplotlib Patch artist that represents this legend patch.
         """
-        return Patch(label=self._label,
-                     facecolor=(self._face_color if self._face_color is not None else "none"),
-                     edgecolor=(self._edge_color if self._edge_color is not None else "none"),
-                     linewidth=self._line_width, linestyle=self._line_style, hatch=self._hatch, alpha=self._alpha,
-                     fill=(self._face_color is not None))
+        return Patch(
+            label=self._label,
+            facecolor=(self._face_color if self._face_color is not None else "none"),
+            edgecolor=(self._edge_color if self._edge_color is not None else "none"),
+            linewidth=self._line_width,
+            linestyle=self._line_style,
+            hatch=self._hatch,
+            alpha=self._alpha,
+            fill=(self._face_color is not None),
+        )
 
     @property
     def face_color(self) -> ColorType:
