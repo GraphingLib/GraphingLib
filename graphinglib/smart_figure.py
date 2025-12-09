@@ -3043,8 +3043,8 @@ class SmartFigureWCS(SmartFigure):
         y_tick_spacing: Optional[Quantity] = None,
         number_of_x_ticks: Optional[int] = None,
         number_of_y_ticks: Optional[int] = None,
-        x_tick_formatter: Optional[Callable | str] = None,
-        y_tick_formatter: Optional[Callable | str] = None,
+        x_tick_formatter: Optional[str | Callable] = None,
+        y_tick_formatter: Optional[str | Callable] = None,
         minor_x_tick_frequency: Optional[int] = None,
         minor_y_tick_frequency: Optional[int] = None,
     ) -> Self:
@@ -3070,11 +3070,14 @@ class SmartFigureWCS(SmartFigure):
                 This value is not absolute, but rather a suggestion to the WCSAxes. The actual number of ticks
                 displayed may vary depending on the data and limits of the axes.
 
-        x_tick_formatter, y_tick_formatter : Callable | str, optional
+        x_tick_formatter, y_tick_formatter : str | Callable, optional
             A function or a string format to apply to the x or y tick labels. If a function is provided, it should take
             a single argument (the tick value) and return a formatted string. If a string is provided, it should be a
             format string that will be applied to each tick value. See the `astropy documentation
             <https://docs.astropy.org/en/latest/visualization/wcsaxes/ticks_labels_grid.html>`_ for more details.
+
+            .. warning::
+                Callable formatters must only be given if the coordinate axis is not in angular units.
 
             Examples::
 
@@ -3082,7 +3085,7 @@ class SmartFigureWCS(SmartFigure):
 
                 ``1h01m34.1s``
 
-                >>> x_tick_formatter = lambda x: f"{x:.2f} s"
+                >>> x_tick_formatter = lambda x: f"{x:.2f} s"  # only for non-angular coordinate axes
 
                 ``1.23 s``
 
