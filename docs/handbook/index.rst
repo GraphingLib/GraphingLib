@@ -197,6 +197,22 @@ Sections in this handbook
 
             Visit this section
 
+    .. grid-item-card::
+        :img-top: ../_static/icons/Multifigure.svg
+
+        Plotting Astronomical Data with SmartFigureWCS
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        Create complex astronomical plots with WCS support.
+        ++++
+
+        .. button-ref:: ./smart_figure_wcs
+            :expand:
+            :color: primary
+            :click-parent:
+
+            Visit this section
+
 .. toctree::
    :maxdepth: 2
    :hidden:
@@ -212,3 +228,4 @@ Sections in this handbook
    figure_style_file
    smart_figure_simple
    smart_figure_advanced
+   smart_figure_wcs
