@@ -206,9 +206,35 @@ The :class:`~graphinglib.SmartFigure` uses a grid system defined by ``num_rows``
 
     # Can also use the shape property
     fig.shape = (3, 2)  # Now 3x2 grid
+    fig.elements = [[]]*6
+    fig.show()
 
 .. note::
    Changing the ``num_rows`` or ``num_cols`` of a preexisting :class:`~graphinglib.SmartFigure` is only allowed if there are no elements in the rows/columns being removed.
+
+This grid system can be exploited to create complex layouts by adding elements that span multiple rows or columns:
+
+.. plot::
+    :context: close-figs
+
+    # 4 column layout that appears like a 2 column layout
+    fig = gl.SmartFigure(num_rows=2, num_cols=4)
+    fig[0, :2] = curve1
+    fig[0, 2:] = curve1
+    fig[1, 1:3] = curve2  # places in the middle of the bottom row
+    fig.show()
+
+.. plot::
+    :context: close-figs
+
+    # 6 column layout that appears like a 3 and 2 column layout
+    fig = gl.SmartFigure(num_rows=2, num_cols=6)
+    fig[0, :2] = curve1
+    fig[0, 2:4] = curve1
+    fig[0, 4:] = curve1
+    fig[1, :3] = curve2
+    fig[1, 3:] = curve2
+    fig.show()
 
 Figure Size
 -----------
@@ -770,16 +796,23 @@ The :py:meth:`~graphinglib.SmartFigure.set_visual_params` method provides a conv
     )
 
     fig.set_visual_params(
-        figure_face_color="#2a2121ff",
+        figure_face_color="#dd834bff",
         axes_face_color="grey",
         axes_edge_color="navy",
         axes_line_width=2,
-        text_color="darkred",
-        font_size=20,
-        use_latex=True,
+        legend_font_size=30,
+        use_latex=True
     )
 
     fig.show()
+
+.. plot::
+    :nofigs:
+    :include-source: false
+
+    # This code is hidden and is used to properly reset matplotlib's rcparams, which seem to have trouble being properly reset between plots in some doc build environments.
+    curve1 = gl.Curve.from_function(lambda x: np.sin(x), 0, 2*np.pi, label="sin")
+    curve2 = gl.Curve.from_function(lambda x: np.cos(x), 0, 2*np.pi, label="cos")
 
 .. plot::
     :context: close-figs
@@ -855,20 +888,24 @@ For multi-subplot figures, create a single legend for all subplots:
     )
     fig.show()
 
-.. plot::
-    :context: close-figs
+.. code-block:: python
 
     # Outside legend positions
     fig = gl.SmartFigure(
         2, 2,
         general_legend=True,
         legend_loc="outside lower center",
+        legend_cols=4,
         elements=[curve1, curve2, curve1, curve2]
     )
-    fig.show()
+    fig.save("output.png")  # Or use inline Jupyter display
+
+.. figure:: /handbook/images/outside_legend_example.png
+    :align: center
+    :width: 70%
 
 .. warning::
-    General legends with a location beginning with ``"outside`` may not be displayed correctly since matplotlib does not change the window size to accomodate for the legend position. In such cases, use inline Jupyter display or save the figure to a file to see the legend on the figure.
+    General legends with a location beginning with ``"outside"`` may not be displayed correctly since matplotlib does not change the window size to accomodate for the legend position. In such cases, use inline Jupyter display or save the figure to a file to see the legend on the figure.
 
 If you have a nested :class:`~graphinglib.SmartFigure`, you can create a general legend for the entire figure including all sub-figures:
 
@@ -1281,8 +1318,15 @@ Twin Axis Customization
     twin_y.add_elements(extra_curve)
 
     # Access elements
-    print(f"Twin axis has {len(twin_y)} elements")
     first_element = twin_y[0]
+    print(f"Twin axis has {len(twin_y)} elements")
+
+Output:
+
+.. code-block:: none
+
+    Twin axis has 2 elements
+
 
 .. note::
    Twin axes can only be created for single-subplot :class:`~graphinglib.SmartFigure` objects (1x1 grid).
@@ -1757,6 +1801,8 @@ Troubleshooting
 **Twin axis error:**
    Verify figure is single-subplot (``is_single_subplot == True``). You may need to create a nested :class:`~graphinglib.SmartFigure` for the subplot with twin axis.
 
+**GraphingLib issues:**
+    https://github.com/GraphingLib/GraphingLib/issues
 
 See Also
 ========
