@@ -2,6 +2,14 @@
 Creating a simple figure with the :class:`~graphinglib.SmartFigure`
 ===================================================================
 
+.. plot::
+    :nofigs:
+    :include-source: false
+
+    # Reset matplotlib state completely at the start of this page
+    import matplotlib.pyplot as plt
+    plt.rcdefaults()
+
 Quickstart
 ----------
 
