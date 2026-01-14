@@ -36,6 +36,7 @@ Plottables
     :nosignatures:
 
     Arrow
+    AxFunc
     Circle
     Contour
     Curve
