@@ -565,6 +565,9 @@ class FitFromSine(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    max_iterations : int
+        Maximum number of iterations for the fit.
+        Default is 10000.
 
     Attributes
     ----------
@@ -592,6 +595,7 @@ class FitFromSine(GeneralFit):
         color: str = "default",
         line_width: str = "default",
         line_style: str = "default",
+        max_iterations: int = 10000,
     ) -> None:
         """
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
@@ -617,6 +621,9 @@ class FitFromSine(GeneralFit):
         line_style : str
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
+        max_iterations : int
+            Maximum number of iterations for the fit.
+            Default is 10000.
 
         Attributes
         ----------
@@ -643,6 +650,7 @@ class FitFromSine(GeneralFit):
         """
         self._curve_to_be_fit = curve_to_be_fit
         self._guesses = guesses
+        self._max_iterations = max_iterations
         self._calculate_parameters()
         self._function = self._sine_func_with_params()
         self._color = color
@@ -666,6 +674,10 @@ class FitFromSine(GeneralFit):
         self._y_data = self._function(self._x_data)
 
         self._setup_attributes()
+
+    @property
+    def max_iterations(self) -> int:
+        return self._max_iterations
 
     @property
     def amplitude(self) -> float:
@@ -729,6 +741,7 @@ class FitFromSine(GeneralFit):
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
             p0=self._guesses,
+            maxfev=self._max_iterations,
         )
         self._amplitude, self._frequency_rad, self._phase_rad, self._vertical_shift = (
             self._parameters
@@ -788,6 +801,9 @@ class FitFromExponential(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    max_iterations : int
+        Maximum number of iterations for the fit.
+        Default is 10000.
 
     Attributes
     ----------
@@ -809,6 +825,7 @@ class FitFromExponential(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        max_iterations: int = 10000,
     ) -> None:
         """
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`)
@@ -832,6 +849,9 @@ class FitFromExponential(GeneralFit):
         line_style : str
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
+        max_iterations : int
+            Maximum number of iterations for the fit.
+            Default is 10000.
 
         Attributes
         ----------
@@ -846,6 +866,7 @@ class FitFromExponential(GeneralFit):
         """
         self._curve_to_be_fit = curve_to_be_fit
         self._guesses = guesses
+        self._max_iterations = max_iterations
         self._calculate_parameters()
         self._function = self._exp_func_with_params()
         self._color = color
@@ -869,6 +890,10 @@ class FitFromExponential(GeneralFit):
         self._y_data = self._function(self._x_data)
 
         self._setup_attributes()
+
+    @property
+    def max_iterations(self) -> int:
+        return self._max_iterations
 
     @property
     def parameters(self) -> np.ndarray:
@@ -903,6 +928,7 @@ class FitFromExponential(GeneralFit):
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
             p0=self._guesses,
+            maxfev=self._max_iterations,
         )
         self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
 
@@ -954,6 +980,9 @@ class FitFromGaussian(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    max_iterations : int
+        Maximum number of iterations for the fit.
+        Default is 10000.
 
     Attributes
     ----------
@@ -984,6 +1013,7 @@ class FitFromGaussian(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        max_iterations: int = 10000,
     ) -> None:
         """
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
@@ -1009,6 +1039,9 @@ class FitFromGaussian(GeneralFit):
         line_style : str
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
+        max_iterations : int
+            Maximum number of iterations for the fit.
+            Default is 10000.
 
         Attributes
         ----------
@@ -1031,6 +1064,7 @@ class FitFromGaussian(GeneralFit):
         """
         self._curve_to_be_fit = curve_to_be_fit
         self._guesses = guesses
+        self._max_iterations = max_iterations
         self._calculate_parameters()
         self._function = self._gaussian_func_with_params()
         self._color = color
@@ -1054,6 +1088,10 @@ class FitFromGaussian(GeneralFit):
         self._y_data = self._function(self._x_data)
 
         self._setup_attributes()
+
+    @property
+    def max_iterations(self) -> int:
+        return self._max_iterations
 
     @property
     def amplitude(self) -> float:
@@ -1094,6 +1132,7 @@ class FitFromGaussian(GeneralFit):
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
             p0=self._guesses,
+            maxfev=self._max_iterations,
         )
         self._amplitude = self._parameters[0]
         self._mean = self._parameters[1]
@@ -1150,6 +1189,9 @@ class FitFromSquareRoot(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    max_iterations : int
+        Maximum number of iterations for the fit.
+        Default is 10000.
 
     Attributes
     ----------
@@ -1171,6 +1213,7 @@ class FitFromSquareRoot(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        max_iterations: int = 10000,
     ) -> None:
         """
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
@@ -1196,6 +1239,9 @@ class FitFromSquareRoot(GeneralFit):
         line_style : str
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
+        max_iterations : int
+            Maximum number of iterations for the fit.
+            Default is 10000.
 
         Attributes
         ----------
@@ -1210,6 +1256,7 @@ class FitFromSquareRoot(GeneralFit):
         """
         self._curve_to_be_fit = curve_to_be_fit
         self._guesses = guesses
+        self._max_iterations = max_iterations
         self._calculate_parameters()
         self._function = self._square_root_func_with_params()
         self._color = color
@@ -1233,6 +1280,10 @@ class FitFromSquareRoot(GeneralFit):
         self._y_data = self._function(self._x_data)
 
         self._setup_attributes()
+
+    @property
+    def max_iterations(self) -> int:
+        return self._max_iterations
 
     @property
     def parameters(self) -> np.ndarray:
@@ -1261,6 +1312,7 @@ class FitFromSquareRoot(GeneralFit):
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
             p0=self._guesses,
+            maxfev=self._max_iterations,
         )
         self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
 
@@ -1318,6 +1370,9 @@ class FitFromLog(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    max_iterations : int
+        Maximum number of iterations for the fit.
+        Default is 10000.
 
     Attributes
     ----------
@@ -1340,6 +1395,7 @@ class FitFromLog(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        max_iterations: int = 10000,
     ) -> None:
         """
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
@@ -1368,6 +1424,9 @@ class FitFromLog(GeneralFit):
         line_style : str
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
+        max_iterations : int
+            Maximum number of iterations for the fit.
+            Default is 10000.
 
         Attributes
         ----------
@@ -1383,6 +1442,7 @@ class FitFromLog(GeneralFit):
         self._curve_to_be_fit = curve_to_be_fit
         self._log_base = log_base
         self._guesses = guesses
+        self._max_iterations = max_iterations
         self._calculate_parameters()
         self._function = self._log_func_with_params()
         self._color = color
@@ -1406,6 +1466,10 @@ class FitFromLog(GeneralFit):
         self._y_data = self._function(self._x_data)
 
         self._setup_attributes()
+
+    @property
+    def max_iterations(self) -> int:
+        return self._max_iterations
 
     @property
     def parameters(self) -> np.ndarray:
@@ -1434,6 +1498,7 @@ class FitFromLog(GeneralFit):
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
             p0=self._guesses,
+            maxfev=self._max_iterations,
         )
         self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
 
@@ -1490,6 +1555,9 @@ class FitFromFunction(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    max_iterations : int
+        Maximum number of iterations for the fit.
+        Default is 10000.
 
     Attributes
     ----------
@@ -1512,6 +1580,7 @@ class FitFromFunction(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        max_iterations: int = 10000,
     ):
         """
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from a
@@ -1539,6 +1608,9 @@ class FitFromFunction(GeneralFit):
         line_style : str
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
+        max_iterations : int
+            Maximum number of iterations for the fit.
+            Default is 10000.
 
         Attributes
         ----------
@@ -1557,6 +1629,7 @@ class FitFromFunction(GeneralFit):
         self._color = color
         self._line_width = line_width
         self._line_style = line_style
+        self._max_iterations = max_iterations
 
         self._calculate_parameters()
         self._function = self._get_function_with_params()
@@ -1575,6 +1648,10 @@ class FitFromFunction(GeneralFit):
         self._y_data = self._function(self._x_data)
 
         self._setup_attributes()
+
+    @property
+    def max_iterations(self) -> int:
+        return self._max_iterations
 
     @property
     def parameters(self) -> np.ndarray:
@@ -1641,6 +1718,9 @@ class FitFromFOTF(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    max_iterations : int
+        Maximum number of iterations for the fit.
+        Default is 10000.
 
     Attributes
     ----------
@@ -1664,6 +1744,7 @@ class FitFromFOTF(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        max_iterations: int = 10000,
     ) -> None:
         """
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing :class:`~graphinglib.data_plotting_1d.Curve` object using a first order transfer function (FOTF) fit.
@@ -1687,6 +1768,9 @@ class FitFromFOTF(GeneralFit):
         line_style : str
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
+        max_iterations : int
+            Maximum number of iterations for the fit.
+            Default is 10000.
 
         Attributes
         ----------
@@ -1703,6 +1787,7 @@ class FitFromFOTF(GeneralFit):
         """
         self._curve_to_be_fit = curve_to_be_fit
         self._guesses = guesses
+        self._max_iterations = max_iterations
         self._calculate_parameters()
         self._function = self._fotf_func_with_params()
         self._color = color
@@ -1726,6 +1811,10 @@ class FitFromFOTF(GeneralFit):
         self._y_data = self._function(self._x_data)
 
         self._setup_attributes()
+
+    @property
+    def max_iterations(self) -> int:
+        return self._max_iterations
 
     @property
     def gain(self) -> float:
@@ -1762,6 +1851,7 @@ class FitFromFOTF(GeneralFit):
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
             p0=self._guesses,
+            maxfev=self._max_iterations,
         )
         self._gain = self._parameters[0]
         self._time_constant = self._parameters[1]
