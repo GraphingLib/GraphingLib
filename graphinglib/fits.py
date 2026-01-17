@@ -467,8 +467,8 @@ class FitFromPolynomial(GeneralFit):
             else 500
         )
         self._x_data = np.linspace(
-            self._curve_to_be_fit._x_data[0],
-            self._curve_to_be_fit._x_data[-1],
+            np.min(self._curve_to_be_fit._x_data),
+            np.max(self._curve_to_be_fit._x_data),
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
@@ -667,8 +667,8 @@ class FitFromSine(GeneralFit):
             else 500
         )
         self._x_data = np.linspace(
-            self._curve_to_be_fit._x_data[0],
-            self._curve_to_be_fit._x_data[-1],
+            np.min(self._curve_to_be_fit._x_data),
+            np.max(self._curve_to_be_fit._x_data),
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
@@ -883,8 +883,8 @@ class FitFromExponential(GeneralFit):
             else 500
         )
         self._x_data = np.linspace(
-            self._curve_to_be_fit._x_data[0],
-            self._curve_to_be_fit._x_data[-1],
+            np.min(self._curve_to_be_fit._x_data),
+            np.max(self._curve_to_be_fit._x_data),
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
@@ -1081,8 +1081,8 @@ class FitFromGaussian(GeneralFit):
             else 500
         )
         self._x_data = np.linspace(
-            self._curve_to_be_fit._x_data[0],
-            self._curve_to_be_fit._x_data[-1],
+            np.min(self._curve_to_be_fit._x_data),
+            np.max(self._curve_to_be_fit._x_data),
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
@@ -1273,8 +1273,8 @@ class FitFromSquareRoot(GeneralFit):
             else 500
         )
         self._x_data = np.linspace(
-            self._curve_to_be_fit._x_data[0],
-            self._curve_to_be_fit._x_data[-1],
+            np.min(self._curve_to_be_fit._x_data),
+            np.max(self._curve_to_be_fit._x_data),
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
@@ -1459,8 +1459,8 @@ class FitFromLog(GeneralFit):
             else 500
         )
         self._x_data = np.linspace(
-            self._curve_to_be_fit._x_data[0],
-            self._curve_to_be_fit._x_data[-1],
+            np.min(self._curve_to_be_fit._x_data),
+            np.max(self._curve_to_be_fit._x_data),
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
@@ -1641,8 +1641,8 @@ class FitFromFunction(GeneralFit):
             else 500
         )
         self._x_data = np.linspace(
-            self._curve_to_be_fit._x_data[0],
-            self._curve_to_be_fit._x_data[-1],
+            np.min(self._curve_to_be_fit._x_data),
+            np.max(self._curve_to_be_fit._x_data),
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
@@ -1804,8 +1804,8 @@ class FitFromFOTF(GeneralFit):
             else 500
         )
         self._x_data = np.linspace(
-            self._curve_to_be_fit._x_data[0],
-            self._curve_to_be_fit._x_data[-1],
+            np.min(self._curve_to_be_fit._x_data),
+            np.max(self._curve_to_be_fit._x_data),
             number_of_points,
         )
         self._y_data = self._function(self._x_data)
