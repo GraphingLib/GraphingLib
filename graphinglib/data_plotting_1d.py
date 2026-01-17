@@ -1844,7 +1844,7 @@ class Scatter(Plottable1D):
     @marker_size.setter
     def marker_size(self, marker_size: float | Literal["default"]) -> None:
         self._marker_size = marker_size
-        
+
     @property
     def marker_edge_width(self) -> float:
         return self._marker_edge_width
@@ -2831,8 +2831,10 @@ class Histogram(Plottable1D):
     ----------
     data : ArrayLike
         Array of values to be plotted.
-    number_of_bins : int
-        Number of bins to be used in the histogram.
+    bins : int | ArrayLike
+        If `bins` is an integer, it defines the number of equal_width bins to be used in the histogram.
+        If `bins` is an array, it defines the bin edges to be used in the histogram, including the left edge of the
+        first bin and the right edge of the last bin.
     label : str, optional
         Label to be displayed in the legend.
     face_color : str
@@ -2865,7 +2867,7 @@ class Histogram(Plottable1D):
     def __init__(
         self,
         data: ArrayLike,
-        number_of_bins: int,
+        bins: int,
         label: Optional[str] = None,
         face_color: str = "default",
         edge_color: str = "default",
@@ -2883,8 +2885,10 @@ class Histogram(Plottable1D):
         ----------
         data : ArrayLike
             Array of values to be plotted.
-        number_of_bins : int
-            Number of bins to be used in the histogram.
+        bins : int | ArrayLike
+            If `bins` is an integer, it defines the number of equal_width bins to be used in the histogram.
+            If `bins` is an array, it defines the bin edges to be used in the histogram, including the left edge of the
+            first bin and the right edge of the last bin.
         label : str, optional
             Label to be displayed in the legend.
         face_color : str
@@ -2918,7 +2922,7 @@ class Histogram(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         """
         self._data = np.asarray(data)
-        self._number_of_bins = number_of_bins
+        self._bins = bins
         self._label = label
         self._face_color = face_color
         self._edge_color = edge_color
@@ -2940,7 +2944,7 @@ class Histogram(Plottable1D):
         self._mean = np.mean(self._data)
         self._standard_deviation = np.std(self._data)
         _parameters = np.histogram(
-            self._data, bins=self._number_of_bins, density=self._normalize
+            self._data, bins=self._bins, density=self._normalize
         )
         self._bin_heights, bin_edges = _parameters[0], _parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
@@ -2953,7 +2957,7 @@ class Histogram(Plottable1D):
     def from_fit_residuals(
         cls,
         fit: Fit,
-        number_of_bins: int,
+        bins: int,
         label: Optional[str] = None,
         face_color: str = "default",
         edge_color: str = "default",
@@ -2971,8 +2975,10 @@ class Histogram(Plottable1D):
         ----------
         fit : Fit
             The fit from which the residuals are to be calculated.
-        number_of_bins : int
-            Number of bins to be used in the histogram.
+        bins : int | ArrayLike
+            If `bins` is an integer, it defines the number of equal_width bins to be used in the histogram.
+            If `bins` is an array, it defines the bin edges to be used in the histogram, including the left edge of the
+            first bin and the right edge of the last bin.
         label : str, optional
             Label to be displayed in the legend.
         face_color : str
@@ -3012,7 +3018,7 @@ class Histogram(Plottable1D):
         residuals = fit.get_residuals()
         return cls(
             residuals,
-            number_of_bins,
+            bins,
             label,
             face_color,
             edge_color,
@@ -3034,7 +3040,7 @@ class Histogram(Plottable1D):
         self._mean = np.mean(self._data)
         self._standard_deviation = np.std(self._data)
         _parameters = np.histogram(
-            self._data, bins=self._number_of_bins, density=self._normalize
+            self._data, bins=self._bins, density=self._normalize
         )
         self._bin_heights, bin_edges = _parameters[0], _parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
@@ -3044,14 +3050,14 @@ class Histogram(Plottable1D):
         self._bin_edges = bin_edges
 
     @property
-    def number_of_bins(self) -> int:
-        return self._number_of_bins
+    def bins(self) -> int:
+        return self._bins
 
-    @number_of_bins.setter
-    def number_of_bins(self, number_of_bins: int) -> None:
-        self._number_of_bins = number_of_bins
+    @bins.setter
+    def bins(self, bins: int) -> None:
+        self._bins = bins
         _parameters = np.histogram(
-            self._data, bins=self._number_of_bins, density=self._normalize
+            self._data, bins=self._bins, density=self._normalize
         )
         self._bin_heights, bin_edges = _parameters[0], _parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
@@ -3327,7 +3333,7 @@ class Histogram(Plottable1D):
         params = {k: v for k, v in params.items() if v != "default"}
         axes.hist(
             self._data,
-            bins=self._number_of_bins,
+            bins=self._bins,
             label=self._label,
             zorder=z_order - 1,
             **params,

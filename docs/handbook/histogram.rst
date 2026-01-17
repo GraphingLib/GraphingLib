@@ -9,7 +9,7 @@ Lets start by creating a simple Histogram of a normal distribution.
 
     values = np.random.normal(loc=2, scale=5, size=500)
 
-    histogram = gl.Histogram(values, number_of_bins=30, label="Distribution of values")
+    histogram = gl.Histogram(values, bins=30, label="Distribution of values")
 
     figure = gl.Figure(x_label="Values", y_label="Counts")
     figure.add_elements(histogram)
@@ -30,7 +30,7 @@ It is also possible to overlay a normal fit of the distribution simply by callin
     values = np.random.normal(loc=2, scale=5, size=500)
 
     histogram = gl.Histogram(
-        values, number_of_bins=30, label="Distribution of values"
+        values, bins=30, label="Distribution of values"
     )
     histogram.add_pdf()
 
