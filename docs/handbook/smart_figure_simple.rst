@@ -39,8 +39,8 @@ We can specify the axis labels by using the ``x_label`` and ``y_label`` paramete
 
 As a general note, all parameters available in the constructor are also available as properties. This means that you can set or modify them after creating the :class:`~graphinglib.SmartFigure`. For further informations on the available parameters and methods, please refer to the :doc:`handbook section on complex SmartFigures </handbook/smart_figure_advanced>` or the :doc:`reference section on SmartFigure objects <../generated/graphinglib.SmartFigure>`.
 
-Creating multi-subplots layouts
--------------------------------
+Creating multi-subplot layouts
+------------------------------
 
 To create a figure with a grid of subplots, the dimensions of the canvas first need to be defined using the ``num_rows`` and ``num_cols`` parameters, shown in the figure below. This grid is then used to place each subplot in the :class:`~graphinglib.SmartFigure`.
 
