@@ -12,3 +12,4 @@ git+https://github.com/GraphingLib/GraphingLib.git
 numpydoc
 PyGithub
 pyperclip
+astropy

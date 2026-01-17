@@ -201,7 +201,7 @@ Sections in this handbook
         :img-top: ../_static/icons/SmartFigureWCS.svg
 
         Plotting astronomical data with the SmartFigureWCS
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
         Create complex astronomical plots with WCS support.
         ++++
