@@ -85,7 +85,7 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(self.testPoint._label, "Test Point")
 
     def test_colors_is_default(self):
-        self.assertEqual(self.testPoint._color, "default")
+        self.assertEqual(self.testPoint._face_color, "default")
 
     def test_edge_color_is_default(self):
         self.assertEqual(self.testPoint._edge_color, "default")
@@ -119,7 +119,7 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(testPointCopy._x, self.testPoint._x)
         self.assertEqual(testPointCopy._y, self.testPoint._y)
         self.assertEqual(testPointCopy._label, self.testPoint._label)
-        self.assertEqual(testPointCopy._color, self.testPoint._color)
+        self.assertEqual(testPointCopy._face_color, self.testPoint._face_color)
         self.assertEqual(testPointCopy._edge_color, self.testPoint._edge_color)
         self.assertEqual(testPointCopy._marker_size, self.testPoint._marker_size)
         self.assertEqual(testPointCopy._marker_style, self.testPoint._marker_style)
