@@ -430,43 +430,26 @@ class Heatmap(Plottable2D):
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
+        params = {
+            "cmap": self._color_map,
+            "alpha": self._alpha_value,
+            "aspect": self._aspect_ratio,
+            "origin": self._origin_position,
+            "interpolation": self._interpolation,
+        }
         if self._x_axis_range is not None and self._y_axis_range is not None:
-            params = {
-                "cmap": self._color_map,
-                "alpha": self._alpha_value,
-                "aspect": self._aspect_ratio,
-                "origin": self._origin_position,
-                "interpolation": self._interpolation,
-                "extent": self._xy_range,
-            }
-            params = {k: v for k, v in params.items() if v != "default"}
-            if self._color_map_range:
-                params["vmin"] = min(self._color_map_range)
-                params["vmax"] = max(self._color_map_range)
+            params["extent"] = self._xy_range
 
-            image = axes.imshow(
-                self._image,
-                zorder=z_order,
-                **params,
-            )
-        else:
-            params = {
-                "cmap": self._color_map,
-                "alpha": self._alpha_value,
-                "aspect": self._aspect_ratio,
-                "origin": self._origin_position,
-                "interpolation": self._interpolation,
-            }
-            params = {k: v for k, v in params.items() if v != "default"}
-            if self._color_map_range:
-                params["vmin"] = min(self._color_map_range)
-                params["vmax"] = max(self._color_map_range)
+        params = {k: v for k, v in params.items() if v != "default"}
+        if self._color_map_range:
+            params["vmin"] = min(self._color_map_range)
+            params["vmax"] = max(self._color_map_range)
 
-            image = axes.imshow(
-                self._image,
-                zorder=z_order,
-                **params,
-            )
+        image = axes.imshow(
+            self._image,
+            zorder=z_order,
+            **params,
+        )
         fig = axes.get_figure()
         if self._show_color_bar:
             fig.colorbar(image, ax=axes, **self._color_bar_params)
