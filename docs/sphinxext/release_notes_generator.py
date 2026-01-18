@@ -26,6 +26,7 @@ GraphingLib {version2} Release Notes
 TAGS = [
     "new_feature",
     "improvement",
+    "bugfix",
     "compatibility",
     "deprecation",
     "expired",
@@ -35,6 +36,7 @@ TAGS = [
 TAGS_TO_SECTIONS = {
     "new_feature": "New Features",
     "improvement": "Improvements",
+    "bugfix": "Bug Fixes",
     "compatibility": "Compatibility Changes",
     "deprecation": "Deprecations",
     "expired": "Expired Deprecations",
