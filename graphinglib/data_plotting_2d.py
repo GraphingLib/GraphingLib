@@ -134,8 +134,6 @@ class Heatmap(Plottable2D):
             self._show_color_bar = False
         else:
             self._image = np.asarray(self._image)
-        if self._x_axis_range is not None and self._y_axis_range is not None:
-            self._xy_range = self._x_axis_range + self._y_axis_range
 
     @classmethod
     def from_function(
@@ -391,6 +389,12 @@ class Heatmap(Plottable2D):
     def color_bar_params(self) -> dict:
         return self._color_bar_params
 
+    @property
+    def _xy_range(self) -> Optional[tuple[float, float, float, float]]:
+        if self._x_axis_range is not None and self._y_axis_range is not None:
+            return self._x_axis_range + self._y_axis_range
+        return None
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
@@ -436,9 +440,8 @@ class Heatmap(Plottable2D):
             "aspect": self._aspect_ratio,
             "origin": self._origin_position,
             "interpolation": self._interpolation,
+            "extent": self._xy_range,
         }
-        if self._x_axis_range is not None and self._y_axis_range is not None:
-            params["extent"] = self._xy_range
 
         params = {k: v for k, v in params.items() if v != "default"}
         if self._color_map_range:
