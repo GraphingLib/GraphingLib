@@ -367,7 +367,7 @@ class Curve(Plottable1D):
         """
         Defines the equality between two curves.
         """
-        return self.x_data == other.x_data and self.y_data == other.y_data
+        return np.equal(self.x_data, other.x_data).all() and np.equal(self.y_data, other.y_data).all()
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -1909,7 +1909,7 @@ class Scatter(Plottable1D):
         """
         Defines the equality between two scatters.
         """
-        return self.x_data == other.x_data and self.y_data == other.y_data
+        return np.equal(self.x_data, other.x_data).all() and np.equal(self.y_data, other.y_data).all()
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -3154,7 +3154,8 @@ class Histogram(Plottable1D):
         """
         Defines the equality between two histograms.
         """
-        return self.bin_heights == other.bin_heights and self.bin_centers == other.bin_centers
+        return np.equal(self.bin_heights, other.bin_heights).all() \
+               and np.equal(self.bin_centers, other.bin_centers).all()
 
     def _get_label(self) -> None:
         """
