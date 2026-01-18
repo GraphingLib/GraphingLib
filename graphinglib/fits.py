@@ -127,7 +127,7 @@ class GeneralFit(Curve):
         self,
         x: float,
         label: str | None = None,
-        color: str = "default",
+        face_color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -142,7 +142,7 @@ class GeneralFit(Curve):
             x value of the point.
         label : str, optional
             Label to be displayed in the legend.
-        color : str
+        face_color : str
             Face color of the point.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
@@ -166,7 +166,7 @@ class GeneralFit(Curve):
             x,
             self._function(x),
             label=label,
-            color=color,
+            face_color=face_color,
             edge_color=edge_color,
             marker_size=marker_size,
             marker_style=marker_style,
@@ -183,7 +183,7 @@ class GeneralFit(Curve):
         y: float,
         interpolation_kind: str = "linear",
         label: str | None = None,
-        color: str = "default",
+        face_color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -201,7 +201,7 @@ class GeneralFit(Curve):
             Default is "linear".
         label : str, optional
             Label to be displayed in the legend.
-        color : str
+        face_color : str
             Face color of the point.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
@@ -228,7 +228,7 @@ class GeneralFit(Curve):
                 coord[0],
                 coord[1],
                 label=label,
-                color=color,
+                face_color=face_color,
                 edge_color=edge_color,
                 marker_size=marker_size,
                 marker_style=marker_style,

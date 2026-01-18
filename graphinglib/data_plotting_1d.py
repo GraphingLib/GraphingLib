@@ -803,7 +803,7 @@ class Curve(Plottable1D):
         x: float,
         interpolation_method: str = "linear",
         label: Optional[str] = None,
-        color: str = "default",
+        face_color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -824,7 +824,7 @@ class Curve(Plottable1D):
             Defaults to "linear".
         label : str, optional
             Point's label to be displayed in the legend.
-        color : str
+        face_color : str
             Face color of the point.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
@@ -849,7 +849,7 @@ class Curve(Plottable1D):
             x,
             self.get_coordinates_at_x(x, interpolation_method)[1],
             label=label,
-            color=color,
+            face_color=face_color,
             edge_color=edge_color,
             marker_size=marker_size,
             marker_style=marker_style,
@@ -899,7 +899,7 @@ class Curve(Plottable1D):
         y: float,
         interpolation_method: str = "linear",
         label: str | None = None,
-        color: str = "default",
+        face_color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -920,7 +920,7 @@ class Curve(Plottable1D):
             Defaults to "linear".
         label : str, optional
             Point label to be displayed in the legend.
-        color : str
+        face_color : str
             Face color of the point.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
@@ -947,7 +947,7 @@ class Curve(Plottable1D):
                 pair[0],
                 pair[1],
                 label=label,
-                color=color,
+                face_color=face_color,
                 edge_color=edge_color,
                 marker_size=marker_size,
                 marker_style=marker_style,
@@ -1333,7 +1333,7 @@ class Curve(Plottable1D):
         self,
         other: Self,
         labels: Optional[list[str] | str] = None,
-        colors: list[str] | str = "default",
+        face_colors: list[str] | str = "default",
         edge_colors: list[str] | str = "default",
         marker_sizes: list[float] | float | Literal["default"] = "default",
         marker_styles: list[str] | str = "default",
@@ -1352,7 +1352,7 @@ class Curve(Plottable1D):
         labels : list[str] or str, optional
             Labels of the intersection points to be displayed in the legend.
             If a single string is passed, all intersection points will have the same label.
-        colors : list[str] or str
+        face_colors : list[str] or str
             Face colors of the intersection points.
             If a single string is passed, all intersection points will have the same color.
             Default depends on the ``figure_style`` configuration.
@@ -1392,10 +1392,10 @@ class Curve(Plottable1D):
             except (IndexError, TypeError, AssertionError):
                 label = labels
             try:
-                assert isinstance(colors, list)
-                color = colors[i]
+                assert isinstance(face_colors, list)
+                face_color = face_colors[i]
             except (IndexError, TypeError, AssertionError):
-                color = colors
+                face_color = face_colors
             try:
                 assert isinstance(edge_colors, list)
                 edge_color = edge_colors[i]
@@ -1422,7 +1422,7 @@ class Curve(Plottable1D):
                     point[0],
                     point[1],
                     label=label,
-                    color=color,
+                    face_color=face_color,
                     edge_color=edge_color,
                     marker_size=marker_size,
                     marker_style=marker_style,
@@ -2409,7 +2409,7 @@ class Scatter(Plottable1D):
         x: float,
         interpolation_method: str = "linear",
         label: Optional[str] = None,
-        color: str = "default",
+        face_color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
@@ -2430,7 +2430,7 @@ class Scatter(Plottable1D):
             Defaults to "linear".
         label : str, optional
             Label to be displayed in the legend.
-        color : str
+        face_color : str
             Face color of the point.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
@@ -2455,7 +2455,7 @@ class Scatter(Plottable1D):
             x,
             self.get_coordinates_at_x(x, interpolation_method)[1],
             label=label,
-            color=color,
+            face_color=face_color,
             edge_color=edge_color,
             marker_size=marker_size,
             marker_style=marker_style,
@@ -2506,7 +2506,7 @@ class Scatter(Plottable1D):
         y: float,
         interpolation_method: str = "linear",
         label: Optional[str] = None,
-        color: str = "default",
+        face_color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
@@ -2527,7 +2527,7 @@ class Scatter(Plottable1D):
             Defaults to "linear".
         label : str, optional
             Label to be displayed in the legend.
-        color : str
+        face_color : str
             Face color of the point.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
@@ -2554,7 +2554,7 @@ class Scatter(Plottable1D):
                 coord[0],
                 coord[1],
                 label=label,
-                color=color,
+                face_color=face_color,
                 edge_color=edge_color,
                 marker_size=marker_size,
                 marker_style=marker_style,
