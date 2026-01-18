@@ -13,7 +13,7 @@ values = np.random.normal(loc=2, scale=5, size=500)
 
 histogram = gl.Histogram(
     values,
-    number_of_bins=30,
+    bins=30,
     hist_type="bar",
     face_color="C2",
     edge_color="k",
