@@ -3056,7 +3056,7 @@ class Histogram(Plottable1D):
 
     @property
     def label(self) -> str:
-        return self._label
+        return self._get_label()
 
     @label.setter
     def label(self, label: str) -> None:
@@ -3156,9 +3156,9 @@ class Histogram(Plottable1D):
         """
         return self.bin_heights == other.bin_heights and self.bin_centers == other.bin_centers
 
-    def _create_label(self) -> None:
+    def _get_label(self) -> None:
         """
-        Creates the label of the histogram (with or without parameters).
+        Gives the label of the histogram (with or without parameters).
         """
         lab = self._label
         if lab and self._show_params:
@@ -3168,7 +3168,7 @@ class Histogram(Plottable1D):
             )
         elif self._show_params:
             lab = rf"$\mu$ = {0 if abs(self._mean) < 1e-3 else self._mean:.3f}, $\sigma$ = {self._standard_deviation:.3f}"
-        self._label = lab
+        return lab
 
     def copy(self) -> Self:
         """
@@ -3283,7 +3283,6 @@ class Histogram(Plottable1D):
         """
         Plots the element in the specified axes.
         """
-        self._create_label()
         params = {
             "facecolor": (
                 to_rgba(self._face_color, self._alpha)
@@ -3322,7 +3321,7 @@ class Histogram(Plottable1D):
         axes.hist(
             self._data,
             bins=self._bins,
-            label=self._label,
+            label=self.label,  # uses the get_label() method
             zorder=z_order - 1,
             **params,
         )
