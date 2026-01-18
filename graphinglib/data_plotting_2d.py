@@ -31,8 +31,9 @@ class Heatmap(Plottable2D):
 
     Parameters
     ----------
-    image : ArrayLike or str
-        Image to display as an array of values or from a file.
+    image : ArrayLike | str
+        Image to display. If an array of values is given, the 2D array will be interpreted as the values of the image.
+        If a str if given, the corresponding file will be read as an image.
     x_axis_range, y_axis_range : tuple[float, float], optional
         The range of x and y values used for the axes as tuples containing the
         start and end of the range.
@@ -82,8 +83,9 @@ class Heatmap(Plottable2D):
 
         Parameters
         ----------
-        image : ArrayLike or str
-            Image to display as an array of values or from a file.
+        image : ArrayLike | str
+            Image to display. If an array of values is given, the 2D array will be interpreted as the values of the
+            image. If a str if given, the corresponding file will be read as an image.
         x_axis_range, y_axis_range : tuple[float, float], optional
             The range of x and y values used for the axes as tuples containing the
             start and end of the range.
@@ -303,7 +305,7 @@ class Heatmap(Plottable2D):
         )
 
     @property
-    def image(self) -> ArrayLike:
+    def image(self) -> ArrayLike | str:
         return self._image
 
     @image.setter
