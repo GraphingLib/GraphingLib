@@ -8,4 +8,4 @@ GraphingLib welcomes the contribution of the coding community to add new feature
 * Maintaining the code
 * Writing documentation
 
-For all the information on how to contribute to GraphingLib's code and documentation, please visit our [contributor's guide](https://www.graphinglib.org/en/latest/contributing.html).
+For all the information on how to contribute to GraphingLib's code and documentation, please visit our [contributor's guide](https://graphinglib.org/latest/contributing/index.html).
