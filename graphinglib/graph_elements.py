@@ -28,7 +28,7 @@ class Plottable(Protocol):
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
-        Axes
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         pass
 
@@ -200,8 +200,6 @@ class Hlines:
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
-        Plots the element in the specified
-        Axes
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
@@ -1014,7 +1012,8 @@ class Text:
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
-        Plots the element in the specified Axes
+        Plots the element in the specified
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         size = self._font_size if self._font_size != "same as figure" else None
         params = {
