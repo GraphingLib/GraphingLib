@@ -721,7 +721,7 @@ class FitFromSine(GeneralFit):
         """
         Creates a string representation of the sine function.
         """
-        part1 = f"{self._amplitude:.3f} \sin({self._frequency_rad:.3f}x"
+        part1 = rf"{self._amplitude:.3f} \sin({self._frequency_rad:.3f}x"
         part2 = (
             f" + {self._phase_rad:.3f})"
             if self._phase_rad >= 0
@@ -831,7 +831,7 @@ class FitFromExponential(GeneralFit):
     ) -> None:
         """
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`)
-        of the form :math:`f(x) = a \exp(bx + c)` from an existing :class:`~graphinglib.data_plotting_1d.Curve`
+        of the form :math:`f(x) = a \\exp(bx + c)` from an existing :class:`~graphinglib.data_plotting_1d.Curve`
         object using an exponential fit.
 
         Parameters
@@ -913,7 +913,7 @@ class FitFromExponential(GeneralFit):
         """
         Creates a string representation of the exponential function.
         """
-        part1 = f"{self._parameters[0]:.3f} \exp({self._parameters[1]:.3f}x"
+        part1 = rf"{self._parameters[0]:.3f} \exp({self._parameters[1]:.3f}x"
         part2 = (
             f" + {self._parameters[2]:.3f})"
             if self._parameters[2] >= 0
@@ -962,7 +962,7 @@ class FitFromGaussian(GeneralFit):
     Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
     :class:`~graphinglib.data_plotting_1d.Curve` object using a gaussian fit.
 
-    Fits a gaussian function of the form :math:`f(x) = A e^{-\\frac{(x - \mu)^2}{2 \sigma^2}}` to the given curve.
+    Fits a gaussian function of the form :math:`f(x) = A e^{-\\frac{(x - \\mu)^2}{2 \\sigma^2}}` to the given curve.
     All standard :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
     Parameters
@@ -1021,7 +1021,7 @@ class FitFromGaussian(GeneralFit):
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
         :class:`~graphinglib.data_plotting_1d.Curve` object using a gaussian fit.
 
-        Fits a gaussian function of the form :math:`f(x) = A e^{-\\frac{(x - \mu)^2}{2 \sigma^2}}` to the given curve.
+        Fits a gaussian function of the form :math:`f(x) = A e^{-\\frac{(x - \\mu)^2}{2 \\sigma^2}}` to the given curve.
         All standard :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
         Parameters
@@ -1123,7 +1123,7 @@ class FitFromGaussian(GeneralFit):
         """
         Creates a string representation of the gaussian function.
         """
-        return f"$\mu = {self._mean:.3f}, \sigma = {self._standard_deviation:.3f}, A = {self._amplitude:.3f}$"
+        return rf"$\mu = {self._mean:.3f}, \sigma = {self._standard_deviation:.3f}, A = {self._amplitude:.3f}$"
 
     def _calculate_parameters(self) -> None:
         """
@@ -1171,7 +1171,7 @@ class FitFromSquareRoot(GeneralFit):
     Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
     :class:`~graphinglib.data_plotting_1d.Curve` object using a square root fit.
 
-    Fits a square root function of the form :math:`f(x) = a \sqrt{x + b} + c` to the given curve. All standard
+    Fits a square root function of the form :math:`f(x) = a \\sqrt{x + b} + c` to the given curve. All standard
     :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
     Parameters
@@ -1221,7 +1221,7 @@ class FitFromSquareRoot(GeneralFit):
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
         :class:`~graphinglib.data_plotting_1d.Curve` object using a square root fit.
 
-        Fits a square root function of the form :math:`f(x) = a \sqrt{x + b} + c` to the given curve. All standard
+        Fits a square root function of the form :math:`f(x) = a \\sqrt{x + b} + c` to the given curve. All standard
         :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
         Parameters
@@ -1303,7 +1303,7 @@ class FitFromSquareRoot(GeneralFit):
         """
         Creates a string representation of the square root function.
         """
-        return f"${self._parameters[0]:.3f} \sqrt{{x {'+' if self._parameters[1] > 0 else '-'} {abs(self._parameters[1]):.3f}}} {'+' if self._parameters[2] > 0 else '-'} {abs(self._parameters[2]):.3f}$"
+        return rf"${self._parameters[0]:.3f} \sqrt{{x {'+' if self._parameters[1] > 0 else '-'} {abs(self._parameters[1]):.3f}}} {'+' if self._parameters[2] > 0 else '-'} {abs(self._parameters[2]):.3f}$"
 
     def _calculate_parameters(self) -> None:
         """
@@ -1349,7 +1349,7 @@ class FitFromLog(GeneralFit):
     Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
     :class:`~graphinglib.data_plotting_1d.Curve` object using a logarithmic fit.
 
-    Fits a logarithmic function of the form :math:`f(x) = a \log_{base}(x + b) + c` to the given curve. All standard
+    Fits a logarithmic function of the form :math:`f(x) = a \\log_{base}(x + b) + c` to the given curve. All standard
     :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
     Parameters
@@ -1403,7 +1403,7 @@ class FitFromLog(GeneralFit):
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
         :class:`~graphinglib.data_plotting_1d.Curve` object using a logarithmic fit.
 
-        Fits a logarithmic function of the form :math:`f(x) = a \log_{base}(x + b) + c` to the given curve. All standard
+        Fits a logarithmic function of the form :math:`f(x) = a \\log_{base}(x + b) + c` to the given curve. All standard
         :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
         Parameters
@@ -1701,7 +1701,7 @@ class FitFromFOTF(GeneralFit):
     """
     Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing :class:`~graphinglib.data_plotting_1d.Curve` object using a first order transfer function (FOTF) fit.
 
-    Fits a first order transfer function of the form :math:`f(x) = K\left(1-e^{-\\frac{t}{\\tau}}\\right)` to the given curve. All standard :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
+    Fits a first order transfer function of the form :math:`f(x) = K\\left(1-e^{-\\frac{t}{\\tau}}\\right)` to the given curve. All standard :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
     Parameters
     ----------
@@ -1751,7 +1751,7 @@ class FitFromFOTF(GeneralFit):
         """
         Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing :class:`~graphinglib.data_plotting_1d.Curve` object using a first order transfer function (FOTF) fit.
 
-        Fits a first order transfer function of the form :math:`f(x) = K \left(1 - e^{-\\frac{t}{\\tau}}\\right)` to the given curve. All standard :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
+        Fits a first order transfer function of the form :math:`f(x) = K \\left(1 - e^{-\\frac{t}{\\tau}}\\right)` to the given curve. All standard :class:`~graphinglib.data_plotting_1d.Curve` attributes and methods are available.
 
         Parameters
         ----------
@@ -1842,7 +1842,7 @@ class FitFromFOTF(GeneralFit):
         """
         Creates a string representation of the first order transfer function.
         """
-        return f"$K = {self._gain:.3f}, \\tau = {self._time_constant:.3f}$"
+        return rf"$K = {self._gain:.3f}, \tau = {self._time_constant:.3f}$"
 
     def _calculate_parameters(self) -> None:
         """
