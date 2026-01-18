@@ -5,15 +5,15 @@ The :class:`~graphinglib.data_plotting_1d.Curve` and its operations
 In GraphingLib, all curves are objects which are instances of the :class:`~graphinglib.data_plotting_1d.Curve` class. You can create a curve in two ways. The first is to create a curve from lists (or numpy arrays) of x and y values, and the second is to create a curve from a function.
 
 .. plot::
-    
+
     # Create a curve from lists of x and y values
     x_values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     y_values = [0, 1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
     curve_1 = gl.Curve(x_values, y_values, line_style="--")
-    
+
     # Create a curve from a function
     curve_2 = gl.Curve.from_function(lambda x: -20 * (x - 5) ** 2 + 400, x_min=0, x_max=10)
-    
+
     fig = gl.Figure()
     fig.add_elements(curve_1, curve_2)
     fig.show()
@@ -60,9 +60,9 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class includes interpolation me
     )
 
     # Get the points of intersection between the two curves
-    intersection_points = curve_1.create_intersection_points(curve_2, marker_styles="P", colors="red")
+    intersection_points = curve_1.create_intersection_points(curve_2, marker_styles="P", face_colors="red")
     # Get points where curve 1 crosses the x axis (where y = 0)
-    cross_x_axis_points = curve_1.create_points_at_y(0, color="blue")
+    cross_x_axis_points = curve_1.create_points_at_y(0, face_color="blue")
 
     # Print coordinates of first intersection point
     first_int = curve_1.get_intersection_coordinates(curve_2)[0]
@@ -75,7 +75,7 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class includes interpolation me
     fig.show()
 
 .. code-block:: none
-    
+
         First intersection point: (0.5651742229068757, 2.677727491121997)
 
 Curve calculus

@@ -1,5 +1,5 @@
 Curve:
-  _color: 
+  _color:
   _line_width: 2
   _line_style: "-"
   _cap_width: 3
@@ -59,7 +59,7 @@ MultiFigure:
   _size: [6.4, 4.8]
 
 Point:
-  _color: "k"
+  _face_color: "k"
   _edge_color: null
   _marker_size: 30
   _marker_style: "o"
@@ -166,8 +166,8 @@ Table:
 
 Stream:
   _line_width: 1
-  _color: 
-  _color_map: 
+  _color:
+  _color_map:
   _arrow_size: 1
 
 Circle:
@@ -230,4 +230,3 @@ rc_params:
   grid.linewidth: 0.5
   grid.color: "grey"
   grid.alpha: 0.5
-  

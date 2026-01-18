@@ -83,8 +83,8 @@ Interpolation between data points is possible by calling the :meth:`~graphinglib
         label="$\sin(3x)\cos^2(x)$",
     )
 
-    point_at_4 = scatter.create_point_at_x(4, color="red")
-    points_at_y_one_half = scatter.create_points_at_y(0.5, color="orange")
+    point_at_4 = scatter.create_point_at_x(4, face_color="red")
+    points_at_y_one_half = scatter.create_points_at_y(0.5, face_color="orange")
 
     fig = gl.Figure()
     # Use the * operator to unpack the list of points
@@ -100,7 +100,7 @@ You can also add a third dimension to your scatter plot by specifying the color 
     y = np.random.rand(100) * 10
 
     # Generate a list of intensity values which will be mapped to colors
-    z = np.sin(x) + np.cos(y) 
+    z = np.sin(x) + np.cos(y)
 
     # Create scatter plot with color
     scatter = gl.Scatter(x, y, face_color=z, color_map="Reds", show_color_bar=True)
@@ -130,14 +130,14 @@ There are a number of curve fit objects that can be used to fit data. The most v
 
     # Use the fit to predict value of y at x = 5
     print(f"Value of fit at x = 5 is y = {fit.function(5)}")
-    predicted_point = fit.create_point_at_x(5, color="red")
+    predicted_point = fit.create_point_at_x(5, face_color="red")
 
     fig = gl.Figure()
     fig.add_elements(scatter, fit, predicted_point)
     fig.show()
 
 .. code-block:: none
-    
+
     Coefficient of x^0: 4.9668661552059294
     Coefficient of x^1: -4.099977593163963
     Coefficient of x^2: 1.0770659002222067
