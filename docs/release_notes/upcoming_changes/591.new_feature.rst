@@ -1,0 +1,3 @@
+Miscellaneous corrections
+-------------------------
+Renamed parameter "number_of_bins" to "bins" in Histogram class for consistency and clarity. Added "max_iterations" parameter to fitting classes. Renamed Point "color" to "face_color" for consistency with Scatter.
