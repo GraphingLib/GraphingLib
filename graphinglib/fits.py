@@ -501,6 +501,8 @@ class FitFromPolynomial(GeneralFit):
                 continue
             coeff_chunks.append(self._format_coeff(coeff))
             power_chunks.append(self._format_power(power))
+        if len(coeff_chunks) == 0:
+            return "$0$"
         coeff_chunks[0] = coeff_chunks[0].lstrip("+ ")
         return (
             "$"

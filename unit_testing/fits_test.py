@@ -614,3 +614,7 @@ class TestFitFromFunction(unittest.TestCase):
         )
         self.assertEqual(copy._color, self.fit._color)
         self.assertEqual(copy._label, self.fit._label)
+
+
+if __name__ == "__main__":
+    unittest.main()
