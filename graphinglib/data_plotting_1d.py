@@ -2921,7 +2921,6 @@ class Histogram(Plottable1D):
             Whether or not to show the mean and standard deviation of the data.
             Default depends on the ``figure_style`` configuration.
         """
-        self._data = np.asarray(data)
         self._bins = bins
         self._label = label
         self._face_color = face_color
@@ -2932,6 +2931,7 @@ class Histogram(Plottable1D):
         self._normalize = normalize
         self._orientation = orientation
         self._show_params = show_params
+        self.data = np.asarray(data)
 
         self._show_pdf = False
         self._pdf_type = None
@@ -2940,18 +2940,6 @@ class Histogram(Plottable1D):
         self._pdf_curve_color = None
         self._pdf_mean_color = None
         self._pdf_std_color = None
-
-        self._mean = np.mean(self._data)
-        self._standard_deviation = np.std(self._data)
-        _parameters = np.histogram(
-            self._data, bins=self._bins, density=self._normalize
-        )
-        self._bin_heights, bin_edges = _parameters[0], _parameters[1]
-        bin_width = bin_edges[1] - bin_edges[0]
-        bin_centers = bin_edges[1:] - bin_width / 2
-        self._bin_width = bin_width
-        self._bin_centers = bin_centers
-        self._bin_edges = bin_edges
 
     @classmethod
     def from_fit_residuals(
