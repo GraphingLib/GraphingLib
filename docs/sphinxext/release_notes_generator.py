@@ -1,9 +1,10 @@
-from graphinglib import __version__
-from glob import glob
-from os.path import split, join, exists
 from collections import defaultdict
+from glob import glob
+from os.path import exists, join, split
+
 from github import Github
 
+from graphinglib import __version__
 
 RELEASE_NOTES_INDEX_TEMPLATE = """
 .. _release_notes:
@@ -117,13 +118,53 @@ def get_github_info(pr_list):
     return pr_dict, contrib_dict
 
 
+class ReleaseNoteEntry:
+    def __init__(self, title, contents):
+        self.title = title
+        self.contents = contents
+
+
 class ReleaseNoteGenerator:
     def __init__(self, path):
         with open(path, "r") as f:
             lines = f.readlines()
             f.close()
-        self.title = lines[0]
-        self.contents = lines[2:]
+        self.entries = self._parse_entries(lines)
+
+    @staticmethod
+    def _is_heading(lines, idx):
+        if idx + 1 >= len(lines):
+            return False
+        title_line = lines[idx].strip()
+        underline_line = lines[idx + 1].strip()
+        if not title_line or not underline_line:
+            return False
+        if len(underline_line) < len(title_line):
+            return False
+        return len(set(underline_line)) == 1
+
+    def _parse_entries(self, lines):
+        entries = []
+        idx = 0
+        while idx < len(lines):
+            while idx < len(lines) and lines[idx].strip() == "":
+                idx += 1
+            if idx >= len(lines) or not self._is_heading(lines, idx):
+                break
+
+            title = lines[idx]
+            idx += 2  # Skip title and underline
+            start = idx
+
+            while idx < len(lines) and not self._is_heading(lines, idx):
+                idx += 1
+
+            entries.append(ReleaseNoteEntry(title, lines[start:idx]))
+
+        if not entries and lines:
+            entries.append(ReleaseNoteEntry(lines[0], lines[2:]))
+
+        return entries
 
 
 def main(app):
@@ -148,12 +189,14 @@ def main(app):
         for prn in upcoming[tag]:
             rn = ReleaseNoteGenerator(join(upcoming_path, f"{prn}.{tag}.rst"))
             pr_url = f"https://github.com/GraphingLib/GraphingLib/pull/{prn}"
-            output += rn.title + "^" * (len(rn.title) - 1) + "\n\n"
-            for line in rn.contents:
-                if line == "\n":
-                    continue
-                output += line + "\n"
-            output += f"\n(`pr-{prn} <{pr_url}>`_)\n\n"
+            for entry in rn.entries:
+                output += entry.title + "^" * (len(entry.title) - 1) + "\n\n"
+                for line in entry.contents:
+                    if line == "\n":
+                        continue
+                    output += line + "\n"
+                output += "\n"
+            output += f"(`pr-{prn} <{pr_url}>`_)\n\n"
 
     pr_dict, contrib_dict = get_github_info(pr_list)
     output += (
