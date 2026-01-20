@@ -1657,7 +1657,7 @@ class SmartFigure:
                     custom_labels, custom_handles = [], []
 
             elif element is not None:
-                raise GraphingException(f"Unsupported element type in list: {type(element).__name__}")
+                raise GraphingException(f"Unsupported element type in list: {type(element).__name__}.")
 
         # Set a general axis for adding general labels/title and controlling padding
         general_ax = self._figure.add_subplot(self._gridspec[:, :], frameon=False)
@@ -2259,7 +2259,7 @@ class SmartFigure:
             (x_tick_labels is not None) and x_ticks is None,
             (y_tick_labels is not None) and y_ticks is None,
         ]):
-            raise GraphingException("Ticks position must be specified when ticks labels are specified")
+            raise GraphingException("Ticks position must be specified when ticks labels are specified.")
 
         if any([
             (x_ticks is not None) and (x_tick_spacing is not None),
@@ -2267,7 +2267,7 @@ class SmartFigure:
             (minor_x_ticks is not None) and (minor_x_tick_spacing is not None),
             (minor_y_ticks is not None) and (minor_y_tick_spacing is not None),
         ]):
-            raise GraphingException("Tick spacing and tick positions cannot be set simultaneously")
+            raise GraphingException("Tick spacing and tick positions cannot be set simultaneously.")
 
         if x_ticks is not None and x_tick_labels is not None:
             if len(x_ticks) != len(x_tick_labels):
@@ -3111,13 +3111,13 @@ class SmartFigureWCS(SmartFigure):
             (x_ticks is not None) and (number_of_x_ticks is not None),
             (y_ticks is not None) and (number_of_y_ticks is not None),
         ]):
-            raise GraphingException("Number of ticks and tick positions cannot be set simultaneously")
+            raise GraphingException("Number of ticks and tick positions cannot be set simultaneously.")
 
         if any([
             (x_tick_spacing is not None) and (number_of_x_ticks is not None),
             (y_tick_spacing is not None) and (number_of_y_ticks is not None),
         ]):
-            raise GraphingException("Number of ticks and tick spacing cannot be set simultaneously")
+            raise GraphingException("Number of ticks and tick spacing cannot be set simultaneously.")
 
         params = [
             "number_of_x_ticks", "number_of_y_ticks", "x_tick_formatter", "y_tick_formatter",
