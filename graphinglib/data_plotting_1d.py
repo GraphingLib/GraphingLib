@@ -367,7 +367,7 @@ class Curve(Plottable1D):
         """
         Defines the equality between two curves.
         """
-        return self.x_data == other.x_data and self.y_data == other.y_data
+        return np.equal(self.x_data, other.x_data).all() and np.equal(self.y_data, other.y_data).all()
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -803,7 +803,7 @@ class Curve(Plottable1D):
         x: float,
         interpolation_method: str = "linear",
         label: Optional[str] = None,
-        color: str = "default",
+        face_color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -824,7 +824,7 @@ class Curve(Plottable1D):
             Defaults to "linear".
         label : str, optional
             Point's label to be displayed in the legend.
-        color : str
+        face_color : str
             Face color of the point.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
@@ -849,7 +849,7 @@ class Curve(Plottable1D):
             x,
             self.get_coordinates_at_x(x, interpolation_method)[1],
             label=label,
-            color=color,
+            face_color=face_color,
             edge_color=edge_color,
             marker_size=marker_size,
             marker_style=marker_style,
@@ -899,7 +899,7 @@ class Curve(Plottable1D):
         y: float,
         interpolation_method: str = "linear",
         label: str | None = None,
-        color: str = "default",
+        face_color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -920,7 +920,7 @@ class Curve(Plottable1D):
             Defaults to "linear".
         label : str, optional
             Point label to be displayed in the legend.
-        color : str
+        face_color : str
             Face color of the point.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
@@ -947,7 +947,7 @@ class Curve(Plottable1D):
                 pair[0],
                 pair[1],
                 label=label,
-                color=color,
+                face_color=face_color,
                 edge_color=edge_color,
                 marker_size=marker_size,
                 marker_style=marker_style,
@@ -1333,7 +1333,7 @@ class Curve(Plottable1D):
         self,
         other: Self,
         labels: Optional[list[str] | str] = None,
-        colors: list[str] | str = "default",
+        face_colors: list[str] | str = "default",
         edge_colors: list[str] | str = "default",
         marker_sizes: list[float] | float | Literal["default"] = "default",
         marker_styles: list[str] | str = "default",
@@ -1352,7 +1352,7 @@ class Curve(Plottable1D):
         labels : list[str] or str, optional
             Labels of the intersection points to be displayed in the legend.
             If a single string is passed, all intersection points will have the same label.
-        colors : list[str] or str
+        face_colors : list[str] or str
             Face colors of the intersection points.
             If a single string is passed, all intersection points will have the same color.
             Default depends on the ``figure_style`` configuration.
@@ -1392,10 +1392,10 @@ class Curve(Plottable1D):
             except (IndexError, TypeError, AssertionError):
                 label = labels
             try:
-                assert isinstance(colors, list)
-                color = colors[i]
+                assert isinstance(face_colors, list)
+                face_color = face_colors[i]
             except (IndexError, TypeError, AssertionError):
-                color = colors
+                face_color = face_colors
             try:
                 assert isinstance(edge_colors, list)
                 edge_color = edge_colors[i]
@@ -1422,7 +1422,7 @@ class Curve(Plottable1D):
                     point[0],
                     point[1],
                     label=label,
-                    color=color,
+                    face_color=face_color,
                     edge_color=edge_color,
                     marker_size=marker_size,
                     marker_style=marker_style,
@@ -1533,7 +1533,7 @@ class Curve(Plottable1D):
                 )
         if self._fill_between_bounds:
             params = {"alpha": 0.2}
-            params["color"] = (
+            params["facecolor"] = (
                 self._fill_between_color
                 if self._fill_between_color != "same as curve"
                 else self.handle[0].get_color()
@@ -1844,7 +1844,7 @@ class Scatter(Plottable1D):
     @marker_size.setter
     def marker_size(self, marker_size: float | Literal["default"]) -> None:
         self._marker_size = marker_size
-        
+
     @property
     def marker_edge_width(self) -> float:
         return self._marker_edge_width
@@ -1909,7 +1909,7 @@ class Scatter(Plottable1D):
         """
         Defines the equality between two scatters.
         """
-        return self.x_data == other.x_data and self.y_data == other.y_data
+        return np.equal(self.x_data, other.x_data).all() and np.equal(self.y_data, other.y_data).all()
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -2409,7 +2409,7 @@ class Scatter(Plottable1D):
         x: float,
         interpolation_method: str = "linear",
         label: Optional[str] = None,
-        color: str = "default",
+        face_color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
@@ -2430,7 +2430,7 @@ class Scatter(Plottable1D):
             Defaults to "linear".
         label : str, optional
             Label to be displayed in the legend.
-        color : str
+        face_color : str
             Face color of the point.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
@@ -2455,7 +2455,7 @@ class Scatter(Plottable1D):
             x,
             self.get_coordinates_at_x(x, interpolation_method)[1],
             label=label,
-            color=color,
+            face_color=face_color,
             edge_color=edge_color,
             marker_size=marker_size,
             marker_style=marker_style,
@@ -2506,7 +2506,7 @@ class Scatter(Plottable1D):
         y: float,
         interpolation_method: str = "linear",
         label: Optional[str] = None,
-        color: str = "default",
+        face_color: str = "default",
         edge_color: str = "default",
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
@@ -2527,7 +2527,7 @@ class Scatter(Plottable1D):
             Defaults to "linear".
         label : str, optional
             Label to be displayed in the legend.
-        color : str
+        face_color : str
             Face color of the point.
             Default depends on the ``figure_style`` configuration.
         edge_color : str
@@ -2554,7 +2554,7 @@ class Scatter(Plottable1D):
                 coord[0],
                 coord[1],
                 label=label,
-                color=color,
+                face_color=face_color,
                 edge_color=edge_color,
                 marker_size=marker_size,
                 marker_style=marker_style,
@@ -2831,8 +2831,10 @@ class Histogram(Plottable1D):
     ----------
     data : ArrayLike
         Array of values to be plotted.
-    number_of_bins : int
-        Number of bins to be used in the histogram.
+    bins : int | ArrayLike
+        If `bins` is an integer, it defines the number of equal_width bins to be used in the histogram.
+        If `bins` is an array, it defines the bin edges to be used in the histogram, including the left edge of the
+        first bin and the right edge of the last bin.
     label : str, optional
         Label to be displayed in the legend.
     face_color : str
@@ -2865,7 +2867,7 @@ class Histogram(Plottable1D):
     def __init__(
         self,
         data: ArrayLike,
-        number_of_bins: int,
+        bins: int,
         label: Optional[str] = None,
         face_color: str = "default",
         edge_color: str = "default",
@@ -2883,8 +2885,10 @@ class Histogram(Plottable1D):
         ----------
         data : ArrayLike
             Array of values to be plotted.
-        number_of_bins : int
-            Number of bins to be used in the histogram.
+        bins : int | ArrayLike
+            If `bins` is an integer, it defines the number of equal_width bins to be used in the histogram.
+            If `bins` is an array, it defines the bin edges to be used in the histogram, including the left edge of the
+            first bin and the right edge of the last bin.
         label : str, optional
             Label to be displayed in the legend.
         face_color : str
@@ -2917,8 +2921,7 @@ class Histogram(Plottable1D):
             Whether or not to show the mean and standard deviation of the data.
             Default depends on the ``figure_style`` configuration.
         """
-        self._data = np.asarray(data)
-        self._number_of_bins = number_of_bins
+        self._bins = bins
         self._label = label
         self._face_color = face_color
         self._edge_color = edge_color
@@ -2928,6 +2931,7 @@ class Histogram(Plottable1D):
         self._normalize = normalize
         self._orientation = orientation
         self._show_params = show_params
+        self.data = np.asarray(data)
 
         self._show_pdf = False
         self._pdf_type = None
@@ -2937,23 +2941,11 @@ class Histogram(Plottable1D):
         self._pdf_mean_color = None
         self._pdf_std_color = None
 
-        self._mean = np.mean(self._data)
-        self._standard_deviation = np.std(self._data)
-        _parameters = np.histogram(
-            self._data, bins=self._number_of_bins, density=self._normalize
-        )
-        self._bin_heights, bin_edges = _parameters[0], _parameters[1]
-        bin_width = bin_edges[1] - bin_edges[0]
-        bin_centers = bin_edges[1:] - bin_width / 2
-        self._bin_width = bin_width
-        self._bin_centers = bin_centers
-        self._bin_edges = bin_edges
-
     @classmethod
     def from_fit_residuals(
         cls,
         fit: Fit,
-        number_of_bins: int,
+        bins: int,
         label: Optional[str] = None,
         face_color: str = "default",
         edge_color: str = "default",
@@ -2971,8 +2963,10 @@ class Histogram(Plottable1D):
         ----------
         fit : Fit
             The fit from which the residuals are to be calculated.
-        number_of_bins : int
-            Number of bins to be used in the histogram.
+        bins : int | ArrayLike
+            If `bins` is an integer, it defines the number of equal_width bins to be used in the histogram.
+            If `bins` is an array, it defines the bin edges to be used in the histogram, including the left edge of the
+            first bin and the right edge of the last bin.
         label : str, optional
             Label to be displayed in the legend.
         face_color : str
@@ -3012,7 +3006,7 @@ class Histogram(Plottable1D):
         residuals = fit.get_residuals()
         return cls(
             residuals,
-            number_of_bins,
+            bins,
             label,
             face_color,
             edge_color,
@@ -3034,7 +3028,7 @@ class Histogram(Plottable1D):
         self._mean = np.mean(self._data)
         self._standard_deviation = np.std(self._data)
         _parameters = np.histogram(
-            self._data, bins=self._number_of_bins, density=self._normalize
+            self._data, bins=self._bins, density=self._normalize
         )
         self._bin_heights, bin_edges = _parameters[0], _parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
@@ -3044,14 +3038,14 @@ class Histogram(Plottable1D):
         self._bin_edges = bin_edges
 
     @property
-    def number_of_bins(self) -> int:
-        return self._number_of_bins
+    def bins(self) -> int:
+        return self._bins
 
-    @number_of_bins.setter
-    def number_of_bins(self, number_of_bins: int) -> None:
-        self._number_of_bins = number_of_bins
+    @bins.setter
+    def bins(self, bins: int) -> None:
+        self._bins = bins
         _parameters = np.histogram(
-            self._data, bins=self._number_of_bins, density=self._normalize
+            self._data, bins=self._bins, density=self._normalize
         )
         self._bin_heights, bin_edges = _parameters[0], _parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
@@ -3062,7 +3056,7 @@ class Histogram(Plottable1D):
 
     @property
     def label(self) -> str:
-        return self._label
+        return self._get_label()
 
     @label.setter
     def label(self, label: str) -> None:
@@ -3160,11 +3154,12 @@ class Histogram(Plottable1D):
         """
         Defines the equality between two histograms.
         """
-        return self.bin_heights == other.bin_heights and self.bin_centers == other.bin_centers
+        return np.equal(self.bin_heights, other.bin_heights).all() \
+               and np.equal(self.bin_centers, other.bin_centers).all()
 
-    def _create_label(self) -> None:
+    def _get_label(self) -> None:
         """
-        Creates the label of the histogram (with or without parameters).
+        Gives the label of the histogram (with or without parameters).
         """
         lab = self._label
         if lab and self._show_params:
@@ -3174,7 +3169,7 @@ class Histogram(Plottable1D):
             )
         elif self._show_params:
             lab = rf"$\mu$ = {0 if abs(self._mean) < 1e-3 else self._mean:.3f}, $\sigma$ = {self._standard_deviation:.3f}"
-        self._label = lab
+        return lab
 
     def copy(self) -> Self:
         """
@@ -3289,7 +3284,6 @@ class Histogram(Plottable1D):
         """
         Plots the element in the specified axes.
         """
-        self._create_label()
         params = {
             "facecolor": (
                 to_rgba(self._face_color, self._alpha)
@@ -3327,8 +3321,8 @@ class Histogram(Plottable1D):
         params = {k: v for k, v in params.items() if v != "default"}
         axes.hist(
             self._data,
-            bins=self._number_of_bins,
-            label=self._label,
+            bins=self._bins,
+            label=self.label,  # uses the get_label() method
             zorder=z_order - 1,
             **params,
         )

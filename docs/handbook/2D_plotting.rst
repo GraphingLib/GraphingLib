@@ -17,14 +17,14 @@ The Heatmap class allows you to plot a 2-dimensional map of values or display im
     figure.add_elements(map)
     figure.show()
 
-As for the :class:`~graphinglib.data_plotting_1d.Curve` and :class:`~graphinglib.data_plotting_1d.Scatter` objects, it is possible to create a Heatmap from a function with the :py:meth:`~graphinglib.data_plotting_2d.Heatmap.from_function` method:
+As for the :class:`~graphinglib.data_plotting_1d.Curve` and :class:`~graphinglib.data_plotting_1d.Scatter` objects, it is possible to create a Heatmap from a function with the :py:meth:`~graphinglib.Heatmap.from_function` method:
 
 .. plot::
 
     map = gl.Heatmap.from_function(
         lambda x, y: np.cos(x * 0.2) + np.sin(y * 0.3), (0, 49), (49, 0)
     )
-    
+
     figure = gl.Figure()
     figure.add_elements(map)
     figure.show()
@@ -52,8 +52,8 @@ It is also possible to create a Heatmap from a list or array of values at uneven
     fig.add_elements(scatter)
     fig.show()
 
-The :py:meth:`~graphinglib.data_plotting_2d.Heatmap.from_points` method used below will interpolate the data on a grid and create a Heatmap from this interpolated data: 
- 
+The :py:meth:`~graphinglib.Heatmap.from_points` method used below will interpolate the data on a grid and create a Heatmap from this interpolated data:
+
 .. plot::
 
     def func(x, y):
@@ -86,7 +86,7 @@ To display an image instead, simply create a Heatmap with the path to an image a
     figure.add_elements(map)
     figure.show()
 
-There are again many parameters to control for the Heatmap objects but an important one to mention here is the ``interpolation`` parameter. This allows you to choose an interpolation method to apply to the Heatmap data (image or not). The possible values for this parameter are the `interpolation methods for imshow from Matplotlib <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_. Using the ``bicubic`` interpolation on the GraphingLib logo before: 
+There are again many parameters to control for the Heatmap objects but an important one to mention here is the ``interpolation`` parameter. This allows you to choose an interpolation method to apply to the Heatmap data (image or not). The possible values for this parameter are the `interpolation methods for imshow from Matplotlib <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_. Using the ``bicubic`` interpolation on the GraphingLib logo before:
 
 .. plot::
 
@@ -112,7 +112,7 @@ The Contour class allows you to display a contour plot of 2-dimensional data. He
     figure.add_elements(contour)
     figure.show()
 
-The contour class also has a :py:meth:`~graphinglib.data_plotting_2d.Contour.from_function` method:
+The contour class also has a :py:meth:`~graphinglib.Contour.from_function` method:
 
 .. plot::
 
@@ -121,7 +121,7 @@ The contour class also has a :py:meth:`~graphinglib.data_plotting_2d.Contour.fro
         lambda x, y: np.cos(x * 0.2) + np.sin(y * 0.3), x_grid, y_grid
     )
 
-The :class:`~graphinglib.data_plotting_2d.VectorField` Object
+The :class:`~graphinglib.VectorField` Object
 -------------------------------------------------------------
 As its name suggests, the VectorField class allows you to plot a 2-dimensional vector field. Here is an example of its usage:
 
@@ -129,13 +129,13 @@ As its name suggests, the VectorField class allows you to plot a 2-dimensional v
 
     x_grid, y_grid = np.meshgrid(np.arange(0, 11, 1), np.arange(0, 11, 1))
     u, v = (np.cos(x_grid * 0.2), np.sin(y_grid * 0.3))
-    
+
     vector = gl.VectorField(x_grid, y_grid, u, v)
     figure = gl.Figure()
     figure.add_elements(vector)
     figure.show()
 
-As both classes discussed prior, the VectorField object has a :py:meth:`~graphinglib.data_plotting_2d.VectorField.from_function` method:
+As both classes discussed prior, the VectorField object has a :py:meth:`~graphinglib.VectorField.from_function` method:
 
 .. plot::
 
@@ -158,7 +158,7 @@ The Stream class allows you to create stream plots in GraphingLib. Here is an ex
     figure.add_elements(stream)
     figure.show()
 
-The density parameter used in the example above is the density of stream lines to display. The default density is set to 1, which means that the plotting domain is divided into a 30x30 grid in which each square can only be traversed by one stream line. Note that it is also possible to create a Stream from a function using its :py:meth:`~graphinglib.data_plotting_2d.Stream.from_function` method:
+The density parameter used in the example above is the density of stream lines to display. The default density is set to 1, which means that the plotting domain is divided into a 30x30 grid in which each square can only be traversed by one stream line. Note that it is also possible to create a Stream from a function using its :py:meth:`~graphinglib.Stream.from_function` method:
 
 .. plot::
 

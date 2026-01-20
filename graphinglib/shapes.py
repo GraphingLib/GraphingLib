@@ -745,7 +745,7 @@ class Polygon:
         if self._fill:
             kwargs = {
                 "alpha": self._fill_alpha,
-                "zorder": z_order - 1,
+                "zorder": z_order,
             }
             if self._fill_color is not None:
                 kwargs["facecolor"] = self._fill_color

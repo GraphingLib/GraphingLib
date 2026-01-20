@@ -18,7 +18,7 @@ GraphingLib has a number of built-in styles which are showcased at the bottom of
     fig2 = gl.Figure(figure_style="dark")
     fig2.set_visual_params(axes_edge_color="red") # "dark" style, but axes color is overridden
 
-If no style is specified, the user's default style is used. This default style can be set by the user using the `set_default_style` function or by using GraphingLib's Style Editor. Once set, the default style will be saved and used for all figures created without a specified style. The default style can also be retrieved using the `get_default_style` function.
+If no style is specified, the user's default style is used. This default style can be set by the user using the :py:func:`~graphinglib.set_default_style` function or by using GraphingLib's Style Editor. Once set, the default style will be saved and used for all figures created without a specified style. The default style can also be retrieved using the :py:func:`~graphinglib.get_default_style` function.
 
 .. plot::
 
@@ -28,7 +28,7 @@ If no style is specified, the user's default style is used. This default style c
 
 .. plot::
     :include-source: false
-    
+
     gl.set_default_style("plain")
 
 When you install GraphingLib for the first time, the default style is the "plain" style. You can also create your own styles or modify existing ones. To do this, you can use GraphingLib's Style Editor as described below.
@@ -131,7 +131,7 @@ Here is the code used to generate the above figures if you want to try it out wi
 .. code-block:: python
 
     import numpy as np
-    import graphing_lib as gl
+    import graphinglib as gl
 
     style = "plain" # Change this to the style you want to showcase
     colors = gl.get_colors(style)

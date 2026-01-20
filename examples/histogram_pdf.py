@@ -13,7 +13,7 @@ import graphinglib as gl
 values = np.random.normal(loc=2, scale=5, size=500)
 
 # Create histogram
-histogram = gl.Histogram(values, number_of_bins=30, label="Distribution of values")
+histogram = gl.Histogram(values, bins=30, label="Distribution of values")
 
 # Add a normal probability density function overlay
 # The pdf is calculated using the mean and standard deviation of the data

@@ -200,3 +200,7 @@ class TestStyles(unittest.TestCase):
                 if not res[0]:
                     return (False, key, res[2])
         return (True, None, None)
+
+
+if __name__ == "__main__":
+    unittest.main()

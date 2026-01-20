@@ -28,7 +28,7 @@ class Plottable(Protocol):
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
-        Axes
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         pass
 
@@ -200,8 +200,6 @@ class Hlines:
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
-        Plots the element in the specified
-        Axes
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
@@ -519,7 +517,7 @@ class Point:
         The x and y coordinates of the :class:`~graphinglib.graph_elements.Point`.
     label : str, optional
         Label to be attached to the :class:`~graphinglib.graph_elements.Point`.
-    color : str or None
+    face_color : str or None
         Face color of the marker.
         Default depends on the ``figure_style`` configuration.
     edge_color : str or None
@@ -551,7 +549,7 @@ class Point:
         x: float,
         y: float,
         label: Optional[str] = None,
-        color: Optional[str] = "default",
+        face_color: Optional[str] = "default",
         edge_color: Optional[str] = "default",
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
@@ -573,7 +571,7 @@ class Point:
             The x and y coordinates of the :class:`~graphinglib.graph_elements.Point`.
         label : str, optional
             Label to be attached to the :class:`~graphinglib.graph_elements.Point`.
-        color : str or None
+        face_color : str or None
             Face color of the marker.
             Default depends on the ``figure_style`` configuration.
         edge_color : str or None
@@ -607,7 +605,7 @@ class Point:
             self._x = x
             self._y = y
         self._label = label
-        self._color = color
+        self._face_color = face_color
         self._edge_color = edge_color
         self._marker_size = marker_size
         self._marker_style = marker_style
@@ -643,12 +641,12 @@ class Point:
         self._label = label
 
     @property
-    def color(self) -> str | None:
-        return self._color
+    def face_color(self) -> str | None:
+        return self._face_color
 
-    @color.setter
-    def color(self, color: str) -> None:
-        self._color = color
+    @face_color.setter
+    def face_color(self, face_color: str) -> None:
+        self._face_color = face_color
 
     @property
     def edge_color(self) -> str | None:
@@ -747,7 +745,7 @@ class Point:
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if self._color is None and self._edge_color is None:
+        if self._face_color is None and self._edge_color is None:
             raise GraphingException(
                 "Both the face color and edge color of the point can't be None. Set at least one of them."
             )
@@ -759,7 +757,7 @@ class Point:
         else:
             point_label = None
         params = {
-            "c": self._color if self._color is not None else "none",
+            "c": self._face_color if self._face_color is not None else "none",
             "edgecolors": self._edge_color if self._edge_color is not None else "none",
             "s": self._marker_size,
             "marker": self._marker_style,
@@ -777,7 +775,7 @@ class Point:
             if self._edge_color is not None:
                 text_color = self._edge_color
             else:
-                text_color = self._color
+                text_color = self._face_color
         else:
             text_color = self._text_color
         params = {
@@ -810,7 +808,7 @@ class Point:
                 if self._edge_color is not None:
                     text_color = self._edge_color
                 else:
-                    text_color = self._color
+                    text_color = self._face_color
             else:
                 text_color = self._text_color
             params = {
@@ -1014,7 +1012,8 @@ class Text:
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
-        Plots the element in the specified Axes
+        Plots the element in the specified
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         size = self._font_size if self._font_size != "same as figure" else None
         params = {

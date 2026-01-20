@@ -261,12 +261,12 @@ You can customize the appearance of Arrows by specifying the following optional 
     )
 
     # Create points at the start and end of the arrows (to illustrate the shrinking)
-    point1 = gl.Point(0, 0, color="C0")
-    point2 = gl.Point(1, 0, color="C1")
-    point3 = gl.Point(2, 0, color="C2")
-    point4 = gl.Point(1, 1, color="C0")
-    point5 = gl.Point(2, 1, color="C1")
-    point6 = gl.Point(3, 1, color="C2")
+    point1 = gl.Point(0, 0, face_color="C0")
+    point2 = gl.Point(1, 0, face_color="C1")
+    point3 = gl.Point(2, 0, face_color="C2")
+    point4 = gl.Point(1, 1, face_color="C0")
+    point5 = gl.Point(2, 1, face_color="C1")
+    point6 = gl.Point(3, 1, face_color="C2")
 
     fig = gl.Figure(y_lim=(-0.5, 1.5), x_lim=(-0.5, 3.5))
     fig.add_elements(arrow1, arrow2, arrow3)
@@ -291,7 +291,7 @@ It is possible to change the width of the line with the ``width`` parameter. The
     circle = gl.Circle(0, 0, 1, line_width=2, edge_color="C0", fill_color="C0")
     center = gl.Point(0, 0, marker_size=50)
     point = gl.Point(1, 0, marker_size=50)
-    
+
     # Adding a line to display the radius of the circle
     line = gl.Line(
         (0, 0.07), (point.x, point.y + 0.07), capped_line=True, cap_width=1

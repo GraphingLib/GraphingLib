@@ -31,8 +31,9 @@ class Heatmap(Plottable2D):
 
     Parameters
     ----------
-    image : ArrayLike or str
-        Image to display as an array of values or from a file.
+    image : ArrayLike | str
+        Image to display. If an array of values is given, the 2D array will be interpreted as the values of the image.
+        If a str if given, the corresponding file will be read as an image.
     x_axis_range, y_axis_range : tuple[float, float], optional
         The range of x and y values used for the axes as tuples containing the
         start and end of the range.
@@ -82,8 +83,9 @@ class Heatmap(Plottable2D):
 
         Parameters
         ----------
-        image : ArrayLike or str
-            Image to display as an array of values or from a file.
+        image : ArrayLike | str
+            Image to display. If an array of values is given, the 2D array will be interpreted as the values of the
+            image. If a str if given, the corresponding file will be read as an image.
         x_axis_range, y_axis_range : tuple[float, float], optional
             The range of x and y values used for the axes as tuples containing the
             start and end of the range.
@@ -132,8 +134,6 @@ class Heatmap(Plottable2D):
             self._show_color_bar = False
         else:
             self._image = np.asarray(self._image)
-        if self._x_axis_range is not None and self._y_axis_range is not None:
-            self._xy_range = self._x_axis_range + self._y_axis_range
 
     @classmethod
     def from_function(
@@ -303,7 +303,7 @@ class Heatmap(Plottable2D):
         )
 
     @property
-    def image(self) -> ArrayLike:
+    def image(self) -> ArrayLike | str:
         return self._image
 
     @image.setter
@@ -389,6 +389,12 @@ class Heatmap(Plottable2D):
     def color_bar_params(self) -> dict:
         return self._color_bar_params
 
+    @property
+    def _xy_range(self) -> Optional[tuple[float, float, float, float]]:
+        if self._x_axis_range is not None and self._y_axis_range is not None:
+            return self._x_axis_range + self._y_axis_range
+        return None
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
@@ -428,43 +434,25 @@ class Heatmap(Plottable2D):
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if self._x_axis_range is not None and self._y_axis_range is not None:
-            params = {
-                "cmap": self._color_map,
-                "alpha": self._alpha_value,
-                "aspect": self._aspect_ratio,
-                "origin": self._origin_position,
-                "interpolation": self._interpolation,
-                "extent": self._xy_range,
-            }
-            params = {k: v for k, v in params.items() if v != "default"}
-            if self._color_map_range:
-                params["vmin"] = min(self._color_map_range)
-                params["vmax"] = max(self._color_map_range)
+        params = {
+            "cmap": self._color_map,
+            "alpha": self._alpha_value,
+            "aspect": self._aspect_ratio,
+            "origin": self._origin_position,
+            "interpolation": self._interpolation,
+            "extent": self._xy_range,
+        }
 
-            image = axes.imshow(
-                self._image,
-                zorder=z_order,
-                **params,
-            )
-        else:
-            params = {
-                "cmap": self._color_map,
-                "alpha": self._alpha_value,
-                "aspect": self._aspect_ratio,
-                "origin": self._origin_position,
-                "interpolation": self._interpolation,
-            }
-            params = {k: v for k, v in params.items() if v != "default"}
-            if self._color_map_range:
-                params["vmin"] = min(self._color_map_range)
-                params["vmax"] = max(self._color_map_range)
+        params = {k: v for k, v in params.items() if v != "default"}
+        if self._color_map_range:
+            params["vmin"] = min(self._color_map_range)
+            params["vmax"] = max(self._color_map_range)
 
-            image = axes.imshow(
-                self._image,
-                zorder=z_order,
-                **params,
-            )
+        image = axes.imshow(
+            self._image,
+            zorder=z_order,
+            **params,
+        )
         fig = axes.get_figure()
         if self._show_color_bar:
             fig.colorbar(image, ax=axes, **self._color_bar_params)
