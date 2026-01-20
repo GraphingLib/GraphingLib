@@ -553,6 +553,9 @@ The :py:meth:`~graphinglib.SmartFigure.set_ticks` method provides fine-grained c
     fig.set_ticks(reset=True)  # Reset to default behavior
     fig.show()
 
+.. note::
+    Since tick position and tick spacing are conflicting parameters, trying to set both at the same time for the same axis will raise an error. Similarly, giving tick labels without tick positions will also raise an error. For more details on the possible combinations of parameters, see the :py:meth:`~graphinglib.SmartFigure.set_ticks` method docstring.
+
 Tick Appearance
 ---------------
 
