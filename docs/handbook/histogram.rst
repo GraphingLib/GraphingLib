@@ -23,7 +23,7 @@ In this example we can see that the legend includes the values of the distributi
     mu = histogram.mean
     sigma = histogram.standard_deviation
 
-It is also possible to overlay a normal fit of the distribution simply by calling the :py:meth:`~graphinglib.data_plotting_1d.Histogram.add_pdf` (probability density function; currently, only normal is available):
+It is also possible to overlay a normal fit of the distribution simply by calling the :py:meth:`~graphinglib.Histogram.add_pdf` (probability density function; currently, only normal is available):
 
 .. plot::
 
@@ -41,7 +41,7 @@ It is also possible to overlay a normal fit of the distribution simply by callin
 Plotting fit residuals
 ----------------------
 
-You can create a Histogram from a previously created fit to display the residuals of said fit. Here is an example of how to create such a Histogram using the :py:meth:`~graphinglib.data_plotting_1d.Histogram.plot_residuals_from_fit` method:
+You can create a Histogram from a previously created fit to display the residuals of said fit. Here is an example of how to create such a Histogram using the :py:meth:`~graphinglib.Histogram.from_fit_residuals` method:
 
 .. plot::
 

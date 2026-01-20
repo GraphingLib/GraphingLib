@@ -21,3 +21,7 @@ _xy_range is now a property to keep it updated if the axis ranges are modified a
 Filling Curve between bounds now uses facecolor
 -----------------------------------------------
 Modified Curve._plot_element so it uses facecolor instead of color when filling between bounds to remove the solid contour.
+
+Added valid links in handbook
+-----------------------------
+Updated all links to methods and functions in the handbook to ensure they are clickable. Also corrected some old method names in the handbook.

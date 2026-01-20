@@ -5,7 +5,7 @@ Scatter plots and fitting experimental data
 The :class:`~graphinglib.data_plotting_1d.Scatter` Object
 ---------------------------------------------------------
 
-In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plotting_1d.Scatter` object. If you want to plot existing data, you can use the standard constructor by passing in the x and y data as lists or numpy arrays. If you want to plot a function, you can use the :meth:`~graphinglib.data_plotting_1d.Scatter.from_function` method. This method takes in a function and a range of x values to evaluate the function at. In the latter case, you can also specify the number of points to evaluate the function at. Both of these alternatives are shown below.
+In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plotting_1d.Scatter` object. If you want to plot existing data, you can use the standard constructor by passing in the x and y data as lists or numpy arrays. If you want to plot a function, you can use the :py:meth:`~graphinglib.Scatter.from_function` method. This method takes in a function and a range of x values to evaluate the function at. In the latter case, you can also specify the number of points to evaluate the function at. Both of these alternatives are shown below.
 
 .. plot::
 
@@ -30,7 +30,7 @@ In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plottin
     fig.add_elements(scatter_1, scatter_2)
     fig.show()
 
-You can also add error bars for `x` and/or `y` by calling the :meth:`~graphinglib.data_plotting_1d.Scatter.add_errorbars` method like so:
+You can also add error bars for `x` and/or `y` by calling the :py:meth:`~graphinglib.Scatter.add_errorbars` method like so:
 
 .. plot::
 
@@ -71,7 +71,7 @@ Just like with the :class:`~graphinglib.data_plotting_1d.Curve` object, you can 
     fig.add_elements(scatter_sine, scatter_line, scatter_addition, scatter_plus_constant)
     fig.show()
 
-Interpolation between data points is possible by calling the :meth:`~graphinglib.data_plotting_1d.Scatter.get_coordinates_at_x` and :meth:`~graphinglib.data_plotting_1d.Scatter.get_coordinates_at_y` methods. The first returns a tuple of coordinates that represent the point on the curve at the specified x value. The second works the same way, but returns a list of tuples, one for each point on the curve that has the specified y value. The :meth:`~graphinglib.data_plotting_1d.Scatter.create_point_at_x` and :meth:`~graphinglib.data_plotting_1d.Scatter.create_points_at_y` methods work the same way, but return :class:`~graphinglib.graph_elements.Point` objects instead of tuples.
+Interpolation between data points is possible by calling the :py:meth:`~graphinglib.Scatter.get_coordinates_at_x` and :py:meth:`~graphinglib.Scatter.get_coordinates_at_y` methods. The first returns a tuple of coordinates that represent the point on the curve at the specified x value. The second works the same way, but returns a list of tuples, one for each point on the curve that has the specified y value. The :py:meth:`~graphinglib.Scatter.create_point_at_x` and :py:meth:`~graphinglib.Scatter.create_points_at_y` methods work the same way, but return :class:`~graphinglib.graph_elements.Point` objects instead of tuples.
 
 .. plot::
 
@@ -212,6 +212,6 @@ And here is an example of fitting a specific, user-defined function to some data
 
     Slit width: 3.763 microns
 
-As a bonus tip, you can use the :meth:`~graphinglib.data_plotting_1d.Scatter.create_slice_x` and :meth:`~graphinglib.data_plotting_1d.Scatter.create_slice_y` methods to create a :class:`~graphinglib.data_plotting_1d.Scatter` object that represents a slice of the original data. This can be useful for fitting a function to just part of your data if you measurements are not reliable at all x values.
+As a bonus tip, you can use the :py:meth:`~graphinglib.Scatter.create_slice_x` and :py:meth:`~graphinglib.Scatter.create_slice_y` methods to create a :class:`~graphinglib.data_plotting_1d.Scatter` object that represents a slice of the original data. This can be useful for fitting a function to just part of your data if you measurements are not reliable at all x values.
 
-It is also possible to use the :meth:`~graphinglib.data_plotting_1d.Scatter.to_desmos` to export the scatter into a Desmos-readable format. This can allow easier estimation of the initial guesses for proper fitting.
+It is also possible to use the :py:meth:`~graphinglib.Scatter.to_desmos` to export the scatter into a Desmos-readable format. This can allow easier estimation of the initial guesses for proper fitting.
