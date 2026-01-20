@@ -137,6 +137,7 @@ In order to submit your pull request, here are a few things you should do :
 
    * ``new_feature`` : For new features added to GraphingLib
    * ``improvement`` : For changes improving the efficiency and/or functioning of a feature
+   * ``bugfix`` : For bug fixes
    * ``compatibility`` : For changes affecting backwards compatibility (not for removal of deprecated features)
    * ``deprecation`` : For setting a feature as deprecated (not yet removed but emitting a ``DeprecationWarning``)
    * ``expired`` : For removed deprecated features
