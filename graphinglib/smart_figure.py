@@ -2071,8 +2071,9 @@ class SmartFigure:
         rc_params_dict : dict[str, str | float]
             Dictionary of rc parameters to update.
             Defaults to empty dictionary.
-        reset : bool
-            Whether or not to reset the rc parameters to the default values for the specified ``figure_style``.
+        reset : bool, optional
+            If ``True``, resets all previously set rc parameters to their default values for the specified
+            ``figure_style`` before applying the new parameters.
             Defaults to ``False``.
 
         Returns
@@ -2117,8 +2118,9 @@ class SmartFigure:
 
         Parameters
         ----------
-        reset : bool
-            Whether or not to reset the rc parameters to the default values for the specified ``figure_style``.
+        reset : bool, optional
+            If ``True``, resets all previously set visual parameters to their default values for the specified
+            ``figure_style`` before applying the new parameters.
             Defaults to ``False``.
         figure_face_color : str, optional
             The color of the figure face.
@@ -2232,7 +2234,7 @@ class SmartFigure:
         Parameters
         ----------
         reset : bool, optional
-            Whether to reset the ticks to their default values.
+            If ``True``, resets all previously set ticks to their default values before applying the new parameters.
             Defaults to ``False``.
         x_ticks, y_ticks : Iterable[float], optional
             Tick positions for the x or y axis. If a value is specified, the corresponding ``x_tick_spacing`` or
@@ -2487,8 +2489,7 @@ class SmartFigure:
         elements : Iterable[LegendElement], optional
             Iterable of :class:`~graphinglib.LegendElement` objects to add to the legend.
         reset : bool, optional
-            Whether or not to reset the custom handles and labels previously added with this method before adding the
-            new ones.
+            If ``True``, resets all previously set custom handles and labels before adding the new ones.
             Defaults to ``False``.
 
         Returns
@@ -2525,8 +2526,8 @@ class SmartFigure:
         Parameters
         ----------
         reset : bool, optional
-            Whether to reset all previously set padding parameters to their default values before applying the new
-            parameters.
+            If ``True``, resets all previously set text padding parameters to their default values before applying the
+            new parameters.
             Defaults to ``False``.
         x_label_pad, y_label_pad : float, optional
             Padding between the main x-axis or y-axis label and the respective axis.
@@ -2577,8 +2578,9 @@ class SmartFigure:
         Parameters
         ----------
         reset : bool, optional
-            Whether to reset all previously set reference labels parameters to their default values before applying the
-            new parameters.
+            If ``True``, resets all previously set reference label parameters to their default values before applying
+            the new parameters.
+            Defaults to ``False``.
         color : str
             The color of the reference labels.
         start_index : int, optional
@@ -3053,7 +3055,7 @@ class SmartFigureWCS(SmartFigure):
         Parameters
         ----------
         reset : bool, optional
-            Whether to reset the ticks to their default values.
+            If ``True``, resets all previously set ticks to their default values before applying the new parameters.
             Defaults to ``False``.
         x_ticks, y_ticks : list[Quantity], optional
             Tick positions for the x or y axis. If a value is specified, the corresponding ``x_tick_spacing`` and
@@ -3169,7 +3171,7 @@ class SmartFigureWCS(SmartFigure):
             parameters specifically for each axes.
             Defaults to ``"both"``.
         reset : bool, optional
-            If ``True``, all previously given tick parameters are reset to their default values before applying the new
+            If ``True``, resets all previously given tick parameters to their default values before applying the new
             parameters.
             Defaults to ``False``.
         direction : {"in", "out"}, optional
@@ -3707,8 +3709,9 @@ class SmartTwinAxis:
         rc_params_dict : dict[str, str | float]
             Dictionary of rc parameters to update.
             Defaults to empty dictionary.
-        reset : bool
-            Whether or not to reset the rc parameters to the default values.
+        reset : bool, optional
+            If ``True``, resets all previously set rc parameters to their default values for the specified
+            ``figure_style`` before applying the new parameters.
             Defaults to ``False``.
 
         Returns
@@ -3742,8 +3745,9 @@ class SmartTwinAxis:
 
         Parameters
         ----------
-        reset : bool
-            Whether or not to reset the rc parameters to the default values for the specified ``figure_style``.
+        reset : bool, optional
+            If ``True``, resets all previously set visual parameters to their default values for the specified
+            ``figure_style`` before applying the new parameters.
             Defaults to ``False``.
         edge_color : str, optional
             The color of the spine.
@@ -3816,7 +3820,7 @@ class SmartTwinAxis:
         Parameters
         ----------
         reset : bool, optional
-            Whether to reset the tick parameters to their default values.
+            If ``True``, resets all previously set ticks to their default values before applying the new parameters.
             Defaults to ``False``.
         ticks : Iterable[float], optional
             Tick positions for the axis. If a value is specified, the ``tick_spacing`` parameter must be ``None``.
@@ -3886,7 +3890,7 @@ class SmartTwinAxis:
             specifically for each ticks type.
             Defaults to ``"major"``.
         reset : bool, optional
-            If ``True``, all previously given tick parameters are reset to their default values before applying the new
+            If ``True``, resets all previously given tick parameters to their default values before applying the new
             parameters.
             Defaults to ``False``.
         direction : {"in", "out", "inout"}, optional
