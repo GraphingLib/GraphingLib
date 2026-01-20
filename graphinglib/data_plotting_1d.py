@@ -1533,7 +1533,7 @@ class Curve(Plottable1D):
                 )
         if self._fill_between_bounds:
             params = {"alpha": 0.2}
-            params["color"] = (
+            params["facecolor"] = (
                 self._fill_between_color
                 if self._fill_between_color != "same as curve"
                 else self.handle[0].get_color()
