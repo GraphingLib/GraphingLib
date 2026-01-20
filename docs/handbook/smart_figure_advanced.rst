@@ -99,7 +99,7 @@ Setting the :py:attr:`~graphinglib.SmartFigure.elements` property **replaces all
     fig.show()
 
 .. note::
-   The ``elements`` property setter internally calls :py:meth:`~graphinglib.SmartFigure.add_elements`, but only after clearing all existing elements first. This makes it equivalent to creating a new figure.
+   The ``elements`` property setter internally calls :py:meth:`~graphinglib.SmartFigure.add_elements`, but only after clearing all existing elements first. This can be used to reset the elements before adding new ones.
 
 Indexing: ``__setitem__`` and ``__getitem__``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
