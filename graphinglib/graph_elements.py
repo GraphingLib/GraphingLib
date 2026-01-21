@@ -69,6 +69,9 @@ class Hlines:
         Line styles to use for the lines. One style for every line or a style
         per line can be specified.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the lines.
+        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -80,6 +83,7 @@ class Hlines:
         colors: list[str] | str = "default",
         line_widths: list[float] | float = "default",
         line_styles: list[str] | str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> None:
         if isinstance(y, (list, np.ndarray)):
             self._y = np.asarray(y)
@@ -101,6 +105,7 @@ class Hlines:
         self._colors = colors
         self._line_widths = line_widths
         self._line_styles = line_styles
+        self._alpha = alpha
         if isinstance(self._y, (int, float)) and isinstance(
             self._colors, (list, np.ndarray)
         ):
@@ -192,6 +197,10 @@ class Hlines:
     def line_styles(self, line_styles: list[str] | str) -> None:
         self._line_styles = line_styles
 
+    @property
+    def alpha(self) -> float | Literal["default"]:
+        return self._alpha
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.graph_elements.Hlines` object.
@@ -209,6 +218,7 @@ class Hlines:
                     "colors": self._colors,
                     "linestyles": self._line_styles,
                     "linewidths": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.hlines(
@@ -224,6 +234,7 @@ class Hlines:
                     "color": self._colors,
                     "linestyle": self._line_styles,
                     "linewidth": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 for i in range(len(self._y)):
@@ -246,6 +257,7 @@ class Hlines:
                     "colors": self._colors,
                     "linestyles": self._line_styles,
                     "linewidths": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.hlines(
@@ -261,6 +273,7 @@ class Hlines:
                     "color": self._colors,
                     "linestyle": self._line_styles,
                     "linewidth": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.axhline(self._y, zorder=z_order, **params)
@@ -302,6 +315,9 @@ class Vlines:
         Line styles to use for the lines. One style for every line or a style
         per line can be specified.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the lines.
+        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -313,6 +329,7 @@ class Vlines:
         colors: list[str] | str = "default",
         line_widths: list[float] | float = "default",
         line_styles: list[str] | str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> None:
         if isinstance(x, (list, np.ndarray)):
             self._x = np.asarray(x)
@@ -330,6 +347,7 @@ class Vlines:
         self._colors = colors
         self._line_styles = line_styles
         self._line_widths = line_widths
+        self._alpha = alpha
         if isinstance(self._x, (int, float)) and isinstance(
             self._colors, (list, np.ndarray)
         ):
@@ -421,6 +439,14 @@ class Vlines:
     def line_styles(self, line_styles: list[str] | str) -> None:
         self._line_styles = line_styles
 
+    @property
+    def alpha(self) -> float | Literal["default"]:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float | Literal["default"]) -> None:
+        self._alpha = alpha
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.graph_elements.Vlines` object.
@@ -438,6 +464,7 @@ class Vlines:
                     "colors": self._colors,
                     "linestyles": self._line_styles,
                     "linewidths": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.vlines(
@@ -453,6 +480,7 @@ class Vlines:
                     "color": self._colors,
                     "linestyle": self._line_styles,
                     "linewidth": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 for i in range(len(self._x)):
@@ -475,6 +503,7 @@ class Vlines:
                     "colors": self._colors,
                     "linestyles": self._line_styles,
                     "linewidths": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.vlines(
@@ -490,6 +519,7 @@ class Vlines:
                     "color": self._colors,
                     "linestyle": self._line_styles,
                     "linewidth": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.axvline(self._x, zorder=z_order, **params)

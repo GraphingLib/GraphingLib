@@ -34,9 +34,11 @@ class TestHlines(unittest.TestCase):
         self.assertEqual(testHlinesCopy._y, self.testHlines._y)
         self.assertEqual(testHlinesCopy._x_min, self.testHlines._x_min)
         self.assertEqual(testHlinesCopy._x_max, self.testHlines._x_max)
-        self.assertEqual(testHlinesCopy._colors, self.testHlines._colors)
-        self.assertEqual(testHlinesCopy._line_styles, self.testHlines._line_styles)
         self.assertEqual(testHlinesCopy._label, self.testHlines._label)
+        self.assertEqual(testHlinesCopy._colors, self.testHlines._colors)
+        self.assertEqual(testHlinesCopy._line_widths, self.testHlines._line_widths)
+        self.assertEqual(testHlinesCopy._line_styles, self.testHlines._line_styles)
+        self.assertEqual(testHlinesCopy._alpha, self.testHlines._alpha)
 
 
 class TestVlines(unittest.TestCase):
@@ -66,9 +68,11 @@ class TestVlines(unittest.TestCase):
         self.assertEqual(list(testVlinesCopy._x), list(self.testVlines._x))
         self.assertEqual(testVlinesCopy._y_min, self.testVlines._y_min)
         self.assertEqual(testVlinesCopy._y_max, self.testVlines._y_max)
-        self.assertEqual(testVlinesCopy._colors, self.testVlines._colors)
-        self.assertEqual(testVlinesCopy._line_styles, self.testVlines._line_styles)
         self.assertEqual(testVlinesCopy._label, self.testVlines._label)
+        self.assertEqual(testVlinesCopy._colors, self.testVlines._colors)
+        self.assertEqual(testVlinesCopy._line_widths, self.testVlines._line_widths)
+        self.assertEqual(testVlinesCopy._line_styles, self.testVlines._line_styles)
+        self.assertEqual(testVlinesCopy._alpha, self.testVlines._alpha)
 
 
 class TestPoint(unittest.TestCase):
