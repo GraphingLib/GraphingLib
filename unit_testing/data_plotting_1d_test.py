@@ -727,7 +727,7 @@ class TestScatter(unittest.TestCase):
         fig._prepare_figure()
         self.assertEqual(scatter.handle.get_edgecolor().shape[0], 100)
 
-    def test_errobars_take_face_color(self):
+    def test_errorbars_take_face_color(self):
         scatter = Scatter.from_function(
             lambda x: x**2,
             -10,
@@ -746,7 +746,7 @@ class TestScatter(unittest.TestCase):
             list(to_rgba("blue")),
         )
 
-    def test_errobars_take_edge_color(self):
+    def test_errorbars_take_edge_color(self):
         scatter = Scatter.from_function(
             lambda x: x**2,
             -10,
@@ -765,7 +765,7 @@ class TestScatter(unittest.TestCase):
             list(to_rgba("red")),
         )
 
-    def test_errobars_become_black_from_face_color(self):
+    def test_errorbars_become_black_from_face_color(self):
         scatter = Scatter.from_function(
             lambda x: x**2,
             -10,
@@ -785,7 +785,7 @@ class TestScatter(unittest.TestCase):
             list(to_rgba("black")),
         )
 
-    def test_errobars_become_black_from_edge_color(self):
+    def test_errorbars_become_black_from_edge_color(self):
         scatter = Scatter.from_function(
             lambda x: x**2,
             -10,
@@ -805,7 +805,7 @@ class TestScatter(unittest.TestCase):
             list(to_rgba("black")),
         )
 
-    def test_errobars_become_white_from_face_color(self):
+    def test_errorbars_become_white_from_face_color(self):
         scatter = Scatter.from_function(
             lambda x: x**2,
             -10,
@@ -825,7 +825,7 @@ class TestScatter(unittest.TestCase):
             list(to_rgba("white")),
         )
 
-    def test_errobars_become_white_from_edge_color(self):
+    def test_errorbars_become_white_from_edge_color(self):
         scatter = Scatter.from_function(
             lambda x: x**2,
             -10,
