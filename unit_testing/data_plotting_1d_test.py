@@ -387,6 +387,7 @@ class TestScatter(unittest.TestCase):
                 edge_color="k",
                 marker_size=1,
                 marker_style="o",
+                alpha=0.5,
                 number_of_points=400,
             ),
             Scatter,
@@ -443,6 +444,7 @@ class TestScatter(unittest.TestCase):
             edge_color="k",
             marker_size=30,
             marker_style="o",
+            alpha=0.8,
         )
         _, self.testAxes = subplots()
         self.testScatter._plot_element(self.testAxes, 0)

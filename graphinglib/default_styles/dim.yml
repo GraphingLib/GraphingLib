@@ -134,6 +134,7 @@ Scatter:
   _marker_size: 60
   _marker_edge_width: 1.5
   _marker_style: o
+  _alpha: 1.0
 Stream:
   _arrow_size: 1
   _color: null

@@ -21,6 +21,7 @@ Scatter:
   _marker_size: 50
   _marker_edge_width: 1.5
   _marker_style: "o"
+  _alpha: 1.0
   _cap_width: 3
   _errorbars_color: "same as scatter"
   _errorbars_line_width: 1

@@ -1660,6 +1660,9 @@ class Scatter(Plottable1D):
     marker_style : str
         Style of the points.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the scatter plot.
+        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -1675,6 +1678,7 @@ class Scatter(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> None:
         """
         This class implements a general scatter plot.
@@ -1710,6 +1714,9 @@ class Scatter(Plottable1D):
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the scatter plot.
+            Default depends on the ``figure_style`` configuration.
         """
         self.handle = None
         self.errorbars_handle = None
@@ -1724,6 +1731,7 @@ class Scatter(Plottable1D):
         self._marker_size = marker_size
         self._marker_edge_width = marker_edge_width
         self._marker_style = marker_style
+        self._alpha = alpha
 
         self._x_error = None
         self._y_error = None
@@ -1750,6 +1758,7 @@ class Scatter(Plottable1D):
         marker_size: int | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         number_of_points: int = 30,
     ) -> Self:
         """
@@ -1787,6 +1796,9 @@ class Scatter(Plottable1D):
         marker_edge_width: float
             Line width of the marker edges.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the scatter plot.
+            Default depends on the ``figure_style`` configuration.
         number_of_points : int
             Number of points to be plotted.
             Defaults to 30.
@@ -1809,6 +1821,7 @@ class Scatter(Plottable1D):
             marker_size,
             marker_edge_width,
             marker_style,
+            alpha,
         )
 
     @property
@@ -1914,6 +1927,14 @@ class Scatter(Plottable1D):
     @marker_style.setter
     def marker_style(self, marker_style: str) -> None:
         self._marker_style = marker_style
+
+    @property
+    def alpha(self) -> float | Literal["default"]:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float | Literal["default"]) -> None:
+        self._alpha = alpha
 
     @property
     def show_errorbars(self) -> bool:
@@ -2180,6 +2201,7 @@ class Scatter(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -2216,6 +2238,9 @@ class Scatter(Plottable1D):
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            The opacity of the points (0 is transparent, 1 is opaque).
+            Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
 
@@ -2247,6 +2272,8 @@ class Scatter(Plottable1D):
                 copy._marker_edge_width = marker_edge_width
             if marker_style != "default":
                 copy._marker_style = marker_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
             return Scatter(
@@ -2261,6 +2288,7 @@ class Scatter(Plottable1D):
                 marker_size,
                 marker_edge_width,
                 marker_style,
+                alpha,
             )
 
     def create_slice_y(
@@ -2276,6 +2304,7 @@ class Scatter(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -2312,6 +2341,9 @@ class Scatter(Plottable1D):
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            The opacity of the points (0 is transparent, 1 is opaque).
+            Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
 
@@ -2343,6 +2375,8 @@ class Scatter(Plottable1D):
                 copy._marker_edge_width = marker_edge_width
             if marker_style != "default":
                 copy._marker_style = marker_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
             return Scatter(
@@ -2357,6 +2391,7 @@ class Scatter(Plottable1D):
                 marker_size,
                 marker_edge_width,
                 marker_style,
+                alpha,
             )
 
     def add_errorbars(
@@ -2771,6 +2806,7 @@ class Scatter(Plottable1D):
             "s": self._marker_size,
             "marker": self._marker_style,
             "linewidth": self._marker_edge_width,
+            "alpha": self._alpha,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         params["facecolors"] = mpl_face_color
