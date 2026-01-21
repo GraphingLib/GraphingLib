@@ -894,6 +894,9 @@ class Text:
     font_size : float
         Font size of the text.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the text.
+        Default depends on the ``figure_style`` configuration.
     h_align, v_align : str
         Horizontal and vertical alignment of the text.
         Default depends on the ``figure_style`` configuration.
@@ -904,6 +907,7 @@ class Text:
     _text: str
     _color: str = "default"
     _font_size: float | Literal["same as figure"] = "same as figure"
+    _alpha: float | Literal["default"] = "default"
     _h_align: str = "default"
     _v_align: str = "default"
     _arrow_pointing_to: Optional[tuple[float]] = field(default=None, init=False)
@@ -915,6 +919,7 @@ class Text:
         text: str,
         color: str = "default",
         font_size: float | Literal["same as figure"] = "same as figure",
+        alpha: float | Literal["default"] = "default",
         h_align: str = "default",
         v_align: str = "default",
     ) -> None:
@@ -937,6 +942,9 @@ class Text:
         font_size : float
             Font size of the text.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the text.
+            Default depends on the ``figure_style`` configuration.
         h_align, v_align : str
             Horizontal and vertical alignment of the text.
             Default depends on the ``figure_style`` configuration.
@@ -946,6 +954,7 @@ class Text:
         self._text = text
         self._color = color
         self._font_size = font_size
+        self._alpha = alpha
         self._h_align = h_align
         self._v_align = v_align
         self._arrow_pointing_to = None
@@ -991,6 +1000,14 @@ class Text:
         self._font_size = font_size
 
     @property
+    def alpha(self) -> float | Literal["default"]:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float | Literal["default"]) -> None:
+        self._alpha = alpha
+
+    @property
     def h_align(self) -> str:
         return self._h_align
 
@@ -1027,6 +1044,7 @@ class Text:
         shrink: Optional[float] = None,
         head_width: Optional[float] = None,
         head_length: Optional[float] = None,
+        alpha: Optional[float] = None,
     ) -> None:
         """
         Adds an arrow pointing from the :class:`~graphinglib.graph_elements.Text`
@@ -1045,6 +1063,8 @@ class Text:
             Width of the head of the arrow.
         head_length : float, optional
             Length of the head of the arrow.
+        alpha : float, optional
+            Transparency of the arrow.
         """
         self._arrow_pointing_to = points_to
         self._arrow_properties = {}
@@ -1056,6 +1076,8 @@ class Text:
             self._arrow_properties["headwidth"] = head_width
         if head_length is not None:
             self._arrow_properties["headlength"] = head_length
+        if alpha is not None:
+            self._arrow_properties["alpha"] = alpha
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -1068,6 +1090,7 @@ class Text:
             "fontsize": size,
             "horizontalalignment": self._h_align,
             "verticalalignment": self._v_align,
+            "alpha": self._alpha,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.text(

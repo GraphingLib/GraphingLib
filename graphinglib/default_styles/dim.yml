@@ -108,6 +108,7 @@ Histogram:
   _pdf_std_color: white
   _show_params: true
 Hlines:
+  _alpha: 1.0
   _colors: white
   _line_styles: '-'
   _line_widths: 2
@@ -152,6 +153,7 @@ Table:
   _row_align: "left"
   _col_align: "center"
 Text:
+  _alpha: 1.0
   _color: white
   _h_align: center
   _v_align: baseline
@@ -160,6 +162,7 @@ VectorField:
   _arrow_head_size: 1
   _color: "white"
 Vlines:
+  _alpha: 1.0
   _colors: white
   _line_styles: solid
   _line_widths: 2

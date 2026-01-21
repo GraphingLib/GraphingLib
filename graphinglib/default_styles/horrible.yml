@@ -43,11 +43,13 @@ Histogram:
   _pdf_std_color: "b"
 
 Hlines:
+  _alpha: 1.0
   _colors: "k"
   _line_styles: "-"
   _line_widths: 2
 
 Vlines:
+  _alpha: 1.0
   _colors: "k"
   _line_styles: "solid"
   _line_widths: 2
@@ -160,6 +162,7 @@ VectorField:
   _color: "green"
 
 Text:
+  _alpha: 1.0
   _color: "orange"
   _h_align: "right"
   _v_align: "top"
