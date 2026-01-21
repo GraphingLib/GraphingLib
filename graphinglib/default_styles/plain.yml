@@ -201,6 +201,7 @@ Rectangle:
   _line_style: "-"
 
 Arrow:
+  _alpha: 1.0
   _color: "black"
   _head_size: 1
   _width: 2

@@ -40,6 +40,9 @@ class Arrow:
         Fraction of the total length of the arrow to shrink from both ends.
         A value of 0.5 means the arrow is no longer visible.
         Defaults to 0.
+    alpha : float
+        Transparency of the arrow.
+        Default depends on the ``figure_style`` configuration.
     two_sided : bool
         If ``True``, an arrow is shown at both head and tail. Defaults to ``False``.
     """
@@ -52,6 +55,7 @@ class Arrow:
         width: float | Literal["default"] = "default",
         head_size: float | Literal["default"] = "default",
         shrink: float = 0,
+        alpha: float | Literal["default"] = "default",
         two_sided: bool = False,
     ):
         """This class implements an arrow object.
@@ -82,6 +86,7 @@ class Arrow:
         self._width = width
         self._head_size = head_size
         self._shrink = shrink
+        self._alpha = alpha
         self._two_sided = two_sided
 
     @property
@@ -133,6 +138,14 @@ class Arrow:
         self._shrink = value
 
     @property
+    def alpha(self):
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, value):
+        self._alpha = value
+
+    @property
     def two_sided(self):
         return self._two_sided
 
@@ -171,6 +184,7 @@ class Arrow:
             "arrowstyle": f"{self._style}, head_width={head_width}, head_length={head_length}",
             "color": self._color,
             "linewidth": self._width,
+            "alpha": self._alpha,
         }
         if self._shrink != 0:
             shrinkPointA, shrinkPointB = self._shrink_points()
