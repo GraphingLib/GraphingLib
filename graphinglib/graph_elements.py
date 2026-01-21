@@ -900,6 +900,9 @@ class Text:
     h_align, v_align : str
         Horizontal and vertical alignment of the text.
         Default depends on the ``figure_style`` configuration.
+    rotation : float
+        Rotation angle of the text in degrees.
+        Defaults to 0.
     """
 
     _x: float
@@ -910,6 +913,7 @@ class Text:
     _alpha: float | Literal["default"] = "default"
     _h_align: str = "default"
     _v_align: str = "default"
+    _rotation: float = 0.0
     _arrow_pointing_to: Optional[tuple[float]] = field(default=None, init=False)
 
     def __init__(
@@ -922,6 +926,7 @@ class Text:
         alpha: float | Literal["default"] = "default",
         h_align: str = "default",
         v_align: str = "default",
+        rotation: float = 0.0,
     ) -> None:
         """
         This class allows text to be plotted.
@@ -948,6 +953,9 @@ class Text:
         h_align, v_align : str
             Horizontal and vertical alignment of the text.
             Default depends on the ``figure_style`` configuration.
+        rotation : float
+            Rotation angle of the text in degrees.
+            Defaults to 0.
         """
         self._x = x
         self._y = y
@@ -957,6 +965,7 @@ class Text:
         self._alpha = alpha
         self._h_align = h_align
         self._v_align = v_align
+        self._rotation = rotation
         self._arrow_pointing_to = None
 
     @property
@@ -1024,6 +1033,14 @@ class Text:
         self._v_align = v_align
 
     @property
+    def rotation(self) -> float:
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, rotation: float) -> None:
+        self._rotation = rotation
+
+    @property
     def arrow_pointing_to(self) -> Optional[tuple[float]]:
         return self._arrow_pointing_to
 
@@ -1088,9 +1105,10 @@ class Text:
         params = {
             "color": self._color,
             "fontsize": size,
+            "alpha": self._alpha,
             "horizontalalignment": self._h_align,
             "verticalalignment": self._v_align,
-            "alpha": self._alpha,
+            "rotation": self._rotation,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.text(

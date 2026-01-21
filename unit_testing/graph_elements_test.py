@@ -149,6 +149,7 @@ class TestText(unittest.TestCase):
             alpha=0.6,
             h_align="center",
             v_align="center",
+            rotation=10.0,
         )
         self.assertEqual(testText._x, 0.0)
         self.assertEqual(testText._y, 0.0)
@@ -158,6 +159,7 @@ class TestText(unittest.TestCase):
         self.assertEqual(testText._alpha, 0.6)
         self.assertEqual(testText._h_align, "center")
         self.assertEqual(testText._v_align, "center")
+        self.assertEqual(testText._rotation, 10.0)
 
     def test_add_arrow(self):
         testText = Text(
@@ -169,6 +171,7 @@ class TestText(unittest.TestCase):
             alpha=0.5,
             h_align="center",
             v_align="center",
+            rotation=15.0,
         )
         testText.add_arrow(
             points_to=(1, 1), width=0.1, head_width=0.3, head_length=0.2, shrink=0.05, alpha=0.1
@@ -189,6 +192,7 @@ class TestText(unittest.TestCase):
             alpha=0.75,
             h_align="center",
             v_align="center",
+            rotation=-40.0,
         )
         testText.add_arrow(
             points_to=(1, 1), width=0.1, head_width=0.3, head_length=0.2, shrink=0.05, alpha=0.9
@@ -202,6 +206,7 @@ class TestText(unittest.TestCase):
         self.assertEqual(ax.texts[0].get_alpha(), 0.75)
         self.assertEqual(ax.texts[0].get_horizontalalignment(), "center")
         self.assertEqual(ax.texts[0].get_verticalalignment(), "center")
+        self.assertEqual(ax.texts[0].get_rotation(), 360 - 40.0)
         # Check if the arrow is plotted correctly
         for child in ax.get_children():
             if isinstance(child, plt.Annotation):
@@ -224,6 +229,7 @@ class TestText(unittest.TestCase):
             alpha=0.3,
             h_align="center",
             v_align="center",
+            rotation=-25.0,
         )
         testTextCopy = testText.copy()
         self.assertEqual(testTextCopy._x, testText._x)
@@ -234,6 +240,7 @@ class TestText(unittest.TestCase):
         self.assertEqual(testTextCopy._alpha, testText._alpha)
         self.assertEqual(testTextCopy._h_align, testText._h_align)
         self.assertEqual(testTextCopy._v_align, testText._v_align)
+        self.assertEqual(testTextCopy._rotation, testText._rotation)
         self.assertEqual(testTextCopy._arrow_pointing_to, testText._arrow_pointing_to)
 
 
