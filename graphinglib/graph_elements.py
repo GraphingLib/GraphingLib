@@ -532,6 +532,9 @@ class Point:
     edge_width : float
         Edge width of the marker.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the point.
+        Default depends on the ``figure_style`` configuration.
     font_size : float
         Font size for the text attached to the marker.
         Default depends on the ``figure_style`` configuration.
@@ -554,6 +557,7 @@ class Point:
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         edge_width: float | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
         font_size: int | Literal["same as figure"] = "same as figure",
         text_color: str = "default",
         h_align: str = "left",
@@ -586,6 +590,9 @@ class Point:
         edge_width : float
             Edge width of the marker.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the point.
+            Default depends on the ``figure_style`` configuration.
         font_size : float
             Font size for the text attached to the marker.
             Default depends on the ``figure_style`` configuration.
@@ -610,6 +617,7 @@ class Point:
         self._marker_size = marker_size
         self._marker_style = marker_style
         self._edge_width = edge_width
+        self._alpha = alpha
         self._font_size = font_size
         self._text_color = text_color
         self._h_align = h_align
@@ -679,6 +687,14 @@ class Point:
     @edge_width.setter
     def edge_width(self, edge_width: float | Literal["default"]) -> None:
         self._edge_width = edge_width
+
+    @property
+    def alpha(self) -> float | Literal["default"]:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float | Literal["default"]) -> None:
+        self._alpha = alpha
 
     @property
     def font_size(self) -> float | Literal["same as figure"]:
@@ -762,6 +778,7 @@ class Point:
             "s": self._marker_size,
             "marker": self._marker_style,
             "linewidths": self._edge_width,
+            "alpha": self._alpha,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.scatter(

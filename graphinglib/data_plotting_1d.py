@@ -840,6 +840,7 @@ class Curve(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> Point:
         """
         Creates a point on the curve at a given x value.
@@ -871,6 +872,9 @@ class Curve(Plottable1D):
         line_width : float
             Width of the point edge.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the point.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
@@ -886,6 +890,7 @@ class Curve(Plottable1D):
             marker_size=marker_size,
             marker_style=marker_style,
             edge_width=line_width,
+            alpha=alpha,
         )
         return point
 
@@ -936,6 +941,7 @@ class Curve(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> list[Point]:
         """
         Gets the points on the curve at a given y value. Can return multiple Point objects if the curve crosses the y value multiple times.
@@ -967,6 +973,9 @@ class Curve(Plottable1D):
         line_width : float
             Width of the point edge.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the point.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
@@ -984,6 +993,7 @@ class Curve(Plottable1D):
                 marker_size=marker_size,
                 marker_style=marker_style,
                 edge_width=line_width,
+                alpha=alpha,
             )
             for pair in pairs
         ]
@@ -1394,6 +1404,7 @@ class Curve(Plottable1D):
         marker_sizes: list[float] | float | Literal["default"] = "default",
         marker_styles: list[str] | str = "default",
         edge_widths: list[float] | float | Literal["default"] = "default",
+        alphas: list[float] | float | Literal["default"] = "default",
     ) -> list[Point]:
         """
         Creates the intersection Points between two curves.
@@ -1427,6 +1438,10 @@ class Curve(Plottable1D):
         edge_widths : list[float] or float
             Widths of the intersection points.
             If a single float is passed, all intersection points will have the same width.
+            Default depends on the ``figure_style`` configuration.
+        alphas : list[float] or float
+            Transparencies of the intersection points.
+            If a single float is passed, all intersection points will have the same transparency.
             Default depends on the ``figure_style`` configuration.
 
         Returns
@@ -1472,6 +1487,11 @@ class Curve(Plottable1D):
                 edge_width = edge_widths[i]
             except (IndexError, TypeError, AssertionError):
                 edge_width = edge_widths
+            try:
+                assert isinstance(alphas, list)
+                alpha = alphas[i]
+            except (IndexError, TypeError, AssertionError):
+                alpha = alphas
             point = point_coords[i]
             point_objects.append(
                 Point(
@@ -1483,6 +1503,7 @@ class Curve(Plottable1D):
                     marker_size=marker_size,
                     marker_style=marker_style,
                     edge_width=edge_width,
+                    alpha=alpha,
                 )
             )
         return point_objects
@@ -2239,7 +2260,7 @@ class Scatter(Plottable1D):
             Style of the points.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            The opacity of the points (0 is transparent, 1 is opaque).
+            Transparencies of the points.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
@@ -2342,7 +2363,7 @@ class Scatter(Plottable1D):
             Style of the points.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            The opacity of the points (0 is transparent, 1 is opaque).
+            Transparencies of the points.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
@@ -2503,6 +2524,7 @@ class Scatter(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> Point:
         """
         Creates a Point on the curve at a given x value.
@@ -2534,6 +2556,9 @@ class Scatter(Plottable1D):
         marker_style : str
             Style of the point.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the point.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
@@ -2549,6 +2574,7 @@ class Scatter(Plottable1D):
             marker_size=marker_size,
             marker_style=marker_style,
             edge_width=marker_edge_width,
+            alpha=alpha,
         )
         return point
 
@@ -2600,6 +2626,7 @@ class Scatter(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> list[Point]:
         """
         Creates the Points on the curve at a given y value. Can return multiple Points if the curve crosses the y value multiple times.
@@ -2631,6 +2658,9 @@ class Scatter(Plottable1D):
         marker_style : str
             Style of the point.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the point.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
@@ -2648,6 +2678,7 @@ class Scatter(Plottable1D):
                 marker_size=marker_size,
                 marker_style=marker_style,
                 edge_width=marker_edge_width,
+                alpha=alpha,
             )
             for coord in coords
         ]

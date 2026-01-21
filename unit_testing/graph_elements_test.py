@@ -73,7 +73,7 @@ class TestVlines(unittest.TestCase):
 
 class TestPoint(unittest.TestCase):
     def setUp(self):
-        self.testPoint = Point(x=0.0, y=0.0, label="Test Point")
+        self.testPoint = Point(x=0.0, y=0.0, label="Test Point", alpha=0.7)
 
     def test_x_is_float(self):
         self.assertEqual(self.testPoint._x, 0.0)
@@ -83,6 +83,9 @@ class TestPoint(unittest.TestCase):
 
     def test_label_is_str(self):
         self.assertEqual(self.testPoint._label, "Test Point")
+
+    def test_alpha_is_float(self):
+        self.assertEqual(self.testPoint._alpha, 0.7)
 
     def test_colors_is_default(self):
         self.assertEqual(self.testPoint._face_color, "default")
@@ -119,6 +122,7 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(testPointCopy._x, self.testPoint._x)
         self.assertEqual(testPointCopy._y, self.testPoint._y)
         self.assertEqual(testPointCopy._label, self.testPoint._label)
+        self.assertEqual(testPointCopy._alpha, self.testPoint._alpha)
         self.assertEqual(testPointCopy._face_color, self.testPoint._face_color)
         self.assertEqual(testPointCopy._edge_color, self.testPoint._edge_color)
         self.assertEqual(testPointCopy._marker_size, self.testPoint._marker_size)

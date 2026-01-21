@@ -121,6 +121,7 @@ Point:
   _edge_width: 1.5
   _marker_size: 30
   _marker_style: o
+  _alpha: 1.0
   _text_color: same as point
 Scatter:
   _cap_thickness: 2

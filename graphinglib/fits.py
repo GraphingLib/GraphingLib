@@ -140,6 +140,7 @@ class GeneralFit(Curve):
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> Point:
         """
         Gets the point on the curve at a given x value.
@@ -165,6 +166,9 @@ class GeneralFit(Curve):
         line_width : float
             Width of the edge of the point.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the point.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
@@ -179,6 +183,7 @@ class GeneralFit(Curve):
             marker_size=marker_size,
             marker_style=marker_style,
             edge_width=line_width,
+            alpha=alpha,
         )
 
     def get_coordinates_at_y(
@@ -196,6 +201,7 @@ class GeneralFit(Curve):
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> list[Point]:
         """
         Creates the Points on the curve at a given y value.
@@ -224,6 +230,9 @@ class GeneralFit(Curve):
         line_width : float
             Width of the edge of the point.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the point.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
@@ -241,6 +250,7 @@ class GeneralFit(Curve):
                 marker_size=marker_size,
                 marker_style=marker_style,
                 edge_width=line_width,
+                alpha=alpha,
             )
             for coord in coord_pairs
         ]
