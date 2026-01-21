@@ -148,6 +148,7 @@ class TestLine(unittest.TestCase):
             width=2,
             capped_line=True,
             cap_width=3,
+            alpha=0.2,
         )
 
         self.assertEqual(line._pointA[0], 3)
@@ -158,6 +159,7 @@ class TestLine(unittest.TestCase):
         self.assertEqual(line._width, 2)
         self.assertEqual(line._capped_line, True)
         self.assertEqual(line._cap_width, 3)
+        self.assertEqual(line._alpha, 0.2)
 
     def test_plotting(self):
         line = Line(
@@ -167,6 +169,7 @@ class TestLine(unittest.TestCase):
             width=2,
             capped_line=True,
             cap_width=3,
+            alpha=1.0,
         )
 
         _, ax = plt.subplots()
@@ -188,6 +191,7 @@ class TestLine(unittest.TestCase):
             width=2,
             capped_line=True,
             cap_width=3,
+            alpha=0.3,
         )
         line_copy = line.copy()
         self.assertEqual(line._pointA, line_copy._pointA)
@@ -196,6 +200,7 @@ class TestLine(unittest.TestCase):
         self.assertEqual(line._width, line_copy._width)
         self.assertEqual(line._capped_line, line_copy._capped_line)
         self.assertEqual(line._cap_width, line_copy._cap_width)
+        self.assertEqual(line._alpha, line_copy._alpha)
 
 
 class TestPolygon(unittest.TestCase):

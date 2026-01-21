@@ -30,9 +30,11 @@ class Arrow:
     pointB : tuple[float, float]
         Point B of the arrow. If the arrow is single-sided, refers to the head.
     color : str
-        Color of the arrow. Default depends on the ``figure_style`` configuration.
+        Color of the arrow.
+        Default depends on the ``figure_style`` configuration.
     width : float, optional
-        Arrow line width. Default depends on the ``figure_style`` configuration.
+        Arrow line width.
+        Default depends on the ``figure_style`` configuration.
     head_size : float, optional
         Scales the size of the arrow head.
         Default depends on the ``figure_style`` configuration.
@@ -216,13 +218,20 @@ class Line:
     pointB : tuple[float, float]
         Point B of the line.
     color : str
-        Color of the line. Default depends on the ``figure_style`` configuration.
+        Color of the line.
+        Default depends on the ``figure_style`` configuration.
     width : float, optional
-        Line width. Default depends on the ``figure_style`` configuration.
+        Line width.
+        Default depends on the ``figure_style`` configuration.
     capped_line : bool
-        If ``True``, the line is capped on both ends. Defaults to ``False``.
+        If ``True``, the line is capped on both ends.
+        Defaults to ``False``.
     cap_width : float
-        Width of the caps. Default depends on the ``figure_style`` configuration.
+        Width of the caps.
+        Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the line.
+        Default depends on the ``figure_style`` configuration.
     """
 
     _pointA: tuple[float, float]
@@ -231,6 +240,7 @@ class Line:
     _width: float | Literal["default"] = "default"
     _capped_line: bool = False
     _cap_width: float | Literal["default"] = "default"
+    _alpha: float | Literal["default"] = "default"
 
     def __init__(
         self,
@@ -240,6 +250,7 @@ class Line:
         width: float | Literal["default"] = "default",
         capped_line: bool = False,
         cap_width: float | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
     ):
         self._pointA = pointA
         self._pointB = pointB
@@ -247,6 +258,7 @@ class Line:
         self._width = width
         self._capped_line = capped_line
         self._cap_width = cap_width
+        self._alpha = alpha
 
     @property
     def pointA(self) -> tuple[float, float]:
@@ -296,6 +308,14 @@ class Line:
     def cap_width(self, value: float):
         self._cap_width = value
 
+    @property
+    def alpha(self) -> float:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, value: float):
+        self._alpha = value
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.shapes.Line` object.
@@ -311,6 +331,7 @@ class Line:
             "arrowstyle": style,
             "color": self._color,
             "linewidth": self._width,
+            "alpha": self._alpha,
         }
         axes.annotate(
             "",

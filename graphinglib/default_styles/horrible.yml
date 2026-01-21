@@ -215,6 +215,7 @@ Arrow:
   _width: 10
 
 Line:
+  _alpha: 1.0
   _color: "tab:olive"
   _width: 10
   _cap_width: 3

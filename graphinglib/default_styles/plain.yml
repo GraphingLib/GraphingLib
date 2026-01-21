@@ -207,6 +207,7 @@ Arrow:
   _width: 2
 
 Line:
+  _alpha: 1.0
   _color: "black"
   _width: 2
   _cap_width: 1
