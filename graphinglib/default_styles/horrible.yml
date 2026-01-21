@@ -1,4 +1,5 @@
 Curve:
+  _alpha: 1.0
   _color:
   _line_width: 10
   _line_style: "-."
@@ -67,6 +68,7 @@ Point:
   _text_color: "same as point"
 
 FitFromPolynomial:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -75,6 +77,7 @@ FitFromPolynomial:
   _res_line_style: "--"
 
 FitFromExponential:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -83,6 +86,7 @@ FitFromExponential:
   _res_line_style: "--"
 
 FitFromGaussian:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -91,6 +95,7 @@ FitFromGaussian:
   _res_line_style: "--"
 
 FitFromSine:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -99,6 +104,7 @@ FitFromSine:
   _res_line_style: "--"
 
 FitFromSquareRoot:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -107,6 +113,7 @@ FitFromSquareRoot:
   _res_line_style: "--"
 
 FitFromLog:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -115,6 +122,7 @@ FitFromLog:
   _res_line_style: "--"
 
 FitFromFunction:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -123,6 +131,7 @@ FitFromFunction:
   _res_line_style: "--"
 
 FitFromFOTF:
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"

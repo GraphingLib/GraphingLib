@@ -112,6 +112,9 @@ class Curve(Plottable1D):
     line_style : str
         Style of the curve.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the curve.
+        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -122,6 +125,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> None:
         self.handle = None
         self._x_data = np.asarray(x_data)
@@ -130,6 +134,7 @@ class Curve(Plottable1D):
         self._color = color
         self._line_width = line_width
         self._line_style = line_style
+        self._alpha = alpha
 
         self._x_error = None
         self._y_error = None
@@ -160,6 +165,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         number_of_points: int = 500,
     ) -> Self:
         """
@@ -179,6 +185,12 @@ class Curve(Plottable1D):
         line_width : float
             Width of the curve.
             Default depends on the ``figure_style`` configuration.
+        line_style : str
+            Style of the curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the curve.
+            Default depends on the ``figure_style`` configuration.
         number_of_points : int
             Number of points to be used to plot the curve (resolution).
             Defaults to 500.
@@ -189,7 +201,7 @@ class Curve(Plottable1D):
         """
         x_data = np.linspace(x_min, x_max, number_of_points)
         y_data = func(x_data)
-        return cls(x_data, y_data, label, color, line_width, line_style)
+        return cls(x_data, y_data, label, color, line_width, line_style, alpha)
 
     @property
     def x_data(self) -> np.ndarray:
@@ -254,6 +266,14 @@ class Curve(Plottable1D):
     @line_style.setter
     def line_style(self, line_style: str) -> None:
         self._line_style = line_style
+
+    @property
+    def alpha(self) -> float | Literal["default"]:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float | Literal["default"]) -> None:
+        self._alpha = alpha
 
     @property
     def show_errorbars(self) -> bool:
@@ -589,6 +609,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -608,6 +629,9 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the slice.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the slice.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the slicing applied and the parameters passed to this method.
@@ -631,9 +655,11 @@ class Curve(Plottable1D):
                 copy._line_width = line_width
             if line_style != "default":
                 copy._line_style = line_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
-            return Curve(x_data, y_data, label, color, line_width, line_style)
+            return Curve(x_data, y_data, label, color, line_width, line_style, alpha)
 
     def create_slice_y(
         self,
@@ -643,6 +669,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -662,6 +689,9 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the slice.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the slice.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the slicing applied and the parameters passed to this method.
@@ -685,9 +715,11 @@ class Curve(Plottable1D):
                 copy._line_width = line_width
             if line_style != "default":
                 copy._line_style = line_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
-            return Curve(x_data, y_data, label, color, line_width, line_style)
+            return Curve(x_data, y_data, label, color, line_width, line_style, alpha)
 
     def add_errorbars(
         self,
@@ -963,6 +995,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -980,6 +1013,9 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the derivative applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the derivative applied and the parameters passed to this method.
@@ -1001,9 +1037,11 @@ class Curve(Plottable1D):
                 copy._line_width = line_width
             if line_style != "default":
                 copy._line_style = line_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
-            return Curve(x_data, y_data, label, color, line_width, line_style)
+            return Curve(x_data, y_data, label, color, line_width, line_style, alpha)
 
     def create_integral_curve(
         self,
@@ -1012,6 +1050,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -1032,6 +1071,9 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the integral applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the integral applied and the parameters passed to this method.
@@ -1055,9 +1097,11 @@ class Curve(Plottable1D):
                 copy._line_width = line_width
             if line_style != "default":
                 copy._line_style = line_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
-            return Curve(self._x_data, y_data, label, color, line_width, line_style)
+            return Curve(self._x_data, y_data, label, color, line_width, line_style, alpha)
 
     def create_tangent_curve(
         self,
@@ -1066,6 +1110,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -1085,6 +1130,9 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the tangent applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the tangent applied and the parameters passed to this method.
@@ -1108,10 +1156,12 @@ class Curve(Plottable1D):
                 copy._line_width = line_width
             if line_style != "default":
                 copy._line_style = line_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
             tangent_curve = Curve(
-                self._x_data, y_data, label, color, line_width, line_style
+                self._x_data, y_data, label, color, line_width, line_style, alpha
             )
             return tangent_curve
 
@@ -1122,6 +1172,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -1141,6 +1192,9 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the normal applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the normal applied and the parameters passed to this method.
@@ -1164,10 +1218,12 @@ class Curve(Plottable1D):
                 copy._line_width = line_width
             if line_style != "default":
                 copy._line_style = line_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
             normal_curve = Curve(
-                self._x_data, y_data, label, color, line_width, line_style
+                self._x_data, y_data, label, color, line_width, line_style, alpha
             )
             return normal_curve
 
@@ -1435,11 +1491,14 @@ class Curve(Plottable1D):
         """
         Plots the element in the specified axes.
         """
+        params = {
+            "color": self._color,
+            "linewidth": self._line_width,
+            "linestyle": self._line_style,
+            "alpha": self._alpha,
+        }
         if self._show_errorbars:
-            params = {
-                "color": self._color,
-                "linewidth": self._line_width,
-                "linestyle": self._line_style,
+            params.update({
                 "elinewidth": (
                     self._errorbars_line_width
                     if self._errorbars_line_width != "same as curve"
@@ -1456,7 +1515,7 @@ class Curve(Plottable1D):
                     if self._errorbars_color != "same as curve"
                     else self._color
                 ),
-            }
+            })
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
                 self._x_data,
@@ -1468,11 +1527,6 @@ class Curve(Plottable1D):
                 **params,
             )
         else:
-            params = {
-                "color": self._color,
-                "linewidth": self._line_width,
-                "linestyle": self._line_style,
-            }
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
                 self._x_data,

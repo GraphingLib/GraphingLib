@@ -2,6 +2,7 @@ Curve:
   _color:
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
   _cap_width: 3
   _errorbars_color: "same as curve"
   _errorbars_line_width: "same as curve"
@@ -70,6 +71,7 @@ FitFromPolynomial:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"
@@ -78,6 +80,7 @@ FitFromExponential:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"
@@ -86,6 +89,7 @@ FitFromGaussian:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"
@@ -94,6 +98,7 @@ FitFromSine:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"
@@ -102,6 +107,7 @@ FitFromSquareRoot:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"
@@ -113,6 +119,7 @@ FitFromLog:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
 
 FitFromFunction:
   _res_color: "k"
@@ -121,6 +128,7 @@ FitFromFunction:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
 
 FitFromFOTF:
   _res_color: "k"
@@ -129,6 +137,7 @@ FitFromFOTF:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
 
 Heatmap:
   _aspect_ratio: "equal"

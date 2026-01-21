@@ -39,6 +39,9 @@ class GeneralFit(Curve):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the curve.
+        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -48,6 +51,7 @@ class GeneralFit(Curve):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> None:
         """
         Parameters
@@ -65,6 +69,9 @@ class GeneralFit(Curve):
         line_style : str
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the curve.
+            Default depends on the ``figure_style`` configuration.
         """
         self._curve_to_be_fit = curve_to_be_fit
         self._color = color
@@ -74,6 +81,7 @@ class GeneralFit(Curve):
         else:
             self._label = "$f(x) = $" + str(self)
         self._line_style = line_style
+        self._alpha = alpha
 
         self._function: Callable[[np.ndarray], np.ndarray]
 
@@ -247,6 +255,7 @@ class GeneralFit(Curve):
             "color": self._color,
             "linewidth": self._line_width,
             "linestyle": self._line_style,
+            "alpha": self._alpha,
         }
         params = {key: value for key, value in params.items() if value != "default"}
         (self.handle,) = axes.plot(
@@ -266,6 +275,7 @@ class GeneralFit(Curve):
                 "color": self._res_color,
                 "linewidth": self._res_line_width,
                 "linestyle": self._res_line_style,
+                "alpha": self._alpha,
             }
             params = {key: value for key, value in params.items() if value != "default"}
             axes.plot(
@@ -385,6 +395,9 @@ class FitFromPolynomial(GeneralFit):
     line_style : str
         Line style of the :class:`~graphinglib.data_plotting_1d.Curve`.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the :class:`~graphinglib.data_plotting_1d.Curve`.
+        Default depends on the ``figure_style`` configuration.
 
     Attributes
     ----------
@@ -406,6 +419,7 @@ class FitFromPolynomial(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: int | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> None:
         """
         Creates a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing curve object using a polynomial fit.
@@ -429,6 +443,9 @@ class FitFromPolynomial(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the :class:`~graphinglib.data_plotting_1d.Curve`.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the :class:`~graphinglib.data_plotting_1d.Curve`.
             Default depends on the ``figure_style`` configuration.
 
         Attributes
@@ -460,6 +477,7 @@ class FitFromPolynomial(GeneralFit):
         else:
             self._label = "$f(x) = $" + str(self)
         self._line_style = line_style
+        self._alpha = alpha
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self._curve_to_be_fit._x_data)
@@ -567,6 +585,9 @@ class FitFromSine(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the curve.
+        Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
@@ -597,6 +618,7 @@ class FitFromSine(GeneralFit):
         color: str = "default",
         line_width: str = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         max_iterations: int = 10000,
     ) -> None:
         """
@@ -622,6 +644,9 @@ class FitFromSine(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the curve.
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
@@ -662,6 +687,7 @@ class FitFromSine(GeneralFit):
             self._label = "$f(x) = $" + str(self)
         self._line_width = line_width
         self._line_style = line_style
+        self._alpha = alpha
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self._curve_to_be_fit._x_data)
@@ -803,6 +829,9 @@ class FitFromExponential(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the curve.
+        Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
@@ -827,6 +856,7 @@ class FitFromExponential(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         max_iterations: int = 10000,
     ) -> None:
         """
@@ -850,6 +880,9 @@ class FitFromExponential(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the curve.
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
@@ -878,6 +911,7 @@ class FitFromExponential(GeneralFit):
             self._label = "$f(x) = $" + str(self)
         self._line_width = line_width
         self._line_style = line_style
+        self._alpha = alpha
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self._curve_to_be_fit._x_data)
@@ -982,6 +1016,9 @@ class FitFromGaussian(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the curve.
+        Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
@@ -1015,6 +1052,7 @@ class FitFromGaussian(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         max_iterations: int = 10000,
     ) -> None:
         """
@@ -1040,6 +1078,9 @@ class FitFromGaussian(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the curve.
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
@@ -1076,6 +1117,7 @@ class FitFromGaussian(GeneralFit):
             self._label = str(self)
         self._line_width = line_width
         self._line_style = line_style
+        self._alpha = alpha
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self._curve_to_be_fit._x_data)
@@ -1191,6 +1233,9 @@ class FitFromSquareRoot(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the curve.
+        Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
@@ -1215,6 +1260,7 @@ class FitFromSquareRoot(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         max_iterations: int = 10000,
     ) -> None:
         """
@@ -1240,6 +1286,9 @@ class FitFromSquareRoot(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the curve.
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
@@ -1268,6 +1317,7 @@ class FitFromSquareRoot(GeneralFit):
             self._label = str(self)
         self._line_width = line_width
         self._line_style = line_style
+        self._alpha = alpha
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self._curve_to_be_fit._x_data)
@@ -1372,6 +1422,9 @@ class FitFromLog(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the curve.
+        Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
@@ -1397,6 +1450,7 @@ class FitFromLog(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         max_iterations: int = 10000,
     ) -> None:
         """
@@ -1426,6 +1480,9 @@ class FitFromLog(GeneralFit):
         line_style : str
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the curve.
+            Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
             Default is 10000.
@@ -1454,6 +1511,7 @@ class FitFromLog(GeneralFit):
             self._label = str(self)
         self._line_width = line_width
         self._line_style = line_style
+        self._alpha = alpha
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self._curve_to_be_fit._x_data)
@@ -1557,6 +1615,9 @@ class FitFromFunction(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the curve.
+        Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
@@ -1582,6 +1643,7 @@ class FitFromFunction(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         max_iterations: int = 10000,
     ):
         """
@@ -1610,6 +1672,9 @@ class FitFromFunction(GeneralFit):
         line_style : str
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the curve.
+            Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
             Default is 10000.
@@ -1631,6 +1696,7 @@ class FitFromFunction(GeneralFit):
         self._color = color
         self._line_width = line_width
         self._line_style = line_style
+        self._alpha = alpha
         self._max_iterations = max_iterations
 
         self._calculate_parameters()
@@ -1720,6 +1786,9 @@ class FitFromFOTF(GeneralFit):
     line_style : str
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Transparency of the curve.
+        Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
@@ -1746,6 +1815,7 @@ class FitFromFOTF(GeneralFit):
         color: str = "default",
         line_width: int | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         max_iterations: int = 10000,
     ) -> None:
         """
@@ -1769,6 +1839,9 @@ class FitFromFOTF(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Transparency of the curve.
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
@@ -1799,6 +1872,7 @@ class FitFromFOTF(GeneralFit):
             self._label = str(self)
         self._line_width = line_width
         self._line_style = line_style
+        self._alpha = alpha
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self._curve_to_be_fit._x_data)

@@ -42,6 +42,7 @@ class TestCurve(unittest.TestCase):
                 color="k",
                 line_width=1,
                 line_style="-",
+                alpha=0.5,
                 number_of_points=400,
             ),
             Curve,
@@ -91,7 +92,7 @@ class TestCurve(unittest.TestCase):
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
         self.testCurve = Curve(
-            x, sin(x), "Test Curve", color="k", line_width=3, line_style="--"
+            x, sin(x), "Test Curve", color="k", line_width=3, line_style="--", alpha=0.4,
         )
         _, self.testAxes = subplots()
         self.testCurve._plot_element(self.testAxes, 0)
@@ -331,6 +332,7 @@ class TestCurve(unittest.TestCase):
         self.assertEqual(curve_copy._color, self.testCurve._color)
         self.assertEqual(curve_copy._line_width, self.testCurve._line_width)
         self.assertEqual(curve_copy._line_style, self.testCurve._line_style)
+        self.assertEqual(curve_copy._alpha, self.testCurve._alpha)
         self.assertListEqual(list(curve_copy._x_data), list(self.testCurve._x_data))
         self.assertListEqual(list(curve_copy._y_data), list(self.testCurve._y_data))
 

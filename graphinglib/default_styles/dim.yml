@@ -5,6 +5,7 @@ Contour:
   _number_of_levels: 10
   _show_color_bar: true
 Curve:
+  _alpha: 1.0
   _cap_thickness: same as curve
   _cap_width: 3
   _color: null
@@ -24,6 +25,7 @@ Figure:
   - 6.4
   - 4.8
 FitFromExponential:
+  _alpha: 1.0
   _color: white
   _line_style: '-'
   _line_width: 2
@@ -31,6 +33,7 @@ FitFromExponential:
   _res_line_style: --
   _res_line_width: 1
 FitFromFunction:
+  _alpha: 1.0
   _color: white
   _line_style: '-'
   _line_width: 2
@@ -38,6 +41,7 @@ FitFromFunction:
   _res_line_style: --
   _res_line_width: 1
 FitFromGaussian:
+  _alpha: 1.0
   _color: white
   _line_style: '-'
   _line_width: 2
@@ -45,6 +49,7 @@ FitFromGaussian:
   _res_line_style: --
   _res_line_width: 1
 FitFromLog:
+  _alpha: 1.0
   _color: white
   _line_style: '-'
   _line_width: 2
@@ -52,6 +57,7 @@ FitFromLog:
   _res_line_style: --
   _res_line_width: 1
 FitFromPolynomial:
+  _alpha: 1.0
   _color: white
   _line_style: '-'
   _line_width: 2
@@ -59,6 +65,7 @@ FitFromPolynomial:
   _res_line_style: --
   _res_line_width: 1
 FitFromSine:
+  _alpha: 1.0
   _color: white
   _line_style: '-'
   _line_width: 2
@@ -66,6 +73,7 @@ FitFromSine:
   _res_line_style: --
   _res_line_width: 1
 FitFromSquareRoot:
+  _alpha: 1.0
   _color: white
   _line_style: '-'
   _line_width: 2
@@ -73,6 +81,7 @@ FitFromSquareRoot:
   _res_line_style: --
   _res_line_width: 1
 FitFromFOTF:
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"
