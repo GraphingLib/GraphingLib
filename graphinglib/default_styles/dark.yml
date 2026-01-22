@@ -109,7 +109,7 @@ MultiFigure:
 SmartFigure:
   _size: [6.4, 4.8]
 Point:
-  _color: white
+  _face_color: white
   _edge_color: null
   _edge_width: 1.5
   _marker_size: 30

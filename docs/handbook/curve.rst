@@ -5,15 +5,15 @@ The :class:`~graphinglib.data_plotting_1d.Curve` and its operations
 In GraphingLib, all curves are objects which are instances of the :class:`~graphinglib.data_plotting_1d.Curve` class. You can create a curve in two ways. The first is to create a curve from lists (or numpy arrays) of x and y values, and the second is to create a curve from a function.
 
 .. plot::
-    
+
     # Create a curve from lists of x and y values
     x_values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     y_values = [0, 1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
     curve_1 = gl.Curve(x_values, y_values, line_style="--")
-    
+
     # Create a curve from a function
     curve_2 = gl.Curve.from_function(lambda x: -20 * (x - 5) ** 2 + 400, x_min=0, x_max=10)
-    
+
     fig = gl.Figure()
     fig.add_elements(curve_1, curve_2)
     fig.show()
@@ -49,7 +49,7 @@ You can also find the the maximum and minimum values of a curve (maximum or mini
 Identifying points on a curve
 -----------------------------
 
-The :class:`~graphinglib.data_plotting_1d.Curve` class includes interpolation methods for creating coordinates and points on a curve at a specific x or y value. The :meth:`~graphinglib.data_plotting_1d.Curve.get_coordinates_at_x` method returns a tuple of coordinates (x, y) representing a point on the curve at a given x value. Similarly, the :meth:`~graphinglib.data_plotting_1d.Curve.get_coordinates_at_y` method returns a list of tuples (since a function can cross a y value at multiple points), each representing the coordinates of a point on the curve at the given y value. Alternatively, the :meth:`~graphinglib.data_plotting_1d.Curve.create_point_at_x` and :meth:`~graphinglib.data_plotting_1d.Curve.create_points_at_y` methods create a :class:`~graphinglib.graph_elements.Point` object or a list of such objects which can then be added to a Figure. Additionally, the :meth:`~graphinglib.data_plotting_1d.Curve.get_intersection_coordinates` and :meth:`~graphinglib.data_plotting_1d.Curve.create_intersection_points` methods, which identify the points of intersection between two curves, also follow this logic.
+The :class:`~graphinglib.data_plotting_1d.Curve` class includes interpolation methods for creating coordinates and points on a curve at a specific x or y value. The :meth:`~graphinglib.Curve.get_coordinates_at_x` method returns a tuple of coordinates (x, y) representing a point on the curve at a given x value. Similarly, the :meth:`~graphinglib.Curve.get_coordinates_at_y` method returns a list of tuples (since a function can cross a y value at multiple points), each representing the coordinates of a point on the curve at the given y value. Alternatively, the :meth:`~graphinglib.Curve.create_point_at_x` and :meth:`~graphinglib.Curve.create_points_at_y` methods create a :class:`~graphinglib.graph_elements.Point` object or a list of such objects which can then be added to a Figure. Additionally, the :meth:`~graphinglib.Curve.get_intersection_coordinates` and :meth:`~graphinglib.Curve.create_intersection_points` methods, which identify the points of intersection between two curves, also follow this logic.
 
 .. plot::
 
@@ -60,9 +60,9 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class includes interpolation me
     )
 
     # Get the points of intersection between the two curves
-    intersection_points = curve_1.create_intersection_points(curve_2, marker_styles="P", colors="red")
+    intersection_points = curve_1.create_intersection_points(curve_2, marker_styles="P", face_colors="red")
     # Get points where curve 1 crosses the x axis (where y = 0)
-    cross_x_axis_points = curve_1.create_points_at_y(0, color="blue")
+    cross_x_axis_points = curve_1.create_points_at_y(0, face_color="blue")
 
     # Print coordinates of first intersection point
     first_int = curve_1.get_intersection_coordinates(curve_2)[0]
@@ -75,13 +75,13 @@ The :class:`~graphinglib.data_plotting_1d.Curve` class includes interpolation me
     fig.show()
 
 .. code-block:: none
-    
+
         First intersection point: (0.5651742229068757, 2.677727491121997)
 
 Curve calculus
 --------------
 
-There are a number of methods which can be used to perform calculus on a curve. The :meth:`~graphinglib.data_plotting_1d.Curve.create_derivative_curve` and :meth:`~graphinglib.data_plotting_1d.Curve.create_integral_curve` both return new :class:`~graphinglib.data_plotting_1d.Curve` objects. You can also use the :meth:`~graphinglib.data_plotting_1d.Curve.create_tangent_curve` and :meth:`~graphinglib.data_plotting_1d.Curve.create_normal_curve` methods to plot tangents and normals to other curves at a given x value.
+There are a number of methods which can be used to perform calculus on a curve. The :meth:`~graphinglib.Curve.create_derivative_curve` and :meth:`~graphinglib.Curve.create_integral_curve` both return new :class:`~graphinglib.data_plotting_1d.Curve` objects. You can also use the :meth:`~graphinglib.Curve.create_tangent_curve` and :meth:`~graphinglib.Curve.create_normal_curve` methods to plot tangents and normals to other curves at a given x value.
 
 .. plot::
 
@@ -101,7 +101,7 @@ There are a number of methods which can be used to perform calculus on a curve. 
     multifig = gl.MultiFigure.from_row([fig1, fig2], size=(12, 6), reference_labels=False)
     multifig.show()
 
-The :meth:`~graphinglib.data_plotting_1d.Curve.get_area_between` method can be used to calculate the area under a curve between two x values (and shade it in if you want). The :meth:`~graphinglib.data_plotting_1d.Curve.get_slope_at` method can be used to calculate the slope of a curve at a given x value, and the :meth:`~graphinglib.data_plotting_1d.Curve.get_arc_length_between` method can be used to calculate the arc length of a curve between two x values.
+The :meth:`~graphinglib.Curve.get_area_between` method can be used to calculate the area under a curve between two x values (and shade it in if you want). The :meth:`~graphinglib.Curve.get_slope_at` method can be used to calculate the slope of a curve at a given x value, and the :meth:`~graphinglib.Curve.get_arc_length_between` method can be used to calculate the arc length of a curve between two x values.
 
 .. plot::
 
@@ -131,7 +131,7 @@ The :meth:`~graphinglib.data_plotting_1d.Curve.get_area_between` method can be u
 Other methods
 -------------
 
-Also available are the :meth:`~graphinglib.data_plotting_1d.Curve.create_slice_x` and :meth:`~graphinglib.data_plotting_1d.Curve.create_slice_y` methods, which create a slice of a curve between two x or y values. These are especially useful when you have a noisy patch in your data and you want to create a fit of just the clean part of the curve.
+Also available are the :meth:`~graphinglib.Curve.create_slice_x` and :meth:`~graphinglib.Curve.create_slice_y` methods, which create a slice of a curve between two x or y values. These are especially useful when you have a noisy patch in your data and you want to create a fit of just the clean part of the curve.
 
 .. plot::
 
@@ -140,7 +140,7 @@ Also available are the :meth:`~graphinglib.data_plotting_1d.Curve.create_slice_x
     slice_x = curve_1.create_slice_x(-3, 3)
     slice_y = curve_1.create_slice_y(1, 5)
 
-The :meth:`~graphinglib.data_plotting_1d.Curve.to_desmos` allows the curve to be exported into a Desmos-readable format that can be pasted into a single Desmos cell, enabling easy comparison between curves.
+The :meth:`~graphinglib.Curve.to_desmos` allows the curve to be exported into a Desmos-readable format that can be pasted into a single Desmos cell, enabling easy comparison between curves.
 
 .. plot::
 

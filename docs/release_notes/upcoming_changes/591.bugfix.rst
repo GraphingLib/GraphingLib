@@ -1,0 +1,19 @@
+Fixed bug in FitFromPolynomial.__str__
+--------------------------------------
+Fixed a bug where the __str__ method would fail if the polynomial had a 0 coefficient.
+
+Fixed bug of repeated Histogram parameters in figure legend
+-----------------------------------------------------------
+Fixed a bug where showing multiple times the same Histogram in a figure would stack repeatedly its parameters in the legend.
+
+Fixed SyntaxWarnings
+--------------------
+Added raw strings to remove SyntaxWarnings in strings containing backslashes.
+
+Fixed Plottable1D.__eq__
+------------------------
+Fixed a bug where the data could not be compared since the truth value was ambiguous.
+
+Fixed Polygon fill
+------------------
+Fixed a bug where the Polygon fill would not render when plotted on a Heatmap.

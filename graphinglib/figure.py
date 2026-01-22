@@ -785,7 +785,7 @@ class Figure:
             "grid.linestyle": line_style,
             "grid.linewidth": line_width,
         }
-        rc_params_dict = {k: v for k, v in rc_params_dict.items() if v is not "default"}
+        rc_params_dict = {k: v for k, v in rc_params_dict.items() if v != "default"}
         self.set_rc_params(rc_params_dict)
 
     def create_twin_axis(

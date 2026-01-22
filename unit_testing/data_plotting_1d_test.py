@@ -925,7 +925,7 @@ class TestHistogram(unittest.TestCase):
         self.assertEqual(self.testHist._edge_color, "k")
 
     def test_bins_is_int(self):
-        self.assertEqual(self.testHist._number_of_bins, 20)
+        self.assertEqual(self.testHist._bins, 20)
 
     def test_alpha_is_default(self):
         self.assertEqual(self.testHist._alpha, "default")
@@ -945,7 +945,7 @@ class TestHistogram(unittest.TestCase):
         self.assertEqual(hist_copy._label, self.testHist._label)
         self.assertEqual(hist_copy._face_color, self.testHist._face_color)
         self.assertEqual(hist_copy._edge_color, self.testHist._edge_color)
-        self.assertEqual(hist_copy._number_of_bins, self.testHist._number_of_bins)
+        self.assertEqual(hist_copy._bins, self.testHist._bins)
         self.assertEqual(hist_copy._alpha, self.testHist._alpha)
         self.assertEqual(hist_copy._hist_type, self.testHist._hist_type)
         self.assertListEqual(list(hist_copy._data), list(self.testHist._data))

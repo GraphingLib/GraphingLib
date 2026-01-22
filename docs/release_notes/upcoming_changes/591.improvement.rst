@@ -1,0 +1,27 @@
+Renamed Histogram.number_of_bins
+--------------------------------
+Renamed parameter "number_of_bins" to "bins" in Histogram class for consistency and clarity since this parameter can be used to specify bin edges as well as the number of bins.
+
+Improved Fits fitting range
+---------------------------
+Modified Fits classes to choose their fitting range based on the minimum and maximum x-values of the provided data instead of the first and last points.
+
+Improved Histogram.__init__ and Heatmap._plot_element
+-----------------------------------------------------
+Cleaned these methods by removing redundant code and improving readability.
+
+Renamed Point.color to face_color
+---------------------------------
+Renamed the "color" parameter in the Point class to "face_color" for consistency with the Scatter class.
+
+Transformed Heatmap._xy_range to a property
+-------------------------------------------
+_xy_range is now a property to keep it updated if the axis ranges are modified after the Heatmap's creation.
+
+Filling Curve between bounds now uses facecolor
+-----------------------------------------------
+Modified Curve._plot_element so it uses facecolor instead of color when filling between bounds to remove the solid contour.
+
+Added valid links in handbook
+-----------------------------
+Updated all links to methods and functions in the handbook to ensure they are clickable. Also corrected some old method names in the handbook.

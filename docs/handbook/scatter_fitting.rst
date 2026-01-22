@@ -5,7 +5,7 @@ Scatter plots and fitting experimental data
 The :class:`~graphinglib.data_plotting_1d.Scatter` Object
 ---------------------------------------------------------
 
-In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plotting_1d.Scatter` object. If you want to plot existing data, you can use the standard constructor by passing in the x and y data as lists or numpy arrays. If you want to plot a function, you can use the :meth:`~graphinglib.data_plotting_1d.Scatter.from_function` method. This method takes in a function and a range of x values to evaluate the function at. In the latter case, you can also specify the number of points to evaluate the function at. Both of these alternatives are shown below.
+In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plotting_1d.Scatter` object. If you want to plot existing data, you can use the standard constructor by passing in the x and y data as lists or numpy arrays. If you want to plot a function, you can use the :py:meth:`~graphinglib.Scatter.from_function` method. This method takes in a function and a range of x values to evaluate the function at. In the latter case, you can also specify the number of points to evaluate the function at. Both of these alternatives are shown below.
 
 .. plot::
 
@@ -30,7 +30,7 @@ In GraphingLib, there are two ways to create a :class:`~graphinglib.data_plottin
     fig.add_elements(scatter_1, scatter_2)
     fig.show()
 
-You can also add error bars for `x` and/or `y` by calling the :meth:`~graphinglib.data_plotting_1d.Scatter.add_errorbars` method like so:
+You can also add error bars for `x` and/or `y` by calling the :py:meth:`~graphinglib.Scatter.add_errorbars` method like so:
 
 .. plot::
 
@@ -71,7 +71,7 @@ Just like with the :class:`~graphinglib.data_plotting_1d.Curve` object, you can 
     fig.add_elements(scatter_sine, scatter_line, scatter_addition, scatter_plus_constant)
     fig.show()
 
-Interpolation between data points is possible by calling the :meth:`~graphinglib.data_plotting_1d.Scatter.get_coordinates_at_x` and :meth:`~graphinglib.data_plotting_1d.Scatter.get_coordinates_at_y` methods. The first returns a tuple of coordinates that represent the point on the curve at the specified x value. The second works the same way, but returns a list of tuples, one for each point on the curve that has the specified y value. The :meth:`~graphinglib.data_plotting_1d.Scatter.create_point_at_x` and :meth:`~graphinglib.data_plotting_1d.Scatter.create_points_at_y` methods work the same way, but return :class:`~graphinglib.graph_elements.Point` objects instead of tuples.
+Interpolation between data points is possible by calling the :py:meth:`~graphinglib.Scatter.get_coordinates_at_x` and :py:meth:`~graphinglib.Scatter.get_coordinates_at_y` methods. The first returns a tuple of coordinates that represent the point on the curve at the specified x value. The second works the same way, but returns a list of tuples, one for each point on the curve that has the specified y value. The :py:meth:`~graphinglib.Scatter.create_point_at_x` and :py:meth:`~graphinglib.Scatter.create_points_at_y` methods work the same way, but return :class:`~graphinglib.graph_elements.Point` objects instead of tuples.
 
 .. plot::
 
@@ -83,8 +83,8 @@ Interpolation between data points is possible by calling the :meth:`~graphinglib
         label="$\sin(3x)\cos^2(x)$",
     )
 
-    point_at_4 = scatter.create_point_at_x(4, color="red")
-    points_at_y_one_half = scatter.create_points_at_y(0.5, color="orange")
+    point_at_4 = scatter.create_point_at_x(4, face_color="red")
+    points_at_y_one_half = scatter.create_points_at_y(0.5, face_color="orange")
 
     fig = gl.Figure()
     # Use the * operator to unpack the list of points
@@ -100,7 +100,7 @@ You can also add a third dimension to your scatter plot by specifying the color 
     y = np.random.rand(100) * 10
 
     # Generate a list of intensity values which will be mapped to colors
-    z = np.sin(x) + np.cos(y) 
+    z = np.sin(x) + np.cos(y)
 
     # Create scatter plot with color
     scatter = gl.Scatter(x, y, face_color=z, color_map="Reds", show_color_bar=True)
@@ -130,14 +130,14 @@ There are a number of curve fit objects that can be used to fit data. The most v
 
     # Use the fit to predict value of y at x = 5
     print(f"Value of fit at x = 5 is y = {fit.function(5)}")
-    predicted_point = fit.create_point_at_x(5, color="red")
+    predicted_point = fit.create_point_at_x(5, face_color="red")
 
     fig = gl.Figure()
     fig.add_elements(scatter, fit, predicted_point)
     fig.show()
 
 .. code-block:: none
-    
+
     Coefficient of x^0: 4.9668661552059294
     Coefficient of x^1: -4.099977593163963
     Coefficient of x^2: 1.0770659002222067
@@ -212,6 +212,6 @@ And here is an example of fitting a specific, user-defined function to some data
 
     Slit width: 3.763 microns
 
-As a bonus tip, you can use the :meth:`~graphinglib.data_plotting_1d.Scatter.create_slice_x` and :meth:`~graphinglib.data_plotting_1d.Scatter.create_slice_y` methods to create a :class:`~graphinglib.data_plotting_1d.Scatter` object that represents a slice of the original data. This can be useful for fitting a function to just part of your data if you measurements are not reliable at all x values.
+As a bonus tip, you can use the :py:meth:`~graphinglib.Scatter.create_slice_x` and :py:meth:`~graphinglib.Scatter.create_slice_y` methods to create a :class:`~graphinglib.data_plotting_1d.Scatter` object that represents a slice of the original data. This can be useful for fitting a function to just part of your data if you measurements are not reliable at all x values.
 
-It is also possible to use the :meth:`~graphinglib.data_plotting_1d.Scatter.to_desmos` to export the scatter into a Desmos-readable format. This can allow easier estimation of the initial guesses for proper fitting.
+It is also possible to use the :py:meth:`~graphinglib.Scatter.to_desmos` to export the scatter into a Desmos-readable format. This can allow easier estimation of the initial guesses for proper fitting.

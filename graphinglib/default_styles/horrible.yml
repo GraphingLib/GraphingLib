@@ -1,5 +1,5 @@
 Curve:
-  _color: 
+  _color:
   _line_width: 10
   _line_style: "-."
   _cap_width: 10
@@ -62,7 +62,7 @@ SmartFigure:
   _size: [10, 7]
 
 Point:
-  _color: "cyan"
+  _face_color: "cyan"
   _edge_color: "red"
   _marker_size: 200
   _edge_width: 1.5
@@ -124,7 +124,7 @@ FitFromFunction:
   _res_color: "r"
   _res_line_width: 1
   _res_line_style: "--"
-  
+
 FitFromFOTF:
   _res_color: "k"
   _res_line_width: 1
@@ -169,10 +169,10 @@ Table:
 
 Stream:
   _line_width: 1
-  _color: 
-  _color_map: 
+  _color:
+  _color_map:
   _arrow_size: 5
-  
+
 Circle:
   _fill: True
   _fill_alpha: 0.5
@@ -206,7 +206,7 @@ Line:
   _color: "tab:olive"
   _width: 10
   _cap_width: 3
-  
+
 rc_params:
   figure.facecolor: "white"
   savefig.dpi: 200
