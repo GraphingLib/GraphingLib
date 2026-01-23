@@ -1,6 +1,6 @@
 Added alpha parameter
 ---------------------
-Added a "alpha" parameter to Curve, Fits, Scatter, Point, HLines, VLines, Text, Arrow and Line classes to control transparency.
+Added a "alpha" parameter to Curve, Fits, Scatter, Point, HLines, VLines, Text, Arrow and Line classes to control opacity.
 
 Added Text.rotation parameter
 -----------------------------

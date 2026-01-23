@@ -43,7 +43,7 @@ class Arrow:
         A value of 0.5 means the arrow is no longer visible.
         Defaults to 0.
     alpha : float
-        Transparency of the arrow.
+        Opacity of the arrow.
         Default depends on the ``figure_style`` configuration.
     two_sided : bool
         If ``True``, an arrow is shown at both head and tail. Defaults to ``False``.
@@ -230,7 +230,7 @@ class Line:
         Width of the caps.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the line.
+        Opacity of the line.
         Default depends on the ``figure_style`` configuration.
     """
 

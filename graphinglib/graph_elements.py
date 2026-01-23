@@ -70,7 +70,7 @@ class Hlines:
         per line can be specified.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the lines.
+        Opacity of the lines.
         Default depends on the ``figure_style`` configuration.
     """
 
@@ -316,7 +316,7 @@ class Vlines:
         per line can be specified.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the lines.
+        Opacity of the lines.
         Default depends on the ``figure_style`` configuration.
     """
 
@@ -563,7 +563,7 @@ class Point:
         Edge width of the marker.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the point.
+        Opacity of the point.
         Default depends on the ``figure_style`` configuration.
     font_size : float
         Font size for the text attached to the marker.
@@ -621,7 +621,7 @@ class Point:
             Edge width of the marker.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the point.
+            Opacity of the point.
             Default depends on the ``figure_style`` configuration.
         font_size : float
             Font size for the text attached to the marker.
@@ -895,7 +895,7 @@ class Text:
         Font size of the text.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the text.
+        Opacity of the text.
         Default depends on the ``figure_style`` configuration.
     h_align, v_align : str
         Horizontal and vertical alignment of the text.
@@ -948,7 +948,7 @@ class Text:
             Font size of the text.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the text.
+            Opacity of the text.
             Default depends on the ``figure_style`` configuration.
         h_align, v_align : str
             Horizontal and vertical alignment of the text.
@@ -1081,7 +1081,7 @@ class Text:
         head_length : float, optional
             Length of the head of the arrow.
         alpha : float, optional
-            Transparency of the arrow.
+            Opacity of the arrow.
         """
         self._arrow_pointing_to = points_to
         self._arrow_properties = {}

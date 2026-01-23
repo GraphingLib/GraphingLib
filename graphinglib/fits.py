@@ -40,7 +40,7 @@ class GeneralFit(Curve):
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the curve.
+        Opacity of the curve.
         Default depends on the ``figure_style`` configuration.
     """
 
@@ -70,7 +70,7 @@ class GeneralFit(Curve):
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the curve.
+            Opacity of the curve.
             Default depends on the ``figure_style`` configuration.
         """
         self._curve_to_be_fit = curve_to_be_fit
@@ -167,7 +167,7 @@ class GeneralFit(Curve):
             Width of the edge of the point.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the point.
+            Opacity of the point.
             Default depends on the ``figure_style`` configuration.
 
         Returns
@@ -231,7 +231,7 @@ class GeneralFit(Curve):
             Width of the edge of the point.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the point.
+            Opacity of the point.
             Default depends on the ``figure_style`` configuration.
 
         Returns
@@ -406,7 +406,7 @@ class FitFromPolynomial(GeneralFit):
         Line style of the :class:`~graphinglib.data_plotting_1d.Curve`.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the :class:`~graphinglib.data_plotting_1d.Curve`.
+        Opacity of the :class:`~graphinglib.data_plotting_1d.Curve`.
         Default depends on the ``figure_style`` configuration.
 
     Attributes
@@ -455,7 +455,7 @@ class FitFromPolynomial(GeneralFit):
             Line style of the :class:`~graphinglib.data_plotting_1d.Curve`.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the :class:`~graphinglib.data_plotting_1d.Curve`.
+            Opacity of the :class:`~graphinglib.data_plotting_1d.Curve`.
             Default depends on the ``figure_style`` configuration.
 
         Attributes
@@ -596,7 +596,7 @@ class FitFromSine(GeneralFit):
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the curve.
+        Opacity of the curve.
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
@@ -656,7 +656,7 @@ class FitFromSine(GeneralFit):
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the curve.
+            Opacity of the curve.
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
@@ -840,7 +840,7 @@ class FitFromExponential(GeneralFit):
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the curve.
+        Opacity of the curve.
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
@@ -892,7 +892,7 @@ class FitFromExponential(GeneralFit):
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the curve.
+            Opacity of the curve.
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
@@ -1027,7 +1027,7 @@ class FitFromGaussian(GeneralFit):
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the curve.
+        Opacity of the curve.
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
@@ -1090,7 +1090,7 @@ class FitFromGaussian(GeneralFit):
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the curve.
+            Opacity of the curve.
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
@@ -1244,7 +1244,7 @@ class FitFromSquareRoot(GeneralFit):
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the curve.
+        Opacity of the curve.
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
@@ -1298,7 +1298,7 @@ class FitFromSquareRoot(GeneralFit):
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the curve.
+            Opacity of the curve.
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
@@ -1433,7 +1433,7 @@ class FitFromLog(GeneralFit):
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the curve.
+        Opacity of the curve.
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
@@ -1491,7 +1491,7 @@ class FitFromLog(GeneralFit):
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the curve.
+            Opacity of the curve.
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
@@ -1626,7 +1626,7 @@ class FitFromFunction(GeneralFit):
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the curve.
+        Opacity of the curve.
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
@@ -1683,7 +1683,7 @@ class FitFromFunction(GeneralFit):
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the curve.
+            Opacity of the curve.
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
@@ -1797,7 +1797,7 @@ class FitFromFOTF(GeneralFit):
         Line style of the curve.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the curve.
+        Opacity of the curve.
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
@@ -1851,7 +1851,7 @@ class FitFromFOTF(GeneralFit):
             Line style of the curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the curve.
+            Opacity of the curve.
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.

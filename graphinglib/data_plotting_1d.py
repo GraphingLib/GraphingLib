@@ -113,7 +113,7 @@ class Curve(Plottable1D):
         Style of the curve.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the curve.
+        Opacity of the curve.
         Default depends on the ``figure_style`` configuration.
     """
 
@@ -189,7 +189,7 @@ class Curve(Plottable1D):
             Style of the curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the curve.
+            Opacity of the curve.
             Default depends on the ``figure_style`` configuration.
         number_of_points : int
             Number of points to be used to plot the curve (resolution).
@@ -631,7 +631,7 @@ class Curve(Plottable1D):
             Style of the slice.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the slice.
+            Opacity of the slice.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the slicing applied and the parameters passed to this method.
@@ -691,7 +691,7 @@ class Curve(Plottable1D):
             Style of the slice.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the slice.
+            Opacity of the slice.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the slicing applied and the parameters passed to this method.
@@ -873,7 +873,7 @@ class Curve(Plottable1D):
             Width of the point edge.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the point.
+            Opacity of the point.
             Default depends on the ``figure_style`` configuration.
 
         Returns
@@ -974,7 +974,7 @@ class Curve(Plottable1D):
             Width of the point edge.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the point.
+            Opacity of the point.
             Default depends on the ``figure_style`` configuration.
 
         Returns
@@ -1025,7 +1025,7 @@ class Curve(Plottable1D):
             Style of the new curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the new curve.
+            Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the derivative applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the derivative applied and the parameters passed to this method.
@@ -1083,7 +1083,7 @@ class Curve(Plottable1D):
             Style of the new curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the new curve.
+            Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the integral applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the integral applied and the parameters passed to this method.
@@ -1142,7 +1142,7 @@ class Curve(Plottable1D):
             Style of the new curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the new curve.
+            Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the tangent applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the tangent applied and the parameters passed to this method.
@@ -1204,7 +1204,7 @@ class Curve(Plottable1D):
             Style of the new curve.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the new curve.
+            Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the normal applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the normal applied and the parameters passed to this method.
@@ -1440,8 +1440,8 @@ class Curve(Plottable1D):
             If a single float is passed, all intersection points will have the same width.
             Default depends on the ``figure_style`` configuration.
         alphas : list[float] or float
-            Transparencies of the intersection points.
-            If a single float is passed, all intersection points will have the same transparency.
+            Opacities of the intersection points.
+            If a single float is passed, all intersection points will have the same opacity.
             Default depends on the ``figure_style`` configuration.
 
         Returns
@@ -1682,7 +1682,7 @@ class Scatter(Plottable1D):
         Style of the points.
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the scatter plot.
+        Opacity of the scatter plot.
         Default depends on the ``figure_style`` configuration.
     """
 
@@ -1736,7 +1736,7 @@ class Scatter(Plottable1D):
             Style of the points.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the scatter plot.
+            Opacity of the scatter plot.
             Default depends on the ``figure_style`` configuration.
         """
         self.handle = None
@@ -1818,7 +1818,7 @@ class Scatter(Plottable1D):
             Line width of the marker edges.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the scatter plot.
+            Opacity of the scatter plot.
             Default depends on the ``figure_style`` configuration.
         number_of_points : int
             Number of points to be plotted.
@@ -2260,7 +2260,7 @@ class Scatter(Plottable1D):
             Style of the points.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparencies of the points.
+            Opacities of the points.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
@@ -2363,7 +2363,7 @@ class Scatter(Plottable1D):
             Style of the points.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparencies of the points.
+            Opacities of the points.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
@@ -2557,7 +2557,7 @@ class Scatter(Plottable1D):
             Style of the point.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the point.
+            Opacity of the point.
             Default depends on the ``figure_style`` configuration.
 
         Returns
@@ -2659,7 +2659,7 @@ class Scatter(Plottable1D):
             Style of the point.
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the point.
+            Opacity of the point.
             Default depends on the ``figure_style`` configuration.
 
         Returns
@@ -2968,7 +2968,7 @@ class Histogram(Plottable1D):
         Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the histogram.
+        Opacity of the histogram.
         Default depends on the ``figure_style`` configuration.
     line_width : float
         Width of the histogram edge.
@@ -3022,7 +3022,7 @@ class Histogram(Plottable1D):
             Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the histogram.
+            Opacity of the histogram.
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the histogram edge.
@@ -3100,7 +3100,7 @@ class Histogram(Plottable1D):
             Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the histogram.
+            Opacity of the histogram.
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the histogram edge.
