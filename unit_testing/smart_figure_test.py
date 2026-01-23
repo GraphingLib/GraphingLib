@@ -1154,7 +1154,7 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.set_grid(visible_x=True, visible_y=False, color="blue", alpha=0.5, line_style="--", line_width=2)
         self.assertTrue(self.fig.show_grid)
         self.fig.show_grid = False
-        self.fig.set_grid(show_on_top=True)
+        self.fig.set_grid()
         self.assertTrue(self.fig.show_grid)
 
     def test_set_custom_legend(self):
@@ -1662,7 +1662,6 @@ class TestSmartFigureWCS(TestSmartFigure):
         result = self.fig.set_grid(
             visible_x=True,
             visible_y=False,
-            show_on_top=True,
             color="red",
             alpha=0.5,
             line_style="--",

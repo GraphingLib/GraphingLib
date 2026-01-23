@@ -183,8 +183,7 @@ WCS coordinate grids follow the curved coordinate system:
     # Add coordinate grid
     fig.set_grid(
         color="black",
-        line_width=2,
-        show_on_top=True
+        line_width=2
     )
 
     fig.show()

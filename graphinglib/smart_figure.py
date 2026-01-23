@@ -1554,6 +1554,7 @@ class SmartFigure:
 
                 ax.set_aspect(self._aspect_ratio)
                 ax.set_box_aspect(self._box_aspect_ratio)
+                ax.set_axisbelow(False)  # ensure grid and ticks are above other elements
 
                 # Invert axes
                 # When axes are shared, check if already inverted to avoid double-toggling
@@ -1581,8 +1582,6 @@ class SmartFigure:
                 if self._show_grid:
                     ax.grid(self._grid.get("visible_x"), which=self._grid.get("which_x"), axis="x")
                     ax.grid(self._grid.get("visible_y"), which=self._grid.get("which_y"), axis="y")
-                    if self._grid.get("show_on_top"):
-                        ax.set_axisbelow(False)
 
                 # Axes subtitles
                 if self._subtitles is not None:
@@ -2396,7 +2395,6 @@ class SmartFigure:
         reset: bool = False,
         visible_x: bool = True,
         visible_y: bool = True,
-        show_on_top: bool = False,
         which_x: Literal["major", "minor", "both"] = "both",
         which_y: Literal["major", "minor", "both"] = "both",
         color: str | Literal["default"] = "default",
@@ -2417,10 +2415,6 @@ class SmartFigure:
             If ``True``, sets the x-axis or y-axis grid visible. If ``False``, the grid is not shown for the respective
             axis.
             Defaults to ``True`` for both axes.
-        show_on_top : bool, optional
-            If ``True``, sets the grid lines to be shown on top of the plot elements. This can be useful to see the grid
-            lines above a plotted :class:`~graphinglib.Heatmap` for example.
-            Defaults to ``False``.
         which_x, which_y : Literal["major", "minor", "both"], optional
             Sets whether major, minor or both grid lines are shown for the x-axis and y-axis respectively.
             Defaults to ``"both"`` for both axes.
@@ -2452,7 +2446,7 @@ class SmartFigure:
             })
 
         self._show_grid = True
-        params = ["visible_x", "visible_y", "show_on_top", "which_x", "which_y"]
+        params = ["visible_x", "visible_y", "which_x", "which_y"]
         for param in params:
             value = locals()[param]
             if value is not None:
@@ -3241,7 +3235,6 @@ class SmartFigureWCS(SmartFigure):
         self,
         visible_x: bool = True,
         visible_y: bool = True,
-        show_on_top: bool = False,
         color: str | Literal["default"] = "default",
         alpha: float | Literal["default"] = "default",
         line_style: str | Literal["default"] = "default",
@@ -3261,10 +3254,6 @@ class SmartFigureWCS(SmartFigure):
             If ``True``, sets the x-axis or y-axis grid visible. If ``False``, the grid is not shown for the respective
             axis.
             Defaults to ``True`` for both axes.
-        show_on_top : bool, optional
-            If ``True``, sets the grid lines to be shown on top of the plot elements. This can be useful to see the grid
-            lines above a plotted :class:`~graphinglib.Heatmap` for example.
-            Defaults to ``False``.
         color : str, optional
             Sets the color of the grid lines.
             Default depends on the ``figure_style`` configuration.
@@ -3286,7 +3275,6 @@ class SmartFigureWCS(SmartFigure):
         return super().set_grid(
             visible_x=visible_x,
             visible_y=visible_y,
-            show_on_top=show_on_top,
             which_x="major",
             which_y="major",
             color=color,

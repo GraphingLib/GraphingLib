@@ -645,17 +645,6 @@ The same parameters are applied to both axes and major and minor grid lines, but
     fig.set_ticks(minor_y_tick_spacing=0.125)
     fig.show()
 
-When plotting elements, the grid is shown by default under the plot elements. However, you can specify that it should be drawn on top, which is especially useful when plotting :class:`~graphinglib.Heatmap` objects:
-
-.. plot::
-    :context: close-figs
-
-    # Show grid on top of plot elements
-    heatmap = gl.Heatmap(np.random.rand(10, 10))
-    fig = gl.SmartFigure(elements=[heatmap])
-    fig.set_grid(show_on_top=True)
-    fig.show()
-
 .. note::
     Once you have enabled the grid with :py:meth:`~graphinglib.SmartFigure.set_grid`, you can toggle its visibility using the :py:attr:`~graphinglib.SmartFigure.show_grid` property.
 
