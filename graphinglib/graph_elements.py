@@ -7,7 +7,7 @@ from typing import Literal, Optional, Protocol, runtime_checkable, Any
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import LineCollection
-from matplotlib.figure import Figure
+from matplotlib.figure import Figure as MPLFigure
 from numpy.typing import ArrayLike
 
 from .legend_artists import VerticalLineCollection
@@ -1029,7 +1029,7 @@ class Text(Plottable):
         if head_length is not None:
             self._arrow_properties["headlength"] = head_length
 
-    def _plot_element(self, target: plt.Axes | Figure, z_order: int, **kwargs) -> None:
+    def _plot_element(self, target: plt.Axes | MPLFigure, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified target, which can be either an
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_ or a
