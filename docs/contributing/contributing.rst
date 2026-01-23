@@ -94,7 +94,7 @@ Recommended Development Environment
 
 The minimal Python version required for GraphingLib is 3.10. We recommend setting up a dedicated virtual environment to develop your
 contributions. Although it is not mandatory, we suggest using ``uv`` to manage your virtual environment. For information on how to
-install and get started with ``uv``, visit `their website <https://docs.astral.sh/uv/getting-started/>`_. Once you have Poetry installed
+install and get started with ``uv``, visit `their website <https://docs.astral.sh/uv/getting-started/>`_. Once you have ``uv`` installed
 and your fork is cloned on your computer, run this command from within the main folder to create a virtual environment and install
 GraphingLib's dependencies ::
 
