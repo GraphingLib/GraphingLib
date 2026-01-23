@@ -34,6 +34,7 @@ class TestArrow(unittest.TestCase):
             width=2,
             head_size=3,
             shrink=0.1,
+            alpha=0.4,
             two_sided=True,
         )
 
@@ -45,6 +46,7 @@ class TestArrow(unittest.TestCase):
         self.assertEqual(arrow._width, 2)
         self.assertEqual(arrow._head_size, 3)
         self.assertEqual(arrow._shrink, 0.1)
+        self.assertEqual(arrow._alpha, 0.4)
         self.assertEqual(arrow._two_sided, True)
 
     def test_shrink_points(self):
@@ -100,6 +102,7 @@ class TestArrow(unittest.TestCase):
             width=2,
             head_size=3,
             shrink=0.1,
+            alpha=1.0,
             two_sided=True,
         )
 
@@ -122,6 +125,7 @@ class TestArrow(unittest.TestCase):
             width=2,
             head_size=3,
             shrink=0.1,
+            alpha=0.85,
             two_sided=True,
         )
         arrow_copy = arrow.copy()
@@ -131,6 +135,7 @@ class TestArrow(unittest.TestCase):
         self.assertEqual(arrow._width, arrow_copy._width)
         self.assertEqual(arrow._head_size, arrow_copy._head_size)
         self.assertEqual(arrow._shrink, arrow_copy._shrink)
+        self.assertEqual(arrow._alpha, arrow_copy._alpha)
         self.assertEqual(arrow._two_sided, arrow_copy._two_sided)
 
 
@@ -143,6 +148,7 @@ class TestLine(unittest.TestCase):
             width=2,
             capped_line=True,
             cap_width=3,
+            alpha=0.2,
         )
 
         self.assertEqual(line._pointA[0], 3)
@@ -153,6 +159,7 @@ class TestLine(unittest.TestCase):
         self.assertEqual(line._width, 2)
         self.assertEqual(line._capped_line, True)
         self.assertEqual(line._cap_width, 3)
+        self.assertEqual(line._alpha, 0.2)
 
     def test_plotting(self):
         line = Line(
@@ -162,6 +169,7 @@ class TestLine(unittest.TestCase):
             width=2,
             capped_line=True,
             cap_width=3,
+            alpha=1.0,
         )
 
         _, ax = plt.subplots()
@@ -183,6 +191,7 @@ class TestLine(unittest.TestCase):
             width=2,
             capped_line=True,
             cap_width=3,
+            alpha=0.3,
         )
         line_copy = line.copy()
         self.assertEqual(line._pointA, line_copy._pointA)
@@ -191,6 +200,7 @@ class TestLine(unittest.TestCase):
         self.assertEqual(line._width, line_copy._width)
         self.assertEqual(line._capped_line, line_copy._capped_line)
         self.assertEqual(line._cap_width, line_copy._cap_width)
+        self.assertEqual(line._alpha, line_copy._alpha)
 
 
 class TestPolygon(unittest.TestCase):

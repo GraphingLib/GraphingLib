@@ -30,9 +30,11 @@ class Arrow:
     pointB : tuple[float, float]
         Point B of the arrow. If the arrow is single-sided, refers to the head.
     color : str
-        Color of the arrow. Default depends on the ``figure_style`` configuration.
+        Color of the arrow.
+        Default depends on the ``figure_style`` configuration.
     width : float, optional
-        Arrow line width. Default depends on the ``figure_style`` configuration.
+        Arrow line width.
+        Default depends on the ``figure_style`` configuration.
     head_size : float, optional
         Scales the size of the arrow head.
         Default depends on the ``figure_style`` configuration.
@@ -40,6 +42,9 @@ class Arrow:
         Fraction of the total length of the arrow to shrink from both ends.
         A value of 0.5 means the arrow is no longer visible.
         Defaults to 0.
+    alpha : float
+        Opacity of the arrow.
+        Default depends on the ``figure_style`` configuration.
     two_sided : bool
         If ``True``, an arrow is shown at both head and tail. Defaults to ``False``.
     """
@@ -52,6 +57,7 @@ class Arrow:
         width: float | Literal["default"] = "default",
         head_size: float | Literal["default"] = "default",
         shrink: float = 0,
+        alpha: float | Literal["default"] = "default",
         two_sided: bool = False,
     ):
         """This class implements an arrow object.
@@ -82,6 +88,7 @@ class Arrow:
         self._width = width
         self._head_size = head_size
         self._shrink = shrink
+        self._alpha = alpha
         self._two_sided = two_sided
 
     @property
@@ -133,6 +140,14 @@ class Arrow:
         self._shrink = value
 
     @property
+    def alpha(self):
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, value):
+        self._alpha = value
+
+    @property
     def two_sided(self):
         return self._two_sided
 
@@ -171,6 +186,7 @@ class Arrow:
             "arrowstyle": f"{self._style}, head_width={head_width}, head_length={head_length}",
             "color": self._color,
             "linewidth": self._width,
+            "alpha": self._alpha,
         }
         if self._shrink != 0:
             shrinkPointA, shrinkPointB = self._shrink_points()
@@ -202,13 +218,20 @@ class Line:
     pointB : tuple[float, float]
         Point B of the line.
     color : str
-        Color of the line. Default depends on the ``figure_style`` configuration.
+        Color of the line.
+        Default depends on the ``figure_style`` configuration.
     width : float, optional
-        Line width. Default depends on the ``figure_style`` configuration.
+        Line width.
+        Default depends on the ``figure_style`` configuration.
     capped_line : bool
-        If ``True``, the line is capped on both ends. Defaults to ``False``.
+        If ``True``, the line is capped on both ends.
+        Defaults to ``False``.
     cap_width : float
-        Width of the caps. Default depends on the ``figure_style`` configuration.
+        Width of the caps.
+        Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Opacity of the line.
+        Default depends on the ``figure_style`` configuration.
     """
 
     _pointA: tuple[float, float]
@@ -217,6 +240,7 @@ class Line:
     _width: float | Literal["default"] = "default"
     _capped_line: bool = False
     _cap_width: float | Literal["default"] = "default"
+    _alpha: float | Literal["default"] = "default"
 
     def __init__(
         self,
@@ -226,6 +250,7 @@ class Line:
         width: float | Literal["default"] = "default",
         capped_line: bool = False,
         cap_width: float | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
     ):
         self._pointA = pointA
         self._pointB = pointB
@@ -233,6 +258,7 @@ class Line:
         self._width = width
         self._capped_line = capped_line
         self._cap_width = cap_width
+        self._alpha = alpha
 
     @property
     def pointA(self) -> tuple[float, float]:
@@ -282,6 +308,14 @@ class Line:
     def cap_width(self, value: float):
         self._cap_width = value
 
+    @property
+    def alpha(self) -> float:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, value: float):
+        self._alpha = value
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.shapes.Line` object.
@@ -297,6 +331,7 @@ class Line:
             "arrowstyle": style,
             "color": self._color,
             "linewidth": self._width,
+            "alpha": self._alpha,
         }
         axes.annotate(
             "",

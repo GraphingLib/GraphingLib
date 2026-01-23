@@ -69,6 +69,9 @@ class Hlines:
         Line styles to use for the lines. One style for every line or a style
         per line can be specified.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Opacity of the lines.
+        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -80,6 +83,7 @@ class Hlines:
         colors: list[str] | str = "default",
         line_widths: list[float] | float = "default",
         line_styles: list[str] | str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> None:
         if isinstance(y, (list, np.ndarray)):
             self._y = np.asarray(y)
@@ -101,6 +105,7 @@ class Hlines:
         self._colors = colors
         self._line_widths = line_widths
         self._line_styles = line_styles
+        self._alpha = alpha
         if isinstance(self._y, (int, float)) and isinstance(
             self._colors, (list, np.ndarray)
         ):
@@ -192,6 +197,10 @@ class Hlines:
     def line_styles(self, line_styles: list[str] | str) -> None:
         self._line_styles = line_styles
 
+    @property
+    def alpha(self) -> float | Literal["default"]:
+        return self._alpha
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.graph_elements.Hlines` object.
@@ -209,6 +218,7 @@ class Hlines:
                     "colors": self._colors,
                     "linestyles": self._line_styles,
                     "linewidths": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.hlines(
@@ -224,6 +234,7 @@ class Hlines:
                     "color": self._colors,
                     "linestyle": self._line_styles,
                     "linewidth": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 for i in range(len(self._y)):
@@ -246,6 +257,7 @@ class Hlines:
                     "colors": self._colors,
                     "linestyles": self._line_styles,
                     "linewidths": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.hlines(
@@ -261,6 +273,7 @@ class Hlines:
                     "color": self._colors,
                     "linestyle": self._line_styles,
                     "linewidth": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.axhline(self._y, zorder=z_order, **params)
@@ -302,6 +315,9 @@ class Vlines:
         Line styles to use for the lines. One style for every line or a style
         per line can be specified.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Opacity of the lines.
+        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -313,6 +329,7 @@ class Vlines:
         colors: list[str] | str = "default",
         line_widths: list[float] | float = "default",
         line_styles: list[str] | str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> None:
         if isinstance(x, (list, np.ndarray)):
             self._x = np.asarray(x)
@@ -330,6 +347,7 @@ class Vlines:
         self._colors = colors
         self._line_styles = line_styles
         self._line_widths = line_widths
+        self._alpha = alpha
         if isinstance(self._x, (int, float)) and isinstance(
             self._colors, (list, np.ndarray)
         ):
@@ -421,6 +439,14 @@ class Vlines:
     def line_styles(self, line_styles: list[str] | str) -> None:
         self._line_styles = line_styles
 
+    @property
+    def alpha(self) -> float | Literal["default"]:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float | Literal["default"]) -> None:
+        self._alpha = alpha
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.graph_elements.Vlines` object.
@@ -438,6 +464,7 @@ class Vlines:
                     "colors": self._colors,
                     "linestyles": self._line_styles,
                     "linewidths": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.vlines(
@@ -453,6 +480,7 @@ class Vlines:
                     "color": self._colors,
                     "linestyle": self._line_styles,
                     "linewidth": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 for i in range(len(self._x)):
@@ -475,6 +503,7 @@ class Vlines:
                     "colors": self._colors,
                     "linestyles": self._line_styles,
                     "linewidths": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.vlines(
@@ -490,6 +519,7 @@ class Vlines:
                     "color": self._colors,
                     "linestyle": self._line_styles,
                     "linewidth": self._line_widths,
+                    "alpha": self._alpha,
                 }
                 params = {k: v for k, v in params.items() if v != "default"}
                 axes.axvline(self._x, zorder=z_order, **params)
@@ -532,6 +562,9 @@ class Point:
     edge_width : float
         Edge width of the marker.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Opacity of the point.
+        Default depends on the ``figure_style`` configuration.
     font_size : float
         Font size for the text attached to the marker.
         Default depends on the ``figure_style`` configuration.
@@ -554,6 +587,7 @@ class Point:
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         edge_width: float | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
         font_size: int | Literal["same as figure"] = "same as figure",
         text_color: str = "default",
         h_align: str = "left",
@@ -586,6 +620,9 @@ class Point:
         edge_width : float
             Edge width of the marker.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the point.
+            Default depends on the ``figure_style`` configuration.
         font_size : float
             Font size for the text attached to the marker.
             Default depends on the ``figure_style`` configuration.
@@ -610,6 +647,7 @@ class Point:
         self._marker_size = marker_size
         self._marker_style = marker_style
         self._edge_width = edge_width
+        self._alpha = alpha
         self._font_size = font_size
         self._text_color = text_color
         self._h_align = h_align
@@ -679,6 +717,14 @@ class Point:
     @edge_width.setter
     def edge_width(self, edge_width: float | Literal["default"]) -> None:
         self._edge_width = edge_width
+
+    @property
+    def alpha(self) -> float | Literal["default"]:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float | Literal["default"]) -> None:
+        self._alpha = alpha
 
     @property
     def font_size(self) -> float | Literal["same as figure"]:
@@ -762,6 +808,7 @@ class Point:
             "s": self._marker_size,
             "marker": self._marker_style,
             "linewidths": self._edge_width,
+            "alpha": self._alpha,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.scatter(
@@ -847,9 +894,15 @@ class Text:
     font_size : float
         Font size of the text.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Opacity of the text.
+        Default depends on the ``figure_style`` configuration.
     h_align, v_align : str
         Horizontal and vertical alignment of the text.
         Default depends on the ``figure_style`` configuration.
+    rotation : float
+        Rotation angle of the text in degrees.
+        Defaults to 0.
     """
 
     _x: float
@@ -857,8 +910,10 @@ class Text:
     _text: str
     _color: str = "default"
     _font_size: float | Literal["same as figure"] = "same as figure"
+    _alpha: float | Literal["default"] = "default"
     _h_align: str = "default"
     _v_align: str = "default"
+    _rotation: float = 0.0
     _arrow_pointing_to: Optional[tuple[float]] = field(default=None, init=False)
 
     def __init__(
@@ -868,8 +923,10 @@ class Text:
         text: str,
         color: str = "default",
         font_size: float | Literal["same as figure"] = "same as figure",
+        alpha: float | Literal["default"] = "default",
         h_align: str = "default",
         v_align: str = "default",
+        rotation: float = 0.0,
     ) -> None:
         """
         This class allows text to be plotted.
@@ -890,17 +947,25 @@ class Text:
         font_size : float
             Font size of the text.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the text.
+            Default depends on the ``figure_style`` configuration.
         h_align, v_align : str
             Horizontal and vertical alignment of the text.
             Default depends on the ``figure_style`` configuration.
+        rotation : float
+            Rotation angle of the text in degrees.
+            Defaults to 0.
         """
         self._x = x
         self._y = y
         self._text = text
         self._color = color
         self._font_size = font_size
+        self._alpha = alpha
         self._h_align = h_align
         self._v_align = v_align
+        self._rotation = rotation
         self._arrow_pointing_to = None
 
     @property
@@ -944,6 +1009,14 @@ class Text:
         self._font_size = font_size
 
     @property
+    def alpha(self) -> float | Literal["default"]:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float | Literal["default"]) -> None:
+        self._alpha = alpha
+
+    @property
     def h_align(self) -> str:
         return self._h_align
 
@@ -958,6 +1031,14 @@ class Text:
     @v_align.setter
     def v_align(self, v_align: str) -> None:
         self._v_align = v_align
+
+    @property
+    def rotation(self) -> float:
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, rotation: float) -> None:
+        self._rotation = rotation
 
     @property
     def arrow_pointing_to(self) -> Optional[tuple[float]]:
@@ -980,6 +1061,7 @@ class Text:
         shrink: Optional[float] = None,
         head_width: Optional[float] = None,
         head_length: Optional[float] = None,
+        alpha: Optional[float] = None,
     ) -> None:
         """
         Adds an arrow pointing from the :class:`~graphinglib.graph_elements.Text`
@@ -998,6 +1080,8 @@ class Text:
             Width of the head of the arrow.
         head_length : float, optional
             Length of the head of the arrow.
+        alpha : float, optional
+            Opacity of the arrow.
         """
         self._arrow_pointing_to = points_to
         self._arrow_properties = {}
@@ -1009,6 +1093,8 @@ class Text:
             self._arrow_properties["headwidth"] = head_width
         if head_length is not None:
             self._arrow_properties["headlength"] = head_length
+        if alpha is not None:
+            self._arrow_properties["alpha"] = alpha
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -1019,8 +1105,10 @@ class Text:
         params = {
             "color": self._color,
             "fontsize": size,
+            "alpha": self._alpha,
             "horizontalalignment": self._h_align,
             "verticalalignment": self._v_align,
+            "rotation": self._rotation,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         axes.text(

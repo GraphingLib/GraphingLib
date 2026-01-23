@@ -1,0 +1,7 @@
+Added alpha parameter
+---------------------
+Added a "alpha" parameter to Curve, Fits, Scatter, Point, HLines, VLines, Text, Arrow and Line classes to control opacity.
+
+Added Text.rotation parameter
+-----------------------------
+Added a "rotation" parameter to the Text class to allow rotation of text elements.
