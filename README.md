@@ -40,20 +40,26 @@ To get started with GraphingLib, check out our comprehensive [documentation and 
 
 From PyPI with
 
-```text
+```bash
 pip install graphinglib
 ```
 
 From source with
 
-```text
+```bash
 pip install git+https://github.com/GraphingLib/GraphingLib.git
 ```
 
 Using Poetry with
 
-```text
+```bash
 poetry add graphinglib
+```
+
+Using `uv` with
+
+```bash
+uv add graphinglib
 ```
 
 ## Contributing

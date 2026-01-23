@@ -1,35 +1,40 @@
-[tool.poetry]
+[project]
+authors = [
+  { name = "Gustave Coulombe", email = "magikgus@gmail.com" },
+  { name = "Yannick Lapointe", email = "yannicklapointe@proton.me" },
+]
 name = "graphinglib"
 version = "1.6.0"
 description = "An object oriented wrapper combining the functionalities of Matplotlib and Scipy"
 license = "MIT"
-authors = [
-    "Gustave Coulombe <magikgus@gmail.com>",
-    "Yannick Lapointe <yannicklapointe77@gmail.com>",
-]
 readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "numpy>=1.24.2,<2.0.0",
+  "scipy>=1.10.1,<2.0.0",
+  "matplotlib>=3.7.1,<4.0.0",
+  "PyYAML>=6.0,<7.0",
+  "platformdirs>=3.11.0,<4.0.0",
+  "setuptools-scm>=8.0.4,<9.0.0",
+  "shapely>=2.0.3,<3.0.0",
+  "pyperclip>=1.9.0,<2.0.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.10,<3.13"
-numpy = "^1.24.2"
-scipy = "^1.10.1"
-matplotlib = "^3.7.1"
-PyYAML = "^6.0"
-platformdirs = "^3.11.0"
-setuptools-scm = "^8.0.4"
-shapely = "^2.0.3"
-pyperclip = "^1.9.0"
-
-[tool.poetry.group.dev.dependencies]
-black = "^23.3.0"
-ipykernel = "^6.23.0"
-sphinx-favicon = "^1.0.1"
-sphinx-copybutton = "^0.5.2"
-sphinx-design = "^0.5.0"
-pydata-sphinx-theme = "^0.14.1"
-numpydoc = "^1.7.0"
-pygithub = "^2.3.0"
+[dependency-groups]
+dev = [
+  "black>=23.3.0,<24.0.0",
+  "ipykernel>=6.23.0,<7.0.0",
+  "sphinx-favicon>=1.0.1,<2.0.0",
+  "sphinx-copybutton>=0.5.2,<0.6.0",
+  "sphinx-design>=0.5.0,<0.6.0",
+  "pydata-sphinx-theme>=0.14.1,<0.15.0",
+  "numpydoc>=1.7.0,<2.0.0",
+  "pygithub>=2.3.0,<3.0.0",
+]
 
 [build-system]
-requires = ["poetry-core", "setuptools>=64", "setuptools_scm>=8"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
