@@ -1,6 +1,6 @@
 from __future__ import annotations as _annotations_
 from shutil import which
-from typing import Literal, Optional, Any, Self, Callable, Iterable
+from typing import Literal, Optional, Any, Self, Callable, Iterable, Iterator
 from logging import warning
 from string import ascii_lowercase
 from collections import OrderedDict
@@ -975,7 +975,7 @@ class SmartFigure:
             # Normalize all iterables to lists for consistency
             if isinstance(element, Plottable):
                 el = [element]
-            elif isinstance(element, Iterable):
+            elif isinstance(element, Iterable) and not isinstance(element, SmartFigure):
                 el = list(element)
             else:
                 el = element
@@ -1008,6 +1008,14 @@ class SmartFigure:
         """
         key_ = self._validate_and_normalize_key(key)
         return self._elements.get(key_, [])
+
+    def __iter__(self) -> Iterator[list[Plottable] | SmartFigure]:
+        """
+        Iterates over the elements in the SmartFigure in order of their position in the grid, from top-left to
+        bottom-right.
+        """
+        for element in self._ordered_elements.values():
+            yield element
 
     def __deepcopy__(self, memo: dict) -> Self:
         """
@@ -2629,8 +2637,8 @@ class SmartFigure:
         elements: Optional[Iterable[Plottable]] = [],
     ) -> SmartTwinAxis:
         """
-        Creates a twin axis for the SmartFigure. This method creates a :class:`~graphinglib.SmartTwinAxis`
-        object that can be used to plot elements on a secondary axis in the same subplot.
+        Creates a twin axis for the SmartFigure. This method creates a :class:`~graphinglib.SmartTwinAxis` object that
+        can be used to plot elements on a secondary axis in the same subplot.
 
         Parameters
         ----------
@@ -3444,6 +3452,13 @@ class SmartTwinAxis:
         if key_ >= len(self._elements) or key_ < 0:
             raise IndexError(f"Key {key} is out of bounds for the SmartTwinAxis with {len(self._elements)} elements.")
         return self._elements[key_]
+
+    def __iter__(self) -> Iterator[Plottable]:
+        """
+        Iterates over the elements in the SmartTwinAxis in order of their position in the grid, from top-left to
+        bottom-right.
+        """
+        yield from self._elements
 
     def copy(self) -> Self:
         """

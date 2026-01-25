@@ -752,6 +752,15 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.fig_2x3[1::2, :] = DummyPlottable()
 
+    def test_iter(self):
+        """Test iteration over subplots."""
+        count = 0
+        self.fig_2x3.elements = [[None]]*6
+        for subplot in self.fig_2x3:
+            self.assertIsInstance(subplot, list)
+            count += 1
+        self.assertEqual(count, 6)  # 2 rows * 3 columns = 6 subplots
+
     def test_negative_integer_indexing(self):
         """Test negative integer indexing for element access."""
         mock_element = DummyPlottable("test_element")
@@ -1899,6 +1908,14 @@ class TestSmartTwinAxis(unittest.TestCase):
             _ = self.twin_axis[2]
         with self.assertRaises(IndexError):
             _ = self.twin_axis[-3]
+
+    def test_iter(self):
+        """Test iteration over twin axis elements."""
+        self.twin_axis.elements = [self.curve1, self.curve2]
+        elements = list(iter(self.twin_axis))
+        self.assertEqual(len(elements), 2)
+        self.assertIs(elements[0], self.curve1)
+        self.assertIs(elements[1], self.curve2)
 
     def test_copy_and_copy_with(self):
         """Test copying and copying with modifications for twin axis."""

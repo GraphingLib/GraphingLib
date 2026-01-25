@@ -101,8 +101,8 @@ Setting the :py:attr:`~graphinglib.SmartFigure.elements` property **replaces all
 .. note::
    The ``elements`` property setter internally calls :py:meth:`~graphinglib.SmartFigure.add_elements`, but only after clearing all existing elements first. This can be used to reset the elements before adding new ones.
 
-Indexing: ``__setitem__`` and ``__getitem__``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Indexing using ``__setitem__``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The most powerful method for element management uses indexing, which allows elements to **span multiple subplots**:
 
@@ -130,21 +130,6 @@ The most powerful method for element management uses indexing, which allows elem
     fig[0, 0] = curve1
     fig[0, 0] += [curve2]  # Adds curve2 without removing curve1
     fig.show()
-
-Retrieve elements using indexing:
-
-.. code-block:: python
-
-    # Retrieve elements using indexing
-    fig = gl.SmartFigure(elements=[curve1, curve2])
-    retrieved = fig[0, 0]  # Returns list: [curve1, curve2]
-    print(f"Number of elements: {len(retrieved)}")
-
-Output:
-
-.. code-block:: none
-
-    Number of elements: 2
 
 Understanding ``None`` and ``[]``
 -----------------------------------------------
@@ -188,6 +173,35 @@ To remove elements, set them to ``None``:
 
 .. warning::
    To remove a spanning element, you **must** use the exact slice that was used to add it. Using ``fig[0, :] = None`` will not remove single-subplot elements added in the first row.
+
+Retrieving Elements
+-------------------
+
+You can retrieve elements using indexing. Indexing in a subplot that contains :class:`~graphinglib.Plottable` objects will return a list of these elements:
+
+.. plot::
+    :context: close-figs
+
+    fig = gl.SmartFigure(2, 2)
+    fig[0, 0] = [curve1, curve2]
+    fig[1, 0] = [curve1]
+    curves = fig[0, 0]  # Returns list: [curve1, curve2]
+    single_curve = fig[1, 0][0]  # Returns curve1
+
+You can also iterate on the :class:`~graphinglib.SmartFigure` directly to access each subplot in order:
+
+.. plot::
+    :context: close-figs
+
+    fig = gl.SmartFigure(1, 2, elements=[[curve1.copy(), curve2.copy()], [curve1.copy(), curve2.copy()]])
+
+    colors = ["green", "purple"]
+    line_widths = [1, 4]
+    for subplot, color, line_width in zip(fig, colors, line_widths):
+        subplot[0].color = color  # Modify the first element of each subplot
+        subplot[1].line_width = line_width  # Modify the second element
+
+    fig.show()
 
 
 Layout and Structure Control
@@ -1101,6 +1115,22 @@ Basic Nesting
     parent.elements = [fig1, fig2]
     parent.show()
 
+You can also use indexing to modify nested figures after creation:
+
+.. plot::
+    :context: close-figs
+
+    fig1 = gl.SmartFigure(elements=[curve1])
+    fig2 = gl.SmartFigure(elements=[curve2])
+
+    parent = gl.SmartFigure(num_cols=2, elements=[fig1, fig2])
+
+    # Modify nested figure parameters
+    parent[0].set_visual_params(axes_edge_color="red")
+    parent[1].set_visual_params(axes_edge_color="blue")
+
+    parent.show()
+
 Multi-level Nesting
 -------------------
 
@@ -1191,7 +1221,7 @@ It can also be used to combine figures into a parent figure by changing seamless
 Twin Axes
 =========
 
-The :class:`~graphinglib.SmartTwinAxis` class is very similar to :class:`~graphinglib.SmartFigure` but represents a single secondary axis. This object needs to be associated with a :class:`~graphinglib.SmartFigure` to be displayed and allows you to plot data with different scales on the same subplot. Similar to the :class:`~graphinglib.SmartFigure` you can customize its appearance with :py:meth:`~graphinglib.SmartTwinAxis.set_visual_params`, :py:meth:`~graphinglib.SmartTwinAxis.set_tick_params`, etc. and manage its elements with :py:meth:`~graphinglib.SmartTwinAxis.add_elements` and other methods.
+The :class:`~graphinglib.SmartTwinAxis` class is very similar to :class:`~graphinglib.SmartFigure` but represents a single secondary axis. This object needs to be associated with a :class:`~graphinglib.SmartFigure` to be displayed and allows you to plot data with different scales on the same subplot. Similar to the :class:`~graphinglib.SmartFigure` you can customize its appearance with :py:meth:`~graphinglib.SmartTwinAxis.set_visual_params`, :py:meth:`~graphinglib.SmartTwinAxis.set_tick_params`, etc. and manage its elements with :py:meth:`~graphinglib.SmartTwinAxis.add_elements` and other methods. For more details, see the :class:`~graphinglib.SmartTwinAxis` class documentation.
 
 Creating Twin Axes
 ------------------
