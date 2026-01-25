@@ -10,9 +10,9 @@ from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.transforms import ScaledTranslation
 
-from graphinglib.file_manager import FileLoader, get_default_style
-from graphinglib.graph_elements import GraphingException, Plottable
-from graphinglib.legend_artists import (
+from .file_manager import FileLoader, get_default_style
+from .graph_elements import GraphingException, Plottable
+from .legend_artists import (
     HandlerMultipleLines,
     HandlerMultipleVerticalLines,
     VerticalLineCollection,
