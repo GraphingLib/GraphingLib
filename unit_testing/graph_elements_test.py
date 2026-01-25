@@ -34,9 +34,11 @@ class TestHlines(unittest.TestCase):
         self.assertEqual(testHlinesCopy._y, self.testHlines._y)
         self.assertEqual(testHlinesCopy._x_min, self.testHlines._x_min)
         self.assertEqual(testHlinesCopy._x_max, self.testHlines._x_max)
-        self.assertEqual(testHlinesCopy._colors, self.testHlines._colors)
-        self.assertEqual(testHlinesCopy._line_styles, self.testHlines._line_styles)
         self.assertEqual(testHlinesCopy._label, self.testHlines._label)
+        self.assertEqual(testHlinesCopy._colors, self.testHlines._colors)
+        self.assertEqual(testHlinesCopy._line_widths, self.testHlines._line_widths)
+        self.assertEqual(testHlinesCopy._line_styles, self.testHlines._line_styles)
+        self.assertEqual(testHlinesCopy._alpha, self.testHlines._alpha)
 
 
 class TestVlines(unittest.TestCase):
@@ -66,14 +68,16 @@ class TestVlines(unittest.TestCase):
         self.assertEqual(list(testVlinesCopy._x), list(self.testVlines._x))
         self.assertEqual(testVlinesCopy._y_min, self.testVlines._y_min)
         self.assertEqual(testVlinesCopy._y_max, self.testVlines._y_max)
-        self.assertEqual(testVlinesCopy._colors, self.testVlines._colors)
-        self.assertEqual(testVlinesCopy._line_styles, self.testVlines._line_styles)
         self.assertEqual(testVlinesCopy._label, self.testVlines._label)
+        self.assertEqual(testVlinesCopy._colors, self.testVlines._colors)
+        self.assertEqual(testVlinesCopy._line_widths, self.testVlines._line_widths)
+        self.assertEqual(testVlinesCopy._line_styles, self.testVlines._line_styles)
+        self.assertEqual(testVlinesCopy._alpha, self.testVlines._alpha)
 
 
 class TestPoint(unittest.TestCase):
     def setUp(self):
-        self.testPoint = Point(x=0.0, y=0.0, label="Test Point")
+        self.testPoint = Point(x=0.0, y=0.0, label="Test Point", alpha=0.7)
 
     def test_x_is_float(self):
         self.assertEqual(self.testPoint._x, 0.0)
@@ -83,6 +87,9 @@ class TestPoint(unittest.TestCase):
 
     def test_label_is_str(self):
         self.assertEqual(self.testPoint._label, "Test Point")
+
+    def test_alpha_is_float(self):
+        self.assertEqual(self.testPoint._alpha, 0.7)
 
     def test_colors_is_default(self):
         self.assertEqual(self.testPoint._face_color, "default")
@@ -119,6 +126,7 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(testPointCopy._x, self.testPoint._x)
         self.assertEqual(testPointCopy._y, self.testPoint._y)
         self.assertEqual(testPointCopy._label, self.testPoint._label)
+        self.assertEqual(testPointCopy._alpha, self.testPoint._alpha)
         self.assertEqual(testPointCopy._face_color, self.testPoint._face_color)
         self.assertEqual(testPointCopy._edge_color, self.testPoint._edge_color)
         self.assertEqual(testPointCopy._marker_size, self.testPoint._marker_size)
@@ -138,16 +146,20 @@ class TestText(unittest.TestCase):
             text="Test Text",
             color="red",
             font_size=12,
+            alpha=0.6,
             h_align="center",
             v_align="center",
+            rotation=10.0,
         )
         self.assertEqual(testText._x, 0.0)
         self.assertEqual(testText._y, 0.0)
         self.assertEqual(testText._text, "Test Text")
         self.assertEqual(testText._color, "red")
         self.assertEqual(testText._font_size, 12)
+        self.assertEqual(testText._alpha, 0.6)
         self.assertEqual(testText._h_align, "center")
         self.assertEqual(testText._v_align, "center")
+        self.assertEqual(testText._rotation, 10.0)
 
     def test_add_arrow(self):
         testText = Text(
@@ -156,16 +168,18 @@ class TestText(unittest.TestCase):
             text="Test Text",
             color="red",
             font_size=12,
+            alpha=0.5,
             h_align="center",
             v_align="center",
+            rotation=15.0,
         )
         testText.add_arrow(
-            points_to=(1, 1), width=0.1, head_width=0.3, head_length=0.2, shrink=0.05
+            points_to=(1, 1), width=0.1, head_width=0.3, head_length=0.2, shrink=0.05, alpha=0.1
         )
         self.assertEqual(testText._arrow_pointing_to, (1, 1))
         self.assertDictEqual(
             testText._arrow_properties,
-            {"width": 0.1, "headwidth": 0.3, "headlength": 0.2, "shrink": 0.05},
+            {"width": 0.1, "headwidth": 0.3, "headlength": 0.2, "shrink": 0.05, "alpha": 0.1},
         )
 
     def test_plotting(self):
@@ -175,11 +189,13 @@ class TestText(unittest.TestCase):
             text="Test Text",
             color="red",
             font_size=12,
+            alpha=0.75,
             h_align="center",
             v_align="center",
+            rotation=-40.0,
         )
         testText.add_arrow(
-            points_to=(1, 1), width=0.1, head_width=0.3, head_length=0.2, shrink=0.05
+            points_to=(1, 1), width=0.1, head_width=0.3, head_length=0.2, shrink=0.05, alpha=0.9
         )
         fig, ax = plt.subplots()
         testText._plot_element(ax, 0)
@@ -187,8 +203,10 @@ class TestText(unittest.TestCase):
         self.assertEqual(ax.texts[0].get_text(), "Test Text")
         self.assertEqual(ax.texts[0].get_color(), "red")
         self.assertEqual(ax.texts[0].get_fontsize(), 12)
+        self.assertEqual(ax.texts[0].get_alpha(), 0.75)
         self.assertEqual(ax.texts[0].get_horizontalalignment(), "center")
         self.assertEqual(ax.texts[0].get_verticalalignment(), "center")
+        self.assertEqual(ax.texts[0].get_rotation(), 360 - 40.0)
         # Check if the arrow is plotted correctly
         for child in ax.get_children():
             if isinstance(child, plt.Annotation):
@@ -198,6 +216,7 @@ class TestText(unittest.TestCase):
                 self.assertEqual(child.arrowprops["headwidth"], 0.3)
                 self.assertEqual(child.arrowprops["headlength"], 0.2)
                 self.assertEqual(child.arrowprops["shrink"], 0.05)
+                self.assertEqual(child.arrowprops["alpha"], 0.9)
         plt.close(fig)
 
     def test_copy(self):
@@ -207,8 +226,10 @@ class TestText(unittest.TestCase):
             text="Test Text",
             color="red",
             font_size=12,
+            alpha=0.3,
             h_align="center",
             v_align="center",
+            rotation=-25.0,
         )
         testTextCopy = testText.copy()
         self.assertEqual(testTextCopy._x, testText._x)
@@ -216,8 +237,10 @@ class TestText(unittest.TestCase):
         self.assertEqual(testTextCopy._text, testText._text)
         self.assertEqual(testTextCopy._color, testText._color)
         self.assertEqual(testTextCopy._font_size, testText._font_size)
+        self.assertEqual(testTextCopy._alpha, testText._alpha)
         self.assertEqual(testTextCopy._h_align, testText._h_align)
         self.assertEqual(testTextCopy._v_align, testText._v_align)
+        self.assertEqual(testTextCopy._rotation, testText._rotation)
         self.assertEqual(testTextCopy._arrow_pointing_to, testText._arrow_pointing_to)
 
 

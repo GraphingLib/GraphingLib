@@ -114,6 +114,9 @@ class Curve(Plottable1D):
     line_style : str
         Style of the curve.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Opacity of the curve.
+        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -124,6 +127,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> None:
         self.handle = None
         self._x_data = np.asarray(x_data)
@@ -132,6 +136,7 @@ class Curve(Plottable1D):
         self._color = color
         self._line_width = line_width
         self._line_style = line_style
+        self._alpha = alpha
 
         self._x_error = None
         self._y_error = None
@@ -162,6 +167,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         number_of_points: int = 500,
     ) -> Self:
         """
@@ -181,6 +187,12 @@ class Curve(Plottable1D):
         line_width : float
             Width of the curve.
             Default depends on the ``figure_style`` configuration.
+        line_style : str
+            Style of the curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the curve.
+            Default depends on the ``figure_style`` configuration.
         number_of_points : int
             Number of points to be used to plot the curve (resolution).
             Defaults to 500.
@@ -191,7 +203,7 @@ class Curve(Plottable1D):
         """
         x_data = np.linspace(x_min, x_max, number_of_points)
         y_data = func(x_data)
-        return cls(x_data, y_data, label, color, line_width, line_style)
+        return cls(x_data, y_data, label, color, line_width, line_style, alpha)
 
     @property
     def x_data(self) -> np.ndarray:
@@ -256,6 +268,14 @@ class Curve(Plottable1D):
     @line_style.setter
     def line_style(self, line_style: str) -> None:
         self._line_style = line_style
+
+    @property
+    def alpha(self) -> float | Literal["default"]:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float | Literal["default"]) -> None:
+        self._alpha = alpha
 
     @property
     def show_errorbars(self) -> bool:
@@ -591,6 +611,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -610,6 +631,9 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the slice.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the slice.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the slicing applied and the parameters passed to this method.
@@ -633,9 +657,11 @@ class Curve(Plottable1D):
                 copy._line_width = line_width
             if line_style != "default":
                 copy._line_style = line_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
-            return Curve(x_data, y_data, label, color, line_width, line_style)
+            return Curve(x_data, y_data, label, color, line_width, line_style, alpha)
 
     def create_slice_y(
         self,
@@ -645,6 +671,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -664,6 +691,9 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the slice.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the slice.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the slicing applied and the parameters passed to this method.
@@ -687,9 +717,11 @@ class Curve(Plottable1D):
                 copy._line_width = line_width
             if line_style != "default":
                 copy._line_style = line_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
-            return Curve(x_data, y_data, label, color, line_width, line_style)
+            return Curve(x_data, y_data, label, color, line_width, line_style, alpha)
 
     def add_errorbars(
         self,
@@ -810,6 +842,7 @@ class Curve(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> Point:
         """
         Creates a point on the curve at a given x value.
@@ -841,6 +874,9 @@ class Curve(Plottable1D):
         line_width : float
             Width of the point edge.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the point.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
@@ -856,6 +892,7 @@ class Curve(Plottable1D):
             marker_size=marker_size,
             marker_style=marker_style,
             edge_width=line_width,
+            alpha=alpha,
         )
         return point
 
@@ -906,6 +943,7 @@ class Curve(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_style: str = "default",
         line_width: float | Literal["default"] = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> list[Point]:
         """
         Gets the points on the curve at a given y value. Can return multiple Point objects if the curve crosses the y value multiple times.
@@ -937,6 +975,9 @@ class Curve(Plottable1D):
         line_width : float
             Width of the point edge.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the point.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
@@ -954,6 +995,7 @@ class Curve(Plottable1D):
                 marker_size=marker_size,
                 marker_style=marker_style,
                 edge_width=line_width,
+                alpha=alpha,
             )
             for pair in pairs
         ]
@@ -965,6 +1007,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -982,6 +1025,9 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the derivative applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the derivative applied and the parameters passed to this method.
@@ -1003,9 +1049,11 @@ class Curve(Plottable1D):
                 copy._line_width = line_width
             if line_style != "default":
                 copy._line_style = line_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
-            return Curve(x_data, y_data, label, color, line_width, line_style)
+            return Curve(x_data, y_data, label, color, line_width, line_style, alpha)
 
     def create_integral_curve(
         self,
@@ -1014,6 +1062,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -1034,6 +1083,9 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the integral applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the integral applied and the parameters passed to this method.
@@ -1057,9 +1109,11 @@ class Curve(Plottable1D):
                 copy._line_width = line_width
             if line_style != "default":
                 copy._line_style = line_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
-            return Curve(self._x_data, y_data, label, color, line_width, line_style)
+            return Curve(self._x_data, y_data, label, color, line_width, line_style, alpha)
 
     def create_tangent_curve(
         self,
@@ -1068,6 +1122,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -1087,6 +1142,9 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the tangent applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the tangent applied and the parameters passed to this method.
@@ -1110,10 +1168,12 @@ class Curve(Plottable1D):
                 copy._line_width = line_width
             if line_style != "default":
                 copy._line_style = line_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
             tangent_curve = Curve(
-                self._x_data, y_data, label, color, line_width, line_style
+                self._x_data, y_data, label, color, line_width, line_style, alpha
             )
             return tangent_curve
 
@@ -1124,6 +1184,7 @@ class Curve(Plottable1D):
         color: str = "default",
         line_width: float | Literal["default"] = "default",
         line_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -1143,6 +1204,9 @@ class Curve(Plottable1D):
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
+            Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the normal applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the normal applied and the parameters passed to this method.
@@ -1166,10 +1230,12 @@ class Curve(Plottable1D):
                 copy._line_width = line_width
             if line_style != "default":
                 copy._line_style = line_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
             normal_curve = Curve(
-                self._x_data, y_data, label, color, line_width, line_style
+                self._x_data, y_data, label, color, line_width, line_style, alpha
             )
             return normal_curve
 
@@ -1340,6 +1406,7 @@ class Curve(Plottable1D):
         marker_sizes: list[float] | float | Literal["default"] = "default",
         marker_styles: list[str] | str = "default",
         edge_widths: list[float] | float | Literal["default"] = "default",
+        alphas: list[float] | float | Literal["default"] = "default",
     ) -> list[Point]:
         """
         Creates the intersection Points between two curves.
@@ -1373,6 +1440,10 @@ class Curve(Plottable1D):
         edge_widths : list[float] or float
             Widths of the intersection points.
             If a single float is passed, all intersection points will have the same width.
+            Default depends on the ``figure_style`` configuration.
+        alphas : list[float] or float
+            Opacities of the intersection points.
+            If a single float is passed, all intersection points will have the same opacity.
             Default depends on the ``figure_style`` configuration.
 
         Returns
@@ -1418,6 +1489,11 @@ class Curve(Plottable1D):
                 edge_width = edge_widths[i]
             except (IndexError, TypeError, AssertionError):
                 edge_width = edge_widths
+            try:
+                assert isinstance(alphas, list)
+                alpha = alphas[i]
+            except (IndexError, TypeError, AssertionError):
+                alpha = alphas
             point = point_coords[i]
             point_objects.append(
                 Point(
@@ -1429,6 +1505,7 @@ class Curve(Plottable1D):
                     marker_size=marker_size,
                     marker_style=marker_style,
                     edge_width=edge_width,
+                    alpha=alpha,
                 )
             )
         return point_objects
@@ -1437,11 +1514,14 @@ class Curve(Plottable1D):
         """
         Plots the element in the specified axes.
         """
+        params = {
+            "color": self._color,
+            "linewidth": self._line_width,
+            "linestyle": self._line_style,
+            "alpha": self._alpha,
+        }
         if self._show_errorbars:
-            params = {
-                "color": self._color,
-                "linewidth": self._line_width,
-                "linestyle": self._line_style,
+            params.update({
                 "elinewidth": (
                     self._errorbars_line_width
                     if self._errorbars_line_width != "same as curve"
@@ -1458,7 +1538,7 @@ class Curve(Plottable1D):
                     if self._errorbars_color != "same as curve"
                     else self._color
                 ),
-            }
+            })
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
                 self._x_data,
@@ -1470,11 +1550,6 @@ class Curve(Plottable1D):
                 **params,
             )
         else:
-            params = {
-                "color": self._color,
-                "linewidth": self._line_width,
-                "linestyle": self._line_style,
-            }
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
                 self._x_data,
@@ -1608,6 +1683,9 @@ class Scatter(Plottable1D):
     marker_style : str
         Style of the points.
         Default depends on the ``figure_style`` configuration.
+    alpha : float
+        Opacity of the scatter plot.
+        Default depends on the ``figure_style`` configuration.
     """
 
     def __init__(
@@ -1623,6 +1701,7 @@ class Scatter(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> None:
         """
         This class implements a general scatter plot.
@@ -1658,6 +1737,9 @@ class Scatter(Plottable1D):
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the scatter plot.
+            Default depends on the ``figure_style`` configuration.
         """
         self.handle = None
         self.errorbars_handle = None
@@ -1672,6 +1754,7 @@ class Scatter(Plottable1D):
         self._marker_size = marker_size
         self._marker_edge_width = marker_edge_width
         self._marker_style = marker_style
+        self._alpha = alpha
 
         self._x_error = None
         self._y_error = None
@@ -1698,6 +1781,7 @@ class Scatter(Plottable1D):
         marker_size: int | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         number_of_points: int = 30,
     ) -> Self:
         """
@@ -1735,6 +1819,9 @@ class Scatter(Plottable1D):
         marker_edge_width: float
             Line width of the marker edges.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the scatter plot.
+            Default depends on the ``figure_style`` configuration.
         number_of_points : int
             Number of points to be plotted.
             Defaults to 30.
@@ -1757,6 +1844,7 @@ class Scatter(Plottable1D):
             marker_size,
             marker_edge_width,
             marker_style,
+            alpha,
         )
 
     @property
@@ -1862,6 +1950,14 @@ class Scatter(Plottable1D):
     @marker_style.setter
     def marker_style(self, marker_style: str) -> None:
         self._marker_style = marker_style
+
+    @property
+    def alpha(self) -> float | Literal["default"]:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float | Literal["default"]) -> None:
+        self._alpha = alpha
 
     @property
     def show_errorbars(self) -> bool:
@@ -2128,6 +2224,7 @@ class Scatter(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -2164,6 +2261,9 @@ class Scatter(Plottable1D):
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacities of the points.
+            Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
 
@@ -2195,6 +2295,8 @@ class Scatter(Plottable1D):
                 copy._marker_edge_width = marker_edge_width
             if marker_style != "default":
                 copy._marker_style = marker_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
             return Scatter(
@@ -2209,6 +2311,7 @@ class Scatter(Plottable1D):
                 marker_size,
                 marker_edge_width,
                 marker_style,
+                alpha,
             )
 
     def create_slice_y(
@@ -2224,6 +2327,7 @@ class Scatter(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
+        alpha: float | Literal["default"] = "default",
         copy_first: bool = False,
     ) -> Self:
         """
@@ -2260,6 +2364,9 @@ class Scatter(Plottable1D):
         marker_style : str
             Style of the points.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacities of the points.
+            Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
 
@@ -2291,6 +2398,8 @@ class Scatter(Plottable1D):
                 copy._marker_edge_width = marker_edge_width
             if marker_style != "default":
                 copy._marker_style = marker_style
+            if alpha != "default":
+                copy._alpha = alpha
             return copy
         else:
             return Scatter(
@@ -2305,6 +2414,7 @@ class Scatter(Plottable1D):
                 marker_size,
                 marker_edge_width,
                 marker_style,
+                alpha,
             )
 
     def add_errorbars(
@@ -2416,6 +2526,7 @@ class Scatter(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> Point:
         """
         Creates a Point on the curve at a given x value.
@@ -2447,6 +2558,9 @@ class Scatter(Plottable1D):
         marker_style : str
             Style of the point.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the point.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
@@ -2462,6 +2576,7 @@ class Scatter(Plottable1D):
             marker_size=marker_size,
             marker_style=marker_style,
             edge_width=marker_edge_width,
+            alpha=alpha,
         )
         return point
 
@@ -2513,6 +2628,7 @@ class Scatter(Plottable1D):
         marker_size: float | Literal["default"] = "default",
         marker_edge_width: float | Literal["default"] = "default",
         marker_style: str = "default",
+        alpha: float | Literal["default"] = "default",
     ) -> list[Point]:
         """
         Creates the Points on the curve at a given y value. Can return multiple Points if the curve crosses the y value multiple times.
@@ -2544,6 +2660,9 @@ class Scatter(Plottable1D):
         marker_style : str
             Style of the point.
             Default depends on the ``figure_style`` configuration.
+        alpha : float
+            Opacity of the point.
+            Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
@@ -2561,6 +2680,7 @@ class Scatter(Plottable1D):
                 marker_size=marker_size,
                 marker_style=marker_style,
                 edge_width=marker_edge_width,
+                alpha=alpha,
             )
             for coord in coords
         ]
@@ -2719,6 +2839,7 @@ class Scatter(Plottable1D):
             "s": self._marker_size,
             "marker": self._marker_style,
             "linewidth": self._marker_edge_width,
+            "alpha": self._alpha,
         }
         params = {k: v for k, v in params.items() if v != "default"}
         params["facecolors"] = mpl_face_color
@@ -2849,7 +2970,7 @@ class Histogram(Plottable1D):
         Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
         Default depends on the ``figure_style`` configuration.
     alpha : float
-        Transparency of the histogram.
+        Opacity of the histogram.
         Default depends on the ``figure_style`` configuration.
     line_width : float
         Width of the histogram edge.
@@ -2903,7 +3024,7 @@ class Histogram(Plottable1D):
             Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the histogram.
+            Opacity of the histogram.
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the histogram edge.
@@ -2981,7 +3102,7 @@ class Histogram(Plottable1D):
             Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
             Default depends on the ``figure_style`` configuration.
         alpha : float
-            Transparency of the histogram.
+            Opacity of the histogram.
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the histogram edge.

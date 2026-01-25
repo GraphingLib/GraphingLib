@@ -2,6 +2,7 @@ Curve:
   _color:
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
   _cap_width: 3
   _errorbars_color: "same as curve"
   _errorbars_line_width: "same as curve"
@@ -20,6 +21,7 @@ Scatter:
   _marker_size: 50
   _marker_edge_width: 1.5
   _marker_style: "o"
+  _alpha: 1.0
   _cap_width: 3
   _errorbars_color: "same as scatter"
   _errorbars_line_width: 1
@@ -41,11 +43,13 @@ Histogram:
   _pdf_std_color: "k"
 
 Hlines:
+  _alpha: 1.0
   _colors: "k"
   _line_styles: "-"
   _line_widths: 2
 
 Vlines:
+  _alpha: 1.0
   _colors: "k"
   _line_styles: "solid"
   _line_widths: 2
@@ -67,12 +71,14 @@ Point:
   _marker_size: 30
   _marker_style: "o"
   _edge_width: 1.5
+  _alpha: 1.0
   _text_color: "same as point"
 
 FitFromPolynomial:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"
@@ -81,6 +87,7 @@ FitFromExponential:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"
@@ -89,6 +96,7 @@ FitFromGaussian:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"
@@ -97,6 +105,7 @@ FitFromSine:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"
@@ -105,6 +114,7 @@ FitFromSquareRoot:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"
@@ -116,6 +126,7 @@ FitFromLog:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
 
 FitFromFunction:
   _res_color: "k"
@@ -124,6 +135,7 @@ FitFromFunction:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
 
 FitFromFOTF:
   _res_color: "k"
@@ -132,6 +144,7 @@ FitFromFOTF:
   _color: "k"
   _line_width: 2
   _line_style: "-"
+  _alpha: 1.0
 
 Heatmap:
   _aspect_ratio: "equal"
@@ -152,6 +165,7 @@ VectorField:
   _color: "k"
 
 Text:
+  _alpha: 1.0
   _color: "k"
   _h_align: "center"
   _v_align: "baseline"
@@ -190,11 +204,13 @@ Rectangle:
   _line_style: "-"
 
 Arrow:
+  _alpha: 1.0
   _color: "black"
   _head_size: 1
   _width: 2
 
 Line:
+  _alpha: 1.0
   _color: "black"
   _width: 2
   _cap_width: 1

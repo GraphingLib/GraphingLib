@@ -42,6 +42,7 @@ class TestCurve(unittest.TestCase):
                 color="k",
                 line_width=1,
                 line_style="-",
+                alpha=0.5,
                 number_of_points=400,
             ),
             Curve,
@@ -91,7 +92,7 @@ class TestCurve(unittest.TestCase):
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
         self.testCurve = Curve(
-            x, sin(x), "Test Curve", color="k", line_width=3, line_style="--"
+            x, sin(x), "Test Curve", color="k", line_width=3, line_style="--", alpha=0.4,
         )
         _, self.testAxes = subplots()
         self.testCurve._plot_element(self.testAxes, 0)
@@ -331,6 +332,7 @@ class TestCurve(unittest.TestCase):
         self.assertEqual(curve_copy._color, self.testCurve._color)
         self.assertEqual(curve_copy._line_width, self.testCurve._line_width)
         self.assertEqual(curve_copy._line_style, self.testCurve._line_style)
+        self.assertEqual(curve_copy._alpha, self.testCurve._alpha)
         self.assertListEqual(list(curve_copy._x_data), list(self.testCurve._x_data))
         self.assertListEqual(list(curve_copy._y_data), list(self.testCurve._y_data))
 
@@ -385,6 +387,7 @@ class TestScatter(unittest.TestCase):
                 edge_color="k",
                 marker_size=1,
                 marker_style="o",
+                alpha=0.5,
                 number_of_points=400,
             ),
             Scatter,
@@ -441,6 +444,7 @@ class TestScatter(unittest.TestCase):
             edge_color="k",
             marker_size=30,
             marker_style="o",
+            alpha=0.8,
         )
         _, self.testAxes = subplots()
         self.testScatter._plot_element(self.testAxes, 0)
@@ -723,7 +727,7 @@ class TestScatter(unittest.TestCase):
         fig._prepare_figure()
         self.assertEqual(scatter.handle.get_edgecolor().shape[0], 100)
 
-    def test_errobars_take_face_color(self):
+    def test_errorbars_take_face_color(self):
         scatter = Scatter.from_function(
             lambda x: x**2,
             -10,
@@ -742,7 +746,7 @@ class TestScatter(unittest.TestCase):
             list(to_rgba("blue")),
         )
 
-    def test_errobars_take_edge_color(self):
+    def test_errorbars_take_edge_color(self):
         scatter = Scatter.from_function(
             lambda x: x**2,
             -10,
@@ -761,7 +765,7 @@ class TestScatter(unittest.TestCase):
             list(to_rgba("red")),
         )
 
-    def test_errobars_become_black_from_face_color(self):
+    def test_errorbars_become_black_from_face_color(self):
         scatter = Scatter.from_function(
             lambda x: x**2,
             -10,
@@ -781,7 +785,7 @@ class TestScatter(unittest.TestCase):
             list(to_rgba("black")),
         )
 
-    def test_errobars_become_black_from_edge_color(self):
+    def test_errorbars_become_black_from_edge_color(self):
         scatter = Scatter.from_function(
             lambda x: x**2,
             -10,
@@ -801,7 +805,7 @@ class TestScatter(unittest.TestCase):
             list(to_rgba("black")),
         )
 
-    def test_errobars_become_white_from_face_color(self):
+    def test_errorbars_become_white_from_face_color(self):
         scatter = Scatter.from_function(
             lambda x: x**2,
             -10,
@@ -821,7 +825,7 @@ class TestScatter(unittest.TestCase):
             list(to_rgba("white")),
         )
 
-    def test_errobars_become_white_from_edge_color(self):
+    def test_errorbars_become_white_from_edge_color(self):
         scatter = Scatter.from_function(
             lambda x: x**2,
             -10,

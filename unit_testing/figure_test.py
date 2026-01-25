@@ -285,6 +285,7 @@ class TestTwinAxis(unittest.TestCase):
                 "_line_width": 2,
                 "_color": "k",
                 "_line_style": "-",
+                "_alpha": 1.0,
             }
         }
         twin = TwinAxis()

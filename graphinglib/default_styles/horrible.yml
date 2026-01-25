@@ -1,4 +1,5 @@
 Curve:
+  _alpha: 1.0
   _color:
   _line_width: 10
   _line_style: "-."
@@ -20,6 +21,7 @@ Scatter:
   _marker_size: 4000
   _marker_edge_width: 1.5
   _marker_style: "+"
+  _alpha: 1.0
   _cap_width: 10
   _errorbars_color: "same as scatter"
   _errorbars_line_width: 3
@@ -41,11 +43,13 @@ Histogram:
   _pdf_std_color: "b"
 
 Hlines:
+  _alpha: 1.0
   _colors: "k"
   _line_styles: "-"
   _line_widths: 2
 
 Vlines:
+  _alpha: 1.0
   _colors: "k"
   _line_styles: "solid"
   _line_widths: 2
@@ -67,9 +71,11 @@ Point:
   _marker_size: 200
   _edge_width: 1.5
   _marker_style: "D"
+  _alpha: 1.0
   _text_color: "same as point"
 
 FitFromPolynomial:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -78,6 +84,7 @@ FitFromPolynomial:
   _res_line_style: "--"
 
 FitFromExponential:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -86,6 +93,7 @@ FitFromExponential:
   _res_line_style: "--"
 
 FitFromGaussian:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -94,6 +102,7 @@ FitFromGaussian:
   _res_line_style: "--"
 
 FitFromSine:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -102,6 +111,7 @@ FitFromSine:
   _res_line_style: "--"
 
 FitFromSquareRoot:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -110,6 +120,7 @@ FitFromSquareRoot:
   _res_line_style: "--"
 
 FitFromLog:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -118,6 +129,7 @@ FitFromLog:
   _res_line_style: "--"
 
 FitFromFunction:
+  _alpha: 1.0
   _color: "khaki"
   _line_width: 5
   _line_style: "--"
@@ -126,6 +138,7 @@ FitFromFunction:
   _res_line_style: "--"
 
 FitFromFOTF:
+  _alpha: 1.0
   _res_color: "k"
   _res_line_width: 1
   _res_line_style: "--"
@@ -152,6 +165,7 @@ VectorField:
   _color: "green"
 
 Text:
+  _alpha: 1.0
   _color: "orange"
   _h_align: "right"
   _v_align: "top"
@@ -198,11 +212,13 @@ Polygon:
   _line_style: "-"
 
 Arrow:
+  _alpha: 1.0
   _color: "tab:olive"
   _head_size: 5
   _width: 10
 
 Line:
+  _alpha: 1.0
   _color: "tab:olive"
   _width: 10
   _cap_width: 3
