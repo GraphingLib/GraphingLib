@@ -344,7 +344,7 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.fig.aspect_ratio = "yes"
         with self.assertRaises(TypeError):
-            self.fig.aspect_ratio = [1]
+            self.fig.aspect_ratio = array([1])
         with self.assertRaises(ValueError):
             self.fig.aspect_ratio = -1
         # Valid
@@ -361,7 +361,7 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.fig.box_aspect_ratio = "yes"
         with self.assertRaises(TypeError):
-            self.fig.box_aspect_ratio = [1]
+            self.fig.box_aspect_ratio = array([1])
         with self.assertRaises(ValueError):
             self.fig.box_aspect_ratio = -1
         # Valid
@@ -661,6 +661,88 @@ class TestSmartFigure(unittest.TestCase):
         # Valid
         self.fig.hide_default_legend_elements = True
         self.assertTrue(self.fig.hide_default_legend_elements)
+
+    def test_list_or_item_properties(self):
+        """Test all properties that can be either lists or single items except the projection parameter."""
+        self.fig_2x3[:, 0] = DummyPlottable()
+        self.fig_2x3[0, 1] = DummyPlottable()
+        self.fig_2x3[0, 2] = DummyPlottable()
+        self.fig_2x3[1, 2] = DummyPlottable()
+        # leave the [1,1] subplot empty
+
+        bool_tests = [[True, True, False], [False, False, True, False], [True, False, False, True, False]]
+        params = {
+            "x_lim": [[(0, 1), None, (1, 2), (None, 4)],
+                      [None, None, (None, 0), (0, None)],
+                      [(0, 1), (1, 2), None, None, (5, 6)]],
+            "y_lim": [[(0, 1), None, (1, 2), (None, 4)],
+                      [None, None, (None, 0), (0, None)],
+                      [(0, 1), (1, 2), None, None, (5, 6)]],
+            "log_scale_x": bool_tests,
+            "log_scale_y": bool_tests,
+            "remove_axes": bool_tests,
+            "aspect_ratio": [[1.0, 1.0, 2.0], [1.5, 1.0, "auto", "equal"], [0.75, 1.0, 1.0, "auto", "equal"]],
+            "box_aspect_ratio": [[None, 0.5, 2.0], [1.5, None, 0.75, 3.0], [0.33, None, None, 2.0, 4.0]],
+            "remove_x_ticks": bool_tests,
+            "remove_y_ticks": bool_tests,
+            "invert_x_axis": bool_tests,
+            "invert_y_axis": bool_tests,
+            "reference_labels": bool_tests,
+            "reference_labels_loc": [["inside", (0.5, 0.5), "outside"],
+                                     ["outside", "inside", (0, 0), (1, 1)],
+                                     ["inside", (0.25, 0.75), (0.75, 0.25), "inside", "outside"]],
+            "legend_loc": [["upper right", (0.5, 0.5), "lower left"],
+                           ["upper left", (0, 1), (1, 0), "center"],
+                           ["center", "lower left", (0.2, 0.7), (0.7, 0.2), "outside lower center"]],
+            "legend_cols": [[1, 2, 3], [2, 1, 3, 1], [1, 2, 3, 5, 1]],
+            "show_legend": bool_tests,
+            "show_grid": bool_tests,
+            "hide_default_legend_elements": bool_tests,
+        }
+        for param, values in params.items():
+            fig = self.fig_2x3.copy_with(**{param: values[0]})  # underfilled list
+            fig._fill_per_subplot_params()
+            fig = self.fig_2x3.copy_with(**{param: values[1]})  # equally filled list
+            fig._fill_per_subplot_params()
+            with self.assertRaises(GraphingException):
+                fig = self.fig_2x3.copy_with(**{param: values[2]})  # overfilled list
+                fig._fill_per_subplot_params()
+
+    def test_projection_list_or_item(self):
+        """Test projection property with list or single item assignment."""
+        self.fig_2x3[:, 0] = DummyPlottable()
+        self.fig_2x3[0, 1] = DummyPlottable()
+        self.fig_2x3[0, 2] = DummyPlottable()
+        self.fig_2x3[1, 2] = DummyPlottable()
+        # leave the [1,1] subplot empty
+
+        self.fig_2x3.projection = [None, "polar", "polar"]  # underfilled list
+        self.fig_2x3._fill_per_subplot_params()
+        self.fig_2x3.projection = ["polar", None, "polar", None]  # equally filled list
+        self.fig_2x3._fill_per_subplot_params()
+        with self.assertRaises(GraphingException):
+            self.fig_2x3.projection = [None, "polar", None, "polar", None]  # overfilled list
+            self.fig_2x3._fill_per_subplot_params()
+
+    def test_general_legend_list_or_item_properties(self):
+        """Test properties that are invalid as lists when general_legend is True."""
+        self.fig_2x2.elements = [DummyPlottable() for _ in range(4)]
+        params = {
+            "show_legend": [True, False, True, False],
+            "legend_cols": [1, 2, 1],
+            "legend_loc": ["upper right", "lower left"],
+            "hide_default_legend_elements": [True],
+        }
+        self.fig_2x2._default_params = FileLoader("plain").load()
+        self.fig_2x2._reference_label_i = 0
+        self.fig_2x2.general_legend = True
+
+        for param, values in params.items():
+            fig = self.fig_2x2.copy_with(**{param: values})
+            fig._figure = plt.figure()
+            with self.assertRaises(GraphingException):
+                fig._prepare_figure()
+            plt.close(self.fig._figure)
 
     def test_len_and_setitem_getitem(self):
         """Test length calculation and item assignment/retrieval."""
@@ -1491,6 +1573,28 @@ class TestSmartFigureWCS(TestSmartFigure):
 
         with self.assertRaises(GraphingException):
             self.fig.projection = None
+
+    def test_projection_list_or_item(self):
+        """Test projection property with list or single item assignment."""
+        self.fig_2x3[:, 0] = DummyPlottable()
+        self.fig_2x3[0, 1] = DummyPlottable()
+        self.fig_2x3[0, 2] = DummyPlottable()
+        self.fig_2x3[1, 2] = DummyPlottable()
+        # leave the [1,1] subplot empty
+
+        self.fig_2x3._default_params = FileLoader("plain").load()
+        self.fig_2x3._reference_label_i = 0
+        self.fig_2x3._figure = plt.figure()
+
+        self.fig_2x3.projection = [self.wcs, self.wcs, self.wcs, self.wcs]  # equally filled list
+        self.fig_2x3._prepare_figure()
+        plt.close(self.fig._figure)
+        with self.assertRaises(GraphingException):
+            self.fig_2x3.projection = [self.wcs, self.wcs, self.wcs]  # underfilled list
+            self.fig_2x3._prepare_figure()
+        with self.assertRaises(GraphingException):
+            self.fig_2x3.projection = [self.wcs, self.wcs, self.wcs, self.wcs, self.wcs]  # overfilled list
+            self.fig_2x3._prepare_figure()
 
     def test_add_all_elements(self):
         """Test adding all types of elements to the figure."""

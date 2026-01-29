@@ -194,7 +194,7 @@ Advanced Usage
 Multiple Subplots
 -----------------
 
-All subplots share the same WCS projection:
+All subplots can share the same WCS projection:
 
 .. code-block:: python
 
@@ -219,6 +219,18 @@ All subplots share the same WCS projection:
         num_cols=2,
         subtitles=["Filter A", "Filter B", "Filter C", "Filter D"],
         elements=[heatmap1, heatmap2, heatmap3, heatmap4]
+    )
+
+Similar to the :class:`~graphinglib.SmartFigure`, you can also specify different WCS projections using a list of WCS objects for the ``projection`` parameter. However, WCS projections must be given for every subplot, i.e. the length of the ``projection`` list must match the number of non-empty subplots (see the :py:meth:`~graphinglib.SmartFigureWCS.__len__` method for more details):
+
+.. code-block:: python
+
+    wcs_list = [wcs1, wcs2]  # List of WCS objects for each subplot
+
+    fig = gl.SmartFigureWCS(
+        projection=wcs_list,
+        num_cols=2,
+        elements=[heatmap1, heatmap2]
     )
 
 Nesting WCS Figures

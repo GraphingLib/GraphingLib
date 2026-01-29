@@ -14,6 +14,7 @@
         ~{{ name }}.{{ item }}
     {%- endfor %}
         ~{{ name }}.__iter__
+        ~{{ name }}.__len__
         ~{{ name }}.__getitem__
     {%- if name not in ['SmartTwinAxis'] %}
         ~{{ name }}.__setitem__

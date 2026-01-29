@@ -725,6 +725,171 @@ Other than adding :class:`~graphinglib.Text` elements directly to subplots, you 
    Annotations use figure-relative coordinates, not data coordinates. This makes them useful for notes that should appear in fixed positions regardless of data scales. This also allows them to be placed outside the axes area.
 
 
+Properties That Accept Lists or Single Items
+=============================================
+
+Many properties of the :class:`~graphinglib.SmartFigure` class are typed as ``ListOrItem``, a flexible type that allows you to provide either a single value or a list of values. This feature is essential for customizing multi-subplot figures where different subplots may need different configurations.
+
+Understanding the ``ListOrItem`` Type
+-------------------------------------
+
+The ``ListOrItem`` type is a type hint defined as:
+
+.. code-block:: python
+
+    ListOrItem = Union[T, list[T]]
+
+where ``T`` is any type. This means that any property documented as ``ListOrItem[float]`` (for example) can accept either a single ``float`` value or a ``list[float]``.
+
+When you provide a **single value**, it is applied to **all subplots**. When you provide a **list of values**, each value is applied to the corresponding subplot from left to right, top to bottom.
+
+List Length and Padding Rules
+------------------------------
+
+When using lists with :class:`~graphinglib.SmartFigure`, the following rules apply to list length:
+
+**Shorter than number of non-empty subplots:**
+    The list is padded with the default value for that property. For example, if you have 4 subplots but only provide 2 values in a list, the remaining 2 subplots will use the default value.
+
+**Equal to number of non-empty subplots:**
+    Perfect! Each value maps exactly to one subplot.
+
+**Longer than number of non-empty subplots:**
+    An error is raised. The list cannot have more values than there are subplots.
+
+**Special case - Nested SmartFigures:**
+    When a subplot contains a nested :class:`~graphinglib.SmartFigure`, this object will count as a non-empty subplot. As such, you may need to pad your lists with any value to account for nested figures which control their own properties and will ignore this parameter.
+
+.. note::
+    The number of non-empty subplots corresponds to the number of subplots that will actually be drawn. This excludes subplots set to ``None`` (not drawn) but includes subplots that are drawn but empty (e.g. set to ``[]``). Subplots that span multiple rows or columns are also counted as one subplot. To get the number of non-empty subplots, use the :py:meth:`~graphinglib.SmartFigure.__len__` method.
+
+Properties That Accept ``ListOrItem``
+--------------------------------------
+
+The following properties accept ``ListOrItem`` values:
+
+.. list-table::
+   :widths: 28 52 20
+   :header-rows: 1
+
+   * - Property
+     - Type
+     - Default Value
+   * - ``x_lim``
+     - ``ListOrItem[tuple[float, float] | None]``
+     - ``None``
+   * - ``y_lim``
+     - ``ListOrItem[tuple[float, float] | None]``
+     - ``None``
+   * - ``log_scale_x``
+     - ``ListOrItem[bool]``
+     - ``False``
+   * - ``log_scale_y``
+     - ``ListOrItem[bool]``
+     - ``False``
+   * - ``remove_axes``
+     - ``ListOrItem[bool]``
+     - ``False``
+   * - ``aspect_ratio``
+     - ``ListOrItem[float | Literal["auto", "equal"]]``
+     - ``"auto"``
+   * - ``box_aspect_ratio``
+     - ``ListOrItem[float | None]``
+     - ``None``
+   * - ``remove_x_ticks``
+     - ``ListOrItem[bool]``
+     - ``False``
+   * - ``remove_y_ticks``
+     - ``ListOrItem[bool]``
+     - ``False``
+   * - ``invert_x_axis``
+     - ``ListOrItem[bool]``
+     - ``False``
+   * - ``invert_y_axis``
+     - ``ListOrItem[bool]``
+     - ``False``
+   * - ``reference_labels``
+     - ``ListOrItem[bool]``
+     - ``True``
+   * - ``reference_labels_loc``
+     - ``ListOrItem[Literal["inside", "outside"] | tuple[float, float]]``
+     - ``"outside"``
+   * - ``projection``
+     - ``ListOrItem[Any | None]``
+     - ``None``
+   * - ``legend_loc``
+     - ``ListOrItem[str | tuple | None]``
+     - ``None``
+   * - ``legend_cols``
+     - ``ListOrItem[int]``
+     - ``1``
+   * - ``show_legend``
+     - ``ListOrItem[bool]``
+     - ``True``
+   * - ``show_grid``
+     - ``ListOrItem[bool]``
+     - ``False``
+   * - ``hide_default_legend_elements``
+     - ``ListOrItem[bool]``
+     - ``False``
+
+.. warning::
+    When ``general_legend`` is set to ``True``, legend properties must be provided as single values and cannot be lists, since there is only one legend for the entire figure. If a list is provided, an error will be raised during figure creation. Parameters affected are ``legend_loc``, ``legend_cols``, ``show_legend`` and ``hide_default_legend_elements``. Note that the ``hide_custom_legend_elements`` parameter must always be a single value since it applies to the entire figure.
+
+Examples of Using Lists
+------------------------
+
+Here are practical examples showing how to use lists with these properties:
+
+.. plot::
+    :context: close-figs
+
+    # List of values - each subplot gets different limits
+    fig = gl.SmartFigure(
+        2, 2,
+        x_lim=[(0, 6), (0, 10), (0, 5), (0, 8)],  # Different x limits per subplot
+        y_lim=[(-1.5, 1.5), (-2, 2), (-1, 1), (-3, 3)],  # Different y limits per subplot
+        elements=[curve1]*4
+    )
+    fig.show()
+
+.. plot::
+    :context: close-figs
+
+    # Shortened list - padded with defaults
+    fig = gl.SmartFigure(
+        2, 2,
+        aspect_ratio=["equal", "equal"],  # Only first 2 subplots get equal aspect ratio
+        # Remaining 2 subplots use the default "auto"
+        elements=[curve1]*4
+    )
+    fig.show()
+
+.. plot::
+    :context: close-figs
+
+    # Different log scales per subplot
+    fig = gl.SmartFigure(
+        2, 2,
+        log_scale_x=[False, True, False],  # Last subplot uses default False
+        log_scale_y=[False, False, True, False],
+        elements=[curve1]*4
+    )
+    fig.show()
+
+.. plot::
+    :context: close-figs
+
+    # Different legend configurations per subplot
+    fig = gl.SmartFigure(
+        2, 2,
+        legend_loc=["upper left", "upper right", "lower left", "lower right"],
+        show_legend=[True, True, False, True],  # Hide legend in third subplot
+        elements=[curve1]*4
+    )
+    fig.show()
+
+
 Visual Styling
 ==============
 
@@ -1006,6 +1171,17 @@ Reference labels  are enabled by default:
     )
     fig.show()
 
+.. plot::
+    :context: close-figs
+
+    # Show reference labels on specific subplots
+    fig = gl.SmartFigure(
+        2, 2,
+        reference_labels=[True, True, False, True],  # No label on third subplot
+        elements=[curve1]*4
+    )
+    fig.show()
+
 Reference Label Position
 ------------------------
 
@@ -1029,6 +1205,19 @@ You can control where reference labels are placed using the ``reference_labels_l
     fig = gl.SmartFigure(
         2, 2,
         reference_labels_loc=(0.02, -0.01),  # (x, y) offset in inches
+        elements=[curve1]*4
+    )
+    fig.show()
+
+You can also customize the position per subplot:
+
+.. plot::
+    :context: close-figs
+
+    # Different positions for different subplots
+    fig = gl.SmartFigure(
+        2, 2,
+        reference_labels_loc=["inside", (0.05, -0.01), "inside", "outside"],
         elements=[curve1]*4
     )
     fig.show()
@@ -1351,7 +1540,7 @@ Output:
 
 
 .. note::
-   Twin axes can only be created for single-subplot :class:`~graphinglib.SmartFigure` objects (1x1 grid).
+   Twin axes can only be created for single-subplot :class:`~graphinglib.SmartFigure` objects (1x1 grid). As such, it may be required to use nested :class:`~graphinglib.SmartFigure` objects when working with multi-subplot figures that need twin axes.
 
 
 Projections

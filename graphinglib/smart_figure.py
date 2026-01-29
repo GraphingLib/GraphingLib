@@ -1,6 +1,6 @@
 from __future__ import annotations as _annotations_
 from shutil import which
-from typing import Literal, Any, Self, Callable, Iterable, Iterator
+from typing import Literal, Any, Self, Callable, Iterable, Iterator, TypeVar, Union
 from logging import warning
 from string import ascii_lowercase
 from collections import OrderedDict
@@ -37,6 +37,9 @@ from .legend_artists import (
 
 from numpy.typing import ArrayLike
 
+T = TypeVar("T")
+ListOrItem = Union[T, list[T]]
+
 
 class SmartFigure:
     """
@@ -62,8 +65,9 @@ class SmartFigure:
         Default depends on the ``figure_style`` configuration.
     title : str, optional
         General title of the figure.
-    x_lim, y_lim : tuple[float, float], optional
-        Limits for the x and y axes of the figure.
+    x_lim, y_lim : tuple[float, float] | list[tuple[float, float]], optional
+        Limits for the x and y axes of the figure. This can be given as a single value or a list of values to apply to
+        each subplot.
     sub_x_labels, sub_y_labels : Iterable[str], optional
         Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
         single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
@@ -73,16 +77,19 @@ class SmartFigure:
         allows to set subtitles for each subfigure without needing to create nested
         :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
         each subfigure needs its own subtitle.
-    log_scale_x, log_scale_y : bool, optional
-        Whether to use a logarithmic scale for the x and y axes, respectively.
+    log_scale_x, log_scale_y : bool | list[bool], optional
+        Whether to use a logarithmic scale for the x and y axes, respectively. This can be given as a single value or
+        a list of values to apply to each subplot.
         Defaults to ``False``.
-    remove_axes : bool, optional
-        Whether to remove the axes from the figure.
+    remove_axes : bool | list[bool], optional
+        Whether to remove the axes from the figure. This can be given as a single boolean or a list of booleans to apply
+        to each subplot.
         Defaults to ``False``.
-    aspect_ratio : float | Literal["auto", "equal"], optional
+    aspect_ratio : float | Literal["auto", "equal"] | list[float | Literal["auto", "equal"]], optional
         Aspect ratio of the figure. If set to "auto", the aspect ratio is determined automatically to fill the available
         space. If set to "equal", the aspect ratio is set to 1:1. If set to a float, the aspect ratio represents the
-        ratio of the height to the width of the data.
+        ratio of the height to the width of the data. This can be given as a single value or a list of values to apply
+        to each subplot.
         Defaults to "auto".
 
         .. warning::
@@ -90,23 +97,27 @@ class SmartFigure:
             box containing the elements. The `aspect_ratio` parameter is the aspect ratio of the data itself, which
             does not change the size of the plot but rather how the data is displayed within the plot.
 
-    box_aspect_ratio : float, optional
-        Aspect ratio of the box containing the elements, i.e. the ratio of the height to the width of the plot.
+    box_aspect_ratio : float | list[float], optional
+        Aspect ratio of the box containing the elements, i.e. the ratio of the height to the width of the plot. This can
+        be given as a single value or a list of values to apply to each subplot.
 
         .. warning::
             This parameter must not be confused with the `aspect_ratio` parameter, which is the aspect ratio of the
             data itself. The `box_aspect_ratio` parameter changes the size of the plot, which does not affect the
             figure's axes.
 
-    remove_x_ticks, remove_y_ticks : bool, optional
-        Whether to remove the x and y ticks from the figure, respectively.
+    remove_x_ticks, remove_y_ticks : bool | list[bool], optional
+        Whether to remove the x and y ticks from the figure, respectively. This can be given as a single value or a list
+        of values to apply to each subplot.
         Defaults to ``False``.
-    invert_x_axis, invert_y_axis : bool, optional
-        Whether to invert the x and y axes, respectively.
+    invert_x_axis, invert_y_axis : bool | list[bool], optional
+        Whether to invert the x and y axes, respectively. This can be given as a single value or a list of values to
+        apply to each subplot.
         Defaults to ``False``.
-    reference_labels : bool, optional
+    reference_labels : bool | list[bool], optional
         Whether or not to add reference labels to the subfigures. If set to ``True``, each subfigure will be labeled
-        alphabetically in the form of "a)", "b)", etc.
+        alphabetically in the form of "a)", "b)", etc. This can be given as a single value or a list of values to apply
+        to each subplot.
         Defaults to ``True``.
 
         .. note::
@@ -124,9 +135,10 @@ class SmartFigure:
             As the global reference label is placed more left than the reference label, this forces the horizontal shift
             of the axes, which may lead to overlapping between axes. Consider modifying the `size` or `width_padding`
             parameters to avoid this issue.
-    reference_labels_loc : Literal["inside", "outside"] | tuple[float, float], optional
+    reference_labels_loc : Literal["inside", "outside"] | tuple[float, float] | list, optional
         Location of the reference labels of the SubFigures, which can be either "inside", "outside" or a tuple of
-        (x, y) relative coordinates to the top-left corner of each subfigure.
+        (x, y) relative coordinates to the top-left corner of each subfigure. This can be given as a single value or a
+        list of values to apply to each subplot.
         Defaults to ``"outside"``.
     width_padding, height_padding : float, optional
         Padding between the subfigures in the x and y directions, respectively. The default value of ``None`` results in
@@ -146,9 +158,10 @@ class SmartFigure:
             axes sharing will not be applied to the nested SmartFigure. Instead, the nested SmartFigure will have its
             own axes sharing settings.
 
-    projection : Any, optional
+    projection : Any | list[Any], optional
         Projection type for the subfigures. This can be a string of a matplotlib projection (e.g., "polar") or an object
-        capable of creating a projection (e.g. astropy.wcs.WCS).
+        capable of creating a projection (e.g. astropy.wcs.WCS). This can be given as a single value or a list of values
+        to apply to each subplot.
 
         .. note::
             3D projections are not supported at the moment.
@@ -160,12 +173,13 @@ class SmartFigure:
         However, if a nested SmartFigure sets its general legend to ``True``, it will be created separately and will not
         be added to the parent's general legend.
         Defaults to ``False``.
-    legend_loc : str | tuple, optional
+    legend_loc : str | tuple | list[str | tuple], optional
         Location of the legend. This can be a string (e.g., "upper right") or a tuple of (x, y) relative coordinates.
         The supported string locations are: {"upper right", "upper left", "lower left", "lower right", "right",
         "center left", "center right", "lower center", "upper center", "center", "outside upper center",
         "outside center right", "outside lower center", "outside center left"}. Additionally, only if ``general_legend``
-        is set to ``False``, the legend location can also be set to "best".
+        is set to ``False``, the legend location can also be set to "best". This option can be given as a single value
+        or a list of values to apply to each subplot.
         Defaults to ``"best"`` if ``general_legend`` is set to ``False``, otherwise it defaults to ``"lower center"``.
 
         .. warning::
@@ -174,11 +188,13 @@ class SmartFigure:
             use inline figures in a Jupyter notebook or save the figure to a file to ensure proper display of the
             legend outside the figure.
 
-    legend_cols : int, optional
-        Number of columns to display the labels in the legend. This is only used if the legend is displayed.
+    legend_cols : int | list[int], optional
+        Number of columns to display the labels in the legend. This is only used if the legend is displayed. This can be
+        given as a single value or a list of values to apply to each subplot.
         Defaults to ``1``.
-    show_legend : bool, optional
-        Whether to show the legend for the figure. This allows to easily toggle the visibility of the legend.
+    show_legend : bool | list[bool], optional
+        Whether to show the legend for the figure. This allows to easily toggle the visibility of the legend. This can
+        be given as a single value or a list of values to apply to each subplot.
         Defaults to ``True``.
     twin_x_axis, twin_y_axis : SmartTwinAxis, optional
         Twin axes for the x and y axes, respectively. This allows to attach additional axes to the main axes of the
@@ -219,34 +235,34 @@ class SmartFigure:
         y_label: str | None = None,
         size: tuple[float, float] | Literal["default"] = "default",
         title: str | None = None,
-        x_lim: tuple[float, float] | None = None,
-        y_lim: tuple[float, float] | None = None,
+        x_lim: ListOrItem[tuple[float, float] | None] = None,
+        y_lim: ListOrItem[tuple[float, float] | None] = None,
         sub_x_labels: Iterable[str] | None = None,
         sub_y_labels: Iterable[str] | None = None,
         subtitles: Iterable[str] | None = None,
-        log_scale_x: bool = False,
-        log_scale_y: bool = False,
-        remove_axes: bool = False,
-        aspect_ratio: float | Literal["auto", "equal"] = "auto",
-        box_aspect_ratio: float | None = None,
-        remove_x_ticks: bool = False,
-        remove_y_ticks: bool = False,
-        invert_x_axis: bool = False,
-        invert_y_axis: bool = False,
-        reference_labels: bool = True,
+        log_scale_x: ListOrItem[bool] = False,
+        log_scale_y: ListOrItem[bool] = False,
+        remove_axes: ListOrItem[bool] = False,
+        aspect_ratio: ListOrItem[float | Literal["auto", "equal"]] = "auto",
+        box_aspect_ratio: ListOrItem[float | None] = None,
+        remove_x_ticks: ListOrItem[bool] = False,
+        remove_y_ticks: ListOrItem[bool] = False,
+        invert_x_axis: ListOrItem[bool] = False,
+        invert_y_axis: ListOrItem[bool] = False,
+        reference_labels: ListOrItem[bool] = True,
         global_reference_label: bool = False,
-        reference_labels_loc: Literal["inside", "outside"] | tuple[float, float] = "outside",
+        reference_labels_loc: ListOrItem[Literal["inside", "outside"] | tuple[float, float]] = "outside",
         width_padding: float = None,
         height_padding: float = None,
         width_ratios: ArrayLike = None,
         height_ratios: ArrayLike = None,
         share_x: bool = False,
         share_y: bool = False,
-        projection: Any | None = None,
+        projection: ListOrItem[Any | None] = None,
         general_legend: bool = False,
-        legend_loc: str | tuple | None = None,
-        legend_cols: int = 1,
-        show_legend: bool = True,
+        legend_loc: ListOrItem[str | tuple | None] = None,
+        legend_cols: ListOrItem[int] = 1,
+        show_legend: ListOrItem[bool] = True,
         twin_x_axis: SmartTwinAxis | None = None,
         twin_y_axis: SmartTwinAxis | None = None,
         figure_style: str = "default",
@@ -313,6 +329,7 @@ class SmartFigure:
         self._hidden_spines = None
         self._user_rc_dict = {}
         self._default_params = {}
+        self._subplot_p = {}  # used to store the ListOrItem parameters that can be different for each subplot
 
     @property
     def num_rows(self) -> int:
@@ -407,29 +424,31 @@ class SmartFigure:
         self._title = value
 
     @property
-    def x_lim(self) -> tuple[float, float] | None:
+    def x_lim(self) -> ListOrItem[tuple[float, float] | None]:
         return self._x_lim
 
     @x_lim.setter
-    def x_lim(self, value: tuple[float, float] | None) -> None:
-        if value is not None:
-            if not isinstance(value, tuple):
-                raise TypeError("x_lim must be a tuple.")
-            if len(value) != 2:
-                raise ValueError("x_lim must be a tuple of length 2.")
+    def x_lim(self, value: ListOrItem[tuple[float, float] | None]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if v is not None:
+                if not isinstance(v, tuple):
+                    raise TypeError("x_lim must be a tuple.")
+                if len(v) != 2:
+                    raise ValueError("x_lim must be a tuple of length 2.")
         self._x_lim = value
 
     @property
-    def y_lim(self) -> tuple[float, float] | None:
+    def y_lim(self) -> ListOrItem[tuple[float, float] | None]:
         return self._y_lim
 
     @y_lim.setter
-    def y_lim(self, value: tuple[float, float] | None) -> None:
-        if value is not None:
-            if not isinstance(value, tuple):
-                raise TypeError("y_lim must be a tuple.")
-            if len(value) != 2:
-                raise ValueError("y_lim must be a tuple of length 2.")
+    def y_lim(self, value: ListOrItem[tuple[float, float] | None]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if v is not None:
+                if not isinstance(v, tuple):
+                    raise TypeError("y_lim must be a tuple.")
+                if len(v) != 2:
+                    raise ValueError("y_lim must be a tuple of length 2.")
         self._y_lim = value
 
     @property
@@ -466,108 +485,118 @@ class SmartFigure:
         self._subtitles = value
 
     @property
-    def log_scale_x(self) -> bool:
+    def log_scale_x(self) -> ListOrItem[bool]:
         return self._log_scale_x
 
     @log_scale_x.setter
-    def log_scale_x(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise TypeError("log_scale_x must be a bool.")
+    def log_scale_x(self, value: ListOrItem[bool]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, bool):
+                raise TypeError("log_scale_x must be a bool.")
         self._log_scale_x = value
 
     @property
-    def log_scale_y(self) -> bool:
+    def log_scale_y(self) -> ListOrItem[bool]:
         return self._log_scale_y
 
     @log_scale_y.setter
-    def log_scale_y(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise TypeError("log_scale_y must be a bool.")
+    def log_scale_y(self, value: ListOrItem[bool]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, bool):
+                raise TypeError("log_scale_y must be a bool.")
         self._log_scale_y = value
 
     @property
-    def remove_axes(self) -> bool:
+    def remove_axes(self) -> ListOrItem[bool]:
         return self._remove_axes
 
     @remove_axes.setter
-    def remove_axes(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise TypeError("remove_axes must be a bool.")
+    def remove_axes(self, value: ListOrItem[bool]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, bool):
+                raise TypeError("remove_axes must be a bool.")
         self._remove_axes = value
 
     @property
-    def aspect_ratio(self) -> float | Literal["auto", "equal"]:
+    def aspect_ratio(self) -> ListOrItem[float | Literal["auto", "equal"]]:
         return self._aspect_ratio
 
     @aspect_ratio.setter
-    def aspect_ratio(self, value: float | Literal["auto", "equal"]) -> None:
-        if not isinstance(value, (float, int)) and value != "auto" and value != "equal":
-            raise TypeError("aspect_ratio must be a float, 'auto' or 'equal'.")
-        if isinstance(value, (float, int)) and value <= 0:
-            raise ValueError("aspect_ratio must be greater than 0.")
+    def aspect_ratio(self, value: ListOrItem[float | Literal["auto", "equal"]]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, (float, int)) and v != "auto" and v != "equal":
+                raise TypeError("aspect_ratio must be a float, 'auto' or 'equal'.")
+            if isinstance(v, (float, int)) and v <= 0:
+                raise ValueError("aspect_ratio must be greater than 0.")
         self._aspect_ratio = value
 
     @property
-    def box_aspect_ratio(self) -> float | None:
+    def box_aspect_ratio(self) -> ListOrItem[float | None]:
         return self._box_aspect_ratio
 
     @box_aspect_ratio.setter
-    def box_aspect_ratio(self, value: float | None) -> None:
-        if value is not None:
-            if not isinstance(value, (float, int)):
-                raise TypeError("box_aspect_ratio must be a number.")
-            if value <= 0:
-                raise ValueError("box_aspect_ratio must be greater than 0.")
+    def box_aspect_ratio(self, value: ListOrItem[float | None]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if v is not None:
+                if not isinstance(v, (float, int)):
+                    raise TypeError("box_aspect_ratio must be a number.")
+                if v <= 0:
+                    raise ValueError("box_aspect_ratio must be greater than 0.")
         self._box_aspect_ratio = value
 
     @property
-    def remove_x_ticks(self) -> bool:
+    def remove_x_ticks(self) -> ListOrItem[bool]:
         return self._remove_x_ticks
 
     @remove_x_ticks.setter
-    def remove_x_ticks(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise TypeError("remove_x_ticks must be a bool.")
+    def remove_x_ticks(self, value: ListOrItem[bool]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, bool):
+                raise TypeError("remove_x_ticks must be a bool.")
         self._remove_x_ticks = value
 
     @property
-    def remove_y_ticks(self) -> bool:
+    def remove_y_ticks(self) -> ListOrItem[bool]:
         return self._remove_y_ticks
 
     @remove_y_ticks.setter
-    def remove_y_ticks(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise TypeError("remove_y_ticks must be a bool.")
+    def remove_y_ticks(self, value: ListOrItem[bool]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, bool):
+                raise TypeError("remove_y_ticks must be a bool.")
         self._remove_y_ticks = value
 
     @property
-    def invert_x_axis(self) -> bool:
+    def invert_x_axis(self) -> ListOrItem[bool]:
         return self._invert_x_axis
 
     @invert_x_axis.setter
-    def invert_x_axis(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise TypeError("invert_x_axis must be a bool.")
+    def invert_x_axis(self, value: ListOrItem[bool]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, bool):
+                raise TypeError("invert_x_axis must be a bool.")
         self._invert_x_axis = value
 
     @property
-    def invert_y_axis(self) -> bool:
+    def invert_y_axis(self) -> ListOrItem[bool]:
         return self._invert_y_axis
 
     @invert_y_axis.setter
-    def invert_y_axis(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise TypeError("invert_y_axis must be a bool.")
+    def invert_y_axis(self, value: ListOrItem[bool]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, bool):
+                raise TypeError("invert_y_axis must be a bool.")
         self._invert_y_axis = value
 
     @property
-    def reference_labels(self) -> bool:
+    def reference_labels(self) -> ListOrItem[bool]:
         return self._reference_labels
 
     @reference_labels.setter
-    def reference_labels(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise TypeError("reference_labels must be a bool.")
+    def reference_labels(self, value: ListOrItem[bool]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, bool):
+                raise TypeError("reference_labels must be a bool.")
         self._reference_labels = value
 
     @property
@@ -581,16 +610,17 @@ class SmartFigure:
         self._global_reference_label = value
 
     @property
-    def reference_labels_loc(self) -> Literal["inside", "outside"] | tuple[float, float]:
+    def reference_labels_loc(self) -> ListOrItem[Literal["inside", "outside"] | tuple[float, float]]:
         return self._reference_labels_loc
 
     @reference_labels_loc.setter
-    def reference_labels_loc(self, value: Literal["inside", "outside"] | tuple[float, float]) -> None:
-        if isinstance(value, tuple):
-            if len(value) != 2:
-                raise ValueError("If reference_labels_loc is a tuple, it must be of length 2.")
-        elif value not in ["inside", "outside"]:
-            raise ValueError("reference_labels_loc must be either 'inside' or 'outside'.")
+    def reference_labels_loc(self, value: ListOrItem[Literal["inside", "outside"] | tuple[float, float]]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if isinstance(v, tuple):
+                if len(v) != 2:
+                    raise ValueError("If reference_labels_loc is a tuple, it must be of length 2.")
+            elif v not in ["inside", "outside"]:
+                raise ValueError("reference_labels_loc must be either 'inside' or 'outside'.")
         self._reference_labels_loc = value
 
     @property
@@ -670,22 +700,23 @@ class SmartFigure:
         self._share_y = value
 
     @property
-    def projection(self) -> Any | None:
+    def projection(self) -> ListOrItem[Any | None]:
         return self._projection
 
     @projection.setter
-    def projection(self, value: Any | None) -> None:
-        if value is not None:
-            valid_projections = get_projection_names()
-            if "3d" in valid_projections:
-                valid_projections.remove("3d")
-            if isinstance(value, str):
-                if value == "3d":
-                    raise GraphingException("3D projection is not supported.")
-                if value not in valid_projections:
-                    raise ValueError(f"projection must be one of {valid_projections} or a valid object.")
-            elif isinstance(value, WCS):
-                raise GraphingException("WCS projection should be used with the SmartFigureWCS object.")
+    def projection(self, value: ListOrItem[Any | None]) -> None:
+        valid_projections = get_projection_names()
+        if "3d" in valid_projections:
+            valid_projections.remove("3d")
+        for v in value if isinstance(value, list) else [value]:
+            if v is not None:
+                if isinstance(v, str):
+                    if v == "3d":
+                        raise GraphingException("3D projection is not supported.")
+                    if v not in valid_projections:
+                        raise ValueError(f"projection must be one of {valid_projections} or a valid object.")
+                elif isinstance(v, WCS):
+                    raise GraphingException("WCS projection should be used with the SmartFigureWCS object.")
         self._projection = value
 
     @property
@@ -699,47 +730,50 @@ class SmartFigure:
         self._general_legend = value
 
     @property
-    def legend_loc(self) -> str | tuple | None:
+    def legend_loc(self) -> ListOrItem[str | tuple | None]:
         return self._legend_loc
 
     @legend_loc.setter
-    def legend_loc(self, value: str | tuple | None) -> None:
-        if value is not None:
-            if isinstance(value, str):
-                choices = ["best", "upper right", "upper left", "lower left", "lower right", "right", "center left",
-                           "center right", "lower center", "upper center", "center", "outside upper center",
-                           "outside center right", "outside lower center", "outside center left"]
-                if value not in choices:
-                    raise ValueError(f"legend_loc must be one of {choices}.")
-                if self._general_legend and value == "best":
-                    raise ValueError("legend_loc cannot be 'best' when general_legend is True.")
-            elif isinstance(value, tuple):
-                if len(value) != 2:
-                    raise ValueError("legend_loc must be a string or a tuple of length 2.")
-            else:
-                raise TypeError("legend_loc must be a string or tuple.")
+    def legend_loc(self, value: ListOrItem[str | tuple | None]) -> None:
+        choices = ["best", "upper right", "upper left", "lower left", "lower right", "right", "center left",
+                    "center right", "lower center", "upper center", "center", "outside upper center",
+                    "outside center right", "outside lower center", "outside center left"]
+        for v in value if isinstance(value, list) else [value]:
+            if v is not None:
+                if isinstance(v, str):
+                    if v not in choices:
+                        raise ValueError(f"legend_loc must be one of {choices}.")
+                    if self._general_legend and v == "best":
+                        raise ValueError("legend_loc cannot be 'best' when general_legend is True.")
+                elif isinstance(v, tuple):
+                    if len(v) != 2:
+                        raise ValueError("legend_loc must be a string or a tuple of length 2.")
+                else:
+                    raise TypeError("legend_loc must be a string or tuple.")
         self._legend_loc = value
 
     @property
-    def legend_cols(self) -> int:
+    def legend_cols(self) -> ListOrItem[int]:
         return self._legend_cols
 
     @legend_cols.setter
-    def legend_cols(self, value: int) -> None:
-        if not isinstance(value, int):
-            raise TypeError("legend_cols must be an integer.")
-        if value < 1:
-            raise ValueError("legend_cols must be greater than 0.")
+    def legend_cols(self, value: ListOrItem[int]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, int):
+                raise TypeError("legend_cols must be an integer.")
+            if v < 1:
+                raise ValueError("legend_cols must be greater than 0.")
         self._legend_cols = value
 
     @property
-    def show_legend(self) -> bool:
+    def show_legend(self) -> ListOrItem[bool]:
         return self._show_legend
 
     @show_legend.setter
-    def show_legend(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise TypeError("show_legend must be a bool.")
+    def show_legend(self, value: ListOrItem[bool]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, bool):
+                raise TypeError("show_legend must be a bool.")
         self._show_legend = value
 
     @property
@@ -810,7 +844,7 @@ class SmartFigure:
         self._annotations = value
 
     @property
-    def show_grid(self) -> bool:
+    def show_grid(self) -> ListOrItem[bool]:
         """
         Whether to show the grid lines on the figure. A grid first needs to be created using the
         :meth: `~graphinglib.SmartFigure.set_grid` method. This can be used to easily toggle the visibility of a
@@ -819,9 +853,10 @@ class SmartFigure:
         return self._show_grid
 
     @show_grid.setter
-    def show_grid(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise TypeError("show_grid must be a bool.")
+    def show_grid(self, value: ListOrItem[bool]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, bool):
+                raise TypeError("show_grid must be a bool.")
         self._show_grid = value
 
     @property
@@ -833,6 +868,11 @@ class SmartFigure:
         legend elements will be hidden even if the parent SmartFigure attempts to create a general legend. However, both
         the nested and parent SmartFigures need to set this property to False to display the custom elements of a nested
         SmartFigure in a global general legend.
+
+        .. note::
+            Custom legend elements can only be plotted if the :attr:`~graphinglib.SmartFigure.general_legend` property
+            is set to ``True`` or if the SmartFigure is a single subplot. This is because custom legend elements are
+            associated with the figure as a whole, and not with individual subplots.
         """
         return self._hide_custom_legend_elements
 
@@ -843,7 +883,7 @@ class SmartFigure:
         self._hide_custom_legend_elements = value
 
     @property
-    def hide_default_legend_elements(self) -> bool:
+    def hide_default_legend_elements(self) -> ListOrItem[bool]:
         """
         Whether to hide default legend elements. This is useful if a custom legend was previously created using the
         :meth:`~graphinglib.SmartFigure.set_custom_legend` method and you want to hide the default labels created with
@@ -860,9 +900,10 @@ class SmartFigure:
         return self._hide_default_legend_elements
 
     @hide_default_legend_elements.setter
-    def hide_default_legend_elements(self, value: bool) -> None:
-        if not isinstance(value, bool):
-            raise TypeError("hide_default_legend_elements must be a bool.")
+    def hide_default_legend_elements(self, value: ListOrItem[bool]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, bool):
+                raise TypeError("hide_default_legend_elements must be a bool.")
         self._hide_default_legend_elements = value
 
     @property
@@ -879,7 +920,7 @@ class SmartFigure:
 
     def __len__(self) -> int:
         """
-        Gives the number of elements in the :class:`~graphinglib.SmartFigure`.
+        Gives the number of non-empty subplots in the :class:`~graphinglib.SmartFigure`.
         """
         return len(self._elements)
 
@@ -1446,6 +1487,23 @@ class SmartFigure:
             if value is not None and len(value) != num_subplots:
                 raise GraphingException(f"Number of {param} must be equal to the number of subplots.")
 
+        # Verify that all legend properties are single values when a general legend is requested
+        if self._general_legend:
+            legend_params = {
+                "show_legend": self._show_legend,
+                "legend_cols": self._legend_cols,
+                "legend_loc": self._legend_loc,
+                "hide_default_legend_elements": self._hide_default_legend_elements,
+            }
+            for param_name, param_value in legend_params.items():
+                if isinstance(param_value, list):
+                    raise GraphingException(
+                        f"When using a general legend, the '{param_name}' property must be a single value, not a list."
+                    )
+
+        # Get the normalized list or item parameter dict
+        self._fill_per_subplot_params()
+
         cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
         num_cycle_colors = len(cycle_colors)
         subtitles_pad = self._pad_params.get("subtitles_pad")
@@ -1516,7 +1574,7 @@ class SmartFigure:
                 ax = subfig.add_subplot(
                     sharex=ax if self._share_x else None,  # This enables the coherent zoom and pan of the axes
                     sharey=ax if self._share_y else None,  # but it does not remove the ticklabels
-                    projection=self._projection,
+                    projection=self._subplot_p["projection"][subplot_i],
                 )
 
                 # Plotting loop
@@ -1542,37 +1600,38 @@ class SmartFigure:
                         z_order += 5
 
                 # Add reference label
-                if self._reference_labels and (len(self) > 1 or isinstance(self._figure, SubFigure)):
-                    self._create_reference_label(ax)
+                if (self._subplot_p["reference_labels"][subplot_i]
+                    and (len(self) > 1 or isinstance(self._figure, SubFigure))):
+                    self._create_reference_label(ax, subplot_i)
 
                 # Axes limits
-                if self._x_lim:
-                    ax.set_xlim(*self._x_lim)
-                if self._y_lim:
-                    ax.set_ylim(*self._y_lim)
+                if self._subplot_p["x_lim"][subplot_i]:
+                    ax.set_xlim(*self._subplot_p["x_lim"][subplot_i])
+                if self._subplot_p["y_lim"][subplot_i]:
+                    ax.set_ylim(*self._subplot_p["y_lim"][subplot_i])
 
                 # Logarithmic scale
-                if self._log_scale_x:
+                if self._subplot_p["log_scale_x"][subplot_i]:
                     ax.set_xscale("log")
-                if self._log_scale_y:
+                if self._subplot_p["log_scale_y"][subplot_i]:
                     ax.set_yscale("log")
 
                 # Remove axes
-                if self._remove_axes:
+                if self._subplot_p["remove_axes"][subplot_i]:
                     ax.axis("off")
 
-                ax.set_aspect(self._aspect_ratio)
-                ax.set_box_aspect(self._box_aspect_ratio)
+                ax.set_aspect(self._subplot_p["aspect_ratio"][subplot_i])
+                ax.set_box_aspect(self._subplot_p["box_aspect_ratio"][subplot_i])
                 ax.set_axisbelow(False)  # ensure grid and ticks are above other elements
 
                 # Invert axes
                 # When axes are shared, check if already inverted to avoid double-toggling
-                if self._invert_x_axis and not ax.xaxis_inverted():
+                if self._subplot_p["invert_x_axis"][subplot_i] and not ax.xaxis_inverted():
                     ax.invert_xaxis()
-                if self._invert_y_axis and not ax.yaxis_inverted():
+                if self._subplot_p["invert_y_axis"][subplot_i] and not ax.yaxis_inverted():
                     ax.invert_yaxis()
 
-                self._customize_ticks(ax)
+                self._customize_ticks(ax, subplot_i)
 
                 # If axes are shared, manually remove ticklabels from unnecessary plots as it is not done automatically
                 # when adding subplots
@@ -1588,7 +1647,7 @@ class SmartFigure:
                         ax.tick_params(axis="y", labelright=False)
 
                 # Customize grid
-                if self._show_grid:
+                if self._subplot_p["show_grid"][subplot_i]:
                     ax.grid(self._grid.get("visible_x"), which=self._grid.get("which_x"), axis="x")
                     ax.grid(self._grid.get("visible_y"), which=self._grid.get("which_y"), axis="y")
 
@@ -1629,10 +1688,10 @@ class SmartFigure:
                         twin_axis._default_params = {}
 
                 # Axes legend
+                if self._subplot_p["hide_default_legend_elements"][subplot_i]:
+                    default_labels = []
+                    default_handles = []
                 if not self._general_legend and make_legend:
-                    if self._hide_default_legend_elements:
-                        default_labels = []
-                        default_handles = []
                     if self.is_single_subplot:
                         custom_labels += self._custom_legend_labels
                         custom_handles += self._custom_legend_handles
@@ -1642,8 +1701,8 @@ class SmartFigure:
                     labels = default_labels + custom_labels
                     handles = default_handles + custom_handles
 
-                    if self._show_legend and labels:
-                        legend_params = self._get_legend_params(labels, handles, -0.1)
+                    if self._subplot_p["show_legend"][subplot_i] and labels:
+                        legend_params = self._get_legend_params(labels, handles, -0.1, subplot_i)
                         # Set legend_ax to the uppermost drawn axis to avoid overlapping with any elements
                         if self._twin_y_axis is not None:
                             legend_ax = self._twin_y_axis._axes
@@ -1699,19 +1758,17 @@ class SmartFigure:
                 annotation._plot_element(self._figure, z_order)
                 z_order += 5
 
-        # General legend
-        custom_labels += self._custom_legend_labels
-        custom_handles += self._custom_legend_handles
-        if self._hide_default_legend_elements:
-            default_labels = []
-            default_handles = []
+        # Legend parameters
         if self._hide_custom_legend_elements:
             custom_labels = []
             custom_handles = []
-        labels = default_labels + custom_labels
-        handles = default_handles + custom_handles
-        if self._general_legend and labels:  # making a general legend is priorized over make_legend=False
-            if self._show_legend:
+        else:
+            custom_labels += self._custom_legend_labels
+            custom_handles += self._custom_legend_handles
+        if self._general_legend:  # making a general legend is priorized over make_legend=False
+            labels = default_labels + custom_labels
+            handles = default_handles + custom_handles
+            if labels and self._show_legend:
                 legend_params = self._get_legend_params(labels, handles, 0)
                 try:
                     _legend = self._figure.legend(
@@ -1732,7 +1789,56 @@ class SmartFigure:
                 "labels": {"default": default_labels, "custom": custom_labels},
                 "handles": {"default": default_handles, "custom": custom_handles},
             }
+        self._subplot_p = {}  # clear the ListOrItem subplot parameters to free memory
         return legend_info
+
+    def _fill_per_subplot_params(self) -> dict[str, Any]:
+        """
+        Fills the _subplot_p dictionary with parameters that can be broadcasted to all subplots in the
+        :class:`~graphinglib.SmartFigure`. If a parameter is given as a single value, it is broadcasted to all subplots.
+        If it is given as a list, its length must not exceed the number of non-empty subplots. Shorter lists are padded
+        using the default value for that parameter.
+        """
+        self_length = len(self)
+        blank_figure = SmartFigure()  # create a blank SmartFigure to get the default parameter values
+        subplot_p = {
+            "x_lim": blank_figure._x_lim,
+            "y_lim": blank_figure._y_lim,
+            "log_scale_x": blank_figure._log_scale_x,
+            "log_scale_y": blank_figure._log_scale_y,
+            "remove_axes": blank_figure._remove_axes,
+            "aspect_ratio": blank_figure._aspect_ratio,
+            "box_aspect_ratio": blank_figure._box_aspect_ratio,
+            "remove_x_ticks": blank_figure._remove_x_ticks,
+            "remove_y_ticks": blank_figure._remove_y_ticks,
+            "invert_x_axis": blank_figure._invert_x_axis,
+            "invert_y_axis": blank_figure._invert_y_axis,
+            "reference_labels": blank_figure._reference_labels,
+            "reference_labels_loc": blank_figure._reference_labels_loc,
+            "projection": blank_figure._projection,
+            "legend_loc": blank_figure._legend_loc,
+            "legend_cols": blank_figure._legend_cols,
+            "show_legend": blank_figure._show_legend,
+            "show_grid": blank_figure._show_grid,
+            "hide_default_legend_elements": blank_figure._hide_default_legend_elements,
+        }
+
+        for param, default_value in subplot_p.items():
+            value = getattr(self, f"_{param}")
+            if isinstance(value, list):
+                if len(value) > self_length:
+                    raise GraphingException(
+                        f"Number of {param} values ({len(value)}) must not exceed the number of non-empty subplots "
+                        f"({self_length})."
+                    )
+                elif len(value) < self_length:
+                    # Pad the list with default values to reach the number of non-empty subplots
+                    subplot_p[param] = value + [default_value] * (self_length - len(value))
+                else:
+                    subplot_p[param] = value
+            else:
+                subplot_p[param] = [value] * self_length
+        self._subplot_p = subplot_p
 
     def _get_all_axes_recursive(self, figure_or_subfigure: Figure | SubFigure) -> list[Axes]:
         """
@@ -1815,6 +1921,7 @@ class SmartFigure:
     def _customize_ticks(
         self,
         ax: Axes,
+        subplot_i: int,
     ) -> None:
         """
         Customizes the ticks of the specified Axes according to the SmartFigure's tick parameters. This method is useful
@@ -1853,9 +1960,9 @@ class SmartFigure:
             )
 
         # Remove ticks
-        if self._remove_x_ticks:
+        if self._subplot_p["remove_x_ticks"][subplot_i]:
             ax.tick_params("x", which="both", labelbottom=False, labeltop=False, bottom=False, top=False)
-        if self._remove_y_ticks:
+        if self._subplot_p["remove_y_ticks"][subplot_i]:
             ax.tick_params("y", which="both", labelleft=False, labelright=False, left=False, right=False)
 
     def _customize_ax_label(
@@ -1883,7 +1990,8 @@ class SmartFigure:
 
     def _create_reference_label(
         self,
-        target: Axes | Figure | SubFigure
+        target: Axes | Figure | SubFigure,
+        subplot_i: int | None = None,
     ) -> None:
         """
         Creates a reference label for the specified target (either an Axes, Figure or SubFigure). The label is
@@ -1903,7 +2011,7 @@ class SmartFigure:
             x=0,
             y=1,
             s=formatted_letter,
-            transform=trans + self._get_reference_label_translation(target),
+            transform=trans + self._get_reference_label_translation(target, subplot_i),
             color=reflabel_params.get("color"),
             fontsize=reflabel_params.get("font_size"),
             fontweight=reflabel_params.get("font_weight"),
@@ -1913,17 +2021,19 @@ class SmartFigure:
     def _get_reference_label_translation(
         self,
         target: Axes | Figure | SubFigure,
+        subplot_i: int | None = None,
     ) -> ScaledTranslation:
         """
         Gives the translation to apply to the reference label to position it correctly relative to an Axes, Figure or
         SubFigure. The translation varies depending on the location of the reference label.
         """
         if isinstance(target, Axes):
-            if isinstance(self._reference_labels_loc, tuple):
-                return ScaledTranslation(*self.reference_labels_loc, self._figure.dpi_scale_trans)
-            elif self._reference_labels_loc == "outside":
+            reflabel_loc = self._subplot_p["reference_labels_loc"][subplot_i]
+            if isinstance(reflabel_loc, tuple):
+                return ScaledTranslation(*reflabel_loc, self._figure.dpi_scale_trans)
+            elif reflabel_loc == "outside":
                 return ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
-            elif self._reference_labels_loc == "inside":
+            elif reflabel_loc == "inside":
                 return ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
             else:
                 raise ValueError("Invalid reference label location. Please specify either 'inside' or 'outside'.")
@@ -1938,6 +2048,7 @@ class SmartFigure:
         labels: list[str],
         handles: list[Any],
         outside_lower_center_y_offset: float,
+        subplot_i: int = 0,
     ) -> dict[str, Any]:
         """
         Gives the parameters to use for the legend. The parameters are set according to the specified ``figure_style``
@@ -1954,6 +2065,11 @@ class SmartFigure:
             position the legend outside of the figure and to make it not overlap the ``x_label`` at the bottom. This
             parameter is useful as the vertical offset for the "outside lower center" location is not the same
             depending on if the legend is created for an Axes or a SubFigure.
+        subplot_i : int, optional
+            The index of the subplot for which the legend is being created. This is used to access the per-subplot
+            legend parameters. If no value is given (e.g. when creating a general legend), the _subplot_p dict should
+            contain only the same value and the first subplot's parameters are used for simplicity.
+            Defaults to ``0``.
 
         Returns
         -------
@@ -1970,15 +2086,16 @@ class SmartFigure:
                 LineCollection: HandlerMultipleLines(),
                 VerticalLineCollection: HandlerMultipleVerticalLines(),
             },
-            "ncols" : self._legend_cols,
+            "ncols" : self._subplot_p["legend_cols"][subplot_i],
         }
-        if self._legend_loc is None:
+        legend_loc = self._subplot_p["legend_loc"][subplot_i]
+        if legend_loc is None:
             if self._general_legend:
                 legend_params.update({"loc": "lower center"})
             else:
                 legend_params.update({"loc": "best"})
         else:
-            if "outside" in self._legend_loc:
+            if "outside" in legend_loc:
                 outside_coords = {
                     "outside upper center": (0.5, 1),
                     "outside center right": (1, 0.5),
@@ -1992,11 +2109,11 @@ class SmartFigure:
                     "outside center left": "center right",
                 }
                 legend_params.update({
-                    "loc": outside_keyword[self._legend_loc],
-                    "bbox_to_anchor": outside_coords[self._legend_loc],
+                    "loc": outside_keyword[legend_loc],
+                    "bbox_to_anchor": outside_coords[legend_loc],
                 })
             else:
-                legend_params.update({"loc": self._legend_loc})
+                legend_params.update({"loc": legend_loc})
         return legend_params
 
     def _fill_in_missing_params(self, element: SmartFigure | Plottable) -> list[str]:
@@ -2477,10 +2594,10 @@ class SmartFigure:
         reset: bool = False,
     ) -> Self:
         """
-        Sets a custom legend for the figure. If the SmartFigure contains multiple subfigures, custom legends only work
-        if the ``general_legend`` parameter is set to ``True``. Otherwise, custom legends can be added for non-general
-        legends if the SmartFigure is a single subplot (see the :attr:`~graphinglib.SmartFigure.is_single_subplot`
-        property).
+        Sets a custom legend for the figure. If the SmartFigure contains multiple subplots, **custom legends only**
+        **work if the ``general_legend`` parameter is set to ``True``**. Otherwise, custom legends can be added for
+        non-general legends if the SmartFigure is a single subplot (see the
+        :attr:`~graphinglib.SmartFigure.is_single_subplot` property).
 
         .. note::
             The visibility of default or custom legend elements can be controlled individually with the
@@ -2706,9 +2823,10 @@ class SmartFigureWCS(SmartFigure):
 
     Parameters
     ----------
-    projection : WCS
+    projection : WCS | list[WCS]
         The `World Coordinate System (WCS) <https://docs.astropy.org/en/stable/wcs/index.html>`_ object to use for the
         figure. This is used to plot data in a coordinate system that is not Cartesian, such as celestial coordinates.
+        This can be given as a single WCS object or a list of WCS objects to apply to each subplot.
     num_rows, num_cols : int, optional
         Number of rows and columns for the base grid. These parameters determine the number of "squares" on which the
         plots can be placed.
@@ -2721,8 +2839,9 @@ class SmartFigureWCS(SmartFigure):
         Default depends on the ``figure_style`` configuration.
     title : str, optional
         General title of the figure.
-    x_lim, y_lim : tuple[float, float], optional
-        Limits for the x and y axes of the figure.
+    x_lim, y_lim : tuple[float, float] | list[tuple[float, float]], optional
+        Limits for the x and y axes of the figure. This can be given as a single value or a list of values to apply to
+        each subplot.
     sub_x_labels, sub_y_labels : Iterable[str], optional
         Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
         single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
@@ -2732,16 +2851,19 @@ class SmartFigureWCS(SmartFigure):
         allows to set subtitles for each subfigure without needing to create nested
         :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
         each subfigure needs its own subtitle.
-    log_scale_x, log_scale_y : bool, optional
-        Whether to use a logarithmic scale for the x and y axes, respectively.
+    log_scale_x, log_scale_y : bool | list[bool], optional
+        Whether to use a logarithmic scale for the x and y axes, respectively. This can be given as a single value or
+        a list of values to apply to each subplot.
         Defaults to ``False``.
-    remove_axes : bool, optional
-        Whether to remove the axes from the figure.
+    remove_axes : bool | list[bool], optional
+        Whether to remove the axes from the figure. This can be given as a single boolean or a list of booleans to apply
+        to each subplot.
         Defaults to ``False``.
-    aspect_ratio : float | Literal["auto", "equal"], optional
+    aspect_ratio : float | Literal["auto", "equal"] | list[float | Literal["auto", "equal"]], optional
         Aspect ratio of the figure. If set to "auto", the aspect ratio is determined automatically to fill the available
         space. If set to "equal", the aspect ratio is set to 1:1. If set to a float, the aspect ratio represents the
-        ratio of the height to the width of the data.
+        ratio of the height to the width of the data. This can be given as a single value or a list of values to apply
+        to each subplot.
         Defaults to "auto".
 
         .. warning::
@@ -2749,23 +2871,27 @@ class SmartFigureWCS(SmartFigure):
             box containing the elements. The `aspect_ratio` parameter is the aspect ratio of the data itself, which
             does not change the size of the plot but rather how the data is displayed within the plot.
 
-    box_aspect_ratio : float, optional
-        Aspect ratio of the box containing the elements, i.e. the ratio of the height to the width of the plot.
+    box_aspect_ratio : float | list[float], optional
+        Aspect ratio of the box containing the elements, i.e. the ratio of the height to the width of the plot. This can
+        be given as a single value or a list of values to apply to each subplot.
 
         .. warning::
             This parameter must not be confused with the `aspect_ratio` parameter, which is the aspect ratio of the
             data itself. The `box_aspect_ratio` parameter changes the size of the plot, which does not affect the
             figure's axes.
 
-    remove_x_ticks, remove_y_ticks : bool, optional
-        Whether to remove the x and y ticks from the figure, respectively.
+    remove_x_ticks, remove_y_ticks : bool | list[bool], optional
+        Whether to remove the x and y ticks from the figure, respectively. This can be given as a single value or a list
+        of values to apply to each subplot.
         Defaults to ``False``.
-    invert_x_axis, invert_y_axis : bool, optional
-        Whether to invert the x and y axes, respectively.
+    invert_x_axis, invert_y_axis : bool | list[bool], optional
+        Whether to invert the x and y axes, respectively. This can be given as a single value or a list of values to
+        apply to each subplot.
         Defaults to ``False``.
-    reference_labels : bool, optional
+    reference_labels : bool | list[bool], optional
         Whether or not to add reference labels to the subfigures. If set to ``True``, each subfigure will be labeled
-        alphabetically in the form of "a)", "b)", etc.
+        alphabetically in the form of "a)", "b)", etc. This can be given as a single value or a list of values to apply
+        to each subplot.
         Defaults to ``True``.
 
         .. note::
@@ -2783,9 +2909,10 @@ class SmartFigureWCS(SmartFigure):
             As the global reference label is placed more left than the reference label, this forces the horizontal shift
             of the axes, which may lead to overlapping between axes. Consider modifying the `size` or `width_padding`
             parameters to avoid this issue.
-    reference_labels_loc : Literal["inside", "outside"] | tuple[float, float], optional
+    reference_labels_loc : Literal["inside", "outside"] | tuple[float, float] | list, optional
         Location of the reference labels of the SubFigures, which can be either "inside", "outside" or a tuple of
-        (x, y) relative coordinates to the top-left corner of each subfigure.
+        (x, y) relative coordinates to the top-left corner of each subfigure. This can be given as a single value or a
+        list of values to apply to each subplot.
         Defaults to ``"outside"``.
     width_padding, height_padding : float, optional
         Padding between the subfigures in the x and y directions, respectively. The default value of ``None`` results in
@@ -2812,12 +2939,13 @@ class SmartFigureWCS(SmartFigure):
         However, if a nested SmartFigure sets its general legend to ``True``, it will be created separately and will not
         be added to the parent's general legend.
         Defaults to ``False``.
-    legend_loc : str | tuple, optional
+    legend_loc : str | tuple | list[str | tuple], optional
         Location of the legend. This can be a string (e.g., "upper right") or a tuple of (x, y) relative coordinates.
         The supported string locations are: {"upper right", "upper left", "lower left", "lower right", "right",
         "center left", "center right", "lower center", "upper center", "center", "outside upper center",
         "outside center right", "outside lower center", "outside center left"}. Additionally, only if ``general_legend``
-        is set to ``False``, the legend location can also be set to "best".
+        is set to ``False``, the legend location can also be set to "best". This option can be given as a single value
+        or a list of values to apply to each subplot.
         Defaults to ``"best"`` if ``general_legend`` is set to ``False``, otherwise it defaults to ``"lower center"``.
 
         .. warning::
@@ -2826,11 +2954,13 @@ class SmartFigureWCS(SmartFigure):
             use inline figures in a Jupyter notebook or save the figure to a file to ensure proper display of the
             legend outside the figure.
 
-    legend_cols : int, optional
-        Number of columns to display the labels in the legend. This is only used if the legend is displayed.
+    legend_cols : int | list[int], optional
+        Number of columns to display the labels in the legend. This is only used if the legend is displayed. This can be
+        given as a single value or a list of values to apply to each subplot.
         Defaults to ``1``.
-    show_legend : bool, optional
-        Whether to show the legend for the figure. This allows to easily toggle the visibility of the legend.
+    show_legend : bool | list[bool], optional
+        Whether to show the legend for the figure. This allows to easily toggle the visibility of the legend. This can
+        be given as a single value or a list of values to apply to each subplot.
         Defaults to ``True``.
     twin_x_axis, twin_y_axis : SmartTwinAxis, optional
         Twin axes for the x and y axes, respectively. This allows to attach additional axes to the main axes of the
@@ -2865,30 +2995,30 @@ class SmartFigureWCS(SmartFigure):
 
     def __init__(
         self,
-        projection: WCS,
+        projection: ListOrItem[WCS],
         num_rows: int = 1,
         num_cols: int = 1,
         x_label: str | None = None,
         y_label: str | None = None,
         size: tuple[float, float] | Literal["default"] = "default",
         title: str | None = None,
-        x_lim: tuple[float, float] | None = None,
-        y_lim: tuple[float, float] | None = None,
+        x_lim: ListOrItem[tuple[float, float] | None] = None,
+        y_lim: ListOrItem[tuple[float, float] | None] = None,
         sub_x_labels: Iterable[str] | None = None,
         sub_y_labels: Iterable[str] | None = None,
         subtitles: Iterable[str] | None = None,
-        log_scale_x: bool = False,
-        log_scale_y: bool = False,
-        remove_axes: bool = False,
-        aspect_ratio: float | Literal["auto", "equal"] = "auto",
-        box_aspect_ratio: float | None = None,
-        remove_x_ticks: bool = False,
-        remove_y_ticks: bool = False,
-        invert_x_axis: bool = False,
-        invert_y_axis: bool = False,
-        reference_labels: bool = True,
+        log_scale_x: ListOrItem[bool] = False,
+        log_scale_y: ListOrItem[bool] = False,
+        remove_axes: ListOrItem[bool] = False,
+        aspect_ratio: ListOrItem[float | Literal["auto", "equal"]] = "auto",
+        box_aspect_ratio: ListOrItem[float | None] = None,
+        remove_x_ticks: ListOrItem[bool] = False,
+        remove_y_ticks: ListOrItem[bool] = False,
+        invert_x_axis: ListOrItem[bool] = False,
+        invert_y_axis: ListOrItem[bool] = False,
+        reference_labels: ListOrItem[bool] = True,
         global_reference_label: bool = False,
-        reference_labels_loc: Literal["inside", "outside"] | tuple[float, float] = "outside",
+        reference_labels_loc: ListOrItem[Literal["inside", "outside"] | tuple[float, float]] = "outside",
         width_padding: float = None,
         height_padding: float = None,
         width_ratios: ArrayLike = None,
@@ -2896,9 +3026,9 @@ class SmartFigureWCS(SmartFigure):
         share_x: bool = False,
         share_y: bool = False,
         general_legend: bool = False,
-        legend_loc: str | tuple | None = None,
-        legend_cols: int = 1,
-        show_legend: bool = True,
+        legend_loc: ListOrItem[str | tuple | None] = None,
+        legend_cols: ListOrItem[int] = 1,
+        show_legend: ListOrItem[bool] = True,
         twin_x_axis: SmartTwinAxis | None = None,
         twin_y_axis: SmartTwinAxis | None = None,
         figure_style: str = "default",
@@ -2956,18 +3086,35 @@ class SmartFigureWCS(SmartFigure):
         self._tick_params = deepcopy(self._default_tick_params)
 
     @property
-    def projection(self) -> WCS:
+    def projection(self) -> ListOrItem[WCS]:
         return self._projection
 
     @projection.setter
-    def projection(self, value: WCS) -> None:
-        if not isinstance(value, WCS):
-            raise GraphingException("The projection of a SmartFigureWCS must be a WCS object.")
+    def projection(self, value: ListOrItem[WCS]) -> None:
+        for v in value if isinstance(value, list) else [value]:
+            if not isinstance(v, WCS):
+                raise GraphingException("The projection of a SmartFigureWCS must be a WCS object.")
         self._projection = value
+
+    def _prepare_figure(
+        self,
+        is_matplotlib_style: bool = False,
+        make_legend: bool = True,
+    ) -> dict[str, dict[str, list[str | Any]]]:
+        """
+        Wraps the parent method to check if the number of projections matches the number of non-empty subplots.
+        """
+        if isinstance(self._projection, list) and len(self._projection) != len(self):
+            raise GraphingException(
+                f"Number of WCS projections ({len(self._projection)}) must be equal to the number of non-empty "
+                f"subplots ({len(self)})."
+            )
+        return super()._prepare_figure(is_matplotlib_style, make_legend)
 
     def _customize_ticks(
         self,
         ax: Axes,
+        subplot_i: int,
     ) -> None:
         """
         Customizes the ticks of the specified Axes according to the SmartFigure's tick parameters. This method is useful
@@ -3039,10 +3186,10 @@ class SmartFigureWCS(SmartFigure):
             ax.tick_params(axis="y", which="minor", length=self._tick_params["y minor"].get("length"))
 
         # Remove ticks
-        if self._remove_x_ticks:
+        if self._subplot_p["remove_x_ticks"][subplot_i]:
             x_axis.set_ticks_visible(False)
             x_axis.set_ticklabel_visible(False)
-        if self._remove_y_ticks:
+        if self._subplot_p["remove_y_ticks"][subplot_i]:
             y_axis.set_ticks_visible(False)
             y_axis.set_ticklabel_visible(False)
 
