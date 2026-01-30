@@ -698,6 +698,9 @@ class TestSmartFigure(unittest.TestCase):
             "show_legend": bool_tests,
             "show_grid": bool_tests,
             "hide_default_legend_elements": bool_tests,
+            "sub_x_labels": [["X1", "X2", None], [None, "X_valid", "X3", None],["X1", None, "X2", None, "X3"]],
+            "sub_y_labels": [["Y1", "Y2", None], [None, "Y_valid", "Y3", None],["Y1", None, "Y2", None, "Y3"]],
+            "subtitles": [["T 1", None, "T 3"], [None, "Valid T", "T 2", None], ["T 1", None, "T 2", None, "T 3"]],
         }
         for param, values in params.items():
             fig = self.fig_2x3.copy_with(**{param: values[0]})  # underfilled list
@@ -1268,6 +1271,11 @@ class TestSmartFigure(unittest.TestCase):
 
     def test_set_text_padding_params(self):
         """Test setting text padding parameters."""
+        self.fig_2x2.elements = [DummyPlottable() for _ in range(4)]
+        self.fig_2x2._default_params = FileLoader("plain").load()
+        self.fig_2x2._reference_label_i = 0
+        self.fig_2x2._figure = plt.figure()
+
         # Test initial state (empty _pad_params)
         self.assertEqual(self.fig_2x2._pad_params, {})
 
@@ -1324,12 +1332,11 @@ class TestSmartFigure(unittest.TestCase):
         self.fig_2x2.set_text_padding_params(sub_x_labels_pad=[])
         self.assertEqual(self.fig_2x2._pad_params["sub_x_labels_pad"], [])
 
-        # Test raises error when plotting if the padding parameters length are inconsistent
+        # Test list lengths
+        self.fig_2x2.set_text_padding_params(sub_x_labels_pad=[1, 2, None])  # Underfilled list
+        self.fig_2x2._prepare_figure()
         with self.assertRaises(GraphingException):
-            self.fig_2x2.set_text_padding_params(sub_x_labels_pad=[1.0, 2.0])
-            self.fig_2x2._prepare_figure()
-        with self.assertRaises(GraphingException):
-            self.fig_2x2.set_text_padding_params(sub_x_labels_pad=[1.0, 2.0, 3.0, 4.0, 5.0])
+            self.fig_2x2.set_text_padding_params(sub_y_labels_pad=[1.0, 2.0, None, None, 3.0])  # Overfilled list
             self.fig_2x2._prepare_figure()
 
     def test_set_reference_labels_params(self):

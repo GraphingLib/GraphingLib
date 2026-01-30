@@ -71,12 +71,14 @@ class SmartFigure:
     sub_x_labels, sub_y_labels : Iterable[str], optional
         Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
         single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
-        :class:`~graphinglib.SmartFigure` objects for each subfigure only to set the x and y labels.
+        :class:`~graphinglib.SmartFigure` objects for each subfigure only to set the x and y labels. This list cannot
+        be longer than the number of non-empty subplots and None values can be used to skip specific subplots.
     subtitles : Iterable[str], optional
         Labels for the subtitles of each subfigure, respectively. Similarly to `sub_x_labels` and `sub_y_labels`, this
         allows to set subtitles for each subfigure without needing to create nested
         :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
-        each subfigure needs its own subtitle.
+        each subfigure needs its own subtitle. This list cannot be longer than the number of non-empty subplots and None
+        values can be used to skip specific subplots.
     log_scale_x, log_scale_y : bool | list[bool], optional
         Whether to use a logarithmic scale for the x and y axes, respectively. This can be given as a single value or
         a list of values to apply to each subplot.
@@ -1476,17 +1478,6 @@ class SmartFigure:
             :attr:`~graphinglib.SmartFigure.hide_default_legend_elements` and
             :attr:`~graphinglib.SmartFigure.hide_custom_legend_elements` properties.
         """
-        # If given, check the consistency of the sub_x_labels, sub_y_labels and subtitles, as well as their padding
-        num_subplots = len(self)
-        for param in ["sub_x_labels", "sub_y_labels", "subtitles"]:
-            value = getattr(self, param)
-            if value is not None and len(value) != num_subplots:
-                raise GraphingException(f"Number of {param} must be equal to the number of subplots.")
-        for param in ["sub_x_labels_pad", "sub_y_labels_pad", "subtitles_pad"]:
-            value = self._pad_params.get(param)
-            if value is not None and len(value) != num_subplots:
-                raise GraphingException(f"Number of {param} must be equal to the number of subplots.")
-
         # Verify that all legend properties are single values when a general legend is requested
         if self._general_legend:
             legend_params = {
@@ -1506,7 +1497,7 @@ class SmartFigure:
 
         cycle_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
         num_cycle_colors = len(cycle_colors)
-        subtitles_pad = self._pad_params.get("subtitles_pad")
+        subtitles_pad = self._subplot_p["subtitles_pad"]
 
         self._gridspec = self._figure.add_gridspec(
             self._num_rows,
@@ -1536,8 +1527,8 @@ class SmartFigure:
                 # Check whether sub_x_labels/sub_y_labels/sub_titles are set and can be given as the main
                 # x_label/y_label/title of the nested SmartFigure
                 sub_params = [
-                    sub_param[subplot_i] if sub_param is not None and len(sub_param) > subplot_i else None
-                    for sub_param in [self._sub_x_labels, self._sub_y_labels, self._subtitles]
+                    self._subplot_p[sub_param][subplot_i]
+                    for sub_param in ["sub_x_labels", "sub_y_labels", "subtitles"]
                 ]  # list containing the sub_x_label, sub_y_label and subtitle for the current subplot
                 # subfig_none_params contains True if the corresponding parameter is None in the nested SmartFigure
                 subfig_none_params = [getattr(element, param) is None for param in ["x_label", "y_label", "title"]]
@@ -1821,10 +1812,19 @@ class SmartFigure:
             "show_legend": blank_figure._show_legend,
             "show_grid": blank_figure._show_grid,
             "hide_default_legend_elements": blank_figure._hide_default_legend_elements,
+            "sub_x_labels": blank_figure._sub_x_labels,
+            "sub_y_labels": blank_figure._sub_y_labels,
+            "subtitles": blank_figure._subtitles,
+            "sub_x_labels_pad": None,
+            "sub_y_labels_pad": None,
+            "subtitles_pad": None,
         }
 
         for param, default_value in subplot_p.items():
-            value = getattr(self, f"_{param}")
+            if param[-3:] == "pad":
+                value = self._pad_params.get(param)
+            else:
+                value = getattr(self, f"_{param}")
             if isinstance(value, list):
                 if len(value) > self_length:
                     raise GraphingException(
@@ -1978,10 +1978,10 @@ class SmartFigure:
             x_label, x_pad = self._x_label, self._pad_params.get("x_label_pad")
             y_label, y_pad = self._y_label, self._pad_params.get("y_label_pad")
         else:
-            x_label, x_pad = [None if val is None else val[subplot_i]
-                              for val in [self._sub_x_labels, self._pad_params.get("sub_x_labels_pad")]]
-            y_label, y_pad = [None if val is None else val[subplot_i]
-                              for val in [self._sub_y_labels, self._pad_params.get("sub_y_labels_pad")]]
+            x_label, x_pad = [val[subplot_i]
+                              for val in [self._subplot_p["sub_x_labels"], self._subplot_p["sub_x_labels_pad"]]]
+            y_label, y_pad = [val[subplot_i]
+                              for val in [self._subplot_p["sub_y_labels"], self._subplot_p["sub_y_labels_pad"]]]
 
         if x_label is not None:
             ax.set_xlabel(x_label, labelpad=x_pad)
@@ -2845,12 +2845,14 @@ class SmartFigureWCS(SmartFigure):
     sub_x_labels, sub_y_labels : Iterable[str], optional
         Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
         single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
-        :class:`~graphinglib.SmartFigure` objects for each subfigure only to set the x and y labels.
+        :class:`~graphinglib.SmartFigure` objects for each subfigure only to set the x and y labels. This list cannot
+        be longer than the number of non-empty subplots and None values can be used to skip specific subplots.
     subtitles : Iterable[str], optional
         Labels for the subtitles of each subfigure, respectively. Similarly to `sub_x_labels` and `sub_y_labels`, this
         allows to set subtitles for each subfigure without needing to create nested
         :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
-        each subfigure needs its own subtitle.
+        each subfigure needs its own subtitle. This list cannot be longer than the number of non-empty subplots and None
+        values can be used to skip specific subplots.
     log_scale_x, log_scale_y : bool | list[bool], optional
         Whether to use a logarithmic scale for the x and y axes, respectively. This can be given as a single value or
         a list of values to apply to each subplot.

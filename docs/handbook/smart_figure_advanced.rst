@@ -385,8 +385,22 @@ Use ``sub_x_labels``, ``sub_y_labels``, and ``subtitles`` for per-subplot custom
     )
     fig.show()
 
-.. note::
-   These parameters require exactly as many labels as there are subplots (this feature is subject to change).
+You can also use ``None`` in the lists to skip labels for specific subplots, or give shorter lists:
+
+.. plot::
+    :context: close-figs
+
+    fig = gl.SmartFigure(
+        2, 2,
+        sub_x_labels=["Time (ms)"],  # Only first subplot gets x label
+        sub_y_labels=[None, "Power", "Phase"],  # Last subplot uses default y label
+        subtitles=["Channel 1", "Channel 2", None, "Channel 4"],  # Skip third subtitle
+        elements=[curve1]*4
+    )
+    fig.show()
+
+.. warning::
+    If the provided lists are longer than the number of non-empty subplots, an error will be raised. For details on list length rules, see the :ref:`list-length-rules` section.
 
 Axes Limits
 -----------
@@ -742,6 +756,8 @@ The ``ListOrItem`` type is a type hint defined as:
 where ``T`` is any type. This means that any property documented as ``ListOrItem[float]`` (for example) can accept either a single ``float`` value or a ``list[float]``.
 
 When you provide a **single value**, it is applied to **all subplots**. When you provide a **list of values**, each value is applied to the corresponding subplot from left to right, top to bottom.
+
+.. _list-length-rules:
 
 List Length and Padding Rules
 ------------------------------
