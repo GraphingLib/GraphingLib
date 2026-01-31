@@ -1187,6 +1187,9 @@ The :py:meth:`~graphinglib.SmartFigure.set_custom_legend` method adds custom leg
     fig.hide_custom_legend_elements = True
     fig.show()
 
+.. seealso::
+   See the :class:`~graphinglib.LegendLine`, :class:`~graphinglib.LegendMarker`, and :class:`~graphinglib.LegendPatch` classes for creating custom legend elements.
+
 
 Reference Labels
 ================
@@ -1598,7 +1601,7 @@ Supported Projections
 The ``projection`` parameter accepts:
 
 - **Matplotlib projection strings**: `Any projection name supported by matplotlib <https://matplotlib.org/stable/api/projections_api.html>`_ (e.g., ``"polar"``, ``"aitoff"``, ``"hammer"``, ``"lambert"``, ``"mollweide"``, ``"rectilinear"``). You can get a list of available projections using ``matplotlib.projections.get_projection_names()``.
-- **Projection objects**: Objects capable of creating a projection. For `astropy.wcs.WCS <https://docs.astropy.org/en/stable/wcs/index.html>`_ objects used for plotting astronomical data, use the specialized :class:`~graphinglib.SmartFigureWCS` class instead. You can read more about it in the :doc:`/handbook/smart_figure_wcs` documentation.
+- **Projection objects**: Objects capable of creating a projection. For `astropy.wcs.WCS <https://docs.astropy.org/en/stable/wcs/index.html>`_ objects used for plotting astronomical data, use the specialized :class:`~graphinglib.SmartFigureWCS` class instead. You can read more about it in the :doc:`/handbook/smart_figure_projections` documentation.
 
 .. warning::
     3D projections (``"3d"``) are **not supported** at this time. These will be added in a future release, probably as a separate class `SmartFigure3D`.
@@ -1745,7 +1748,7 @@ Key features of :class:`~graphinglib.SmartFigureWCS`:
 - All standard :class:`~graphinglib.SmartFigure` features (nesting, twin axes, styling, etc.)
 
 .. seealso::
-   See :doc:`/handbook/smart_figure_wcs` for comprehensive documentation on plotting astronomical data with :class:`~graphinglib.SmartFigureWCS`.
+   See :doc:`/handbook/smart_figure_projections` for comprehensive documentation on plotting astronomical data with :class:`~graphinglib.SmartFigureWCS`.
 
 
 File Operations
@@ -2063,7 +2066,7 @@ See Also
 ========
 
 - :doc:`/handbook/smart_figure_simple` - Quick start guide
-- :doc:`/handbook/smart_figure_wcs` - Plotting astronomical data with WCS
+- :doc:`/handbook/smart_figure_projections` - Plotting astronomical data with WCS
 - :doc:`/handbook/figure_style_file` - Creating custom style files
 - :doc:`/generated/graphinglib.SmartFigure` - SmartFigure API reference
 - :doc:`/generated/graphinglib.SmartTwinAxis` - Twin axis API reference

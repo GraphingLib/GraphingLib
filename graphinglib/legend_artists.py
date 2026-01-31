@@ -130,7 +130,8 @@ class LegendElement(Protocol):
     """
     This class implements a legend element that can be used to create custom legend entries for the
     :meth:`~graphinglib.SmartFigure.set_custom_legend` method. It should not be used on its own and must be subclassed
-    to create specific legend elements that implement the `handle` property, which returns a Matplotlib artist.
+    to create specific legend elements that implement the `handle` property, which returns a Matplotlib artist. All
+    parameters are also available as properties.
     """
     @property
     def handle(self) -> Artist:
@@ -192,7 +193,8 @@ class LegendLine(LegendElement):
     """
     This class implements a legend line wrapping the
     `Line2D <https://matplotlib.org/stable/api/_as_gen/matplotlib.lines.Line2D.html#matplotlib.lines.Line2D>`_ object
-    for creating custom legend entries with the :meth:`:~graphinglib.SmartFigure.set_custom_legend` method.
+    for creating custom legend entries with the :meth:`~graphinglib.SmartFigure.set_custom_legend` method. All
+    parameters are also available as properties.
 
     Parameters
     ----------
@@ -280,8 +282,8 @@ class LegendMarker(LegendElement):
     """
     This class implements a legend marker wrapping the `Line2D
     <https://matplotlib.org/stable/api/_as_gen/matplotlib.lines.Line2D.html#matplotlib.lines.Line2D>`_ object with a
-    marker style set for creating custom legend entries with the :meth:`:~graphinglib.SmartFigure.set_custom_legend`
-    method.
+    marker style set for creating custom legend entries with the :meth:`~graphinglib.SmartFigure.set_custom_legend`
+    method. All parameters are also available as properties.
 
     Parameters
     ----------
@@ -419,7 +421,8 @@ class LegendPatch(LegendElement):
     """
     This class implements a legend patch wrapping the
     `Patch <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Patch.html#matplotlib.patches.Patch>`_ object
-    for creating custom legend entries with the :meth:`:~graphinglib.SmartFigure.set_custom_legend` method.
+    for creating custom legend entries with the :meth:`~graphinglib.SmartFigure.set_custom_legend` method. All
+    parameters are also available as properties.
 
     Parameters
     ----------

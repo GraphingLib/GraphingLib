@@ -62,6 +62,17 @@ Plottables
     VectorField
     Vlines
 
+Legend elements
+---------------
+.. autosummary::
+    :toctree: generated/
+    :template: class
+    :nosignatures:
+
+    LegendLine
+    LegendMarker
+    LegendPatch
+
 Utility functions
 -----------------
 
