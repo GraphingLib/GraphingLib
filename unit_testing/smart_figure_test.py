@@ -1219,8 +1219,10 @@ class TestSmartFigure(unittest.TestCase):
 
     def test_set_ticks_and_tick_params(self):
         """Test setting ticks and tick parameters."""
-        self.fig.set_ticks(x_ticks=[0, 1], x_tick_labels=["a", "b"])
-        self.fig.set_ticks(y_ticks=[0, 1], y_tick_labels=["a", "b"])
+        tick_func = lambda x: f"Label {x}"
+        self.fig.set_ticks(x_ticks=[0, 1], x_tick_labels=["a", "b"], y_ticks=[0, 1], y_tick_labels=["a", "b"])
+        self.fig.set_ticks(x_ticks=[0, 1], x_tick_labels=tick_func, y_ticks=[0, 1], y_tick_labels=tick_func)
+        self.fig.set_ticks(x_tick_spacing=0.5, x_tick_labels=tick_func, y_tick_spacing=0.5, y_tick_labels=tick_func)
         self.fig.set_ticks(minor_x_ticks=[0.1, 0.2], minor_y_tick_spacing=0.5)
         self.fig.set_ticks(x_tick_spacing=None, y_tick_spacing=None)
         self.fig.set_tick_params(axis="x", which="major", direction="in", length=5)
@@ -2168,9 +2170,13 @@ class TestSmartTwinAxis(unittest.TestCase):
 
     def test_set_ticks_and_tick_params(self):
         """Test setting ticks and tick parameters for twin axis."""
+        tick_func = lambda x: f"Label {x}"
         self.twin_axis.set_ticks(ticks=[0, 1], tick_labels=["a", "b"])
+        self.twin_axis.set_ticks(ticks=[0, 1], tick_labels=tick_func)
+        self.twin_axis.set_ticks(tick_spacing=0.5, tick_labels=tick_func)
         self.twin_axis.set_ticks(minor_ticks=[0.1, 0.2])
         self.twin_axis.set_ticks(tick_spacing=None)
+
         self.twin_axis.set_tick_params(which="major", direction="in", length=5)
         self.twin_axis.set_tick_params(which="minor", color="red", reset=True)
         self.assertDictEqual(

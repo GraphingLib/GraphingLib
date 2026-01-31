@@ -1927,21 +1927,43 @@ class SmartFigure:
         Customizes the ticks of the specified Axes according to the SmartFigure's tick parameters. This method is useful
         for inheritance to allow each SmartFigure class to customize the ticks their way.
         """
+        # Handle x-axis ticks
         if self._ticks.get("x_ticks") is not None:
-            ax.set_xticks(self._ticks.get("x_ticks"), self._ticks.get("x_tick_labels"))
+            x_labels = self._ticks.get("x_tick_labels")
+            if callable(x_labels):
+                # Apply the callable to each tick
+                x_labels = [x_labels(tick) for tick in self._ticks.get("x_ticks")]
+            ax.set_xticks(self._ticks.get("x_ticks"), x_labels)
+
         ax.tick_params(axis="x", which="major", **self._tick_params["x major"])
+
         if self._ticks.get("x_tick_spacing") is not None:
             ax.xaxis.set_major_locator(
                 ticker.MultipleLocator(self._ticks.get("x_tick_spacing"))
             )
+            # If a callable is provided for x_tick_labels, apply it with a FuncFormatter
+            x_labels = self._ticks.get("x_tick_labels")
+            if callable(x_labels):
+                ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, pos: x_labels(x)))
 
+        # Handle y-axis ticks
         if self._ticks.get("y_ticks") is not None:
-            ax.set_yticks(self._ticks.get("y_ticks"), self._ticks.get("y_tick_labels"))
+            y_labels = self._ticks.get("y_tick_labels")
+            if callable(y_labels):
+                # Apply the callable to each tick
+                y_labels = [y_labels(tick) for tick in self._ticks.get("y_ticks")]
+            ax.set_yticks(self._ticks.get("y_ticks"), y_labels)
+
         ax.tick_params(axis="y", which="major", **self._tick_params["y major"])
+
         if self._ticks.get("y_tick_spacing") is not None:
             ax.yaxis.set_major_locator(
                 ticker.MultipleLocator(self._ticks.get("y_tick_spacing"))
             )
+            # If a callable is provided for y_tick_labels, apply it with a FuncFormatter
+            y_labels = self._ticks.get("y_tick_labels")
+            if callable(y_labels):
+                ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, pos: y_labels(y)))
 
         if self._ticks.get("minor_x_ticks") is not None:
             ax.set_xticks(self._ticks.get("minor_x_ticks"), minor=True)
@@ -2344,8 +2366,8 @@ class SmartFigure:
         reset: bool = False,
         x_ticks: Iterable[float] | None = None,
         y_ticks: Iterable[float] | None = None,
-        x_tick_labels: Iterable[str] | None = None,
-        y_tick_labels: Iterable[str] | None = None,
+        x_tick_labels: Iterable[str] | Callable | None = None,
+        y_tick_labels: Iterable[str] | Callable | None = None,
         x_tick_spacing: float | None = None,
         y_tick_spacing: float | None = None,
         minor_x_ticks: Iterable[float] | None = None,
@@ -2364,12 +2386,18 @@ class SmartFigure:
         x_ticks, y_ticks : Iterable[float], optional
             Tick positions for the x or y axis. If a value is specified, the corresponding ``x_tick_spacing`` or
             ``y_tick_spacing`` parameter must be ``None``.
-        x_tick_labels, y_tick_labels : Iterable[str], optional
-            Tick labels for the x or y axis. If a value is specified, the corresponding ``x_ticks`` or ``y_ticks``
-            parameter must also be given. The number of tick labels must match the number of ticks.
+        x_tick_labels, y_tick_labels : Iterable[str] | Callable, optional
+            Tick labels for the x or y axis. Can be either:
+
+            - An iterable of strings: If a value is specified, the corresponding ``x_ticks`` or ``y_ticks``
+              parameter must also be given. The number of tick labels must match the number of ticks.
+            - A callable that takes a float (the tick position) and returns a string: Can be used with ``x_ticks`` or
+              ``y_ticks`` to apply the function to each tick position, or with ``x_tick_spacing`` or ``y_tick_spacing``
+              to apply the function to any tick position using a custom formatter.
         x_tick_spacing, y_tick_spacing : float, optional
             Spacing between major ticks on the x or y axis. If a value is specified, the corresponding ``x_ticks`` or
-            ``y_ticks`` parameter must be ``None``.
+            ``y_ticks`` parameter must be ``None``. When a callable ``x_tick_labels`` or ``y_tick_labels`` is provided
+            with a spacing parameter, the callable will be used to format all tick labels automatically.
         minor_x_ticks, minor_y_ticks : Iterable[float], optional
             Minor tick positions for the x or y axis. If a value is specified, the corresponding
             ``minor_x_tick_spacing`` or ``minor_y_tick_spacing`` parameter must be ``None``.
@@ -2382,11 +2410,20 @@ class SmartFigure:
         Self
             For convenience, the same SmartFigure with the updated ticks.
         """
+        # Check if tick labels are provided without ticks or spacing
+        x_has_spacing = x_tick_spacing is not None
+        y_has_spacing = y_tick_spacing is not None
+        x_callable = callable(x_tick_labels)
+        y_callable = callable(y_tick_labels)
+
         if any([
-            (x_tick_labels is not None) and x_ticks is None,
-            (y_tick_labels is not None) and y_ticks is None,
+            (x_tick_labels is not None) and x_ticks is None and not (x_has_spacing and x_callable),
+            (y_tick_labels is not None) and y_ticks is None and not (y_has_spacing and y_callable),
         ]):
-            raise GraphingException("Ticks position must be specified when ticks labels are specified.")
+            raise GraphingException(
+                "Ticks position must be specified when ticks labels are specified, "
+                "unless a callable is provided with tick spacing."
+            )
 
         if any([
             (x_ticks is not None) and (x_tick_spacing is not None),
@@ -2396,13 +2433,13 @@ class SmartFigure:
         ]):
             raise GraphingException("Tick spacing and tick positions cannot be set simultaneously.")
 
-        if x_ticks is not None and x_tick_labels is not None:
+        if x_ticks is not None and x_tick_labels is not None and not callable(x_tick_labels):
             if len(x_ticks) != len(x_tick_labels):
                 raise GraphingException(
                     f"Number of x ticks ({len(x_ticks)}) and number of x tick labels "
                     f"({len(x_tick_labels)}) must be the same."
                 )
-        if y_ticks is not None and y_tick_labels is not None:
+        if y_ticks is not None and y_tick_labels is not None and not callable(y_tick_labels):
             if len(y_ticks) != len(y_tick_labels):
                 raise GraphingException(
                     f"Number of y ticks ({len(y_ticks)}) and number of y tick labels "
@@ -3795,12 +3832,22 @@ class SmartTwinAxis:
             ax_set_ticks, axis_str, ax_axis = self._axes.set_xticks, "x", self._axes.xaxis
 
         if self._ticks.get("ticks") is not None:
-            ax_set_ticks(self._ticks.get("ticks"), self._ticks.get("tick_labels"))
+            tick_labels = self._ticks.get("tick_labels")
+            if callable(tick_labels):
+                # Apply the callable to each tick
+                tick_labels = [tick_labels(tick) for tick in self._ticks.get("ticks")]
+            ax_set_ticks(self._ticks.get("ticks"), tick_labels)
+
         self._axes.tick_params(axis=axis_str, which="major", **self._tick_params["major"])
+
         if self._ticks.get("tick_spacing") is not None:
             ax_axis.set_major_locator(
                 ticker.MultipleLocator(self._ticks.get("tick_spacing"))
             )
+            # If a callable is provided for tick_labels, apply it with a FuncFormatter
+            tick_labels = self._ticks.get("tick_labels")
+            if callable(tick_labels):
+                ax_axis.set_major_formatter(ticker.FuncFormatter(lambda pos, x: tick_labels(pos)))
 
         if self._ticks.get("minor_ticks") is not None:
             ax_set_ticks(self._ticks.get("minor_ticks"), minor=True)
@@ -3970,7 +4017,7 @@ class SmartTwinAxis:
         self,
         reset: bool = False,
         ticks: Iterable[float] | None = None,
-        tick_labels: Iterable[str] | None = None,
+        tick_labels: Iterable[str] | Callable[[float], str] | None = None,
         tick_spacing: float | None = None,
         minor_ticks: Iterable[float] | None = None,
         minor_tick_spacing: float | None = None,
@@ -3985,11 +4032,17 @@ class SmartTwinAxis:
             Defaults to ``False``.
         ticks : Iterable[float], optional
             Tick positions for the axis. If a value is specified, the ``tick_spacing`` parameter must be ``None``.
-        tick_labels : Iterable[str], optional
-            Tick labels for the axis. If a value is specified, the ``ticks`` parameter must also be given. The number of
-            tick labels must match the number of ticks.
+        tick_labels : Iterable[str] | Callable[[float], str], optional
+            Tick labels for the axis. Can be either:
+
+            - An iterable of strings: If a value is specified, the ``ticks`` parameter must also be given. The number of
+              tick labels must match the number of ticks.
+            - A callable that takes a float (the tick position) and returns a string: Can be used with ``ticks`` to apply
+              the function to each tick position, or with ``tick_spacing`` to apply the function to any tick position
+              using a custom formatter.
         tick_spacing : float, optional
-            Spacing between major ticks on the axis.
+            Spacing between major ticks on the axis. When a callable ``tick_labels`` is provided with spacing,
+            the callable will be used to format all tick labels automatically.
         minor_ticks : Iterable[float], optional
             Minor tick positions for the axis.
         minor_tick_spacing : float, optional
@@ -4000,8 +4053,15 @@ class SmartTwinAxis:
         Self
             For convenience, the same SmartTwinAxis with the updated ticks.
         """
-        if (tick_labels is not None) and ticks is None:
-            raise GraphingException("Ticks position must be specified when ticks labels are specified.")
+        # Check if tick labels are provided without ticks or spacing
+        has_spacing = tick_spacing is not None
+        is_callable = callable(tick_labels)
+
+        if (tick_labels is not None) and ticks is None and not (has_spacing and is_callable):
+            raise GraphingException(
+                "Ticks position must be specified when ticks labels are specified, "
+                "unless a callable is provided with tick spacing."
+            )
 
         if any([
             (ticks is not None) and (tick_spacing is not None),
@@ -4009,7 +4069,7 @@ class SmartTwinAxis:
         ]):
             raise GraphingException("Tick spacing and tick positions cannot be set simultaneously.")
 
-        if ticks is not None and tick_labels is not None:
+        if ticks is not None and tick_labels is not None and not callable(tick_labels):
             if len(ticks) != len(tick_labels):
                 raise GraphingException(
                     f"Number of ticks ({len(ticks)}) and number of tick labels ({len(tick_labels)}) must be the same."

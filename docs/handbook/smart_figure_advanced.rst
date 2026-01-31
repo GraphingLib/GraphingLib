@@ -581,8 +581,36 @@ The :py:meth:`~graphinglib.SmartFigure.set_ticks` method provides fine-grained c
     fig.set_ticks(reset=True)  # Reset to default behavior
     fig.show()
 
-.. note::
-    Since tick position and tick spacing are conflicting parameters, trying to set both at the same time for the same axis will raise an error. Similarly, giving tick labels without tick positions will also raise an error. For more details on the possible combinations of parameters, see the :py:meth:`~graphinglib.SmartFigure.set_ticks` method docstring.
+You can also provide a custom tick label formatter function that takes a tick value and returns a string label:
+
+.. plot::
+    :context: close-figs
+
+    # Use a formatter and specify tick positions
+    formatter = lambda v: f"{v/np.pi:.1f}π" if v != 0 else "0"
+
+    fig = gl.SmartFigure(elements=[curve1])
+    fig.set_ticks(
+        x_ticks=[0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi],
+        x_tick_labels=formatter
+    )
+    fig.show()
+
+.. plot::
+    :context: close-figs
+
+    # Use a formatter and specify tick spacing
+    formatter = lambda v: f"$y={v}$"
+
+    fig = gl.SmartFigure(elements=[curve1])
+    fig.set_ticks(
+        y_tick_spacing=0.5,
+        y_tick_labels=formatter,
+    )
+    fig.show()
+
+.. warning::
+    Since tick position and tick spacing are conflicting parameters, trying to set both at the same time for the same axis will raise an error. Similarly, giving tick labels as a list without giving tick positions will also raise an error. For more details on the possible combinations of parameters, see the :py:meth:`~graphinglib.SmartFigure.set_ticks` method docstring.
 
 Tick Appearance
 ---------------
