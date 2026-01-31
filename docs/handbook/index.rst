@@ -200,13 +200,13 @@ Sections in this handbook
     .. grid-item-card::
         :img-top: ../_static/icons/SmartFigureWCS.svg
 
-        Plotting astronomical data with the SmartFigureWCS
+        Specialized SmartFigures for different projections
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-        Create complex astronomical plots with WCS support.
+        Use custom SmartFigures with specific projection functionalities.
         ++++
 
-        .. button-ref:: ./smart_figure_wcs
+        .. button-ref:: ./smart_figure_projections
             :expand:
             :color: primary
             :click-parent:
@@ -228,4 +228,4 @@ Sections in this handbook
    figure_style_file
    smart_figure_simple
    smart_figure_advanced
-   smart_figure_wcs
+   smart_figure_projections

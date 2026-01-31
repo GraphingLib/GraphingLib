@@ -1,15 +1,20 @@
-====================================================================
+==================================================
+Specialized SmartFigures for different projections
+==================================================
+
+Specialized :class:`~graphinglib.SmartFigure` classes are available to handle specific projection needs. These classes extend the functionality of the standard :class:`~graphinglib.SmartFigure` to provide features tailored to particular types of data and coordinate systems. Currently, only the :class:`~graphinglib.SmartFigureWCS` class is implemented, which is designed for astronomical data using the World Coordinate System (WCS).
+
+.. contents:: Table of Contents
+   :local:
+   :depth: 3
+
 Plotting Astronomical Data with :class:`~graphinglib.SmartFigureWCS`
 ====================================================================
 
 The :class:`~graphinglib.SmartFigureWCS` class is a specialized version of the :class:`~graphinglib.SmartFigure` class designed specifically for astronomical data using the `World Coordinate System (WCS) <https://docs.astropy.org/en/stable/wcs/index.html>`_ from Astropy.
 
-.. contents:: Table of Contents
-   :local:
-   :depth: 2
-
 Introduction to WCS
-===================
+-------------------
 
 The World Coordinate System is a Flexible Image Transport System (FITS) standard used in astronomy to describe the mapping between pixel coordinates in an image and physical coordinates on the sky (typically right ascension and declination). WCS is essential for:
 
@@ -28,17 +33,17 @@ WCS metadata is typically stored in FITS file headers and includes information a
 - Rotation and distortion parameters
 
 Key Differences from SmartFigure
-=================================
+--------------------------------
 
 :class:`~graphinglib.SmartFigureWCS` extends :class:`~graphinglib.SmartFigure` with several important differences:
 
 Required WCS Projection
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``projection`` parameter is **required** and must be an `astropy.wcs.WCS <https://docs.astropy.org/en/stable/wcs/index.html>`_ object. This ensures proper handling of astronomical coordinate systems. Since it is no longer optional, the ``projection`` argument is now the first positional argument in the constructor.
 
 Specialized Tick Handling
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :class:`~graphinglib.SmartFigureWCS` uses `astropy.visualization.wcsaxes <https://docs.astropy.org/en/stable/visualization/wcsaxes/index.html>`_ which provide:
 
@@ -47,7 +52,7 @@ The :class:`~graphinglib.SmartFigureWCS` uses `astropy.visualization.wcsaxes <ht
 - Coordinate grid lines that follow great circles on the sky
 
 Enhanced Coordinate Grids
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :class:`~graphinglib.SmartFigureWCS` provides enhanced support for coordinate grids appropriate for astronomical data:
 
@@ -56,7 +61,7 @@ Enhanced Coordinate Grids
 - Support for different coordinate frames (ICRS, Galactic, Ecliptic, etc.)
 
 All Standard Features Available
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Despite these specializations, :class:`~graphinglib.SmartFigureWCS` supports **all features** of :class:`~graphinglib.SmartFigure`:
 
@@ -72,10 +77,10 @@ Despite these specializations, :class:`~graphinglib.SmartFigureWCS` supports **a
     You can also nest :class:`~graphinglib.SmartFigureWCS` objects within standard :class:`~graphinglib.SmartFigure` layouts or vice versa to combine plots with different projections.
 
 Getting Started
-===============
+---------------
 
 Loading FITS Files
-------------------
+^^^^^^^^^^^^^^^^^^
 
 The most common workflow involves loading a FITS file that contains WCS information:
 
@@ -106,7 +111,7 @@ The most common workflow involves loading a FITS file that contains WCS informat
     The ``origin_position="lower"`` argument in :class:`~graphinglib.Heatmap` is necessary because ``WCSAxes`` do not support images with ``origin="upper"``.
 
 Creating WCS Objects Programmatically
---------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For testing or custom coordinate systems, you can create WCS objects programmatically:
 
@@ -137,10 +142,10 @@ For testing or custom coordinate systems, you can create WCS objects programmati
     fig.show()
 
 Customization
-=============
+-------------
 
 Customizing Coordinate Display
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Control how coordinates are displayed:
 
@@ -171,7 +176,7 @@ Control how coordinates are displayed:
     fig.show()
 
 Adding Coordinate Grids
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 WCS coordinate grids follow the curved coordinate system:
 
@@ -189,10 +194,10 @@ WCS coordinate grids follow the curved coordinate system:
     fig.show()
 
 Advanced Usage
-==============
+--------------
 
 Multiple Subplots
------------------
+^^^^^^^^^^^^^^^^^
 
 All subplots can share the same WCS projection:
 
@@ -234,7 +239,7 @@ Similar to the :class:`~graphinglib.SmartFigure`, you can also specify different
     )
 
 Nesting WCS Figures
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 Combine WCS figures with standard figures:
 
@@ -268,10 +273,10 @@ Combine WCS figures with standard figures:
     parent.show()
 
 Troubleshooting
-===============
+---------------
 
 Common Issues
--------------
+^^^^^^^^^^^^^
 
 **WCS not recognized**
    Ensure Astropy is installed and the FITS header contains valid WCS keywords.
@@ -289,7 +294,7 @@ Common Issues
    Check the ``CDELT`` or ``CD`` matrix values. Very different values in x and y can cause distortion. Use ``aspect_ratio="equal"`` if needed.
 
 Getting Help
-------------
+^^^^^^^^^^^^
 
 - **Astropy WCS documentation**: https://docs.astropy.org/en/stable/wcs/
 - **WCSAxes documentation**: https://docs.astropy.org/en/stable/visualization/wcsaxes/
@@ -297,7 +302,7 @@ Getting Help
 - **GraphingLib issues**: https://github.com/GraphingLib/GraphingLib/issues
 
 See Also
-========
+--------
 
 - :doc:`/handbook/smart_figure_simple` - Basic SmartFigure usage
 - :doc:`/handbook/smart_figure_advanced` - Advanced SmartFigure features
