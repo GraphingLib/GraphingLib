@@ -36,7 +36,6 @@ Plottables
     :nosignatures:
 
     Arrow
-    AxFunc
     Circle
     Contour
     Curve
@@ -52,6 +51,7 @@ Plottables
     Histogram
     Hlines
     Line
+    PlottableAxMethod
     Point
     Polygon
     Rectangle

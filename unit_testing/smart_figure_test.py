@@ -17,7 +17,7 @@ from graphinglib.smart_figure import SmartFigure, SmartFigureWCS, SmartTwinAxis
 from graphinglib.data_plotting_1d import Curve, Scatter, Histogram
 from graphinglib.data_plotting_2d import Heatmap, VectorField, Contour, Stream
 from graphinglib.fits import FitFromFunction
-from graphinglib.graph_elements import Plottable, GraphingException, Hlines, Vlines, Point, Text, Table, AxFunc
+from graphinglib.graph_elements import Plottable, GraphingException, Hlines, Vlines, Point, Text, Table, PlottableAxMethod
 from graphinglib.legend_artists import LegendLine
 from graphinglib.shapes import Arrow, Line, Polygon, Circle, Rectangle
 
@@ -1004,7 +1004,7 @@ class TestSmartFigure(unittest.TestCase):
         self.fig[0] = Rectangle(0, 0, 1, 2)
         self.fig._initialize_parent_smart_figure()
         plt.close()
-        self.fig[0] = AxFunc("bar", [1, 2, 3, 4], [1, 2, 3, 4])
+        self.fig[0] = PlottableAxMethod("bar", [1, 2, 3, 4], [1, 2, 3, 4])
         self.fig._initialize_parent_smart_figure()
         plt.close()
 

@@ -1483,25 +1483,33 @@ class Table(Plottable):
             cell.set_edgecolor(self._edge_color)
             cell.set_linewidth(self._edge_width)
 
-class AxFunc(Plottable):
+
+class PlottableAxMethod(Plottable):
     """
-    This experimental class allows to call any matplotlib Axes function as a plottable element in a
-    :class:`~graphinglib.smart_figure.SmartFigure`. This object can be used to access functionality that is not yet
+    This experimental class allows to call any matplotlib Axes method as a plottable element in a
+    :class:`~graphinglib.smart_figure.SmartFigure`. This object can be used to create plot types that have not yet been
     implemented in GraphingLib.
+
+    This class only works with Axes methods that create plottable elements (e.g., ``bar`` or ``pcolormesh``).
+    Methods that modify axes properties (e.g., ``set_facecolor``, ``set_title``) are not supported.
 
     Parameters
     ----------
-    func : str
-        Name of the matplotlib Axes function to call. The function will be called as ``axes.func(*args, **kwargs)``. For
+    meth : str
+        Name of the matplotlib Axes method to call. The method will be called as ``axes.meth(*args, **kwargs)``. For
         example, this can be "pcolormesh" or "bar".
-    *args : Any
-        Positional arguments to pass to ``axes.func``.
-    **kwargs : Any
-        Keyword arguments to pass to ``axes.func``.
+
+        .. warning::
+            The provided matplotlib Axes method must accept a ``zorder`` keyword argument to be compatible with this
+            class. If not, an exception will be raised when attempting to plot the element.
+    *args
+        Positional arguments to pass to ``axes.meth``.
+    **kwargs
+        Keyword arguments to pass to ``axes.meth``.
     """
 
-    def __init__(self, func: str, *args: Any, **kwargs: Any) -> None:
-        self.func = func
+    def __init__(self, meth: str, *args, **kwargs) -> None:
+        self.meth = meth
         self.args = args
         self.kwargs = kwargs
 
@@ -1510,4 +1518,19 @@ class AxFunc(Plottable):
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        getattr(axes, self.func)(*self.args, zorder=z_order, **self.kwargs)
+        try:
+            getattr(axes, self.meth)(*self.args, zorder=z_order, **self.kwargs)
+        except TypeError as e:
+            if "zorder" in str(e):
+                try:
+                    getattr(axes, self.meth)(*self.args, **self.kwargs)
+                except Exception as e2:
+                    raise GraphingException(
+                        f"Failed to call Axes method '{self.meth}' with provided arguments. Please check that all "
+                        "provided arguments are valid for the given method."
+                    ) from e2
+            else:
+                raise GraphingException(
+                    f"Failed to call Axes method '{self.meth}' with provided arguments. Please check that all "
+                    "provided arguments are valid for the given method."
+                ) from e
