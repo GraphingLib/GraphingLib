@@ -336,7 +336,7 @@ class TestFitFromGaussian(unittest.TestCase):
         self.assertEqual(self.fit._standard_deviation_of_fit_params.shape, (3,))
 
     def test_str(self):
-        self.assertEqual(str(self.fit), "$\mu = 1.000, \sigma = 1.000, A = 5.000$")
+        self.assertEqual(str(self.fit), r"$\mu = 1.000, \sigma = 1.000, A = 5.000$")
 
     def test_function(self):
         self.assertAlmostEqual(self.fit._function(3), 0.676515, places=3)

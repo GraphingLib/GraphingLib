@@ -207,6 +207,7 @@ rc_params:
   axes.titlesize: 12
   axes.titleweight: "normal"
   axes.prop_cycle: cycler('color', ['#4796b8', '#edb73b', '#d04125', '#91bf5a', '#a766cc', '#ed893b', '#26b59b', '#cccccc'])
+  axes.grid: False
   figure.titlesize: 12
   figure.titleweight: "normal"
   figure.facecolor: dimgrey
