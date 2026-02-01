@@ -80,7 +80,7 @@ Interpolation between data points is possible by calling the :py:meth:`~graphing
         x_min=0,
         x_max=2 * np.pi,
         number_of_points=70,
-        label="$\sin(3x)\cos^2(x)$",
+        label=r"$\sin(3x)\cos^2(x)$",
     )
 
     point_at_4 = scatter.create_point_at_x(4, face_color="red")

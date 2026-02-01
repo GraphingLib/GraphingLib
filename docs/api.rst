@@ -18,6 +18,15 @@ Figure and MultiFigure
     Figure
     MultiFigure
 
+.. autosummary::
+    :toctree: generated/
+    :template: smart_figure_classes
+    :nosignatures:
+
+    SmartFigure
+    SmartFigureWCS
+    SmartTwinAxis
+
 Plottables
 ----------
 
@@ -42,6 +51,7 @@ Plottables
     Histogram
     Hlines
     Line
+    PlottableAxMethod
     Point
     Polygon
     Rectangle
@@ -51,6 +61,17 @@ Plottables
     Text
     VectorField
     Vlines
+
+Legend elements
+---------------
+.. autosummary::
+    :toctree: generated/
+    :template: class
+    :nosignatures:
+
+    LegendLine
+    LegendMarker
+    LegendPatch
 
 Utility functions
 -----------------
