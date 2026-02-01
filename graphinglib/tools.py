@@ -8,8 +8,8 @@ except ImportError:
 
 class MathematicalObject(Protocol):
     """
-    This class implements the __r* and __i* methods for adding, subtracting, multiplying, dividing or raising to a power
-    an object that contains the implementation for the standard operators.
+    This class implements the __r* (reverse) and __i* (inplace) methods for adding, subtracting, multiplying, dividing
+    and raising to a power an object that implements the direct methods.
 
     .. warning::
         This class works only if the children class implements the `__add__`, `__sub__`, `__mul__`, `__truediv__` and
