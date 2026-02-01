@@ -85,6 +85,8 @@ class Plottable1D:
 
         formatted_points = "["
         for x, y in zip(sorted_x_data, sorted_y_data):
+            if np.isnan(x) or np.isnan(y):
+                continue
             x_num, x_exponent = f"{x:.{decimal_precision:d}e}".split("e")
             y_num, y_exponent = f"{y:.{decimal_precision:d}e}".split("e")
             formatted_points += f"({format_tex(x_num, x_exponent)},{format_tex(y_num, y_exponent)}),"
