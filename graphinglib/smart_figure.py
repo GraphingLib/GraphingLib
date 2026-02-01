@@ -1114,9 +1114,10 @@ class SmartFigure:
             else:
                 close_match = get_close_matches(key, properties, n=1, cutoff=0.6)
                 if close_match:
-                    raise AttributeError(f"SmartFigure has no attribute '{key}'. Did you mean '{close_match[0]}'?")
+                    raise AttributeError(f"{self.__class__.__name__} has no attribute '{key}'. "
+                                         f"Did you mean '{close_match[0]}'?")
                 else:
-                    raise AttributeError(f"SmartFigure has no attribute '{key}'.")
+                    raise AttributeError(f"{self.__class__.__name__} has no attribute '{key}'.")
         return new_copy
 
     @property
@@ -3691,9 +3692,10 @@ class SmartTwinAxis:
             else:
                 close_match = get_close_matches(key, properties, n=1, cutoff=0.6)
                 if close_match:
-                    raise AttributeError(f"SmartTwinAxis has no attribute '{key}'. Did you mean '{close_match[0]}'?")
+                    raise AttributeError(f"{self.__class__.__name__} has no attribute '{key}'. "
+                                         f"Did you mean '{close_match[0]}'?")
                 else:
-                    raise AttributeError(f"SmartTwinAxis has no attribute '{key}'.")
+                    raise AttributeError(f"{self.__class__.__name__} has no attribute '{key}'.")
         return new_copy
 
     def add_elements(self, *elements: Plottable | None) -> Self:
