@@ -6,9 +6,9 @@
 Handbook
 ========
 
-Welcome to the Handbook section of the documentation! In this section, you will find examples and tutorials for the various objects and methods of the GraphingLib library. 
+Welcome to the Handbook section of the documentation! In this section, you will find examples and tutorials for the various objects and methods of the GraphingLib library.
 
-.. note:: 
+.. note::
 
     In every code snippets you will encounter, the following imports precede the snippet's code: ::
 
@@ -52,7 +52,7 @@ Sections in this handbook
             :click-parent:
 
             Visit this section
-    
+
     .. grid-item-card::
         :img-top: ../_static/icons/Scatter.svg
 
@@ -68,7 +68,7 @@ Sections in this handbook
             :click-parent:
 
             Visit this section
-    
+
     .. grid-item-card::
         :img-top: ../_static/icons/Histogram.svg
 
@@ -107,7 +107,7 @@ Sections in this handbook
         Creating shapes
         ^^^^^^^^^^^^^^^
 
-        Rectangle, Circle, Arrow and Line.
+        Rectangle, Circle, Ellipse, Arrow and Line.
         ++++
 
         .. button-ref:: ./shapes
