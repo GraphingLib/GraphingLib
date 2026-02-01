@@ -12,8 +12,8 @@ class MathematicalObject(Protocol):
     an object that contains the implementation for the standard operators.
 
     .. warning::
-        This class works only if the children class implements the __add__, __sub__, __mul__, __truediv__ and __pow__
-        methods.
+        This class works only if the children class implements the `__add__`, `__sub__`, `__mul__`, `__truediv__` and
+        `__pow__` methods. Note also that the `__rpow__` method is not implemented by this class.
     """
 
     def __add__(self, other: Any) -> Self:
