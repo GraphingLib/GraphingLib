@@ -16,6 +16,7 @@ from scipy.interpolate import interp1d
 from pyperclip import copy as copy_to_clipboard
 
 from .graph_elements import Point, Plottable
+from .tools import MathematicalObject
 
 try:
     from typing import Self
@@ -93,7 +94,7 @@ class Plottable1D(Plottable, Protocol):
 
 
 @dataclass
-class Curve(Plottable1D):
+class Curve(Plottable1D, MathematicalObject):
     """
     This class implements a general continuous curve.
 
@@ -412,28 +413,6 @@ class Curve(Plottable1D):
         else:
             raise TypeError("Can only add a curve to another curve or a number.")
 
-    def __radd__(self, other: Self | float) -> Self:
-        return self.__add__(other)
-
-    def __iadd__(self, other: Self | float) -> Self:
-        if isinstance(other, Curve):
-            if not np.array_equal(self._x_data, other._x_data):
-                if len(self._x_data) > len(other._x_data):
-                    x_data = other._x_data
-                    y_data = interp1d(self._x_data, self._y_data)(x_data)
-                    self._y_data = y_data + other._y_data
-                    return self
-                else:
-                    x_data = self._x_data
-                    y_data = interp1d(other._x_data, other._y_data)(x_data)
-                    self._y_data = y_data + self._y_data
-                    return self
-            self._y_data += other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data += other
-            return self
-
     def __sub__(self, other: Self | float) -> Self:
         """
         Defines the subtraction of two curves or a curve and a number.
@@ -455,28 +434,6 @@ class Curve(Plottable1D):
             return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only subtract a curve from another curve or a number.")
-
-    def __rsub__(self, other: Self | float) -> Self:
-        return (self * -1) + other
-
-    def __isub__(self, other: Self | float) -> Self:
-        if isinstance(other, Curve):
-            if not np.array_equal(self._x_data, other._x_data):
-                if len(self._x_data) > len(other._x_data):
-                    x_data = other._x_data
-                    y_data = interp1d(self._x_data, self._y_data)(x_data)
-                    self._y_data = y_data - other._y_data
-                    return self
-                else:
-                    x_data = self._x_data
-                    y_data = interp1d(other._x_data, other._y_data)(x_data)
-                    self._y_data = self._y_data - y_data
-                    return self
-            self._y_data -= other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data -= other
-            return self
 
     def __mul__(self, other: Self | float) -> Self:
         """
@@ -500,28 +457,6 @@ class Curve(Plottable1D):
         else:
             raise TypeError("Can only multiply a curve by another curve or a number.")
 
-    def __rmul__(self, other: Self | float) -> Self:
-        return self.__mul__(other)
-
-    def __imul__(self, other: Self | float) -> Self:
-        if isinstance(other, Curve):
-            if not np.array_equal(self._x_data, other._x_data):
-                if len(self._x_data) > len(other._x_data):
-                    x_data = other._x_data
-                    y_data = interp1d(self._x_data, self._y_data)(x_data)
-                    self._y_data = y_data * other._y_data
-                    return self
-                else:
-                    x_data = self._x_data
-                    y_data = interp1d(other._x_data, other._y_data)(x_data)
-                    self._y_data = self._y_data * y_data
-                    return self
-            self._y_data *= other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data *= other
-            return self
-
     def __truediv__(self, other: Self | float) -> Self:
         """
         Defines the division of two curves or a curve and a number.
@@ -544,31 +479,6 @@ class Curve(Plottable1D):
         else:
             raise TypeError("Can only divide a curve by another curve or a number.")
 
-    def __rtruediv__(self, other: Self | float) -> Self:
-        try:
-            return (self**-1) * other
-        except ZeroDivisionError:
-            raise ZeroDivisionError("Cannot divide by zero.")
-
-    def __itruediv__(self, other: Self | float) -> Self:
-        if isinstance(other, Curve):
-            if not np.array_equal(self._x_data, other._x_data):
-                if len(self._x_data) > len(other._x_data):
-                    x_data = other._x_data
-                    y_data = interp1d(self._x_data, self._y_data)(x_data)
-                    self._y_data = y_data / other._y_data
-                    return self
-                else:
-                    x_data = self._x_data
-                    y_data = interp1d(other._x_data, other._y_data)(x_data)
-                    self._y_data = self._y_data / y_data
-                    return self
-            self._y_data /= other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data /= other
-            return self
-
     def __pow__(self, other: float) -> Self:
         """
         Defines the power of a curve to a number.
@@ -578,10 +488,6 @@ class Curve(Plottable1D):
             return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only raise a curve to another curve or a number.")
-
-    def __ipow__(self, other: float) -> Self:
-        self._y_data **= other
-        return self
 
     def __iter__(self):
         """
@@ -634,11 +540,14 @@ class Curve(Plottable1D):
             Opacity of the slice.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the slicing applied and the parameters passed to this method.
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any
+            other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
+            will be created with the slicing applied and the parameters passed to this method.
 
         Returns
         -------
-        A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two x values.
+        A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two x
+        values.
         """
         mask = (self._x_data >= x1) & (self._x_data <= x2)
         x_data = self._x_data[mask]
@@ -694,11 +603,14 @@ class Curve(Plottable1D):
             Opacity of the slice.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the slicing applied and the parameters passed to this method.
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any
+            other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
+            will be created with the slicing applied and the parameters passed to this method.
 
         Returns
         -------
-        A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two y values.
+        A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two y
+        values.
         """
         mask = (self._y_data >= y1) & (self._y_data <= y2)
         x_data = self._x_data[mask]
@@ -900,7 +812,8 @@ class Curve(Plottable1D):
         interpolation_method: str = "linear",
     ) -> list[tuple[float, float]]:
         """
-        Gets the coordinates of the curve at a given y value. Can return multiple coordinate pairs if the curve crosses the y value multiple times.
+        Gets the coordinates of the curve at a given y value. Can return multiple coordinate pairs if the curve crosses
+        the y value multiple times.
 
         Parameters
         ----------
@@ -944,7 +857,8 @@ class Curve(Plottable1D):
         alpha: float | Literal["default"] = "default",
     ) -> list[Point]:
         """
-        Gets the points on the curve at a given y value. Can return multiple Point objects if the curve crosses the y value multiple times.
+        Gets the points on the curve at a given y value. Can return multiple Point objects if the curve crosses the y
+        value multiple times.
 
         Parameters
         ----------
@@ -1028,7 +942,9 @@ class Curve(Plottable1D):
             Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the curve (with all its parameters) will be returned with the derivative applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the derivative applied and the parameters passed to this method.
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the derivative applied. Any
+            other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
+            will be created with the derivative applied and the parameters passed to this method.
 
         Returns
         -------
@@ -1086,7 +1002,9 @@ class Curve(Plottable1D):
             Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the curve (with all its parameters) will be returned with the integral applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the integral applied and the parameters passed to this method.
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the integral applied. Any
+            other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
+            will be created with the integral applied and the parameters passed to this method.
 
         Returns
         -------
@@ -1145,12 +1063,15 @@ class Curve(Plottable1D):
             Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the curve (with all its parameters) will be returned with the tangent applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the tangent applied and the parameters passed to this method.
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the tangent applied. Any
+            other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
+            will be created with the tangent applied and the parameters passed to this method.
 
         Returns
         -------
         :class:`~graphinglib.data_plotting_1d.Curve`
-            A :class:`~graphinglib.data_plotting_1d.Curve` object which is the tangent to the original curve at a given x value.
+            A :class:`~graphinglib.data_plotting_1d.Curve` object which is the tangent to the original curve at a given
+            x value.
         """
         point = self.get_coordinates_at_x(x)
         gradient = self.create_derivative_curve().get_coordinates_at_x(x)[1]
@@ -1207,12 +1128,15 @@ class Curve(Plottable1D):
             Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the curve (with all its parameters) will be returned with the normal applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the normal applied and the parameters passed to this method.
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the normal applied. Any
+            other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
+            will be created with the normal applied and the parameters passed to this method.
 
         Returns
         -------
         :class:`~graphinglib.data_plotting_1d.Curve`
-            A :class:`~graphinglib.data_plotting_1d.Curve` object which is the normal to the original curve at a given x value.
+            A :class:`~graphinglib.data_plotting_1d.Curve` object which is the normal to the original curve at a given x
+            value.
         """
         point = self.get_coordinates_at_x(x)
         gradient = self.create_derivative_curve().get_coordinates_at_x(x)[1]
@@ -1297,7 +1221,8 @@ class Curve(Plottable1D):
             Color of the area between the curve and the x axis when ``fill_between`` is set to ``True``.
             Default depends on the ``figure_style`` configuration.
         other_curve : :class:`~graphinglib.data_plotting_1d.Curve`, optional
-            If specified, the area between the two curves will be calculated instead of the area between the curve and the x axis.
+            If specified, the area between the two curves will be calculated instead of the area between the curve and
+            the x axis.
 
         Returns
         -------
@@ -1414,7 +1339,8 @@ class Curve(Plottable1D):
         other : :class:`~graphinglib.data_plotting_1d.Curve`
             The other curve to calculate the intersections with.
         as_point_objects : bool
-            Whether to return a list of :class:`~graphinglib.graph_elements.Point` objects (True) or a list of tuples of coordinates (False).
+            Whether to return a list of :class:`~graphinglib.graph_elements.Point` objects (True) or a list of tuples of
+            coordinates (False).
             Defaults to False.
         labels : list[str] or str, optional
             Labels of the intersection points to be displayed in the legend.
@@ -1447,7 +1373,8 @@ class Curve(Plottable1D):
         Returns
         -------
         list[:class:`~graphinglib.graph_elements.Point`] or list[tuple[float, float]]
-            A list of :class:`~graphinglib.graph_elements.Point` objects which are the intersection points between the two curves.
+            A list of :class:`~graphinglib.graph_elements.Point` objects which are the intersection points between the
+            two curves.
         """
         y = self._y_data - other._y_data
         s = np.abs(np.diff(np.sign(y))).astype(bool)
@@ -1646,7 +1573,7 @@ class Curve(Plottable1D):
 
 
 @dataclass
-class Scatter(Plottable1D):
+class Scatter(Plottable1D, MathematicalObject):
     """
     This class implements a general scatter plot.
 
@@ -2028,26 +1955,6 @@ class Scatter(Plottable1D):
                 "Can only add a scatter plot to another scatter plot or a number."
             )
 
-    def __radd__(self, other: Self | float) -> Self:
-        """
-        Defines the reverse addition of a scatter plot and a number.
-        """
-        return self.__add__(other)
-
-    def __iadd__(self, other: Self | float) -> Self:
-        if isinstance(other, Scatter):
-            try:
-                assert np.array_equal(self._x_data, other._x_data)
-            except AssertionError:
-                raise ValueError(
-                    "Cannot add two scatter plots with different x values."
-                )
-            self._y_data += other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data += other
-            return self
-
     def __sub__(self, other: Self | float) -> Self:
         """
         Defines the subtraction of two scatter plots or a scatter plot and a number.
@@ -2068,26 +1975,6 @@ class Scatter(Plottable1D):
             raise TypeError(
                 "Can only subtract a scatter plot from another scatter plot or a number."
             )
-
-    def __rsub__(self, other: Self | float) -> Self:
-        """
-        Defines the reverse subtraction of a scatter plot and a number.
-        """
-        return (self * -1) + other
-
-    def __isub__(self, other: Self | float) -> Self:
-        if isinstance(other, Scatter):
-            try:
-                assert np.array_equal(self._x_data, other._x_data)
-            except AssertionError:
-                raise ValueError(
-                    "Cannot subtract two scatter plots with different x values."
-                )
-            self._y_data -= other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data -= other
-            return self
 
     def __mul__(self, other: Self | float) -> Self:
         """
@@ -2110,26 +1997,6 @@ class Scatter(Plottable1D):
                 "Can only multiply a scatter plot by another scatter plot or a number."
             )
 
-    def __rmul__(self, other: Self | float) -> Self:
-        """
-        Defines the reverse multiplication of a scatter plot and a number.
-        """
-        return self.__mul__(other)
-
-    def __imul__(self, other: Self | float) -> Self:
-        if isinstance(other, Scatter):
-            try:
-                assert np.array_equal(self._x_data, other._x_data)
-            except AssertionError:
-                raise ValueError(
-                    "Cannot multiply two scatter plots with different x values."
-                )
-            self._y_data *= other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data *= other
-            return self
-
     def __truediv__(self, other: Self | float) -> Self:
         """
         Defines the division of two scatter plots or a scatter plot and a number.
@@ -2151,29 +2018,6 @@ class Scatter(Plottable1D):
                 "Can only divide a scatter plot by another scatter plot or a number."
             )
 
-    def __rtruediv__(self, other: Self | float) -> Self:
-        """
-        Defines the division of two scatter plots or a scatter plot and a number.
-        """
-        try:
-            return (self**-1) * other
-        except ZeroDivisionError:
-            raise ZeroDivisionError("Cannot divide by zero.")
-
-    def __itruediv__(self, other: Self | float) -> Self:
-        if isinstance(other, Scatter):
-            try:
-                assert np.array_equal(self._x_data, other._x_data)
-            except AssertionError:
-                raise ValueError(
-                    "Cannot divide two scatter plots with different x values."
-                )
-            self._y_data /= other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data /= other
-            return self
-
     def __pow__(self, other: float) -> Self:
         """
         Defines the power of a scatter plot to a number.
@@ -2185,10 +2029,6 @@ class Scatter(Plottable1D):
             raise TypeError(
                 "Can only raise a scatter plot to another scatter plot or a number."
             )
-
-    def __ipow__(self, other: float) -> Self:
-        self._y_data **= other
-        return self
 
     def __iter__(self):
         """
@@ -2263,7 +2103,9 @@ class Scatter(Plottable1D):
             Opacities of the points.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
+            If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied.
+            Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a
+            new scatter plot will be created with the slice applied and the parameters passed to this method.
 
         Returns
         -------
@@ -2366,7 +2208,9 @@ class Scatter(Plottable1D):
             Opacities of the points.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
+            If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied.
+            Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a
+            new scatter plot will be created with the slice applied and the parameters passed to this method.
 
         Returns
         -------
@@ -2584,7 +2428,8 @@ class Scatter(Plottable1D):
         interpolation_method: str = "linear",
     ) -> list[tuple[float, float]]:
         """
-        Gets the coordinates the curve at a given y value. Can return multiple coordinate pairs if the curve crosses the y value multiple times.
+        Gets the coordinates the curve at a given y value. Can return multiple coordinate pairs if the curve crosses the
+        y value multiple times.
 
         Parameters
         ----------
@@ -2629,7 +2474,8 @@ class Scatter(Plottable1D):
         alpha: float | Literal["default"] = "default",
     ) -> list[Point]:
         """
-        Creates the Points on the curve at a given y value. Can return multiple Points if the curve crosses the y value multiple times.
+        Creates the Points on the curve at a given y value. Can return multiple Points if the curve crosses the y value
+        multiple times.
 
         Parameters
         ----------
@@ -2770,7 +2616,8 @@ class Scatter(Plottable1D):
                 pass
             else:
                 raise ValueError(
-                    "Both face color and edge color cannot be lists/arrays/tuples of intensities or colors. Please set at least one of them to a valid color or set one of them to None."
+                    "Both face color and edge color cannot be lists/arrays/tuples of intensities or colors. "
+                    "Please set at least one of them to a valid color or set one of them to None."
                 )
 
         # Convert face color to matplotlib notation
@@ -2806,12 +2653,12 @@ class Scatter(Plottable1D):
             if all(isinstance(i, (int, float)) for i in self._face_color):
                 color_map = plt.get_cmap(self._color_map)
 
-                # Sets the data range that the color map will cover. Otherwise, it will be calculated from the array of intensities
+                # Sets the data range that the color map will cover.
                 if self._color_map_range:
                     norm = Normalize(
                         vmin=min(self._color_map_range), vmax=max(self._color_map_range)
                     )
-                else:
+                else:  # Calculate from the array of intensities
                     norm = Normalize(
                         vmin=min(self._face_color), vmax=max(self._face_color)
                     )
@@ -2821,12 +2668,12 @@ class Scatter(Plottable1D):
             if all(isinstance(i, (int, float)) for i in self._edge_color):
                 color_map = plt.get_cmap(self._color_map)
 
-                # Sets the data range that the color map will cover. Otherwise, it will be calculated from the array of intensities
+                # Sets the data range that the color map will cover.
                 if self._color_map_range:
                     norm = Normalize(
                         vmin=min(self._color_map_range), vmax=max(self._color_map_range)
                     )
-                else:
+                else:  # Calculate from the array of intensities
                     norm = Normalize(
                         vmin=min(self._edge_color), vmax=max(self._edge_color)
                     )
