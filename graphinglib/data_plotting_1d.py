@@ -16,6 +16,7 @@ from scipy.interpolate import interp1d
 from pyperclip import copy as copy_to_clipboard
 
 from .graph_elements import Point
+from .tools import MathematicalObject
 
 try:
     from typing import Self
@@ -93,7 +94,7 @@ class Plottable1D:
 
 
 @dataclass
-class Curve(Plottable1D):
+class Curve(Plottable1D, MathematicalObject):
     """
     This class implements a general continuous curve.
 
@@ -412,28 +413,6 @@ class Curve(Plottable1D):
         else:
             raise TypeError("Can only add a curve to another curve or a number.")
 
-    def __radd__(self, other: Self | float) -> Self:
-        return self.__add__(other)
-
-    def __iadd__(self, other: Self | float) -> Self:
-        if isinstance(other, Curve):
-            if not np.array_equal(self._x_data, other._x_data):
-                if len(self._x_data) > len(other._x_data):
-                    x_data = other._x_data
-                    y_data = interp1d(self._x_data, self._y_data)(x_data)
-                    self._y_data = y_data + other._y_data
-                    return self
-                else:
-                    x_data = self._x_data
-                    y_data = interp1d(other._x_data, other._y_data)(x_data)
-                    self._y_data = y_data + self._y_data
-                    return self
-            self._y_data += other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data += other
-            return self
-
     def __sub__(self, other: Self | float) -> Self:
         """
         Defines the subtraction of two curves or a curve and a number.
@@ -455,28 +434,6 @@ class Curve(Plottable1D):
             return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only subtract a curve from another curve or a number.")
-
-    def __rsub__(self, other: Self | float) -> Self:
-        return (self * -1) + other
-
-    def __isub__(self, other: Self | float) -> Self:
-        if isinstance(other, Curve):
-            if not np.array_equal(self._x_data, other._x_data):
-                if len(self._x_data) > len(other._x_data):
-                    x_data = other._x_data
-                    y_data = interp1d(self._x_data, self._y_data)(x_data)
-                    self._y_data = y_data - other._y_data
-                    return self
-                else:
-                    x_data = self._x_data
-                    y_data = interp1d(other._x_data, other._y_data)(x_data)
-                    self._y_data = self._y_data - y_data
-                    return self
-            self._y_data -= other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data -= other
-            return self
 
     def __mul__(self, other: Self | float) -> Self:
         """
@@ -500,28 +457,6 @@ class Curve(Plottable1D):
         else:
             raise TypeError("Can only multiply a curve by another curve or a number.")
 
-    def __rmul__(self, other: Self | float) -> Self:
-        return self.__mul__(other)
-
-    def __imul__(self, other: Self | float) -> Self:
-        if isinstance(other, Curve):
-            if not np.array_equal(self._x_data, other._x_data):
-                if len(self._x_data) > len(other._x_data):
-                    x_data = other._x_data
-                    y_data = interp1d(self._x_data, self._y_data)(x_data)
-                    self._y_data = y_data * other._y_data
-                    return self
-                else:
-                    x_data = self._x_data
-                    y_data = interp1d(other._x_data, other._y_data)(x_data)
-                    self._y_data = self._y_data * y_data
-                    return self
-            self._y_data *= other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data *= other
-            return self
-
     def __truediv__(self, other: Self | float) -> Self:
         """
         Defines the division of two curves or a curve and a number.
@@ -544,31 +479,6 @@ class Curve(Plottable1D):
         else:
             raise TypeError("Can only divide a curve by another curve or a number.")
 
-    def __rtruediv__(self, other: Self | float) -> Self:
-        try:
-            return (self**-1) * other
-        except ZeroDivisionError:
-            raise ZeroDivisionError("Cannot divide by zero.")
-
-    def __itruediv__(self, other: Self | float) -> Self:
-        if isinstance(other, Curve):
-            if not np.array_equal(self._x_data, other._x_data):
-                if len(self._x_data) > len(other._x_data):
-                    x_data = other._x_data
-                    y_data = interp1d(self._x_data, self._y_data)(x_data)
-                    self._y_data = y_data / other._y_data
-                    return self
-                else:
-                    x_data = self._x_data
-                    y_data = interp1d(other._x_data, other._y_data)(x_data)
-                    self._y_data = self._y_data / y_data
-                    return self
-            self._y_data /= other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data /= other
-            return self
-
     def __pow__(self, other: float) -> Self:
         """
         Defines the power of a curve to a number.
@@ -578,10 +488,6 @@ class Curve(Plottable1D):
             return Curve(self._x_data, new_y_data)
         else:
             raise TypeError("Can only raise a curve to another curve or a number.")
-
-    def __ipow__(self, other: float) -> Self:
-        self._y_data **= other
-        return self
 
     def __iter__(self):
         """
@@ -1646,7 +1552,7 @@ class Curve(Plottable1D):
 
 
 @dataclass
-class Scatter(Plottable1D):
+class Scatter(Plottable1D, MathematicalObject):
     """
     This class implements a general scatter plot.
 
@@ -2028,26 +1934,6 @@ class Scatter(Plottable1D):
                 "Can only add a scatter plot to another scatter plot or a number."
             )
 
-    def __radd__(self, other: Self | float) -> Self:
-        """
-        Defines the reverse addition of a scatter plot and a number.
-        """
-        return self.__add__(other)
-
-    def __iadd__(self, other: Self | float) -> Self:
-        if isinstance(other, Scatter):
-            try:
-                assert np.array_equal(self._x_data, other._x_data)
-            except AssertionError:
-                raise ValueError(
-                    "Cannot add two scatter plots with different x values."
-                )
-            self._y_data += other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data += other
-            return self
-
     def __sub__(self, other: Self | float) -> Self:
         """
         Defines the subtraction of two scatter plots or a scatter plot and a number.
@@ -2068,26 +1954,6 @@ class Scatter(Plottable1D):
             raise TypeError(
                 "Can only subtract a scatter plot from another scatter plot or a number."
             )
-
-    def __rsub__(self, other: Self | float) -> Self:
-        """
-        Defines the reverse subtraction of a scatter plot and a number.
-        """
-        return (self * -1) + other
-
-    def __isub__(self, other: Self | float) -> Self:
-        if isinstance(other, Scatter):
-            try:
-                assert np.array_equal(self._x_data, other._x_data)
-            except AssertionError:
-                raise ValueError(
-                    "Cannot subtract two scatter plots with different x values."
-                )
-            self._y_data -= other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data -= other
-            return self
 
     def __mul__(self, other: Self | float) -> Self:
         """
@@ -2110,26 +1976,6 @@ class Scatter(Plottable1D):
                 "Can only multiply a scatter plot by another scatter plot or a number."
             )
 
-    def __rmul__(self, other: Self | float) -> Self:
-        """
-        Defines the reverse multiplication of a scatter plot and a number.
-        """
-        return self.__mul__(other)
-
-    def __imul__(self, other: Self | float) -> Self:
-        if isinstance(other, Scatter):
-            try:
-                assert np.array_equal(self._x_data, other._x_data)
-            except AssertionError:
-                raise ValueError(
-                    "Cannot multiply two scatter plots with different x values."
-                )
-            self._y_data *= other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data *= other
-            return self
-
     def __truediv__(self, other: Self | float) -> Self:
         """
         Defines the division of two scatter plots or a scatter plot and a number.
@@ -2151,29 +1997,6 @@ class Scatter(Plottable1D):
                 "Can only divide a scatter plot by another scatter plot or a number."
             )
 
-    def __rtruediv__(self, other: Self | float) -> Self:
-        """
-        Defines the division of two scatter plots or a scatter plot and a number.
-        """
-        try:
-            return (self**-1) * other
-        except ZeroDivisionError:
-            raise ZeroDivisionError("Cannot divide by zero.")
-
-    def __itruediv__(self, other: Self | float) -> Self:
-        if isinstance(other, Scatter):
-            try:
-                assert np.array_equal(self._x_data, other._x_data)
-            except AssertionError:
-                raise ValueError(
-                    "Cannot divide two scatter plots with different x values."
-                )
-            self._y_data /= other._y_data
-            return self
-        elif isinstance(other, (int, float)):
-            self._y_data /= other
-            return self
-
     def __pow__(self, other: float) -> Self:
         """
         Defines the power of a scatter plot to a number.
@@ -2185,10 +2008,6 @@ class Scatter(Plottable1D):
             raise TypeError(
                 "Can only raise a scatter plot to another scatter plot or a number."
             )
-
-    def __ipow__(self, other: float) -> Self:
-        self._y_data **= other
-        return self
 
     def __iter__(self):
         """
