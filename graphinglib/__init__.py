@@ -44,5 +44,6 @@ from .fits import (
 from .graph_elements import Plottable, GraphingException, Hlines, Point, Table, Text, Vlines, PlottableAxMethod
 from .legend_artists import LegendElement, LegendLine, LegendMarker, LegendPatch
 from .multifigure import MultiFigure
-from .shapes import Arrow, Circle, Line, Polygon, Rectangle
+from .shapes import Arrow, Circle, Ellipse, Line, Polygon, Rectangle
 from .smart_figure import SmartFigure, SmartFigureWCS, SmartTwinAxis
+from .tools import MathematicalObject

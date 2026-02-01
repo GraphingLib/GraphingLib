@@ -39,6 +39,7 @@ Plottables
     Circle
     Contour
     Curve
+    Ellipse
     FitFromExponential
     FitFromFOTF
     FitFromFunction
@@ -85,3 +86,12 @@ Utility functions
     get_default_style
     get_styles
     set_default_style
+
+Tools
+-----
+.. autosummary::
+    :toctree: generated/
+    :template: class
+    :nosignatures:
+
+    MathematicalObject

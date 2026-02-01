@@ -158,6 +158,9 @@ class TestText(unittest.TestCase):
             h_align="center",
             v_align="center",
             rotation=10.0,
+            highlight_color="yellow",
+            highlight_alpha=0.5,
+            highlight_padding=0.2,
         )
         self.assertEqual(testText._x, 0.0)
         self.assertEqual(testText._y, 0.0)
@@ -168,6 +171,9 @@ class TestText(unittest.TestCase):
         self.assertEqual(testText._h_align, "center")
         self.assertEqual(testText._v_align, "center")
         self.assertEqual(testText._rotation, 10.0)
+        self.assertEqual(testText._highlight_color, "yellow")
+        self.assertEqual(testText._highlight_alpha, 0.5)
+        self.assertEqual(testText._highlight_padding, 0.2)
 
     def test_add_arrow(self):
         testText = Text(
@@ -201,6 +207,9 @@ class TestText(unittest.TestCase):
             h_align="center",
             v_align="center",
             rotation=-40.0,
+            highlight_color="blue",
+            highlight_alpha=0.4,
+            highlight_padding=0.15,
         )
         testText.add_arrow(
             points_to=(1, 1), width=0.1, head_width=0.3, head_length=0.2, shrink=0.05, alpha=0.9
@@ -215,6 +224,10 @@ class TestText(unittest.TestCase):
         self.assertEqual(ax.texts[0].get_horizontalalignment(), "center")
         self.assertEqual(ax.texts[0].get_verticalalignment(), "center")
         self.assertEqual(ax.texts[0].get_rotation(), 360 - 40.0)
+        # Check if the highlight box is plotted correctly
+        bbox = ax.texts[0].get_bbox_patch()
+        self.assertEqual(bbox.get_facecolor(), to_rgba("blue", 0.4))
+        self.assertAlmostEqual(bbox.get_boxstyle().pad, 0.15)
         # Check if the arrow is plotted correctly
         for child in ax.get_children():
             if isinstance(child, plt.Annotation):
@@ -238,6 +251,9 @@ class TestText(unittest.TestCase):
             h_align="center",
             v_align="center",
             rotation=-25.0,
+            highlight_color="green",
+            highlight_alpha=0.7,
+            highlight_padding=0.1,
         )
         testTextCopy = testText.copy()
         self.assertEqual(testTextCopy._x, testText._x)
@@ -249,6 +265,9 @@ class TestText(unittest.TestCase):
         self.assertEqual(testTextCopy._h_align, testText._h_align)
         self.assertEqual(testTextCopy._v_align, testText._v_align)
         self.assertEqual(testTextCopy._rotation, testText._rotation)
+        self.assertEqual(testTextCopy._highlight_color, testText._highlight_color)
+        self.assertEqual(testTextCopy._highlight_alpha, testText._highlight_alpha)
+        self.assertEqual(testTextCopy._highlight_padding, testText._highlight_padding)
         self.assertEqual(testTextCopy._arrow_pointing_to, testText._arrow_pointing_to)
 
 

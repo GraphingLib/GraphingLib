@@ -1,0 +1,3 @@
+Added MathematicalObject Protocol class
+---------------------------------------
+Added a MathematicalObject Protocol class in graphinglib.tools to provide default implementations for reverse and in-place mathematical operations.

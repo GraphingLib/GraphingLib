@@ -195,6 +195,14 @@ Circle:
   _line_width: 2
   _line_style: "-"
 
+Ellipse:
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
+
 Rectangle:
   _fill: True
   _fill_alpha: 0.5

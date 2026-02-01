@@ -107,7 +107,7 @@ Sections in this handbook
         Creating shapes
         ^^^^^^^^^^^^^^^
 
-        Rectangle, Circle, Arrow and Line.
+        Rectangle, Circle, Ellipse, Arrow and Line.
         ++++
 
         .. button-ref:: ./shapes
