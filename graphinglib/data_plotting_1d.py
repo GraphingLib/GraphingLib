@@ -540,11 +540,14 @@ class Curve(Plottable1D, MathematicalObject):
             Opacity of the slice.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the slicing applied and the parameters passed to this method.
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any
+            other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
+            will be created with the slicing applied and the parameters passed to this method.
 
         Returns
         -------
-        A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two x values.
+        A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two x
+        values.
         """
         mask = (self._x_data >= x1) & (self._x_data <= x2)
         x_data = self._x_data[mask]
@@ -600,11 +603,14 @@ class Curve(Plottable1D, MathematicalObject):
             Opacity of the slice.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the slicing applied and the parameters passed to this method.
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any
+            other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
+            will be created with the slicing applied and the parameters passed to this method.
 
         Returns
         -------
-        A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two y values.
+        A :class:`~graphinglib.data_plotting_1d.Curve` object which is the slice of the original curve between the two y
+        values.
         """
         mask = (self._y_data >= y1) & (self._y_data <= y2)
         x_data = self._x_data[mask]
@@ -806,7 +812,8 @@ class Curve(Plottable1D, MathematicalObject):
         interpolation_method: str = "linear",
     ) -> list[tuple[float, float]]:
         """
-        Gets the coordinates of the curve at a given y value. Can return multiple coordinate pairs if the curve crosses the y value multiple times.
+        Gets the coordinates of the curve at a given y value. Can return multiple coordinate pairs if the curve crosses
+        the y value multiple times.
 
         Parameters
         ----------
@@ -850,7 +857,8 @@ class Curve(Plottable1D, MathematicalObject):
         alpha: float | Literal["default"] = "default",
     ) -> list[Point]:
         """
-        Gets the points on the curve at a given y value. Can return multiple Point objects if the curve crosses the y value multiple times.
+        Gets the points on the curve at a given y value. Can return multiple Point objects if the curve crosses the y
+        value multiple times.
 
         Parameters
         ----------
@@ -934,7 +942,9 @@ class Curve(Plottable1D, MathematicalObject):
             Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the curve (with all its parameters) will be returned with the derivative applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the derivative applied and the parameters passed to this method.
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the derivative applied. Any
+            other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
+            will be created with the derivative applied and the parameters passed to this method.
 
         Returns
         -------
@@ -992,7 +1002,9 @@ class Curve(Plottable1D, MathematicalObject):
             Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the curve (with all its parameters) will be returned with the integral applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the integral applied and the parameters passed to this method.
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the integral applied. Any
+            other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
+            will be created with the integral applied and the parameters passed to this method.
 
         Returns
         -------
@@ -1051,12 +1063,15 @@ class Curve(Plottable1D, MathematicalObject):
             Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the curve (with all its parameters) will be returned with the tangent applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the tangent applied and the parameters passed to this method.
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the tangent applied. Any
+            other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
+            will be created with the tangent applied and the parameters passed to this method.
 
         Returns
         -------
         :class:`~graphinglib.data_plotting_1d.Curve`
-            A :class:`~graphinglib.data_plotting_1d.Curve` object which is the tangent to the original curve at a given x value.
+            A :class:`~graphinglib.data_plotting_1d.Curve` object which is the tangent to the original curve at a given
+            x value.
         """
         point = self.get_coordinates_at_x(x)
         gradient = self.create_derivative_curve().get_coordinates_at_x(x)[1]
@@ -1113,12 +1128,15 @@ class Curve(Plottable1D, MathematicalObject):
             Opacity of the new curve.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the curve (with all its parameters) will be returned with the normal applied. Any other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve will be created with the normal applied and the parameters passed to this method.
+            If ``True``, a copy of the curve (with all its parameters) will be returned with the normal applied. Any
+            other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
+            will be created with the normal applied and the parameters passed to this method.
 
         Returns
         -------
         :class:`~graphinglib.data_plotting_1d.Curve`
-            A :class:`~graphinglib.data_plotting_1d.Curve` object which is the normal to the original curve at a given x value.
+            A :class:`~graphinglib.data_plotting_1d.Curve` object which is the normal to the original curve at a given x
+            value.
         """
         point = self.get_coordinates_at_x(x)
         gradient = self.create_derivative_curve().get_coordinates_at_x(x)[1]
@@ -1203,7 +1221,8 @@ class Curve(Plottable1D, MathematicalObject):
             Color of the area between the curve and the x axis when ``fill_between`` is set to ``True``.
             Default depends on the ``figure_style`` configuration.
         other_curve : :class:`~graphinglib.data_plotting_1d.Curve`, optional
-            If specified, the area between the two curves will be calculated instead of the area between the curve and the x axis.
+            If specified, the area between the two curves will be calculated instead of the area between the curve and
+            the x axis.
 
         Returns
         -------
@@ -1320,7 +1339,8 @@ class Curve(Plottable1D, MathematicalObject):
         other : :class:`~graphinglib.data_plotting_1d.Curve`
             The other curve to calculate the intersections with.
         as_point_objects : bool
-            Whether to return a list of :class:`~graphinglib.graph_elements.Point` objects (True) or a list of tuples of coordinates (False).
+            Whether to return a list of :class:`~graphinglib.graph_elements.Point` objects (True) or a list of tuples of
+            coordinates (False).
             Defaults to False.
         labels : list[str] or str, optional
             Labels of the intersection points to be displayed in the legend.
@@ -1353,7 +1373,8 @@ class Curve(Plottable1D, MathematicalObject):
         Returns
         -------
         list[:class:`~graphinglib.graph_elements.Point`] or list[tuple[float, float]]
-            A list of :class:`~graphinglib.graph_elements.Point` objects which are the intersection points between the two curves.
+            A list of :class:`~graphinglib.graph_elements.Point` objects which are the intersection points between the
+            two curves.
         """
         y = self._y_data - other._y_data
         s = np.abs(np.diff(np.sign(y))).astype(bool)
@@ -2082,7 +2103,9 @@ class Scatter(Plottable1D, MathematicalObject):
             Opacities of the points.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
+            If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied.
+            Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a
+            new scatter plot will be created with the slice applied and the parameters passed to this method.
 
         Returns
         -------
@@ -2185,7 +2208,9 @@ class Scatter(Plottable1D, MathematicalObject):
             Opacities of the points.
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
-            If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied. Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a new scatter plot will be created with the slice applied and the parameters passed to this method.
+            If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied.
+            Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a
+            new scatter plot will be created with the slice applied and the parameters passed to this method.
 
         Returns
         -------
@@ -2403,7 +2428,8 @@ class Scatter(Plottable1D, MathematicalObject):
         interpolation_method: str = "linear",
     ) -> list[tuple[float, float]]:
         """
-        Gets the coordinates the curve at a given y value. Can return multiple coordinate pairs if the curve crosses the y value multiple times.
+        Gets the coordinates the curve at a given y value. Can return multiple coordinate pairs if the curve crosses the
+        y value multiple times.
 
         Parameters
         ----------
@@ -2448,7 +2474,8 @@ class Scatter(Plottable1D, MathematicalObject):
         alpha: float | Literal["default"] = "default",
     ) -> list[Point]:
         """
-        Creates the Points on the curve at a given y value. Can return multiple Points if the curve crosses the y value multiple times.
+        Creates the Points on the curve at a given y value. Can return multiple Points if the curve crosses the y value
+        multiple times.
 
         Parameters
         ----------
@@ -2589,7 +2616,8 @@ class Scatter(Plottable1D, MathematicalObject):
                 pass
             else:
                 raise ValueError(
-                    "Both face color and edge color cannot be lists/arrays/tuples of intensities or colors. Please set at least one of them to a valid color or set one of them to None."
+                    "Both face color and edge color cannot be lists/arrays/tuples of intensities or colors. "
+                    "Please set at least one of them to a valid color or set one of them to None."
                 )
 
         # Convert face color to matplotlib notation
@@ -2625,12 +2653,12 @@ class Scatter(Plottable1D, MathematicalObject):
             if all(isinstance(i, (int, float)) for i in self._face_color):
                 color_map = plt.get_cmap(self._color_map)
 
-                # Sets the data range that the color map will cover. Otherwise, it will be calculated from the array of intensities
+                # Sets the data range that the color map will cover.
                 if self._color_map_range:
                     norm = Normalize(
                         vmin=min(self._color_map_range), vmax=max(self._color_map_range)
                     )
-                else:
+                else:  # Calculate from the array of intensities
                     norm = Normalize(
                         vmin=min(self._face_color), vmax=max(self._face_color)
                     )
@@ -2640,12 +2668,12 @@ class Scatter(Plottable1D, MathematicalObject):
             if all(isinstance(i, (int, float)) for i in self._edge_color):
                 color_map = plt.get_cmap(self._color_map)
 
-                # Sets the data range that the color map will cover. Otherwise, it will be calculated from the array of intensities
+                # Sets the data range that the color map will cover.
                 if self._color_map_range:
                     norm = Normalize(
                         vmin=min(self._color_map_range), vmax=max(self._color_map_range)
                     )
-                else:
+                else:  # Calculate from the array of intensities
                     norm = Normalize(
                         vmin=min(self._edge_color), vmax=max(self._edge_color)
                     )
