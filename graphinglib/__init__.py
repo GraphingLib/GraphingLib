@@ -43,5 +43,5 @@ from .fits import (
 )
 from .graph_elements import GraphingException, Hlines, Point, Table, Text, Vlines
 from .multifigure import MultiFigure
-from .shapes import Arrow, Circle, Line, Polygon, Rectangle
+from .shapes import Arrow, Circle, Ellipse, Line, Polygon, Rectangle
 from .tools import MathematicalObject

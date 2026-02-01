@@ -30,6 +30,7 @@ Plottables
     Circle
     Contour
     Curve
+    Ellipse
     FitFromExponential
     FitFromFOTF
     FitFromFunction

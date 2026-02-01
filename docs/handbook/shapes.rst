@@ -224,6 +224,67 @@ Since :class:`~graphinglib.shapes.Circle` objects actually inherit from :class:`
     print(circle.area)
     print(circle.perimeter)
 
+The :class:`~graphinglib.shapes.Ellipse` Object
+-----------------------------------------------
+
+The :class:`~graphinglib.shapes.Ellipse` class is similar to :class:`~graphinglib.shapes.Circle`, but allows you to specify different radii for the x and y axes. You can also apply a rotation angle to the ellipse. Create an Ellipse by specifying its center point, x radius, and y radius:
+
+.. plot::
+
+    ellipse = gl.Ellipse(x_center=0, y_center=0, x_radius=10, y_radius=5)
+
+The key differences between :class:`~graphinglib.shapes.Ellipse` and :class:`~graphinglib.shapes.Circle` are:
+
+- **Two independent radii**: Use ``x_radius`` and ``y_radius`` instead of a single ``radius`` parameter
+- **Optional rotation**: You can rotate the ellipse using the ``angle`` parameter (in degrees)
+- **Width and height properties**: Access or set dimensions via ``width`` (2 × x_radius) and ``height`` (2 × y_radius)
+
+Here is an example with different ellipses:
+
+.. plot::
+
+    ellipse1 = gl.Ellipse(
+        x_center=-5,
+        y_center=5,
+        x_radius=8,
+        y_radius=4,
+        fill_color="C1",
+        edge_color="C1",
+        line_width=2,
+        fill=True,
+        fill_alpha=0.7,
+    )
+
+    ellipse2 = gl.Ellipse(
+        x_center=5,
+        y_center=5,
+        x_radius=6,
+        y_radius=3,
+        fill_color="C0",
+        edge_color="C0",
+        line_width=2,
+        fill=True,
+        fill_alpha=0.7,
+        angle=30,  # Rotated by 30 degrees
+    )
+
+    ellipse3 = gl.Ellipse(
+        x_center=0,
+        y_center=-3,
+        x_radius=6,
+        y_radius=4,
+        edge_color="C2",
+        line_width=3,
+        fill=False,
+        angle=45,
+    )
+
+    figure = gl.Figure(x_lim=(-15, 15), y_lim=(-10, 10), aspect_ratio=1)
+    figure.add_elements(ellipse1, ellipse2, ellipse3)
+    figure.show()
+
+Like Circles, Ellipse objects inherit from :class:`~graphinglib.shapes.Polygon` and use point approximation, so circumference and area calculations are approximations. The ``number_of_points`` parameter can be adjusted for better accuracy.
+
 The :class:`~graphinglib.shapes.Arrow` Object
 ----------------------------------------------
 
