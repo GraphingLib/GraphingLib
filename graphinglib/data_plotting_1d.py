@@ -15,7 +15,7 @@ from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import interp1d
 from pyperclip import copy as copy_to_clipboard
 
-from .graph_elements import Point
+from .graph_elements import Point, Plottable
 
 try:
     from typing import Self
@@ -47,7 +47,7 @@ class Fit(Protocol):
         pass
 
 
-class Plottable1D:
+class Plottable1D(Plottable, Protocol):
     """
     Dummy class to allow type hinting of Plottable1D objects.
     """

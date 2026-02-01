@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Callable, Literal, Optional
+from typing import Callable, Literal, Optional, Protocol
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,13 +11,15 @@ from matplotlib.image import imread
 from numpy.typing import ArrayLike
 from scipy.interpolate import griddata
 
+from .graph_elements import Plottable
+
 try:
     from typing import Self
 except ImportError:
     from typing_extensions import Self
 
 
-class Plottable2D:
+class Plottable2D(Plottable, Protocol):
     """
     Dummy class to allow type hinting of Plottable2D objects.
     """
