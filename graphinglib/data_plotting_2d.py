@@ -46,7 +46,7 @@ class Heatmap(Plottable2D):
     show_color_bar : bool
         Whether or not to display the color bar next to the plot.
         Defaults to ``True``.
-    alpha_value : float
+    alpha : float
         Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
         Defaults to 1.0.
     aspect_ratio : str or float
@@ -73,7 +73,7 @@ class Heatmap(Plottable2D):
         color_map: str | Colormap = "default",
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
-        alpha_value: float = 1.0,
+        alpha: float = 1.0,
         aspect_ratio: str | float = "default",
         origin_position: str = "default",
         interpolation: str = "none",
@@ -98,7 +98,7 @@ class Heatmap(Plottable2D):
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Defaults to ``True``.
-        alpha_value : float
+        alpha : float
             Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
             Defaults to 1.0.
         aspect_ratio : str or float
@@ -122,7 +122,7 @@ class Heatmap(Plottable2D):
         self._color_map = color_map
         self._color_map_range = color_map_range
         self._show_color_bar = show_color_bar
-        self._alpha_value = alpha_value
+        self._alpha = alpha
         self._aspect_ratio = aspect_ratio
         self._origin_position = origin_position
         self._interpolation = interpolation
@@ -144,7 +144,7 @@ class Heatmap(Plottable2D):
         color_map: str | Colormap = "default",
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool = True,
-        alpha_value: float = 1.0,
+        alpha: float = 1.0,
         aspect_ratio: str | float = "default",
         origin_position: str = "default",
         interpolation: str = "none",
@@ -170,7 +170,7 @@ class Heatmap(Plottable2D):
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Defaults to ``True``.
-        alpha_value : float
+        alpha : float
             Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
             Defaults to 1.0.
         aspect_ratio : str or float
@@ -206,7 +206,7 @@ class Heatmap(Plottable2D):
             color_map,
             color_map_range,
             show_color_bar,
-            alpha_value,
+            alpha,
             aspect_ratio,
             origin_position,
             interpolation,
@@ -224,7 +224,7 @@ class Heatmap(Plottable2D):
         color_map: str | Colormap = "default",
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool = True,
-        alpha_value: float = 1.0,
+        alpha: float = 1.0,
         aspect_ratio: str | float = "default",
         origin_position: str = "default",
         interpolation: str = "none",
@@ -254,7 +254,7 @@ class Heatmap(Plottable2D):
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Defaults to ``True``.
-        alpha_value : float
+        alpha : float
             Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
             Defaults to 1.0.
         aspect_ratio : str or float
@@ -296,7 +296,7 @@ class Heatmap(Plottable2D):
             color_map,
             color_map_range,
             show_color_bar,
-            alpha_value,
+            alpha,
             aspect_ratio,
             origin_position,
             interpolation,
@@ -354,12 +354,12 @@ class Heatmap(Plottable2D):
         self._show_color_bar = show_color_bar
 
     @property
-    def alpha_value(self) -> float:
-        return self._alpha_value
+    def alpha(self) -> float:
+        return self._alpha
 
-    @alpha_value.setter
-    def alpha_value(self, alpha_value: float) -> None:
-        self._alpha_value = alpha_value
+    @alpha.setter
+    def alpha(self, alpha: float) -> None:
+        self._alpha = alpha
 
     @property
     def aspect_ratio(self) -> str | float:
@@ -436,7 +436,7 @@ class Heatmap(Plottable2D):
         """
         params = {
             "cmap": self._color_map,
-            "alpha": self._alpha_value,
+            "alpha": self._alpha,
             "aspect": self._aspect_ratio,
             "origin": self._origin_position,
             "interpolation": self._interpolation,

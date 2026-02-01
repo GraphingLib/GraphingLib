@@ -17,7 +17,7 @@ class TestHeatmap(unittest.TestCase):
             y_axis_range=(0, 11),
             color_map="viridis",
             show_color_bar=True,
-            alpha_value=0.5,
+            alpha=0.5,
             aspect_ratio="auto",
             origin_position="upper",
             interpolation="nearest",
@@ -43,7 +43,7 @@ class TestHeatmap(unittest.TestCase):
             y_axis_range=(0, 3 * np.pi),
             color_map="viridis",
             show_color_bar=True,
-            alpha_value=0.5,
+            alpha=0.5,
             aspect_ratio="auto",
             origin_position="upper",
             interpolation="nearest",
@@ -74,7 +74,7 @@ class TestHeatmap(unittest.TestCase):
             y_axis_range=(0, 11),
             color_map="viridis",
             show_color_bar=True,
-            alpha_value=0.5,
+            alpha=0.5,
             aspect_ratio="auto",
             origin_position="upper",
             interpolation="nearest",
@@ -99,7 +99,7 @@ class TestHeatmap(unittest.TestCase):
             y_axis_range=(0, 11),
             color_map="viridis",
             show_color_bar=True,
-            alpha_value=0.5,
+            alpha=0.5,
             aspect_ratio="auto",
             origin_position="upper",
             interpolation="nearest",
@@ -111,7 +111,7 @@ class TestHeatmap(unittest.TestCase):
         self.assertEqual(heatmap_copy._y_axis_range, (0, 11))
         self.assertEqual(heatmap_copy._color_map, "viridis")
         self.assertEqual(heatmap_copy._show_color_bar, True)
-        self.assertEqual(heatmap_copy._alpha_value, 0.5)
+        self.assertEqual(heatmap_copy._alpha, 0.5)
         self.assertEqual(heatmap_copy._aspect_ratio, "auto")
         self.assertEqual(heatmap_copy._origin_position, "upper")
         self.assertEqual(heatmap_copy._interpolation, "nearest")
