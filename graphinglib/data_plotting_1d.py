@@ -58,6 +58,9 @@ class Plottable1D:
         Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
         cell and the object's data will be displayed.
 
+        .. note::
+            NaN values are ignored.
+
         Parameters
         ----------
         x_data, y_data : ArrayLike

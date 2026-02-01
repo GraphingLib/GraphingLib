@@ -1,0 +1,3 @@
+NaNs are now ignored in to_desmos
+---------------------------------
+Not a number values (NaNs) are now ignored when calling the `to_desmos` method of `Plottable1D` objects.
