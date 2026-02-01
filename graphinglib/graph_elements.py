@@ -903,6 +903,16 @@ class Text:
     rotation : float
         Rotation angle of the text in degrees.
         Defaults to 0.
+    highlight_color : str, optional
+        Color of the background highlight box behind the text.
+        If specified, a box will be drawn behind the text.
+        Default is ``None`` (no highlight).
+    highlight_alpha : float, optional
+        Opacity of the highlight box.
+        Defaults to 1.0.
+    highlight_padding : float, optional
+        Padding around the text for the highlight box. A value of 0 means no padding.
+        Defaults to 0.1.
     """
 
     _x: float
@@ -914,6 +924,9 @@ class Text:
     _h_align: str = "default"
     _v_align: str = "default"
     _rotation: float = 0.0
+    _highlight_color: Optional[str] = None
+    _highlight_alpha: float = 1.0
+    _highlight_padding: float = 0.1
     _arrow_pointing_to: Optional[tuple[float]] = field(default=None, init=False)
 
     def __init__(
@@ -927,6 +940,9 @@ class Text:
         h_align: str = "default",
         v_align: str = "default",
         rotation: float = 0.0,
+        highlight_color: Optional[str] = None,
+        highlight_alpha: float = 1.0,
+        highlight_padding: float = 0.1,
     ) -> None:
         """
         This class allows text to be plotted.
@@ -956,6 +972,16 @@ class Text:
         rotation : float
             Rotation angle of the text in degrees.
             Defaults to 0.
+        highlight_color : str, optional
+            Color of the background highlight box behind the text.
+            If specified, a box will be drawn behind the text.
+            Default is ``None`` (no highlight).
+        highlight_alpha : float, optional
+            Opacity of the highlight box.
+            Defaults to 1.0.
+        highlight_padding : float, optional
+            Padding around the text for the highlight box. A value of 0 means no padding.
+            Defaults to 0.1.
         """
         self._x = x
         self._y = y
@@ -966,6 +992,9 @@ class Text:
         self._h_align = h_align
         self._v_align = v_align
         self._rotation = rotation
+        self._highlight_color = highlight_color
+        self._highlight_alpha = highlight_alpha
+        self._highlight_padding = highlight_padding
         self._arrow_pointing_to = None
 
     @property
@@ -1041,6 +1070,30 @@ class Text:
         self._rotation = rotation
 
     @property
+    def highlight_color(self) -> Optional[str]:
+        return self._highlight_color
+
+    @highlight_color.setter
+    def highlight_color(self, highlight_color: Optional[str]) -> None:
+        self._highlight_color = highlight_color
+
+    @property
+    def highlight_alpha(self) -> float:
+        return self._highlight_alpha
+
+    @highlight_alpha.setter
+    def highlight_alpha(self, highlight_alpha: float) -> None:
+        self._highlight_alpha = highlight_alpha
+
+    @property
+    def highlight_padding(self) -> float:
+        return self._highlight_padding
+
+    @highlight_padding.setter
+    def highlight_padding(self, highlight_padding: float) -> None:
+        self._highlight_padding = highlight_padding
+
+    @property
     def arrow_pointing_to(self) -> Optional[tuple[float]]:
         return self._arrow_pointing_to
 
@@ -1110,6 +1163,17 @@ class Text:
             "verticalalignment": self._v_align,
             "rotation": self._rotation,
         }
+
+        # Add highlight/background box if highlight_color is specified
+        if self._highlight_color is not None:
+            bbox_dict = {
+                "boxstyle": f"square,pad={self._highlight_padding}",
+                "facecolor": self._highlight_color,
+                "edgecolor": "none",
+                "alpha": self._highlight_alpha,
+            }
+            params["bbox"] = bbox_dict
+
         params = {k: v for k, v in params.items() if v != "default"}
         axes.text(
             self._x,
