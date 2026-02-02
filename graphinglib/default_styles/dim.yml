@@ -116,6 +116,8 @@ MultiFigure:
   _size:
   - 6.4
   - 4.8
+SmartFigure:
+  _size: [6.4, 4.8]
 Point:
   _face_color: white
   _edge_color: null
@@ -209,8 +211,12 @@ rc_params:
   axes.facecolor: dimgrey
   axes.labelcolor: white
   axes.linewidth: 1
-  axes.prop_cycle: cycler('color', ['#4796b8', '#edb73b', '#d04125', '#91bf5a', '#a766cc',
-    '#ed893b', '#26b59b', '#cccccc'])
+  axes.titlesize: 12
+  axes.titleweight: "normal"
+  axes.prop_cycle: cycler('color', ['#4796b8', '#edb73b', '#d04125', '#91bf5a', '#a766cc', '#ed893b', '#26b59b', '#cccccc'])
+  axes.grid: False
+  figure.titlesize: 12
+  figure.titleweight: "normal"
   figure.facecolor: dimgrey
   savefig.dpi: 200
   font.family: sans-serif

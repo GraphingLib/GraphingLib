@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Literal, Optional, Protocol
+from typing import Literal, Optional, Protocol, runtime_checkable, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import LineCollection
+from matplotlib.figure import Figure as MPLFigure
 from numpy.typing import ArrayLike
 
 from .legend_artists import VerticalLineCollection
@@ -17,6 +18,7 @@ except ImportError:
     from typing_extensions import Self
 
 
+@runtime_checkable
 class Plottable(Protocol):
     """
     Dummy class for a general plottable object.
@@ -24,6 +26,23 @@ class Plottable(Protocol):
     .. attention:: Not to be used directly.
 
     """
+
+    def __deepcopy__(self, memo: dict) -> Self:
+        """
+        Creates a deep copy of the Plottable instance, intentionally excluding the 'handle' attribute from the copy.
+        This avoids issues when copying a Plottable that has been previously drawn and stored.
+        """
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        excluded_attrs = ["handle"]
+        for property_, value in self.__dict__.items():
+            if property_ not in excluded_attrs:
+                result.__dict__[property_] = deepcopy(value, memo)
+        for attr in excluded_attrs:
+            if hasattr(self, attr):
+                setattr(result, attr, None)
+        return result
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -41,7 +60,7 @@ class GraphingException(Exception):
     pass
 
 
-class Hlines:
+class Hlines(Plottable):
     """
     This class implements simple horizontal lines.
 
@@ -287,7 +306,7 @@ class Hlines:
                 )
 
 
-class Vlines:
+class Vlines(Plottable):
     """
     This class implements simple vertical lines.
 
@@ -533,7 +552,7 @@ class Vlines:
                 )
 
 
-class Point:
+class Point(Plottable):
     """
     This class implements a point object.
 
@@ -874,7 +893,7 @@ class Point:
 
 
 @dataclass
-class Text:
+class Text(Plottable):
     """
     This class allows text to be plotted.
 
@@ -1149,10 +1168,11 @@ class Text:
         if alpha is not None:
             self._arrow_properties["alpha"] = alpha
 
-    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
+    def _plot_element(self, target: plt.Axes | MPLFigure, z_order: int, **kwargs) -> None:
         """
-        Plots the element in the specified
-        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
+        Plots the element in the specified target, which can be either an
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_ or a
+        `Figure <https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html>`.
         """
         size = self._font_size if self._font_size != "same as figure" else None
         params = {
@@ -1175,14 +1195,14 @@ class Text:
             params["bbox"] = bbox_dict
 
         params = {k: v for k, v in params.items() if v != "default"}
-        axes.text(
+        target.text(
             self._x,
             self._y,
             self._text,
             zorder=z_order,
             **params,
         )
-        if self._arrow_pointing_to is not None:
+        if self._arrow_pointing_to is not None and isinstance(target, plt.Axes):
             self._arrow_properties["color"] = self._color
             params = {
                 "color": self._color,
@@ -1194,7 +1214,7 @@ class Text:
             if self._color != "default":
                 self._arrow_properties["color"] = self._color
                 params["arrowprops"] = self._arrow_properties
-            axes.annotate(
+            target.annotate(
                 self._text,
                 self._arrow_pointing_to,
                 xytext=(self._x, self._y),
@@ -1204,7 +1224,7 @@ class Text:
 
 
 @dataclass
-class Table:
+class Table(Plottable):
     """
     This class allows to plot a table inside a Figure or MultiFigure.
 
@@ -1526,3 +1546,55 @@ class Table:
             cell.set_text_props(color=self._text_color)
             cell.set_edgecolor(self._edge_color)
             cell.set_linewidth(self._edge_width)
+
+
+class PlottableAxMethod(Plottable):
+    """
+    This experimental class allows to call any matplotlib Axes method as a plottable element in a
+    :class:`~graphinglib.smart_figure.SmartFigure`. This object can be used to create plot types that have not yet been
+    implemented in GraphingLib.
+
+    This class only works with Axes methods that create plottable elements (e.g., ``bar`` or ``pcolormesh``).
+    Methods that modify axes properties (e.g., ``set_facecolor``, ``set_title``) are not supported.
+
+    Parameters
+    ----------
+    meth : str
+        Name of the matplotlib Axes method to call. The method will be called as ``axes.meth(*args, **kwargs)``. For
+        example, this can be "pcolormesh" or "bar".
+
+        .. warning::
+            The provided matplotlib Axes method must accept a ``zorder`` keyword argument to be compatible with this
+            class. If not, an exception will be raised when attempting to plot the element.
+    *args
+        Positional arguments to pass to ``axes.meth``.
+    **kwargs
+        Keyword arguments to pass to ``axes.meth``.
+    """
+
+    def __init__(self, meth: str, *args, **kwargs) -> None:
+        self.meth = meth
+        self.args = args
+        self.kwargs = kwargs
+
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
+        """
+        Plots the element in the specified
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
+        """
+        try:
+            getattr(axes, self.meth)(*self.args, zorder=z_order, **self.kwargs)
+        except TypeError as e:
+            if "zorder" in str(e):
+                try:
+                    getattr(axes, self.meth)(*self.args, **self.kwargs)
+                except Exception as e2:
+                    raise GraphingException(
+                        f"Failed to call Axes method '{self.meth}' with provided arguments. Please check that all "
+                        "provided arguments are valid for the given method."
+                    ) from e2
+            else:
+                raise GraphingException(
+                    f"Failed to call Axes method '{self.meth}' with provided arguments. Please check that all "
+                    "provided arguments are valid for the given method."
+                ) from e

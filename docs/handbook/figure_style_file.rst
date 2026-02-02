@@ -51,6 +51,7 @@ To learn more about the Style Editor, you can check out the Style Editor documen
 
         Go to Style Editor Documentation
 
+.. _graphinglib_styles_showcase:
 
 GraphingLib Styles Showcase
 ---------------------------

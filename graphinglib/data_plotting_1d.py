@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 from types import NoneType
-from typing import Callable, Literal, Optional, Protocol
+from typing import Callable, Literal, Optional, Protocol, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,7 +15,7 @@ from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import interp1d
 from pyperclip import copy as copy_to_clipboard
 
-from .graph_elements import Point
+from .graph_elements import Point, Plottable
 from .tools import MathematicalObject
 
 try:
@@ -24,6 +24,7 @@ except ImportError:
     from typing_extensions import Self
 
 
+@runtime_checkable
 class Fit(Protocol):
     """
     Dummy class to allow type hinting of Fit objects.
@@ -48,7 +49,8 @@ class Fit(Protocol):
         pass
 
 
-class Plottable1D:
+@runtime_checkable
+class Plottable1D(Plottable, Protocol):
     """
     Dummy class to allow type hinting of Plottable1D objects.
     """
