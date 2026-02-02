@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
+from difflib import get_close_matches
 from typing import Literal, Optional, Protocol, runtime_checkable, Any
 
 import matplotlib.pyplot as plt
@@ -27,6 +28,46 @@ class Plottable(Protocol):
 
     """
 
+    def copy_with(self, **kwargs) -> Self:
+        """
+        Returns a deep copy of the Plottable with specified attributes overridden. This is useful when multiple
+        properties need to be changed in copies of Plottable objects, as it allows to modify the attributes in a single
+        call.
+
+        Parameters
+        ----------
+        **kwargs
+            Properties to override in the copied Plottable. The keys should be property names to modify and the values
+            are the new values for those properties.
+
+        Returns
+        -------
+        Self
+            A new instance with the specified attributes overridden.
+
+        Examples
+        --------
+        Copy an existing Curve and change the color and line_style at the same time::
+
+            curve = Curve(x_data, y_data, color='blue')
+            new_curve = curve.copy_with(color='red', line_style='dashed')
+        """
+        properties = [attr for attr in dir(self.__class__) if isinstance(getattr(self.__class__, attr, None), property)]
+        properties = list(filter(lambda x: x[0] != "_", properties))  # filter out hidden properties
+        print(properties)
+        new_copy = deepcopy(self)
+        for key, value in kwargs.items():
+            if hasattr(new_copy, key):
+                setattr(new_copy, key, value)
+            else:
+                close_match = get_close_matches(key, properties, n=1, cutoff=0.6)
+                if close_match:
+                    raise AttributeError(f"{self.__class__.__name__} has no attribute '{key}'. "
+                                         f"Did you mean '{close_match[0]}'?")
+                else:
+                    raise AttributeError(f"{self.__class__.__name__} has no attribute '{key}'.")
+        return new_copy
+      
     def __deepcopy__(self, memo: dict) -> Self:
         """
         Creates a deep copy of the Plottable instance, intentionally excluding the 'handle' attribute from the copy.
