@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Callable, Literal, Optional, Protocol
+from typing import Callable, Literal, Optional, Protocol, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,6 +19,7 @@ except ImportError:
     from typing_extensions import Self
 
 
+@runtime_checkable
 class Plottable2D(Plottable, Protocol):
     """
     Dummy class to allow type hinting of Plottable2D objects.

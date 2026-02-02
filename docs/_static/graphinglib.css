@@ -69,33 +69,33 @@ html[data-theme=dark] .sd-card img[src*='.svg'] {
     padding: 30px 10px 20px 10px;
     margin: 10px 0px;
 }
-  
+
 .sd-card .sd-card-header {
     text-align: center;
 }
-  
+
 .sd-card .sd-card-header .sd-card-text {
     margin: 0px;
 }
-  
+
 .sd-card .sd-card-img-top {
     height: 52px;
     width: 52px;
     margin-left: auto;
     margin-right: auto;
 }
-  
+
 .sd-card .sd-card-header {
     border: none;
     font-size: var(--pst-font-size-h5);
     font-weight: bold;
     padding: 2.5rem 0rem 0.5rem 0rem;
 }
-  
+
 .sd-card .sd-card-footer {
     border: none;
 }
-  
+
 .sd-card .sd-card-footer .sd-card-text {
     max-width: 220px;
     margin-left: auto;
@@ -108,4 +108,8 @@ html[data-theme=dark] .sd-card img[src*='.svg'] {
 
 .table tbody tr:nth-child(2n):hover {
     background-color: var(--pst-color-table-row-zebra-high-bg);
+}
+
+.margin-bottom {
+    margin-bottom: 2rem;
 }

@@ -4,7 +4,15 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import to_rgba
 from numpy import ndarray
 
-from graphinglib.graph_elements import Hlines, Point, Table, Text, Vlines
+from graphinglib.graph_elements import (
+    GraphingException,
+    Hlines,
+    PlottableAxMethod,
+    Point,
+    Table,
+    Text,
+    Vlines,
+)
 
 
 class TestHlines(unittest.TestCase):
@@ -456,6 +464,31 @@ class TestTable(unittest.TestCase):
         self.assertListEqual(tableCopy._row_labels, table._row_labels)
         self.assertEqual(tableCopy._row_align, table._row_align)
         self.assertListEqual(tableCopy._row_colors, table._row_colors)
+
+
+class TestPlottableAxMethod(unittest.TestCase):
+    def test_plot_element_success(self):
+        plottable = PlottableAxMethod("plot", [0, 1], [1, 0], color="red")
+        fig, ax = plt.subplots()
+        plottable._plot_element(ax, 5)
+        self.assertEqual(len(ax.lines), 1)
+        self.assertEqual(ax.lines[0].get_color(), "red")
+        self.assertEqual(ax.lines[0].get_zorder(), 5)
+        plt.close(fig)
+
+    def test_plot_element_invalid_method_raises(self):
+        plottable = PlottableAxMethod("not_a_real_method")
+        fig, ax = plt.subplots()
+        with self.assertRaises(AttributeError):
+            plottable._plot_element(ax, 0)
+        plt.close(fig)
+
+    def test_plot_element_non_plottable_method_raises(self):
+        plottable = PlottableAxMethod("bar", not_a_real_argument=42)
+        fig, ax = plt.subplots()
+        with self.assertRaises(GraphingException):
+            plottable._plot_element(ax, 0)
+        plt.close(fig)
 
 
 if __name__ == "__main__":

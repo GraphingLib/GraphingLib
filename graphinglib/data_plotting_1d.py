@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 from types import NoneType
-from typing import Callable, Literal, Optional, Protocol
+from typing import Callable, Literal, Optional, Protocol, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,6 +24,7 @@ except ImportError:
     from typing_extensions import Self
 
 
+@runtime_checkable
 class Fit(Protocol):
     """
     Dummy class to allow type hinting of Fit objects.
@@ -48,6 +49,7 @@ class Fit(Protocol):
         pass
 
 
+@runtime_checkable
 class Plottable1D(Plottable, Protocol):
     """
     Dummy class to allow type hinting of Plottable1D objects.

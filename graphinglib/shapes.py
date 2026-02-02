@@ -11,7 +11,7 @@ from shapely import LineString
 from shapely import Polygon as ShPolygon
 
 from .data_plotting_1d import Curve
-from .graph_elements import Point
+from .graph_elements import Plottable, Point
 
 try:
     from typing import Self
@@ -20,7 +20,7 @@ except ImportError:
 
 
 @dataclass
-class Arrow:
+class Arrow(Plottable):
     """This class implements an arrow object.
 
     Parameters
@@ -208,7 +208,7 @@ class Arrow:
 
 
 @dataclass
-class Line:
+class Line(Plottable):
     """This class implements a line object.
 
     Parameters
@@ -342,7 +342,7 @@ class Line:
         )
 
 
-class Polygon:
+class Polygon(Plottable):
     """This class implements a Polygon object.
 
     Parameters
