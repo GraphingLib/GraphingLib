@@ -7,16 +7,15 @@ from typing import Callable, Literal, Optional, Protocol, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import (Colormap, Normalize, is_color_like, to_rgba,
-                               to_rgba_array)
+from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
+from pyperclip import copy as copy_to_clipboard
 from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import interp1d
-from pyperclip import copy as copy_to_clipboard
 
-from .graph_elements import Point, Plottable
-from .tools import MathematicalObject
+from .graph_elements import Plottable, Point
+from .tools import MathematicalObject, get_contrasting_shade
 
 try:
     from typing import Self
@@ -56,7 +55,9 @@ class Plottable1D(Plottable, Protocol):
     """
 
     @staticmethod
-    def to_desmos(x_data: ArrayLike, y_data: ArrayLike, decimal_precision: int=2) -> str:
+    def to_desmos(
+        x_data: ArrayLike, y_data: ArrayLike, decimal_precision: int = 2
+    ) -> str:
         """
         Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
         cell and the object's data will be displayed.
@@ -95,7 +96,9 @@ class Plottable1D(Plottable, Protocol):
                 continue
             x_num, x_exponent = f"{x:.{decimal_precision:d}e}".split("e")
             y_num, y_exponent = f"{y:.{decimal_precision:d}e}".split("e")
-            formatted_points += f"({format_tex(x_num, x_exponent)},{format_tex(y_num, y_exponent)}),"
+            formatted_points += (
+                f"({format_tex(x_num, x_exponent)},{format_tex(y_num, y_exponent)}),"
+            )
         formatted_points = formatted_points[:-1] + "]"
         return formatted_points
 
@@ -395,7 +398,10 @@ class Curve(Plottable1D, MathematicalObject):
         """
         Defines the equality between two curves.
         """
-        return np.equal(self.x_data, other.x_data).all() and np.equal(self.y_data, other.y_data).all()
+        return (
+            np.equal(self.x_data, other.x_data).all()
+            and np.equal(self.y_data, other.y_data).all()
+        )
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -1036,7 +1042,9 @@ class Curve(Plottable1D, MathematicalObject):
                 copy._alpha = alpha
             return copy
         else:
-            return Curve(self._x_data, y_data, label, color, line_width, line_style, alpha)
+            return Curve(
+                self._x_data, y_data, label, color, line_width, line_style, alpha
+            )
 
     def create_tangent_curve(
         self,
@@ -1302,7 +1310,7 @@ class Curve(Plottable1D, MathematicalObject):
             points.append((x_val, y_val))
         return points
 
-    def to_desmos(self, decimal_precision: int=2, to_clipboard: bool=False) -> str:
+    def to_desmos(self, decimal_precision: int = 2, to_clipboard: bool = False) -> str:
         """
         Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
         cell and the object's data will be displayed.
@@ -1322,7 +1330,9 @@ class Curve(Plottable1D, MathematicalObject):
         formatted points : str
             A list of tuples representing every data point.
         """
-        formatted_points = super().to_desmos(self._x_data, self._y_data, decimal_precision)
+        formatted_points = super().to_desmos(
+            self._x_data, self._y_data, decimal_precision
+        )
         if to_clipboard:
             copy_to_clipboard(formatted_points)
         return formatted_points
@@ -1453,24 +1463,26 @@ class Curve(Plottable1D, MathematicalObject):
             "alpha": self._alpha,
         }
         if self._show_errorbars:
-            params.update({
-                "elinewidth": (
-                    self._errorbars_line_width
-                    if self._errorbars_line_width != "same as curve"
-                    else self._line_width
-                ),
-                "capsize": self._cap_width,
-                "capthick": (
-                    self._cap_thickness
-                    if self._cap_thickness != "same as curve"
-                    else self._line_width
-                ),
-                "ecolor": (
-                    self._errorbars_color
-                    if self._errorbars_color != "same as curve"
-                    else self._color
-                ),
-            })
+            params.update(
+                {
+                    "elinewidth": (
+                        self._errorbars_line_width
+                        if self._errorbars_line_width != "same as curve"
+                        else self._line_width
+                    ),
+                    "capsize": self._cap_width,
+                    "capthick": (
+                        self._cap_thickness
+                        if self._cap_thickness != "same as curve"
+                        else self._line_width
+                    ),
+                    "ecolor": (
+                        self._errorbars_color
+                        if self._errorbars_color != "same as curve"
+                        else self._color
+                    ),
+                }
+            )
             params = {k: v for k, v in params.items() if v != "default"}
             self.handle = axes.errorbar(
                 self._x_data,
@@ -1939,7 +1951,10 @@ class Scatter(Plottable1D, MathematicalObject):
         """
         Defines the equality between two scatters.
         """
-        return np.equal(self.x_data, other.x_data).all() and np.equal(self.y_data, other.y_data).all()
+        return (
+            np.equal(self.x_data, other.x_data).all()
+            and np.equal(self.y_data, other.y_data).all()
+        )
 
     def __add__(self, other: Self | float) -> Self:
         """
@@ -2537,7 +2552,7 @@ class Scatter(Plottable1D, MathematicalObject):
         ]
         return points
 
-    def to_desmos(self, decimal_precision: int=2, to_clipboard: bool=False) -> str:
+    def to_desmos(self, decimal_precision: int = 2, to_clipboard: bool = False) -> str:
         """
         Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
         cell and the object's data will be displayed.
@@ -2557,52 +2572,12 @@ class Scatter(Plottable1D, MathematicalObject):
         formatted points : str
             A list of tuples representing every data point.
         """
-        formatted_points = super().to_desmos(self._x_data, self._y_data, decimal_precision)
+        formatted_points = super().to_desmos(
+            self._x_data, self._y_data, decimal_precision
+        )
         if to_clipboard:
             copy_to_clipboard(formatted_points)
         return formatted_points
-
-    def _get_contrasting_shade(self, color: str | tuple[int, int, int]) -> str:
-        """
-        Gives the most contrasting shade (black/white) for a given color. The algorithm used comes from this Stack
-        Exchange answer : https://ux.stackexchange.com/a/82068.
-
-        Parameters
-        ----------
-        color : str or tuple[int, int, int]
-            Color that needs to be contrasted. This can either be a known matplotlib color string or a RGB code, given
-            as a tuple of integers that take 0-255.
-
-        Returns
-        -------
-        shade : str
-            Shade (black/white) that contrasts the most with the given color.
-        """
-        if isinstance(color, str):
-            color = to_rgba_array(color)[0, :3] * 255
-
-        R, G, B = color
-
-        if R <= 10:
-            Rg = R / 3294
-        else:
-            Rg = (R / 269 + 0.0513) ** 2.4
-
-        if G <= 10:
-            Gg = G / 3294
-        else:
-            Gg = (G / 269 + 0.0513) ** 2.4
-
-        if B <= 10:
-            Bg = B / 3294
-        else:
-            Bg = (B / 269 + 0.0513) ** 2.4
-
-        L = 0.2126 * Rg + 0.7152 * Gg + 0.0722 * Bg
-        if L < 0.5:
-            return "white"
-        else:
-            return "black"
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -2726,7 +2701,7 @@ class Scatter(Plottable1D, MathematicalObject):
                     mpl_errorbars_color = marker_face_color
                 else:
                     ax_face_color = plt.rcParams["axes.facecolor"]
-                    mpl_errorbars_color = self._get_contrasting_shade(ax_face_color)
+                    mpl_errorbars_color = get_contrasting_shade(ax_face_color)
             elif isinstance(self._errorbars_color, str):
                 # Use specified color
                 mpl_errorbars_color = self._errorbars_color
@@ -3002,9 +2977,7 @@ class Histogram(Plottable1D):
         self._data = np.array(data)
         self._mean = np.mean(self._data)
         self._standard_deviation = np.std(self._data)
-        _parameters = np.histogram(
-            self._data, bins=self._bins, density=self._normalize
-        )
+        _parameters = np.histogram(self._data, bins=self._bins, density=self._normalize)
         self._bin_heights, bin_edges = _parameters[0], _parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
         bin_centers = bin_edges[1:] - bin_width / 2
@@ -3019,9 +2992,7 @@ class Histogram(Plottable1D):
     @bins.setter
     def bins(self, bins: int) -> None:
         self._bins = bins
-        _parameters = np.histogram(
-            self._data, bins=self._bins, density=self._normalize
-        )
+        _parameters = np.histogram(self._data, bins=self._bins, density=self._normalize)
         self._bin_heights, bin_edges = _parameters[0], _parameters[1]
         bin_width = bin_edges[1] - bin_edges[0]
         bin_centers = bin_edges[1:] - bin_width / 2
@@ -3129,8 +3100,10 @@ class Histogram(Plottable1D):
         """
         Defines the equality between two histograms.
         """
-        return np.equal(self.bin_heights, other.bin_heights).all() \
-               and np.equal(self.bin_centers, other.bin_centers).all()
+        return (
+            np.equal(self.bin_heights, other.bin_heights).all()
+            and np.equal(self.bin_centers, other.bin_centers).all()
+        )
 
     def _get_label(self) -> None:
         """
@@ -3230,7 +3203,7 @@ class Histogram(Plottable1D):
         self._pdf_mean_color = mean_color
         self._pdf_std_color = std_color
 
-    def to_desmos(self, decimal_precision: int=2, to_clipboard: bool=False) -> str:
+    def to_desmos(self, decimal_precision: int = 2, to_clipboard: bool = False) -> str:
         """
         Gives every bin's upper center in a Desmos-readable format. The outputted string can then be pasted into a
         single Desmos cell and the object's data will be displayed.
@@ -3250,7 +3223,9 @@ class Histogram(Plottable1D):
         formatted points : str
             A list of tuples representing every data point.
         """
-        formatted_points = super().to_desmos(self.bin_centers, self.bin_heights, decimal_precision)
+        formatted_points = super().to_desmos(
+            self.bin_centers, self.bin_heights, decimal_precision
+        )
         if to_clipboard:
             copy_to_clipboard(formatted_points)
         return formatted_points
