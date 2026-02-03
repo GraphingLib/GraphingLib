@@ -45,7 +45,7 @@ extensions = [
 ]
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "release_notes/upcoming_changes/*.rst"]
 
 
 # -- Options for HTML output -------------------------------------------------

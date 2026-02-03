@@ -6,9 +6,9 @@
 Handbook
 ========
 
-Welcome to the Handbook section of the documentation! In this section, you will find examples and tutorials for the various objects and methods of the GraphingLib library. 
+Welcome to the Handbook section of the documentation! In this section, you will find examples and tutorials for the various objects and methods of the GraphingLib library.
 
-.. note:: 
+.. note::
 
     In every code snippets you will encounter, the following imports precede the snippet's code: ::
 
@@ -52,7 +52,7 @@ Sections in this handbook
             :click-parent:
 
             Visit this section
-    
+
     .. grid-item-card::
         :img-top: ../_static/icons/Scatter.svg
 
@@ -68,7 +68,7 @@ Sections in this handbook
             :click-parent:
 
             Visit this section
-    
+
     .. grid-item-card::
         :img-top: ../_static/icons/Histogram.svg
 
@@ -107,7 +107,7 @@ Sections in this handbook
         Creating shapes
         ^^^^^^^^^^^^^^^
 
-        Rectangle, Circle, Arrow and Line.
+        Rectangle, Circle, Ellipse, Arrow and Line.
         ++++
 
         .. button-ref:: ./shapes
@@ -165,6 +165,54 @@ Sections in this handbook
 
             Visit this section
 
+    .. grid-item-card::
+        :img-top: ../_static/icons/Figure.svg
+
+        Creating a simple figure with the SmartFigure
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        Everything about simple Figures.
+        ++++
+
+        .. button-ref:: ./smart_figure_simple
+            :expand:
+            :color: primary
+            :click-parent:
+
+            Visit this section
+
+    .. grid-item-card::
+        :img-top: ../_static/icons/Multifigure.svg
+
+        Advanced plotting with the SmartFigure
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        Create complex layouts with a single object.
+        ++++
+
+        .. button-ref:: ./smart_figure_advanced
+            :expand:
+            :color: primary
+            :click-parent:
+
+            Visit this section
+
+    .. grid-item-card::
+        :img-top: ../_static/icons/SmartFigureWCS.svg
+
+        Specialized SmartFigures for different projections
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        Use custom SmartFigures with specific projection functionalities.
+        ++++
+
+        .. button-ref:: ./smart_figure_projections
+            :expand:
+            :color: primary
+            :click-parent:
+
+            Visit this section
+
 .. toctree::
    :maxdepth: 2
    :hidden:
@@ -178,3 +226,6 @@ Sections in this handbook
    multifigure
    2D_plotting
    figure_style_file
+   smart_figure_simple
+   smart_figure_advanced
+   smart_figure_projections

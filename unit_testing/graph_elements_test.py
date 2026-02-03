@@ -4,7 +4,15 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import to_rgba
 from numpy import ndarray
 
-from graphinglib.graph_elements import Hlines, Point, Table, Text, Vlines
+from graphinglib.graph_elements import (
+    GraphingException,
+    Hlines,
+    PlottableAxMethod,
+    Point,
+    Table,
+    Text,
+    Vlines,
+)
 
 
 class TestHlines(unittest.TestCase):
@@ -40,6 +48,59 @@ class TestHlines(unittest.TestCase):
         self.assertEqual(testHlinesCopy._line_styles, self.testHlines._line_styles)
         self.assertEqual(testHlinesCopy._alpha, self.testHlines._alpha)
 
+    def test_single_line_accepts_single_item_style_lists(self):
+        style_kwargs = [
+            {"colors": ["r"]},
+            {"line_styles": ["--"]},
+            {"line_widths": [2.0]},
+        ]
+        for kwargs in style_kwargs:
+            with self.subTest(kwargs=kwargs):
+                try:
+                    Hlines(y=1, x_min=0, x_max=1, **kwargs)
+                except GraphingException as exc:
+                    self.fail(f"Single-element style list should be accepted: {exc}")
+
+    def test_single_line_rejects_multiple_style_values(self):
+        style_kwargs = [
+            {"colors": ["r", "g"]},
+            {"line_styles": ["--", "-."]},
+            {"line_widths": [1.0, 2.0]},
+        ]
+        for kwargs in style_kwargs:
+            with self.subTest(kwargs=kwargs):
+                with self.assertRaises(GraphingException):
+                    Hlines(y=1, x_min=0, x_max=1, **kwargs)
+
+    def test_multiple_lines_accepts_matching_style_lengths(self):
+        try:
+            Hlines(
+                y=[0, 1],
+                x_min=[0, 0],
+                x_max=[1, 1],
+                colors=["r", "b"],
+                line_styles=["--", "-."],
+                line_widths=[1.0, 2.0],
+            )
+        except GraphingException as exc:
+            self.fail(f"Matching style lengths for multiple lines should be accepted: {exc}")
+
+    def test_multiple_lines_rejects_mismatched_style_lengths(self):
+        base_kwargs = {
+            "y": [0, 1],
+            "x_min": [0, 0],
+            "x_max": [1, 1],
+        }
+        cases = [
+            {"colors": ["r"]},
+            {"line_styles": ["--"]},
+            {"line_widths": [1.0]},
+        ]
+        for extra in cases:
+            with self.subTest(extra=extra):
+                with self.assertRaises(GraphingException):
+                    Hlines(**base_kwargs, **extra)
+
 
 class TestVlines(unittest.TestCase):
     def setUp(self):
@@ -73,6 +134,59 @@ class TestVlines(unittest.TestCase):
         self.assertEqual(testVlinesCopy._line_widths, self.testVlines._line_widths)
         self.assertEqual(testVlinesCopy._line_styles, self.testVlines._line_styles)
         self.assertEqual(testVlinesCopy._alpha, self.testVlines._alpha)
+
+    def test_single_line_accepts_single_item_style_lists(self):
+        style_kwargs = [
+            {"colors": ["r"]},
+            {"line_styles": ["--"]},
+            {"line_widths": [2.0]},
+        ]
+        for kwargs in style_kwargs:
+            with self.subTest(kwargs=kwargs):
+                try:
+                    Vlines(x=1, y_min=0, y_max=1, **kwargs)
+                except GraphingException as exc:
+                    self.fail(f"Single-element style list should be accepted: {exc}")
+
+    def test_single_line_rejects_multiple_style_values(self):
+        style_kwargs = [
+            {"colors": ["r", "g"]},
+            {"line_styles": ["--", "-."]},
+            {"line_widths": [1.0, 2.0]},
+        ]
+        for kwargs in style_kwargs:
+            with self.subTest(kwargs=kwargs):
+                with self.assertRaises(GraphingException):
+                    Vlines(x=1, y_min=0, y_max=1, **kwargs)
+
+    def test_multiple_lines_accepts_matching_style_lengths(self):
+        try:
+            Vlines(
+                x=[0, 1],
+                y_min=[0, 0],
+                y_max=[1, 1],
+                colors=["r", "b"],
+                line_styles=["--", "-."],
+                line_widths=[1.0, 2.0],
+            )
+        except GraphingException as exc:
+            self.fail(f"Matching style lengths for multiple lines should be accepted: {exc}")
+
+    def test_multiple_lines_rejects_mismatched_style_lengths(self):
+        base_kwargs = {
+            "x": [0, 1],
+            "y_min": [0, 0],
+            "y_max": [1, 1],
+        }
+        cases = [
+            {"colors": ["r"]},
+            {"line_styles": ["--"]},
+            {"line_widths": [1.0]},
+        ]
+        for extra in cases:
+            with self.subTest(extra=extra):
+                with self.assertRaises(GraphingException):
+                    Vlines(**base_kwargs, **extra)
 
 
 class TestPoint(unittest.TestCase):
@@ -150,6 +264,9 @@ class TestText(unittest.TestCase):
             h_align="center",
             v_align="center",
             rotation=10.0,
+            highlight_color="yellow",
+            highlight_alpha=0.5,
+            highlight_padding=0.2,
         )
         self.assertEqual(testText._x, 0.0)
         self.assertEqual(testText._y, 0.0)
@@ -160,6 +277,9 @@ class TestText(unittest.TestCase):
         self.assertEqual(testText._h_align, "center")
         self.assertEqual(testText._v_align, "center")
         self.assertEqual(testText._rotation, 10.0)
+        self.assertEqual(testText._highlight_color, "yellow")
+        self.assertEqual(testText._highlight_alpha, 0.5)
+        self.assertEqual(testText._highlight_padding, 0.2)
 
     def test_add_arrow(self):
         testText = Text(
@@ -193,6 +313,9 @@ class TestText(unittest.TestCase):
             h_align="center",
             v_align="center",
             rotation=-40.0,
+            highlight_color="blue",
+            highlight_alpha=0.4,
+            highlight_padding=0.15,
         )
         testText.add_arrow(
             points_to=(1, 1), width=0.1, head_width=0.3, head_length=0.2, shrink=0.05, alpha=0.9
@@ -207,6 +330,10 @@ class TestText(unittest.TestCase):
         self.assertEqual(ax.texts[0].get_horizontalalignment(), "center")
         self.assertEqual(ax.texts[0].get_verticalalignment(), "center")
         self.assertEqual(ax.texts[0].get_rotation(), 360 - 40.0)
+        # Check if the highlight box is plotted correctly
+        bbox = ax.texts[0].get_bbox_patch()
+        self.assertEqual(bbox.get_facecolor(), to_rgba("blue", 0.4))
+        self.assertAlmostEqual(bbox.get_boxstyle().pad, 0.15)
         # Check if the arrow is plotted correctly
         for child in ax.get_children():
             if isinstance(child, plt.Annotation):
@@ -230,6 +357,9 @@ class TestText(unittest.TestCase):
             h_align="center",
             v_align="center",
             rotation=-25.0,
+            highlight_color="green",
+            highlight_alpha=0.7,
+            highlight_padding=0.1,
         )
         testTextCopy = testText.copy()
         self.assertEqual(testTextCopy._x, testText._x)
@@ -241,6 +371,9 @@ class TestText(unittest.TestCase):
         self.assertEqual(testTextCopy._h_align, testText._h_align)
         self.assertEqual(testTextCopy._v_align, testText._v_align)
         self.assertEqual(testTextCopy._rotation, testText._rotation)
+        self.assertEqual(testTextCopy._highlight_color, testText._highlight_color)
+        self.assertEqual(testTextCopy._highlight_alpha, testText._highlight_alpha)
+        self.assertEqual(testTextCopy._highlight_padding, testText._highlight_padding)
         self.assertEqual(testTextCopy._arrow_pointing_to, testText._arrow_pointing_to)
 
 
@@ -437,6 +570,31 @@ class TestTable(unittest.TestCase):
         self.assertListEqual(tableCopy._row_labels, table._row_labels)
         self.assertEqual(tableCopy._row_align, table._row_align)
         self.assertListEqual(tableCopy._row_colors, table._row_colors)
+
+
+class TestPlottableAxMethod(unittest.TestCase):
+    def test_plot_element_success(self):
+        plottable = PlottableAxMethod("plot", [0, 1], [1, 0], color="red")
+        fig, ax = plt.subplots()
+        plottable._plot_element(ax, 5)
+        self.assertEqual(len(ax.lines), 1)
+        self.assertEqual(ax.lines[0].get_color(), "red")
+        self.assertEqual(ax.lines[0].get_zorder(), 5)
+        plt.close(fig)
+
+    def test_plot_element_invalid_method_raises(self):
+        plottable = PlottableAxMethod("not_a_real_method")
+        fig, ax = plt.subplots()
+        with self.assertRaises(AttributeError):
+            plottable._plot_element(ax, 0)
+        plt.close(fig)
+
+    def test_plot_element_non_plottable_method_raises(self):
+        plottable = PlottableAxMethod("bar", not_a_real_argument=42)
+        fig, ax = plt.subplots()
+        with self.assertRaises(GraphingException):
+            plottable._plot_element(ax, 0)
+        plt.close(fig)
 
 
 if __name__ == "__main__":

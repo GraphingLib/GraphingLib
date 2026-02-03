@@ -62,6 +62,9 @@ Figure:
 MultiFigure:
   _size: [6.4, 4.8]
 
+SmartFigure:
+  _size: [6.4, 4.8]
+
 Point:
   _face_color: "k"
   _edge_color: null
@@ -192,6 +195,14 @@ Circle:
   _line_width: 2
   _line_style: "-"
 
+Ellipse:
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
+
 Rectangle:
   _fill: True
   _fill_alpha: 0.5
@@ -227,7 +238,12 @@ rc_params:
   axes.edgecolor: "black"
   axes.labelcolor: "black"
   axes.linewidth: 1
+  axes.titlesize: 12
+  axes.titleweight: "normal"
   axes.prop_cycle: cycler('color', ['#3e82a0', '#edb73b', '#b9503b', '#8aba4e', '#695178', '#ed893b', '#34a893', '#616161'])
+  axes.grid: False
+  figure.titlesize: 12
+  figure.titleweight: "normal"
   xtick.color: "black"
   ytick.color: "black"
   xtick.direction: "in"

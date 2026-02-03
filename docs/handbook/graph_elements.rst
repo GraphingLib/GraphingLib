@@ -70,6 +70,24 @@ The Text object is used to display text on a figure. It also allows you to point
     fig.add_elements(text)
     fig.show()
 
+You can also customize the text by adding highlighting:
+
+.. plot::
+
+    text = gl.Text(
+        0.5,
+        0.5,
+        "This text is\nhighlighted!",
+        font_size=20,
+        highlight_color="lightblue",
+        highlight_alpha=0.5,
+        highlight_padding=0.2,
+    )
+
+    fig = gl.Figure()
+    fig.add_elements(text)
+    fig.show()
+
 There are many more parameters to be customized for the Text object and its arrow, but those are all included in the figure style files and can therefore be left out most of the time. For details on the other parameters, visit the :py:class:`Reference section on Text objects <graphinglib.graph_elements.Text>`.
 
 The :class:`~graphinglib.graph_elements.Table` Object

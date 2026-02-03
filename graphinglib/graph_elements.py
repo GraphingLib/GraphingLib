@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Literal, Optional, Protocol
+from difflib import get_close_matches
+from typing import Literal, Optional, Protocol, runtime_checkable, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import LineCollection
+from matplotlib.figure import Figure as MPLFigure
 from numpy.typing import ArrayLike
 
 from .legend_artists import VerticalLineCollection
@@ -17,6 +19,7 @@ except ImportError:
     from typing_extensions import Self
 
 
+@runtime_checkable
 class Plottable(Protocol):
     """
     Dummy class for a general plottable object.
@@ -24,6 +27,63 @@ class Plottable(Protocol):
     .. attention:: Not to be used directly.
 
     """
+
+    def copy_with(self, **kwargs) -> Self:
+        """
+        Returns a deep copy of the Plottable with specified attributes overridden. This is useful when multiple
+        properties need to be changed in copies of Plottable objects, as it allows to modify the attributes in a single
+        call.
+
+        Parameters
+        ----------
+        **kwargs
+            Properties to override in the copied Plottable. The keys should be property names to modify and the values
+            are the new values for those properties.
+
+        Returns
+        -------
+        Self
+            A new instance with the specified attributes overridden.
+
+        Examples
+        --------
+        Copy an existing Curve and change the color and line_style at the same time::
+
+            curve = Curve(x_data, y_data, color='blue')
+            new_curve = curve.copy_with(color='red', line_style='dashed')
+        """
+        properties = [attr for attr in dir(self.__class__) if isinstance(getattr(self.__class__, attr, None), property)]
+        properties = list(filter(lambda x: x[0] != "_", properties))  # filter out hidden properties
+        print(properties)
+        new_copy = deepcopy(self)
+        for key, value in kwargs.items():
+            if hasattr(new_copy, key):
+                setattr(new_copy, key, value)
+            else:
+                close_match = get_close_matches(key, properties, n=1, cutoff=0.6)
+                if close_match:
+                    raise AttributeError(f"{self.__class__.__name__} has no attribute '{key}'. "
+                                         f"Did you mean '{close_match[0]}'?")
+                else:
+                    raise AttributeError(f"{self.__class__.__name__} has no attribute '{key}'.")
+        return new_copy
+      
+    def __deepcopy__(self, memo: dict) -> Self:
+        """
+        Creates a deep copy of the Plottable instance, intentionally excluding the 'handle' attribute from the copy.
+        This avoids issues when copying a Plottable that has been previously drawn and stored.
+        """
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        excluded_attrs = ["handle"]
+        for property_, value in self.__dict__.items():
+            if property_ not in excluded_attrs:
+                result.__dict__[property_] = deepcopy(value, memo)
+        for attr in excluded_attrs:
+            if hasattr(self, attr):
+                setattr(result, attr, None)
+        return result
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -41,7 +101,7 @@ class GraphingException(Exception):
     pass
 
 
-class Hlines:
+class Hlines(Plottable):
     """
     This class implements simple horizontal lines.
 
@@ -109,19 +169,24 @@ class Hlines:
         if isinstance(self._y, (int, float)) and isinstance(
             self._colors, (list, np.ndarray)
         ):
-            raise GraphingException("There can't be multiple colors for a single line!")
+            if len(self._colors) > 1:
+                raise GraphingException(
+                    "There can't be multiple colors for a single line!"
+                )
         if isinstance(self._y, (int, float)) and isinstance(
             self._line_styles, (list, np.ndarray)
         ):
-            raise GraphingException(
-                "There can't be multiple line styles for a single line!"
-            )
+            if len(self._line_styles) > 1:
+                raise GraphingException(
+                    "There can't be multiple line styles for a single line!"
+                )
         if isinstance(self._y, (int, float)) and isinstance(
             self._line_widths, (list, np.ndarray)
         ):
-            raise GraphingException(
-                "There can't be multiple line widths for a single line!"
-            )
+            if len(self._line_widths) > 1:
+                raise GraphingException(
+                    "There can't be multiple line widths for a single line!"
+                )
         if isinstance(self._y, (list, np.ndarray)):
             if isinstance(self._colors, list) and len(self._y) != len(self._colors):
                 raise GraphingException(
@@ -287,7 +352,7 @@ class Hlines:
                 )
 
 
-class Vlines:
+class Vlines(Plottable):
     """
     This class implements simple vertical lines.
 
@@ -351,19 +416,24 @@ class Vlines:
         if isinstance(self._x, (int, float)) and isinstance(
             self._colors, (list, np.ndarray)
         ):
-            raise GraphingException("There can't be multiple colors for a single line!")
+            if len(self._colors) > 1:
+                raise GraphingException(
+                    "There can't be multiple colors for a single line!"
+                )
         if isinstance(self._x, (int, float)) and isinstance(
             self._line_styles, (list, np.ndarray)
         ):
-            raise GraphingException(
-                "There can't be multiple line styles for a single line!"
-            )
+            if len(self._line_styles) > 1:
+                raise GraphingException(
+                    "There can't be multiple line styles for a single line!"
+                )
         if isinstance(self._x, (int, float)) and isinstance(
             self._line_widths, (list, np.ndarray)
         ):
-            raise GraphingException(
-                "There can't be multiple line widths for a single line!"
-            )
+            if len(self._line_widths) > 1:
+                raise GraphingException(
+                    "There can't be multiple line widths for a single line!"
+                )
         if isinstance(self._x, (list, np.ndarray)):
             if isinstance(self._colors, list) and len(self._x) != len(self._colors):
                 raise GraphingException(
@@ -533,7 +603,7 @@ class Vlines:
                 )
 
 
-class Point:
+class Point(Plottable):
     """
     This class implements a point object.
 
@@ -874,7 +944,7 @@ class Point:
 
 
 @dataclass
-class Text:
+class Text(Plottable):
     """
     This class allows text to be plotted.
 
@@ -903,6 +973,16 @@ class Text:
     rotation : float
         Rotation angle of the text in degrees.
         Defaults to 0.
+    highlight_color : str, optional
+        Color of the background highlight box behind the text.
+        If specified, a box will be drawn behind the text.
+        Default is ``None`` (no highlight).
+    highlight_alpha : float, optional
+        Opacity of the highlight box.
+        Defaults to 1.0.
+    highlight_padding : float, optional
+        Padding around the text for the highlight box. A value of 0 means no padding.
+        Defaults to 0.1.
     """
 
     _x: float
@@ -914,6 +994,9 @@ class Text:
     _h_align: str = "default"
     _v_align: str = "default"
     _rotation: float = 0.0
+    _highlight_color: Optional[str] = None
+    _highlight_alpha: float = 1.0
+    _highlight_padding: float = 0.1
     _arrow_pointing_to: Optional[tuple[float]] = field(default=None, init=False)
 
     def __init__(
@@ -927,6 +1010,9 @@ class Text:
         h_align: str = "default",
         v_align: str = "default",
         rotation: float = 0.0,
+        highlight_color: Optional[str] = None,
+        highlight_alpha: float = 1.0,
+        highlight_padding: float = 0.1,
     ) -> None:
         """
         This class allows text to be plotted.
@@ -956,6 +1042,16 @@ class Text:
         rotation : float
             Rotation angle of the text in degrees.
             Defaults to 0.
+        highlight_color : str, optional
+            Color of the background highlight box behind the text.
+            If specified, a box will be drawn behind the text.
+            Default is ``None`` (no highlight).
+        highlight_alpha : float, optional
+            Opacity of the highlight box.
+            Defaults to 1.0.
+        highlight_padding : float, optional
+            Padding around the text for the highlight box. A value of 0 means no padding.
+            Defaults to 0.1.
         """
         self._x = x
         self._y = y
@@ -966,6 +1062,9 @@ class Text:
         self._h_align = h_align
         self._v_align = v_align
         self._rotation = rotation
+        self._highlight_color = highlight_color
+        self._highlight_alpha = highlight_alpha
+        self._highlight_padding = highlight_padding
         self._arrow_pointing_to = None
 
     @property
@@ -1041,6 +1140,30 @@ class Text:
         self._rotation = rotation
 
     @property
+    def highlight_color(self) -> Optional[str]:
+        return self._highlight_color
+
+    @highlight_color.setter
+    def highlight_color(self, highlight_color: Optional[str]) -> None:
+        self._highlight_color = highlight_color
+
+    @property
+    def highlight_alpha(self) -> float:
+        return self._highlight_alpha
+
+    @highlight_alpha.setter
+    def highlight_alpha(self, highlight_alpha: float) -> None:
+        self._highlight_alpha = highlight_alpha
+
+    @property
+    def highlight_padding(self) -> float:
+        return self._highlight_padding
+
+    @highlight_padding.setter
+    def highlight_padding(self, highlight_padding: float) -> None:
+        self._highlight_padding = highlight_padding
+
+    @property
     def arrow_pointing_to(self) -> Optional[tuple[float]]:
         return self._arrow_pointing_to
 
@@ -1096,10 +1219,11 @@ class Text:
         if alpha is not None:
             self._arrow_properties["alpha"] = alpha
 
-    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
+    def _plot_element(self, target: plt.Axes | MPLFigure, z_order: int, **kwargs) -> None:
         """
-        Plots the element in the specified
-        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
+        Plots the element in the specified target, which can be either an
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_ or a
+        `Figure <https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html>`.
         """
         size = self._font_size if self._font_size != "same as figure" else None
         params = {
@@ -1110,15 +1234,26 @@ class Text:
             "verticalalignment": self._v_align,
             "rotation": self._rotation,
         }
+
+        # Add highlight/background box if highlight_color is specified
+        if self._highlight_color is not None:
+            bbox_dict = {
+                "boxstyle": f"square,pad={self._highlight_padding}",
+                "facecolor": self._highlight_color,
+                "edgecolor": "none",
+                "alpha": self._highlight_alpha,
+            }
+            params["bbox"] = bbox_dict
+
         params = {k: v for k, v in params.items() if v != "default"}
-        axes.text(
+        target.text(
             self._x,
             self._y,
             self._text,
             zorder=z_order,
             **params,
         )
-        if self._arrow_pointing_to is not None:
+        if self._arrow_pointing_to is not None and isinstance(target, plt.Axes):
             self._arrow_properties["color"] = self._color
             params = {
                 "color": self._color,
@@ -1130,7 +1265,7 @@ class Text:
             if self._color != "default":
                 self._arrow_properties["color"] = self._color
                 params["arrowprops"] = self._arrow_properties
-            axes.annotate(
+            target.annotate(
                 self._text,
                 self._arrow_pointing_to,
                 xytext=(self._x, self._y),
@@ -1140,7 +1275,7 @@ class Text:
 
 
 @dataclass
-class Table:
+class Table(Plottable):
     """
     This class allows to plot a table inside a Figure or MultiFigure.
 
@@ -1462,3 +1597,55 @@ class Table:
             cell.set_text_props(color=self._text_color)
             cell.set_edgecolor(self._edge_color)
             cell.set_linewidth(self._edge_width)
+
+
+class PlottableAxMethod(Plottable):
+    """
+    This experimental class allows to call any matplotlib Axes method as a plottable element in a
+    :class:`~graphinglib.smart_figure.SmartFigure`. This object can be used to create plot types that have not yet been
+    implemented in GraphingLib.
+
+    This class only works with Axes methods that create plottable elements (e.g., ``bar`` or ``pcolormesh``).
+    Methods that modify axes properties (e.g., ``set_facecolor``, ``set_title``) are not supported.
+
+    Parameters
+    ----------
+    meth : str
+        Name of the matplotlib Axes method to call. The method will be called as ``axes.meth(*args, **kwargs)``. For
+        example, this can be "pcolormesh" or "bar".
+
+        .. warning::
+            The provided matplotlib Axes method must accept a ``zorder`` keyword argument to be compatible with this
+            class. If not, an exception will be raised when attempting to plot the element.
+    *args
+        Positional arguments to pass to ``axes.meth``.
+    **kwargs
+        Keyword arguments to pass to ``axes.meth``.
+    """
+
+    def __init__(self, meth: str, *args, **kwargs) -> None:
+        self.meth = meth
+        self.args = args
+        self.kwargs = kwargs
+
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
+        """
+        Plots the element in the specified
+        `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
+        """
+        try:
+            getattr(axes, self.meth)(*self.args, zorder=z_order, **self.kwargs)
+        except TypeError as e:
+            if "zorder" in str(e):
+                try:
+                    getattr(axes, self.meth)(*self.args, **self.kwargs)
+                except Exception as e2:
+                    raise GraphingException(
+                        f"Failed to call Axes method '{self.meth}' with provided arguments. Please check that all "
+                        "provided arguments are valid for the given method."
+                    ) from e2
+            else:
+                raise GraphingException(
+                    f"Failed to call Axes method '{self.meth}' with provided arguments. Please check that all "
+                    "provided arguments are valid for the given method."
+                ) from e

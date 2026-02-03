@@ -5,8 +5,7 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import to_rgba
 
 from graphinglib.data_plotting_1d import Curve
-from graphinglib.graph_elements import Point
-from graphinglib.shapes import Arrow, Circle, Line, Polygon, Rectangle
+from graphinglib.shapes import Arrow, Circle, Ellipse, Line, Polygon, Rectangle
 
 
 class TestCircle(unittest.TestCase):
@@ -15,6 +14,147 @@ class TestCircle(unittest.TestCase):
 
         self.assertAlmostEqual(circle.area, np.pi, places=2)
         self.assertAlmostEqual(circle.perimeter, 2 * np.pi, places=2)
+
+
+class TestEllipse(unittest.TestCase):
+    def test_init(self):
+        ellipse = Ellipse(2, 2, 2, 1)
+
+        self.assertAlmostEqual(ellipse.x_center, 2, places=2)
+        self.assertAlmostEqual(ellipse.y_center, 2, places=2)
+        self.assertAlmostEqual(ellipse.x_radius, 2, places=2)
+        self.assertAlmostEqual(ellipse.y_radius, 1, places=2)
+        self.assertAlmostEqual(ellipse.angle, 0, places=2)
+        self.assertAlmostEqual(ellipse.width, 4, places=2)
+        self.assertAlmostEqual(ellipse.height, 2, places=2)
+
+    def test_init_with_angle(self):
+        ellipse = Ellipse(0, 0, 2, 1, angle=45)
+
+        self.assertAlmostEqual(ellipse.angle, 45, places=2)
+
+    def test_init_invalid_radii(self):
+        with self.assertRaises(ValueError):
+            Ellipse(2, 2, -1, 1)
+
+        with self.assertRaises(ValueError):
+            Ellipse(2, 2, 1, -1)
+
+        with self.assertRaises(ValueError):
+            Ellipse(2, 2, 0, 1)
+
+    def test_init_invalid_points(self):
+        with self.assertRaises(ValueError):
+            Ellipse(2, 2, 1, 1, number_of_points=3)
+
+    def test_x_center_setter(self):
+        ellipse = Ellipse(0, 0, 2, 1)
+        ellipse.x_center = 5
+
+        self.assertAlmostEqual(ellipse.x_center, 5, places=2)
+
+    def test_y_center_setter(self):
+        ellipse = Ellipse(0, 0, 2, 1)
+        ellipse.y_center = 3
+
+        self.assertAlmostEqual(ellipse.y_center, 3, places=2)
+
+    def test_x_radius_setter(self):
+        ellipse = Ellipse(0, 0, 2, 1)
+        ellipse.x_radius = 3
+
+        self.assertAlmostEqual(ellipse.x_radius, 3, places=2)
+        self.assertAlmostEqual(ellipse.width, 6, places=2)
+
+    def test_y_radius_setter(self):
+        ellipse = Ellipse(0, 0, 2, 1)
+        ellipse.y_radius = 2
+
+        self.assertAlmostEqual(ellipse.y_radius, 2, places=2)
+        self.assertAlmostEqual(ellipse.height, 4, places=2)
+
+    def test_x_radius_setter_invalid(self):
+        ellipse = Ellipse(0, 0, 2, 1)
+
+        with self.assertRaises(ValueError):
+            ellipse.x_radius = -1
+
+        with self.assertRaises(ValueError):
+            ellipse.x_radius = 0
+
+    def test_y_radius_setter_invalid(self):
+        ellipse = Ellipse(0, 0, 2, 1)
+
+        with self.assertRaises(ValueError):
+            ellipse.y_radius = -1
+
+        with self.assertRaises(ValueError):
+            ellipse.y_radius = 0
+
+    def test_width_setter(self):
+        ellipse = Ellipse(0, 0, 2, 1)
+        ellipse.width = 6
+
+        self.assertAlmostEqual(ellipse.width, 6, places=2)
+        self.assertAlmostEqual(ellipse.x_radius, 3, places=2)
+
+    def test_height_setter(self):
+        ellipse = Ellipse(0, 0, 2, 1)
+        ellipse.height = 4
+
+        self.assertAlmostEqual(ellipse.height, 4, places=2)
+        self.assertAlmostEqual(ellipse.y_radius, 2, places=2)
+
+    def test_width_setter_invalid(self):
+        ellipse = Ellipse(0, 0, 2, 1)
+
+        with self.assertRaises(ValueError):
+            ellipse.width = -1
+
+        with self.assertRaises(ValueError):
+            ellipse.width = 0
+
+    def test_height_setter_invalid(self):
+        ellipse = Ellipse(0, 0, 2, 1)
+
+        with self.assertRaises(ValueError):
+            ellipse.height = -1
+
+        with self.assertRaises(ValueError):
+            ellipse.height = 0
+
+    def test_angle_setter(self):
+        ellipse = Ellipse(0, 0, 2, 1)
+        ellipse.angle = 30
+
+        self.assertAlmostEqual(ellipse.angle, 30, places=2)
+
+    def test_angle_rotation(self):
+        ellipse1 = Ellipse(0, 0, 2, 1, angle=0)
+        ellipse2 = Ellipse(0, 0, 2, 1, angle=45)
+
+        # Both ellipses should have the same area (shape shouldn't change on rotation)
+        self.assertAlmostEqual(ellipse1.area, ellipse2.area, places=1)
+
+    def test_copy(self):
+        ellipse = Ellipse(2, 3, 2, 1, fill_color="red", edge_color="blue", angle=45)
+        ellipse_copy = ellipse.copy()
+
+        self.assertAlmostEqual(ellipse_copy.x_center, ellipse.x_center, places=2)
+        self.assertAlmostEqual(ellipse_copy.y_center, ellipse.y_center, places=2)
+        self.assertAlmostEqual(ellipse_copy.x_radius, ellipse.x_radius, places=2)
+        self.assertAlmostEqual(ellipse_copy.y_radius, ellipse.y_radius, places=2)
+        self.assertAlmostEqual(ellipse_copy.angle, ellipse.angle, places=2)
+        self.assertEqual(ellipse_copy._fill_color, ellipse._fill_color)
+        self.assertEqual(ellipse_copy._edge_color, ellipse._edge_color)
+
+    def test_plotting(self):
+        ellipse = Ellipse(2, 2, 2, 1, fill=True, fill_color="red", fill_alpha=0.5, edge_color="blue", line_width=2,
+                          line_style="-", angle=30)
+
+        fig, ax = plt.subplots()
+        ellipse._plot_element(ax, 0)
+        plt.close(fig)
 
 
 class TestRectangle(unittest.TestCase):

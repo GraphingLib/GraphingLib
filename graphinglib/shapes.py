@@ -11,7 +11,7 @@ from shapely import LineString
 from shapely import Polygon as ShPolygon
 
 from .data_plotting_1d import Curve
-from .graph_elements import Point
+from .graph_elements import Plottable, Point
 
 try:
     from typing import Self
@@ -20,7 +20,7 @@ except ImportError:
 
 
 @dataclass
-class Arrow:
+class Arrow(Plottable):
     """This class implements an arrow object.
 
     Parameters
@@ -208,7 +208,7 @@ class Arrow:
 
 
 @dataclass
-class Line:
+class Line(Plottable):
     """This class implements a line object.
 
     Parameters
@@ -342,7 +342,7 @@ class Line:
         )
 
 
-class Polygon:
+class Polygon(Plottable):
     """This class implements a Polygon object.
 
     Parameters
@@ -898,6 +898,181 @@ class Circle(Polygon):
     @diameter.setter
     def diameter(self, value):
         self.radius = value / 2
+
+    @property
+    def circumference(self):
+        return self._sh_polygon.exterior.length
+
+
+@dataclass
+class Ellipse(Polygon):
+    """This class implements an Ellipse object with a given center, two radii and an optional rotation angle.
+
+    Parameters
+    ----------
+    x_center : float
+        The x coordinate of the center of the ellipse.
+    y_center : float
+        The y coordinate of the center of the ellipse.
+    x_radius : float
+        The radius of the ellipse along the x axis.
+    y_radius : float
+        The radius of the ellipse along the y axis.
+    angle : float, optional
+        The rotation angle of the ellipse in degrees.
+        Defaults to 0.
+    fill : bool, optional
+        Whether the ellipse should be filled or not.
+        Default depends on the ``figure_style`` configuration.
+    fill_color : str, optional
+        The color of the ellipse's fill.
+        Default depends on the ``figure_style`` configuration.
+    edge_color : str, optional
+        The color of the ellipse's edge.
+        Default depends on the ``figure_style`` configuration.
+    line_width : float, optional
+        The width of the line.
+        Default depends on the ``figure_style`` configuration.
+    line_style : str, optional
+        The style of the line.
+        Default depends on the ``figure_style`` configuration.
+    fill_alpha : float, optional
+        The alpha value of the fill.
+        Default depends on the ``figure_style`` configuration.
+    number_of_points : int, optional
+        The number of points to use to approximate the ellipse.
+        Default is 100 (covers approximately 99.9% of perfect ellipse area).
+    """
+
+    def __init__(
+        self,
+        x_center: float,
+        y_center: float,
+        x_radius: float,
+        y_radius: float,
+        angle: float = 0,
+        fill: bool = "default",
+        fill_color: str = "default",
+        edge_color: str = "default",
+        line_width: float | Literal["default"] = "default",
+        line_style: str = "default",
+        fill_alpha: float | Literal["default"] = "default",
+        number_of_points: int = 100,
+    ):
+        if number_of_points < 4:
+            raise ValueError("The number of points must be greater than or equal to 4")
+        if x_radius <= 0 or y_radius <= 0:
+            raise ValueError("The radii must be positive")
+        self._fill = fill
+        self._fill_color = fill_color
+        self._edge_color = edge_color
+        self._line_width = line_width
+        self._line_style = line_style
+        self._fill_alpha = fill_alpha
+        self._num_points = number_of_points
+        self._x_radius = x_radius
+        self._y_radius = y_radius
+        self._angle = angle
+        self._sh_polygon = sh.geometry.Point(x_center, y_center).buffer(
+            1, number_of_points // 4
+        )
+        self._sh_polygon = sh.affinity.scale(
+            self._sh_polygon, xfact=x_radius, yfact=y_radius, origin=(x_center, y_center)
+        )
+        if angle != 0:
+            self._sh_polygon = sh.affinity.rotate(
+                self._sh_polygon, angle, origin=(x_center, y_center)
+            )
+
+    def _rebuild(
+        self,
+        x_center: float,
+        y_center: float,
+        x_radius: float,
+        y_radius: float,
+        angle: float,
+    ):
+        self._x_radius = x_radius
+        self._y_radius = y_radius
+        self._angle = angle
+        self._sh_polygon = sh.geometry.Point(x_center, y_center).buffer(
+            1, self._num_points // 4
+        )
+        self._sh_polygon = sh.affinity.scale(
+            self._sh_polygon, xfact=x_radius, yfact=y_radius, origin=(x_center, y_center)
+        )
+        if angle != 0:
+            self._sh_polygon = sh.affinity.rotate(
+                self._sh_polygon, angle, origin=(x_center, y_center)
+            )
+
+    @property
+    def x_center(self):
+        return self.get_centroid_coordinates()[0]
+
+    @x_center.setter
+    def x_center(self, value):
+        self._rebuild(value, self.y_center, self._x_radius, self._y_radius, self._angle)
+
+    @property
+    def y_center(self):
+        return self.get_centroid_coordinates()[1]
+
+    @y_center.setter
+    def y_center(self, value):
+        self._rebuild(self.x_center, value, self._x_radius, self._y_radius, self._angle)
+
+    @property
+    def x_radius(self):
+        return self._x_radius
+
+    @x_radius.setter
+    def x_radius(self, value):
+        if value <= 0:
+            raise ValueError("The x radius must be positive")
+        self._rebuild(self.x_center, self.y_center, value, self._y_radius, self._angle)
+
+    @property
+    def y_radius(self):
+        return self._y_radius
+
+    @y_radius.setter
+    def y_radius(self, value):
+        if value <= 0:
+            raise ValueError("The y radius must be positive")
+        self._rebuild(self.x_center, self.y_center, self._x_radius, value, self._angle)
+
+    @property
+    def angle(self):
+        return self._angle
+
+    @angle.setter
+    def angle(self, value):
+        self._rebuild(self.x_center, self.y_center, self._x_radius, self._y_radius, value)
+
+    @property
+    def width(self):
+        """Returns the width of the ellipse along the x axis."""
+        return 2 * self._x_radius
+
+    @width.setter
+    def width(self, value):
+        """Controls the width of the ellipse along the x axis."""
+        if value <= 0:
+            raise ValueError("The width must be positive")
+        self.x_radius = value / 2
+
+    @property
+    def height(self):
+        """Returns the height of the ellipse along the y axis."""
+        return 2 * self._y_radius
+
+    @height.setter
+    def height(self, value):
+        """Controls the height of the ellipse along the y axis."""
+        if value <= 0:
+            raise ValueError("The height must be positive")
+        self.y_radius = value / 2
 
     @property
     def circumference(self):
