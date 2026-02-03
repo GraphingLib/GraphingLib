@@ -2865,6 +2865,10 @@ class SmartFigureWCS(SmartFigure):
     This class implements a figure object for plotting :class:`~graphinglib.Plottable` elements with a
     `astropy.wcs.WCS <https://docs.astropy.org/en/stable/wcs/index.html>`_ projection.
 
+    .. note::
+        This class is available when the optional ``graphinglib[astro]`` extra is installed
+        (it pulls in Astropy). Install with ``pip install graphinglib[astro]``.
+
     It allows for the creation of complex figures recursively, where each :class:`~graphinglib.SmartFigure` can contain
     other :class:`~graphinglib.SmartFigure` objects. The class supports a variety of customization options as well as
     the ability to use styles and themes for consistent visual appearance across different figures. The idea behind this
