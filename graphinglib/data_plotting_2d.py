@@ -38,8 +38,11 @@ class Heatmap(Plottable2D):
         Image to display. If an array of values is given, the 2D array will be interpreted as the values of the image.
         If a str if given, the corresponding file will be read as an image.
     x_axis_range, y_axis_range : tuple[float, float], optional
-        The range of x and y values used for the axes as tuples containing the
-        start and end of the range.
+        The range of x and y values used for the axes as tuples containing the start and end of the range. These values
+        are ignored when ``x_mesh`` and ``y_mesh`` are provided.
+    x_mesh, y_mesh : ArrayLike, optional
+        Mesh grids defining the coordinates of the heatmap values. When provided, the heatmap is plotted using
+        ``pcolormesh`` instead of ``imshow``.
     color_map : str, Colormap
         The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
         string (named colormap from Matplotlib) or a Colormap object.
@@ -53,13 +56,15 @@ class Heatmap(Plottable2D):
         Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
         Defaults to 1.0.
     aspect_ratio : str or float
-        Aspect ratio of the axes.
+        Aspect ratio of the axes. This value is ignored when ``x_mesh`` and ``y_mesh`` are provided.
         Default depends on the ``figure_style`` configuration.
     origin_position : str
-        Position of the origin of the axes (upper left or lower left corner).
+        Position of the origin of the axes (upper left or lower left corner). This value is ignored when ``x_mesh`` and
+        ``y_mesh`` are provided.
         Default depends on the ``figure_style`` configuration.
     interpolation : str
-        Interpolation method to be applied to the image.
+        Interpolation method to be applied to the image. This value is ignored when ``x_mesh`` and ``y_mesh`` are
+        provided.
         Defaults to ``"none"``.
 
         .. seealso::
@@ -73,6 +78,8 @@ class Heatmap(Plottable2D):
         image: ArrayLike | str,
         x_axis_range: Optional[tuple[float, float]] = None,
         y_axis_range: Optional[tuple[float, float]] = None,
+        x_mesh: Optional[ArrayLike] = None,
+        y_mesh: Optional[ArrayLike] = None,
         color_map: str | Colormap = "default",
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
@@ -90,8 +97,11 @@ class Heatmap(Plottable2D):
             Image to display. If an array of values is given, the 2D array will be interpreted as the values of the
             image. If a str if given, the corresponding file will be read as an image.
         x_axis_range, y_axis_range : tuple[float, float], optional
-            The range of x and y values used for the axes as tuples containing the
-            start and end of the range.
+            The range of x and y values used for the axes as tuples containing the start and end of the range. These
+            values are ignored when ``x_mesh`` and ``y_mesh`` are provided.
+        x_mesh, y_mesh : ArrayLike, optional
+            Mesh grids defining the coordinates of the heatmap values. When provided, the heatmap is plotted using
+            ``pcolormesh`` instead of ``imshow``.
         color_map : str, Colormap
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
@@ -105,13 +115,15 @@ class Heatmap(Plottable2D):
             Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
             Defaults to 1.0.
         aspect_ratio : str or float
-            Aspect ratio of the axes.
+            Aspect ratio of the axes. This value is ignored when ``x_mesh`` and ``y_mesh`` are provided.
             Default depends on the ``figure_style`` configuration.
         origin_position : str
-            Position of the origin of the axes (upper left or lower left corner).
+            Position of the origin of the axes (upper left or lower left corner). This value is ignored when ``x_mesh``
+            and ``y_mesh`` are provided.
             Default depends on the ``figure_style`` configuration.
         interpolation : str
-            Interpolation method to be applied to the image.
+            Interpolation method to be applied to the image. This value is ignored when ``x_mesh`` and ``y_mesh`` are
+            provided.
             Defaults to ``"none"``.
 
             .. seealso::
@@ -122,6 +134,8 @@ class Heatmap(Plottable2D):
         self._image = image
         self._x_axis_range = x_axis_range
         self._y_axis_range = y_axis_range
+        self.x_mesh = x_mesh
+        self.y_mesh = y_mesh
         self._color_map = color_map
         self._color_map_range = color_map_range
         self._show_color_bar = show_color_bar
@@ -232,7 +246,7 @@ class Heatmap(Plottable2D):
         origin_position: str = "default",
         interpolation: str = "none",
         number_of_points: tuple[int, int] = (50, 50),
-    ):
+    ) -> Self:
         """
         Creates a heatmap by interpolating unevenly distributed data points on a grid.
 
@@ -331,6 +345,22 @@ class Heatmap(Plottable2D):
     @y_axis_range.setter
     def y_axis_range(self, y_axis_range: Optional[tuple[float, float]]) -> None:
         self._y_axis_range = y_axis_range
+
+    @property
+    def x_mesh(self) -> Optional[ArrayLike]:
+        return self._x_mesh
+
+    @x_mesh.setter
+    def x_mesh(self, x_mesh: Optional[ArrayLike]) -> None:
+        self._x_mesh = None if x_mesh is None else np.asarray(x_mesh)
+
+    @property
+    def y_mesh(self) -> Optional[ArrayLike]:
+        return self._y_mesh
+
+    @y_mesh.setter
+    def y_mesh(self, y_mesh: Optional[ArrayLike]) -> None:
+        self._y_mesh = None if y_mesh is None else np.asarray(y_mesh)
 
     @property
     def color_map(self) -> str | Colormap:
@@ -440,22 +470,34 @@ class Heatmap(Plottable2D):
         params = {
             "cmap": self._color_map,
             "alpha": self._alpha,
-            "aspect": self._aspect_ratio,
-            "origin": self._origin_position,
-            "interpolation": self._interpolation,
-            "extent": self._xy_range,
         }
-
-        params = {k: v for k, v in params.items() if v != "default"}
         if self._color_map_range:
             params["vmin"] = min(self._color_map_range)
             params["vmax"] = max(self._color_map_range)
+        use_pcolormesh = self._x_mesh is not None and self._y_mesh is not None
+        if use_pcolormesh:
+            params = {k: v for k, v in params.items() if v != "default"}
+            image = axes.pcolormesh(
+                self._x_mesh,
+                self._y_mesh,
+                self._image,
+                zorder=z_order,
+                **params,
+            )
+        else:
+            params.update({
+                "aspect": self._aspect_ratio,
+                "origin": self._origin_position,
+                "interpolation": self._interpolation,
+                "extent": self._xy_range,
+            })
 
-        image = axes.imshow(
-            self._image,
-            zorder=z_order,
-            **params,
-        )
+            params = {k: v for k, v in params.items() if v != "default"}
+            image = axes.imshow(
+                self._image,
+                zorder=z_order,
+                **params,
+            )
         fig = axes.get_figure()
         if self._show_color_bar:
             fig.colorbar(image, ax=axes, **self._color_bar_params)
