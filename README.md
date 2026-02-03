@@ -64,7 +64,8 @@ uv add graphinglib
 
 ## Contributing
 
-We welcome contributions from the community. If you're interested in contributing to GraphingLib, please read our [contribution guidelines](https://www.graphinglib.org/en/stable/contributing.html) on our documentation website.
+We welcome contributions from the community. If you're interested in contributing to GraphingLib, please read our [contribution guidelines](https://graphinglib.org/doc-1.5.0/contributing/index.html) on our documentation website.
+
 
 ## Example
 Here is a short example showing how to use GraphingLib to create a figure with a scatter plot, a fit, and a histogram of the residuals.
