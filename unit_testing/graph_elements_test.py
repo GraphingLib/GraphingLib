@@ -48,6 +48,59 @@ class TestHlines(unittest.TestCase):
         self.assertEqual(testHlinesCopy._line_styles, self.testHlines._line_styles)
         self.assertEqual(testHlinesCopy._alpha, self.testHlines._alpha)
 
+    def test_single_line_accepts_single_item_style_lists(self):
+        style_kwargs = [
+            {"colors": ["r"]},
+            {"line_styles": ["--"]},
+            {"line_widths": [2.0]},
+        ]
+        for kwargs in style_kwargs:
+            with self.subTest(kwargs=kwargs):
+                try:
+                    Hlines(y=1, x_min=0, x_max=1, **kwargs)
+                except GraphingException as exc:
+                    self.fail(f"Single-element style list should be accepted: {exc}")
+
+    def test_single_line_rejects_multiple_style_values(self):
+        style_kwargs = [
+            {"colors": ["r", "g"]},
+            {"line_styles": ["--", "-."]},
+            {"line_widths": [1.0, 2.0]},
+        ]
+        for kwargs in style_kwargs:
+            with self.subTest(kwargs=kwargs):
+                with self.assertRaises(GraphingException):
+                    Hlines(y=1, x_min=0, x_max=1, **kwargs)
+
+    def test_multiple_lines_accepts_matching_style_lengths(self):
+        try:
+            Hlines(
+                y=[0, 1],
+                x_min=[0, 0],
+                x_max=[1, 1],
+                colors=["r", "b"],
+                line_styles=["--", "-."],
+                line_widths=[1.0, 2.0],
+            )
+        except GraphingException as exc:
+            self.fail(f"Matching style lengths for multiple lines should be accepted: {exc}")
+
+    def test_multiple_lines_rejects_mismatched_style_lengths(self):
+        base_kwargs = {
+            "y": [0, 1],
+            "x_min": [0, 0],
+            "x_max": [1, 1],
+        }
+        cases = [
+            {"colors": ["r"]},
+            {"line_styles": ["--"]},
+            {"line_widths": [1.0]},
+        ]
+        for extra in cases:
+            with self.subTest(extra=extra):
+                with self.assertRaises(GraphingException):
+                    Hlines(**base_kwargs, **extra)
+
 
 class TestVlines(unittest.TestCase):
     def setUp(self):
@@ -81,6 +134,59 @@ class TestVlines(unittest.TestCase):
         self.assertEqual(testVlinesCopy._line_widths, self.testVlines._line_widths)
         self.assertEqual(testVlinesCopy._line_styles, self.testVlines._line_styles)
         self.assertEqual(testVlinesCopy._alpha, self.testVlines._alpha)
+
+    def test_single_line_accepts_single_item_style_lists(self):
+        style_kwargs = [
+            {"colors": ["r"]},
+            {"line_styles": ["--"]},
+            {"line_widths": [2.0]},
+        ]
+        for kwargs in style_kwargs:
+            with self.subTest(kwargs=kwargs):
+                try:
+                    Vlines(x=1, y_min=0, y_max=1, **kwargs)
+                except GraphingException as exc:
+                    self.fail(f"Single-element style list should be accepted: {exc}")
+
+    def test_single_line_rejects_multiple_style_values(self):
+        style_kwargs = [
+            {"colors": ["r", "g"]},
+            {"line_styles": ["--", "-."]},
+            {"line_widths": [1.0, 2.0]},
+        ]
+        for kwargs in style_kwargs:
+            with self.subTest(kwargs=kwargs):
+                with self.assertRaises(GraphingException):
+                    Vlines(x=1, y_min=0, y_max=1, **kwargs)
+
+    def test_multiple_lines_accepts_matching_style_lengths(self):
+        try:
+            Vlines(
+                x=[0, 1],
+                y_min=[0, 0],
+                y_max=[1, 1],
+                colors=["r", "b"],
+                line_styles=["--", "-."],
+                line_widths=[1.0, 2.0],
+            )
+        except GraphingException as exc:
+            self.fail(f"Matching style lengths for multiple lines should be accepted: {exc}")
+
+    def test_multiple_lines_rejects_mismatched_style_lengths(self):
+        base_kwargs = {
+            "x": [0, 1],
+            "y_min": [0, 0],
+            "y_max": [1, 1],
+        }
+        cases = [
+            {"colors": ["r"]},
+            {"line_styles": ["--"]},
+            {"line_widths": [1.0]},
+        ]
+        for extra in cases:
+            with self.subTest(extra=extra):
+                with self.assertRaises(GraphingException):
+                    Vlines(**base_kwargs, **extra)
 
 
 class TestPoint(unittest.TestCase):

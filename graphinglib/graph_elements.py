@@ -169,19 +169,24 @@ class Hlines(Plottable):
         if isinstance(self._y, (int, float)) and isinstance(
             self._colors, (list, np.ndarray)
         ):
-            raise GraphingException("There can't be multiple colors for a single line!")
+            if len(self._colors) > 1:
+                raise GraphingException(
+                    "There can't be multiple colors for a single line!"
+                )
         if isinstance(self._y, (int, float)) and isinstance(
             self._line_styles, (list, np.ndarray)
         ):
-            raise GraphingException(
-                "There can't be multiple line styles for a single line!"
-            )
+            if len(self._line_styles) > 1:
+                raise GraphingException(
+                    "There can't be multiple line styles for a single line!"
+                )
         if isinstance(self._y, (int, float)) and isinstance(
             self._line_widths, (list, np.ndarray)
         ):
-            raise GraphingException(
-                "There can't be multiple line widths for a single line!"
-            )
+            if len(self._line_widths) > 1:
+                raise GraphingException(
+                    "There can't be multiple line widths for a single line!"
+                )
         if isinstance(self._y, (list, np.ndarray)):
             if isinstance(self._colors, list) and len(self._y) != len(self._colors):
                 raise GraphingException(
@@ -411,19 +416,24 @@ class Vlines(Plottable):
         if isinstance(self._x, (int, float)) and isinstance(
             self._colors, (list, np.ndarray)
         ):
-            raise GraphingException("There can't be multiple colors for a single line!")
+            if len(self._colors) > 1:
+                raise GraphingException(
+                    "There can't be multiple colors for a single line!"
+                )
         if isinstance(self._x, (int, float)) and isinstance(
             self._line_styles, (list, np.ndarray)
         ):
-            raise GraphingException(
-                "There can't be multiple line styles for a single line!"
-            )
+            if len(self._line_styles) > 1:
+                raise GraphingException(
+                    "There can't be multiple line styles for a single line!"
+                )
         if isinstance(self._x, (int, float)) and isinstance(
             self._line_widths, (list, np.ndarray)
         ):
-            raise GraphingException(
-                "There can't be multiple line widths for a single line!"
-            )
+            if len(self._line_widths) > 1:
+                raise GraphingException(
+                    "There can't be multiple line widths for a single line!"
+                )
         if isinstance(self._x, (list, np.ndarray)):
             if isinstance(self._colors, list) and len(self._x) != len(self._colors):
                 raise GraphingException(
