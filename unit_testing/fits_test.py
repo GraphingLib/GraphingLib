@@ -3,9 +3,15 @@ import unittest
 from numpy import exp, linspace, log, pi, sin
 
 from graphinglib.data_plotting_1d import *
-from graphinglib.fits import (FitFromExponential, FitFromFunction,
-                              FitFromGaussian, FitFromLog, FitFromPolynomial,
-                              FitFromSine, FitFromSquareRoot)
+from graphinglib.fits import (
+    FitFromExponential,
+    FitFromFunction,
+    FitFromGaussian,
+    FitFromLog,
+    FitFromPolynomial,
+    FitFromSine,
+    FitFromSquareRoot,
+)
 
 
 class TestFitFromPolynomial(unittest.TestCase):
@@ -146,15 +152,10 @@ class TestFitFromSine(unittest.TestCase):
         )
 
     def test_parameters(self):
-        self.assertListEqual(
-            [
-                self.fit._amplitude,
-                self.fit._frequency_rad,
-                self.fit._phase_rad,
-                self.fit._vertical_shift,
-            ],
-            [2, 3, 4, 5],
-        )
+        self.assertAlmostEqual(self.fit._amplitude, 2.000, places=7)
+        self.assertAlmostEqual(self.fit._frequency_rad, 3.000, places=7)
+        self.assertAlmostEqual(self.fit._phase_rad, 4.000, places=7)
+        self.assertAlmostEqual(self.fit._vertical_shift, 5.000, places=7)
 
     def test_cov(self):
         self.assertIsInstance(self.fit._cov_matrix, np.ndarray)
