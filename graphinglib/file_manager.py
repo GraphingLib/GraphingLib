@@ -263,6 +263,11 @@ def get_default_style() -> str:
     )
     config_file = f"{config_dir}/config.yml"
 
+    # Ensure the config file exists to avoid FileNotFoundError when reading.
+    if not path.exists(config_file):
+        with open(config_file, "w"):
+            pass
+
     # If file exists, load the default style
     try:
         with open(config_file, "r") as file:
