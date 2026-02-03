@@ -5,7 +5,7 @@ try:
 except ImportError:
     from typing_extensions import Self
 
-from graphinglib.tools import MathematicalObject
+from graphinglib.tools import MathematicalObject, get_contrasting_shade
 
 
 class TestMathematicalObject(unittest.TestCase):
@@ -81,6 +81,20 @@ class TestMathematicalObject(unittest.TestCase):
             obj /= 2
         with self.assertRaises(NotImplementedError):
             obj **= 2
+
+
+class TestGetContrastingShade(unittest.TestCase):
+    def test_dark_rgb_returns_white(self):
+        self.assertEqual(get_contrasting_shade((0, 0, 0)), "white")
+        self.assertEqual(get_contrasting_shade((5, 5, 5)), "white")
+
+    def test_light_rgb_returns_black(self):
+        self.assertEqual(get_contrasting_shade((255, 255, 255)), "black")
+        self.assertEqual(get_contrasting_shade((250, 240, 230)), "black")
+
+    def test_color_strings_use_matplotlib_parsing(self):
+        self.assertEqual(get_contrasting_shade("navy"), "white")
+        self.assertEqual(get_contrasting_shade("yellow"), "black")
 
 
 if __name__ == "__main__":
