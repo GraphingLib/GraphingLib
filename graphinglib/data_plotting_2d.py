@@ -217,16 +217,16 @@ class Heatmap(Plottable2D):
         x_grid, y_grid = np.meshgrid(x, y)
         z = func(x_grid, y_grid)
         return cls(
-            z,
-            x_axis_range,
-            y_axis_range,
-            color_map,
-            color_map_range,
-            show_color_bar,
-            alpha,
-            aspect_ratio,
-            origin_position,
-            interpolation,
+            image=z,
+            x_axis_range=x_axis_range,
+            y_axis_range=y_axis_range,
+            color_map=color_map,
+            color_map_range=color_map_range,
+            show_color_bar=show_color_bar,
+            alpha=alpha,
+            aspect_ratio=aspect_ratio,
+            origin_position=origin_position,
+            interpolation=interpolation,
         )
 
     @classmethod
@@ -307,16 +307,16 @@ class Heatmap(Plottable2D):
             fill_value=fill_value,
         )
         return cls(
-            grid,
-            x_axis_range,
-            y_axis_range,
-            color_map,
-            color_map_range,
-            show_color_bar,
-            alpha,
-            aspect_ratio,
-            origin_position,
-            interpolation,
+            image=grid,
+            x_axis_range=x_axis_range,
+            y_axis_range=y_axis_range,
+            color_map=color_map,
+            color_map_range=color_map_range,
+            show_color_bar=show_color_bar,
+            alpha=alpha,
+            aspect_ratio=aspect_ratio,
+            origin_position=origin_position,
+            interpolation=interpolation,
         )
 
     @property
