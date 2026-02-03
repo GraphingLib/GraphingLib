@@ -1,25 +1,34 @@
-import unittest
 import os
-
+import unittest
 import warnings
 
 from matplotlib import use as matplotlib_use
+
 matplotlib_use("Agg")  # Use non-GUI backend for tests
 
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from numpy import linspace, sin, pi, array
-from astropy.wcs import WCS
-import astropy.units as u
+from numpy import array, linspace, pi, sin
 
+try:
+    import astropy.units as u
+    from astropy.wcs import WCS
+    HAS_ASTROPY = True
+except ImportError:
+    HAS_ASTROPY = False
+    WCS = None
+    u = None
+
+from graphinglib.data_plotting_1d import Curve, Histogram, Scatter
+from graphinglib.data_plotting_2d import Contour, Heatmap, Stream, VectorField
 from graphinglib.file_manager import FileLoader
-from graphinglib.smart_figure import SmartFigure, SmartFigureWCS, SmartTwinAxis
-from graphinglib.data_plotting_1d import Curve, Scatter, Histogram
-from graphinglib.data_plotting_2d import Heatmap, VectorField, Contour, Stream
 from graphinglib.fits import FitFromFunction
-from graphinglib.graph_elements import Plottable, GraphingException, Hlines, Vlines, Point, Text, Table, PlottableAxMethod
+from graphinglib.graph_elements import (GraphingException, Hlines, Plottable,
+                                        PlottableAxMethod, Point, Table, Text,
+                                        Vlines)
 from graphinglib.legend_artists import LegendLine
-from graphinglib.shapes import Arrow, Line, Polygon, Circle, Rectangle
+from graphinglib.shapes import Arrow, Circle, Line, Polygon, Rectangle
+from graphinglib.smart_figure import SmartFigure, SmartFigureWCS, SmartTwinAxis
 
 
 class DummyPlottable(Plottable):
@@ -1492,6 +1501,7 @@ class TestSmartFigure(unittest.TestCase):
         plt.close(self.fig._figure)
 
 
+@unittest.skipUnless(HAS_ASTROPY, "Install the optional extra with `pip install graphinglib[astro]` to run WCS tests.")
 # Test suite for SmartFigureWCS, inheriting from TestSmartFigure to avoid code duplication
 class TestSmartFigureWCS(TestSmartFigure):
     """
