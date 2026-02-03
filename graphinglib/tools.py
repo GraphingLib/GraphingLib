@@ -5,6 +5,8 @@ try:
 except ImportError:
     from typing_extensions import Self
 
+from matplotlib.colors import to_rgba_array
+
 
 class MathematicalObject(Protocol):
     """
@@ -65,3 +67,46 @@ class MathematicalObject(Protocol):
     def __ipow__(self, other: Any) -> Self:
         self = self.__pow__(other)
         return self
+
+
+def get_contrasting_shade(color: str | tuple[int, int, int]) -> str:
+    """
+    Gives the most contrasting shade (black/white) for a given color. The algorithm used comes from this Stack
+    Exchange answer : https://ux.stackexchange.com/a/82068.
+
+    Parameters
+    ----------
+    color : str or tuple[int, int, int]
+        Color that needs to be contrasted. This can either be a known matplotlib color string or a RGB code, given
+        as a tuple of integers that take 0-255.
+
+    Returns
+    -------
+    shade : str
+        Shade (black/white) that contrasts the most with the given color.
+    """
+    if isinstance(color, str):
+        color = to_rgba_array(color)[0, :3] * 255
+
+    R, G, B = color
+
+    if R <= 10:
+        Rg = R / 3294
+    else:
+        Rg = (R / 269 + 0.0513) ** 2.4
+
+    if G <= 10:
+        Gg = G / 3294
+    else:
+        Gg = (G / 269 + 0.0513) ** 2.4
+
+    if B <= 10:
+        Bg = B / 3294
+    else:
+        Bg = (B / 269 + 0.0513) ** 2.4
+
+    L = 0.2126 * Rg + 0.7152 * Gg + 0.0722 * Bg
+    if L < 0.5:
+        return "white"
+    else:
+        return "black"
