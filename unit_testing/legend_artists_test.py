@@ -1,13 +1,15 @@
 import unittest
-from unittest.mock import patch
 
-import matplotlib.colors as mcolors
 from matplotlib.artist import Artist
 from matplotlib.lines import Line2D
-from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Patch
 
-from graphinglib.legend_artists import LegendElement, LegendLine, LegendMarker, LegendPatch
+from graphinglib.legend_artists import (
+    LegendElement,
+    LegendLine,
+    LegendMarker,
+    LegendPatch,
+)
 
 
 class TestLegendElement(unittest.TestCase):
@@ -57,7 +59,7 @@ class TestLegendLine(unittest.TestCase):
             gap_color="blue",
             line_width=2.5,
             line_style="--",
-            alpha=0.8
+            alpha=0.8,
         )
 
     def test_initialization(self):
@@ -191,7 +193,7 @@ class TestLegendMarker(unittest.TestCase):
             marker_size=8.0,
             marker_style="s",
             fill_style="left",
-            alpha=0.7
+            alpha=0.7,
         )
 
     def test_initialization(self):
@@ -286,7 +288,24 @@ class TestLegendMarker(unittest.TestCase):
     def test_marker_style_validation(self):
         """Test marker style validation."""
         # Valid markers
-        valid_markers = [".", ",", "o", "v", "^", "<", ">", "s", "p", "*", "h", "H", "+", "x", "D", "d"]
+        valid_markers = [
+            ".",
+            ",",
+            "o",
+            "v",
+            "^",
+            "<",
+            ">",
+            "s",
+            "p",
+            "*",
+            "h",
+            "H",
+            "+",
+            "x",
+            "D",
+            "d",
+        ]
         for marker in valid_markers:
             self.legend_marker.marker_style = marker
             self.assertEqual(self.legend_marker.marker_style, marker)
@@ -328,7 +347,7 @@ class TestLegendPatch(unittest.TestCase):
             line_width=1.5,
             line_style="-.",
             hatch="//",
-            alpha=0.7
+            alpha=0.7,
         )
 
     def test_initialization(self):

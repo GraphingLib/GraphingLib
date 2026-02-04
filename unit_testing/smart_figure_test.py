@@ -13,6 +13,7 @@ from numpy import array, linspace, pi, sin
 try:
     import astropy.units as u
     from astropy.wcs import WCS
+
     HAS_ASTROPY = True
 except ImportError:
     HAS_ASTROPY = False
@@ -39,7 +40,10 @@ class DummyPlottable(Plottable):
         self._y_data = [0, 1]
 
     def _plot_element(self, ax, z_order, cycle_color=None):
-        self.handle, = ax.plot(self._x_data, self._y_data, label=self.label, color=cycle_color)
+        (self.handle,) = ax.plot(
+            self._x_data, self._y_data, label=self.label, color=cycle_color
+        )
+
 
 class TestSmartFigure(unittest.TestCase):
     def setUp(self):
@@ -65,19 +69,62 @@ class TestSmartFigure(unittest.TestCase):
 
     def test_init_custom_args(self):
         """Test SmartFigure initialization with custom arguments."""
-        elements = [[DummyPlottable(), DummyPlottable()], None, DummyPlottable(),
-                    [None], [DummyPlottable(), DummyPlottable(), DummyPlottable()], []]
+        elements = [
+            [DummyPlottable(), DummyPlottable()],
+            None,
+            DummyPlottable(),
+            [None],
+            [DummyPlottable(), DummyPlottable(), DummyPlottable()],
+            [],
+        ]
         annotations = (Text(0.5, 0.5, "Center"), Text(0.1, 0.1, "Corner"))
         fig = self.cls(
-            num_rows=2, num_cols=3, x_label="X", y_label="Y", size=(8, 6), title="Test Figure", x_lim=(0, 10),
-            y_lim=(-5, 5), sub_x_labels=["X1", "X2", "X3"], sub_y_labels=["Y1", "Y2"],
-            subtitles=["Title 1", "Title 2", "Title 3", "Title 4", "Title 5", "Title 6"], log_scale_x=True,
-            log_scale_y=True, remove_axes=True, aspect_ratio=1.5, box_aspect_ratio=0.7, remove_x_ticks=True,
-            remove_y_ticks=True, invert_x_axis=True, invert_y_axis=True, reference_labels=False,
-            global_reference_label=True, reference_labels_loc="inside", width_padding=0.5, height_padding=0,
-            width_ratios=[1,2,3], height_ratios=[1,2], share_x=True, share_y=True, projection="polar",
-            general_legend=True, legend_loc="upper right", legend_cols=2, show_legend=False, twin_x_axis=None,
-            twin_y_axis=None, figure_style="dark", elements=elements, annotations=annotations,
+            num_rows=2,
+            num_cols=3,
+            x_label="X",
+            y_label="Y",
+            size=(8, 6),
+            title="Test Figure",
+            x_lim=(0, 10),
+            y_lim=(-5, 5),
+            sub_x_labels=["X1", "X2", "X3"],
+            sub_y_labels=["Y1", "Y2"],
+            subtitles=[
+                "Title 1",
+                "Title 2",
+                "Title 3",
+                "Title 4",
+                "Title 5",
+                "Title 6",
+            ],
+            log_scale_x=True,
+            log_scale_y=True,
+            remove_axes=True,
+            aspect_ratio=1.5,
+            box_aspect_ratio=0.7,
+            remove_x_ticks=True,
+            remove_y_ticks=True,
+            invert_x_axis=True,
+            invert_y_axis=True,
+            reference_labels=False,
+            global_reference_label=True,
+            reference_labels_loc="inside",
+            width_padding=0.5,
+            height_padding=0,
+            width_ratios=[1, 2, 3],
+            height_ratios=[1, 2],
+            share_x=True,
+            share_y=True,
+            projection="polar",
+            general_legend=True,
+            legend_loc="upper right",
+            legend_cols=2,
+            show_legend=False,
+            twin_x_axis=None,
+            twin_y_axis=None,
+            figure_style="dark",
+            elements=elements,
+            annotations=annotations,
         )
         self.assertEqual(fig.num_rows, 2)
         self.assertEqual(fig.num_cols, 3)
@@ -89,7 +136,10 @@ class TestSmartFigure(unittest.TestCase):
         self.assertEqual(fig.y_lim, (-5, 5))
         self.assertEqual(fig.sub_x_labels, ["X1", "X2", "X3"])
         self.assertEqual(fig.sub_y_labels, ["Y1", "Y2"])
-        self.assertEqual(fig.subtitles, ["Title 1", "Title 2", "Title 3", "Title 4", "Title 5", "Title 6"])
+        self.assertEqual(
+            fig.subtitles,
+            ["Title 1", "Title 2", "Title 3", "Title 4", "Title 5", "Title 6"],
+        )
         self.assertTrue(fig.log_scale_x)
         self.assertTrue(fig.log_scale_y)
         self.assertTrue(fig.remove_axes)
@@ -261,7 +311,9 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.sub_x_labels = valid_labels
         self.assertEqual(self.fig.sub_x_labels, valid_labels)
         self.fig.sub_x_labels = [None, "valid"]
-        with self.assertRaises(GraphingException):  # different number of sub labels and subplots
+        with self.assertRaises(
+            GraphingException
+        ):  # different number of sub labels and subplots
             self.fig._initialize_parent_smart_figure()
 
         # Test invalid types
@@ -282,7 +334,9 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.sub_y_labels = valid_labels
         self.assertEqual(self.fig.sub_y_labels, valid_labels)
         self.fig.sub_y_labels = [None, "valid"]
-        with self.assertRaises(GraphingException):  # different number of sub labels and subplots
+        with self.assertRaises(
+            GraphingException
+        ):  # different number of sub labels and subplots
             self.fig._initialize_parent_smart_figure()
 
         # Test invalid types
@@ -303,7 +357,9 @@ class TestSmartFigure(unittest.TestCase):
         self.fig.subtitles = valid_titles
         self.assertEqual(self.fig.subtitles, valid_titles)
         self.fig.subtitles = [None, "valid"]
-        with self.assertRaises(GraphingException):  # different number of subtitles and subplots
+        with self.assertRaises(
+            GraphingException
+        ):  # different number of subtitles and subplots
             self.fig._initialize_parent_smart_figure()
 
         # Test invalid types
@@ -565,9 +621,21 @@ class TestSmartFigure(unittest.TestCase):
             self.fig.legend_loc = 1
         # Valid
         for pos in [
-            "upper right", "upper left", "lower left", "lower right", "right",
-            "center left", "center right", "lower center", "upper center", "center", "outside upper center",
-            "outside center right", "outside lower center", "outside center left", (0.5, 0.5)
+            "upper right",
+            "upper left",
+            "lower left",
+            "lower right",
+            "right",
+            "center left",
+            "center right",
+            "lower center",
+            "upper center",
+            "center",
+            "outside upper center",
+            "outside center right",
+            "outside lower center",
+            "outside center left",
+            (0.5, 0.5),
         ]:
             self.fig.legend_loc = pos
             self.assertEqual(self.fig.legend_loc, pos)
@@ -621,7 +689,11 @@ class TestSmartFigure(unittest.TestCase):
         self.assertEqual(len(self.fig_1x4.elements), 2)
 
         # Setting new elements will clear existing ones
-        self.fig_3x1.elements = [[DummyPlottable(), DummyPlottable()], [None], DummyPlottable()]
+        self.fig_3x1.elements = [
+            [DummyPlottable(), DummyPlottable()],
+            [None],
+            DummyPlottable(),
+        ]
         self.assertEqual(len(self.fig_3x1.elements), 3)
 
     def test_annotations(self):
@@ -634,7 +706,10 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.fig.annotations = [Text(1, 1, "s"), Arrow(0, 0, 1, 1)]
         # Valid
-        annotations = [Text(0.5, 0.5, "Center"), Text(0.1, 0.9, "Top Left", h_align="left", v_align="top")]
+        annotations = [
+            Text(0.5, 0.5, "Center"),
+            Text(0.1, 0.9, "Top Left", h_align="left", v_align="top"),
+        ]
         self.fig.annotations = annotations
         self.assertEqual(self.fig.annotations, annotations)
 
@@ -679,37 +754,75 @@ class TestSmartFigure(unittest.TestCase):
         self.fig_2x3[1, 2] = DummyPlottable()
         # leave the [1,1] subplot empty
 
-        bool_tests = [[True, True, False], [False, False, True, False], [True, False, False, True, False]]
+        bool_tests = [
+            [True, True, False],
+            [False, False, True, False],
+            [True, False, False, True, False],
+        ]
         params = {
-            "x_lim": [[(0, 1), None, (1, 2), (None, 4)],
-                      [None, None, (None, 0), (0, None)],
-                      [(0, 1), (1, 2), None, None, (5, 6)]],
-            "y_lim": [[(0, 1), None, (1, 2), (None, 4)],
-                      [None, None, (None, 0), (0, None)],
-                      [(0, 1), (1, 2), None, None, (5, 6)]],
+            "x_lim": [
+                [(0, 1), None, (1, 2), (None, 4)],
+                [None, None, (None, 0), (0, None)],
+                [(0, 1), (1, 2), None, None, (5, 6)],
+            ],
+            "y_lim": [
+                [(0, 1), None, (1, 2), (None, 4)],
+                [None, None, (None, 0), (0, None)],
+                [(0, 1), (1, 2), None, None, (5, 6)],
+            ],
             "log_scale_x": bool_tests,
             "log_scale_y": bool_tests,
             "remove_axes": bool_tests,
-            "aspect_ratio": [[1.0, 1.0, 2.0], [1.5, 1.0, "auto", "equal"], [0.75, 1.0, 1.0, "auto", "equal"]],
-            "box_aspect_ratio": [[None, 0.5, 2.0], [1.5, None, 0.75, 3.0], [0.33, None, None, 2.0, 4.0]],
+            "aspect_ratio": [
+                [1.0, 1.0, 2.0],
+                [1.5, 1.0, "auto", "equal"],
+                [0.75, 1.0, 1.0, "auto", "equal"],
+            ],
+            "box_aspect_ratio": [
+                [None, 0.5, 2.0],
+                [1.5, None, 0.75, 3.0],
+                [0.33, None, None, 2.0, 4.0],
+            ],
             "remove_x_ticks": bool_tests,
             "remove_y_ticks": bool_tests,
             "invert_x_axis": bool_tests,
             "invert_y_axis": bool_tests,
             "reference_labels": bool_tests,
-            "reference_labels_loc": [["inside", (0.5, 0.5), "outside"],
-                                     ["outside", "inside", (0, 0), (1, 1)],
-                                     ["inside", (0.25, 0.75), (0.75, 0.25), "inside", "outside"]],
-            "legend_loc": [["upper right", (0.5, 0.5), "lower left"],
-                           ["upper left", (0, 1), (1, 0), "center"],
-                           ["center", "lower left", (0.2, 0.7), (0.7, 0.2), "outside lower center"]],
+            "reference_labels_loc": [
+                ["inside", (0.5, 0.5), "outside"],
+                ["outside", "inside", (0, 0), (1, 1)],
+                ["inside", (0.25, 0.75), (0.75, 0.25), "inside", "outside"],
+            ],
+            "legend_loc": [
+                ["upper right", (0.5, 0.5), "lower left"],
+                ["upper left", (0, 1), (1, 0), "center"],
+                [
+                    "center",
+                    "lower left",
+                    (0.2, 0.7),
+                    (0.7, 0.2),
+                    "outside lower center",
+                ],
+            ],
             "legend_cols": [[1, 2, 3], [2, 1, 3, 1], [1, 2, 3, 5, 1]],
             "show_legend": bool_tests,
             "show_grid": bool_tests,
             "hide_default_legend_elements": bool_tests,
-            "sub_x_labels": [["X1", "X2", None], [None, "X_valid", "X3", None],["X1", None, "X2", None, "X3"]],
-            "sub_y_labels": [["Y1", "Y2", None], [None, "Y_valid", "Y3", None],["Y1", None, "Y2", None, "Y3"]],
-            "subtitles": [["T 1", None, "T 3"], [None, "Valid T", "T 2", None], ["T 1", None, "T 2", None, "T 3"]],
+            "sub_x_labels": [
+                ["X1", "X2", None],
+                [None, "X_valid", "X3", None],
+                ["X1", None, "X2", None, "X3"],
+            ],
+            "sub_y_labels": [
+                ["Y1", "Y2", None],
+                [None, "Y_valid", "Y3", None],
+                ["Y1", None, "Y2", None, "Y3"],
+            ],
+            "subtitles": [
+                ["T 1", None, "T 3"],
+                [None, "Valid T", "T 2", None],
+                ["T 1", None, "T 2", None, "T 3"],
+            ],
         }
         for param, values in params.items():
             fig = self.fig_2x3.copy_with(**{param: values[0]})  # underfilled list
@@ -733,7 +846,13 @@ class TestSmartFigure(unittest.TestCase):
         self.fig_2x3.projection = ["polar", None, "polar", None]  # equally filled list
         self.fig_2x3._fill_per_subplot_params()
         with self.assertRaises(GraphingException):
-            self.fig_2x3.projection = [None, "polar", None, "polar", None]  # overfilled list
+            self.fig_2x3.projection = [
+                None,
+                "polar",
+                None,
+                "polar",
+                None,
+            ]  # overfilled list
             self.fig_2x3._fill_per_subplot_params()
 
     def test_general_legend_list_or_item_properties(self):
@@ -849,7 +968,7 @@ class TestSmartFigure(unittest.TestCase):
     def test_iter(self):
         """Test iteration over subplots."""
         count = 0
-        self.fig_2x3.elements = [[None]]*6
+        self.fig_2x3.elements = [[None]] * 6
         for subplot in self.fig_2x3:
             self.assertIsInstance(subplot, list)
             count += 1
@@ -928,7 +1047,9 @@ class TestSmartFigure(unittest.TestCase):
         self.assertEqual(result, expected)
 
         # Test negative slice normalization
-        result = self.fig_2x3._validate_and_normalize_key((slice(-2, None), slice(-3, -1)))
+        result = self.fig_2x3._validate_and_normalize_key(
+            (slice(-2, None), slice(-3, -1))
+        )
         expected = (slice(0, 2), slice(0, 2))
         self.assertEqual(result, expected)
 
@@ -949,7 +1070,9 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.fig_2x2.add_elements(dummy, dummy, dummy, dummy, dummy)
         with self.assertRaises(ValueError):
-            self.fig_2x2.add_elements(None, None, [dummy, dummy, None, dummy, dummy], None, None)
+            self.fig_2x2.add_elements(
+                None, None, [dummy, dummy, None, dummy, dummy], None, None
+            )
 
     def test_add_all_elements(self):
         """Test adding all types of elements to the figure."""
@@ -977,7 +1100,7 @@ class TestSmartFigure(unittest.TestCase):
         self.fig[0] = Stream([0, 1], [0, 1], [[1, 0], [1, 0]], [[0, 1], [0, 1]])
         self.fig._initialize_parent_smart_figure()
         plt.close()
-        self.fig[0] = FitFromFunction(lambda x, a: a*x, Curve([0, 1, 2], [0, 1, 2]))
+        self.fig[0] = FitFromFunction(lambda x, a: a * x, Curve([0, 1, 2], [0, 1, 2]))
         self.fig._initialize_parent_smart_figure()
         plt.close()
         self.fig[0] = Hlines([0, 1, 2])
@@ -1053,14 +1176,14 @@ class TestSmartFigure(unittest.TestCase):
         os.remove("test_smart_figure_output.pdf")
 
         # Test saving with split_pdf and a non-PDF extension
-        with self.assertLogs(level='WARNING') as log:
+        with self.assertLogs(level="WARNING") as log:
             self.fig.save("test_smart_figure_output.png", split_pdf=True)
             self.assertTrue(any("File extension" in record for record in log.output))
         self.assertTrue(os.path.exists("test_smart_figure_output.pdf"))
         os.remove("test_smart_figure_output.pdf")
 
         # Test saving with split_pdf and no extension
-        with self.assertLogs(level='WARNING') as log:
+        with self.assertLogs(level="WARNING") as log:
             self.fig.save("figure", split_pdf=True)
             self.assertTrue(any("File extension" in record for record in log.output))
         self.assertTrue(os.path.exists("figure.pdf"))
@@ -1228,23 +1351,46 @@ class TestSmartFigure(unittest.TestCase):
 
     def test_set_ticks_and_tick_params(self):
         """Test setting ticks and tick parameters."""
-        tick_func = lambda x: f"Label {x}"
-        self.fig.set_ticks(x_ticks=[0, 1], x_tick_labels=["a", "b"], y_ticks=[0, 1], y_tick_labels=["a", "b"])
-        self.fig.set_ticks(x_ticks=[0, 1], x_tick_labels=tick_func, y_ticks=[0, 1], y_tick_labels=tick_func)
-        self.fig.set_ticks(x_tick_spacing=0.5, x_tick_labels=tick_func, y_tick_spacing=0.5, y_tick_labels=tick_func)
+        def tick_func(x):
+            return f"Label {x}"
+        self.fig.set_ticks(
+            x_ticks=[0, 1],
+            x_tick_labels=["a", "b"],
+            y_ticks=[0, 1],
+            y_tick_labels=["a", "b"],
+        )
+        self.fig.set_ticks(
+            x_ticks=[0, 1],
+            x_tick_labels=tick_func,
+            y_ticks=[0, 1],
+            y_tick_labels=tick_func,
+        )
+        self.fig.set_ticks(
+            x_tick_spacing=0.5,
+            x_tick_labels=tick_func,
+            y_tick_spacing=0.5,
+            y_tick_labels=tick_func,
+        )
         self.fig.set_ticks(minor_x_ticks=[0.1, 0.2], minor_y_tick_spacing=0.5)
         self.fig.set_ticks(x_tick_spacing=None, y_tick_spacing=None)
         self.fig.set_tick_params(axis="x", which="major", direction="in", length=5)
-        self.fig.set_tick_params(axis="y", which="minor", color="red", length=3, reset=True)
+        self.fig.set_tick_params(
+            axis="y", which="minor", color="red", length=3, reset=True
+        )
         self.assertDictEqual(
             self.fig._tick_params,
             {
-                "x major": {"direction": "in", "length": 5}, "x minor": {},
-                "y major": {}, "y minor": {"color": "red", "length": 3},
-            }
+                "x major": {"direction": "in", "length": 5},
+                "x minor": {},
+                "y major": {},
+                "y minor": {"color": "red", "length": 3},
+            },
         )
         self.fig.set_tick_params(axis="both", which="both", reset=True)
-        self.assertDictEqual(self.fig._tick_params, {"x major": {}, "x minor": {}, "y major": {}, "y minor": {}})
+        self.assertDictEqual(
+            self.fig._tick_params,
+            {"x major": {}, "x minor": {}, "y major": {}, "y minor": {}},
+        )
         with self.assertRaises(GraphingException):
             self.fig.set_ticks(x_tick_labels=["a"], x_ticks=None)
         with self.assertRaises(GraphingException):
@@ -1252,11 +1398,20 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(GraphingException):
             self.fig.set_ticks(minor_x_ticks=[1], minor_x_tick_spacing=1)
         with self.assertRaises(GraphingException):
-            self.fig.set_ticks(x_ticks=[0, 1, 2, 3], x_tick_labels=["only one label but 4 ticks"])
+            self.fig.set_ticks(
+                x_ticks=[0, 1, 2, 3], x_tick_labels=["only one label but 4 ticks"]
+            )
 
     def test_set_grid(self):
         """Test setting grid parameters."""
-        self.fig.set_grid(visible_x=True, visible_y=False, color="blue", alpha=0.5, line_style="--", line_width=2)
+        self.fig.set_grid(
+            visible_x=True,
+            visible_y=False,
+            color="blue",
+            alpha=0.5,
+            line_style="--",
+            line_width=2,
+        )
         self.assertTrue(self.fig.show_grid)
         self.fig.show_grid = False
         self.fig.set_grid()
@@ -1296,14 +1451,14 @@ class TestSmartFigure(unittest.TestCase):
 
         self.fig_2x2.set_text_padding_params(y_label_pad=15.5, title_pad=1.0)
         self.assertEqual(self.fig_2x2._pad_params["y_label_pad"], 15.5)
-        self.assertEqual(self.fig_2x2._pad_params["x_label_pad"], 10.0)  # Should preserve previous value
+        self.assertEqual(
+            self.fig_2x2._pad_params["x_label_pad"], 10.0
+        )  # Should preserve previous value
         self.assertEqual(self.fig_2x2._pad_params["title_pad"], 1.0)
 
         # Test setting multiple parameters at once
         self.fig_2x2.set_text_padding_params(
-            x_label_pad=5.0,
-            y_label_pad=7.5,
-            title_pad=12.0
+            x_label_pad=5.0, y_label_pad=7.5, title_pad=12.0
         )
         self.assertEqual(self.fig_2x2._pad_params["x_label_pad"], 5.0)
         self.assertEqual(self.fig_2x2._pad_params["y_label_pad"], 7.5)
@@ -1315,8 +1470,12 @@ class TestSmartFigure(unittest.TestCase):
             sub_y_labels_pad=(4.5, 5.5, None, None),
             subtitles_pad=array([6.0, 7.0, 8.0, 9.0]),
         )
-        self.assertEqual(self.fig_2x2._pad_params["sub_x_labels_pad"], [1.0, 2.0, 3.0, 4.0])
-        self.assertEqual(self.fig_2x2._pad_params["sub_y_labels_pad"], (4.5, 5.5, None, None))
+        self.assertEqual(
+            self.fig_2x2._pad_params["sub_x_labels_pad"], [1.0, 2.0, 3.0, 4.0]
+        )
+        self.assertEqual(
+            self.fig_2x2._pad_params["sub_y_labels_pad"], (4.5, 5.5, None, None)
+        )
         self.assertEqual(list(self.fig_2x2._pad_params["subtitles_pad"]), [6, 7, 8, 9])
 
         # Test reset functionality
@@ -1329,13 +1488,19 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.fig_2x2.set_text_padding_params(x_label_pad="invalid")
         with self.assertRaises(TypeError):
-            self.fig_2x2.set_text_padding_params(y_label_pad=[1, 2])  # Should be float/int, not list
+            self.fig_2x2.set_text_padding_params(
+                y_label_pad=[1, 2]
+            )  # Should be float/int, not list
 
         # Test invalid types for iterable padding parameters
         with self.assertRaises(TypeError):
-            self.fig_2x2.set_text_padding_params(sub_x_labels_pad="invalid")  # String not iterable of numbers
+            self.fig_2x2.set_text_padding_params(
+                sub_x_labels_pad="invalid"
+            )  # String not iterable of numbers
         with self.assertRaises(TypeError):
-            self.fig_2x2.set_text_padding_params(sub_y_labels_pad=[1, 2, "invalid"])  # Invalid element in iterable
+            self.fig_2x2.set_text_padding_params(
+                sub_y_labels_pad=[1, 2, "invalid"]
+            )  # Invalid element in iterable
         with self.assertRaises(TypeError):
             self.fig_2x2.set_text_padding_params(sub_x_labels_pad=123)  # Not iterable
 
@@ -1344,10 +1509,14 @@ class TestSmartFigure(unittest.TestCase):
         self.assertEqual(self.fig_2x2._pad_params["sub_x_labels_pad"], [])
 
         # Test list lengths
-        self.fig_2x2.set_text_padding_params(sub_x_labels_pad=[1, 2, None])  # Underfilled list
+        self.fig_2x2.set_text_padding_params(
+            sub_x_labels_pad=[1, 2, None]
+        )  # Underfilled list
         self.fig_2x2._prepare_figure()
         with self.assertRaises(GraphingException):
-            self.fig_2x2.set_text_padding_params(sub_y_labels_pad=[1.0, 2.0, None, None, 3.0])  # Overfilled list
+            self.fig_2x2.set_text_padding_params(
+                sub_y_labels_pad=[1.0, 2.0, None, None, 3.0]
+            )  # Overfilled list
             self.fig_2x2._prepare_figure()
 
     def test_set_reference_labels_params(self):
@@ -1359,11 +1528,15 @@ class TestSmartFigure(unittest.TestCase):
         self.fig_2x2.set_reference_labels_params(font_size=12.0)
         self.assertEqual(self.fig_2x2._reference_labels_params["font_size"], 12.0)
 
-        self.fig_2x2.set_reference_labels_params(color="red", font_weight="bold", start_index=2)
+        self.fig_2x2.set_reference_labels_params(
+            color="red", font_weight="bold", start_index=2
+        )
         self.assertEqual(self.fig_2x2._reference_labels_params["color"], "red")
         self.assertEqual(self.fig_2x2._reference_labels_params["font_weight"], "bold")
         self.assertEqual(self.fig_2x2._reference_labels_params["start_index"], 2)
-        self.assertEqual(self.fig_2x2._reference_labels_params["font_size"], 12.0)  # Should preserve previous value
+        self.assertEqual(
+            self.fig_2x2._reference_labels_params["font_size"], 12.0
+        )  # Should preserve previous value
 
         # Test reset functionality
         self.fig_2x2.set_reference_labels_params(reset=True, font_size=20.0)
@@ -1406,7 +1579,9 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.fig.set_visual_params(hidden_spines=["I am not a direction"])
         with self.assertRaises(ValueError):
-            self.fig.set_visual_params(hidden_spines=["left", "I am still not a direction", "right"])
+            self.fig.set_visual_params(
+                hidden_spines=["left", "I am still not a direction", "right"]
+            )
 
         # Valid
         self.fig.set_visual_params(hidden_spines=["left", "right"])
@@ -1501,7 +1676,10 @@ class TestSmartFigure(unittest.TestCase):
         plt.close(self.fig._figure)
 
 
-@unittest.skipUnless(HAS_ASTROPY, "Install the optional extra with `pip install graphinglib[astro]` to run WCS tests.")
+@unittest.skipUnless(
+    HAS_ASTROPY,
+    "Install the optional extra with `pip install graphinglib[astro]` to run WCS tests.",
+)
 # Test suite for SmartFigureWCS, inheriting from TestSmartFigure to avoid code duplication
 class TestSmartFigureWCS(TestSmartFigure):
     """
@@ -1605,14 +1783,25 @@ class TestSmartFigureWCS(TestSmartFigure):
         self.fig_2x3._reference_label_i = 0
         self.fig_2x3._figure = plt.figure()
 
-        self.fig_2x3.projection = [self.wcs, self.wcs, self.wcs, self.wcs]  # equally filled list
+        self.fig_2x3.projection = [
+            self.wcs,
+            self.wcs,
+            self.wcs,
+            self.wcs,
+        ]  # equally filled list
         self.fig_2x3._prepare_figure()
         plt.close(self.fig._figure)
         with self.assertRaises(GraphingException):
             self.fig_2x3.projection = [self.wcs, self.wcs, self.wcs]  # underfilled list
             self.fig_2x3._prepare_figure()
         with self.assertRaises(GraphingException):
-            self.fig_2x3.projection = [self.wcs, self.wcs, self.wcs, self.wcs, self.wcs]  # overfilled list
+            self.fig_2x3.projection = [
+                self.wcs,
+                self.wcs,
+                self.wcs,
+                self.wcs,
+                self.wcs,
+            ]  # overfilled list
             self.fig_2x3._prepare_figure()
 
     def test_add_all_elements(self):
@@ -1638,7 +1827,7 @@ class TestSmartFigureWCS(TestSmartFigure):
         self.fig[0] = Stream([0, 1], [0, 1], [[1, 0], [1, 0]], [[0, 1], [0, 1]])
         self.fig._initialize_parent_smart_figure()
         plt.close()
-        self.fig[0] = FitFromFunction(lambda x, a: a*x, Curve([0, 1, 2], [0, 1, 2]))
+        self.fig[0] = FitFromFunction(lambda x, a: a * x, Curve([0, 1, 2], [0, 1, 2]))
         self.fig._initialize_parent_smart_figure()
         plt.close()
         self.fig[0] = Hlines([0, 1, 2])
@@ -1706,7 +1895,7 @@ class TestSmartFigureWCS(TestSmartFigure):
             x_tick_formatter="hh:mm:ss",
             y_tick_formatter=lambda x: f"{x:.2f}",
             minor_x_tick_frequency=2,
-            minor_y_tick_frequency=3
+            minor_y_tick_frequency=3,
         )
 
         # Should return self
@@ -1763,10 +1952,22 @@ class TestSmartFigureWCS(TestSmartFigure):
 
         # Check that parameters are set for both axes
         expected_major_params = {
-            "bottom": False, "top": True, "labelbottom": False, "labeltop": True,
-            "left": False, "right": True, "labelleft": False, "labelright": True,
-            "direction": "in", "length": 10, "width": 2, "color": "red",
-            "pad": 5, "labelsize": 12, "labelcolor": "blue", "labelrotation": 45
+            "bottom": False,
+            "top": True,
+            "labelbottom": False,
+            "labeltop": True,
+            "left": False,
+            "right": True,
+            "labelleft": False,
+            "labelright": True,
+            "direction": "in",
+            "length": 10,
+            "width": 2,
+            "color": "red",
+            "pad": 5,
+            "labelsize": 12,
+            "labelcolor": "blue",
+            "labelrotation": 45,
         }
 
         self.assertEqual(self.fig._tick_params["x major"], expected_major_params)
@@ -1777,13 +1978,17 @@ class TestSmartFigureWCS(TestSmartFigure):
         # Test setting parameters for individual axes
         self.fig.set_tick_params(axis="x", length=15)
         self.assertEqual(self.fig._tick_params["x major"]["length"], 15)
-        self.assertEqual(self.fig._tick_params["y major"]["length"], 10)  # Should remain unchanged
+        self.assertEqual(
+            self.fig._tick_params["y major"]["length"], 10
+        )  # Should remain unchanged
 
         # Test reset functionality
         self.fig.set_tick_params(axis="x", reset=True, length=20)
         expected_reset_params = {
-            "bottom": True, "top": True, "labelbottom": True,
-            "length": 20
+            "bottom": True,
+            "top": True,
+            "labelbottom": True,
+            "length": 20,
         }
         self.assertEqual(self.fig._tick_params["x major"], expected_reset_params)
         self.assertEqual(self.fig._tick_params["x minor"], {})
@@ -1797,7 +2002,7 @@ class TestSmartFigureWCS(TestSmartFigure):
             color="red",
             alpha=0.5,
             line_style="--",
-            line_width=2
+            line_width=2,
         )
 
         # Should return self
@@ -1826,14 +2031,42 @@ class TestSmartFigureWCS(TestSmartFigure):
         """Test SmartFigureWCS initialization with all parameters."""
         elements = [DummyPlottable(), DummyPlottable()]
         fig = self.cls(
-            projection=self.wcs, num_rows=2, num_cols=2, x_label="RA", y_label="Dec", size=(10, 8),
-            title="Test WCS Figure", x_lim=(0, 10), y_lim=(-5, 5), sub_x_labels=["RA1", "RA2"],
-            sub_y_labels=["Dec1", "Dec2"], subtitles=["Title 1", "Title 2", "Title 3", "Title 4"], log_scale_x=False,
-            log_scale_y=False, remove_axes=False, aspect_ratio="equal", box_aspect_ratio=0.7, remove_x_ticks=False,
-            remove_y_ticks=False, invert_x_axis=True, invert_y_axis=True, reference_labels=True,
-            global_reference_label=False, reference_labels_loc="outside", width_padding=0.1, height_padding=0.1,
-            width_ratios=[1, 2], height_ratios=[1, 2], share_x=False, share_y=False, general_legend=False,
-            legend_loc="best", legend_cols=1, show_legend=True, figure_style="default", elements=elements,
+            projection=self.wcs,
+            num_rows=2,
+            num_cols=2,
+            x_label="RA",
+            y_label="Dec",
+            size=(10, 8),
+            title="Test WCS Figure",
+            x_lim=(0, 10),
+            y_lim=(-5, 5),
+            sub_x_labels=["RA1", "RA2"],
+            sub_y_labels=["Dec1", "Dec2"],
+            subtitles=["Title 1", "Title 2", "Title 3", "Title 4"],
+            log_scale_x=False,
+            log_scale_y=False,
+            remove_axes=False,
+            aspect_ratio="equal",
+            box_aspect_ratio=0.7,
+            remove_x_ticks=False,
+            remove_y_ticks=False,
+            invert_x_axis=True,
+            invert_y_axis=True,
+            reference_labels=True,
+            global_reference_label=False,
+            reference_labels_loc="outside",
+            width_padding=0.1,
+            height_padding=0.1,
+            width_ratios=[1, 2],
+            height_ratios=[1, 2],
+            share_x=False,
+            share_y=False,
+            general_legend=False,
+            legend_loc="best",
+            legend_cols=1,
+            show_legend=True,
+            figure_style="default",
+            elements=elements,
         )
 
         # Test that WCS-specific attributes are properly initialized
@@ -1849,12 +2082,13 @@ class TestSmartFigureWCS(TestSmartFigure):
 
     def test_methods_return_self_wcs(self):
         """Test that WCS-specific methods return self for method chaining."""
-        result = (self.fig
-                 .set_ticks(number_of_x_ticks=5)
-                 .set_tick_params(direction="in")
-                 .set_grid(visible_x=True)
-                 .set_text_padding_params(x_label_pad=5.0)
-                 .set_reference_labels_params(color="green"))
+        result = (
+            self.fig.set_ticks(number_of_x_ticks=5)
+            .set_tick_params(direction="in")
+            .set_grid(visible_x=True)
+            .set_text_padding_params(x_label_pad=5.0)
+            .set_reference_labels_params(color="green")
+        )
 
         self.assertIs(result, self.fig)
 
@@ -2000,7 +2234,12 @@ class TestSmartTwinAxis(unittest.TestCase):
         self.assertEqual(len(self.twin_axis.elements), 2)
 
         # Setting new elements will clear existing ones
-        self.twin_axis.elements = [DummyPlottable(), DummyPlottable(), None, DummyPlottable()]
+        self.twin_axis.elements = [
+            DummyPlottable(),
+            DummyPlottable(),
+            None,
+            DummyPlottable(),
+        ]
         self.assertEqual(len(self.twin_axis.elements), 3)
 
     def test_len(self):
@@ -2098,8 +2337,14 @@ class TestSmartTwinAxis(unittest.TestCase):
         self.curve1._line_width = "default"
         self.twin_axis.add_elements(self.curve1)
         self.twin_axis._default_params = FileLoader("plain").load()
-        self.twin_axis._prepare_twin_axis(plt.axes(), False, plt.rcParams["axes.prop_cycle"].by_key()["color"], True, 0,
-                                          "default")
+        self.twin_axis._prepare_twin_axis(
+            plt.axes(),
+            False,
+            plt.rcParams["axes.prop_cycle"].by_key()["color"],
+            True,
+            0,
+            "default",
+        )
         self.assertEqual(self.curve1._line_width, "default")
         self.twin_axis._default_params = self.plainDefaults
         self.twin_axis._fill_in_missing_params(self.curve1, "default")
@@ -2141,7 +2386,9 @@ class TestSmartTwinAxis(unittest.TestCase):
 
     def test_customize_visual_style(self):
         """Test customizing visual style parameters for twin axis."""
-        self.twin_axis.set_visual_params(edge_color="blue", font_size=12, font_weight="bold")
+        self.twin_axis.set_visual_params(
+            edge_color="blue", font_size=12, font_weight="bold"
+        )
         self.twin_axis.set_visual_params()
         self.assertDictEqual(
             self.twin_axis._user_rc_dict,
@@ -2163,7 +2410,9 @@ class TestSmartTwinAxis(unittest.TestCase):
 
     def test_customize_visual_style_reset(self):
         """Test resetting visual style parameters for twin axis."""
-        self.twin_axis.set_visual_params(label_color="red", line_width=3, edge_color="orange")
+        self.twin_axis.set_visual_params(
+            label_color="red", line_width=3, edge_color="orange"
+        )
         self.twin_axis.set_visual_params(label_color="yellow", font_size=1)
         self.twin_axis.set_visual_params(reset=True, edge_color="black")
         self.assertDictEqual(self.twin_axis._user_rc_dict, {})
@@ -2174,13 +2423,20 @@ class TestSmartTwinAxis(unittest.TestCase):
         """Test matplotlib style functionality for twin axis."""
         self.twin_axis.add_elements(self.curve1)
         self.twin_axis._default_params = FileLoader("plain").load()
-        self.twin_axis._prepare_twin_axis(plt.axes(), True, plt.rcParams["axes.prop_cycle"].by_key()["color"], True, 0,
-                                          "mpl-gallery")
+        self.twin_axis._prepare_twin_axis(
+            plt.axes(),
+            True,
+            plt.rcParams["axes.prop_cycle"].by_key()["color"],
+            True,
+            0,
+            "mpl-gallery",
+        )
         plt.close("all")
 
     def test_set_ticks_and_tick_params(self):
         """Test setting ticks and tick parameters for twin axis."""
-        tick_func = lambda x: f"Label {x}"
+        def tick_func(x):
+            return f"Label {x}"
         self.twin_axis.set_ticks(ticks=[0, 1], tick_labels=["a", "b"])
         self.twin_axis.set_ticks(ticks=[0, 1], tick_labels=tick_func)
         self.twin_axis.set_ticks(tick_spacing=0.5, tick_labels=tick_func)
@@ -2194,7 +2450,7 @@ class TestSmartTwinAxis(unittest.TestCase):
             {
                 "major": {"direction": "in", "length": 5},
                 "minor": {"color": "red"},
-            }
+            },
         )
         self.twin_axis.set_tick_params(which="both", reset=True)
         self.assertDictEqual(self.twin_axis._tick_params, {"major": {}, "minor": {}})
@@ -2205,15 +2461,23 @@ class TestSmartTwinAxis(unittest.TestCase):
         with self.assertRaises(GraphingException):
             self.twin_axis.set_ticks(minor_ticks=[1], minor_tick_spacing=1)
         with self.assertRaises(GraphingException):
-            self.twin_axis.set_ticks(ticks=[0, 1, 2, 3], tick_labels=["only one label but 4 ticks"])
+            self.twin_axis.set_ticks(
+                ticks=[0, 1, 2, 3], tick_labels=["only one label but 4 ticks"]
+            )
 
     def test_methods_return_self(self):
         """Test that twin axis methods return self for method chaining."""
         self.assertIs(self.twin_axis.add_elements(), self.twin_axis)
         self.assertIs(self.twin_axis.set_ticks(ticks=[0, 1]), self.twin_axis)
-        self.assertIs(self.twin_axis.set_tick_params(label_color="green"), self.twin_axis)
-        self.assertIs(self.twin_axis.set_visual_params(edge_color="red"), self.twin_axis)
-        self.assertIs(self.twin_axis.set_rc_params({"lines.linewidth": 2}), self.twin_axis)
+        self.assertIs(
+            self.twin_axis.set_tick_params(label_color="green"), self.twin_axis
+        )
+        self.assertIs(
+            self.twin_axis.set_visual_params(edge_color="red"), self.twin_axis
+        )
+        self.assertIs(
+            self.twin_axis.set_rc_params({"lines.linewidth": 2}), self.twin_axis
+        )
 
     def test_hide_spines(self):
         """Test hiding the twin axis's spine."""

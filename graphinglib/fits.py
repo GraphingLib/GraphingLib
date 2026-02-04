@@ -810,9 +810,8 @@ class FitFromSine(GeneralFit):
         Callable
             Sine function with the parameters of the fit.
         """
-        return (
-            lambda x: self._amplitude
-            * np.sin(self._frequency_rad * x + self._phase_rad)
+        return lambda x: (
+            self._amplitude * np.sin(self._frequency_rad * x + self._phase_rad)
             + self._vertical_shift
         )
 
@@ -996,8 +995,8 @@ class FitFromExponential(GeneralFit):
         function : Callable
             Exponential function with the parameters of the fit.
         """
-        return lambda x: self._parameters[0] * np.exp(
-            self._parameters[1] * x + self._parameters[2]
+        return lambda x: (
+            self._parameters[0] * np.exp(self._parameters[1] * x + self._parameters[2])
         )
 
 
@@ -1213,8 +1212,9 @@ class FitFromGaussian(GeneralFit):
         function : Callable
             Gaussian function with the parameters of the fit.
         """
-        return lambda x: self._amplitude * np.exp(
-            -(((x - self._mean) / self._standard_deviation) ** 2) / 2
+        return lambda x: (
+            self._amplitude
+            * np.exp(-(((x - self._mean) / self._standard_deviation) ** 2) / 2)
         )
 
 
@@ -1398,9 +1398,8 @@ class FitFromSquareRoot(GeneralFit):
         function : Callable
             Square root function with the parameters of the fit.
         """
-        return (
-            lambda x: self._parameters[0] * np.sqrt(x + self._parameters[1])
-            + self._parameters[2]
+        return lambda x: (
+            self._parameters[0] * np.sqrt(x + self._parameters[1]) + self._parameters[2]
         )
 
 
@@ -1591,8 +1590,8 @@ class FitFromLog(GeneralFit):
         function : Callable
             Logarithmic function with the parameters of the fit.
         """
-        return (
-            lambda x: self._parameters[0]
+        return lambda x: (
+            self._parameters[0]
             * (np.log(x + self._parameters[1]) / np.log(self._log_base))
             + self._parameters[2]
         )
