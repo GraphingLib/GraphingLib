@@ -483,12 +483,14 @@ class Heatmap(Plottable2D):
                 **params,
             )
         else:
-            params.update({
-                "aspect": self._aspect_ratio,
-                "origin": self._origin_position,
-                "interpolation": self._interpolation,
-                "extent": self._xy_range,
-            })
+            params.update(
+                {
+                    "aspect": self._aspect_ratio,
+                    "origin": self._origin_position,
+                    "interpolation": self._interpolation,
+                    "extent": self._xy_range,
+                }
+            )
 
             params = {k: v for k, v in params.items() if v != "default"}
             image = axes.imshow(
@@ -929,7 +931,7 @@ class Contour(Plottable2D):
             show_color_bar,
             filled,
             alpha,
-            line_widths
+            line_widths,
         )
 
     @property
@@ -1073,7 +1075,9 @@ class Contour(Plottable2D):
             params["vmin"] = min(self._color_map_range)
             params["vmax"] = max(self._color_map_range)
 
-        params = {k: v for k, v in params.items() if not isinstance(v, str) or v != "default"}
+        params = {
+            k: v for k, v in params.items() if not isinstance(v, str) or v != "default"
+        }
         if self._filled:
             cont = axes.contourf(
                 x_mesh,

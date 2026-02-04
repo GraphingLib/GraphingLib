@@ -323,6 +323,7 @@ class TestContour(unittest.TestCase):
         fig.add_elements(contour)
         fig._prepare_figure()
 
+
 class TestStream(unittest.TestCase):
     def test_init(self):
         x_grid, y_grid = np.meshgrid(np.linspace(0, 11, 30), np.linspace(0, 11, 30))

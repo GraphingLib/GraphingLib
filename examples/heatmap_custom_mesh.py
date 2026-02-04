@@ -29,6 +29,6 @@ heatmap = gl.Heatmap(
     alpha=0.9,
 )
 
-fig = gl.Figure(size=(10, 7),x_label="x (log scale)",y_label="y (log scale)")
+fig = gl.Figure(size=(10, 7), x_label="x (log scale)", y_label="y (log scale)")
 fig.add_elements(heatmap)
 fig.show()
