@@ -10,9 +10,12 @@ from matplotlib.patches import Polygon
 
 from .file_manager import FileLoader, FileUpdater, get_default_style
 from .graph_elements import GraphingException, Plottable
-from .legend_artists import (HandlerMultipleLines,
-                             HandlerMultipleVerticalLines,
-                             VerticalLineCollection, histogram_legend_artist)
+from .legend_artists import (
+    HandlerMultipleLines,
+    HandlerMultipleVerticalLines,
+    VerticalLineCollection,
+    histogram_legend_artist,
+)
 
 
 class Figure:

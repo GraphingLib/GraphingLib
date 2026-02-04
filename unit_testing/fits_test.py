@@ -3,9 +3,15 @@ import unittest
 import numpy as np
 
 from graphinglib.data_plotting_1d import Curve, Scatter
-from graphinglib.fits import (FitFromExponential, FitFromFunction,
-                              FitFromGaussian, FitFromLog, FitFromPolynomial,
-                              FitFromSine, FitFromSquareRoot)
+from graphinglib.fits import (
+    FitFromExponential,
+    FitFromFunction,
+    FitFromGaussian,
+    FitFromLog,
+    FitFromPolynomial,
+    FitFromSine,
+    FitFromSquareRoot,
+)
 
 
 class TestFitFromPolynomial(unittest.TestCase):

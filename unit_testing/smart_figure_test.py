@@ -24,9 +24,16 @@ from graphinglib.data_plotting_1d import Curve, Histogram, Scatter
 from graphinglib.data_plotting_2d import Contour, Heatmap, Stream, VectorField
 from graphinglib.file_manager import FileLoader
 from graphinglib.fits import FitFromFunction
-from graphinglib.graph_elements import (GraphingException, Hlines, Plottable,
-                                        PlottableAxMethod, Point, Table, Text,
-                                        Vlines)
+from graphinglib.graph_elements import (
+    GraphingException,
+    Hlines,
+    Plottable,
+    PlottableAxMethod,
+    Point,
+    Table,
+    Text,
+    Vlines,
+)
 from graphinglib.legend_artists import LegendLine
 from graphinglib.shapes import Arrow, Circle, Line, Polygon, Rectangle
 from graphinglib.smart_figure import SmartFigure, SmartFigureWCS, SmartTwinAxis
@@ -1351,8 +1358,10 @@ class TestSmartFigure(unittest.TestCase):
 
     def test_set_ticks_and_tick_params(self):
         """Test setting ticks and tick parameters."""
+
         def tick_func(x):
             return f"Label {x}"
+
         self.fig.set_ticks(
             x_ticks=[0, 1],
             x_tick_labels=["a", "b"],
@@ -2435,8 +2444,10 @@ class TestSmartTwinAxis(unittest.TestCase):
 
     def test_set_ticks_and_tick_params(self):
         """Test setting ticks and tick parameters for twin axis."""
+
         def tick_func(x):
             return f"Label {x}"
+
         self.twin_axis.set_ticks(ticks=[0, 1], tick_labels=["a", "b"])
         self.twin_axis.set_ticks(ticks=[0, 1], tick_labels=tick_func)
         self.twin_axis.set_ticks(tick_spacing=0.5, tick_labels=tick_func)
