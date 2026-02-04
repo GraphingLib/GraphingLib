@@ -759,10 +759,11 @@ class Contour(Plottable2D):
 
     Parameters
     ----------
-    x_mesh, y_mesh : ArrayLike
-        x and y coordinates of the mesh grid.
     z_data : ArrayLike
         Data for each point of the mesh.
+    x_mesh, y_mesh : ArrayLike, optional
+        Mesh grids defining the coordinates of the contour values. If not provided, a mesh grid will be created based on
+        the shape of ``z_data``.
     number_of_levels : int
         Number of distinct levels of contour plot.
         Default depends on the ``figure_style`` configuration.
@@ -783,9 +784,9 @@ class Contour(Plottable2D):
         Default depends on the ``figure_style`` configuration.
     """
 
+    _z_data: ArrayLike
     _x_mesh: ArrayLike
     _y_mesh: ArrayLike
-    _z_data: ArrayLike
     _number_of_levels: int | Literal["default"] = "default"
     _color_map: str | Colormap | Literal["default"] = "default"
     _show_color_bar: bool | Literal["default"] = "default"
@@ -794,9 +795,9 @@ class Contour(Plottable2D):
 
     def __init__(
         self,
-        x_mesh: ArrayLike,
-        y_mesh: ArrayLike,
         z_data: ArrayLike,
+        x_mesh: Optional[ArrayLike] = None,
+        y_mesh: Optional[ArrayLike] = None,
         number_of_levels: int | Literal["default"] = "default",
         color_map: str | Colormap | Literal["default"] = "default",
         color_map_range: Optional[tuple[float, float]] = None,
@@ -809,10 +810,11 @@ class Contour(Plottable2D):
 
         Parameters
         ----------
-        x_mesh, y_mesh : ArrayLike
-            x and y coordinates of the mesh grid.
         z_data : ArrayLike
             Data for each point of the mesh.
+        x_mesh, y_mesh : ArrayLike, optional
+            Mesh grids defining the coordinates of the contour values. If not provided, a mesh grid will be created
+            based on the shape of ``z_data``.
         number_of_levels : int
             Number of distinct levels of contour plot.
             Default depends on the ``figure_style`` configuration.
@@ -832,9 +834,9 @@ class Contour(Plottable2D):
             Opacity of the filled contour.
             Default depends on the ``figure_style`` configuration.
         """
-        self._x_mesh = np.asarray(x_mesh)
-        self._y_mesh = np.asarray(y_mesh)
-        self._z_data = np.asarray(z_data)
+        self.z_data = z_data
+        self.x_mesh = x_mesh
+        self.y_mesh = y_mesh
         self._number_of_levels = number_of_levels
         self._color_map = color_map
         self._color_map_range = color_map_range
@@ -912,7 +914,7 @@ class Contour(Plottable2D):
 
     @x_mesh.setter
     def x_mesh(self, x_mesh: ArrayLike) -> None:
-        self._x_mesh = np.asarray(x_mesh)
+        self._x_mesh = None if x_mesh is None else np.asarray(x_mesh)
 
     @property
     def y_mesh(self) -> ArrayLike:
@@ -920,7 +922,7 @@ class Contour(Plottable2D):
 
     @y_mesh.setter
     def y_mesh(self, y_mesh: ArrayLike) -> None:
-        self._y_mesh = np.asarray(y_mesh)
+        self._y_mesh = None if y_mesh is None else np.asarray(y_mesh)
 
     @property
     def z_data(self) -> ArrayLike:
@@ -1021,6 +1023,14 @@ class Contour(Plottable2D):
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
+        if self._x_mesh is None or self._y_mesh is None:
+            x_mesh, y_mesh = np.meshgrid(
+                np.arange(self._z_data.shape[1]),
+                np.arange(self._z_data.shape[0]),
+            )
+        else:
+            x_mesh = self._x_mesh
+            y_mesh = self._y_mesh
         params = {
             "levels": self._number_of_levels,
             "cmap": self._color_map,
@@ -1033,16 +1043,16 @@ class Contour(Plottable2D):
             )
         if self._filled:
             cont = axes.contourf(
-                self._x_mesh,
-                self._y_mesh,
+                x_mesh,
+                y_mesh,
                 self._z_data,
                 zorder=z_order,
                 **params,
             )
         else:
             cont = axes.contour(
-                self._x_mesh,
-                self._y_mesh,
+                x_mesh,
+                y_mesh,
                 self._z_data,
                 zorder=z_order,
                 **params,

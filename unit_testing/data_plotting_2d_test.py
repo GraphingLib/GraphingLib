@@ -268,9 +268,9 @@ class TestContour(unittest.TestCase):
         z = np.sin(xx) + np.cos(yy)
 
         contour = Contour(
+            z_data=z,
             x_mesh=xx,
             y_mesh=yy,
-            z_data=z,
         )
 
         self.assertIsInstance(contour, Contour)
@@ -315,6 +315,13 @@ class TestContour(unittest.TestCase):
         self.assertListEqual(contour_copy._y_mesh.tolist(), yy.tolist())
         self.assertListEqual(contour_copy._z_data.tolist(), z.tolist())
 
+    def test_without_mesh(self):
+        contour = Contour(
+            z_data=np.random.rand(10, 20),
+        )
+        fig = Figure(figure_style="plain")
+        fig.add_elements(contour)
+        fig._prepare_figure()
 
 class TestStream(unittest.TestCase):
     def test_init(self):
