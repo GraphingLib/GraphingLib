@@ -149,8 +149,19 @@ class TestEllipse(unittest.TestCase):
         self.assertEqual(ellipse_copy._edge_color, ellipse._edge_color)
 
     def test_plotting(self):
-        ellipse = Ellipse(2, 2, 2, 1, fill=True, fill_color="red", fill_alpha=0.5, edge_color="blue", line_width=2,
-                          line_style="-", angle=30)
+        ellipse = Ellipse(
+            2,
+            2,
+            2,
+            1,
+            fill=True,
+            fill_color="red",
+            fill_alpha=0.5,
+            edge_color="blue",
+            line_width=2,
+            line_style="-",
+            angle=30,
+        )
 
         fig, ax = plt.subplots()
         ellipse._plot_element(ax, 0)

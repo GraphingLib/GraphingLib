@@ -10,6 +10,7 @@ from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.transforms import ScaledTranslation
 
+from .figure import Figure
 from .file_manager import FileLoader, get_default_style
 from .graph_elements import GraphingException, Plottable
 from .legend_artists import (
@@ -18,8 +19,6 @@ from .legend_artists import (
     VerticalLineCollection,
     histogram_legend_artist,
 )
-
-from .figure import Figure
 
 try:
     from typing import Self
@@ -111,7 +110,7 @@ class MultiFigure:
             The figure style to use for the figure.
             Default can be set using ``gl.set_default_style()``.
         """
-        if type(num_rows) != int or type(num_cols) != int:
+        if type(num_rows) is not int or type(num_cols) is not int:
             raise TypeError("The number of rows and columns must be integers.")
         if num_rows < 1 or num_cols < 1:
             raise ValueError("The number of rows and columns must be greater than 0.")
@@ -356,11 +355,11 @@ class MultiFigure:
             The number of columns spanned by the SubFigure.
         """
 
-        if type(row_start) != int or type(col_start) != int:
+        if type(row_start) is not int or type(col_start) is not int:
             raise TypeError("The placement values must be integers.")
         if row_start < 0 or col_start < 0:
             raise ValueError("The placement values cannot be negative.")
-        if type(row_span) != int or type(col_span) != int:
+        if type(row_span) is not int or type(col_span) is not int:
             raise TypeError("The span values must be integers.")
         if row_span < 1 or col_span < 1:
             raise ValueError("The span values must be greater than 0.")
@@ -529,7 +528,7 @@ class MultiFigure:
                     ncols=legend_cols,
                 )
                 _legend.set_zorder(10000)
-            except:
+            except TypeError:
                 _legend = self._figure.legend(
                     handles=handles,
                     labels=labels,
@@ -593,7 +592,7 @@ class MultiFigure:
         params_to_reset = []
         object_type = type(element).__name__
         for property, value in vars(element).items():
-            if (type(value) == str) and (value == "default"):
+            if (type(value) is str) and (value == "default"):
                 params_to_reset.append(property)
                 if self._default_params[object_type][property] == "same as curve":
                     element.__dict__["_errorbars_color"] = self._default_params[

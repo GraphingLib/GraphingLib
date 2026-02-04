@@ -5,10 +5,17 @@ from unittest.mock import MagicMock, patch
 import yaml
 from matplotlib import pyplot as plt
 
-from graphinglib.file_manager import (FileDeleter, FileLoader, FileSaver,
-                                      FileUpdater, get_color, get_colors,
-                                      get_default_style, get_styles,
-                                      set_default_style)
+from graphinglib.file_manager import (
+    FileDeleter,
+    FileLoader,
+    FileSaver,
+    FileUpdater,
+    get_color,
+    get_colors,
+    get_default_style,
+    get_styles,
+    set_default_style,
+)
 
 
 class TestFileLoader(unittest.TestCase):

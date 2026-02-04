@@ -18,12 +18,15 @@ dependencies = [
   "setuptools-scm>=8.0.4,<9.0.0",
   "shapely>=2.0.3,<3.0.0",
   "pyperclip>=1.9.0,<2.0.0",
+]
+
+[project.optional-dependencies]
+astro = [
   "astropy>=7.0.0,<8.0.0",
 ]
 
 [dependency-groups]
 dev = [
-  "black>=23.3.0,<24.0.0",
   "ipykernel>=6.23.0,<7.0.0",
   "sphinx-favicon>=1.0.1,<2.0.0",
   "sphinx-copybutton>=0.5.2,<0.6.0",
@@ -31,6 +34,8 @@ dev = [
   "pydata-sphinx-theme>=0.14.1,<0.15.0",
   "numpydoc>=1.7.0,<2.0.0",
   "pygithub>=2.3.0,<3.0.0",
+  "astropy>=7.0.0,<8.0.0",
+  "ruff>=0.15.0",
 ]
 
 [build-system]

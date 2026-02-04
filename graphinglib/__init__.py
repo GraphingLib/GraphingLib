@@ -21,8 +21,8 @@ as Matplotlib. For further reference on those conventions, see the
 """
 
 from ._version import __version__
-from .data_plotting_1d import Curve, Histogram, Scatter, Plottable1D
-from .data_plotting_2d import Contour, Heatmap, Stream, VectorField, Plottable2D
+from .data_plotting_1d import Curve, Histogram, Plottable1D, Scatter
+from .data_plotting_2d import Contour, Heatmap, Plottable2D, Stream, VectorField
 from .figure import Figure
 from .file_manager import (
     get_color,
@@ -41,9 +41,68 @@ from .fits import (
     FitFromSine,
     FitFromSquareRoot,
 )
-from .graph_elements import Plottable, GraphingException, Hlines, Point, Table, Text, Vlines, PlottableAxMethod
+from .graph_elements import (
+    GraphingException,
+    Hlines,
+    Plottable,
+    PlottableAxMethod,
+    Point,
+    Table,
+    Text,
+    Vlines,
+)
 from .legend_artists import LegendElement, LegendLine, LegendMarker, LegendPatch
 from .multifigure import MultiFigure
 from .shapes import Arrow, Circle, Ellipse, Line, Polygon, Rectangle
 from .smart_figure import SmartFigure, SmartFigureWCS, SmartTwinAxis
 from .tools import MathematicalObject
+
+__all__ = [
+    "__version__",
+    "Curve",
+    "Histogram",
+    "Plottable1D",
+    "Scatter",
+    "Contour",
+    "Heatmap",
+    "Plottable2D",
+    "Stream",
+    "VectorField",
+    "Figure",
+    "get_color",
+    "get_colors",
+    "get_default_style",
+    "get_styles",
+    "set_default_style",
+    "FitFromExponential",
+    "FitFromFOTF",
+    "FitFromFunction",
+    "FitFromGaussian",
+    "FitFromLog",
+    "FitFromPolynomial",
+    "FitFromSine",
+    "FitFromSquareRoot",
+    "GraphingException",
+    "Hlines",
+    "Plottable",
+    "PlottableAxMethod",
+    "Point",
+    "Table",
+    "Text",
+    "Vlines",
+    "LegendElement",
+    "LegendLine",
+    "LegendMarker",
+    "LegendPatch",
+    "MultiFigure",
+    "Arrow",
+    "Circle",
+    "Ellipse",
+    "Line",
+    "Polygon",
+    "Rectangle",
+    "SmartFigure",
+    "SmartFigureWCS",
+    "SmartTwinAxis",
+    "MathematicalObject",
+]

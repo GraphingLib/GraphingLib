@@ -7,6 +7,7 @@ _thumb: .4, .4
 
 import numpy as np
 import graphinglib as gl
+
 np.random.seed(0)
 
 distribution_1 = gl.Scatter(
@@ -28,12 +29,28 @@ distribution_2 = gl.Scatter(
 
 colors = gl.get_colors()
 vertical_histograms = [
-    gl.Histogram(distribution_1.x_data, bins=10, face_color=colors[0], edge_color=colors[0]),
-    gl.Histogram(distribution_2.x_data, bins=10, face_color=colors[1], edge_color=colors[1]),
+    gl.Histogram(
+        distribution_1.x_data, bins=10, face_color=colors[0], edge_color=colors[0]
+    ),
+    gl.Histogram(
+        distribution_2.x_data, bins=10, face_color=colors[1], edge_color=colors[1]
+    ),
 ]
 horizontal_histograms = [
-    gl.Histogram(distribution_1.y_data, bins=10, face_color=colors[0], edge_color=colors[0], orientation="horizontal"),
-    gl.Histogram(distribution_2.y_data, bins=10, face_color=colors[1], edge_color=colors[1], orientation="horizontal"),
+    gl.Histogram(
+        distribution_1.y_data,
+        bins=10,
+        face_color=colors[0],
+        edge_color=colors[0],
+        orientation="horizontal",
+    ),
+    gl.Histogram(
+        distribution_2.y_data,
+        bins=10,
+        face_color=colors[1],
+        edge_color=colors[1],
+        orientation="horizontal",
+    ),
 ]
 
 # Create two column figures: one which shares the x_axis to perfectly align the histograms, and a second for the
@@ -43,7 +60,9 @@ col_1_fig = gl.SmartFigure(  # left column figure
     num_cols=1,
     x_label="Feature 1",
     sub_y_labels=["Count", "Feature 2"],
-    y_lim=[(0.01, None)],  # Remove the bottom tick (0) of the top plot to avoid overlap with the histogram
+    y_lim=[
+        (0.01, None)
+    ],  # Remove the bottom tick (0) of the top plot to avoid overlap with the histogram
     share_x=True,
     height_padding=0,
     height_ratios=[1, 3],
@@ -55,11 +74,14 @@ col_2_fig = gl.SmartFigure(  # right column figure
     num_rows=2,
     num_cols=1,
     x_label="Count",
-    x_lim=(0.01, None),  # Remove the left tick (0) of the bottom plot to avoid overlap with the histogram
+    x_lim=(
+        0.01,
+        None,
+    ),  # Remove the left tick (0) of the bottom plot to avoid overlap with the histogram
     height_padding=0,
     height_ratios=[1, 3],
     reference_labels=False,
-    elements=[None, horizontal_histograms]
+    elements=[None, horizontal_histograms],
 ).set_tick_params(draw_left_labels=False)
 
 fig = gl.SmartFigure(

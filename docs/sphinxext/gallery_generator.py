@@ -5,13 +5,13 @@ Lightly modified from the seaborn project.
 
 """
 
+import glob
 import os
 import os.path as op
 import re
-import glob
+import shutil
 import token
 import tokenize
-import shutil
 import warnings
 
 import matplotlib
@@ -330,7 +330,7 @@ class ExampleGenerator:
         if thumbloc is not None:
             self.thumbloc = thumbloc
             docstring = "\n".join(
-                [l for l in docstring.split("\n") if not l.startswith("_thumb")]
+                [li for li in docstring.split("\n") if not li.startswith("_thumb")]
             )
 
         self.docstring = docstring
@@ -395,12 +395,11 @@ def main(app):
 
     banner_data = []
 
-    toctree = "\n\n" ".. toctree::\n" "   :hidden:\n\n"
+    toctree = "\n\n.. toctree::\n   :hidden:\n\n"
     contents = "\n\n"
 
     # Write individual example files
     for filename in sorted(glob.glob(op.join(source_dir, "*.py"))):
-
         ex = ExampleGenerator(filename, target_dir)
 
         banner_data.append(

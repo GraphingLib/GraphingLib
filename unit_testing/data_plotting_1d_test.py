@@ -92,7 +92,13 @@ class TestCurve(unittest.TestCase):
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
         self.testCurve = Curve(
-            x, sin(x), "Test Curve", color="k", line_width=3, line_style="--", alpha=0.4,
+            x,
+            sin(x),
+            "Test Curve",
+            color="k",
+            line_width=3,
+            line_style="--",
+            alpha=0.4,
         )
         _, self.testAxes = subplots()
         self.testCurve._plot_element(self.testAxes, 0)
@@ -619,7 +625,7 @@ class TestScatter(unittest.TestCase):
         x = linspace(0, 3 * pi, 100)
         other_scatter = Scatter(x, 0.005 * x**2 + 0.1, "Other Scatter")
         with self.assertRaises(ValueError):
-            new_scatter = self.testScatter + other_scatter
+            _ = self.testScatter + other_scatter
 
     def test_absolute_value(self):
         scatter = abs(self.testScatter)

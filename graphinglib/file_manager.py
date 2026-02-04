@@ -226,7 +226,9 @@ def get_styles(
         )
         if "custom_styles" in listdir(config_dir):
             customs_list = [
-                file.split(".")[0] for file in listdir(f"{config_dir}/custom_styles") if file.endswith(".yml")
+                file.split(".")[0]
+                for file in listdir(f"{config_dir}/custom_styles")
+                if file.endswith(".yml")
             ]
     if gl:
         gl_list = [

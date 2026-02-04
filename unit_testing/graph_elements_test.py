@@ -83,7 +83,9 @@ class TestHlines(unittest.TestCase):
                 line_widths=[1.0, 2.0],
             )
         except GraphingException as exc:
-            self.fail(f"Matching style lengths for multiple lines should be accepted: {exc}")
+            self.fail(
+                f"Matching style lengths for multiple lines should be accepted: {exc}"
+            )
 
     def test_multiple_lines_rejects_mismatched_style_lengths(self):
         base_kwargs = {
@@ -170,7 +172,9 @@ class TestVlines(unittest.TestCase):
                 line_widths=[1.0, 2.0],
             )
         except GraphingException as exc:
-            self.fail(f"Matching style lengths for multiple lines should be accepted: {exc}")
+            self.fail(
+                f"Matching style lengths for multiple lines should be accepted: {exc}"
+            )
 
     def test_multiple_lines_rejects_mismatched_style_lengths(self):
         base_kwargs = {
@@ -294,12 +298,23 @@ class TestText(unittest.TestCase):
             rotation=15.0,
         )
         testText.add_arrow(
-            points_to=(1, 1), width=0.1, head_width=0.3, head_length=0.2, shrink=0.05, alpha=0.1
+            points_to=(1, 1),
+            width=0.1,
+            head_width=0.3,
+            head_length=0.2,
+            shrink=0.05,
+            alpha=0.1,
         )
         self.assertEqual(testText._arrow_pointing_to, (1, 1))
         self.assertDictEqual(
             testText._arrow_properties,
-            {"width": 0.1, "headwidth": 0.3, "headlength": 0.2, "shrink": 0.05, "alpha": 0.1},
+            {
+                "width": 0.1,
+                "headwidth": 0.3,
+                "headlength": 0.2,
+                "shrink": 0.05,
+                "alpha": 0.1,
+            },
         )
 
     def test_plotting(self):
@@ -318,7 +333,12 @@ class TestText(unittest.TestCase):
             highlight_padding=0.15,
         )
         testText.add_arrow(
-            points_to=(1, 1), width=0.1, head_width=0.3, head_length=0.2, shrink=0.05, alpha=0.9
+            points_to=(1, 1),
+            width=0.1,
+            head_width=0.3,
+            head_length=0.2,
+            shrink=0.05,
+            alpha=0.9,
         )
         fig, ax = plt.subplots()
         testText._plot_element(ax, 0)
