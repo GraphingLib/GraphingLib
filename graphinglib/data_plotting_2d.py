@@ -173,11 +173,9 @@ class Heatmap(Plottable2D):
         Parameters
         ----------
         func : Callable[[ArrayLike, ArrayLike], ArrayLike]
-            Function to be plotted. Works with regular functions and lambda
-            functions.
+            Function to be plotted. Works with regular functions and lambda functions.
         x_axis_range, y_axis_range : tuple[float, float], optional
-            The range of x and y values used for the axes as tuples containing the
-            start and end of the range.
+            The range of x and y values used for the axes as tuples containing the start and end of the range.
         color_map : str, Colormap
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
@@ -257,8 +255,7 @@ class Heatmap(Plottable2D):
         values : ArrayLike
             The list or array of values at given points.
         x_axis_range, y_axis_range : tuple[float, float], optional
-            The range of x and y values used for the axes as tuples containing the
-            start and end of the range.
+            The range of x and y values used for the axes as tuples containing the start and end of the range.
         grid_interpolation : str
             Interpolation method to be used when interpolating the uneavenly distributed data on a grid.
             Must be one of {"nearest", "linear", "cubic"}.
@@ -523,8 +520,7 @@ class VectorField(Plottable2D):
     scale : float
         Scaling of the arrow lengths. If ``None``, the arrows will be automatically scaled to look nice. Use 1 for no scaling.
     angle_in_data_coords : bool
-        Wheter to use the screen coordinates or the data coordinates to
-        determine the vector directions.
+        Whether to use the screen coordinates or the data coordinates to determine the vector directions.
         Defaults to ``True``.
     color : str
         Color of the vector arrows.
@@ -603,12 +599,9 @@ class VectorField(Plottable2D):
         Parameters
         ----------
         func : Callable[[ArrayLike, ArrayLike], tuple[ArrayLike, ArrayLike]]
-            Function to be plotted. Works with regular functions and lambda
-            functions.
-        x_data, y_data : ArrayLike
-            x and y coordinates of the vectors.
-        u_data, v_data : ArrayLike
-            Magnitudes in the x and y coordinates.
+            Function to be plotted. Works with regular functions and lambda functions.
+        x_axis_range, y_axis_range : tuple[float, float], optional
+            The range of x and y values used for the axes as tuples containing the start and end of the range.
         number_of_arrows_x, number_of_arrows_y : int
             Number of arrows to plot in the x and y direction. Defaults to 10.
         arrow_width : float
@@ -871,12 +864,9 @@ class Contour(Plottable2D):
         Parameters
         ----------
         func : Callable[[ArrayLike, ArrayLike], ArrayLike]
-            Function to be plotted. Works with regular functions and lambda
-            functions.
-        x_mesh, y_mesh : ArrayLike
-            x and y coordinates of the mesh grid.
-        z_data : ArrayLike
-            Data for each point of the mesh.
+            Function to be plotted. Works with regular functions and lambda functions.
+        x_axis_range, y_axis_range : tuple[float, float], optional
+            The range of x and y values used for the axes as tuples containing the start and end of the range.
         number_of_levels : int
             Number of distinct levels of contour plot.
             Default depends on the ``figure_style`` configuration.
@@ -1153,16 +1143,12 @@ class Stream(Plottable2D):
         Parameters
         ----------
         func : Callable[[ArrayLike, ArrayLike], [ArrayLike, ArrayLike]]
-            Function to be plotted. Works with regular functions and lambda
-            functions.
-        x_axis_range : tuple[float, float]
-            Range of x values.
-        y_axis_range : tuple[float, float]
-            Range of y values.
-        number_of_points_x : int
-            Number of points to fill the x range. Defaults to 30.
-        number_of_points_y : int
-            Number of points to fill the y range. Defaults to 30.
+            Function to be plotted. Works with regular functions and lambda functions.
+        x_axis_range, y_axis_range : tuple[float, float], optional
+            The range of x and y values used for the axes as tuples containing the start and end of the range.
+        number_of_points_x, number_of_points_y : int
+            Number of points to fill the x and y ranges.
+            Defaults to 30.
         density : float or tuple[float, float]
             Density of stream lines. Can be specified independently for the x and y coordinates
             by specifying a density tuple instead. Defaults to 1.
