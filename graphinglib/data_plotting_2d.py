@@ -24,6 +24,7 @@ class Plottable2D(Plottable, Protocol):
     """
     Dummy class to allow type hinting of Plottable2D objects.
     """
+
     pass
 
 

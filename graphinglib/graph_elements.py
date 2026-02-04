@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass, field
 from difflib import get_close_matches
-from typing import Literal, Optional, Protocol, runtime_checkable, Any
+from typing import Literal, Optional, Protocol, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -52,8 +52,14 @@ class Plottable(Protocol):
             curve = Curve(x_data, y_data, color='blue')
             new_curve = curve.copy_with(color='red', line_style='dashed')
         """
-        properties = [attr for attr in dir(self.__class__) if isinstance(getattr(self.__class__, attr, None), property)]
-        properties = list(filter(lambda x: x[0] != "_", properties))  # filter out hidden properties
+        properties = [
+            attr
+            for attr in dir(self.__class__)
+            if isinstance(getattr(self.__class__, attr, None), property)
+        ]
+        properties = list(
+            filter(lambda x: x[0] != "_", properties)
+        )  # filter out hidden properties
         print(properties)
         new_copy = deepcopy(self)
         for key, value in kwargs.items():
@@ -62,12 +68,16 @@ class Plottable(Protocol):
             else:
                 close_match = get_close_matches(key, properties, n=1, cutoff=0.6)
                 if close_match:
-                    raise AttributeError(f"{self.__class__.__name__} has no attribute '{key}'. "
-                                         f"Did you mean '{close_match[0]}'?")
+                    raise AttributeError(
+                        f"{self.__class__.__name__} has no attribute '{key}'. "
+                        f"Did you mean '{close_match[0]}'?"
+                    )
                 else:
-                    raise AttributeError(f"{self.__class__.__name__} has no attribute '{key}'.")
+                    raise AttributeError(
+                        f"{self.__class__.__name__} has no attribute '{key}'."
+                    )
         return new_copy
-      
+
     def __deepcopy__(self, memo: dict) -> Self:
         """
         Creates a deep copy of the Plottable instance, intentionally excluding the 'handle' attribute from the copy.
@@ -1219,7 +1229,9 @@ class Text(Plottable):
         if alpha is not None:
             self._arrow_properties["alpha"] = alpha
 
-    def _plot_element(self, target: plt.Axes | MPLFigure, z_order: int, **kwargs) -> None:
+    def _plot_element(
+        self, target: plt.Axes | MPLFigure, z_order: int, **kwargs
+    ) -> None:
         """
         Plots the element in the specified target, which can be either an
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_ or a

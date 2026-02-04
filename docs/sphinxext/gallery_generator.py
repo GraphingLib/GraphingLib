@@ -5,13 +5,13 @@ Lightly modified from the seaborn project.
 
 """
 
+import glob
 import os
 import os.path as op
 import re
-import glob
+import shutil
 import token
 import tokenize
-import shutil
 import warnings
 
 import matplotlib
@@ -395,12 +395,11 @@ def main(app):
 
     banner_data = []
 
-    toctree = "\n\n" ".. toctree::\n" "   :hidden:\n\n"
+    toctree = "\n\n.. toctree::\n   :hidden:\n\n"
     contents = "\n\n"
 
     # Write individual example files
     for filename in sorted(glob.glob(op.join(source_dir, "*.py"))):
-
         ex = ExampleGenerator(filename, target_dir)
 
         banner_data.append(

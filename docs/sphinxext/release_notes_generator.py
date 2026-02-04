@@ -242,7 +242,7 @@ def main(app):
             if "dev" in v:
                 toctree += "   " + v.lstrip("v") + f" <{v}>\n"
             else:
-                toctree += "   " + v.lstrip("v") + f" <{'old_release_notes/'+v}>\n"
+                toctree += "   " + v.lstrip("v") + f" <{'old_release_notes/' + v}>\n"
         toctree += "\n"
 
     output = RELEASE_NOTES_INDEX_TEMPLATE.format(toctree=toctree)

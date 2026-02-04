@@ -324,7 +324,7 @@ class Line(Plottable):
 
     def _plot_element(self, axes: plt.axes, z_order: int, **kwargs):
         if self._capped_line:
-            style = f"|-|, widthA={self._cap_width/2}, widthB={self._cap_width/2}"
+            style = f"|-|, widthA={self._cap_width / 2}, widthB={self._cap_width / 2}"
         else:
             style = "-"
         props = {
@@ -977,7 +977,10 @@ class Ellipse(Polygon):
             1, number_of_points // 4
         )
         self._sh_polygon = sh.affinity.scale(
-            self._sh_polygon, xfact=x_radius, yfact=y_radius, origin=(x_center, y_center)
+            self._sh_polygon,
+            xfact=x_radius,
+            yfact=y_radius,
+            origin=(x_center, y_center),
         )
         if angle != 0:
             self._sh_polygon = sh.affinity.rotate(
@@ -999,7 +1002,10 @@ class Ellipse(Polygon):
             1, self._num_points // 4
         )
         self._sh_polygon = sh.affinity.scale(
-            self._sh_polygon, xfact=x_radius, yfact=y_radius, origin=(x_center, y_center)
+            self._sh_polygon,
+            xfact=x_radius,
+            yfact=y_radius,
+            origin=(x_center, y_center),
         )
         if angle != 0:
             self._sh_polygon = sh.affinity.rotate(
@@ -1048,7 +1054,9 @@ class Ellipse(Polygon):
 
     @angle.setter
     def angle(self, value):
-        self._rebuild(self.x_center, self.y_center, self._x_radius, self._y_radius, value)
+        self._rebuild(
+            self.x_center, self.y_center, self._x_radius, self._y_radius, value
+        )
 
     @property
     def width(self):

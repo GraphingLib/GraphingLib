@@ -92,7 +92,13 @@ class TestCurve(unittest.TestCase):
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
         self.testCurve = Curve(
-            x, sin(x), "Test Curve", color="k", line_width=3, line_style="--", alpha=0.4,
+            x,
+            sin(x),
+            "Test Curve",
+            color="k",
+            line_width=3,
+            line_style="--",
+            alpha=0.4,
         )
         _, self.testAxes = subplots()
         self.testCurve._plot_element(self.testAxes, 0)

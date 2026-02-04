@@ -31,7 +31,7 @@ class TestMathematicalObject(unittest.TestCase):
                 return TestObject(self.value / other)
 
             def __pow__(self, other: int) -> Self:
-                return TestObject(self.value ** other)
+                return TestObject(self.value**other)
 
         obj = TestObject(10)
         self.assertEqual((obj + 5).value, 15)
@@ -42,7 +42,7 @@ class TestMathematicalObject(unittest.TestCase):
         self.assertEqual((2 * obj).value, 20)
         self.assertEqual((obj / 2).value, 5)
         self.assertEqual((2 / obj).value, 0.2)
-        self.assertEqual((obj ** 2).value, 100)
+        self.assertEqual((obj**2).value, 100)
 
         obj += 10
         self.assertEqual(obj.value, 20)
@@ -71,7 +71,7 @@ class TestMathematicalObject(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             _ = obj / 2
         with self.assertRaises(NotImplementedError):
-            _ = obj ** 2
+            _ = obj**2
 
         with self.assertRaises(NotImplementedError):
             obj -= 5

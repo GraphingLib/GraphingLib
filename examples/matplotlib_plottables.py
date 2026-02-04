@@ -7,6 +7,7 @@ _thumb: .4, .4
 
 import numpy as np
 import graphinglib as gl
+
 np.random.seed(0)
 
 # Create matplotlib plottables that aren't supported yet in GraphingLib
