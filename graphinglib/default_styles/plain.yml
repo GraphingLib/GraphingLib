@@ -158,6 +158,7 @@ Contour:
   _show_color_bar: True
   _filled: True
   _alpha: 1.0
+  _line_widths: 1
 
 VectorField:
   _arrow_width: 1

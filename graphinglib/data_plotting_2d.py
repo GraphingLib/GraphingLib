@@ -783,6 +783,10 @@ class Contour(Plottable2D):
     alpha : float
         Opacity of the filled contour.
         Default depends on the ``figure_style`` configuration.
+    line_widths : float | ArrayLike
+        If the contour is not filled, the width of the contour lines. If an array is provided, it defines the line width
+        for each contour level.
+        Default depends on the ``figure_style`` configuration.
     """
 
     _z_data: ArrayLike
@@ -793,6 +797,7 @@ class Contour(Plottable2D):
     _show_color_bar: bool | Literal["default"] = "default"
     _filled: bool | Literal["default"] = "default"
     _alpha: float | Literal["default"] = "default"
+    _line_widths: float | ArrayLike | Literal["default"] = "default"
 
     def __init__(
         self,
@@ -805,6 +810,7 @@ class Contour(Plottable2D):
         show_color_bar: bool | Literal["default"] = "default",
         filled: bool | Literal["default"] = "default",
         alpha: float | Literal["default"] = "default",
+        line_widths: float | ArrayLike | Literal["default"] = "default",
     ) -> None:
         """
         This class implements contour plots.
@@ -835,6 +841,10 @@ class Contour(Plottable2D):
         alpha : float
             Opacity of the filled contour.
             Default depends on the ``figure_style`` configuration.
+        line_widths : float
+            If the contour is not filled, the width of the contour lines. If an array is provided, it defines the line
+            width for each contour level.
+            Default depends on the ``figure_style`` configuration.
         """
         self.z_data = z_data
         self.x_mesh = x_mesh
@@ -845,6 +855,7 @@ class Contour(Plottable2D):
         self._show_color_bar = show_color_bar
         self._filled = filled
         self._alpha = alpha
+        self._line_widths = line_widths
 
         self._color_bar_params: dict = {}
 
@@ -860,6 +871,7 @@ class Contour(Plottable2D):
         show_color_bar: bool | Literal["default"] = "default",
         filled: bool | Literal["default"] = "default",
         alpha: float | Literal["default"] = "default",
+        line_widths: float | ArrayLike | Literal["default"] = "default",
         number_of_points: tuple[int, int] = (500, 500),
     ) -> Self:
         """
@@ -890,6 +902,13 @@ class Contour(Plottable2D):
         alpha : float
             Opacity of the filled contour.
             Default depends on the ``figure_style`` configuration.
+        line_widths : float
+            If the contour is not filled, the width of the contour lines. If an array is provided, it defines the line
+            width for each contour level.
+            Default depends on the ``figure_style`` configuration.
+        number_of_points : tuple[int, int]
+            Number of points in the x and y coordinates.
+            Defaults to ``(50, 50)``.
 
         Returns
         -------
@@ -909,6 +928,7 @@ class Contour(Plottable2D):
             show_color_bar,
             filled,
             alpha,
+            line_widths
         )
 
     @property
@@ -984,6 +1004,14 @@ class Contour(Plottable2D):
         self._alpha = alpha
 
     @property
+    def line_widths(self) -> float | ArrayLike:
+        return self._line_widths
+
+    @line_widths.setter
+    def line_widths(self, line_widths: float | ArrayLike) -> None:
+        self._line_widths = line_widths
+
+    @property
     def color_bar_params(self) -> dict:
         return self._color_bar_params
 
@@ -1038,6 +1066,7 @@ class Contour(Plottable2D):
             "levels": self._levels,
             "cmap": self._color_map,
             "alpha": self._alpha,
+            "linewidths": self._line_widths if not self._filled else None,
         }
         if self._color_map_range is not None:
             params["vmin"] = min(self._color_map_range)
