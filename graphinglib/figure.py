@@ -8,18 +8,11 @@ from matplotlib.collections import LineCollection
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 
-from .file_manager import (
-    FileLoader,
-    FileUpdater,
-    get_default_style,
-)
+from .file_manager import FileLoader, FileUpdater, get_default_style
 from .graph_elements import GraphingException, Plottable
-from .legend_artists import (
-    HandlerMultipleLines,
-    HandlerMultipleVerticalLines,
-    VerticalLineCollection,
-    histogram_legend_artist,
-)
+from .legend_artists import (HandlerMultipleLines,
+                             HandlerMultipleVerticalLines,
+                             VerticalLineCollection, histogram_legend_artist)
 
 
 class Figure:
@@ -398,7 +391,7 @@ class Figure:
                         ncols=legend_cols,
                     )
                     _legend.set_zorder(10000)
-                except:
+                except TypeError:
                     _legend = self._axes.legend(
                         handles=self._handles,
                         labels=self._labels,
@@ -504,7 +497,7 @@ class Figure:
         while tries < 2:
             try:
                 for property, value in vars(element).items():
-                    if (type(value) == str) and (value == "default"):
+                    if (type(value) is str) and (value == "default"):
                         params_to_reset.append(property)
                         default_value = self._default_params[object_type][property]
                         setattr(element, property, default_value)
@@ -1075,7 +1068,7 @@ class TwinAxis:
         while tries < 2:
             try:
                 for property, value in vars(element).items():
-                    if (type(value) == str) and (value == "default"):
+                    if (type(value) is str) and (value == "default"):
                         params_to_reset.append(property)
                         default_value = self._default_params[object_type][property]
                         if default_value == "same as curve":

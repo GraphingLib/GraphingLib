@@ -1,22 +1,16 @@
 import unittest
 
-from numpy import exp, linspace, log, pi, sin
+import numpy as np
 
-from graphinglib.data_plotting_1d import *
-from graphinglib.fits import (
-    FitFromExponential,
-    FitFromFunction,
-    FitFromGaussian,
-    FitFromLog,
-    FitFromPolynomial,
-    FitFromSine,
-    FitFromSquareRoot,
-)
+from graphinglib.data_plotting_1d import Curve, Scatter
+from graphinglib.fits import (FitFromExponential, FitFromFunction,
+                              FitFromGaussian, FitFromLog, FitFromPolynomial,
+                              FitFromSine, FitFromSquareRoot)
 
 
 class TestFitFromPolynomial(unittest.TestCase):
     def setUp(self):
-        x = linspace(-3, 3 * pi, 1000)
+        x = np.linspace(-3, 3 * np.pi, 1000)
         self.scatter_first_degree = Scatter(x, 3 * x + 2, "k", "Test Curve")
         self.scatter_second_degree = Scatter(x, 4 * x**2 - 3 * x - 2, "k", "Test Curve")
         self.fit_first_degree = FitFromPolynomial(
@@ -145,8 +139,8 @@ class TestFitFromPolynomial(unittest.TestCase):
 
 class TestFitFromSine(unittest.TestCase):
     def setUp(self):
-        x = linspace(0, 3 * pi, 1000)
-        self.data = Scatter(x, 2 * sin(3 * x + 4) + 5, "k", "Data")
+        x = np.linspace(0, 3 * np.pi, 1000)
+        self.data = Scatter(x, 2 * np.sin(3 * x + 4) + 5, "k", "Data")
         self.fit = FitFromSine(
             self.data, "Sinusoidal fit", guesses=[2.09, 3.1, 4.2, 5.2]
         )
@@ -234,8 +228,8 @@ class TestFitFromSine(unittest.TestCase):
 
 class TestFitFromExponential(unittest.TestCase):
     def setUp(self):
-        x = linspace(0, 10, 1000)
-        self.data = Scatter(x, 2 * exp(3 * x + 4), "Data")
+        x = np.linspace(0, 10, 1000)
+        self.data = Scatter(x, 2 * np.exp(3 * x + 4), "Data")
         self.fit = FitFromExponential(
             self.data, "Sinusoidal fit", guesses=[2.09, 3.1, 4.01]
         )
@@ -287,7 +281,7 @@ class TestFitFromExponential(unittest.TestCase):
 
     def test_area_between(self):
         curve1 = Curve.from_function(
-            lambda x: 2 * exp(3 * x + 4), -0.1, 1.1, number_of_points=10000
+            lambda x: 2 * np.exp(3 * x + 4), -0.1, 1.1, number_of_points=10000
         )
         fit = FitFromExponential(curve1, "Exponential fit")
         self.assertAlmostEqual(fit.get_area_between(0, 1), 694.69, places=0)
@@ -319,7 +313,7 @@ class TestFitFromExponential(unittest.TestCase):
 
 class TestFitFromGaussian(unittest.TestCase):
     def setUp(self) -> None:
-        x = linspace(-4, 6, 1000)
+        x = np.linspace(-4, 6, 1000)
         self.data = Scatter(x, 5 * np.exp(-(((x - 1) / 1) ** 2) / 2), "Data")
         self.fit = FitFromGaussian(self.data, "Gaussian fit")
 
@@ -400,7 +394,7 @@ class TestFitFromGaussian(unittest.TestCase):
 
 class TestFitFromSquareRoot(unittest.TestCase):
     def setUp(self) -> None:
-        x = linspace(-1, 6, 1000)
+        x = np.linspace(-1, 6, 1000)
         self.data = Scatter(x, 3 * np.sqrt(x + 4) + 5, "Data")
         self.fit = FitFromSquareRoot(self.data, "Square root fit")
 
@@ -475,8 +469,8 @@ class TestFitFromSquareRoot(unittest.TestCase):
 
 class TestFitFromLog(unittest.TestCase):
     def setUp(self):
-        x = linspace(0, 10, 1000)
-        self.data = Scatter(x, 2 * log(x + 3) + 4, "Data")
+        x = np.linspace(0, 10, 1000)
+        self.data = Scatter(x, 2 * np.log(x + 3) + 4, "Data")
         self.fit = FitFromLog(self.data, "Logarithmic fit")
 
     def test_parameters(self):
@@ -553,7 +547,7 @@ class TestFitFromLog(unittest.TestCase):
 
 class TestFitFromFunction(unittest.TestCase):
     def setUp(self):
-        x = linspace(1, 10, 1000)
+        x = np.linspace(1, 10, 1000)
         self.data = Scatter(x, 1 / x + 3 * x, "Data")
         self.fit = FitFromFunction(lambda x, a, b: a / x + b * x, self.data)
 

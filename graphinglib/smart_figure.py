@@ -6,7 +6,8 @@ from difflib import get_close_matches
 from logging import warning
 from shutil import which
 from string import ascii_lowercase
-from typing import Any, Callable, Iterable, Iterator, Literal, Self, TypeVar, Union
+from typing import (Any, Callable, Iterable, Iterator, Literal, Self, TypeVar,
+                    Union)
 
 try:  # Optional dependency: astropy
     from astropy.units import Quantity
@@ -30,15 +31,12 @@ from matplotlib.projections import get_projection_names
 from matplotlib.transforms import ScaledTranslation
 from numpy.typing import ArrayLike
 
-from .file_manager import FileLoader, FileUpdater, get_default_style, get_styles
+from .file_manager import (FileLoader, FileUpdater, get_default_style,
+                           get_styles)
 from .graph_elements import GraphingException, Plottable, Text
-from .legend_artists import (
-    HandlerMultipleLines,
-    HandlerMultipleVerticalLines,
-    LegendElement,
-    VerticalLineCollection,
-    histogram_legend_artist,
-)
+from .legend_artists import (HandlerMultipleLines,
+                             HandlerMultipleVerticalLines, LegendElement,
+                             VerticalLineCollection, histogram_legend_artist)
 
 T = TypeVar("T")
 ListOrItem = Union[T, list[T]]
@@ -2261,7 +2259,7 @@ class SmartFigure:
 
         letter = ascii_lowercase[self._reference_label_i]
         formatted_letter = self._reference_labels_params.get(
-            "format", lambda l: f"{l})"
+            "format", lambda le: f"{le})"
         )(letter)
         reflabel_params = {
             k: v for k, v in self._reference_labels_params.items() if v != "default"
@@ -2399,7 +2397,7 @@ class SmartFigure:
             try:
                 for property_, value in vars(element).items():
                     if (
-                        (type(value) == str)
+                        (type(value) is str)
                         and (value == "default")
                         and not (property_ == "_figure_style")
                     ):
@@ -4286,7 +4284,7 @@ class SmartTwinAxis:
             try:
                 for property_, value in vars(element).items():
                     if (
-                        (type(value) == str)
+                        (type(value) is str)
                         and (value == "default")
                         and not (property_ == "_figure_style")
                     ):

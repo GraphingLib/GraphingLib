@@ -625,7 +625,7 @@ class TestScatter(unittest.TestCase):
         x = linspace(0, 3 * pi, 100)
         other_scatter = Scatter(x, 0.005 * x**2 + 0.1, "Other Scatter")
         with self.assertRaises(ValueError):
-            new_scatter = self.testScatter + other_scatter
+            _ = self.testScatter + other_scatter
 
     def test_absolute_value(self):
         scatter = abs(self.testScatter)

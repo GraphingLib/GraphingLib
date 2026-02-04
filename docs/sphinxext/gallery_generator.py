@@ -330,7 +330,7 @@ class ExampleGenerator:
         if thumbloc is not None:
             self.thumbloc = thumbloc
             docstring = "\n".join(
-                [l for l in docstring.split("\n") if not l.startswith("_thumb")]
+                [li for li in docstring.split("\n") if not li.startswith("_thumb")]
             )
 
         self.docstring = docstring
