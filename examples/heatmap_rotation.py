@@ -9,7 +9,7 @@ import graphinglib as gl
 import numpy as np
 
 # Load image
-image_source = "docs/_static/icons/GraphingLib-favicon_250x250.png"
+image_source = "../docs/_static/icons/GraphingLib-favicon_250x250.png"
 
 # Create heatmap
 heatmap = gl.Heatmap(
