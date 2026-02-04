@@ -6,8 +6,7 @@ from difflib import get_close_matches
 from logging import warning
 from shutil import which
 from string import ascii_lowercase
-from typing import (Any, Callable, Iterable, Iterator, Literal, Self, TypeVar,
-                    Union)
+from typing import Any, Callable, Iterable, Iterator, Literal, Self, TypeVar, Union
 
 try:  # Optional dependency: astropy
     from astropy.units import Quantity
@@ -31,12 +30,15 @@ from matplotlib.projections import get_projection_names
 from matplotlib.transforms import ScaledTranslation
 from numpy.typing import ArrayLike
 
-from .file_manager import (FileLoader, FileUpdater, get_default_style,
-                           get_styles)
+from .file_manager import FileLoader, FileUpdater, get_default_style, get_styles
 from .graph_elements import GraphingException, Plottable, Text
-from .legend_artists import (HandlerMultipleLines,
-                             HandlerMultipleVerticalLines, LegendElement,
-                             VerticalLineCollection, histogram_legend_artist)
+from .legend_artists import (
+    HandlerMultipleLines,
+    HandlerMultipleVerticalLines,
+    LegendElement,
+    VerticalLineCollection,
+    histogram_legend_artist,
+)
 
 T = TypeVar("T")
 ListOrItem = Union[T, list[T]]
