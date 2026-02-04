@@ -153,7 +153,7 @@ Heatmap:
   _show_color_bar: True
 
 Contour:
-  _number_of_levels: 10
+  _levels: 10
   _color_map: "coolwarm"
   _show_color_bar: True
   _filled: True

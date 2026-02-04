@@ -764,8 +764,9 @@ class Contour(Plottable2D):
     x_mesh, y_mesh : ArrayLike, optional
         Mesh grids defining the coordinates of the contour values. If not provided, a mesh grid will be created based on
         the shape of ``z_data``.
-    number_of_levels : int
-        Number of distinct levels of contour plot.
+    levels : int | ArrayLike
+        If `levels` is an integer, it defines the number of levels to use in the contour.
+        If `levels` is an array, it defines the value of each contour level.
         Default depends on the ``figure_style`` configuration.
     color_map : str or Colormap
         The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
@@ -787,7 +788,7 @@ class Contour(Plottable2D):
     _z_data: ArrayLike
     _x_mesh: ArrayLike
     _y_mesh: ArrayLike
-    _number_of_levels: int | Literal["default"] = "default"
+    _levels: int | Literal["default"] = "default"
     _color_map: str | Colormap | Literal["default"] = "default"
     _show_color_bar: bool | Literal["default"] = "default"
     _filled: bool | Literal["default"] = "default"
@@ -798,7 +799,7 @@ class Contour(Plottable2D):
         z_data: ArrayLike,
         x_mesh: Optional[ArrayLike] = None,
         y_mesh: Optional[ArrayLike] = None,
-        number_of_levels: int | Literal["default"] = "default",
+        levels: int | ArrayLike | Literal["default"] = "default",
         color_map: str | Colormap | Literal["default"] = "default",
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
@@ -815,8 +816,9 @@ class Contour(Plottable2D):
         x_mesh, y_mesh : ArrayLike, optional
             Mesh grids defining the coordinates of the contour values. If not provided, a mesh grid will be created
             based on the shape of ``z_data``.
-        number_of_levels : int
-            Number of distinct levels of contour plot.
+        levels : int | ArrayLike
+            If `levels` is an integer, it defines the number of levels to use in the contour.
+            If `levels` is an array, it defines the value of each contour level.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
@@ -837,7 +839,7 @@ class Contour(Plottable2D):
         self.z_data = z_data
         self.x_mesh = x_mesh
         self.y_mesh = y_mesh
-        self._number_of_levels = number_of_levels
+        self._levels = levels
         self._color_map = color_map
         self._color_map_range = color_map_range
         self._show_color_bar = show_color_bar
@@ -852,7 +854,7 @@ class Contour(Plottable2D):
         func: Callable[[ArrayLike, ArrayLike], ArrayLike],
         x_axis_range: tuple[float, float],
         y_axis_range: tuple[float, float],
-        number_of_levels: int | Literal["default"] = "default",
+        levels: int | ArrayLike | Literal["default"] = "default",
         color_map: str | Colormap | Literal["default"] = "default",
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
@@ -869,8 +871,9 @@ class Contour(Plottable2D):
             Function to be plotted. Works with regular functions and lambda functions.
         x_axis_range, y_axis_range : tuple[float, float], optional
             The range of x and y values used for the axes as tuples containing the start and end of the range.
-        number_of_levels : int
-            Number of distinct levels of contour plot.
+        levels : int | ArrayLike
+            If `levels` is an integer, it defines the number of levels to use in the contour.
+            If `levels` is an array, it defines the value of each contour level.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
@@ -897,10 +900,10 @@ class Contour(Plottable2D):
         x_mesh, y_mesh = np.meshgrid(x, y)
         z_data = func(x_mesh, y_mesh)
         return cls(
+            z_data,
             x_mesh,
             y_mesh,
-            z_data,
-            number_of_levels,
+            levels,
             color_map,
             color_map_range,
             show_color_bar,
@@ -933,12 +936,12 @@ class Contour(Plottable2D):
         self._z_data = np.asarray(z_data)
 
     @property
-    def number_of_levels(self) -> int:
-        return self._number_of_levels
+    def levels(self) -> int | ArrayLike | Literal["default"]:
+        return self._levels
 
-    @number_of_levels.setter
-    def number_of_levels(self, number_of_levels: int) -> None:
-        self._number_of_levels = number_of_levels
+    @levels.setter
+    def levels(self, levels: int | ArrayLike | Literal["default"]) -> None:
+        self._levels = levels
 
     @property
     def color_map(self) -> str | Colormap:
@@ -1032,15 +1035,15 @@ class Contour(Plottable2D):
             x_mesh = self._x_mesh
             y_mesh = self._y_mesh
         params = {
-            "levels": self._number_of_levels,
+            "levels": self._levels,
             "cmap": self._color_map,
             "alpha": self._alpha,
         }
-        params = {k: v for k, v in params.items() if v != "default"}
-        if self._color_map_range:
-            params["levels"] = np.linspace(
-                *self._color_map_range, self._number_of_levels
-            )
+        if self._color_map_range is not None:
+            params["vmin"] = min(self._color_map_range)
+            params["vmax"] = max(self._color_map_range)
+
+        params = {k: v for k, v in params.items() if not isinstance(v, str) or v != "default"}
         if self._filled:
             cont = axes.contourf(
                 x_mesh,

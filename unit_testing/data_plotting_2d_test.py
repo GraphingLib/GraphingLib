@@ -305,9 +305,9 @@ class TestContour(unittest.TestCase):
         z = np.sin(xx) + np.cos(yy)
 
         contour = Contour(
+            z_data=z,
             x_mesh=xx,
             y_mesh=yy,
-            z_data=z,
         )
         contour_copy = contour.copy()
         self.assertIsInstance(contour_copy, Contour)
