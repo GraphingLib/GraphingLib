@@ -1601,7 +1601,7 @@ Supported Projections
 The ``projection`` parameter accepts:
 
 - **Matplotlib projection strings**: `Any projection name supported by matplotlib <https://matplotlib.org/stable/api/projections_api.html>`_ (e.g., ``"polar"``, ``"aitoff"``, ``"hammer"``, ``"lambert"``, ``"mollweide"``, ``"rectilinear"``). You can get a list of available projections using ``matplotlib.projections.get_projection_names()``.
-- **Projection objects**: Objects capable of creating a projection. For `astropy.wcs.WCS <https://docs.astropy.org/en/stable/wcs/index.html>`_ objects used for plotting astronomical data, use the specialized :class:`~graphinglib.SmartFigureWCS` class instead. You can read more about it in the :doc:`/handbook/smart_figure_projections` documentation.
+- **Projection objects**: Objects capable of creating a projection. For `astropy.wcs.WCS <https://docs.astropy.org/en/stable/wcs/index.html>`_ objects used for plotting astronomical data, use the specialized :class:`~graphinglib.SmartFigureWCS` class instead. You can read more about it in the :doc:`/handbook/smart_figure_projections` documentation. Install the ``graphinglib[astro]`` extra to enable WCS support.
 
 .. warning::
     3D projections (``"3d"``) are **not supported** at this time. These will be added in a future release, probably as a separate class `SmartFigure3D`.

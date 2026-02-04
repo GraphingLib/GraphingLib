@@ -62,6 +62,10 @@ Using `uv` with
 uv add graphinglib
 ```
 
+Optional extras:
+
+- Astronomical projections (SmartFigureWCS): install `pip install graphinglib[astro]`
+
 ## Contributing
 
 We welcome contributions from the community. If you're interested in contributing to GraphingLib, please read our [contribution guidelines](https://graphinglib.org/doc-1.5.0/contributing/index.html) on our documentation website.

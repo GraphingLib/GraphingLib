@@ -13,6 +13,10 @@ Plotting Astronomical Data with :class:`~graphinglib.SmartFigureWCS`
 
 The :class:`~graphinglib.SmartFigureWCS` class is a specialized version of the :class:`~graphinglib.SmartFigure` class designed specifically for astronomical data using the `World Coordinate System (WCS) <https://docs.astropy.org/en/stable/wcs/index.html>`_ from Astropy.
 
+.. note::
+
+   :class:`~graphinglib.SmartFigureWCS` is only available when you install the optional ``astro`` extra. Install with ``pip install graphinglib[astro]`` to enable WCS features.
+
 Introduction to WCS
 -------------------
 

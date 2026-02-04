@@ -490,7 +490,6 @@ name = "graphinglib"
 version = "1.6.0"
 source = { editable = "." }
 dependencies = [
-    { name = "astropy" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "platformdirs" },
@@ -501,8 +500,14 @@ dependencies = [
     { name = "shapely" },
 ]
 
+[package.optional-dependencies]
+astro = [
+    { name = "astropy" },
+]
+
 [package.dev-dependencies]
 dev = [
+    { name = "astropy" },
     { name = "black" },
     { name = "ipykernel" },
     { name = "numpydoc" },
@@ -515,7 +520,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "astropy", specifier = ">=7.0.0,<8.0.0" },
+    { name = "astropy", marker = "extra == 'astro'", specifier = ">=7.0.0,<8.0.0" },
     { name = "matplotlib", specifier = ">=3.7.1,<4.0.0" },
     { name = "numpy", specifier = ">=1.24.2,<2.0.0" },
     { name = "platformdirs", specifier = ">=3.11.0,<4.0.0" },
@@ -525,9 +530,11 @@ requires-dist = [
     { name = "setuptools-scm", specifier = ">=8.0.4,<9.0.0" },
     { name = "shapely", specifier = ">=2.0.3,<3.0.0" },
 ]
+provides-extras = ["astro"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "astropy", specifier = ">=7.0.0,<8.0.0" },
     { name = "black", specifier = ">=23.3.0,<24.0.0" },
     { name = "ipykernel", specifier = ">=6.23.0,<7.0.0" },
     { name = "numpydoc", specifier = ">=1.7.0,<2.0.0" },

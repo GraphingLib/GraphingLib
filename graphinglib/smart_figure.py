@@ -1,44 +1,56 @@
 from __future__ import annotations as _annotations_
-from shutil import which
-from typing import Literal, Any, Self, Callable, Iterable, Iterator, TypeVar, Union
-from logging import warning
-from string import ascii_lowercase
+
 from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
-from astropy.wcs import WCS
-from astropy.units import Quantity
+from logging import warning
+from shutil import which
+from string import ascii_lowercase
+from typing import (Any, Callable, Iterable, Iterator, Literal, Self, TypeVar,
+                    Union)
+
+try:  # Optional dependency: astropy
+    from astropy.units import Quantity
+    from astropy.wcs import WCS
+    _ASTROPY_AVAILABLE = True
+except ImportError:
+    _ASTROPY_AVAILABLE = False
+    WCS = type("WCSPlaceholder", (), {})  # type: ignore[assignment]
+    Quantity = type("QuantityPlaceholder", (), {})  # type: ignore[assignment]
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from matplotlib.axes import Axes
+from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.collections import LineCollection
+from matplotlib.figure import Figure, SubFigure
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
-from matplotlib.transforms import ScaledTranslation
-from matplotlib.figure import Figure, SubFigure
-from matplotlib.axes import Axes
 from matplotlib.projections import get_projection_names
-from matplotlib.backends.backend_pdf import PdfPages
-
-from .file_manager import (
-    FileLoader,
-    FileUpdater,
-    get_default_style,
-    get_styles,
-)
-from .graph_elements import GraphingException, Plottable, Text
-from .legend_artists import (
-    HandlerMultipleLines,
-    HandlerMultipleVerticalLines,
-    VerticalLineCollection,
-    histogram_legend_artist,
-    LegendElement,
-)
-
+from matplotlib.transforms import ScaledTranslation
 from numpy.typing import ArrayLike
+
+from .file_manager import (FileLoader, FileUpdater, get_default_style,
+                           get_styles)
+from .graph_elements import GraphingException, Plottable, Text
+from .legend_artists import (HandlerMultipleLines,
+                             HandlerMultipleVerticalLines, LegendElement,
+                             VerticalLineCollection, histogram_legend_artist)
 
 T = TypeVar("T")
 ListOrItem = Union[T, list[T]]
+
+
+def _require_astropy(feature: str = "this feature") -> None:
+    """Raise a clear error when an astro-extra feature is used without the optional dependency installed."""
+    if not _ASTROPY_AVAILABLE:
+        raise GraphingException(
+            f"{feature} requires the optional `graphinglib[astro]` extra (installs Astropy). "
+            "Install it with `pip install graphinglib[astro]`."
+        )
+
+
+HAS_ASTROPY = _ASTROPY_AVAILABLE
 
 
 class SmartFigure:
@@ -2853,6 +2865,10 @@ class SmartFigureWCS(SmartFigure):
     This class implements a figure object for plotting :class:`~graphinglib.Plottable` elements with a
     `astropy.wcs.WCS <https://docs.astropy.org/en/stable/wcs/index.html>`_ projection.
 
+    .. note::
+        This class is available when the optional ``graphinglib[astro]`` extra is installed
+        (it pulls in Astropy). Install with ``pip install graphinglib[astro]``.
+
     It allows for the creation of complex figures recursively, where each :class:`~graphinglib.SmartFigure` can contain
     other :class:`~graphinglib.SmartFigure` objects. The class supports a variety of customization options as well as
     the ability to use styles and themes for consistent visual appearance across different figures. The idea behind this
@@ -3075,6 +3091,8 @@ class SmartFigureWCS(SmartFigure):
         elements: Iterable[Plottable | SmartFigure | None] | Iterable[Iterable[Plottable | None]] = [],
         annotations: Iterable[Text] | None = None,
     ) -> None:
+        _require_astropy("SmartFigureWCS")
+
         super().__init__(
             num_rows=num_rows,
             num_cols=num_cols,
