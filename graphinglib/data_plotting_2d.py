@@ -842,7 +842,7 @@ class Contour(Plottable2D):
         alpha : float
             Opacity of the filled contour.
             Default depends on the ``figure_style`` configuration.
-        line_widths : float
+        line_widths : float | ArrayLike
             If the contour is not filled, the width of the contour lines. If an array is provided, it defines the line
             width for each contour level.
             Default depends on the ``figure_style`` configuration.
@@ -903,7 +903,7 @@ class Contour(Plottable2D):
         alpha : float
             Opacity of the filled contour.
             Default depends on the ``figure_style`` configuration.
-        line_widths : float
+        line_widths : float | ArrayLike
             If the contour is not filled, the width of the contour lines. If an array is provided, it defines the line
             width for each contour level.
             Default depends on the ``figure_style`` configuration.
