@@ -1,0 +1,3 @@
+`norm` parameter for `Heatmap`
+==============================
+Added a `norm` parameter for `Heatmap` as exists for `imshow`.
