@@ -65,7 +65,9 @@ class Arrow(Plottable):
         width: float | Literal["default"] = "default",
         head_size: float | Literal["default"] = "default",
         shrink: float = 0,
-        style: Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"] = "default",
+        style: Literal[
+            "->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"
+        ] = "default",
         alpha: float | Literal["default"] = "default",
         two_sided: bool = False,
     ):
@@ -163,9 +165,20 @@ class Arrow(Plottable):
 
     @style.setter
     def style(self, value):
-        if value not in ["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"]:
-            raise ValueError("Invalid head style. Valid options are: '->', '-|>', '-[', ']->', 'simple', 'fancy', "
-                             "'wedge', 'default'.")
+        if value not in [
+            "->",
+            "-|>",
+            "-[",
+            "]->",
+            "simple",
+            "fancy",
+            "wedge",
+            "default",
+        ]:
+            raise ValueError(
+                "Invalid head style. Valid options are: '->', '-|>', '-[', ']->', 'simple', 'fancy', "
+                "'wedge', 'default'."
+            )
         self._style = value
 
     @property
@@ -215,7 +228,9 @@ class Arrow(Plottable):
                 case "-[":
                     style = "]-["
                 case _:
-                    raise ValueError("The head style must be '->', '-|>' or '-[' for two-sided arrows.")
+                    raise ValueError(
+                        "The head style must be '->', '-|>' or '-[' for two-sided arrows."
+                    )
         else:
             style = self._style
         head_length, head_width = self._head_size * 0.4, self._head_size * 0.2
@@ -223,9 +238,13 @@ class Arrow(Plottable):
         # Set specific arrow properties
         match self._style:
             case "->" | "-|>" | "simple" | "fancy":
-                prop_style_values = f"head_width={head_width}, head_length={head_length}"
+                prop_style_values = (
+                    f"head_width={head_width}, head_length={head_length}"
+                )
             case "-[":
-                prop_style_values = f"widthB={head_width}" + (f", widthA={head_width}" if self._two_sided else "")
+                prop_style_values = f"widthB={head_width}" + (
+                    f", widthA={head_width}" if self._two_sided else ""
+                )
             case "]->":
                 prop_style_values = f"widthA={head_width}"
             case "wedge":
