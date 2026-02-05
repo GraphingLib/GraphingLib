@@ -39,13 +39,13 @@ class Arrow(Plottable):
         Scales the size of the arrow head.
         Default depends on the ``figure_style`` configuration.
     style : Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"], optional
-        The style of the arrow. For a visual explanation of all available styles, see the gallery
-        `Arrow Styles <https://graphinglib.readthedocs.io/en/latest/gallery/arrow_head_styles.html>`_ example.
+        The style of the arrow. For a visual explanation of all available styles, see the gallery "Arrow Styles"
+        example.
         Default depends on the ``figure_style`` configuration.
 
         .. warning::
-            The `styles` parameter differs slightly from matplotlib's `arrowstyle` since GraphingLib also uses a
-            `two_sided` parameter to explicitly define whether the arrow is single or double-sided.
+            The ``style`` parameter differs slightly from matplotlib's ``arrowstyle`` since GraphingLib also uses a
+            ``two_sided`` parameter to explicitly define whether the arrow is single or double-sided.
     shrink : float
         Fraction of the total length of the arrow to shrink from both ends.
         A value of 0.5 means the arrow is no longer visible.
@@ -85,13 +85,13 @@ class Arrow(Plottable):
             Scales the size of the arrow head.
             Default depends on the ``figure_style`` configuration.
         style : Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"], optional
-            The style of the arrow. For a visual explanation of all available styles, see the gallery
-            `Arrow Styles <https://graphinglib.readthedocs.io/en/latest/gallery/arrow_head_styles.html>`_ example.
+            The style of the arrow. For a visual explanation of all available styles, see the gallery "Arrow Styles"
+            example.
             Default depends on the ``figure_style`` configuration.
 
             .. warning::
-                The `styles` parameter differs slightly from matplotlib's `arrowstyle` since GraphingLib also uses a
-                `two_sided` parameter to explicitly define whether the arrow is single or double-sided.
+                The ``styles`` parameter differs slightly from matplotlib's ``arrowstyle`` since GraphingLib also uses a
+                ``two_sided`` parameter to explicitly define whether the arrow is single or double-sided.
         shrink : float
             Fraction of the total length of the arrow to shrink from both ends.
             A value of 0.5 means the arrow is no longer visible.
