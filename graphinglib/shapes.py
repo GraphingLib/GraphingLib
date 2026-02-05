@@ -38,6 +38,14 @@ class Arrow(Plottable):
     head_size : float, optional
         Scales the size of the arrow head.
         Default depends on the ``figure_style`` configuration.
+    style : Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"], optional
+        The style of the arrow. For a visual explanation of all available styles, see the gallery
+        `Arrow Styles <https://graphinglib.readthedocs.io/en/latest/gallery/arrow_head_styles.html>`_ example.
+        Default depends on the ``figure_style`` configuration.
+
+        .. warning::
+            The `styles` parameter differs slightly from matplotlib's `arrowstyle` since GraphingLib also uses a
+            `two_sided` parameter to explicitly define whether the arrow is single or double-sided.
     shrink : float
         Fraction of the total length of the arrow to shrink from both ends.
         A value of 0.5 means the arrow is no longer visible.
@@ -57,6 +65,7 @@ class Arrow(Plottable):
         width: float | Literal["default"] = "default",
         head_size: float | Literal["default"] = "default",
         shrink: float = 0,
+        style: Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"] = "default",
         alpha: float | Literal["default"] = "default",
         two_sided: bool = False,
     ):
@@ -75,6 +84,14 @@ class Arrow(Plottable):
         head_size : float, optional
             Scales the size of the arrow head.
             Default depends on the ``figure_style`` configuration.
+        style : Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"], optional
+            The style of the arrow. For a visual explanation of all available styles, see the gallery
+            `Arrow Styles <https://graphinglib.readthedocs.io/en/latest/gallery/arrow_head_styles.html>`_ example.
+            Default depends on the ``figure_style`` configuration.
+
+            .. warning::
+                The `styles` parameter differs slightly from matplotlib's `arrowstyle` since GraphingLib also uses a
+                `two_sided` parameter to explicitly define whether the arrow is single or double-sided.
         shrink : float
             Fraction of the total length of the arrow to shrink from both ends.
             A value of 0.5 means the arrow is no longer visible.
@@ -88,6 +105,7 @@ class Arrow(Plottable):
         self._width = width
         self._head_size = head_size
         self._shrink = shrink
+        self.style = style
         self._alpha = alpha
         self._two_sided = two_sided
 
@@ -140,6 +158,17 @@ class Arrow(Plottable):
         self._shrink = value
 
     @property
+    def style(self):
+        return self._style
+
+    @style.setter
+    def style(self, value):
+        if value not in ["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"]:
+            raise ValueError("Invalid head style. Valid options are: '->', '-|>', '-[', ']->', 'simple', 'fancy', "
+                             "'wedge', 'default'.")
+        self._style = value
+
+    @property
     def alpha(self):
         return self._alpha
 
@@ -177,13 +206,34 @@ class Arrow(Plottable):
         return deepcopy(self)
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs):
+        ["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"]
         if self._two_sided:
-            self._style = "<|-|>"
+            match self._style:
+                case "->":
+                    style = "<->"
+                case "-|>":
+                    style = "<|-|>"
+                case "-[":
+                    style = "]-["
+                case _:
+                    raise ValueError("The head style must be '->', '-|>' or '-[' for two-sided arrows.")
         else:
-            self._style = "-|>"
+            style = self._style
         head_length, head_width = self._head_size * 0.4, self._head_size * 0.2
+
+        # Set specific arrow properties
+        match self._style:
+            case "->" | "-|>" | "simple" | "fancy":
+                prop_style_values = f"head_width={head_width}, head_length={head_length}"
+            case "-[":
+                prop_style_values = f"widthB={head_width}" + (f", widthA={head_width}" if self._two_sided else "")
+            case "]->":
+                prop_style_values = f"widthA={head_width}"
+            case "wedge":
+                prop_style_values = f"tail_width={head_width}"
+
         props = {
-            "arrowstyle": f"{self._style}, head_width={head_width}, head_length={head_length}",
+            "arrowstyle": f"{style}, {prop_style_values}",
             "color": self._color,
             "linewidth": self._width,
             "alpha": self._alpha,
