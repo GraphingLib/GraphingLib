@@ -38,9 +38,9 @@ class Arrow(Plottable):
     head_size : float, optional
         Scales the size of the arrow head.
         Default depends on the ``figure_style`` configuration.
-    style : Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"], optional
-        The style of the arrow. For a visual explanation of all available styles, see the gallery "Arrow Styles"
-        example.
+    style : ``Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"]``, optional
+        The style of the arrow. For a visual explanation of all available styles, see the gallery
+        `Arrow Styles <https://graphinglib.org/latest/examples/arrow_styles.html>`_ example.
         Default depends on the ``figure_style`` configuration.
 
         .. warning::
@@ -86,13 +86,13 @@ class Arrow(Plottable):
         head_size : float, optional
             Scales the size of the arrow head.
             Default depends on the ``figure_style`` configuration.
-        style : Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"], optional
-            The style of the arrow. For a visual explanation of all available styles, see the gallery "Arrow Styles"
-            example.
+        style : ``Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"]``, optional
+            The style of the arrow. For a visual explanation of all available styles, see the gallery
+            `Arrow Styles <https://graphinglib.org/latest/examples/arrow_styles.html>`_ example.
             Default depends on the ``figure_style`` configuration.
 
             .. warning::
-                The ``styles`` parameter differs slightly from matplotlib's ``arrowstyle`` since GraphingLib also uses a
+                The ``style`` parameter differs slightly from matplotlib's ``arrowstyle`` since GraphingLib also uses a
                 ``two_sided`` parameter to explicitly define whether the arrow is single or double-sided.
         shrink : float
             Fraction of the total length of the arrow to shrink from both ends.
