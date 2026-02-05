@@ -206,7 +206,6 @@ class Arrow(Plottable):
         return deepcopy(self)
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs):
-        ["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"]
         if self._two_sided:
             match self._style:
                 case "->":
