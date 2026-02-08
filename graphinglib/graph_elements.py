@@ -18,6 +18,7 @@ try:
 except ImportError:
     from typing_extensions import Self
 
+
 @runtime_checkable
 class Plottable(Protocol):
     """

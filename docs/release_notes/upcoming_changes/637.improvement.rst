@@ -1,0 +1,3 @@
+Improved `copy_with` support
+----------------------------
+Added `copy_with` to all objects, and improved validation so only public writable properties can be overridden.
