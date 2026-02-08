@@ -5,7 +5,11 @@ try:
 except ImportError:
     from typing_extensions import Self
 
-from graphinglib.tools import MathematicalObject, get_contrasting_shade
+from graphinglib.tools import (
+    MathematicalObject,
+    _copy_with_overrides,
+    get_contrasting_shade,
+)
 
 
 class TestMathematicalObject(unittest.TestCase):
@@ -95,6 +99,62 @@ class TestGetContrastingShade(unittest.TestCase):
     def test_color_strings_use_matplotlib_parsing(self):
         self.assertEqual(get_contrasting_shade("navy"), "white")
         self.assertEqual(get_contrasting_shade("yellow"), "black")
+
+
+class TestCopyWithOverrides(unittest.TestCase):
+    def test_copy_with_overrides(self):
+        class Dummy:
+            def __init__(self):
+                self._value = 1
+                self._fixed = 2
+
+            @property
+            def value(self):
+                return self._value
+
+            @value.setter
+            def value(self, value):
+                self._value = value
+
+            @property
+            def fixed(self):
+                return self._fixed
+
+        obj = Dummy()
+        copied = _copy_with_overrides(obj, value=3)
+        self.assertEqual(copied.value, 3)
+        self.assertEqual(obj.value, 1)
+
+        with self.assertRaisesRegex(AttributeError, "Did you mean 'value'"):
+            _copy_with_overrides(obj, valu=3)
+
+        with self.assertRaisesRegex(AttributeError, "read-only property"):
+            _copy_with_overrides(obj, fixed=4)
+
+        with self.assertRaisesRegex(AttributeError, "has no public writable property"):
+            _copy_with_overrides(obj, _value=5)
+
+    def test_copy_with_rejects_method_override(self):
+        class Dummy:
+            def __init__(self):
+                self._value = 1
+
+            @property
+            def value(self):
+                return self._value
+
+            @value.setter
+            def value(self, value):
+                self._value = value
+
+            def copy(self):
+                return self
+
+        obj = Dummy()
+        with self.assertRaisesRegex(
+            AttributeError, "has no public writable property 'copy'"
+        ):
+            _copy_with_overrides(obj, copy="not allowed")
 
 
 if __name__ == "__main__":

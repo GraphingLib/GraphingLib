@@ -1,3 +1,4 @@
+from copy import deepcopy
 from shutil import which
 from typing import Literal, Optional
 from warnings import warn
@@ -16,6 +17,12 @@ from .legend_artists import (
     VerticalLineCollection,
     histogram_legend_artist,
 )
+from .tools import _copy_with_overrides
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
 
 
 class Figure:
@@ -229,6 +236,29 @@ class Figure:
         """
         for element in elements:
             self._elements.append(element)
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.figure.Figure` object.
+        """
+        return deepcopy(self)
+
+    def copy_with(self, **kwargs) -> Self:
+        """
+        Returns a deep copy of the Figure with specified attributes overridden.
+
+        Parameters
+        ----------
+        **kwargs
+            Public writable properties to override in the copied Figure. The keys should be property names to modify
+            and the values are the new values for those properties.
+
+        Returns
+        -------
+        Figure
+            A new Figure instance with the specified attributes overridden.
+        """
+        return _copy_with_overrides(self, **kwargs)
 
     def _prepare_figure(
         self,
@@ -1027,6 +1057,29 @@ class TwinAxis:
         """
         for element in elements:
             self._elements.append(element)
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.figure.TwinAxis` object.
+        """
+        return deepcopy(self)
+
+    def copy_with(self, **kwargs) -> Self:
+        """
+        Returns a deep copy of the TwinAxis with specified attributes overridden.
+
+        Parameters
+        ----------
+        **kwargs
+            Public writable properties to override in the copied TwinAxis. The keys should be property names to modify
+            and the values are the new values for those properties.
+
+        Returns
+        -------
+        TwinAxis
+            A new TwinAxis instance with the specified attributes overridden.
+        """
+        return _copy_with_overrides(self, **kwargs)
 
     def set_visual_params(
         self,

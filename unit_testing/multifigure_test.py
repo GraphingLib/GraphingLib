@@ -32,6 +32,25 @@ class TestMultiFigure(unittest.TestCase):
         self.assertDictEqual(another_multifig._rc_dict, {})
         self.assertDictEqual(another_multifig._user_rc_dict, {})
 
+    def test_copy_and_copy_with(self):
+        a_multifig = MultiFigure(num_rows=2, num_cols=2, title="Original")
+        copied = a_multifig.copy()
+        self.assertIsNot(copied, a_multifig)
+
+        modified = a_multifig.copy_with(title="Modified")
+        self.assertEqual(modified.title, "Modified")
+        self.assertEqual(a_multifig.title, "Original")
+
+    def test_copy_with_suggests_similar_property(self):
+        a_multifig = MultiFigure(num_rows=2, num_cols=2, title="Original")
+        with self.assertRaisesRegex(AttributeError, "Did you mean 'title'"):
+            a_multifig.copy_with(titel="Modified")
+
+    def test_copy_with_rejects_read_only_property(self):
+        a_multifig = MultiFigure(num_rows=2, num_cols=2, title="Original")
+        with self.assertRaisesRegex(AttributeError, "read-only property"):
+            a_multifig.copy_with(num_rows=3)
+
     def test_create_multifigure_raises(self):
         # Test that raises error if num_rows or num_cols is not an integer or is less than 1
         with self.assertRaises(TypeError):

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from shutil import which
 from string import ascii_lowercase
 from typing import Literal, Optional
@@ -19,6 +20,7 @@ from .legend_artists import (
     VerticalLineCollection,
     histogram_legend_artist,
 )
+from .tools import _copy_with_overrides
 
 try:
     from typing import Self
@@ -172,6 +174,29 @@ class MultiFigure:
     @size.setter
     def size(self, size: tuple[float, float] | Literal["default"]) -> None:
         self._size = size
+
+    def copy(self) -> Self:
+        """
+        Returns a deep copy of the :class:`~graphinglib.multifigure.MultiFigure` object.
+        """
+        return deepcopy(self)
+
+    def copy_with(self, **kwargs) -> Self:
+        """
+        Returns a deep copy of the MultiFigure with specified attributes overridden.
+
+        Parameters
+        ----------
+        **kwargs
+            Public writable properties to override in the copied MultiFigure. The keys should be property names to
+            modify and the values are the new values for those properties.
+
+        Returns
+        -------
+        MultiFigure
+            A new MultiFigure instance with the specified attributes overridden.
+        """
+        return _copy_with_overrides(self, **kwargs)
 
     @classmethod
     def from_row(

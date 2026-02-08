@@ -48,6 +48,26 @@ class TestHlines(unittest.TestCase):
         self.assertEqual(testHlinesCopy._line_styles, self.testHlines._line_styles)
         self.assertEqual(testHlinesCopy._alpha, self.testHlines._alpha)
 
+    def test_copy_with(self):
+        copied = self.testHlines.copy_with(colors="red")
+        self.assertIsNot(copied, self.testHlines)
+        self.assertEqual(copied.colors, "red")
+        self.assertEqual(self.testHlines.colors, "default")
+
+    def test_copy_with_rejects_private_property(self):
+        with self.assertRaisesRegex(
+            AttributeError, "has no public writable property '_y'"
+        ):
+            self.testHlines.copy_with(_y=[2, 3, 4])
+
+    def test_copy_with_suggests_similar_property(self):
+        with self.assertRaisesRegex(AttributeError, "Did you mean 'colors'"):
+            self.testHlines.copy_with(colrs="red")
+
+    def test_copy_with_rejects_read_only_property(self):
+        with self.assertRaisesRegex(AttributeError, "read-only property"):
+            self.testHlines.copy_with(alpha=0.5)
+
     def test_single_line_accepts_single_item_style_lists(self):
         style_kwargs = [
             {"colors": ["r"]},

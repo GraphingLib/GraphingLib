@@ -39,6 +39,24 @@ class TestFigure(unittest.TestCase):
         self.testFigure.add_elements(other_curve, other_other_curve)
         self.assertTrue(len(self.testFigure._elements), 3)
 
+    def test_copy_and_copy_with(self):
+        copied = self.testFigure.copy()
+        self.assertIsNot(copied, self.testFigure)
+
+        modified = self.testFigure.copy_with(title="New Title")
+        self.assertEqual(modified.title, "New Title")
+        self.assertEqual(self.testFigure.title, None)
+
+    def test_copy_with_suggests_similar_property(self):
+        with self.assertRaisesRegex(AttributeError, "Did you mean 'title'"):
+            self.testFigure.copy_with(titel="New Title")
+
+    def test_copy_with_rejects_private_property(self):
+        with self.assertRaisesRegex(
+            AttributeError, "has no public writable property '_title'"
+        ):
+            self.testFigure.copy_with(_title="New Title")
+
     def test_all_curves_plotted(self):
         self.testFigure.add_elements(self.testCurve)
         self.testFigure._prepare_figure()
@@ -256,6 +274,20 @@ class TestTwinAxis(unittest.TestCase):
         curve = Curve([1, 2, 3], [1, 2, 3])
         twin.add_elements(curve)
         self.assertEqual(twin._elements[0], curve)
+
+    def test_copy_and_copy_with(self):
+        twin = TwinAxis(label="A", log_scale=False)
+        copied = twin.copy()
+        self.assertIsNot(copied, twin)
+
+        modified = twin.copy_with(label="B")
+        self.assertEqual(modified.label, "B")
+        self.assertEqual(twin.label, "A")
+
+    def test_copy_with_rejects_read_only_property(self):
+        twin = TwinAxis()
+        with self.assertRaisesRegex(AttributeError, "read-only property"):
+            twin.copy_with(axis_lim=(0, 1))
 
     def test_customized_visual_style(self):
         twin = TwinAxis()
