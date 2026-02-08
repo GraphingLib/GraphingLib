@@ -36,6 +36,7 @@ dev = [
   "pygithub>=2.3.0,<3.0.0",
   "astropy>=7.0.0,<8.0.0",
   "ruff>=0.15.0",
+  "ty>=0.0.14",
 ]
 
 [build-system]

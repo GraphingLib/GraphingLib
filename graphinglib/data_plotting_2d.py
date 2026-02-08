@@ -6,7 +6,7 @@ from typing import Callable, Literal, Optional, Protocol, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import Colormap
+from matplotlib.colors import Colormap, Normalize
 from matplotlib.image import imread
 from numpy.typing import ArrayLike
 from scipy.interpolate import griddata
@@ -72,6 +72,8 @@ class Heatmap(Plottable2D):
 
             For other interpolation methods, refer to
             `Interpolations for imshow <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_.
+    norm : str or Normalize, optional
+        Normalization of the colormap. Default is ``None``.
     """
 
     def __init__(
@@ -88,6 +90,7 @@ class Heatmap(Plottable2D):
         aspect_ratio: str | float = "default",
         origin_position: str = "default",
         interpolation: str = "none",
+        norm: Optional[str | Normalize] = None,
     ) -> None:
         """
         The class implements heatmaps.
@@ -131,6 +134,8 @@ class Heatmap(Plottable2D):
 
                 For other interpolation methods, refer to
                 `Interpolations for imshow <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_.
+        norm : str or Normalize, optional
+            Normalization of the colormap. Default is ``None``.
         """
         self._image = image
         self._x_axis_range = x_axis_range
@@ -144,6 +149,7 @@ class Heatmap(Plottable2D):
         self._aspect_ratio = aspect_ratio
         self._origin_position = origin_position
         self._interpolation = interpolation
+        self._norm = norm
 
         self._color_bar_params: dict = {}
 
@@ -167,6 +173,7 @@ class Heatmap(Plottable2D):
         origin_position: str = "default",
         interpolation: str = "none",
         number_of_points: tuple[int, int] = (50, 50),
+        norm: Optional[str | Normalize] = None,
     ) -> Self:
         """
         Creates a heatmap from a function.
@@ -206,6 +213,8 @@ class Heatmap(Plottable2D):
         number_of_points : tuple[int, int]
             Number of points in the x and y coordinates.
             Defaults to ``(50, 50)``.
+        norm : str or Normalize, optional
+            Normalization of the colormap. Default is ``None``.
 
         Returns
         -------
@@ -226,6 +235,7 @@ class Heatmap(Plottable2D):
             aspect_ratio=aspect_ratio,
             origin_position=origin_position,
             interpolation=interpolation,
+            norm=norm,
         )
 
     @classmethod
@@ -245,6 +255,7 @@ class Heatmap(Plottable2D):
         origin_position: str = "default",
         interpolation: str = "none",
         number_of_points: tuple[int, int] = (50, 50),
+        norm: Optional[str | Normalize] = None,
     ) -> Self:
         """
         Creates a heatmap by interpolating unevenly distributed data points on a grid.
@@ -289,6 +300,8 @@ class Heatmap(Plottable2D):
         number_of_points : tuple[int, int]
             Number of points in the x and y coordinates.
             Defaults to ``(50, 50)``.
+        norm : str or Normalize, optional
+            Normalization of the colormap. Default is ``None``.
 
         Returns
         -------
@@ -315,6 +328,7 @@ class Heatmap(Plottable2D):
             aspect_ratio=aspect_ratio,
             origin_position=origin_position,
             interpolation=interpolation,
+            norm=norm,
         )
 
     @property
@@ -468,6 +482,7 @@ class Heatmap(Plottable2D):
         params = {
             "cmap": self._color_map,
             "alpha": self._alpha,
+            "norm": self._norm,
         }
         if self._color_map_range:
             params["vmin"] = min(self._color_map_range)
