@@ -201,6 +201,7 @@ Arrow:
   _color: "white"
   _head_size: 1
   _width: 2
+  _style: "-|>"
 Line:
   _alpha: 1.0
   _color: "white"

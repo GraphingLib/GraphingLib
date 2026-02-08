@@ -185,6 +185,7 @@ class TestArrow(unittest.TestCase):
             width=2,
             head_size=3,
             shrink=0.1,
+            style="-|>",
             alpha=0.4,
             two_sided=True,
         )
@@ -197,6 +198,7 @@ class TestArrow(unittest.TestCase):
         self.assertEqual(arrow._width, 2)
         self.assertEqual(arrow._head_size, 3)
         self.assertEqual(arrow._shrink, 0.1)
+        self.assertEqual(arrow._style, "-|>")
         self.assertEqual(arrow._alpha, 0.4)
         self.assertEqual(arrow._two_sided, True)
 
@@ -245,6 +247,58 @@ class TestArrow(unittest.TestCase):
         self.assertEqual(shrinkedB[0], 3.4)
         self.assertEqual(shrinkedB[1], 3.4)
 
+    def test_styles(self):
+        valid_styles = ["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"]
+        for style in valid_styles:
+            arrow = Arrow(
+                pointA=(0, 0),
+                pointB=(1, 1),
+                color="blue",
+                width=3,
+                head_size=1,
+                style=style,
+                alpha=1,
+            )
+            self.assertEqual(arrow._style, style)
+        with self.assertRaises(ValueError):
+            Arrow(
+                pointA=(0, 0),
+                pointB=(1, 1),
+                color="blue",
+                width=3,
+                style="<->",
+            )
+
+        # Check errors at plotting time
+        _, ax = plt.subplots()
+        valid_two_sided_styles = ["->", "-|>", "-["]
+        for style in valid_two_sided_styles:
+            arrow = Arrow(
+                pointA=(0, 0),
+                pointB=(1, 1),
+                color="blue",
+                width=3,
+                head_size=1,
+                style=style,
+                two_sided=True,
+                alpha=1,
+            )
+            arrow._plot_element(ax, 0)
+        invalid_two_sided_styles = ["]->", "simple", "fancy", "wedge"]
+        for style in invalid_two_sided_styles:
+            arrow = Arrow(
+                pointA=(0, 0),
+                pointB=(1, 1),
+                color="blue",
+                width=3,
+                head_size=1,
+                style=style,
+                two_sided=True,
+                alpha=1,
+            )
+            with self.assertRaises(ValueError):
+                arrow._plot_element(ax, 0)
+
     def test_plotting(self):
         arrow = Arrow(
             pointA=(3, 3),
@@ -253,8 +307,9 @@ class TestArrow(unittest.TestCase):
             width=2,
             head_size=3,
             shrink=0.1,
+            style="fancy",
             alpha=1.0,
-            two_sided=True,
+            two_sided=False,
         )
 
         _, ax = plt.subplots()
@@ -266,6 +321,7 @@ class TestArrow(unittest.TestCase):
                 self.assertEqual(child.xyann, (3.1, 3.1))
                 self.assertEqual(child.arrow_patch.get_edgecolor(), to_rgba("blue"))
                 self.assertEqual(child.arrow_patch.get_linewidth(), 2)
+                self.assertEqual(child.arrow_patch.get_alpha(), 1.0)
         plt.close()
 
     def test_copy(self):
@@ -276,6 +332,7 @@ class TestArrow(unittest.TestCase):
             width=2,
             head_size=3,
             shrink=0.1,
+            style="-[",
             alpha=0.85,
             two_sided=True,
         )
@@ -286,6 +343,7 @@ class TestArrow(unittest.TestCase):
         self.assertEqual(arrow._width, arrow_copy._width)
         self.assertEqual(arrow._head_size, arrow_copy._head_size)
         self.assertEqual(arrow._shrink, arrow_copy._shrink)
+        self.assertEqual(arrow._style, arrow_copy._style)
         self.assertEqual(arrow._alpha, arrow_copy._alpha)
         self.assertEqual(arrow._two_sided, arrow_copy._two_sided)
 
