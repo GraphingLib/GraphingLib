@@ -2,7 +2,6 @@ from __future__ import annotations as _annotations_
 
 from collections import OrderedDict
 from copy import deepcopy
-from difflib import get_close_matches
 from logging import warning
 from shutil import which
 from string import ascii_lowercase
@@ -39,6 +38,7 @@ from .legend_artists import (
     VerticalLineCollection,
     histogram_legend_artist,
 )
+from .tools import _copy_with_overrides
 
 T = TypeVar("T")
 ListOrItem = Union[T, list[T]]
@@ -1156,8 +1156,8 @@ class SmartFigure:
         Parameters
         ----------
         **kwargs
-            Properties to override in the copied SmartFigure. The keys should be property names to modify and the values
-            are the new values for those properties.
+            Public writable properties to override in the copied SmartFigure. The keys should be property names to
+            modify and the values are the new values for those properties.
 
         Returns
         -------
@@ -1170,30 +1170,7 @@ class SmartFigure:
 
             fig2 = fig1.copy_with(x_label=None, y_label=None)
         """
-        properties = [
-            attr
-            for attr in dir(self.__class__)
-            if isinstance(getattr(self.__class__, attr, None), property)
-        ]
-        properties = list(
-            filter(lambda x: x[0] != "_", properties)
-        )  # filter out hidden properties
-        new_copy = deepcopy(self)
-        for key, value in kwargs.items():
-            if hasattr(new_copy, key):
-                setattr(new_copy, key, value)
-            else:
-                close_match = get_close_matches(key, properties, n=1, cutoff=0.6)
-                if close_match:
-                    raise AttributeError(
-                        f"{self.__class__.__name__} has no attribute '{key}'. "
-                        f"Did you mean '{close_match[0]}'?"
-                    )
-                else:
-                    raise AttributeError(
-                        f"{self.__class__.__name__} has no attribute '{key}'."
-                    )
-        return new_copy
+        return _copy_with_overrides(self, **kwargs)
 
     @property
     def _ordered_elements(self) -> OrderedDict:
@@ -4030,9 +4007,9 @@ class SmartTwinAxis:
 
         Parameters
         ----------
-        kwargs
-            Properties to override in the copied SmartTwinAxis. The keys should be property names to modify and the
-            values are the new values for those properties.
+        **kwargs
+            Public writable properties to override in the copied SmartTwinAxis. The keys should be property names to
+            modify and the values are the new values for those properties.
 
         Returns
         -------
@@ -4045,30 +4022,7 @@ class SmartTwinAxis:
 
             twin_ax_2 = twin_ax_1.copy_with(label="New Label")
         """
-        properties = [
-            attr
-            for attr in dir(self.__class__)
-            if isinstance(getattr(self.__class__, attr, None), property)
-        ]
-        properties = list(
-            filter(lambda x: x[0] != "_", properties)
-        )  # filter out hidden properties
-        new_copy = deepcopy(self)
-        for key, value in kwargs.items():
-            if hasattr(new_copy, key):
-                setattr(new_copy, key, value)
-            else:
-                close_match = get_close_matches(key, properties, n=1, cutoff=0.6)
-                if close_match:
-                    raise AttributeError(
-                        f"{self.__class__.__name__} has no attribute '{key}'. "
-                        f"Did you mean '{close_match[0]}'?"
-                    )
-                else:
-                    raise AttributeError(
-                        f"{self.__class__.__name__} has no attribute '{key}'."
-                    )
-        return new_copy
+        return _copy_with_overrides(self, **kwargs)
 
     def add_elements(self, *elements: Plottable | None) -> Self:
         """

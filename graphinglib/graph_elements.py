@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from difflib import get_close_matches
 from typing import Literal, Optional, Protocol, runtime_checkable
 
 import matplotlib.pyplot as plt
@@ -12,6 +11,7 @@ from matplotlib.figure import Figure as MPLFigure
 from numpy.typing import ArrayLike
 
 from .legend_artists import VerticalLineCollection
+from .tools import _copy_with_overrides
 
 try:
     from typing import Self
@@ -37,8 +37,8 @@ class Plottable(Protocol):
         Parameters
         ----------
         **kwargs
-            Properties to override in the copied Plottable. The keys should be property names to modify and the values
-            are the new values for those properties.
+            Public writable properties to override in the copied Plottable. The keys should be property names to
+            modify and the values are the new values for those properties.
 
         Returns
         -------
@@ -52,31 +52,7 @@ class Plottable(Protocol):
             curve = Curve(x_data, y_data, color='blue')
             new_curve = curve.copy_with(color='red', line_style='dashed')
         """
-        properties = [
-            attr
-            for attr in dir(self.__class__)
-            if isinstance(getattr(self.__class__, attr, None), property)
-        ]
-        properties = list(
-            filter(lambda x: x[0] != "_", properties)
-        )  # filter out hidden properties
-        print(properties)
-        new_copy = deepcopy(self)
-        for key, value in kwargs.items():
-            if hasattr(new_copy, key):
-                setattr(new_copy, key, value)
-            else:
-                close_match = get_close_matches(key, properties, n=1, cutoff=0.6)
-                if close_match:
-                    raise AttributeError(
-                        f"{self.__class__.__name__} has no attribute '{key}'. "
-                        f"Did you mean '{close_match[0]}'?"
-                    )
-                else:
-                    raise AttributeError(
-                        f"{self.__class__.__name__} has no attribute '{key}'."
-                    )
-        return new_copy
+        return _copy_with_overrides(self, **kwargs)
 
     def __deepcopy__(self, memo: dict) -> Self:
         """

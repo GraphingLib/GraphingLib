@@ -1,4 +1,6 @@
-from typing import Any, Protocol
+from copy import deepcopy
+from difflib import get_close_matches
+from typing import Any, Protocol, TypeVar
 
 try:
     from typing import Self
@@ -6,6 +8,51 @@ except ImportError:
     from typing_extensions import Self
 
 from matplotlib.colors import to_rgba_array
+
+T = TypeVar("T")
+
+
+def _copy_with_overrides(instance: T, **kwargs: Any) -> T:
+    """
+    Returns a deep copy of an instance with selected public writable properties overridden.
+    """
+    class_name = instance.__class__.__name__
+    properties: dict[str, property] = {}
+    for attr in dir(instance.__class__):
+        if attr.startswith("_"):
+            continue
+        property_ = getattr(instance.__class__, attr, None)
+        if isinstance(property_, property):
+            properties[attr] = property_
+    writable_properties = {
+        attr: property_
+        for attr, property_ in properties.items()
+        if property_.fset is not None
+    }
+    property_names = list(properties)
+    for key in kwargs:
+        if key.startswith("_"):
+            raise AttributeError(
+                f"{class_name} has no public writable property '{key}'."
+            )
+        if key in writable_properties:
+            continue
+        if key in properties:
+            raise AttributeError(
+                f"{class_name}.{key} is a read-only property and cannot be set."
+            )
+        close_match = get_close_matches(key, property_names, n=1, cutoff=0.6)
+        if close_match:
+            raise AttributeError(
+                f"{class_name} has no public writable property '{key}'. "
+                f"Did you mean '{close_match[0]}'?"
+            )
+        raise AttributeError(f"{class_name} has no public writable property '{key}'.")
+
+    new_copy = deepcopy(instance)
+    for key, value in kwargs.items():
+        setattr(new_copy, key, value)
+    return new_copy
 
 
 class MathematicalObject(Protocol):
