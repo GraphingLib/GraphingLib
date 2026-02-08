@@ -105,6 +105,29 @@ install GraphingLib from source to build the documentation ::
 
     pip install git+https://github.com/GraphingLib/GraphingLib.git
 
+Other recommended tools
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The linting and formatting of the code is checked during the continuous integration (CI) workflow running upon submission of a PR.
+The tool ``ruff`` (`see their docs <https://docs.astral.sh/ruff/>`_) is used for this task and we therefore recommend using it while developing
+code on your machine. ``ruff`` is not a complete LSP and for this task we recommend ``ty`` (`see their docs <https://docs.astral.sh/ty/>`_)
+which implements the type checking functionalities. ``ty`` and ``ruff`` are both developed by the same organization and are,
+therefore, working well together.
+
+For formatting, run ::
+
+    ruff format
+
+To check the linting ::
+
+    ruff check
+
+and add ``--fix`` to fix some errors automatically. To run ``ty`` ::
+
+    ty check
+
+Typing errors have to be fixed manually.
+
 .. _codeguidelines:
 
 Coding Guidelines
