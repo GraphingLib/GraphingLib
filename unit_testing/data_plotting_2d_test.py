@@ -116,6 +116,34 @@ class TestHeatmap(unittest.TestCase):
         self.assertEqual(heatmap_copy._origin_position, "upper")
         self.assertEqual(heatmap_copy._interpolation, "nearest")
 
+    def test_with_custom_mesh_pcolormesh(self):
+        # Test that providing x_mesh and y_mesh uses pcolormesh instead of imshow
+        array_of_data = np.random.rand(10, 10)
+        x = np.linspace(0, 10, 11)
+        y = np.linspace(0, 10, 11)
+        x_mesh, y_mesh = np.meshgrid(x, y)
+
+        heatmap = Heatmap(
+            image=array_of_data,
+            x_mesh=x_mesh,
+            y_mesh=y_mesh,
+            color_map="plasma",
+            color_map_range=(20, 80),
+            show_color_bar=True,
+            alpha=0.8,
+        )
+
+        fig, ax = plt.subplots()
+        heatmap._plot_element(ax, 0)
+
+        # Check that pcolormesh was used (creates a QuadMesh collection)
+        self.assertEqual(len(ax.collections), 1)
+        self.assertEqual(ax.collections[0].get_cmap().name, "plasma")
+        self.assertEqual(ax.collections[0].get_alpha(), 0.8)
+        # Color bar should still be created
+        self.assertEqual(len(fig.axes), 2)
+        self.assertEqual(ax.collections[0].get_clim(), (20, 80))
+
 
 class TestVectorField(unittest.TestCase):
     def test_init(self):
@@ -240,9 +268,9 @@ class TestContour(unittest.TestCase):
         z = np.sin(xx) + np.cos(yy)
 
         contour = Contour(
+            z_data=z,
             x_mesh=xx,
             y_mesh=yy,
-            z_data=z,
         )
 
         self.assertIsInstance(contour, Contour)
@@ -277,15 +305,23 @@ class TestContour(unittest.TestCase):
         z = np.sin(xx) + np.cos(yy)
 
         contour = Contour(
+            z_data=z,
             x_mesh=xx,
             y_mesh=yy,
-            z_data=z,
         )
         contour_copy = contour.copy()
         self.assertIsInstance(contour_copy, Contour)
         self.assertListEqual(contour_copy._x_mesh.tolist(), xx.tolist())
         self.assertListEqual(contour_copy._y_mesh.tolist(), yy.tolist())
         self.assertListEqual(contour_copy._z_data.tolist(), z.tolist())
+
+    def test_without_mesh(self):
+        contour = Contour(
+            z_data=np.random.rand(10, 20),
+        )
+        fig = Figure(figure_style="plain")
+        fig.add_elements(contour)
+        fig._prepare_figure()
 
 
 class TestStream(unittest.TestCase):

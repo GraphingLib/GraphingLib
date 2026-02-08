@@ -14,8 +14,6 @@ x_grid, y_grid = np.meshgrid(np.linspace(0, 10, 20), np.linspace(0, 10, 20))
 data = (x_grid - 5) ** 3 + y_grid**2
 
 contour = gl.Contour(
-    x_mesh=x_grid,
-    y_mesh=y_grid,
     z_data=data,
     color_map="viridis",
     show_color_bar=True,

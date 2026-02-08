@@ -2,8 +2,9 @@ Contour:
   _alpha: 1.0
   _color_map: RdBu
   _filled: true
-  _number_of_levels: 10
+  _levels: 10
   _show_color_bar: true
+  _line_widths: 1
 Curve:
   _alpha: 1.0
   _cap_thickness: same as curve

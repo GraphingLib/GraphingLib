@@ -39,8 +39,11 @@ class Heatmap(Plottable2D):
         Image to display. If an array of values is given, the 2D array will be interpreted as the values of the image.
         If a str if given, the corresponding file will be read as an image.
     x_axis_range, y_axis_range : tuple[float, float], optional
-        The range of x and y values used for the axes as tuples containing the
-        start and end of the range.
+        The range of x and y values used for the axes as tuples containing the start and end of the range. These values
+        are ignored when ``x_mesh`` and ``y_mesh`` are provided.
+    x_mesh, y_mesh : ArrayLike, optional
+        Mesh grids defining the coordinates of the heatmap values. When provided, the heatmap is plotted using
+        ``pcolormesh`` instead of ``imshow``.
     color_map : str, Colormap
         The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
         string (named colormap from Matplotlib) or a Colormap object.
@@ -54,13 +57,15 @@ class Heatmap(Plottable2D):
         Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
         Defaults to 1.0.
     aspect_ratio : str or float
-        Aspect ratio of the axes.
+        Aspect ratio of the axes. This value is ignored when ``x_mesh`` and ``y_mesh`` are provided.
         Default depends on the ``figure_style`` configuration.
     origin_position : str
-        Position of the origin of the axes (upper left or lower left corner).
+        Position of the origin of the axes (upper left or lower left corner). This value is ignored when ``x_mesh`` and
+        ``y_mesh`` are provided.
         Default depends on the ``figure_style`` configuration.
     interpolation : str
-        Interpolation method to be applied to the image.
+        Interpolation method to be applied to the image. This value is ignored when ``x_mesh`` and ``y_mesh`` are
+        provided.
         Defaults to ``"none"``.
 
         .. seealso::
@@ -76,6 +81,8 @@ class Heatmap(Plottable2D):
         image: ArrayLike | str,
         x_axis_range: Optional[tuple[float, float]] = None,
         y_axis_range: Optional[tuple[float, float]] = None,
+        x_mesh: Optional[ArrayLike] = None,
+        y_mesh: Optional[ArrayLike] = None,
         color_map: str | Colormap = "default",
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
@@ -94,8 +101,11 @@ class Heatmap(Plottable2D):
             Image to display. If an array of values is given, the 2D array will be interpreted as the values of the
             image. If a str if given, the corresponding file will be read as an image.
         x_axis_range, y_axis_range : tuple[float, float], optional
-            The range of x and y values used for the axes as tuples containing the
-            start and end of the range.
+            The range of x and y values used for the axes as tuples containing the start and end of the range. These
+            values are ignored when ``x_mesh`` and ``y_mesh`` are provided.
+        x_mesh, y_mesh : ArrayLike, optional
+            Mesh grids defining the coordinates of the heatmap values. When provided, the heatmap is plotted using
+            ``pcolormesh`` instead of ``imshow``.
         color_map : str, Colormap
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
@@ -109,13 +119,15 @@ class Heatmap(Plottable2D):
             Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
             Defaults to 1.0.
         aspect_ratio : str or float
-            Aspect ratio of the axes.
+            Aspect ratio of the axes. This value is ignored when ``x_mesh`` and ``y_mesh`` are provided.
             Default depends on the ``figure_style`` configuration.
         origin_position : str
-            Position of the origin of the axes (upper left or lower left corner).
+            Position of the origin of the axes (upper left or lower left corner). This value is ignored when ``x_mesh``
+            and ``y_mesh`` are provided.
             Default depends on the ``figure_style`` configuration.
         interpolation : str
-            Interpolation method to be applied to the image.
+            Interpolation method to be applied to the image. This value is ignored when ``x_mesh`` and ``y_mesh`` are
+            provided.
             Defaults to ``"none"``.
 
             .. seealso::
@@ -128,6 +140,8 @@ class Heatmap(Plottable2D):
         self._image = image
         self._x_axis_range = x_axis_range
         self._y_axis_range = y_axis_range
+        self.x_mesh = x_mesh
+        self.y_mesh = y_mesh
         self._color_map = color_map
         self._color_map_range = color_map_range
         self._show_color_bar = show_color_bar
@@ -167,11 +181,9 @@ class Heatmap(Plottable2D):
         Parameters
         ----------
         func : Callable[[ArrayLike, ArrayLike], ArrayLike]
-            Function to be plotted. Works with regular functions and lambda
-            functions.
+            Function to be plotted. Works with regular functions and lambda functions.
         x_axis_range, y_axis_range : tuple[float, float], optional
-            The range of x and y values used for the axes as tuples containing the
-            start and end of the range.
+            The range of x and y values used for the axes as tuples containing the start and end of the range.
         color_map : str, Colormap
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
             string (named colormap from Matplotlib) or a Colormap object.
@@ -213,17 +225,17 @@ class Heatmap(Plottable2D):
         x_grid, y_grid = np.meshgrid(x, y)
         z = func(x_grid, y_grid)
         return cls(
-            z,
-            x_axis_range,
-            y_axis_range,
-            color_map,
-            color_map_range,
-            show_color_bar,
-            alpha,
-            aspect_ratio,
-            origin_position,
-            interpolation,
-            norm,
+            image=z,
+            x_axis_range=x_axis_range,
+            y_axis_range=y_axis_range,
+            color_map=color_map,
+            color_map_range=color_map_range,
+            show_color_bar=show_color_bar,
+            alpha=alpha,
+            aspect_ratio=aspect_ratio,
+            origin_position=origin_position,
+            interpolation=interpolation,
+            norm=norm,
         )
 
     @classmethod
@@ -244,7 +256,7 @@ class Heatmap(Plottable2D):
         interpolation: str = "none",
         number_of_points: tuple[int, int] = (50, 50),
         norm: Optional[str | Normalize] = None,
-    ):
+    ) -> Self:
         """
         Creates a heatmap by interpolating unevenly distributed data points on a grid.
 
@@ -255,8 +267,7 @@ class Heatmap(Plottable2D):
         values : ArrayLike
             The list or array of values at given points.
         x_axis_range, y_axis_range : tuple[float, float], optional
-            The range of x and y values used for the axes as tuples containing the
-            start and end of the range.
+            The range of x and y values used for the axes as tuples containing the start and end of the range.
         grid_interpolation : str
             Interpolation method to be used when interpolating the uneavenly distributed data on a grid.
             Must be one of {"nearest", "linear", "cubic"}.
@@ -307,17 +318,17 @@ class Heatmap(Plottable2D):
             fill_value=fill_value,
         )
         return cls(
-            grid,
-            x_axis_range,
-            y_axis_range,
-            color_map,
-            color_map_range,
-            show_color_bar,
-            alpha,
-            aspect_ratio,
-            origin_position,
-            interpolation,
-            norm,
+            image=grid,
+            x_axis_range=x_axis_range,
+            y_axis_range=y_axis_range,
+            color_map=color_map,
+            color_map_range=color_map_range,
+            show_color_bar=show_color_bar,
+            alpha=alpha,
+            aspect_ratio=aspect_ratio,
+            origin_position=origin_position,
+            interpolation=interpolation,
+            norm=norm,
         )
 
     @property
@@ -346,6 +357,22 @@ class Heatmap(Plottable2D):
     @y_axis_range.setter
     def y_axis_range(self, y_axis_range: Optional[tuple[float, float]]) -> None:
         self._y_axis_range = y_axis_range
+
+    @property
+    def x_mesh(self) -> Optional[ArrayLike]:
+        return self._x_mesh
+
+    @x_mesh.setter
+    def x_mesh(self, x_mesh: Optional[ArrayLike]) -> None:
+        self._x_mesh = None if x_mesh is None else np.asarray(x_mesh)
+
+    @property
+    def y_mesh(self) -> Optional[ArrayLike]:
+        return self._y_mesh
+
+    @y_mesh.setter
+    def y_mesh(self, y_mesh: Optional[ArrayLike]) -> None:
+        self._y_mesh = None if y_mesh is None else np.asarray(y_mesh)
 
     @property
     def color_map(self) -> str | Colormap:
@@ -455,23 +482,37 @@ class Heatmap(Plottable2D):
         params = {
             "cmap": self._color_map,
             "alpha": self._alpha,
-            "aspect": self._aspect_ratio,
-            "origin": self._origin_position,
-            "interpolation": self._interpolation,
-            "extent": self._xy_range,
             "norm": self._norm,
         }
-
-        params = {k: v for k, v in params.items() if v != "default"}
         if self._color_map_range:
             params["vmin"] = min(self._color_map_range)
             params["vmax"] = max(self._color_map_range)
+        use_pcolormesh = self._x_mesh is not None and self._y_mesh is not None
+        if use_pcolormesh:
+            params = {k: v for k, v in params.items() if v != "default"}
+            image = axes.pcolormesh(
+                self._x_mesh,
+                self._y_mesh,
+                self._image,
+                zorder=z_order,
+                **params,
+            )
+        else:
+            params.update(
+                {
+                    "aspect": self._aspect_ratio,
+                    "origin": self._origin_position,
+                    "interpolation": self._interpolation,
+                    "extent": self._xy_range,
+                }
+            )
 
-        image = axes.imshow(
-            self._image,
-            zorder=z_order,
-            **params,
-        )
+            params = {k: v for k, v in params.items() if v != "default"}
+            image = axes.imshow(
+                self._image,
+                zorder=z_order,
+                **params,
+            )
         fig = axes.get_figure()
         if self._show_color_bar:
             fig.colorbar(image, ax=axes, **self._color_bar_params)
@@ -497,8 +538,7 @@ class VectorField(Plottable2D):
     scale : float
         Scaling of the arrow lengths. If ``None``, the arrows will be automatically scaled to look nice. Use 1 for no scaling.
     angle_in_data_coords : bool
-        Wheter to use the screen coordinates or the data coordinates to
-        determine the vector directions.
+        Whether to use the screen coordinates or the data coordinates to determine the vector directions.
         Defaults to ``True``.
     color : str
         Color of the vector arrows.
@@ -577,12 +617,9 @@ class VectorField(Plottable2D):
         Parameters
         ----------
         func : Callable[[ArrayLike, ArrayLike], tuple[ArrayLike, ArrayLike]]
-            Function to be plotted. Works with regular functions and lambda
-            functions.
-        x_data, y_data : ArrayLike
-            x and y coordinates of the vectors.
-        u_data, v_data : ArrayLike
-            Magnitudes in the x and y coordinates.
+            Function to be plotted. Works with regular functions and lambda functions.
+        x_axis_range, y_axis_range : tuple[float, float], optional
+            The range of x and y values used for the axes as tuples containing the start and end of the range.
         number_of_arrows_x, number_of_arrows_y : int
             Number of arrows to plot in the x and y direction. Defaults to 10.
         arrow_width : float
@@ -740,12 +777,14 @@ class Contour(Plottable2D):
 
     Parameters
     ----------
-    x_mesh, y_mesh : ArrayLike
-        x and y coordinates of the mesh grid.
     z_data : ArrayLike
         Data for each point of the mesh.
-    number_of_levels : int
-        Number of distinct levels of contour plot.
+    x_mesh, y_mesh : ArrayLike, optional
+        Mesh grids defining the coordinates of the contour values. If not provided, a mesh grid will be created based on
+        the shape of ``z_data``.
+    levels : int | ArrayLike
+        If `levels` is an integer, it defines the number of levels to use in the contour.
+        If `levels` is an array, it defines the value of each contour level.
         Default depends on the ``figure_style`` configuration.
     color_map : str or Colormap
         The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
@@ -762,40 +801,48 @@ class Contour(Plottable2D):
     alpha : float
         Opacity of the filled contour.
         Default depends on the ``figure_style`` configuration.
+    line_widths : float | ArrayLike
+        If the contour is not filled, the width of the contour lines. If an array is provided, it defines the line width
+        for each contour level.
+        Default depends on the ``figure_style`` configuration.
     """
 
+    _z_data: ArrayLike
     _x_mesh: ArrayLike
     _y_mesh: ArrayLike
-    _z_data: ArrayLike
-    _number_of_levels: int | Literal["default"] = "default"
+    _levels: int | Literal["default"] = "default"
     _color_map: str | Colormap | Literal["default"] = "default"
     _show_color_bar: bool | Literal["default"] = "default"
     _filled: bool | Literal["default"] = "default"
     _alpha: float | Literal["default"] = "default"
+    _line_widths: float | ArrayLike | Literal["default"] = "default"
 
     def __init__(
         self,
-        x_mesh: ArrayLike,
-        y_mesh: ArrayLike,
         z_data: ArrayLike,
-        number_of_levels: int | Literal["default"] = "default",
+        x_mesh: Optional[ArrayLike] = None,
+        y_mesh: Optional[ArrayLike] = None,
+        levels: int | ArrayLike | Literal["default"] = "default",
         color_map: str | Colormap | Literal["default"] = "default",
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         filled: bool | Literal["default"] = "default",
         alpha: float | Literal["default"] = "default",
+        line_widths: float | ArrayLike | Literal["default"] = "default",
     ) -> None:
         """
         This class implements contour plots.
 
         Parameters
         ----------
-        x_mesh, y_mesh : ArrayLike
-            x and y coordinates of the mesh grid.
         z_data : ArrayLike
             Data for each point of the mesh.
-        number_of_levels : int
-            Number of distinct levels of contour plot.
+        x_mesh, y_mesh : ArrayLike, optional
+            Mesh grids defining the coordinates of the contour values. If not provided, a mesh grid will be created
+            based on the shape of ``z_data``.
+        levels : int | ArrayLike
+            If `levels` is an integer, it defines the number of levels to use in the contour.
+            If `levels` is an array, it defines the value of each contour level.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
@@ -812,16 +859,21 @@ class Contour(Plottable2D):
         alpha : float
             Opacity of the filled contour.
             Default depends on the ``figure_style`` configuration.
+        line_widths : float | ArrayLike
+            If the contour is not filled, the width of the contour lines. If an array is provided, it defines the line
+            width for each contour level.
+            Default depends on the ``figure_style`` configuration.
         """
-        self._x_mesh = np.asarray(x_mesh)
-        self._y_mesh = np.asarray(y_mesh)
-        self._z_data = np.asarray(z_data)
-        self._number_of_levels = number_of_levels
+        self.z_data = z_data
+        self.x_mesh = x_mesh
+        self.y_mesh = y_mesh
+        self._levels = levels
         self._color_map = color_map
         self._color_map_range = color_map_range
         self._show_color_bar = show_color_bar
         self._filled = filled
         self._alpha = alpha
+        self._line_widths = line_widths
 
         self._color_bar_params: dict = {}
 
@@ -831,12 +883,13 @@ class Contour(Plottable2D):
         func: Callable[[ArrayLike, ArrayLike], ArrayLike],
         x_axis_range: tuple[float, float],
         y_axis_range: tuple[float, float],
-        number_of_levels: int | Literal["default"] = "default",
+        levels: int | ArrayLike | Literal["default"] = "default",
         color_map: str | Colormap | Literal["default"] = "default",
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool | Literal["default"] = "default",
         filled: bool | Literal["default"] = "default",
         alpha: float | Literal["default"] = "default",
+        line_widths: float | ArrayLike | Literal["default"] = "default",
         number_of_points: tuple[int, int] = (500, 500),
     ) -> Self:
         """
@@ -845,14 +898,12 @@ class Contour(Plottable2D):
         Parameters
         ----------
         func : Callable[[ArrayLike, ArrayLike], ArrayLike]
-            Function to be plotted. Works with regular functions and lambda
-            functions.
-        x_mesh, y_mesh : ArrayLike
-            x and y coordinates of the mesh grid.
-        z_data : ArrayLike
-            Data for each point of the mesh.
-        number_of_levels : int
-            Number of distinct levels of contour plot.
+            Function to be plotted. Works with regular functions and lambda functions.
+        x_axis_range, y_axis_range : tuple[float, float], optional
+            The range of x and y values used for the axes as tuples containing the start and end of the range.
+        levels : int | ArrayLike
+            If `levels` is an integer, it defines the number of levels to use in the contour.
+            If `levels` is an array, it defines the value of each contour level.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
             The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Can either be specified as a
@@ -869,6 +920,13 @@ class Contour(Plottable2D):
         alpha : float
             Opacity of the filled contour.
             Default depends on the ``figure_style`` configuration.
+        line_widths : float | ArrayLike
+            If the contour is not filled, the width of the contour lines. If an array is provided, it defines the line
+            width for each contour level.
+            Default depends on the ``figure_style`` configuration.
+        number_of_points : tuple[int, int]
+            Number of points in the x and y coordinates.
+            Defaults to ``(50, 50)``.
 
         Returns
         -------
@@ -879,15 +937,16 @@ class Contour(Plottable2D):
         x_mesh, y_mesh = np.meshgrid(x, y)
         z_data = func(x_mesh, y_mesh)
         return cls(
+            z_data,
             x_mesh,
             y_mesh,
-            z_data,
-            number_of_levels,
+            levels,
             color_map,
             color_map_range,
             show_color_bar,
             filled,
             alpha,
+            line_widths,
         )
 
     @property
@@ -896,7 +955,7 @@ class Contour(Plottable2D):
 
     @x_mesh.setter
     def x_mesh(self, x_mesh: ArrayLike) -> None:
-        self._x_mesh = np.asarray(x_mesh)
+        self._x_mesh = None if x_mesh is None else np.asarray(x_mesh)
 
     @property
     def y_mesh(self) -> ArrayLike:
@@ -904,7 +963,7 @@ class Contour(Plottable2D):
 
     @y_mesh.setter
     def y_mesh(self, y_mesh: ArrayLike) -> None:
-        self._y_mesh = np.asarray(y_mesh)
+        self._y_mesh = None if y_mesh is None else np.asarray(y_mesh)
 
     @property
     def z_data(self) -> ArrayLike:
@@ -915,12 +974,12 @@ class Contour(Plottable2D):
         self._z_data = np.asarray(z_data)
 
     @property
-    def number_of_levels(self) -> int:
-        return self._number_of_levels
+    def levels(self) -> int | ArrayLike | Literal["default"]:
+        return self._levels
 
-    @number_of_levels.setter
-    def number_of_levels(self, number_of_levels: int) -> None:
-        self._number_of_levels = number_of_levels
+    @levels.setter
+    def levels(self, levels: int | ArrayLike | Literal["default"]) -> None:
+        self._levels = levels
 
     @property
     def color_map(self) -> str | Colormap:
@@ -961,6 +1020,14 @@ class Contour(Plottable2D):
     @alpha.setter
     def alpha(self, alpha: float) -> None:
         self._alpha = alpha
+
+    @property
+    def line_widths(self) -> float | ArrayLike:
+        return self._line_widths
+
+    @line_widths.setter
+    def line_widths(self, line_widths: float | ArrayLike) -> None:
+        self._line_widths = line_widths
 
     @property
     def color_bar_params(self) -> dict:
@@ -1005,28 +1072,39 @@ class Contour(Plottable2D):
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
+        if self._x_mesh is None or self._y_mesh is None:
+            x_mesh, y_mesh = np.meshgrid(
+                np.arange(self._z_data.shape[1]),
+                np.arange(self._z_data.shape[0]),
+            )
+        else:
+            x_mesh = self._x_mesh
+            y_mesh = self._y_mesh
         params = {
-            "levels": self._number_of_levels,
+            "levels": self._levels,
             "cmap": self._color_map,
             "alpha": self._alpha,
+            "linewidths": self._line_widths if not self._filled else None,
         }
-        params = {k: v for k, v in params.items() if v != "default"}
-        if self._color_map_range:
-            params["levels"] = np.linspace(
-                *self._color_map_range, self._number_of_levels
-            )
+        if self._color_map_range is not None:
+            params["vmin"] = min(self._color_map_range)
+            params["vmax"] = max(self._color_map_range)
+
+        params = {
+            k: v for k, v in params.items() if not isinstance(v, str) or v != "default"
+        }
         if self._filled:
             cont = axes.contourf(
-                self._x_mesh,
-                self._y_mesh,
+                x_mesh,
+                y_mesh,
                 self._z_data,
                 zorder=z_order,
                 **params,
             )
         else:
             cont = axes.contour(
-                self._x_mesh,
-                self._y_mesh,
+                x_mesh,
+                y_mesh,
                 self._z_data,
                 zorder=z_order,
                 **params,
@@ -1127,16 +1205,12 @@ class Stream(Plottable2D):
         Parameters
         ----------
         func : Callable[[ArrayLike, ArrayLike], [ArrayLike, ArrayLike]]
-            Function to be plotted. Works with regular functions and lambda
-            functions.
-        x_axis_range : tuple[float, float]
-            Range of x values.
-        y_axis_range : tuple[float, float]
-            Range of y values.
-        number_of_points_x : int
-            Number of points to fill the x range. Defaults to 30.
-        number_of_points_y : int
-            Number of points to fill the y range. Defaults to 30.
+            Function to be plotted. Works with regular functions and lambda functions.
+        x_axis_range, y_axis_range : tuple[float, float], optional
+            The range of x and y values used for the axes as tuples containing the start and end of the range.
+        number_of_points_x, number_of_points_y : int
+            Number of points to fill the x and y ranges.
+            Defaults to 30.
         density : float or tuple[float, float]
             Density of stream lines. Can be specified independently for the x and y coordinates
             by specifying a density tuple instead. Defaults to 1.

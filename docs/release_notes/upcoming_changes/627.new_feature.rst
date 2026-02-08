@@ -1,0 +1,11 @@
+Heatmap mesh properties
+-----------------------
+`Heatmap` now supports `x_mesh` and `y_mesh` properties to define the coordinates of the heatmap cells.
+
+Contour doesn't require mesh
+----------------------------
+`Contour` now automatically generates mesh coordinates if `x_mesh` and `y_mesh` are not provided.
+
+Contour `line_widths` property
+------------------------------
+`Contour` now includes a `line_widths` property to customize the width of contour lines, if not filled.
