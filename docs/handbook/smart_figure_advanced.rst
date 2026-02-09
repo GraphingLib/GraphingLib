@@ -2,6 +2,14 @@
 Advanced :class:`~graphinglib.SmartFigure` Usage and Complete Reference
 =========================================================================
 
+.. plot::
+    :nofigs:
+    :include-source: false
+
+    # Reset matplotlib state completely at the start of this page
+    import matplotlib.pyplot as plt
+    plt.rcdefaults()
+
 This comprehensive guide details **every feature and method** of the :class:`~graphinglib.SmartFigure` class. For a quick introduction to basic usage, see :doc:`/handbook/smart_figure_simple`.
 
 .. contents:: Table of Contents
