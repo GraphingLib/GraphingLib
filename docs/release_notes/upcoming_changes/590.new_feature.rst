@@ -1,0 +1,15 @@
+Added ``SmartFigure``, ``SmartFigureWCS`` and ``SmartTwinAxis``
+---------------------------------------------------------------
+Added the ``SmartFigure``, ``SmartFigureWCS`` and ``SmartTwinAxis`` classes to unify ``Figure`` and ``MultiFigure`` in a single class as well as provide a complete way to customize the layout of the figure.
+
+Added ``SmartFigure`` handbook sections
+---------------------------------------
+Added the "Creating a simple figure with the ``SmartFigure``", "Advanced plotting with the ``SmartFigure``" and "Specialized SmartFigures for different projections" handbook sections to the documentation.
+
+Added ``LegendElement`` classes
+-------------------------------
+Added ``LegendLine``, ``LegendMarker`` and ``LegendPatch`` classes to create custom legend entries with the ``SmartFigure``.
+
+Added ``PlottableAxMethod``
+---------------------------
+Added the ``PlottableAxMethod`` class to allow users to create plots that aren't implemented in GraphingLib yet.
