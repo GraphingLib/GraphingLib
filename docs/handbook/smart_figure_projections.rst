@@ -2,6 +2,14 @@
 Specialized SmartFigures for different projections
 ==================================================
 
+.. plot::
+    :nofigs:
+    :include-source: false
+
+    # Reset matplotlib state completely at the start of this page
+    import matplotlib.pyplot as plt
+    plt.rcdefaults()
+
 Specialized :class:`~graphinglib.SmartFigure` classes are available to handle specific projection needs. These classes extend the functionality of the standard :class:`~graphinglib.SmartFigure` to provide features tailored to particular types of data and coordinate systems. Currently, only the :class:`~graphinglib.SmartFigureWCS` class is implemented, which is designed for astronomical data using the World Coordinate System (WCS).
 
 .. contents:: Table of Contents
