@@ -121,6 +121,22 @@ The contour class also has a :py:meth:`~graphinglib.Contour.from_function` metho
         lambda x, y: np.cos(x * 0.2) + np.sin(y * 0.3), x_grid, y_grid
     )
 
+Configuring the colorbar
+------------------------
+
+The colorbar options can be customized through the ``set_color_bar_params`` method of both :class:`~graphinglib.data_plotting_2d.Heatmap` and :class:`~graphinglib.data_plotting_2d.Contour` objects. The label and position of the colorbar can be set using this method, as well as any other arguments normally passed to the ``plt.colorbar`` call. Here is an example of setting parameters for the colorbar:
+
+.. plot::
+
+    map = gl.Heatmap.from_function(
+        lambda x, y: np.cos(x * 0.2) + np.sin(y * 0.3), (0, 49), (49, 0)
+    )
+    map.set_color_bar_params(label="some z values", position="top", shrink=0.75)
+
+    figure = gl.Figure()
+    figure.add_elements(map)
+    figure.show()
+
 The :class:`~graphinglib.VectorField` Object
 -------------------------------------------------------------
 As its name suggests, the VectorField class allows you to plot a 2-dimensional vector field. Here is an example of its usage:
