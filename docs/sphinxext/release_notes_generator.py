@@ -89,6 +89,8 @@ def fetch_new_files(path):
         sorted_upcoming[tag] = sorted_upcoming.get(tag, [])
         sorted_upcoming[tag].append(prnbr)
         pr_list.append(prnbr)
+    for tag in sorted_upcoming.keys():
+        sorted_upcoming[tag].sort()
     pr_list.sort()
     return sorted_upcoming, pr_list
 
