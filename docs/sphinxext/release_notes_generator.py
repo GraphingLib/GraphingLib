@@ -89,6 +89,8 @@ def fetch_new_files(path):
         sorted_upcoming[tag] = sorted_upcoming.get(tag, [])
         sorted_upcoming[tag].append(prnbr)
         pr_list.append(prnbr)
+    for tag in sorted_upcoming.keys():
+        sorted_upcoming[tag].sort()
     pr_list.sort()
     return sorted_upcoming, pr_list
 
@@ -108,14 +110,14 @@ def get_github_info(pr_list):
     org = g.get_organization("GraphingLib")
     repo = org.get_repo("GraphingLib")
     pr_dict = {}
-    contrib_dict = {}
+    contrib_set = set()
     for pr in pr_list:
         pull = repo.get_pull(int(pr))
         pr_dict[pull.title] = pr
         commits = pull.get_commits()
         for c in commits:
-            contrib_dict[c.author.login] = None
-    return pr_dict, contrib_dict
+            contrib_set.add(c.author.login)
+    return pr_dict, contrib_set
 
 
 class ReleaseNoteEntry:
@@ -196,14 +198,14 @@ def main(app):
                         continue
                     output += line + "\n"
                 output += "\n"
-            output += f"(`pr-{prn} <{pr_url}>`_)\n\n"
+                output += f"(`pr-{prn} <{pr_url}>`_)\n\n"
 
-    pr_dict, contrib_dict = get_github_info(pr_list)
+    pr_dict, contrib_set = get_github_info(pr_list)
     output += (
         "Contributors\n------------\n\n"
-        + f"A total of {len(contrib_dict)} people contributed to this release.\n\n"
+        + f"A total of {len(contrib_set)} people contributed to this release.\n\n"
     )
-    for contrib in contrib_dict.keys():
+    for contrib in contrib_set:
         output += f"* `@{contrib} <https://github.com/{contrib}>`_\n\n"
     output += (
         "Merged Pull Requests\n--------------------\n\n"
