@@ -102,6 +102,18 @@ html[data-theme=dark] .sd-card img[src*='.svg'] {
     margin-right: auto;
 }
 
+.bd-content .sd-card {
+    .sd-card-header {
+        background-color: transparent !important
+    }
+    .sd-card-body {
+        background-color: transparent !important
+    }
+    .sd-card-footer {
+        background-color: transparent !important
+    }
+}
+
 .table tbody tr:nth-child(2n+1):hover {
     background-color: var(--pst-color-table-row-zebra-low-bg);
 }
