@@ -1781,7 +1781,7 @@ class SmartFigure:
                     pad = (
                         subtitles_pad[subplot_i] if subtitles_pad is not None else None
                     )
-                    ax.set_title(self._subtitles[subplot_i], pad=pad)
+                    ax.set_title(self._subplot_p["subtitles"][subplot_i], pad=pad)
 
                 # Axes sub_labels
                 self._customize_ax_label(ax, subplot_i)

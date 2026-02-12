@@ -831,11 +831,21 @@ class TestSmartFigure(unittest.TestCase):
                 ["T 1", None, "T 2", None, "T 3"],
             ],
         }
+        self.fig_2x3.set_grid()
         for param, values in params.items():
             fig = self.fig_2x3.copy_with(**{param: values[0]})  # underfilled list
             fig._fill_per_subplot_params()
+            fig._figure = plt.figure()
+            fig._reference_label_i = 0
+            fig._prepare_figure()
+            plt.close()
+
             fig = self.fig_2x3.copy_with(**{param: values[1]})  # equally filled list
             fig._fill_per_subplot_params()
+            fig._figure = plt.figure()
+            fig._reference_label_i = 0
+            fig._prepare_figure()
+            plt.close()
             with self.assertRaises(GraphingException):
                 fig = self.fig_2x3.copy_with(**{param: values[2]})  # overfilled list
                 fig._fill_per_subplot_params()
@@ -877,7 +887,9 @@ class TestSmartFigure(unittest.TestCase):
 
         for param, values in params.items():
             fig = self.fig_2x2.copy_with(**{param: values})
+            fig._fill_per_subplot_params()
             fig._figure = plt.figure()
+            fig._reference_label_i = 0
             with self.assertRaises(GraphingException):
                 fig._prepare_figure()
             plt.close(self.fig._figure)
