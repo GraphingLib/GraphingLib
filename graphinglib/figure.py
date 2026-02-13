@@ -119,15 +119,7 @@ class Figure:
         self._twin_x_axis = None
         self._twin_y_axis = None
 
-        if isinstance(aspect_ratio, str):
-            if aspect_ratio not in ["equal", "auto"]:
-                raise GraphingException(
-                    "Aspect ratio must be either 'equal', 'auto' or a float."
-                )
-        elif isinstance(aspect_ratio, float):
-            if aspect_ratio <= 0:
-                raise GraphingException("Aspect ratio must be a positive float.")
-        self._aspect_ratio = aspect_ratio
+        self.aspect_ratio = aspect_ratio
 
     @property
     def figure_style(self) -> str:
@@ -223,6 +215,18 @@ class Figure:
 
     @aspect_ratio.setter
     def aspect_ratio(self, value: float | str):
+        if isinstance(value, str):
+            if value not in ["equal", "auto"]:
+                raise GraphingException(
+                    "Aspect ratio must be either 'equal', 'auto' or a float."
+                )
+        elif isinstance(value, (int, float)) and not isinstance(value, bool):
+            if value <= 0:
+                raise GraphingException("Aspect ratio must be a positive float.")
+        else:
+            raise GraphingException(
+                "Aspect ratio must be either 'equal', 'auto' or a float."
+            )
         self._aspect_ratio = value
 
     def add_elements(self, *elements: Plottable) -> None:

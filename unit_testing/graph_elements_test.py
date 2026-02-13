@@ -123,6 +123,36 @@ class TestHlines(unittest.TestCase):
                 with self.assertRaises(GraphingException):
                     Hlines(**base_kwargs, **extra)
 
+    def test_rejects_x_min_without_x_max(self):
+        with self.assertRaises(GraphingException):
+            Hlines(y=1, x_min=0, x_max=None)
+
+    def test_setters_validate_styles_for_single_line(self):
+        lines = Hlines(y=1, x_min=0, x_max=1)
+        with self.assertRaises(GraphingException):
+            lines.colors = ["r", "g"]
+        with self.assertRaises(GraphingException):
+            lines.line_styles = ["--", "-."]
+        with self.assertRaises(GraphingException):
+            lines.line_widths = [1.0, 2.0]
+
+    def test_setters_validate_style_lengths_for_multiple_lines(self):
+        lines = Hlines(y=[0, 1], x_min=[0, 0], x_max=[1, 1])
+        with self.assertRaises(GraphingException):
+            lines.colors = ["r"]
+        with self.assertRaises(GraphingException):
+            lines.line_styles = ["--"]
+        with self.assertRaises(GraphingException):
+            lines.line_widths = [1.0]
+
+    def test_setters_require_x_min_and_x_max_together(self):
+        lines = Hlines(y=1, x_min=0, x_max=1)
+        with self.assertRaises(GraphingException):
+            lines.x_min = None
+        lines = Hlines(y=1, x_min=0, x_max=1)
+        with self.assertRaises(GraphingException):
+            lines.x_max = None
+
 
 class TestVlines(unittest.TestCase):
     def setUp(self):
@@ -212,6 +242,24 @@ class TestVlines(unittest.TestCase):
                 with self.assertRaises(GraphingException):
                     Vlines(**base_kwargs, **extra)
 
+    def test_setters_validate_styles_for_single_line(self):
+        lines = Vlines(x=1, y_min=0, y_max=1)
+        with self.assertRaises(GraphingException):
+            lines.colors = ["r", "g"]
+        with self.assertRaises(GraphingException):
+            lines.line_styles = ["--", "-."]
+        with self.assertRaises(GraphingException):
+            lines.line_widths = [1.0, 2.0]
+
+    def test_setters_validate_style_lengths_for_multiple_lines(self):
+        lines = Vlines(x=[0, 1], y_min=[0, 0], y_max=[1, 1])
+        with self.assertRaises(GraphingException):
+            lines.colors = ["r"]
+        with self.assertRaises(GraphingException):
+            lines.line_styles = ["--"]
+        with self.assertRaises(GraphingException):
+            lines.line_widths = [1.0]
+
 
 class TestPoint(unittest.TestCase):
     def setUp(self):
@@ -274,6 +322,24 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(testPointCopy._text_color, self.testPoint._text_color)
         self.assertEqual(testPointCopy._h_align, self.testPoint._h_align)
         self.assertEqual(testPointCopy._v_align, self.testPoint._v_align)
+
+    def test_init_rejects_non_numeric_coordinates(self):
+        with self.assertRaises(GraphingException):
+            Point(x="1", y=0)
+        with self.assertRaises(GraphingException):
+            Point(x=0, y="1")
+
+    def test_coordinate_setters_reject_non_numeric_values(self):
+        point = Point(x=0, y=0)
+        with self.assertRaises(GraphingException):
+            point.x = "1"
+        with self.assertRaises(GraphingException):
+            point.y = "1"
+
+    def test_coordinates_setter_rejects_non_numeric_values(self):
+        point = Point(x=0, y=0)
+        with self.assertRaises(GraphingException):
+            point.coordinates = ("1", 2)
 
 
 class TestText(unittest.TestCase):
