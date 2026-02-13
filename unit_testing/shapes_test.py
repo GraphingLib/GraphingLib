@@ -15,6 +15,28 @@ class TestCircle(unittest.TestCase):
         self.assertAlmostEqual(circle.area, np.pi, places=2)
         self.assertAlmostEqual(circle.perimeter, 2 * np.pi, places=2)
 
+    def test_init_invalid_radius(self):
+        with self.assertRaises(ValueError):
+            Circle(0, 0, 0)
+        with self.assertRaises(ValueError):
+            Circle(0, 0, -1)
+
+    def test_radius_setter_invalid(self):
+        circle = Circle(0, 0, 1)
+        with self.assertRaises(ValueError):
+            circle.radius = 0
+        with self.assertRaises(ValueError):
+            circle.radius = -1
+
+    def test_init_invalid_points(self):
+        with self.assertRaises(ValueError):
+            Circle(0, 0, 1, number_of_points=3)
+
+    def test_number_of_points_setter_invalid(self):
+        circle = Circle(0, 0, 1)
+        with self.assertRaises(ValueError):
+            circle.number_of_points = 3
+
 
 class TestEllipse(unittest.TestCase):
     def test_init(self):
@@ -46,6 +68,11 @@ class TestEllipse(unittest.TestCase):
     def test_init_invalid_points(self):
         with self.assertRaises(ValueError):
             Ellipse(2, 2, 1, 1, number_of_points=3)
+
+    def test_number_of_points_setter_invalid(self):
+        ellipse = Ellipse(0, 0, 2, 1)
+        with self.assertRaises(ValueError):
+            ellipse.number_of_points = 3
 
     def test_x_center_setter(self):
         ellipse = Ellipse(0, 0, 2, 1)
@@ -174,6 +201,27 @@ class TestRectangle(unittest.TestCase):
 
         self.assertAlmostEqual(rectangle.area, 1, places=2)
         self.assertAlmostEqual(rectangle.perimeter, 4, places=2)
+
+    def test_init_invalid_dimensions(self):
+        with self.assertRaises(ValueError):
+            Rectangle(0, 0, 0, 1)
+        with self.assertRaises(ValueError):
+            Rectangle(0, 0, 1, 0)
+        with self.assertRaises(ValueError):
+            Rectangle(0, 0, -1, 1)
+        with self.assertRaises(ValueError):
+            Rectangle(0, 0, 1, -1)
+
+    def test_setters_reject_non_positive_dimensions(self):
+        rectangle = Rectangle(0, 0, 1, 1)
+        with self.assertRaises(ValueError):
+            rectangle.width = 0
+        with self.assertRaises(ValueError):
+            rectangle.width = -1
+        with self.assertRaises(ValueError):
+            rectangle.height = 0
+        with self.assertRaises(ValueError):
+            rectangle.height = -1
 
 
 class TestArrow(unittest.TestCase):

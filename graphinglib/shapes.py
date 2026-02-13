@@ -915,19 +915,17 @@ class Circle(Polygon):
         fill_alpha: float | Literal["default"] = "default",
         number_of_points: int = 100,
     ):
-        if number_of_points < 4:
-            raise ValueError("The number of points must be greater than or equal to 4")
+        self.number_of_points = number_of_points
         self._fill = fill
         self._fill_color = fill_color
         self._edge_color = edge_color
         self._line_width = line_width
         self._line_style = line_style
         self._fill_alpha = fill_alpha
-        if radius <= 0:
-            raise ValueError("The radius must be positive")
         self._sh_polygon = sh.geometry.Point(x_center, y_center).buffer(
-            radius, number_of_points // 4
+            1, self._num_points // 4
         )
+        self.radius = radius
 
     @property
     def x_center(self):
@@ -936,7 +934,7 @@ class Circle(Polygon):
     @x_center.setter
     def x_center(self, value):
         self._sh_polygon = sh.geometry.Point(value, self.y_center).buffer(
-            self.radius, self._sh_polygon.exterior.coords
+            self.radius, self._num_points // 4
         )
 
     @property
@@ -946,7 +944,7 @@ class Circle(Polygon):
     @y_center.setter
     def y_center(self, value):
         self._sh_polygon = sh.geometry.Point(self.x_center, value).buffer(
-            self.radius, self._sh_polygon.exterior.coords
+            self.radius, self._num_points // 4
         )
 
     @property
@@ -955,8 +953,10 @@ class Circle(Polygon):
 
     @radius.setter
     def radius(self, value):
+        if value <= 0:
+            raise ValueError("The radius must be positive")
         self._sh_polygon = sh.geometry.Point(self.x_center, self.y_center).buffer(
-            value, self._sh_polygon.exterior.coords
+            value, self._num_points // 4
         )
 
     @property
@@ -966,6 +966,16 @@ class Circle(Polygon):
     @diameter.setter
     def diameter(self, value):
         self.radius = value / 2
+
+    @property
+    def number_of_points(self):
+        return self._num_points
+
+    @number_of_points.setter
+    def number_of_points(self, value):
+        if value < 4:
+            raise ValueError("The number of points must be greater than or equal to 4")
+        self._num_points = value
 
     @property
     def circumference(self):
@@ -1027,33 +1037,22 @@ class Ellipse(Polygon):
         fill_alpha: float | Literal["default"] = "default",
         number_of_points: int = 100,
     ):
-        if number_of_points < 4:
-            raise ValueError("The number of points must be greater than or equal to 4")
-        if x_radius <= 0 or y_radius <= 0:
-            raise ValueError("The radii must be positive")
+        self.number_of_points = number_of_points
         self._fill = fill
         self._fill_color = fill_color
         self._edge_color = edge_color
         self._line_width = line_width
         self._line_style = line_style
         self._fill_alpha = fill_alpha
-        self._num_points = number_of_points
-        self._x_radius = x_radius
-        self._y_radius = y_radius
-        self._angle = angle
+        self._x_radius = 1
+        self._y_radius = 1
+        self._angle = 0
         self._sh_polygon = sh.geometry.Point(x_center, y_center).buffer(
-            1, number_of_points // 4
+            1, self._num_points // 4
         )
-        self._sh_polygon = sh.affinity.scale(
-            self._sh_polygon,
-            xfact=x_radius,
-            yfact=y_radius,
-            origin=(x_center, y_center),
-        )
-        if angle != 0:
-            self._sh_polygon = sh.affinity.rotate(
-                self._sh_polygon, angle, origin=(x_center, y_center)
-            )
+        self.x_radius = x_radius
+        self.y_radius = y_radius
+        self.angle = angle
 
     def _rebuild(
         self,
@@ -1125,6 +1124,16 @@ class Ellipse(Polygon):
         self._rebuild(
             self.x_center, self.y_center, self._x_radius, self._y_radius, value
         )
+
+    @property
+    def number_of_points(self):
+        return self._num_points
+
+    @number_of_points.setter
+    def number_of_points(self, value):
+        if value < 4:
+            raise ValueError("The number of points must be greater than or equal to 4")
+        self._num_points = value
 
     @property
     def width(self):
@@ -1202,11 +1211,6 @@ class Rectangle(Polygon):
         line_style: str = "default",
         fill_alpha: float | Literal["default"] = "default",
     ):
-        if width <= 0:
-            raise ValueError("The width must be positive")
-        if height <= 0:
-            raise ValueError("The height must be positive")
-
         self._fill = fill
         self._fill_color = fill_color
         self._edge_color = edge_color
@@ -1216,11 +1220,13 @@ class Rectangle(Polygon):
         self._sh_polygon = ShPolygon(
             [
                 (x_bottom_left, y_bottom_left),
-                (x_bottom_left + width, y_bottom_left),
-                (x_bottom_left + width, y_bottom_left + height),
-                (x_bottom_left, y_bottom_left + height),
+                (x_bottom_left + 1, y_bottom_left),
+                (x_bottom_left + 1, y_bottom_left + 1),
+                (x_bottom_left, y_bottom_left + 1),
             ]
         )
+        self.width = width
+        self.height = height
 
     @property
     def x_bottom_left(self):
@@ -1258,6 +1264,8 @@ class Rectangle(Polygon):
 
     @width.setter
     def width(self, value):
+        if value <= 0:
+            raise ValueError("The width must be positive")
         self._sh_polygon = ShPolygon(
             [
                 (self.x_bottom_left, self.y_bottom_left),
@@ -1273,6 +1281,8 @@ class Rectangle(Polygon):
 
     @height.setter
     def height(self, value):
+        if value <= 0:
+            raise ValueError("The height must be positive")
         self._sh_polygon = ShPolygon(
             [
                 (self.x_bottom_left, self.y_bottom_left),

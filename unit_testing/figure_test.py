@@ -247,6 +247,19 @@ class TestFigure(unittest.TestCase):
         a_figure._prepare_figure()
         self.assertEqual(a_figure._axes.get_aspect(), 1)
 
+    def test_aspect_ratio_invalid_init(self):
+        with self.assertRaises(GraphingException):
+            Figure(aspect_ratio="nope", figure_style="plain")
+        with self.assertRaises(GraphingException):
+            Figure(aspect_ratio=-1.0, figure_style="plain")
+
+    def test_aspect_ratio_setter_validation(self):
+        a_figure = Figure(figure_style="plain")
+        with self.assertRaises(GraphingException):
+            a_figure.aspect_ratio = "nope"
+        with self.assertRaises(GraphingException):
+            a_figure.aspect_ratio = -1.0
+
 
 class TestTwinAxis(unittest.TestCase):
     def test_init(self):

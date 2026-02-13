@@ -131,27 +131,30 @@ class Hlines(Plottable):
         line_styles: list[str] | str = "default",
         alpha: float | Literal["default"] = "default",
     ) -> None:
-        if isinstance(y, (list, np.ndarray)):
-            self._y = np.asarray(y)
-        else:
-            self._y = y
-        if isinstance(x_min, (list, np.ndarray)):
-            self._x_min = np.asarray(x_min)
-        else:
-            self._x_min = x_min
-        if isinstance(x_max, (list, np.ndarray)):
-            self._x_max = np.asarray(x_max)
-        else:
-            self._x_max = x_max
+        self._in_init = True
+        self._y = None
+        self._x_min = None
+        self._x_max = None
+        self._colors = "default"
+        self._line_widths = "default"
+        self._line_styles = "default"
+        self.y = y
+        self.x_min = x_min
+        self.x_max = x_max
+        self.label = label
+        self.colors = colors
+        self.line_widths = line_widths
+        self.line_styles = line_styles
+        self._alpha = alpha
+        self._in_init = False
+        self._validate_state()
+
+    def _validate_state(self) -> None:
         if (self._x_min is None) ^ (self._x_max is None):
             raise GraphingException(
                 "Either both x_min and x_max are specified or none of them"
             )
-        self._label = label
-        self._colors = colors
-        self._line_widths = line_widths
-        self._line_styles = line_styles
-        self._alpha = alpha
+
         if isinstance(self._y, (int, float)) and isinstance(
             self._colors, (list, np.ndarray)
         ):
@@ -184,7 +187,6 @@ class Hlines(Plottable):
                 raise GraphingException(
                     "There must be the same number of line styles and lines!"
                 )
-
             if isinstance(self._line_widths, list) and len(self._y) != len(
                 self._line_widths
             ):
@@ -198,7 +200,12 @@ class Hlines(Plottable):
 
     @y.setter
     def y(self, y: ArrayLike) -> None:
-        self._y = y
+        if isinstance(y, (list, np.ndarray)):
+            self._y = np.asarray(y)
+        else:
+            self._y = y
+        if not self._in_init:
+            self._validate_state()
 
     @property
     def x_min(self) -> ArrayLike | None:
@@ -206,7 +213,12 @@ class Hlines(Plottable):
 
     @x_min.setter
     def x_min(self, x_min: Optional[ArrayLike]) -> None:
-        self._x_min = x_min
+        if isinstance(x_min, (list, np.ndarray)):
+            self._x_min = np.asarray(x_min)
+        else:
+            self._x_min = x_min
+        if not self._in_init:
+            self._validate_state()
 
     @property
     def x_max(self) -> ArrayLike | None:
@@ -214,7 +226,12 @@ class Hlines(Plottable):
 
     @x_max.setter
     def x_max(self, x_max: Optional[ArrayLike]) -> None:
-        self._x_max = x_max
+        if isinstance(x_max, (list, np.ndarray)):
+            self._x_max = np.asarray(x_max)
+        else:
+            self._x_max = x_max
+        if not self._in_init:
+            self._validate_state()
 
     @property
     def label(self) -> Optional[str]:
@@ -231,6 +248,8 @@ class Hlines(Plottable):
     @colors.setter
     def colors(self, colors: list[str] | str) -> None:
         self._colors = colors
+        if not self._in_init:
+            self._validate_state()
 
     @property
     def line_widths(self) -> list[float] | float:
@@ -239,6 +258,8 @@ class Hlines(Plottable):
     @line_widths.setter
     def line_widths(self, line_widths: list[float] | float) -> None:
         self._line_widths = line_widths
+        if not self._in_init:
+            self._validate_state()
 
     @property
     def line_styles(self) -> list[str] | str:
@@ -247,6 +268,8 @@ class Hlines(Plottable):
     @line_styles.setter
     def line_styles(self, line_styles: list[str] | str) -> None:
         self._line_styles = line_styles
+        if not self._in_init:
+            self._validate_state()
 
     @property
     def alpha(self) -> float | Literal["default"]:
@@ -382,23 +405,25 @@ class Vlines(Plottable):
         line_styles: list[str] | str = "default",
         alpha: float | Literal["default"] = "default",
     ) -> None:
-        if isinstance(x, (list, np.ndarray)):
-            self._x = np.asarray(x)
-        else:
-            self._x = x
-        if isinstance(y_min, (list, np.ndarray)):
-            self._y_min = np.asarray(y_min)
-        else:
-            self._y_min = y_min
-        if isinstance(y_max, (list, np.ndarray)):
-            self._y_max = np.asarray(y_max)
-        else:
-            self._y_max = y_max
-        self._label = label
-        self._colors = colors
-        self._line_styles = line_styles
-        self._line_widths = line_widths
+        self._in_init = True
+        self._x = None
+        self._y_min = None
+        self._y_max = None
+        self._colors = "default"
+        self._line_styles = "default"
+        self._line_widths = "default"
+        self.x = x
+        self.y_min = y_min
+        self.y_max = y_max
+        self.label = label
+        self.colors = colors
+        self.line_styles = line_styles
+        self.line_widths = line_widths
         self._alpha = alpha
+        self._in_init = False
+        self._validate_state()
+
+    def _validate_state(self) -> None:
         if isinstance(self._x, (int, float)) and isinstance(
             self._colors, (list, np.ndarray)
         ):
@@ -431,7 +456,6 @@ class Vlines(Plottable):
                 raise GraphingException(
                     "There must be the same number of line styles and lines!"
                 )
-
             if isinstance(self._line_widths, list) and len(self._x) != len(
                 self._line_widths
             ):
@@ -445,7 +469,12 @@ class Vlines(Plottable):
 
     @x.setter
     def x(self, x: ArrayLike) -> None:
-        self._x = x
+        if isinstance(x, (list, np.ndarray)):
+            self._x = np.asarray(x)
+        else:
+            self._x = x
+        if not self._in_init:
+            self._validate_state()
 
     @property
     def y_min(self) -> ArrayLike | None:
@@ -453,7 +482,10 @@ class Vlines(Plottable):
 
     @y_min.setter
     def y_min(self, y_min: Optional[ArrayLike]) -> None:
-        self._y_min = y_min
+        if isinstance(y_min, (list, np.ndarray)):
+            self._y_min = np.asarray(y_min)
+        else:
+            self._y_min = y_min
 
     @property
     def y_max(self) -> ArrayLike | None:
@@ -461,7 +493,10 @@ class Vlines(Plottable):
 
     @y_max.setter
     def y_max(self, y_max: Optional[ArrayLike]) -> None:
-        self._y_max = y_max
+        if isinstance(y_max, (list, np.ndarray)):
+            self._y_max = np.asarray(y_max)
+        else:
+            self._y_max = y_max
 
     @property
     def label(self) -> Optional[str]:
@@ -478,6 +513,8 @@ class Vlines(Plottable):
     @colors.setter
     def colors(self, colors: list[str] | str) -> None:
         self._colors = colors
+        if not self._in_init:
+            self._validate_state()
 
     @property
     def line_widths(self) -> list[float] | float:
@@ -486,6 +523,8 @@ class Vlines(Plottable):
     @line_widths.setter
     def line_widths(self, line_widths: list[float] | float) -> None:
         self._line_widths = line_widths
+        if not self._in_init:
+            self._validate_state()
 
     @property
     def line_styles(self) -> list[str] | str:
@@ -494,6 +533,8 @@ class Vlines(Plottable):
     @line_styles.setter
     def line_styles(self, line_styles: list[str] | str) -> None:
         self._line_styles = line_styles
+        if not self._in_init:
+            self._validate_state()
 
     @property
     def alpha(self) -> float | Literal["default"]:
@@ -690,25 +731,27 @@ class Point(Plottable):
             to the :class:`~graphinglib.graph_elements.Point`.
             Defaults to bottom left.
         """
-        if not isinstance(x, int | float) or not isinstance(y, int | float):
+        self.x = x
+        self.y = y
+        self.label = label
+        self.face_color = face_color
+        self.edge_color = edge_color
+        self.marker_size = marker_size
+        self.marker_style = marker_style
+        self.edge_width = edge_width
+        self.alpha = alpha
+        self.font_size = font_size
+        self.text_color = text_color
+        self.h_align = h_align
+        self.v_align = v_align
+        self._show_coordinates: bool = False
+
+    @staticmethod
+    def _validate_coordinate(value: float) -> None:
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
             raise GraphingException(
                 "The x and y coordinates for a point must be a single number each!"
             )
-        else:
-            self._x = x
-            self._y = y
-        self._label = label
-        self._face_color = face_color
-        self._edge_color = edge_color
-        self._marker_size = marker_size
-        self._marker_style = marker_style
-        self._edge_width = edge_width
-        self._alpha = alpha
-        self._font_size = font_size
-        self._text_color = text_color
-        self._h_align = h_align
-        self._v_align = v_align
-        self._show_coordinates: bool = False
 
     @property
     def x(self) -> float:
@@ -716,6 +759,7 @@ class Point(Plottable):
 
     @x.setter
     def x(self, x: float) -> None:
+        self._validate_coordinate(x)
         self._x = x
 
     @property
@@ -724,6 +768,7 @@ class Point(Plottable):
 
     @y.setter
     def y(self, y: float) -> None:
+        self._validate_coordinate(y)
         self._y = y
 
     @property
@@ -828,7 +873,9 @@ class Point(Plottable):
 
     @coordinates.setter
     def coordinates(self, coordinates: tuple[float, float]) -> None:
-        self._x, self._y = coordinates
+        x, y = coordinates
+        self.x = x
+        self.y = y
 
     def copy(self) -> Self:
         """

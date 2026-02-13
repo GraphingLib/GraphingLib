@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -143,6 +144,27 @@ class TestHeatmap(unittest.TestCase):
         # Color bar should still be created
         self.assertEqual(len(fig.axes), 2)
         self.assertEqual(ax.collections[0].get_clim(), (20, 80))
+
+    def test_image_setter_array_conversion(self):
+        heatmap = Heatmap(image=np.zeros((2, 2)))
+        heatmap.image = [[1, 2], [3, 4]]
+        self.assertIsInstance(heatmap._image, np.ndarray)
+        self.assertEqual(heatmap._image.shape, (2, 2))
+
+    def test_image_setter_reads_file_path(self):
+        heatmap = Heatmap(image=np.zeros((2, 2)))
+        fake_image = np.ones((3, 3))
+        with patch("graphinglib.data_plotting_2d.imread", return_value=fake_image):
+            heatmap.image = "dummy.png"
+        self.assertTrue(np.array_equal(heatmap._image, fake_image))
+        self.assertFalse(heatmap._show_color_bar)
+
+    def test_init_with_file_image_disables_color_bar(self):
+        fake_image = np.ones((3, 3))
+        with patch("graphinglib.data_plotting_2d.imread", return_value=fake_image):
+            heatmap = Heatmap(image="dummy.png", show_color_bar=True)
+        self.assertTrue(np.array_equal(heatmap._image, fake_image))
+        self.assertFalse(heatmap._show_color_bar)
 
 
 class TestVectorField(unittest.TestCase):

@@ -137,27 +137,21 @@ class Heatmap(Plottable2D):
         norm : str or Normalize, optional
             Normalization of the colormap. Default is ``None``.
         """
-        self._image = image
-        self._x_axis_range = x_axis_range
-        self._y_axis_range = y_axis_range
+        self.show_color_bar = show_color_bar
+        self.image = image
+        self.x_axis_range = x_axis_range
+        self.y_axis_range = y_axis_range
         self.x_mesh = x_mesh
         self.y_mesh = y_mesh
-        self._color_map = color_map
-        self._color_map_range = color_map_range
-        self._show_color_bar = show_color_bar
-        self._alpha = alpha
-        self._aspect_ratio = aspect_ratio
-        self._origin_position = origin_position
-        self._interpolation = interpolation
+        self.color_map = color_map
+        self.color_map_range = color_map_range
+        self.alpha = alpha
+        self.aspect_ratio = aspect_ratio
+        self.origin_position = origin_position
+        self.interpolation = interpolation
         self._norm = norm
 
         self._color_bar_params: dict = {}
-
-        if isinstance(self._image, str):
-            self._image = imread(self._image)
-            self._show_color_bar = False
-        else:
-            self._image = np.asarray(self._image)
 
     @classmethod
     def from_function(
@@ -339,6 +333,7 @@ class Heatmap(Plottable2D):
     def image(self, image: ArrayLike | str) -> None:
         if isinstance(image, str):
             self._image = imread(image)
+            self._show_color_bar = False
         else:
             self._image = np.asarray(image)
 
