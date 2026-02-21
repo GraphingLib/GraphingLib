@@ -683,6 +683,8 @@ class TestSmartFigure(unittest.TestCase):
         self.assertEqual(self.fig.figure_style, "default")
         self.fig.figure_style = "dark"
         self.assertEqual(self.fig.figure_style, "dark")
+        self.fig.figure_style = "matplotlib"
+        self.assertEqual(self.fig.figure_style, "matplotlib")
 
     def test_elements(self):
         """Test elements property validation and assignment."""
@@ -1367,6 +1369,75 @@ class TestSmartFigure(unittest.TestCase):
         a_figure.add_elements(self.testCurve)
         a_figure._initialize_parent_smart_figure()
         plt.close("all")
+
+    def test_matplotlib_keyword_style_functional(self):
+        """Test that the 'matplotlib' keyword uses Matplotlib's default style."""
+        with plt.style.context("default"):
+            expected_color = plt.rcParams["axes.prop_cycle"].by_key()["color"][0]
+
+        curve = Curve([0, 1], [0, 1])
+        a_figure = self.fig.copy_with(figure_style="matplotlib")
+        a_figure.add_elements(curve)
+        a_figure._initialize_parent_smart_figure()
+
+        self.assertEqual(curve.handle[0].get_color(), expected_color)
+        plt.close("all")
+
+    def test_matplotlib_style_preserved_for_nested_smartfigure(self):
+        """Test that nested SmartFigures keep matplotlib style defaults."""
+        x_data = [0, 1, 2]
+        y_data = [0, 1, 0]
+        style = "Solarize_Light2"
+
+        try:
+            standalone_curve = Curve(x_data, y_data)
+            standalone = SmartFigure(figure_style=style, elements=[standalone_curve])
+            standalone._initialize_parent_smart_figure()
+            standalone_ax = next(
+                ax for ax in standalone._figure.get_axes() if ax.get_navigate()
+            )
+            standalone_facecolor = standalone_ax.get_facecolor()
+            standalone_grid_visible = any(
+                line.get_visible() for line in standalone_ax.get_xgridlines()
+            )
+            standalone_tick_color = (
+                standalone_ax.get_xticklabels()[0].get_color()
+                if standalone_ax.get_xticklabels()
+                else None
+            )
+            standalone_line_color = standalone_curve.handle[0].get_color()
+
+            nested_curve = Curve(x_data, y_data)
+            child = SmartFigure(figure_style=style, elements=[nested_curve])
+            parent = SmartFigure(
+                num_cols=2,
+                elements=[child, None],
+                figure_style=style,
+            )
+            parent._initialize_parent_smart_figure()
+            nested_ax = next(
+                ax
+                for ax in parent._get_all_axes_recursive(parent._figure)
+                if ax.get_navigate()
+            )
+            nested_facecolor = nested_ax.get_facecolor()
+            nested_grid_visible = any(
+                line.get_visible() for line in nested_ax.get_xgridlines()
+            )
+            nested_tick_color = (
+                nested_ax.get_xticklabels()[0].get_color()
+                if nested_ax.get_xticklabels()
+                else None
+            )
+            nested_line_color = nested_curve.handle[0].get_color()
+        finally:
+            plt.close("all")
+
+        self.assertTrue(standalone_grid_visible)
+        self.assertEqual(nested_grid_visible, standalone_grid_visible)
+        self.assertEqual(nested_facecolor, standalone_facecolor)
+        self.assertEqual(nested_tick_color, standalone_tick_color)
+        self.assertEqual(nested_line_color, standalone_line_color)
 
     def test_set_ticks_and_tick_params(self):
         """Test setting ticks and tick parameters."""
