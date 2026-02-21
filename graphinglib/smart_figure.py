@@ -868,7 +868,7 @@ class SmartFigure:
     def figure_style(self, value: str) -> None:
         if not isinstance(value, str):
             raise TypeError("figure_style must be a string.")
-        available_styles = ["default"] + get_styles(matplotlib=True)
+        available_styles = ["default", "matplotlib"] + get_styles(matplotlib=True)
         if value not in available_styles:
             raise ValueError(f"figure_style must be one of {available_styles}.")
         self._figure_style = value
@@ -1620,11 +1620,17 @@ class SmartFigure:
         ):
             if isinstance(element, SmartFigure):
                 element._default_params = deepcopy(self._default_params)
-                element._default_params["rc_params"].update(element._user_rc_dict)
-                plt.rcParams.update(element._default_params["rc_params"])
-                subfig_params_to_reset = element._fill_in_missing_params(
-                    element
-                )  # Fill "default" parameters
+                subfig_params_to_reset = []
+                parent_rc_params = None
+                if is_matplotlib_style:
+                    parent_rc_params = plt.rcParams.copy()
+                    plt.rcParams.update(element._user_rc_dict)
+                else:
+                    element._default_params["rc_params"].update(element._user_rc_dict)
+                    plt.rcParams.update(element._default_params["rc_params"])
+                    subfig_params_to_reset = element._fill_in_missing_params(
+                        element
+                    )  # Fill "default" parameters
 
                 # Check whether sub_x_labels/sub_y_labels/sub_titles are set and can be given as the main
                 # x_label/y_label/title of the nested SmartFigure
@@ -1657,10 +1663,13 @@ class SmartFigure:
                 custom_labels += legend_info["labels"]["custom"]
                 custom_handles += legend_info["handles"]["custom"]
 
-                plt.rcParams.update(
-                    self._default_params["rc_params"]
-                )  # Return to the parent SmartFigure's rc params
-                element._reset_params_to_default(element, subfig_params_to_reset)
+                if is_matplotlib_style:
+                    plt.rcParams.update(parent_rc_params)
+                else:
+                    plt.rcParams.update(
+                        self._default_params["rc_params"]
+                    )  # Return to the parent SmartFigure's rc params
+                    element._reset_params_to_default(element, subfig_params_to_reset)
                 element._default_params = {}
                 for param, param_was_none in zip(
                     ["x_label", "y_label", "title"], subfig_none_params
@@ -1797,13 +1806,21 @@ class SmartFigure:
                 ):
                     if twin_axis is not None:
                         twin_axis._default_params = deepcopy(self._default_params)
-                        twin_axis._default_params["rc_params"].update(
-                            twin_axis._user_rc_dict
-                        )
-                        plt.rcParams.update(twin_axis._default_params["rc_params"])
-                        twin_axis_params_to_reset = twin_axis._fill_in_missing_params(
-                            twin_axis, self._figure_style
-                        )
+                        twin_axis_params_to_reset = []
+                        parent_rc_params = None
+                        if is_matplotlib_style:
+                            parent_rc_params = plt.rcParams.copy()
+                            plt.rcParams.update(twin_axis._user_rc_dict)
+                        else:
+                            twin_axis._default_params["rc_params"].update(
+                                twin_axis._user_rc_dict
+                            )
+                            plt.rcParams.update(twin_axis._default_params["rc_params"])
+                            twin_axis_params_to_reset = (
+                                twin_axis._fill_in_missing_params(
+                                    twin_axis, self._figure_style
+                                )
+                            )
 
                         twin_labels, twin_handles = twin_axis._prepare_twin_axis(
                             fig_axes=ax,
@@ -1817,12 +1834,15 @@ class SmartFigure:
                         default_labels.extend(twin_labels)
                         default_handles.extend(twin_handles)
 
-                        plt.rcParams.update(
-                            self._default_params["rc_params"]
-                        )  # Return to the original rc params
-                        twin_axis._reset_params_to_default(
-                            twin_axis, twin_axis_params_to_reset
-                        )
+                        if is_matplotlib_style:
+                            plt.rcParams.update(parent_rc_params)
+                        else:
+                            plt.rcParams.update(
+                                self._default_params["rc_params"]
+                            )  # Return to the original rc params
+                            twin_axis._reset_params_to_default(
+                                twin_axis, twin_axis_params_to_reset
+                            )
                         twin_axis._default_params = {}
 
                 # Axes legend
