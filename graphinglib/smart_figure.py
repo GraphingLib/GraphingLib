@@ -1004,12 +1004,14 @@ class SmartFigure:
             ``num_cols`` is set to 1, the key can be a single int or slice. Otherwise, the key must be a two-tuple.
         element : Plottable | Iterable[Plottable | None] | SmartFigure | None
             The element(s) to assign. Must be a Plottable, an iterable of Plottable objects, or a SmartFigure. If None,
-            the element at the specified key will be removed. Note that the exact slice used for inserting Plottables or
-            a SmartFigure must be provided to remove it.
+            any element overlapping with the specified key will be removed.
 
             .. note::
-                It is also possible to add a list of Plottables to a subplot already containing Plottables using the
-                ``+=`` operator.
+                - You can access and modify multi-cell subfigures by indexing any cell they occupy.
+                - Setting a cell to None will delete the entire subfigure occupying that cell.
+                - Assigning a new element to a cell with an existing element will replace the entire existing element.
+                - You can add elements to an existing subfigure using the ``+=`` operator.
+                - If the requested slice overlaps with multiple different subfigures, a GraphingException is raised.
 
         Examples
         --------
@@ -1031,10 +1033,14 @@ class SmartFigure:
             | Histogram               |
             +-------------------------+
 
-        We can add elements using the ``+=`` operator and remove them using ``None``::
+        We can add elements using the ``+=`` operator and remove them using ``None``. Notice that we can access
+        the multi-cell Histogram by indexing any cell it occupies::
 
             fig[0, 0] += [gl.Curve(x2, y2)]
             fig[0, 1] = None
+            fig[1, 0] = None  # This deletes the Histogram even though it spans both cells
+            # Or equivalently:
+            # fig[1, :] = None
 
         Which will result in the following layout::
 
@@ -1043,25 +1049,25 @@ class SmartFigure:
             | Curve      |            |
             | Curve      |            |
             +------------+------------+
-            | 1,0          1,1        |
-            | Histogram               |
-            +-------------------------+
+            | 1,0        | 1,1        |
+            |            |            |
+            +------------+------------+
 
-        We can also insert a nested SmartFigure into a specific region of the SmartFigure and remove the bottom plot::
+        We can also insert a nested SmartFigure. If it overlaps with existing elements, they will be replaced::
 
             subfigure = SmartFigure(num_rows=2, num_cols=1)
             subfigure.add_elements(gl.Heatmap(data1), gl.Heatmap(data2))
-            fig[0, 1] = subfigure
-            fig[1, :] = None
+            fig[0, 1] = subfigure  # Placed in the top-right cell
 
         Which will lead to the following layout::
 
             +------------+------------+
             | 0,0        | Heatmap    |
             | Curve      +------------+
-            |            | Heatmap    |
+            | Curve      | Heatmap    |
             +------------+------------+
             | 1,0        | 1,1        |
+            |            |            |
             +------------+------------+
         """
         if not any(
@@ -1074,10 +1080,26 @@ class SmartFigure:
             raise TypeError(
                 "Element must be a Plottable, an iterable of Plottables, or a SmartFigure."
             )
+
         key_ = self._validate_and_normalize_key(key)
-        if element is None:
-            self._elements.pop(key_, None)
-        else:
+
+        # Find all elements that overlap with the requested range
+        overlapping = self._get_overlapping_elements(key_)
+
+        if element is None:  # Deleting element(s)
+            if len(overlapping) == 0:
+                # No element to delete, do nothing
+                pass
+            elif len(overlapping) == 1:
+                # Delete the single overlapping element
+                self._elements.pop(overlapping[0][0])
+            else:
+                # Multiple elements overlap - raise exception
+                raise GraphingException(
+                    f"The requested slice {key} overlaps with multiple subfigures. "
+                    f"Cannot delete multiple subfigures at once. Please delete each subfigure separately."
+                )
+        else:  # Adding/replacing element
             # Normalize all iterables to lists for consistency
             if isinstance(element, Plottable):
                 el = [element]
@@ -1085,7 +1107,24 @@ class SmartFigure:
                 el = list(element)
             else:
                 el = element
-            self._elements[key_] = el
+
+            if len(overlapping) == 0:
+                # No overlap, just add the new element
+                self._elements[key_] = el
+            elif len(overlapping) == 1:
+                # Single element overlaps
+                existing_key = overlapping[0][0]
+
+                # Delete the existing element and add the new one
+                self._elements.pop(existing_key)
+                self._elements[existing_key] = el
+            else:
+                # Multiple elements overlap - raise exception
+                raise GraphingException(
+                    f"The requested slice {key} overlaps with multiple subfigures. "
+                    f"Cannot assign a new element to a position that overlaps with multiple subfigures. "
+                    f"Please remove the overlapping subfigures first or use a more specific slice."
+                )
 
     def __getitem__(
         self, key: int | slice | tuple[int | slice]
@@ -1105,17 +1144,39 @@ class SmartFigure:
             Otherwise, the key must be a two-tuple.
 
             .. note::
-                The exact slice of the element must be provided to access it. This means that if an element spans
-                multiple subplots, the given slice also needs to span these subplots.
+                If a subfigure spans multiple cells, you can access it by indexing any cell it occupies. For example,
+                if a subfigure spans ``[0, :]`` (entire first row), you can access it via ``fig[0, :]``, ``fig[0, 0]``,
+                or ``fig[0, 1]`` (assuming there are at least 2 columns). If the requested slice overlaps with multiple
+                different subfigures, a GraphingException is raised.
 
         Returns
         -------
         list[Plottable] | SmartFigure
             The element(s) at the specified key, which can be a list of Plottables or a SmartFigure. If there is no
-            elements at the given key, an empty list is returned.
+            element at the given key, an empty list is returned.
         """
         key_ = self._validate_and_normalize_key(key)
-        return self._elements.get(key_, [])
+
+        # First, check if there's an exact match
+        if key_ in self._elements:
+            return self._elements[key_]
+
+        # If not, find all elements that overlap with the requested range
+        overlapping = self._get_overlapping_elements(key_)
+
+        if len(overlapping) == 0:
+            # No element at this location
+            return []
+        elif len(overlapping) == 1:
+            # Single element overlaps with this location
+            return overlapping[0][1]
+        else:
+            # Multiple elements overlap with this slice
+            raise GraphingException(
+                f"The requested slice {key} overlaps with multiple subfigures. "
+                f"Cannot return a single element. Please use a more specific slice that "
+                f"matches only one subfigure, or handle each subfigure separately."
+            )
 
     def __iter__(self) -> Iterator[list[Plottable] | SmartFigure]:
         """
@@ -1272,6 +1333,43 @@ class SmartFigure:
         return isinstance(item, Iterable) and all(
             isinstance(el, (Plottable, type(None))) for el in item
         )
+
+    def _get_overlapping_elements(
+        self, key: tuple[slice, slice]
+    ) -> list[tuple[tuple[slice, slice], list[Plottable] | SmartFigure]]:
+        """
+        Finds all elements that overlap with the specified key range.
+
+        Parameters
+        ----------
+        key : tuple[slice, slice]
+            The key range to check for overlaps, as a tuple of two slices.
+
+        Returns
+        -------
+        list[tuple[tuple[slice, slice], list[Plottable] | SmartFigure]]
+            A list of tuples, each containing the key and element that overlaps with the specified range.
+        """
+        overlapping = []
+        row_slice, col_slice = key
+
+        for existing_key, element in self._elements.items():
+            existing_row, existing_col = existing_key
+
+            # Check if there's any overlap
+            row_overlap = not (
+                row_slice.stop <= existing_row.start
+                or row_slice.start >= existing_row.stop
+            )
+            col_overlap = not (
+                col_slice.stop <= existing_col.start
+                or col_slice.start >= existing_col.stop
+            )
+
+            if row_overlap and col_overlap:
+                overlapping.append((existing_key, element))
+
+        return overlapping
 
     def add_elements(
         self,

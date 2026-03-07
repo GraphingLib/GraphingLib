@@ -174,13 +174,13 @@ To remove elements, set them to ``None``:
     # Remove element from specific subplot
     fig[0, 1] = None
 
-    # Remove element spanning multiple subplots (must use exact slice used to add it)
-    fig[1, :] = None    # Remove it (using same slice)
+    # Remove multi-cell element - can use any cell it occupies
+    fig[1, 0] = None    # Removes the entire [1, :] element
 
     fig.show()
 
-.. warning::
-   To remove a spanning element, you **must** use the exact slice that was used to add it. Using ``fig[0, :] = None`` will not remove single-subplot elements added in the first row.
+.. note::
+   When a multi-cell element is removed, you can delete it by clicking on **any** cell it occupies. For example, if an element spans ``[1, :]`` (the entire second row), you can remove it with ``fig[1, 0] = None``, ``fig[1, 1] = None``, or ``fig[1, :] = None``.
 
 Retrieving Elements
 -------------------
@@ -210,6 +210,84 @@ You can also iterate on the :class:`~graphinglib.SmartFigure` directly to access
         subplot[1].line_width = line_width  # Modify the second element
 
     fig.show()
+
+
+Accessing Multi-Cell Elements
+------------------------------
+
+One of the most powerful features of :class:`~graphinglib.SmartFigure` is the ability to access and modify elements that span multiple cells by clicking on **any** cell they occupy:
+
+.. plot::
+    :context: close-figs
+
+    # Create a figure with a multi-cell element spanning the entire first row
+    fig = gl.SmartFigure(2, 3)
+    fig[0, :] = curve1  # Spans all three columns of row 0
+    fig.show()
+
+    # You can access this element via any cell it occupies
+    element_via_col0 = fig[0, 0]  # Access via first column
+    element_via_col1 = fig[0, 1]  # Access via second column
+    element_via_col2 = fig[0, 2]  # Access via third column
+    element_via_slice1 = fig[0, 1:]  # Access via inexact slice
+    element_via_slice2 = fig[0, :]  # Access via exact slice
+
+This makes it much more intuitive to work with complex layouts:
+
+.. plot::
+    :context: close-figs
+
+    fig = gl.SmartFigure(3, 2)
+
+    # Add elements with different spans
+    fig[0, :] = curve1     # Top row, spans both columns
+    fig[1, 0] = curve2     # Middle left, single cell
+    fig[1, 1] = [curve1, curve2]  # Middle right, single cell with multiple elements
+    fig[2, :] = gl.Histogram(np.random.randn(1000), bins=30)  # Bottom row, spans both columns
+
+    # Access and modify via clicking on any cell
+    fig[0, 0][0].color = "red"  # Modify top row element via first column
+    fig[2, 1][0].face_color = "green"  # Modify bottom histogram via second column
+
+    fig.show()
+
+.. warning::
+    The only rule that needs to be followed is that you cannot access or modify elements using a slice that overlaps with multiple **different** subplots. Therefore, you must always use a slice that includes at most a single non-empty subplot.
+
+.. plot::
+    :context: close-figs
+
+    fig = gl.SmartFigure(2, 2)
+    fig[0, :] = curve1  # Spans entire first row
+    fig[1, 0] = curve2  # Single cell in second row
+    fig.show()
+
+    # This raises an error - slice overlaps with two different elements
+    try:
+        element = fig[0:2, :]
+    except gl.GraphingException:
+        print("Cannot access multiple different elements with one slice")
+
+When you replace a multi-cell element, the new element will inherit the span of the original element:
+
+.. plot::
+    :context: close-figs
+
+    fig = gl.SmartFigure(2, 3)
+    fig[0, :] = curve1  # Spans entire first row
+
+    # Replace via single cell - new element inherits [0, :] span
+    fig[0, 1] = curve2
+
+    # curve2 now spans the entire first row
+    assert fig[0, 0][0] is fig[0, 1][0]  # Same element
+
+    # Replace via slice - new element inherits [0, :] span
+    fig[0, 0:2] = gl.Curve.from_function(lambda x: x**3, -2, 2)
+
+    fig.show()
+
+This behavior makes it intuitive to replace or add elements while maintaining your layout structure.
 
 
 Layout and Structure Control

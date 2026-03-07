@@ -986,6 +986,116 @@ class TestSmartFigure(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.fig_2x3[1::2, :] = DummyPlottable()
 
+    def test_multi_cell_access(self):
+        """Test accessing and modifying multi-cell subfigures via any cell they occupy."""
+        # Test 1: Access multi-cell element via exact slice
+        self.fig_2x2[0, :] = DummyPlottable("top_row")
+        retrieved_exact = self.fig_2x2[0, :]
+        self.assertEqual(len(retrieved_exact), 1)
+        self.assertEqual(retrieved_exact[0].label, "top_row")
+
+        # Test 2: Access same multi-cell element via first cell
+        retrieved_cell_0 = self.fig_2x2[0, 0]
+        self.assertEqual(len(retrieved_cell_0), 1)
+        self.assertEqual(retrieved_cell_0[0].label, "top_row")
+
+        # Test 3: Access same multi-cell element via second cell
+        retrieved_cell_1 = self.fig_2x2[0, 1]
+        self.assertEqual(len(retrieved_cell_1), 1)
+        self.assertEqual(retrieved_cell_1[0].label, "top_row")
+
+        # Test 4: Delete multi-cell element via single cell
+        self.fig_2x2[0, 0] = None
+        self.assertEqual(self.fig_2x2[0, 0], [])
+        self.assertEqual(self.fig_2x2[0, 1], [])
+        self.assertEqual(self.fig_2x2[0, :], [])
+
+        # Test 5: Replace multi-cell element via single cell
+        # The new element inherits the span of the old element
+        self.fig_2x2[1, :] = DummyPlottable("bottom_row")
+        self.assertEqual(len(self.fig_2x2[1, 0]), 1)
+        self.assertEqual(self.fig_2x2[1, 0][0].label, "bottom_row")
+
+        # Replace via single cell - new element inherits the multi-cell span
+        self.fig_2x2[1, 1] = DummyPlottable("new_element")
+        self.assertEqual(len(self.fig_2x2[1, 1]), 1)
+        self.assertEqual(self.fig_2x2[1, 1][0].label, "new_element")
+        # New element occupies the same span ([1, :]), so it's accessible from [1, 0]
+        self.assertEqual(len(self.fig_2x2[1, 0]), 1)
+        self.assertEqual(self.fig_2x2[1, 0][0].label, "new_element")
+
+        # Test 6: Add elements to multi-cell subfigure via += operator
+        self.fig_2x2[0, :] = DummyPlottable("first")
+        self.fig_2x2[0, 0] += [DummyPlottable("second")]
+        elements = self.fig_2x2[0, 1]  # Access via different cell
+        self.assertEqual(len(elements), 2)
+        self.assertEqual(elements[0].label, "first")
+        self.assertEqual(elements[1].label, "second")
+
+        # Test 7: Multi-cell subfigures with SmartFigure
+        subfig = SmartFigure(num_rows=1, num_cols=2)
+        subfig.add_elements(DummyPlottable("sub1"), DummyPlottable("sub2"))
+        self.fig_2x2[1, :] = subfig
+
+        # Access via exact slice
+        retrieved_subfig = self.fig_2x2[1, :]
+        self.assertIsInstance(retrieved_subfig, SmartFigure)
+
+        # Access via different cells
+        retrieved_via_cell_0 = self.fig_2x2[1, 0]
+        self.assertIsInstance(retrieved_via_cell_0, SmartFigure)
+        retrieved_via_cell_1 = self.fig_2x2[1, 1]
+        self.assertIsInstance(retrieved_via_cell_1, SmartFigure)
+
+        # Delete via single cell
+        self.fig_2x2[1, 0] = None
+        self.assertEqual(self.fig_2x2[1, 0], [])
+        self.assertEqual(self.fig_2x2[1, 1], [])
+
+    def test_multi_cell_overlap_errors(self):
+        """Test error handling when slices overlap multiple different subfigures."""
+        # Create a figure with multiple non-overlapping elements
+        self.fig_2x2[0, 0] = DummyPlottable("topleft")
+        self.fig_2x2[0, 1] = DummyPlottable("topright")
+
+        # Trying to access a slice that overlaps both should raise an exception
+        with self.assertRaises(GraphingException):
+            _ = self.fig_2x2[0, :]
+
+        # Trying to set a slice that overlaps both should raise an exception
+        with self.assertRaises(GraphingException):
+            self.fig_2x2[0, :] = DummyPlottable("new")
+
+        # Trying to delete a slice that overlaps both should raise an exception
+        with self.assertRaises(GraphingException):
+            self.fig_2x2[0, :] = None
+
+    def test_multi_cell_partial_slice(self):
+        """Test accessing multi-cell elements with partial slices."""
+        # Create a multi-cell element spanning entire first row
+        self.fig_2x3[0, :] = DummyPlottable("full_row")
+
+        # Access via different partial slices
+        self.assertEqual(len(self.fig_2x3[0, 0]), 1)
+        self.assertEqual(self.fig_2x3[0, 0][0].label, "full_row")
+
+        self.assertEqual(len(self.fig_2x3[0, 1]), 1)
+        self.assertEqual(self.fig_2x3[0, 1][0].label, "full_row")
+
+        self.assertEqual(len(self.fig_2x3[0, 2]), 1)
+        self.assertEqual(self.fig_2x3[0, 2][0].label, "full_row")
+
+        # Access via partial slice (should work if it only overlaps the one element)
+        retrieved = self.fig_2x3[0, 0:2]
+        self.assertEqual(len(retrieved), 1)
+        self.assertEqual(retrieved[0].label, "full_row")
+
+        # Delete via partial slice
+        self.fig_2x3[0, 1:3] = None
+        self.assertEqual(self.fig_2x3[0, 0], [])
+        self.assertEqual(self.fig_2x3[0, 1], [])
+        self.assertEqual(self.fig_2x3[0, 2], [])
+
     def test_iter(self):
         """Test iteration over subplots."""
         count = 0
@@ -1031,6 +1141,8 @@ class TestSmartFigure(unittest.TestCase):
         self.fig_2x3[-2:, -3:-1] = mock_element  # Should span (0:2, 0:2)
         key = (slice(0, 2), slice(0, 2))
         self.assertIn(key, self.fig_2x3._elements)
+
+        self.fig_2x3[0, 0] = None  # clear
 
         # Test slice with only negative start
         self.fig_2x3[-1:, :] = DummyPlottable("test2")  # Last row, all columns

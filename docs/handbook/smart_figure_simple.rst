@@ -68,7 +68,7 @@ It is also possible to add elements to a preexisting figure using the :py:meth:`
     figure.add_elements(*[random_curve() for _ in range(3)])  # Adds to the top subplots
     figure.show()
 
-The :py:meth:`~graphinglib.SmartFigure.__setitem__` method can also be used to add or remove elements from specific subplots by specifying their position in the grid, exactly how `two-dimensional numpy arrays are indexed <https://numpy.org/doc/stable/user/basics.indexing.html>`_. Attributing ``None`` to a subplot will remove all its elements. Slicing is also supported to add elements to or remove elements from multiples rows or coklumns at once. Here are some examples:
+The :py:meth:`~graphinglib.SmartFigure.__setitem__` method can also be used to add or remove elements from specific subplots by specifying their position in the grid, exactly how `two-dimensional numpy arrays are indexed <https://numpy.org/doc/stable/user/basics.indexing.html>`_. Attributing ``None`` to a subplot will remove all its elements. Slicing is also supported to add elements to or remove elements from multiples rows or columns at once. Here are some examples:
 
 .. plot::
     :context: close-figs
@@ -81,10 +81,13 @@ The :py:meth:`~graphinglib.SmartFigure.__setitem__` method can also be used to a
     # Add a curve that spans the last two subplots of the bottom row
     figure[1, 1:] = random_curve()
 
-    # Add a curve to the second suplot
+    # Add a curve to the second subplot
     figure[0, 1] += [random_curve()]
 
     figure.show()
+
+.. tip::
+   When an element spans multiple cells, you can access, modify, or remove it by clicking on **any** cell it occupies. For example, to remove the curve that spans ``[1, 1:]``, you can use ``figure[1, 1] = None`` or ``figure[1, 2] = None``. See the :doc:`smart_figure_advanced` section for more details on multi-cell element access.
 
 The advantage of the :class:`~graphinglib.SmartFigure` class is that you can insert this object in itself:
 
