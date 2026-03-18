@@ -62,9 +62,11 @@ class SmartFigure:
 
     It allows for the creation of complex figures recursively, where each :class:`~graphinglib.SmartFigure` can contain
     other :class:`~graphinglib.SmartFigure` objects. The class supports a variety of customization options as well as
-    the ability to use styles and themes for consistent visual appearance across different figures. The idea behind this
-    class is that every SmartFigure contains a single x_label, y_label, title, projection, etc. and that nested
-    SmartFigures can be inserted into the main SmartFigure to create complex figures with more parameters.
+    the ability to use styles and themes for consistent visual appearance across different figures. A SmartFigure can
+    either be used directly as a single plot containing :class:`~graphinglib.Plottable` objects, or as a layout that
+    arranges child :class:`~graphinglib.SmartFigure` objects on a grid. The idea behind this class is that every
+    SmartFigure contains a single x_label, y_label, title, projection, etc. and that nested SmartFigures can be
+    inserted into the main SmartFigure to create complex figures with more parameters.
 
     Parameters
     ----------
@@ -87,13 +89,14 @@ class SmartFigure:
         Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
         single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
         :class:`~graphinglib.SmartFigure` objects for each subfigure only to set the x and y labels. This list cannot
-        be longer than the number of non-empty subplots and None values can be used to skip specific subplots.
+        be longer than the number of subfigures drawn by the SmartFigure and None values can be used to skip specific
+        subfigures.
     subtitles : Iterable[str], optional
         Labels for the subtitles of each subfigure, respectively. Similarly to `sub_x_labels` and `sub_y_labels`, this
         allows to set subtitles for each subfigure without needing to create nested
         :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
-        each subfigure needs its own subtitle. This list cannot be longer than the number of non-empty subplots and None
-        values can be used to skip specific subplots.
+        each subfigure needs its own subtitle. This list cannot be longer than the number of subfigures drawn by the
+        SmartFigure and None values can be used to skip specific subfigures.
     log_scale_x, log_scale_y : bool | list[bool], optional
         Whether to use a logarithmic scale for the x and y axes, respectively. This can be given as a single value or
         a list of values to apply to each subplot.
@@ -171,9 +174,8 @@ class SmartFigure:
         subfigures.
 
         .. note::
-            Sharing axes only works for plots directly inside the SmartFigure. If a nested SmartFigure is used, the
-            axes sharing will not be applied to the nested SmartFigure. Instead, the nested SmartFigure will have its
-            own axes sharing settings.
+            Sharing axes only works for plots drawn directly in the SmartFigure. If you insert an existing nested
+            SmartFigure, that nested figure keeps its own axes sharing settings.
 
     projection : Any | list[Any], optional
         Projection type for the subfigures. This can be a string of a matplotlib projection (e.g., "polar") or an object
@@ -224,18 +226,21 @@ class SmartFigure:
         Defaults to ``"default"``.
     elements : Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]], optional
         The elements to plot in the figure.
-        If an iterable of depth 1 is provided and the figure is 1x1, all the elements are added to the unique plot. For
-        other geometries, the elements are added one by one in the order they are provided to each subplot, and the
-        iterable should not be longer than the number of subplots.
-        If an iterable of depth 2 is provided, each sub-iterable is added to the corresponding subplot, in the order
-        they are provided. The number of sub-iterables should be equal to the number of subplots.
-        If ``None`` elements are present in the iterable, the corresponding subplots are not drawn and a blank space is
-        left in the figure. If iterables containing only ``None`` are given in the main iterable, the corresponding
-        subplots are drawn but empty.
+        If an iterable of :class:`~graphinglib.Plottable` objects is provided, all the elements are added to the
+        SmartFigure's single plot.
+        If a flat iterable is provided for a figure with multiple cells, the items are assigned to the cells from
+        left-to-right, top-to-bottom. Each item can be a child :class:`~graphinglib.SmartFigure`, a
+        :class:`~graphinglib.Plottable`, an iterable of :class:`~graphinglib.Plottable` objects, or ``None``.
+        Plottables and iterables of Plottables create a child plot in that cell. The iterable can be shorter than the
+        total number of cells, in which case the remaining cells are left empty.
+        If a :class:`~graphinglib.SmartFigure` is provided, it occupies exactly one cell in the parent figure. Its
+        ``num_rows`` and ``num_cols`` only describe its internal layout.
 
         .. note::
-            This method for adding elements only allows to add elements to single subplots. If you want to add elements
-            that span multiple subplots, you should use the __setitem__ method instead.
+            The ``elements`` parameter does not use a child :class:`~graphinglib.SmartFigure`'s shape to determine how
+            much space it occupies in the parent. If you want a bare :class:`~graphinglib.Plottable`, an iterable of
+            Plottables, or a child :class:`~graphinglib.SmartFigure` to span multiple subplots in the parent, you
+            should use the __setitem__ method instead.
             For example, to add an element spanning the complete first row , use ``fig[0,:] = element``.
 
     annotations : Iterable[Text], optional
@@ -289,6 +294,11 @@ class SmartFigure:
         | Iterable[Iterable[Plottable | None]] = [],
         annotations: Iterable[Text] | None = None,
     ) -> None:
+        self._mode: Literal["leaf", "container"] = "leaf"
+        self._leaf_elements: list[Plottable] = []
+        self._children: OrderedDict[tuple[slice, slice], SmartFigure] = OrderedDict()
+        self._is_auto_child = False
+        self._flatten_in_parent = False
         self.num_rows = num_rows
         self.num_cols = num_cols
         self.x_label = x_label
@@ -326,6 +336,10 @@ class SmartFigure:
         self.twin_x_axis = twin_x_axis
         self.twin_y_axis = twin_y_axis
         self.figure_style = figure_style
+        if isinstance(elements, Plottable):
+            raise TypeError(
+                "elements must be an iterable when passed to the SmartFigure constructor."
+            )
         self.elements = elements
         self.annotations = annotations
 
@@ -361,19 +375,27 @@ class SmartFigure:
             raise TypeError("num_rows must be an integer.")
         if value < 1:
             raise ValueError("num_rows must be greater than 0.")
+        should_promote = False
         # Check if the number of rows is being reduced and conflicts with existing elements
         try:
             if self._num_rows > value:
                 removed_rows = list(range(value, self._num_rows))
-                for pos, element in self._elements.items():
+                for pos, element in self._children.items():
                     if (pos[0].stop - 1) in removed_rows and element:
                         raise GraphingException(
                             "Cannot remove rows from the SmartFigure when there are elements in "
                             "them. Please remove the elements first."
                         )
+            should_promote = (
+                self._mode == "leaf"
+                and self._num_rows * self._num_cols == 1
+                and value * self._num_cols > 1
+            )
         except AttributeError:
             # The figure is being created, so the _num_rows attribute is not yet set
             pass
+        if should_promote:
+            self._promote_leaf_to_container()
         self._num_rows = value
 
     @property
@@ -386,19 +408,27 @@ class SmartFigure:
             raise TypeError("num_cols must be an integer.")
         if value < 1:
             raise ValueError("num_cols must be greater than 0.")
+        should_promote = False
         # Check if the number of rows is being reduced and conflicts with existing elements
         try:
             if self._num_cols > value:
                 removed_cols = list(range(value, self._num_cols))
-                for pos, element in self._elements.items():
+                for pos, element in self._children.items():
                     if (pos[1].stop - 1) in removed_cols and element:
                         raise GraphingException(
                             "Cannot remove cols from the SmartFigure when there are elements in "
                             "them. Please remove the elements first."
                         )
+            should_promote = (
+                self._mode == "leaf"
+                and self._num_rows * self._num_cols == 1
+                and self._num_rows * value > 1
+            )
         except AttributeError:
             # The figure is being created, so the _num_cols attribute is not yet set
             pass
+        if should_promote:
+            self._promote_leaf_to_container()
         self._num_cols = value
 
     @property
@@ -754,6 +784,8 @@ class SmartFigure:
                         "WCS projection should be used with the SmartFigureWCS object."
                     )
         self._projection = value
+        if hasattr(self, "_children"):
+            self._sync_auto_child_projections()
 
     @property
     def general_legend(self) -> bool:
@@ -874,22 +906,53 @@ class SmartFigure:
         self._figure_style = value
 
     @property
-    def elements(self) -> dict[tuple[slice, slice], Plottable | SmartFigure]:
-        return self._elements
+    def elements(self) -> list[Plottable] | list[SmartFigure | None]:
+        if self._mode == "leaf":
+            return self._leaf_elements
+
+        dense: list[SmartFigure | None] = [None] * (self._num_rows * self._num_cols)
+        for (rows, cols), child in self._iter_child_items():
+            dense[rows.start * self._num_cols + cols.start] = child
+        return dense
 
     @elements.setter
     def elements(
         self,
-        value: Iterable[Plottable | SmartFigure | None]
-        | Iterable[Iterable[Plottable | None]],
+        value: (
+            Plottable
+            | Iterable[Plottable | SmartFigure | None]
+            | Iterable[Iterable[Plottable | None]]
+        ),
     ) -> None:
         """
-        Sets the elements of the SmartFigure with the same rules as the constructor. For adding elements instead of
-        replacing them, use the :meth:`~graphinglib.SmartFigure.add_elements` or the
+        Sets the elements of the SmartFigure with the same rules as the constructor.
+
+        Assigning a single :class:`~graphinglib.Plottable` or an iterable of Plottables replaces the contents of the
+        SmartFigure's single plot.
+        Assigning a flat iterable containing :class:`~graphinglib.SmartFigure` objects, Plottables, iterables of
+        Plottables, or ``None`` fills the figure's grid from left-to-right, top-to-bottom and rebuilds its subplot
+        layout from scratch.
+
+        For adding elements instead of replacing them, use the :meth:`~graphinglib.SmartFigure.add_elements` or the
         :meth:`~graphinglib.SmartFigure.__setitem__` methods.
         """
-        self._elements = {}  # systematically reset the elements when setting them with the property
-        self.add_elements(*value)
+        if isinstance(value, SmartFigure):
+            raise TypeError("Leaf elements cannot be assigned a SmartFigure directly.")
+
+        if isinstance(value, Plottable):
+            self._ensure_leaf_mode()
+            self._leaf_elements = [value]
+            return
+
+        if not isinstance(value, Iterable):
+            raise TypeError("elements must be a Plottable or an iterable.")
+
+        value_list = list(value)
+        if self._should_use_container_elements_setter(value_list):
+            self._set_container_elements(value_list)
+        else:
+            self._ensure_leaf_mode()
+            self._leaf_elements = self._normalize_leaf_rhs(value_list)
 
     @property
     def annotations(self) -> Iterable[Text] | None:
@@ -970,20 +1033,27 @@ class SmartFigure:
     @property
     def is_single_subplot(self) -> bool:
         """
-        Whether the SmartFigure is a single subplot (1x1). This is useful to determine if the SmartFigure can be used
-        as a single plot or if it contains multiple subplots.
+        Whether the SmartFigure currently behaves as a single plot.
+
+        This is useful to determine if the SmartFigure can directly host Plottables and twin axes or if it currently
+        behaves as a layout containing child SmartFigures.
 
         .. note::
             This property is used to verify if custom legend elements can be added to the SmartFigure even if the
             :attr:`~graphinglib.SmartFigure.general_legend` is set to ``False``.
         """
-        return self.num_rows == 1 and self.num_cols == 1
+        return self._mode == "leaf"
 
     def __len__(self) -> int:
         """
-        Gives the number of non-empty subplots in the :class:`~graphinglib.SmartFigure`.
+        Gives the number of immediate contents in the :class:`~graphinglib.SmartFigure`.
+
+        For a SmartFigure used as a single plot, this is the number of Plottables in that plot.
+        For a SmartFigure used as a layout, this is the number of immediate child SmartFigures.
         """
-        return len(self._elements)
+        if self._mode == "leaf":
+            return len(self._leaf_elements)
+        return len(self._children)
 
     def __setitem__(
         self,
@@ -1003,15 +1073,19 @@ class SmartFigure:
             indexing. If slices are provided, the element can span multiple squares in the grid. If ``num_rows`` or
             ``num_cols`` is set to 1, the key can be a single int or slice. Otherwise, the key must be a two-tuple.
         element : Plottable | Iterable[Plottable | None] | SmartFigure | None
-            The element(s) to assign. Must be a Plottable, an iterable of Plottable objects, or a SmartFigure. If None,
-            any element overlapping with the specified key will be removed.
+            The element(s) to assign. Must be a Plottable, an iterable of Plottable objects, or a SmartFigure. If a
+            Plottable or an iterable of Plottables is provided, the selected area becomes a child plot containing those
+            elements. If ``None``, any child overlapping with the specified key will be removed.
 
             .. note::
-                - You can access and modify multi-cell subfigures by indexing any cell they occupy.
-                - Setting a cell to None will delete the entire subfigure occupying that cell.
-                - Assigning a new element to a cell with an existing element will replace the entire existing element.
-                - You can add elements to an existing subfigure using the ``+=`` operator.
-                - If the requested slice overlaps with multiple different subfigures, a GraphingException is raised.
+                - SmartFigures used as a single plot do not support subplot assignment. To use ``__setitem__``, first
+                  create a layout by setting ``num_rows`` or ``num_cols`` larger than 1.
+                - You can access and modify multi-cell child figures by indexing any cell they occupy.
+                - Setting a cell to None will delete the entire child figure occupying that cell.
+                - Assigning new Plottables to a cell with an existing child figure replaces that child figure's plotted
+                  elements while preserving its span.
+                - You can add elements to an existing child plot using the ``+=`` operator.
+                - If the requested slice overlaps with multiple different child figures, a GraphingException is raised.
 
         Examples
         --------
@@ -1070,6 +1144,12 @@ class SmartFigure:
             |            |            |
             +------------+------------+
         """
+        if self._mode == "leaf":
+            raise GraphingException(
+                "SmartFigures used as a single plot do not support subplot assignment. "
+                "Increase num_rows or num_cols first to turn the SmartFigure into a layout."
+            )
+
         if not any(
             [
                 element is None,
@@ -1082,109 +1162,105 @@ class SmartFigure:
             )
 
         key_ = self._validate_and_normalize_key(key)
-
-        # Find all elements that overlap with the requested range
         overlapping = self._get_overlapping_elements(key_)
 
-        if element is None:  # Deleting element(s)
+        if element is None:
             if len(overlapping) == 0:
-                # No element to delete, do nothing
-                pass
-            elif len(overlapping) == 1:
-                # Delete the single overlapping element
-                self._elements.pop(overlapping[0][0])
-            else:
-                # Multiple elements overlap - raise exception
+                return
+            if len(overlapping) > 1:
                 raise GraphingException(
                     f"The requested slice {key} overlaps with multiple subfigures. "
                     f"Cannot delete multiple subfigures at once. Please delete each subfigure separately."
                 )
-        else:  # Adding/replacing element
-            # Normalize all iterables to lists for consistency
-            if isinstance(element, Plottable):
-                el = [element]
-            elif isinstance(element, Iterable) and not isinstance(element, SmartFigure):
-                el = list(element)
-            else:
-                el = element
+            self._children.pop(overlapping[0][0])
+            return
 
-            if len(overlapping) == 0:
-                # No overlap, just add the new element
-                self._elements[key_] = el
-            elif len(overlapping) == 1:
-                # Single element overlaps
-                existing_key = overlapping[0][0]
-
-                # Delete the existing element and add the new one
-                self._elements.pop(existing_key)
-                self._elements[existing_key] = el
-            else:
-                # Multiple elements overlap - raise exception
+        if isinstance(element, SmartFigure):
+            if len(overlapping) > 1:
                 raise GraphingException(
                     f"The requested slice {key} overlaps with multiple subfigures. "
                     f"Cannot assign a new element to a position that overlaps with multiple subfigures. "
                     f"Please remove the overlapping subfigures first or use a more specific slice."
                 )
+            if len(overlapping) == 1:
+                existing_key, existing_child = overlapping[0]
+                if element is existing_child and existing_key == key_:
+                    return
+                self._children.pop(existing_key)
+            element._flatten_in_parent = False
+            element._is_auto_child = False
+            self._children[key_] = element
+            self._children = self._ordered_children()
+            return
+
+        normalized = self._normalize_leaf_rhs(element)
+        if len(overlapping) == 0:
+            self._children[key_] = self._make_auto_child(normalized)
+            changed_span = key_
+            changed_child = self._children[key_]
+        elif len(overlapping) == 1:
+            existing_key, existing_child = overlapping[0]
+            existing_child._ensure_leaf_mode()
+            existing_child._leaf_elements = normalized
+            self._children.move_to_end(existing_key)
+            changed_span = existing_key
+            changed_child = existing_child
+        else:
+            raise GraphingException(
+                f"The requested slice {key} overlaps with multiple subfigures. "
+                f"Cannot assign a new element to a position that overlaps with multiple subfigures. "
+                f"Please remove the overlapping subfigures first or use a more specific slice."
+            )
+        self._children = self._ordered_children()
+        self._sync_auto_child_projection(changed_span, changed_child)
 
     def __getitem__(
         self, key: int | slice | tuple[int | slice]
-    ) -> list[Plottable] | SmartFigure:
+    ) -> SmartFigure:
         """
-        Gives the element(s) at the specified key in the SmartFigure. This can be used to modify or extract directly an
-        element in the SmartFigure. The indexing follows classical 2D numpy-like indexing, where the first element
-        corresponds to the row and the second element corresponds to the column.
+        Gives the child SmartFigure at the specified key in the SmartFigure. This can be used to modify or extract
+        directly a child figure in a SmartFigure used as a layout. The indexing follows classical 2D numpy-like indexing,
+        where the first element corresponds to the row and the second element corresponds to the column.
 
         Parameters
         ----------
         key : int | slice | tuple[int | slice]
-            The key specifying the location(s) in the SmartFigure to access. If a tuple of ints is provided, the element
-            is accessed in the corresponding square of the grid, following classical 2D numpy-like indexing. If slices
-            are provided, an element spanning multiple squares in the grid can be retrieved. If ``num_rows`` or
+            The key specifying the location(s) in the SmartFigure to access. If a tuple of ints is provided, the child
+            figure is accessed in the corresponding square of the grid, following classical 2D numpy-like indexing. If
+            slices are provided, a child figure spanning multiple squares in the grid can be retrieved. If ``num_rows`` or
             ``num_cols`` is set to 1, the key can be a single int or slice to index into the single row or column.
             Otherwise, the key must be a two-tuple.
 
             .. note::
-                If a subfigure spans multiple cells, you can access it by indexing any cell it occupies. For example,
-                if a subfigure spans ``[0, :]`` (entire first row), you can access it via ``fig[0, :]``, ``fig[0, 0]``,
-                or ``fig[0, 1]`` (assuming there are at least 2 columns). If the requested slice overlaps with multiple
-                different subfigures, a GraphingException is raised.
+                If a child figure spans multiple cells, you can access it by indexing any cell it occupies. For
+                example, if a child figure spans ``[0, :]`` (entire first row), you can access it via ``fig[0, :]``,
+                ``fig[0, 0]``, or ``fig[0, 1]`` (assuming there are at least 2 columns). If the requested slice
+                overlaps with multiple different child figures, a GraphingException is raised. SmartFigures used as a
+                single plot do not support subplot indexing.
 
         Returns
         -------
-        list[Plottable] | SmartFigure
-            The element(s) at the specified key, which can be a list of Plottables or a SmartFigure. If there is no
-            element at the given key, an empty list is returned.
+        SmartFigure
+            The child SmartFigure at the specified key.
         """
-        key_ = self._validate_and_normalize_key(key)
+        if self._mode == "leaf":
+            raise GraphingException("Leaf SmartFigures do not support subplot indexing.")
+        span, child = self._get_selected_child(self._validate_and_normalize_key(key), key)
+        self._sync_auto_child_projection(span, child)
+        return child
 
-        # First, check if there's an exact match
-        if key_ in self._elements:
-            return self._elements[key_]
-
-        # If not, find all elements that overlap with the requested range
-        overlapping = self._get_overlapping_elements(key_)
-
-        if len(overlapping) == 0:
-            # No element at this location
-            return []
-        elif len(overlapping) == 1:
-            # Single element overlaps with this location
-            return overlapping[0][1]
-        else:
-            # Multiple elements overlap with this slice
-            raise GraphingException(
-                f"The requested slice {key} overlaps with multiple subfigures. "
-                f"Cannot return a single element. Please use a more specific slice that "
-                f"matches only one subfigure, or handle each subfigure separately."
-            )
-
-    def __iter__(self) -> Iterator[list[Plottable] | SmartFigure]:
+    def __iter__(self) -> Iterator[Plottable | SmartFigure]:
         """
-        Iterates over the elements in the SmartFigure in order of their position in the grid, from top-left to
-        bottom-right.
+        Iterates over the immediate contents of the SmartFigure.
+
+        SmartFigures used as a single plot yield their Plottables in insertion order. SmartFigures used as a layout
+        yield their immediate child SmartFigures in grid order from top-left to bottom-right.
         """
-        for element in self._ordered_elements.values():
-            yield element
+        if self._mode == "leaf":
+            yield from self._leaf_elements
+            return
+        for _, child in self._iter_child_items():
+            yield child
 
     def __deepcopy__(self, memo: dict) -> Self:
         """
@@ -1231,20 +1307,47 @@ class SmartFigure:
 
             fig2 = fig1.copy_with(x_label=None, y_label=None)
         """
-        return _copy_with_overrides(self, **kwargs)
+        new_copy = _copy_with_overrides(self, **kwargs)
+        if "figure_style" in kwargs and "elements" not in kwargs:
+            new_copy._reset_stylable_elements_to_default()
+        return new_copy
+
+    def _reset_stylable_elements_to_default(self) -> None:
+        style_name = self._figure_style
+        if style_name == "default":
+            style_name = get_default_style()
+        try:
+            defaults = FileLoader(style_name).load()
+        except FileNotFoundError:
+            return
+
+        for element in self._iter_all_plottables_recursive():
+            object_type = type(element).__name__
+            for property_ in defaults.get(object_type, {}):
+                if hasattr(element, property_):
+                    setattr(element, property_, "default")
+
+    def _iter_all_plottables_recursive(self) -> Iterator[Plottable]:
+        if self._mode == "leaf":
+            yield from self._leaf_elements
+            return
+        for child in self._children.values():
+            yield from child._iter_all_plottables_recursive()
 
     @property
     def _ordered_elements(self) -> OrderedDict:
-        """
-        Gives the _elements dict sorted by the starting position of the slices. This is used to ensure that the
-        elements are plotted in the correct order when creating the figure.
-        """
-        return OrderedDict(
-            sorted(
-                self._elements.items(),
-                key=lambda item: (item[0][0].start, item[0][1].start),
-            )
-        )
+        if self._mode == "leaf":
+            if not self._leaf_elements:
+                return OrderedDict()
+            return OrderedDict({(slice(0, 1), slice(0, 1)): list(self._leaf_elements)})
+
+        ordered = OrderedDict()
+        for span, child in self._ordered_children().items():
+            if child._flatten_in_parent:
+                ordered[span] = list(child._leaf_elements)
+            else:
+                ordered[span] = child
+        return ordered
 
     def _validate_and_normalize_key(
         self, key: int | slice | tuple[int | slice]
@@ -1330,15 +1433,17 @@ class SmartFigure:
         bool
             True if the item is an iterable of Plottable elements or None, False otherwise.
         """
-        return isinstance(item, Iterable) and all(
+        return not isinstance(item, (str, bytes, SmartFigure)) and isinstance(
+            item, Iterable
+        ) and all(
             isinstance(el, (Plottable, type(None))) for el in item
         )
 
     def _get_overlapping_elements(
         self, key: tuple[slice, slice]
-    ) -> list[tuple[tuple[slice, slice], list[Plottable] | SmartFigure]]:
+    ) -> list[tuple[tuple[slice, slice], SmartFigure]]:
         """
-        Finds all elements that overlap with the specified key range.
+        Finds all child SmartFigures that overlap with the specified key range.
 
         Parameters
         ----------
@@ -1347,13 +1452,13 @@ class SmartFigure:
 
         Returns
         -------
-        list[tuple[tuple[slice, slice], list[Plottable] | SmartFigure]]
-            A list of tuples, each containing the key and element that overlaps with the specified range.
+        list[tuple[tuple[slice, slice], SmartFigure]]
+            A list of tuples, each containing the key and child SmartFigure that overlaps with the specified range.
         """
         overlapping = []
         row_slice, col_slice = key
 
-        for existing_key, element in self._elements.items():
+        for existing_key, element in self._children.items():
             existing_row, existing_col = existing_key
 
             # Check if there's any overlap
@@ -1376,25 +1481,28 @@ class SmartFigure:
         *elements: Plottable | SmartFigure | None | Iterable[Plottable | None],
     ) -> Self:
         """
-        Adds one or more :class:`~graphinglib.Plottable` or :class:`~graphinglib.SmartFigure` to the current
-        SmartFigure. This method is equivalent to using the :meth:`~graphinglib.SmartFigure.__setitem__` method, but can
-        only add elements spanning single subplots.
+        Adds one or more :class:`~graphinglib.Plottable` objects to the current SmartFigure.
+
+        If the SmartFigure is used as a single plot, the elements are appended to that plot.
+        If the SmartFigure is used as a layout, the elements are applied to the grid from left to right, then top to
+        bottom. Existing child plots are appended to, and empty positions are filled by creating new child plots as
+        needed. This method is equivalent to using the :meth:`~graphinglib.SmartFigure.__setitem__` method for single
+        cells, but can only add elements spanning single subplots.
 
         Parameters
         ----------
-        elements : Plottable | SmartFigure | Iterable[Plottable | SmartFigure]
-            Elements to plot in the :class:`~graphinglib.SmartFigure`. Each given element is added in turn to each
-            subplot in the order they are provided. Iterables of :class:`~graphinglib.Plottable` objects can be provided
-            to add multiple elements in the same subplot. The number of provided elements must be at most the number of
-            subplots unless the :class:`~graphinglib.SmartFigure` is a single subplot, in which case all elements are
-            added to the unique plot. If ``None`` elements are present, the corresponding subplot is skipped and not
-            drawn. If iterables containing only ``None`` are given, the corresponding subplots are drawn but will appear
-            empty.
+        elements : Plottable | Iterable[Plottable]
+            Elements to plot in the :class:`~graphinglib.SmartFigure`. Iterables of
+            :class:`~graphinglib.Plottable` objects can be provided to add multiple elements to the same plot.
+            If the SmartFigure is used as a single plot, all provided elements are added to that plot. If the
+            SmartFigure is used as a layout, the given elements are applied to the grid from left to right, then
+            top to bottom. Existing child plots are appended to, and empty positions are filled by creating new child
+            plots as needed. If ``None`` elements are present, the corresponding target is skipped.
 
             .. note::
-                This method for adding elements only allows to add elements to single subplots. If you want to add
-                elements that span multiple subplots, you should use the :meth:`~graphinglib.SmartFigure.__setitem__`
-                method instead.
+                This method can create new 1x1 child plots when filling an existing layout, but it does not create
+                multi-cell spans. If you want to add elements that span multiple subplots, you should use the
+                :meth:`~graphinglib.SmartFigure.__setitem__` method instead.
 
         Returns
         -------
@@ -1407,29 +1515,242 @@ class SmartFigure:
             For more information on how to use the ``__setitem__`` method to add elements that span multiple columns or
             rows to the :class:`~graphinglib.SmartFigure`.
         """
-        if len(elements) > 0:
-            if (
-                len(elements) > self._num_cols * self._num_rows
-                and not self.is_single_subplot
-            ):
-                raise ValueError(
-                    "Too many elements provided for the number of subplots."
-                )
-            # Check the type of each element
-            for i, element in enumerate(elements):
-                index = (0, 0) if self.is_single_subplot else divmod(i, self._num_cols)
+        if self._mode == "leaf":
+            for element in elements:
+                if element is None:
+                    continue
                 if isinstance(element, Plottable):
-                    self[index] += [element]
+                    self._leaf_elements.append(element)
                 elif SmartFigure._is_iterable_of_plottables(element):
-                    self[index] += list(element)
-                elif isinstance(element, SmartFigure):
-                    self[index] = element
-                elif element is not None:
+                    self._leaf_elements.extend(self._normalize_leaf_rhs(element))
+                else:
                     raise TypeError(
-                        f"Element at index {i} must be a Plottable, an iterable of Plottables, or a SmartFigure, "
-                        f"not {type(element).__name__}."
+                        "Leaf SmartFigures only accept Plottables or iterables of Plottables in add_elements."
                     )
+            return self
+
+        max_cells = self._num_rows * self._num_cols
+        if len(elements) > max_cells:
+            raise ValueError("Too many elements provided for the number of cells in the SmartFigure.")
+
+        for index, element in enumerate(elements):
+            if element is None:
+                continue
+            if isinstance(element, SmartFigure):
+                raise TypeError("Container add_elements does not accept SmartFigures.")
+            key = self._dense_index_to_key(index)
+            overlapping = self._get_overlapping_elements(key)
+
+            if len(overlapping) > 1:
+                raise GraphingException(
+                    "Cannot add elements to a cell that overlaps with multiple different subfigures."
+                )
+
+            if len(overlapping) == 0:
+                self._children[key] = self._make_auto_child(element)
+                self._children = self._ordered_children()
+                self._sync_auto_child_projection(key, self._children[key])
+                continue
+
+            _, child = overlapping[0]
+            if not child.is_single_subplot:
+                raise GraphingException(
+                    "add_elements can only append to child SmartFigures that are used as a single plot."
+                )
+            child += element
         return self
+
+    def __add__(self, other):
+        result = self.copy()
+        result += other
+        return result
+
+    def __iadd__(self, other):
+        if self._mode == "leaf":
+            self._leaf_elements.extend(self._normalize_leaf_rhs(other))
+            return self
+
+        if isinstance(other, SmartFigure) or not isinstance(other, Iterable):
+            raise TypeError(
+                "Container SmartFigure += expects a dense iterable of Plottables or iterables of Plottables."
+            )
+
+        values = list(other)
+        dense = self.elements
+        for index, value in enumerate(values):
+            if index >= len(dense) or value is None:
+                continue
+            child = dense[index]
+            if child is None:
+                continue
+            if isinstance(value, SmartFigure):
+                raise TypeError("Container SmartFigure += does not accept SmartFigures.")
+            child += value
+        return self
+
+    def _ensure_leaf_mode(self) -> None:
+        self._mode = "leaf"
+        self._children = OrderedDict()
+
+    def _ensure_container_mode(self) -> None:
+        if self._mode == "container":
+            return
+        self._mode = "container"
+        self._leaf_elements = []
+
+    def _promote_leaf_to_container(self) -> None:
+        if self._mode != "leaf":
+            return
+        child = None
+        if self._leaf_elements or self._twin_x_axis is not None or self._twin_y_axis is not None:
+            child = self.copy()
+            child._num_rows = 1
+            child._num_cols = 1
+            child._mode = "leaf"
+            child._children = OrderedDict()
+            child._is_auto_child = True
+            child._flatten_in_parent = True
+        self._mode = "container"
+        self._leaf_elements = []
+        self._twin_x_axis = None
+        self._twin_y_axis = None
+        self._children = OrderedDict()
+        if child is not None:
+            self._children[(slice(0, 1), slice(0, 1))] = child
+
+    def _ordered_children(self) -> OrderedDict[tuple[slice, slice], SmartFigure]:
+        return OrderedDict(
+            sorted(
+                self._children.items(),
+                key=lambda item: (item[0][0].start, item[0][1].start),
+            )
+        )
+
+    def _iter_child_items(self) -> Iterator[tuple[tuple[slice, slice], SmartFigure]]:
+        yield from self._ordered_children().items()
+
+    def _make_auto_child(self, value: Plottable | Iterable[Plottable | None]) -> SmartFigure:
+        if isinstance(self, SmartFigureWCS):
+            projection = (
+                self._projection[0] if isinstance(self._projection, list) else self._projection
+            )
+            child = self.__class__(projection=projection)
+        else:
+            child = SmartFigure()
+        child._is_auto_child = True
+        child._flatten_in_parent = True
+        child.elements = self._normalize_leaf_rhs(value)
+        return child
+
+    def _sync_auto_child_projection(
+        self, span: tuple[slice, slice], child: SmartFigure
+    ) -> None:
+        if not child._is_auto_child:
+            return
+        projection = self._projection
+        if isinstance(projection, list):
+            ordered_spans = [existing_span for existing_span, _ in self._iter_child_items()]
+            try:
+                index = ordered_spans.index(span)
+            except ValueError:
+                index = 0
+            if not projection:
+                return
+            projection = projection[min(index, len(projection) - 1)]
+        if projection is None and isinstance(child, SmartFigureWCS):
+            return
+        child.projection = projection
+
+    def _sync_auto_child_projections(self) -> None:
+        for span, child in self._iter_child_items():
+            self._sync_auto_child_projection(span, child)
+
+    def _normalize_leaf_rhs(
+        self, value: Plottable | Iterable[Plottable | None]
+    ) -> list[Plottable]:
+        if isinstance(value, Plottable):
+            return [value]
+        if isinstance(value, SmartFigure) or not SmartFigure._is_iterable_of_plottables(
+            value
+        ):
+            raise TypeError("Leaf contents must be Plottables or iterables of Plottables.")
+        return [element for element in value if element is not None]
+
+    def _get_selected_child(
+        self, key: tuple[slice, slice], original_key: Any = None
+    ) -> tuple[tuple[slice, slice], SmartFigure]:
+        if key in self._children:
+            return key, self._children[key]
+
+        overlapping = self._get_overlapping_elements(key)
+        if len(overlapping) == 0:
+            raise GraphingException(
+                f"The requested slice {original_key if original_key is not None else key} does not select a subfigure."
+            )
+        if len(overlapping) > 1:
+            raise GraphingException(
+                f"The requested slice {original_key if original_key is not None else key} overlaps with multiple subfigures. "
+                "Cannot return a single element. Please use a more specific slice that matches only one subfigure."
+            )
+        return overlapping[0]
+
+    def _should_use_container_elements_setter(self, value_list: list[Any]) -> bool:
+        if any(isinstance(value, SmartFigure) for value in value_list):
+            return True
+        if self._num_rows * self._num_cols > 1:
+            for value in value_list:
+                if value is None:
+                    return True
+                if SmartFigure._is_iterable_of_plottables(value):
+                    return True
+            return len(value_list) <= self._num_rows * self._num_cols
+        return False
+
+    def _dense_index_to_key(self, index: int) -> tuple[slice, slice]:
+        row, col = divmod(index, self._num_cols)
+        return (slice(row, row + 1), slice(col, col + 1))
+
+    def _set_container_elements(self, value_list: list[Any]) -> None:
+        self._ensure_container_mode()
+        self._children = OrderedDict()
+        dense = value_list + [None] * (self._num_rows * self._num_cols - len(value_list))
+        occupied: set[tuple[int, int]] = set()
+
+        for index, value in enumerate(dense[: self._num_rows * self._num_cols]):
+            row, col = divmod(index, self._num_cols)
+            if (row, col) in occupied:
+                if value is not None:
+                    raise GraphingException(
+                        "Dense elements cannot assign a value to a cell already covered by a spanning child."
+                    )
+                continue
+            if value is None:
+                continue
+
+            if isinstance(value, SmartFigure):
+                row_span, col_span = 1, 1
+                child = value
+                child._flatten_in_parent = False
+                child._is_auto_child = False
+            else:
+                row_span, col_span = 1, 1
+                child = self._make_auto_child(value)
+
+            if row + row_span > self._num_rows or col + col_span > self._num_cols:
+                raise GraphingException("Child SmartFigure does not fit in the target dense layout.")
+
+            span = (slice(row, row + row_span), slice(col, col + col_span))
+            for covered_row in range(row, row + row_span):
+                for covered_col in range(col, col + col_span):
+                    if (covered_row, covered_col) in occupied:
+                        raise GraphingException(
+                            "Dense elements contain overlapping SmartFigure spans."
+                        )
+                    occupied.add((covered_row, covered_col))
+            self._children[span] = child
+
+        self._children = self._ordered_children()
+        self._sync_auto_child_projections()
 
     def show(
         self,
@@ -1542,7 +1863,12 @@ class SmartFigure:
             """Recursively saves each element of a SmartFigure to a separate page in the provided PdfPages object."""
             for element in self._ordered_elements.values():
                 if isinstance(element, (Plottable, list)):
-                    subfig = self.copy_with(elements=[element], num_rows=1, num_cols=1)
+                    leaf_elements = element if isinstance(element, list) else [element]
+                    subfig = self.copy_with(
+                        elements=leaf_elements,
+                        num_rows=1,
+                        num_cols=1,
+                    )
                 elif isinstance(element, SmartFigure):
                     subfig = element
                 subfig.save(pdf_file, dpi, transparent)
@@ -1816,7 +2142,8 @@ class SmartFigure:
 
                 # Add reference label
                 if self._subplot_p["reference_labels"][subplot_i] and (
-                    len(self) > 1 or isinstance(self._figure, SubFigure)
+                    (1 if self._mode == "leaf" else len(self)) > 1
+                    or isinstance(self._figure, SubFigure)
                 ):
                     self._create_reference_label(ax, subplot_i)
 
@@ -2067,11 +2394,11 @@ class SmartFigure:
     def _fill_per_subplot_params(self) -> dict[str, Any]:
         """
         Fills the _subplot_p dictionary with parameters that can be broadcasted to all subplots in the
-        :class:`~graphinglib.SmartFigure`. If a parameter is given as a single value, it is broadcasted to all subplots.
-        If it is given as a list, its length must not exceed the number of non-empty subplots. Shorter lists are padded
-        using the default value for that parameter.
+        :class:`~graphinglib.SmartFigure`. If a parameter is given as a single value, it is broadcasted to all
+        subplots drawn by the SmartFigure. If it is given as a list, its length must not exceed the number of
+        subfigures the SmartFigure draws. Shorter lists are padded using the default value for that parameter.
         """
-        self_length = len(self)
+        self_length = 1 if self._mode == "leaf" else len(self)
         blank_figure = (
             SmartFigure()
         )  # create a blank SmartFigure to get the default parameter values
@@ -2111,11 +2438,11 @@ class SmartFigure:
             if isinstance(value, list):
                 if len(value) > self_length:
                     raise GraphingException(
-                        f"Number of {param} values ({len(value)}) must not exceed the number of non-empty subplots "
+                        f"Number of {param} values ({len(value)}) must not exceed the number of subfigures "
                         f"({self_length})."
                     )
                 elif len(value) < self_length:
-                    # Pad the list with default values to reach the number of non-empty subplots
+                    # Pad the list with default values to reach the number of subfigures
                     subplot_p[param] = value + [default_value] * (
                         self_length - len(value)
                     )
@@ -2164,9 +2491,9 @@ class SmartFigure:
         Aligns subplot spines when sharing x axes. This method solves the constrained_layout behavior of misaligning the
         edge of subplots to fill the entire grid space, which leads to misaligned spines even when sharing the x axes.
         """
-        for element in self._ordered_elements.values():
-            if isinstance(element, SmartFigure):
-                element._align_shared_x_spines()
+        for child in self._children.values():
+            if not child._flatten_in_parent:
+                child._align_shared_x_spines()
 
         tolerance = 0.3  # allowed difference between axes to consider them to be in the same column
         if self._share_x and self._num_rows > 1:
@@ -3016,7 +3343,7 @@ class SmartFigure:
         """
         Sets a custom legend for the figure. If the SmartFigure contains multiple subplots, **custom legends only**
         **work if the ``general_legend`` parameter is set to ``True``**. Otherwise, custom legends can be added for
-        non-general legends if the SmartFigure is a single subplot (see the
+        non-general legends if the SmartFigure is currently used as a single plot (see the
         :attr:`~graphinglib.SmartFigure.is_single_subplot` property).
 
         .. note::
@@ -3197,6 +3524,8 @@ class SmartFigure:
         Creates a twin axis for the SmartFigure. This method creates a :class:`~graphinglib.SmartTwinAxis` object that
         can be used to plot elements on a secondary axis in the same subplot.
 
+        Twin axes can only be created for SmartFigures that currently render as a single plot.
+
         Parameters
         ----------
         is_y : bool, optional
@@ -3263,16 +3592,19 @@ class SmartFigureWCS(SmartFigure):
 
     It allows for the creation of complex figures recursively, where each :class:`~graphinglib.SmartFigure` can contain
     other :class:`~graphinglib.SmartFigure` objects. The class supports a variety of customization options as well as
-    the ability to use styles and themes for consistent visual appearance across different figures. The idea behind this
-    class is that every SmartFigure contains a single x_label, y_label, title, projection, etc. and that nested
-    SmartFigures can be inserted into the main SmartFigure to create complex figures with more parameters.
+    the ability to use styles and themes for consistent visual appearance across different figures. A
+    :class:`~graphinglib.SmartFigureWCS` follows the same general behavior as :class:`~graphinglib.SmartFigure`, but
+    uses WCS projections for the plots it draws. The idea behind this class is that every SmartFigure contains a single
+    x_label, y_label, title, projection, etc. and that nested SmartFigures can be inserted into the main SmartFigure
+    to create complex figures with more parameters.
 
     Parameters
     ----------
     projection : WCS | list[WCS]
         The `World Coordinate System (WCS) <https://docs.astropy.org/en/stable/wcs/index.html>`_ object to use for the
         figure. This is used to plot data in a coordinate system that is not Cartesian, such as celestial coordinates.
-        This can be given as a single WCS object or a list of WCS objects to apply to each subplot.
+        This can be given as a single WCS object or a list of WCS objects to apply to each subfigure drawn by the
+        SmartFigure.
     num_rows, num_cols : int, optional
         Number of rows and columns for the base grid. These parameters determine the number of "squares" on which the
         plots can be placed.
@@ -3292,13 +3624,14 @@ class SmartFigureWCS(SmartFigure):
         Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
         single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
         :class:`~graphinglib.SmartFigure` objects for each subfigure only to set the x and y labels. This list cannot
-        be longer than the number of non-empty subplots and None values can be used to skip specific subplots.
+        be longer than the number of subfigures drawn by the SmartFigure and None values can be used to skip specific
+        subfigures.
     subtitles : Iterable[str], optional
         Labels for the subtitles of each subfigure, respectively. Similarly to `sub_x_labels` and `sub_y_labels`, this
         allows to set subtitles for each subfigure without needing to create nested
         :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
-        each subfigure needs its own subtitle. This list cannot be longer than the number of non-empty subplots and None
-        values can be used to skip specific subplots.
+        each subfigure needs its own subtitle. This list cannot be longer than the number of subfigures drawn by the
+        SmartFigure and None values can be used to skip specific subfigures.
     log_scale_x, log_scale_y : bool | list[bool], optional
         Whether to use a logarithmic scale for the x and y axes, respectively. This can be given as a single value or
         a list of values to apply to each subplot.
@@ -3376,9 +3709,8 @@ class SmartFigureWCS(SmartFigure):
         subfigures.
 
         .. note::
-            Sharing axes only works for plots directly inside the SmartFigure. If a nested SmartFigure is used, the
-            axes sharing will not be applied to the nested SmartFigure. Instead, the nested SmartFigure will have its
-            own axes sharing settings.
+            Sharing axes only works for plots drawn directly in the SmartFigure. If you insert an existing nested
+            SmartFigure, that nested figure keeps its own axes sharing settings.
 
     general_legend : bool, optional
         Whether to create a general legend for the entire figure. If set to ``True``, a single legend will be created
@@ -3421,18 +3753,21 @@ class SmartFigureWCS(SmartFigure):
         Defaults to ``"default"``.
     elements : Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]], optional
         The elements to plot in the figure.
-        If an iterable of depth 1 is provided and the figure is 1x1, all the elements are added to the unique plot. For
-        other geometries, the elements are added one by one in the order they are provided to each subplot, and the
-        iterable should not be longer than the number of subplots.
-        If an iterable of depth 2 is provided, each sub-iterable is added to the corresponding subplot, in the order
-        they are provided. The number of sub-iterables should be equal to the number of subplots.
-        If ``None`` elements are present in the iterable, the corresponding subplots are not drawn and a blank space is
-        left in the figure. If iterables containing only ``None`` are given in the main iterable, the corresponding
-        subplots are drawn but empty.
+        If an iterable of :class:`~graphinglib.Plottable` objects is provided, all the elements are added to the
+        SmartFigure's single plot.
+        If a flat iterable is provided for a figure with multiple cells, the items are assigned to the cells from
+        left-to-right, top-to-bottom. Each item can be a child :class:`~graphinglib.SmartFigure`, a
+        :class:`~graphinglib.Plottable`, an iterable of :class:`~graphinglib.Plottable` objects, or ``None``.
+        Plottables and iterables of Plottables create a child plot in that cell. The iterable can be shorter than the
+        total number of cells, in which case the remaining cells are left empty.
+        If a :class:`~graphinglib.SmartFigure` is provided, it occupies exactly one cell in the parent figure. Its
+        ``num_rows`` and ``num_cols`` only describe its internal layout.
 
         .. note::
-            This method for adding elements only allows to add elements to single subplots. If you want to add elements
-            that span multiple subplots, you should use the __setitem__ method instead.
+            The ``elements`` parameter does not use a child :class:`~graphinglib.SmartFigure`'s shape to determine how
+            much space it occupies in the parent. If you want a bare :class:`~graphinglib.Plottable`, an iterable of
+            Plottables, or a child :class:`~graphinglib.SmartFigure` to span multiple subplots in the parent, you
+            should use the __setitem__ method instead.
             For example, to add an element spanning the complete first row , use ``fig[0,:] = element``.
 
     annotations : Iterable[Text], optional
@@ -3550,6 +3885,8 @@ class SmartFigureWCS(SmartFigure):
                     "The projection of a SmartFigureWCS must be a WCS object."
                 )
         self._projection = value
+        if hasattr(self, "_children"):
+            self._sync_auto_child_projections()
 
     def _prepare_figure(
         self,
@@ -3557,12 +3894,13 @@ class SmartFigureWCS(SmartFigure):
         make_legend: bool = True,
     ) -> dict[str, dict[str, list[str | Any]]]:
         """
-        Wraps the parent method to check if the number of projections matches the number of non-empty subplots.
+        Wraps the parent method to check if the number of projections matches the number of subfigures drawn by the
+        SmartFigure.
         """
         if isinstance(self._projection, list) and len(self._projection) != len(self):
             raise GraphingException(
-                f"Number of WCS projections ({len(self._projection)}) must be equal to the number of non-empty "
-                f"subplots ({len(self)})."
+                f"Number of WCS projections ({len(self._projection)}) must be equal to the number of subfigures "
+                f"({len(self)})."
             )
         return super()._prepare_figure(is_matplotlib_style, make_legend)
 
