@@ -8,7 +8,7 @@ matplotlib_use("Agg")  # Use non-GUI backend for tests
 
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from numpy import array, linspace, pi, sin
+from numpy import linspace, pi, sin
 
 try:
     import astropy.units as u
@@ -20,22 +20,13 @@ except ImportError:
     WCS = None
     u = None
 
-from graphinglib.data_plotting_1d import Curve, Histogram, Scatter
-from graphinglib.data_plotting_2d import Contour, Heatmap, Stream, VectorField
+from graphinglib.data_plotting_1d import Curve
 from graphinglib.file_manager import FileLoader
-from graphinglib.fits import FitFromFunction
 from graphinglib.graph_elements import (
     GraphingException,
-    Hlines,
     Plottable,
-    PlottableAxMethod,
-    Point,
-    Table,
     Text,
-    Vlines,
 )
-from graphinglib.legend_artists import LegendLine
-from graphinglib.shapes import Arrow, Circle, Line, Polygon, Rectangle
 from graphinglib.smart_figure import SmartFigure, SmartFigureWCS, SmartTwinAxis
 
 
@@ -546,17 +537,13 @@ class TestSmartFigureContainer(unittest.TestCase, SmartFigurePropertyMixin):
         self.fig.add_elements([DummyPlottable("a"), DummyPlottable("b")])
         self.assertEqual(len(self.fig), 1)
         self.assertEqual(len(self.fig[0, 0].elements), 2)
-        self.assertListEqual(
-            [el.label for el in self.fig[0, 0].elements], ["a", "b"]
-        )
+        self.assertListEqual([el.label for el in self.fig[0, 0].elements], ["a", "b"])
 
     def test_add_elements_targets_existing_children_then_creates_new_ones(self):
         self.fig[0, 0] = DummyPlottable("a")
         self.fig.add_elements(DummyPlottable("a2"), DummyPlottable("b"))
         self.assertEqual(len(self.fig[0, 0].elements), 2)
-        self.assertListEqual(
-            [el.label for el in self.fig[0, 0].elements], ["a", "a2"]
-        )
+        self.assertListEqual([el.label for el in self.fig[0, 0].elements], ["a", "a2"])
         self.assertEqual(self.fig[0, 1].elements[0].label, "b")
 
     def test_add_elements_targets_children_in_grid_order(self):
@@ -697,7 +684,9 @@ class TestSmartFigureContainerRendering(unittest.TestCase):
         fig._figure = plt.figure()
         fig._prepare_figure()
         axes = self._get_plot_axes(fig)
-        self.assertFalse(any(label.get_visible() for label in axes[0].get_xticklabels()))
+        self.assertFalse(
+            any(label.get_visible() for label in axes[0].get_xticklabels())
+        )
         plt.close(fig._figure)
 
     def test_explicit_nested_children_remain_true_nested(self):
@@ -776,9 +765,7 @@ class TestSmartFigureContainerRendering(unittest.TestCase):
         self.assertFalse(
             any(label.get_visible() for label in axes[0].get_xticklabels())
         )
-        self.assertTrue(
-            any(label.get_visible() for label in axes[1].get_xticklabels())
-        )
+        self.assertTrue(any(label.get_visible() for label in axes[1].get_xticklabels()))
         plt.close(fig._figure)
 
     def test_parent_list_values_longer_than_children_raise(self):
@@ -801,9 +788,7 @@ class TestSmartFigureContainerRendering(unittest.TestCase):
         self.assertFalse(
             any(label.get_visible() for label in axes[0].get_xticklabels())
         )
-        self.assertTrue(
-            any(label.get_visible() for label in axes[1].get_xticklabels())
-        )
+        self.assertTrue(any(label.get_visible() for label in axes[1].get_xticklabels()))
         plt.close(fig._figure)
 
     def test_explicit_child_override_blocks_parent_inheritance(self):
@@ -816,9 +801,7 @@ class TestSmartFigureContainerRendering(unittest.TestCase):
         parent._figure = plt.figure()
         parent._prepare_figure()
         axes = self._get_plot_axes(parent)
-        self.assertTrue(
-            any(label.get_visible() for label in axes[0].get_xticklabels())
-        )
+        self.assertTrue(any(label.get_visible() for label in axes[0].get_xticklabels()))
         self.assertFalse(
             any(label.get_visible() for label in axes[1].get_xticklabels())
         )
