@@ -57,7 +57,7 @@ For example, let's create a :class:`~graphinglib.SmartFigure` with 2 rows, 3 col
     :context: close-figs
 
     random_curve = lambda: gl.Curve.from_function(
-        lambda x: np.random.rand() * np.sin(x), 0, 2*np.pi
+        lambda x: np.random.rand() * np.sin(x + np.random.rand() * 2 * np.pi), 0, 2*np.pi
     )
     figure = gl.SmartFigure(2, 3, elements=[random_curve() for _ in range(6)])
     figure.show()
