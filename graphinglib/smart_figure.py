@@ -337,9 +337,7 @@ class SmartFigure:
         self.twin_y_axis = twin_y_axis
         self.figure_style = figure_style
         if isinstance(elements, Plottable):
-            raise TypeError(
-                "elements must be an iterable when passed to the SmartFigure constructor."
-            )
+            elements = [elements]
         self.elements = elements
         self.annotations = annotations
 
@@ -1214,9 +1212,7 @@ class SmartFigure:
         self._children = self._ordered_children()
         self._sync_auto_child_projection(changed_span, changed_child)
 
-    def __getitem__(
-        self, key: int | slice | tuple[int | slice]
-    ) -> SmartFigure:
+    def __getitem__(self, key: int | slice | tuple[int | slice]) -> SmartFigure:
         """
         Gives the child SmartFigure at the specified key in the SmartFigure. This can be used to modify or extract
         directly a child figure in a SmartFigure used as a layout. The indexing follows classical 2D numpy-like indexing,
@@ -1244,8 +1240,12 @@ class SmartFigure:
             The child SmartFigure at the specified key.
         """
         if self._mode == "leaf":
-            raise GraphingException("Leaf SmartFigures do not support subplot indexing.")
-        span, child = self._get_selected_child(self._validate_and_normalize_key(key), key)
+            raise GraphingException(
+                "Leaf SmartFigures do not support subplot indexing."
+            )
+        span, child = self._get_selected_child(
+            self._validate_and_normalize_key(key), key
+        )
         self._sync_auto_child_projection(span, child)
         return child
 
@@ -1433,10 +1433,10 @@ class SmartFigure:
         bool
             True if the item is an iterable of Plottable elements or None, False otherwise.
         """
-        return not isinstance(item, (str, bytes, SmartFigure)) and isinstance(
-            item, Iterable
-        ) and all(
-            isinstance(el, (Plottable, type(None))) for el in item
+        return (
+            not isinstance(item, (str, bytes, SmartFigure))
+            and isinstance(item, Iterable)
+            and all(isinstance(el, (Plottable, type(None))) for el in item)
         )
 
     def _get_overlapping_elements(
@@ -1531,7 +1531,9 @@ class SmartFigure:
 
         max_cells = self._num_rows * self._num_cols
         if len(elements) > max_cells:
-            raise ValueError("Too many elements provided for the number of cells in the SmartFigure.")
+            raise ValueError(
+                "Too many elements provided for the number of cells in the SmartFigure."
+            )
 
         for index, element in enumerate(elements):
             if element is None:
@@ -1584,7 +1586,9 @@ class SmartFigure:
             if child is None:
                 continue
             if isinstance(value, SmartFigure):
-                raise TypeError("Container SmartFigure += does not accept SmartFigures.")
+                raise TypeError(
+                    "Container SmartFigure += does not accept SmartFigures."
+                )
             child += value
         return self
 
@@ -1602,7 +1606,11 @@ class SmartFigure:
         if self._mode != "leaf":
             return
         child = None
-        if self._leaf_elements or self._twin_x_axis is not None or self._twin_y_axis is not None:
+        if (
+            self._leaf_elements
+            or self._twin_x_axis is not None
+            or self._twin_y_axis is not None
+        ):
             child = self.copy()
             child._num_rows = 1
             child._num_cols = 1
@@ -1629,10 +1637,14 @@ class SmartFigure:
     def _iter_child_items(self) -> Iterator[tuple[tuple[slice, slice], SmartFigure]]:
         yield from self._ordered_children().items()
 
-    def _make_auto_child(self, value: Plottable | Iterable[Plottable | None]) -> SmartFigure:
+    def _make_auto_child(
+        self, value: Plottable | Iterable[Plottable | None]
+    ) -> SmartFigure:
         if isinstance(self, SmartFigureWCS):
             projection = (
-                self._projection[0] if isinstance(self._projection, list) else self._projection
+                self._projection[0]
+                if isinstance(self._projection, list)
+                else self._projection
             )
             child = self.__class__(projection=projection)
         else:
@@ -1649,7 +1661,9 @@ class SmartFigure:
             return
         projection = self._projection
         if isinstance(projection, list):
-            ordered_spans = [existing_span for existing_span, _ in self._iter_child_items()]
+            ordered_spans = [
+                existing_span for existing_span, _ in self._iter_child_items()
+            ]
             try:
                 index = ordered_spans.index(span)
             except ValueError:
@@ -1673,7 +1687,9 @@ class SmartFigure:
         if isinstance(value, SmartFigure) or not SmartFigure._is_iterable_of_plottables(
             value
         ):
-            raise TypeError("Leaf contents must be Plottables or iterables of Plottables.")
+            raise TypeError(
+                "Leaf contents must be Plottables or iterables of Plottables."
+            )
         return [element for element in value if element is not None]
 
     def _get_selected_child(
@@ -1713,7 +1729,9 @@ class SmartFigure:
     def _set_container_elements(self, value_list: list[Any]) -> None:
         self._ensure_container_mode()
         self._children = OrderedDict()
-        dense = value_list + [None] * (self._num_rows * self._num_cols - len(value_list))
+        dense = value_list + [None] * (
+            self._num_rows * self._num_cols - len(value_list)
+        )
         occupied: set[tuple[int, int]] = set()
 
         for index, value in enumerate(dense[: self._num_rows * self._num_cols]):
@@ -1737,7 +1755,9 @@ class SmartFigure:
                 child = self._make_auto_child(value)
 
             if row + row_span > self._num_rows or col + col_span > self._num_cols:
-                raise GraphingException("Child SmartFigure does not fit in the target dense layout.")
+                raise GraphingException(
+                    "Child SmartFigure does not fit in the target dense layout."
+                )
 
             span = (slice(row, row + row_span), slice(col, col + col_span))
             for covered_row in range(row, row + row_span):
