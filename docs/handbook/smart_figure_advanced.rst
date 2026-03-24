@@ -216,7 +216,7 @@ You can retrieve child plots using indexing. Indexing returns the :class:`~graph
 
     fig = gl.SmartFigure(2, 2)
     fig[0, 0] = [curve1, curve2]
-    fig[1, 0] = [curve1]
+    fig[1, 0] = curve1
     child = fig[0, 0]
     curves = child.elements  # Returns [curve1, curve2]
     single_curve = fig[1, 0].elements[0]  # Returns curve1
