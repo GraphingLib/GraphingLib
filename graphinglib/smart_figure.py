@@ -224,7 +224,7 @@ class SmartFigure:
     figure_style : str, optional
         The figure style to use for the figure. The default style can be set using ``gl.set_default_style()``.
         Defaults to ``"default"``.
-    elements : Plottable | Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]], optional
+    elements : Plottable | Iterable[Plottable | SmartFigure | None] | Iterable[Iterable[Plottable | None]], optional
         The elements to plot in the figure.
         For a standalone :class:`~graphinglib.SmartFigure`:class:`~graphinglib.SmartFigure`, this can be a single
         :class:`~graphinglib.Plottable` or an iterable of :class:`~graphinglib.Plottable` objects to plot in the figure.

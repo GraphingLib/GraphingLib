@@ -131,6 +131,9 @@ Setting the :py:attr:`~graphinglib.SmartFigure.elements` property **replaces all
 .. note::
    An existing child :class:`~graphinglib.SmartFigure` always occupies exactly one cell when it is placed through the ``elements`` property. Its ``num_rows`` and ``num_cols`` only describe its internal layout. If you want a child :class:`~graphinglib.SmartFigure`, a bare :class:`~graphinglib.Plottable`, or an iterable of Plottables to span multiple cells in the parent figure, use indexing with ``[]`` instead.
 
+.. note::
+   Reading the ``elements`` property returns the SmartFigure's current contents. For a single-plot :class:`~graphinglib.SmartFigure`, it returns the list of plotted :class:`~graphinglib.Plottable` objects. For a layout, it returns a list containing child :class:`~graphinglib.SmartFigure` objects or ``None`` placeholders for empty cells. A child spanning multiple cells appears only at its anchor position in that dense list.
+
 Indexing using ``__setitem__``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
