@@ -20,7 +20,7 @@ Creating a basic figure using the :class:`~graphinglib.SmartFigure` object is ea
 
     sine = gl.Curve.from_function(lambda x: np.sin(x), 0, 2 * np.pi)
 
-    figure = gl.SmartFigure(elements=[sine])
+    figure = gl.SmartFigure(elements=sine)
     figure.show()
 
 The :py:meth:`~graphinglib.SmartFigure.show` method is used to show the figure on screen. It is also possible to use the :py:meth:`~graphinglib.SmartFigure.save` method to save the figure to a specified path while setting certain options like the resolution (dpi).
@@ -34,7 +34,7 @@ We can specify the axis labels by using the ``x_label`` and ``y_label`` paramete
 .. plot::
     :context: close-figs
 
-    figure = gl.SmartFigure(x_label="Time (s)", y_label="Potential (V)", elements=[sine])
+    figure = gl.SmartFigure(x_label="Time (s)", y_label="Potential (V)", elements=sine)
     figure.show()
 
 As a general note, all parameters available in the constructor are also available as properties. This means that you can set or modify them after creating the :class:`~graphinglib.SmartFigure`. For further informations on the available parameters and methods, please refer to the :doc:`handbook section on complex SmartFigures </handbook/smart_figure_advanced>` or the :doc:`reference section on SmartFigure objects <../generated/graphinglib.SmartFigure>`.
@@ -196,7 +196,7 @@ In short, the ``figure_style`` chosen in a parent :class:`~graphinglib.SmartFigu
     # Create the figures and add the elements
     figure1 = gl.SmartFigure(figure_style="dark")
     figure1.add_elements(sine)
-    figure2 = gl.SmartFigure(elements=[cosine])
+    figure2 = gl.SmartFigure(elements=cosine)
 
     # Create the parent SmartFigure and add the figures to it
     # Use the "plain" style which has a black axes edge color

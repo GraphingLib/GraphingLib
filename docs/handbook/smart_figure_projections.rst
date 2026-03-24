@@ -115,7 +115,7 @@ The most common workflow involves loading a FITS file that contains WCS informat
     fig = gl.SmartFigureWCS(
         projection=wcs,
         title="Astronomical Image",
-        elements=[heatmap]
+        elements=heatmap
     )
 
 .. note::
@@ -149,7 +149,7 @@ For testing or custom coordinate systems, you can create WCS objects programmati
     fig = gl.SmartFigureWCS(
         projection=wcs,
         title="Synthetic WCS Image",
-        elements=[heatmap]
+        elements=heatmap
     )
     fig.show()
 
@@ -168,7 +168,7 @@ Control how coordinates are displayed:
         projection=wcs,
         x_label="Right Ascension (J2000)",
         y_label="Declination (J2000)",
-        elements=[heatmap]
+        elements=heatmap
     )
 
     # Customize ticks
@@ -195,7 +195,7 @@ WCS coordinate grids follow the curved coordinate system:
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigureWCS(projection=wcs, elements=[heatmap])
+    fig = gl.SmartFigureWCS(projection=wcs, elements=heatmap)
 
     # Add coordinate grid
     fig.set_grid(
@@ -262,7 +262,7 @@ Combine WCS figures with standard figures:
     wcs_fig = gl.SmartFigureWCS(
         projection=wcs,
         title="Sky Image",
-        elements=[heatmap]
+        elements=heatmap
     )
 
     # Create standard analysis plots
@@ -273,7 +273,7 @@ Combine WCS figures with standard figures:
         title="Analysis",
         x_label="Radius (arcsec)",
         y_label="Intensity",
-        elements=[profile]
+        elements=profile
     )
 
     # Combine them

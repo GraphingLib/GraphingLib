@@ -234,9 +234,11 @@ class TestSmartFigureLeaf(unittest.TestCase, SmartFigurePropertyMixin):
         with self.assertRaises(TypeError):
             SmartFigure(elements=[1])
         with self.assertRaises(TypeError):
-            SmartFigure(elements=DummyPlottable())
-        with self.assertRaises(TypeError):
             SmartFigure(elements=[[[DummyPlottable()]]])
+        single = DummyPlottable("single")
+        fig = SmartFigure(elements=single)
+        self.assertEqual(len(fig.elements), 1)
+        self.assertIs(fig.elements[0], single)
         SmartFigure(elements=(DummyPlottable(),))
         SmartFigure(elements=[DummyPlottable(), DummyPlottable()])
 
@@ -983,6 +985,11 @@ class TestSmartTwinAxis(unittest.TestCase):
         self.assertEqual(twin_axis.axis_lim, (0, 10))
         self.assertEqual(len(twin_axis._elements), 2)
 
+    def test_init_accepts_single_element(self):
+        twin_axis = SmartTwinAxis(elements=self.curve1)
+        self.assertEqual(len(twin_axis._elements), 1)
+        self.assertIs(twin_axis._elements[0], self.curve1)
+
     def test_axis_lim(self):
         with self.assertRaises(TypeError):
             self.twin_axis.axis_lim = 1
@@ -1028,6 +1035,9 @@ class TestSmartTwinAxis(unittest.TestCase):
             self.twin_axis.elements = "not_a_list"
         with self.assertRaises(TypeError):
             self.twin_axis.elements = [1, 2, 3]
+        self.twin_axis.elements = DummyPlottable("single")
+        self.assertEqual(len(self.twin_axis.elements), 1)
+        self.assertEqual(self.twin_axis.elements[0].label, "single")
         self.twin_axis.elements = [DummyPlottable(), DummyPlottable()]
         self.assertEqual(len(self.twin_axis.elements), 2)
         self.twin_axis.elements = [

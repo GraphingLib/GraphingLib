@@ -224,17 +224,17 @@ class SmartFigure:
     figure_style : str, optional
         The figure style to use for the figure. The default style can be set using ``gl.set_default_style()``.
         Defaults to ``"default"``.
-    elements : Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]], optional
+    elements : Plottable | Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]], optional
         The elements to plot in the figure.
-        If an iterable of :class:`~graphinglib.Plottable` objects is provided, all the elements are added to the
-        SmartFigure's single plot.
-        If a flat iterable is provided for a figure with multiple cells, the items are assigned to the cells from
-        left-to-right, top-to-bottom. Each item can be a child :class:`~graphinglib.SmartFigure`, a
-        :class:`~graphinglib.Plottable`, an iterable of :class:`~graphinglib.Plottable` objects, or ``None``.
-        Plottables and iterables of Plottables create a child plot in that cell. The iterable can be shorter than the
-        total number of cells, in which case the remaining cells are left empty.
-        If a :class:`~graphinglib.SmartFigure` is provided, it occupies exactly one cell in the parent figure. Its
-        ``num_rows`` and ``num_cols`` only describe its internal layout.
+        For a standalone :class:`~graphinglib.SmartFigure`:class:`~graphinglib.SmartFigure`, this can be a single
+        :class:`~graphinglib.Plottable` or an iterable of :class:`~graphinglib.Plottable` objects to plot in the figure.
+        For a :class:`~graphinglib.SmartFigure` with multiple cells, passing a single :class:`~graphinglib.Plottable`
+        will add it in the first cell of the figure. If an iterable is provided for a figure with multiple cells,
+        the items are assigned to the cells from left-to-right, top-to-bottom. Each item can be a child
+        :class:`~graphinglib.SmartFigure`, a :class:`~graphinglib.Plottable`, an iterable of :class:`~graphinglib.Plottable`
+        objects, or ``None``. The iterable can be shorter than the total number of cells, in which case the remaining cells
+        are left empty. If a :class:`~graphinglib.SmartFigure` is provided, it occupies exactly one cell in the parent figure.
+        Its ``num_rows`` and ``num_cols`` only describe its internal layout.
 
         .. note::
             The ``elements`` parameter does not use a child :class:`~graphinglib.SmartFigure`'s shape to determine how
@@ -290,7 +290,8 @@ class SmartFigure:
         twin_x_axis: SmartTwinAxis | None = None,
         twin_y_axis: SmartTwinAxis | None = None,
         figure_style: str = "default",
-        elements: Iterable[Plottable | SmartFigure | None]
+        elements: Plottable
+        | Iterable[Plottable | SmartFigure | None]
         | Iterable[Iterable[Plottable | None]] = [],
         annotations: Iterable[Text] | None = None,
     ) -> None:
@@ -3538,7 +3539,7 @@ class SmartFigure:
         log_scale: bool = False,
         remove_axes: bool = False,
         remove_ticks: bool = False,
-        elements: Iterable[Plottable | None] = [],
+        elements: Plottable | Iterable[Plottable | None] = [],
     ) -> SmartTwinAxis:
         """
         Creates a twin axis for the SmartFigure. This method creates a :class:`~graphinglib.SmartTwinAxis` object that
@@ -3564,9 +3565,9 @@ class SmartFigure:
         remove_ticks : bool, optional
             Whether to remove the ticks from the twin axis.
             Defaults to ``False``.
-        elements : Iterable[Plottable | None], optional
-            Elements to plot in the twin axis. This must be an iterable of
-            :class:`~graphinglib.Plottable` objects. If ``None`` elements are present, they are ignored.
+        elements : Plottable | Iterable[Plottable | None], optional
+            Elements to plot in the twin axis. A single :class:`~graphinglib.Plottable` is accepted and is treated as
+            a one-element list. If an iterable is provided, any ``None`` elements are ignored.
             Defaults to empty list.
 
         Returns
@@ -3771,10 +3772,11 @@ class SmartFigureWCS(SmartFigure):
     figure_style : str, optional
         The figure style to use for the figure. The default style can be set using ``gl.set_default_style()``.
         Defaults to ``"default"``.
-    elements : Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]], optional
+    elements : Plottable | Iterable[Plottable | SmartFigure] | Iterable[Iterable[Plottable | SmartFigure]], optional
         The elements to plot in the figure.
-        If an iterable of :class:`~graphinglib.Plottable` objects is provided, all the elements are added to the
-        SmartFigure's single plot.
+        If a single :class:`~graphinglib.Plottable` is provided, it is added as the only element in the SmartFigure's
+        single plot. If an iterable of :class:`~graphinglib.Plottable` objects is provided, all the elements are added
+        to the SmartFigure's single plot.
         If a flat iterable is provided for a figure with multiple cells, the items are assigned to the cells from
         left-to-right, top-to-bottom. Each item can be a child :class:`~graphinglib.SmartFigure`, a
         :class:`~graphinglib.Plottable`, an iterable of :class:`~graphinglib.Plottable` objects, or ``None``.
@@ -3837,7 +3839,8 @@ class SmartFigureWCS(SmartFigure):
         twin_x_axis: SmartTwinAxis | None = None,
         twin_y_axis: SmartTwinAxis | None = None,
         figure_style: str = "default",
-        elements: Iterable[Plottable | SmartFigure | None]
+        elements: Plottable
+        | Iterable[Plottable | SmartFigure | None]
         | Iterable[Iterable[Plottable | None]] = [],
         annotations: Iterable[Text] | None = None,
     ) -> None:
@@ -4328,9 +4331,10 @@ class SmartTwinAxis:
     invert_axis : bool, optional
         Whether to invert the twin axis.
         Defaults to ``False``.
-    elements : Iterable[Plottable | None], optional
-        Elements to plot in the twin axis. This must be an iterable of :class:`~graphinglib.Plottable` objects. If
-        ``None`` values are present, they are ignored.
+    elements : Plottable | Iterable[Plottable | None], optional
+        Elements to plot in the twin axis. A single :class:`~graphinglib.Plottable` is accepted and is treated as a
+        one-element list. If an iterable is provided, any ``None`` values are ignored. See the ``elements`` parameter of the
+        :class:`~graphinglib.SmartFigure` class for more details.
     """
 
     def __init__(
@@ -4341,7 +4345,7 @@ class SmartTwinAxis:
         remove_axes: bool = False,
         remove_ticks: bool = False,
         invert_axis: bool = False,
-        elements: Iterable[Plottable | None] = [],
+        elements: Plottable | Iterable[Plottable | None] = [],
     ) -> None:
         self.label = label
         self.axis_lim = axis_lim
@@ -4427,12 +4431,11 @@ class SmartTwinAxis:
         return self._elements
 
     @elements.setter
-    def elements(self, value: Iterable[Plottable | None]) -> None:
-        """
-        Sets the elements of the SmartTwinAxis with the same rules as the constructor. For adding elements instead of
-        replacing them, use the :meth:`~graphinglib.SmartTwinAxis.add_elements` method.
-        """
+    def elements(self, value: Plottable | Iterable[Plottable | None]) -> None:
         self._elements = []  # systematically reset the elements when setting them with the property
+        if isinstance(value, Plottable):
+            self.add_elements(value)
+            return
         self.add_elements(*value)
 
     def __len__(self) -> int:

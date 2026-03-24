@@ -75,8 +75,8 @@ When creating a :class:`~graphinglib.SmartFigure`, you can pass elements directl
     :context: close-figs
 
     # You can also place existing SmartFigures directly in the layout
-    child1 = gl.SmartFigure(elements=[curve1], title="Child 1")
-    child2 = gl.SmartFigure(elements=[curve2], title="Child 2")
+    child1 = gl.SmartFigure(elements=curve1, title="Child 1")
+    child2 = gl.SmartFigure(elements=curve2, title="Child 2")
 
     fig = gl.SmartFigure(1, 2, elements=[child1, child2])
     fig.show()
@@ -89,7 +89,7 @@ The :py:meth:`~graphinglib.SmartFigure.add_elements` method **adds** elements wi
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.add_elements(curve2)  # Adds curve2 to the same subplot
     fig.show()
 
@@ -120,9 +120,9 @@ Setting the :py:attr:`~graphinglib.SmartFigure.elements` property **replaces all
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     # This REPLACES curve1 with curve2
-    fig.elements = [curve2]
+    fig.elements = curve2
     fig.show()
 
 .. note::
@@ -384,14 +384,14 @@ Control the overall figure size with the ``size`` parameter:
     :context: close-figs
 
     # Size in inches (width, height)
-    fig = gl.SmartFigure(size=(10, 6), elements=[curve1])
+    fig = gl.SmartFigure(size=(10, 6), elements=curve1)
     fig.show()
 
 .. plot::
     :context: close-figs
 
     # Use "default" to let the style file determine the size
-    fig = gl.SmartFigure(size="default", elements=[curve1])
+    fig = gl.SmartFigure(size="default", elements=curve1)
     fig.show()
 
 .. note::
@@ -476,7 +476,7 @@ Set labels for the entire figure:
         x_label="Time (s)",
         y_label="Voltage (V)",
         title="Signal Analysis",
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -538,7 +538,7 @@ Set axis limits for all subplots:
     fig = gl.SmartFigure(
         x_lim=(0, 5),
         y_lim=(-1.5, 1.5),
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -555,7 +555,7 @@ Enable logarithmic scales:
     fig = gl.SmartFigure(
         log_scale_x=False,
         log_scale_y=True,
-        elements=[exp_curve]
+        elements=exp_curve,
     )
     fig.show()
 
@@ -572,7 +572,7 @@ Control aspect ratio of the data and the plot box:
 
     fig = gl.SmartFigure(
         aspect_ratio="equal",  # Makes circle truly circular
-        elements=[circle]
+        elements=circle,
     )
     fig.show()
 
@@ -582,7 +582,7 @@ Control aspect ratio of the data and the plot box:
     # box_aspect_ratio controls the plot box shape
     fig = gl.SmartFigure(
         box_aspect_ratio=2.0,  # Box is twice as tall as wide
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -600,7 +600,7 @@ Invert axes direction:
     fig = gl.SmartFigure(
         invert_x_axis=True,
         invert_y_axis=False,
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -616,7 +616,7 @@ Removing Axes and Ticks
     # Remove entire axes
     fig = gl.SmartFigure(
         remove_axes=True,
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -627,7 +627,7 @@ Removing Axes and Ticks
     fig = gl.SmartFigure(
         remove_x_ticks=True,
         remove_y_ticks=False,
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -665,7 +665,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_ticks` method provides fine-grained c
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
 
     # Set custom tick positions
     fig.set_ticks(
@@ -678,7 +678,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_ticks` method provides fine-grained c
     :context: close-figs
 
     # Use automatic spacing
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_ticks(
         x_tick_spacing=np.pi/4,
         y_tick_spacing=0.5
@@ -689,7 +689,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_ticks` method provides fine-grained c
     :context: close-figs
 
     # Add minor ticks
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_ticks(
         x_tick_spacing=np.pi/2,
         minor_x_tick_spacing=np.pi/8,
@@ -701,7 +701,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_ticks` method provides fine-grained c
     :context: close-figs
 
     # Reset to defaults
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_ticks(x_tick_spacing=1.0)  # Set custom ticks
     fig.set_ticks(reset=True)  # Reset to default behavior
     fig.show()
@@ -714,7 +714,7 @@ You can also provide a custom tick label formatter function that takes a tick va
     # Use a formatter and specify tick positions
     formatter = lambda v: f"{v/np.pi:.1f}π" if v != 0 else "0"
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_ticks(
         x_ticks=[0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi],
         x_tick_labels=formatter
@@ -727,7 +727,7 @@ You can also provide a custom tick label formatter function that takes a tick va
     # Use a formatter and specify tick spacing
     formatter = lambda v: f"$y={v}$"
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_ticks(
         y_tick_spacing=0.5,
         y_tick_labels=formatter,
@@ -745,7 +745,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_tick_params` method controls tick app
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
 
     # Customize major ticks
     fig.set_tick_params(
@@ -776,7 +776,7 @@ You can also control the presence of ticks and labels on specific sides of the p
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_tick_params(
         axis="x",
         draw_top_ticks=True,
@@ -799,7 +799,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_grid` method enables and customizes g
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
 
     # Basic grid
     fig.set_grid()
@@ -811,7 +811,7 @@ The same parameters are applied to both axes and major and minor grid lines, but
     :context: close-figs
 
     # Customize grid appearance
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_grid(
         visible_x=True,
         visible_y=True,
@@ -883,7 +883,7 @@ Other than adding :class:`~graphinglib.Text` elements directly to subplots, you 
     note2 = gl.Text(0.05, 0.05, "Bottom Left Note", "green")
 
     fig = gl.SmartFigure(
-        elements=[curve1],
+        elements=curve1,
         annotations=[note1, note2]
     )
     fig.show()
@@ -1073,7 +1073,7 @@ The ``figure_style`` parameter applies predefined visual themes:
     # GraphingLib built-in styles
     fig = gl.SmartFigure(
         figure_style="dim",
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -1083,7 +1083,7 @@ The ``figure_style`` parameter applies predefined visual themes:
     # Matplotlib styles
     fig = gl.SmartFigure(
         figure_style="seaborn-v0_8",
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -1098,7 +1098,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_rc_params` method provides direct acc
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
 
     fig.set_rc_params({
         "axes.facecolor": "#f0f0f0",
@@ -1132,7 +1132,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_visual_params` method provides a conv
     fig = gl.SmartFigure(
         x_label="X",
         y_label="Y",
-        elements=[curve1]
+        elements=curve1,
     )
 
     fig.set_visual_params(
@@ -1168,7 +1168,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_visual_params` method provides a conv
     :context: close-figs
 
     # Hide individual spines
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_visual_params(
         hidden_spines=["top", "right"]
     )
@@ -1443,8 +1443,8 @@ Basic Nesting
     :context: close-figs
 
     # Create individual figures
-    fig1 = gl.SmartFigure(elements=[curve1], reference_labels=False)
-    fig2 = gl.SmartFigure(elements=[curve2], reference_labels=True)
+    fig1 = gl.SmartFigure(elements=curve1, reference_labels=False)
+    fig2 = gl.SmartFigure(elements=curve2, reference_labels=True)
 
     # Combine them
     parent = gl.SmartFigure(num_cols=2, elements=[fig1, fig2])
@@ -1457,12 +1457,12 @@ Basic Nesting
     fig1 = gl.SmartFigure(
         x_label="Time (s)",
         y_label="Signal 1",
-        elements=[curve1]
+        elements=curve1,
     )
     fig2 = gl.SmartFigure(
         x_label="Frequency (Hz)",
         y_label="Signal 2",
-        elements=[curve2]
+        elements=curve2,
     )
 
     parent = gl.SmartFigure(
@@ -1477,8 +1477,8 @@ You can also use indexing to modify nested figures after creation:
 .. plot::
     :context: close-figs
 
-    fig1 = gl.SmartFigure(elements=[curve1])
-    fig2 = gl.SmartFigure(elements=[curve2])
+    fig1 = gl.SmartFigure(elements=curve1)
+    fig2 = gl.SmartFigure(elements=curve2)
 
     parent = gl.SmartFigure(num_cols=2, elements=[fig1, fig2])
 
@@ -1497,8 +1497,8 @@ You can nest :class:`~graphinglib.SmartFigure` objects any number of levels deep
     :context: close-figs
 
     # Level 1: Basic figures
-    fig_a = gl.SmartFigure(elements=[curve1]).set_tick_params(color="red", width=10)
-    fig_b = gl.SmartFigure(elements=[curve2]).set_tick_params(color="blue", width=10)
+    fig_a = gl.SmartFigure(elements=curve1).set_tick_params(color="red", width=10)
+    fig_b = gl.SmartFigure(elements=curve2).set_tick_params(color="blue", width=10)
 
     # Level 2: Combine into two other figures
     row = gl.SmartFigure(num_cols=2, elements=[fig_a, fig_b], global_reference_label=True)
@@ -1519,8 +1519,8 @@ The ``figure_style`` and visual parameters are inherited by nested figures:
     :context: close-figs
 
     # Parent style applies to all nested figures
-    fig1 = gl.SmartFigure(elements=[curve1])
-    fig2 = gl.SmartFigure(elements=[curve2])
+    fig1 = gl.SmartFigure(elements=curve1)
+    fig2 = gl.SmartFigure(elements=curve2)
 
     parent = gl.SmartFigure(
         num_cols=2,
@@ -1551,12 +1551,12 @@ The :py:meth:`~graphinglib.SmartFigure.copy_with` method is especially useful wh
     base_fig = gl.SmartFigure(
         x_label="Time",
         y_label="Amplitude",
-        elements=[curve1]
+        elements=curve1
     )
 
     # Create variations
     fig1 = base_fig.copy_with(title="Sine Wave")
-    fig2 = base_fig.copy_with(title="Cosine Wave", elements=[curve2])
+    fig2 = base_fig.copy_with(title="Cosine Wave", elements=curve2)
 
     parent = gl.SmartFigure(num_cols=2, elements=[fig1, fig2])
     parent.show()
@@ -1594,7 +1594,7 @@ Creating Twin Axes
     fig = gl.SmartFigure(
         x_label="Time (h)",
         y_label="Temperature (°C)",
-        elements=[temp_curve]
+        elements=temp_curve,
     )
 
     # Add twin y-axis for humidity data
@@ -1604,7 +1604,7 @@ Creating Twin Axes
     twin_y = fig.create_twin_axis(
         is_y=True,
         label="Humidity (%)",
-        elements=[humidity_curve]
+        elements=humidity_curve,
     )
 
     fig.show()
@@ -1617,7 +1617,7 @@ Creating Twin Axes
     fig = gl.SmartFigure(
         x_label="Time (s)",
         y_label="Amplitude",
-        elements=[time_curve]
+        elements=time_curve,
     )
 
     freq_curve = gl.Curve.from_function(lambda x: np.cos(x), 0, 2*np.pi,
@@ -1626,7 +1626,7 @@ Creating Twin Axes
     twin_x = fig.create_twin_axis(
         is_y=False,
         label="Frequency (Hz)",
-        elements=[freq_curve]
+        elements=freq_curve,
     )
 
     fig.show()
@@ -1644,13 +1644,13 @@ Even if the :class:`~graphinglib.SmartTwinAxis` can not be plotted alone, you ca
         label="Secondary Axis",
         axis_lim=(0, 100),
         log_scale=False,
-        elements=[humidity_curve]
+        elements=humidity_curve,
     )
 
     fig = gl.SmartFigure(
         y_label="Primary Axis",
         twin_y_axis=twin,
-        elements=[temp_curve]
+        elements=temp_curve,
     )
     fig.show()
 
@@ -1660,13 +1660,13 @@ Twin Axis Customization
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[temp_curve])
+    fig = gl.SmartFigure(elements=temp_curve)
 
     twin_y = fig.create_twin_axis(
         is_y=True,
         label="Humidity (%)",
         axis_lim=(0, 100),
-        elements=[humidity_curve]
+        elements=humidity_curve,
     )
 
     # Customize twin axis appearance
@@ -1688,10 +1688,10 @@ Twin Axis Customization
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[temp_curve])
+    fig = gl.SmartFigure(elements=temp_curve)
 
     # Managing twin axis elements
-    twin_y = fig.create_twin_axis(is_y=True, elements=[humidity_curve])
+    twin_y = fig.create_twin_axis(is_y=True, elements=humidity_curve)
 
     # Add more elements
     extra_curve = gl.Curve.from_function(lambda x: 50 + 10*np.sin(2*x), 0, 2*np.pi,
@@ -1750,7 +1750,7 @@ The most common projection is the polar coordinate system:
     fig = gl.SmartFigure(
         projection="polar",
         aspect_ratio="equal",
-        elements=[polar_curve]
+        elements=polar_curve,
     )
     fig.show()
 
@@ -1795,7 +1795,7 @@ Matplotlib provides several map-like projections useful for displaying data on s
     fig = gl.SmartFigure(
         projection="mollweide",
         title="Mollweide Projection",
-        elements=[curve]
+        elements=curve,
     )
     fig.show()
 
@@ -1847,7 +1847,7 @@ Nested figures can have different projections:
         projection="polar",
         aspect_ratio="equal",
         title="Polar",
-        elements=[polar_curve]
+        elements=polar_curve,
     )
 
     # Combine them
@@ -1884,7 +1884,7 @@ The :py:meth:`~graphinglib.SmartFigure.show` method displays a :class:`~graphing
 
 .. code-block:: python
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
 
     # Basic display
     fig.show()
@@ -1902,7 +1902,7 @@ The :py:meth:`~graphinglib.SmartFigure.save` method is used to save the figure t
 
 .. code-block:: python
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
 
     # Save as PNG
     fig.save("output.png", dpi=300)
@@ -1950,7 +1950,7 @@ Both :py:meth:`~graphinglib.SmartFigure.copy` and :py:meth:`~graphinglib.SmartFi
 
     original = gl.SmartFigure(
         x_label="Original",
-        elements=[curve1]
+        elements=curve1,
     )
 
     # Deep copy
@@ -1961,7 +1961,7 @@ Both :py:meth:`~graphinglib.SmartFigure.copy` and :py:meth:`~graphinglib.SmartFi
     copy2 = original.copy_with(
         x_label="Copy 2",
         y_label="Modified",
-        elements=[curve2]
+        elements=curve2,
     )
 
     parent = gl.SmartFigure(num_cols=3, size=(10, 5), elements=[original, copy1, copy2])
@@ -1983,7 +1983,7 @@ Inspecting Figures
     # Check if the figure is currently used as a single plot
     print(f"Is single subplot: {fig.is_single_subplot}")  # False
 
-    single_fig = gl.SmartFigure(elements=[curve1])
+    single_fig = gl.SmartFigure(elements=curve1)
     print(f"Is single subplot: {single_fig.is_single_subplot}")  # True
 
     # Access a specific child plot
@@ -1999,7 +1999,7 @@ Most methods return ``self`` to enable method chaining:
 .. plot::
     :context: close-figs
 
-    fig = (gl.SmartFigure(elements=[curve1])
+    fig = (gl.SmartFigure(elements=curve1)
            .set_visual_params(axes_edge_color="red")
            .set_ticks(x_tick_spacing=1.0)
            .set_tick_params(direction="out")
