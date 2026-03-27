@@ -1,0 +1,3 @@
+Split axis label color control
+------------------------------
+Axis label colors can be controlled independently from one another through the ``set_visual_params`` method of the ``SmartFigure``.
