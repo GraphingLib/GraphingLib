@@ -338,6 +338,9 @@ class SmartFigure:
         self._pad_params = {}
         self._reference_labels_params = {}
 
+        self._x_axis_label_color = "k"
+        self._y_axis_label_color = "k"
+
         self.show_grid = False
         self._grid = {}
 
@@ -2334,9 +2337,9 @@ class SmartFigure:
             ]
 
         if x_label is not None:
-            ax.set_xlabel(x_label, labelpad=x_pad)
+            ax.set_xlabel(x_label, labelpad=x_pad, color=self._x_axis_label_color)
         if y_label is not None:
-            ax.set_ylabel(y_label, labelpad=y_pad)
+            ax.set_ylabel(y_label, labelpad=y_pad, color=self._y_axis_label_color)
 
     def _create_reference_label(
         self,
@@ -2592,7 +2595,8 @@ class SmartFigure:
         figure_face_color: str | None = None,
         axes_face_color: str | None = None,
         axes_edge_color: str | None = None,
-        axes_label_color: str | None = None,
+        x_axis_label_color: str | None = None,
+        y_axis_label_color: str | None = None,
         axes_label_pad: float | None = None,
         axes_line_width: float | None = None,
         color_cycle: list[str] | None = None,
@@ -2628,8 +2632,10 @@ class SmartFigure:
             The color of the axes face.
         axes_edge_color : str, optional
             The color of the axes edge.
-        axes_label_color : str, optional
-            The color of the axes labels.
+        x_axis_label_color : str, optional
+            The color of the x axis label.
+        y_axis_label_color : str, optional
+            The color of the y axis label.
         axes_label_pad : float, optional
             The padding between the axes labels and the axes.
         axes_line_width : float, optional
@@ -2676,7 +2682,6 @@ class SmartFigure:
             "figure.facecolor": figure_face_color,
             "axes.facecolor": axes_face_color,
             "axes.edgecolor": axes_edge_color,
-            "axes.labelcolor": axes_label_color,
             "axes.labelpad": axes_label_pad,
             "axes.linewidth": axes_line_width,
             "axes.prop_cycle": color_cycle,
@@ -2713,6 +2718,11 @@ class SmartFigure:
                         f"Invalid spine name: {spine}. Must be one of 'right', 'left', 'top' or 'bottom'."
                     )
             self._hidden_spines = hidden_spines
+
+        if x_axis_label_color is not None:
+            self._x_axis_label_color = x_axis_label_color
+        if y_axis_label_color is not None:
+            self._y_axis_label_color = y_axis_label_color
 
         return self
 
