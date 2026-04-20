@@ -20,7 +20,7 @@ Creating a basic figure using the :class:`~graphinglib.SmartFigure` object is ea
 
     sine = gl.Curve.from_function(lambda x: np.sin(x), 0, 2 * np.pi)
 
-    figure = gl.SmartFigure(elements=[sine])
+    figure = gl.SmartFigure(elements=sine)
     figure.show()
 
 The :py:meth:`~graphinglib.SmartFigure.show` method is used to show the figure on screen. It is also possible to use the :py:meth:`~graphinglib.SmartFigure.save` method to save the figure to a specified path while setting certain options like the resolution (dpi).
@@ -34,7 +34,7 @@ We can specify the axis labels by using the ``x_label`` and ``y_label`` paramete
 .. plot::
     :context: close-figs
 
-    figure = gl.SmartFigure(x_label="Time (s)", y_label="Potential (V)", elements=[sine])
+    figure = gl.SmartFigure(x_label="Time (s)", y_label="Potential (V)", elements=sine)
     figure.show()
 
 As a general note, all parameters available in the constructor are also available as properties. This means that you can set or modify them after creating the :class:`~graphinglib.SmartFigure`. For further informations on the available parameters and methods, please refer to the :doc:`handbook section on complex SmartFigures </handbook/smart_figure_advanced>` or the :doc:`reference section on SmartFigure objects <../generated/graphinglib.SmartFigure>`.
@@ -42,7 +42,9 @@ As a general note, all parameters available in the constructor are also availabl
 Creating multi-subplot layouts
 ------------------------------
 
-To create a figure with a grid of subplots, the dimensions of the canvas first need to be defined using the ``num_rows`` and ``num_cols`` parameters, shown in the figure below. This grid is then used to place each subplot in the :class:`~graphinglib.SmartFigure`.
+To create a figure with a grid of subplots, the dimensions of the canvas first need to be defined using the ``num_rows`` and ``num_cols`` parameters, shown in the figure below. This grid is then used to place each child plot in the :class:`~graphinglib.SmartFigure`.
+
+If you already have a :class:`~graphinglib.SmartFigure` being used as a single plot and want to turn it into a layout, first increase ``num_rows`` or ``num_cols``. This keeps the original plot as the child plot in the top-left position of the new layout.
 
 .. image:: images/Canvas.png
     :scale: 30%
@@ -55,20 +57,25 @@ For example, let's create a :class:`~graphinglib.SmartFigure` with 2 rows, 3 col
     :context: close-figs
 
     random_curve = lambda: gl.Curve.from_function(
-        lambda x: np.random.rand() * np.sin(x), 0, 2*np.pi
+        lambda x: np.random.rand() * np.sin(x + np.random.rand() * 2 * np.pi), 0, 2*np.pi
     )
     figure = gl.SmartFigure(2, 3, elements=[random_curve() for _ in range(6)])
     figure.show()
+
+In this example, the ``elements`` list fills the grid from left to right, then top to bottom. Each occupied position becomes its own child plot.
 
 It is also possible to add elements to a preexisting figure using the :py:meth:`~graphinglib.SmartFigure.add_elements` method:
 
 .. plot::
     :context: close-figs
 
-    figure.add_elements(*[random_curve() for _ in range(3)])  # Adds to the top subplots
+    figure = gl.SmartFigure(2, 3)
+    figure.add_elements(*[random_curve() for _ in range(3)])  # Fills the first three positions
     figure.show()
 
-The :py:meth:`~graphinglib.SmartFigure.__setitem__` method can also be used to add or remove elements from specific subplots by specifying their position in the grid, exactly how `two-dimensional numpy arrays are indexed <https://numpy.org/doc/stable/user/basics.indexing.html>`_. Attributing ``None`` to a subplot will remove all its elements. Slicing is also supported to add elements to or remove elements from multiples rows or columns at once. Here are some examples:
+When used on a layout, ``add_elements()`` walks through the grid from left to right, then top to bottom. If a child plot already exists in a position, the new element is added to it. If the position is empty, a new child plot is created there.
+
+The :py:meth:`~graphinglib.SmartFigure.__setitem__` method can also be used to fill specific positions in the layout by specifying their position in the grid, exactly how `two-dimensional numpy arrays are indexed <https://numpy.org/doc/stable/user/basics.indexing.html>`_. Assigning a :class:`~graphinglib.Plottable` to a cell creates a child plot there. Attributing ``None`` to a position removes the child plot occupying it. Slicing is also supported to add elements to or remove elements from multiple rows or columns at once. Here are some examples:
 
 .. plot::
     :context: close-figs
@@ -81,31 +88,40 @@ The :py:meth:`~graphinglib.SmartFigure.__setitem__` method can also be used to a
     # Add a curve that spans the last two subplots of the bottom row
     figure[1, 1:] = random_curve()
 
-    # Add a curve to the second subplot
-    figure[0, 1] += [random_curve()]
+    # Add a curve to the second child plot
+    figure[0, 1] += random_curve()
 
+    figure.show()
+
+The object returned by indexing is itself a :class:`~graphinglib.SmartFigure`, which means you can work on that child plot directly:
+
+.. plot::
+    :context: close-figs
+
+    child_plot = figure[0, 1]
+    child_plot += random_curve()
     figure.show()
 
 .. tip::
    When an element spans multiple cells, you can access, modify, or remove it by clicking on **any** cell it occupies. For example, to remove the curve that spans ``[1, 1:]``, you can use ``figure[1, 1] = None`` or ``figure[1, 2] = None``. See the :doc:`smart_figure_advanced` section for more details on multi-cell element access.
 
-The advantage of the :class:`~graphinglib.SmartFigure` class is that you can insert this object in itself:
+The advantage of the :class:`~graphinglib.SmartFigure` class is that you can also insert an existing :class:`~graphinglib.SmartFigure` inside another one:
 
 .. plot::
     :context: close-figs
 
-    # Insert the previous figure in the second subplot of the first row
+    # Insert the previous figure as a nested child in the bottom-right area
     figure[1, 1:] = figure.copy()
     figure.show()
 
-When inserting a :class:`~graphinglib.SmartFigure` into another :class:`~graphinglib.SmartFigure`, all the parameters of the nested :class:`~graphinglib.SmartFigure` (like axis labels, title, styles, etc.) will be applied to all its subplots. This means that complex figures with different sets of parameters per subplot can be created by nesting :class:`~graphinglib.SmartFigure` objects.
+Assigning plottables to cells creates child plots controlled by the parent layout. Inserting an existing :class:`~graphinglib.SmartFigure` creates a nested figure that keeps its own labels, title, styles, legend behavior, and other subplot-level settings. This means that complex figures with different sets of parameters per area can be created by nesting :class:`~graphinglib.SmartFigure` objects.
 
 In the previous examples, there were labels a), b), c), ... at the top left corner of each subplot. These labels are refered to as **reference labels** and are useful to identify each subplot when inserting the figure in a document. The boolean parameter ``reference_labels`` (in the :class:`~graphinglib.SmartFigure` constructor or as a property) can turn these on or off.
 
 Legends in SmartFigures
 -----------------------
 
-Legends in SmartFigures can be toggled with the ``show_legend`` parameter which applies to all subplots in the :class:`~graphinglib.SmartFigure`. However, it does not apply to nested :class:`~graphinglib.SmartFigure` objects, which allows them to control their own legends independently. The legends in a :class:`~graphinglib.SmartFigure` can be added separately for every subplot or as a single legend combining the labels of every plot. This option is controlled by the ``general_legend`` parameter. By default, it is set to ``False`` so that each subfigure controls its own legend. The two images below illustrate the different legend options. Note that it is also possible to control the position of the legend using the ``legend_loc`` parameter.
+Legends in SmartFigures can be toggled with the ``show_legend`` parameter which applies to all plots drawn directly in the :class:`~graphinglib.SmartFigure`. Explicitly nested :class:`~graphinglib.SmartFigure` objects still control their own legends independently. The legends in a :class:`~graphinglib.SmartFigure` can be added separately for every child plot or as a single legend combining the labels of every plot. This option is controlled by the ``general_legend`` parameter. By default, it is set to ``False`` so that each subfigure controls its own legend. The two images below illustrate the different legend options. Note that it is also possible to control the position of the legend using the ``legend_loc`` parameter.
 
 .. image:: images/individuallegend.png
     :class: margin-bottom
@@ -180,7 +196,7 @@ In short, the ``figure_style`` chosen in a parent :class:`~graphinglib.SmartFigu
     # Create the figures and add the elements
     figure1 = gl.SmartFigure(figure_style="dark")
     figure1.add_elements(sine)
-    figure2 = gl.SmartFigure(elements=[cosine])
+    figure2 = gl.SmartFigure(elements=cosine)
 
     # Create the parent SmartFigure and add the figures to it
     # Use the "plain" style which has a black axes edge color

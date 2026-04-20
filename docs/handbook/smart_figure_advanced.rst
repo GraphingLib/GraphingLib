@@ -22,7 +22,7 @@ This comprehensive guide details **every feature and method** of the :class:`~gr
 Elements Management
 ====================
 
-The :class:`~graphinglib.SmartFigure` provides multiple ways to add and manage plot elements. Understanding the distinction between different methods is crucial for effective use.
+The :class:`~graphinglib.SmartFigure` provides multiple ways to add and manage plot contents. Understanding the distinction between these methods is crucial for effective use, especially when switching between a single plot and a layout of child plots.
 
 Adding Elements: All the Ways
 ------------------------------
@@ -52,23 +52,33 @@ When creating a :class:`~graphinglib.SmartFigure`, you can pass elements directl
 .. plot::
     :context: close-figs
 
-    # For multi-subplot figures, each element goes to a different subplot
+    # For multi-subplot figures, each element fills one cell in order
     fig = gl.SmartFigure(2, 2, elements=[curve1, curve2, curve1, curve2])
     fig.show()
 
 .. plot::
     :context: close-figs
 
-    # You can also provide nested lists to control which elements go where
+    # You can also provide iterables of Plottables to create a child plot with multiple elements
     fig = gl.SmartFigure(
         2, 2,
         elements=[
-            [curve1, curve2],  # Both in first subplot
-            curve1,            # Second subplot
-            None,              # Third subplot (not drawn - blank space)
-            [],                # Fourth subplot (drawn but empty)
+            [curve1, curve2],  # Both in the first child plot
+            curve1,            # Second child plot
+            None,              # Third position left empty
+            [],                # Fourth child plot, drawn but empty
         ]
     )
+    fig.show()
+
+.. plot::
+    :context: close-figs
+
+    # You can also place existing SmartFigures directly in the layout
+    child1 = gl.SmartFigure(elements=curve1, title="Child 1")
+    child2 = gl.SmartFigure(elements=curve2, title="Child 2")
+
+    fig = gl.SmartFigure(1, 2, elements=[child1, child2])
     fig.show()
 
 Method: ``add_elements()``
@@ -79,19 +89,28 @@ The :py:meth:`~graphinglib.SmartFigure.add_elements` method **adds** elements wi
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.add_elements(curve2)  # Adds curve2 to the same subplot
     fig.show()
 
 .. plot::
     :context: close-figs
 
-    # For multi-subplot figures
-    fig = gl.SmartFigure(2, 1, elements=[curve1])
-    fig.add_elements(None, curve2)  # curve2 goes to the second subplot
+    # For layouts, each argument is applied to the next grid position
+    fig = gl.SmartFigure(2, 1)
+    fig.add_elements(curve1, curve2)  # Creates the two child plots
     fig.show()
 
-Similarly to the constructor, you can use nested lists to specify multiple elements per subplot.
+Similarly to the constructor, you can use iterables to specify multiple elements for the same plot:
+
+.. plot::
+    :context: close-figs
+
+    fig = gl.SmartFigure(1, 2)
+    fig.add_elements([curve1, curve2], curve1.copy())
+    fig.show()
+
+When used on a layout, ``add_elements()`` walks through the grid from left to right, then top to bottom. If a child plot already exists in the targeted position, the new content is appended to it. If the position is empty, a new child plot is created there.
 
 Property: ``elements``
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -101,25 +120,31 @@ Setting the :py:attr:`~graphinglib.SmartFigure.elements` property **replaces all
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     # This REPLACES curve1 with curve2
-    fig.elements = [curve2]
+    fig.elements = curve2
     fig.show()
 
 .. note::
-   The ``elements`` property setter internally calls :py:meth:`~graphinglib.SmartFigure.add_elements`, but only after clearing all existing elements first. This can be used to reset the elements before adding new ones.
+   For multi-cell figures, the ``elements`` property fills the grid from left to right, then top to bottom. A :class:`~graphinglib.Plottable` or an iterable of Plottables creates a child plot in the corresponding cell. An existing :class:`~graphinglib.SmartFigure` can also be placed there directly.
+
+.. note::
+   An existing child :class:`~graphinglib.SmartFigure` always occupies exactly one cell when it is placed through the ``elements`` property. Its ``num_rows`` and ``num_cols`` only describe its internal layout. If you want a child :class:`~graphinglib.SmartFigure`, a bare :class:`~graphinglib.Plottable`, or an iterable of Plottables to span multiple cells in the parent figure, use indexing with ``[]`` instead.
+
+.. note::
+   Reading the ``elements`` property returns the SmartFigure's current contents. For a single-plot :class:`~graphinglib.SmartFigure`, it returns the list of plotted :class:`~graphinglib.Plottable` objects. For a layout, it returns a list containing child :class:`~graphinglib.SmartFigure` objects or ``None`` placeholders for empty cells. A child spanning multiple cells appears only at its anchor position in that dense list.
 
 Indexing using ``__setitem__``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The most powerful method for element management uses indexing, which allows elements to **span multiple subplots**:
+The most powerful method for element management uses indexing, which allows you to target specific positions in the layout and lets bare elements **span multiple subplots**:
 
 .. plot::
     :context: close-figs
 
     fig = gl.SmartFigure(2, 3)
 
-    # Add multiple elements to a subplot
+    # Add multiple elements to a child plot
     fig[0, 0] = [curve1, curve2]
 
     # Add element spanning multiple columns
@@ -133,30 +158,32 @@ The most powerful method for element management uses indexing, which allows elem
 .. plot::
     :context: close-figs
 
-    # The += operator adds to existing elements
+    # The += operator adds to the selected child plot
     fig = gl.SmartFigure(2, 2)
     fig[0, 0] = curve1
-    fig[0, 0] += [curve2]  # Adds curve2 without removing curve1
+    fig[0, 0] += curve2  # Adds curve2 without removing curve1
     fig.show()
+
+Assigning a :class:`~graphinglib.Plottable` or an iterable of Plottables creates or updates a child plot. Assigning an existing :class:`~graphinglib.SmartFigure` inserts that figure as a nested child instead.
 
 Understanding ``None`` and ``[]``
 -----------------------------------------------
 
-The distinction between these values is crucial for controlling subplot appearance:
+The distinction between these values is crucial for controlling how a position in the layout is drawn:
 
 .. plot::
     :context: close-figs
 
-    # None: Subplot is NOT drawn - leaves blank space
-    # [], [None] or any list with None: Subplot IS drawn but empty
+    # None: Position is left empty
+    # [], [None] or any list with None: A child plot is created but drawn empty
 
     fig = gl.SmartFigure(2, 3, elements=[
-        curve1,   # Normal subplot with element
-        None,     # NOT drawn - blank space
-        [None],   # Drawn but empty
-        [],       # Drawn but empty (same as [None])
+        curve1,   # Normal child plot with element
+        None,     # Empty position
+        [None],   # Child plot created but empty
+        [],       # Child plot created but empty (same as [None])
         [curve1, None, curve2],  # curve1 and curve2 plotted, None ignored
-        curve2    # Normal subplot with element
+        curve2    # Normal child plot with element
     ])
     fig.show()
 
@@ -185,18 +212,32 @@ To remove elements, set them to ``None``:
 Retrieving Elements
 -------------------
 
-You can retrieve elements using indexing. Indexing in a subplot that contains :class:`~graphinglib.Plottable` objects will return a list of these elements:
+You can retrieve child plots using indexing. Indexing returns the :class:`~graphinglib.SmartFigure` occupying the requested position:
 
 .. plot::
     :context: close-figs
 
     fig = gl.SmartFigure(2, 2)
     fig[0, 0] = [curve1, curve2]
-    fig[1, 0] = [curve1]
-    curves = fig[0, 0]  # Returns list: [curve1, curve2]
-    single_curve = fig[1, 0][0]  # Returns curve1
+    fig[1, 0] = curve1
+    child = fig[0, 0]
+    curves = child.elements  # Returns [curve1, curve2]
+    single_curve = fig[1, 0].elements[0]  # Returns curve1
 
-You can also iterate on the :class:`~graphinglib.SmartFigure` directly to access each subplot in order:
+You can then modify that child plot directly:
+
+.. plot::
+    :context: close-figs
+
+    fig = gl.SmartFigure(1, 2, elements=[[curve1.copy()], [curve2.copy()]])
+
+    child = fig[0, 0]
+    child += curve2.copy()
+    fig[0, 1].add_elements(curve1.copy())
+
+    fig.show()
+
+You can also iterate on the :class:`~graphinglib.SmartFigure` directly to access each child plot in order:
 
 .. plot::
     :context: close-figs
@@ -205,9 +246,9 @@ You can also iterate on the :class:`~graphinglib.SmartFigure` directly to access
 
     colors = ["green", "purple"]
     line_widths = [1, 4]
-    for subplot, color, line_width in zip(fig, colors, line_widths):
-        subplot[0].color = color  # Modify the first element of each subplot
-        subplot[1].line_width = line_width  # Modify the second element
+    for child_plot, color, line_width in zip(fig, colors, line_widths):
+        child_plot.elements[0].color = color
+        child_plot.elements[1].line_width = line_width
 
     fig.show()
 
@@ -225,12 +266,12 @@ One of the most powerful features of :class:`~graphinglib.SmartFigure` is the ab
     fig[0, :] = curve1  # Spans all three columns of row 0
     fig.show()
 
-    # You can access this element via any cell it occupies
-    element_via_col0 = fig[0, 0]  # Access via first column
-    element_via_col1 = fig[0, 1]  # Access via second column
-    element_via_col2 = fig[0, 2]  # Access via third column
-    element_via_slice1 = fig[0, 1:]  # Access via inexact slice
-    element_via_slice2 = fig[0, :]  # Access via exact slice
+    # You can access this child plot via any cell it occupies
+    child_via_col0 = fig[0, 0]
+    child_via_col1 = fig[0, 1]
+    child_via_col2 = fig[0, 2]
+    child_via_slice1 = fig[0, 1:]
+    child_via_slice2 = fig[0, :]
 
 This makes it much more intuitive to work with complex layouts:
 
@@ -246,13 +287,13 @@ This makes it much more intuitive to work with complex layouts:
     fig[2, :] = gl.Histogram(np.random.randn(1000), bins=30)  # Bottom row, spans both columns
 
     # Access and modify via clicking on any cell
-    fig[0, 0][0].color = "red"  # Modify top row element via first column
-    fig[2, 1][0].face_color = "green"  # Modify bottom histogram via second column
+    fig[0, 0].elements[0].color = "red"  # Modify top row element via first column
+    fig[2, 1].elements[0].face_color = "green"  # Modify bottom histogram via second column
 
     fig.show()
 
 .. warning::
-    The only rule that needs to be followed is that you cannot access or modify elements using a slice that overlaps with multiple **different** subplots. Therefore, you must always use a slice that includes at most a single non-empty subplot.
+    The only rule that needs to be followed is that you cannot access or modify elements using a slice that overlaps with multiple **different** subplots. Therefore, you must always use a slice that includes at most a single drawn subfigure.
 
 .. plot::
     :context: close-figs
@@ -262,7 +303,7 @@ This makes it much more intuitive to work with complex layouts:
     fig[1, 0] = curve2  # Single cell in second row
     fig.show()
 
-    # This raises an error - slice overlaps with two different elements
+    # This raises an error - slice overlaps with two different child plots
     try:
         element = fig[0:2, :]
     except gl.GraphingException:
@@ -280,7 +321,7 @@ When you replace a multi-cell element, the new element will inherit the span of 
     fig[0, 1] = curve2
 
     # curve2 now spans the entire first row
-    assert fig[0, 0][0] is fig[0, 1][0]  # Same element
+    assert fig[0, 0] is fig[0, 1]  # Same child plot
 
     # Replace via slice - new element inherits [0, :] span
     fig[0, 0:2] = gl.Curve.from_function(lambda x: x**3, -2, 2)
@@ -311,6 +352,7 @@ The :class:`~graphinglib.SmartFigure` uses a grid system defined by ``num_rows``
 
 .. note::
    Changing the ``num_rows`` or ``num_cols`` of a preexisting :class:`~graphinglib.SmartFigure` is only allowed if there are no elements in the rows/columns being removed.
+   If the SmartFigure was previously being used as a single plot, increasing ``num_rows`` or ``num_cols`` turns it into a layout and moves the original plot to the top-left position.
 
 This grid system can be exploited to create complex layouts by adding elements that span multiple rows or columns:
 
@@ -345,14 +387,14 @@ Control the overall figure size with the ``size`` parameter:
     :context: close-figs
 
     # Size in inches (width, height)
-    fig = gl.SmartFigure(size=(10, 6), elements=[curve1])
+    fig = gl.SmartFigure(size=(10, 6), elements=curve1)
     fig.show()
 
 .. plot::
     :context: close-figs
 
     # Use "default" to let the style file determine the size
-    fig = gl.SmartFigure(size="default", elements=[curve1])
+    fig = gl.SmartFigure(size="default", elements=curve1)
     fig.show()
 
 .. note::
@@ -437,7 +479,7 @@ Set labels for the entire figure:
         x_label="Time (s)",
         y_label="Voltage (V)",
         title="Signal Analysis",
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -486,7 +528,7 @@ You can also use ``None`` in the lists to skip labels for specific subplots, or 
     fig.show()
 
 .. warning::
-    If the provided lists are longer than the number of non-empty subplots, an error will be raised. For details on list length rules, see the :ref:`list-length-rules` section.
+    If the provided lists are longer than the number of subfigures drawn by the SmartFigure, an error will be raised. For details on list length rules, see the :ref:`list-length-rules` section.
 
 Axes Limits
 -----------
@@ -499,7 +541,7 @@ Set axis limits for all subplots:
     fig = gl.SmartFigure(
         x_lim=(0, 5),
         y_lim=(-1.5, 1.5),
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -516,7 +558,7 @@ Enable logarithmic scales:
     fig = gl.SmartFigure(
         log_scale_x=False,
         log_scale_y=True,
-        elements=[exp_curve]
+        elements=exp_curve,
     )
     fig.show()
 
@@ -533,7 +575,7 @@ Control aspect ratio of the data and the plot box:
 
     fig = gl.SmartFigure(
         aspect_ratio="equal",  # Makes circle truly circular
-        elements=[circle]
+        elements=circle,
     )
     fig.show()
 
@@ -543,7 +585,7 @@ Control aspect ratio of the data and the plot box:
     # box_aspect_ratio controls the plot box shape
     fig = gl.SmartFigure(
         box_aspect_ratio=2.0,  # Box is twice as tall as wide
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -561,7 +603,7 @@ Invert axes direction:
     fig = gl.SmartFigure(
         invert_x_axis=True,
         invert_y_axis=False,
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -577,7 +619,7 @@ Removing Axes and Ticks
     # Remove entire axes
     fig = gl.SmartFigure(
         remove_axes=True,
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -588,7 +630,7 @@ Removing Axes and Ticks
     fig = gl.SmartFigure(
         remove_x_ticks=True,
         remove_y_ticks=False,
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -609,7 +651,7 @@ Share axes between subplots for synchronized zooming and consistent limits:
     fig.show()
 
 .. note::
-   Axis sharing only affects direct subplots of the :class:`~graphinglib.SmartFigure`. Nested :class:`~graphinglib.SmartFigure` objects control their own axis sharing independently.
+   Axis sharing affects the plots drawn directly in the parent layout. If you insert an existing nested :class:`~graphinglib.SmartFigure`, that nested figure controls its own axis sharing independently.
 
 .. warning::
     The :class:`~graphinglib.SmartFigure` is currently testing an experimental method for perfectly aligning horizontally shared subplots when ``share_x=True``. This may not work in all cases and could be subject to change in future versions. If you encounter issues, please report them on the `GraphingLib GitHub issue tracker <https://github.com/GraphingLib/GraphingLib/issues>`_.
@@ -626,7 +668,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_ticks` method provides fine-grained c
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
 
     # Set custom tick positions
     fig.set_ticks(
@@ -639,7 +681,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_ticks` method provides fine-grained c
     :context: close-figs
 
     # Use automatic spacing
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_ticks(
         x_tick_spacing=np.pi/4,
         y_tick_spacing=0.5
@@ -650,7 +692,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_ticks` method provides fine-grained c
     :context: close-figs
 
     # Add minor ticks
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_ticks(
         x_tick_spacing=np.pi/2,
         minor_x_tick_spacing=np.pi/8,
@@ -662,7 +704,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_ticks` method provides fine-grained c
     :context: close-figs
 
     # Reset to defaults
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_ticks(x_tick_spacing=1.0)  # Set custom ticks
     fig.set_ticks(reset=True)  # Reset to default behavior
     fig.show()
@@ -675,7 +717,7 @@ You can also provide a custom tick label formatter function that takes a tick va
     # Use a formatter and specify tick positions
     formatter = lambda v: f"{v/np.pi:.1f}π" if v != 0 else "0"
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_ticks(
         x_ticks=[0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi],
         x_tick_labels=formatter
@@ -688,7 +730,7 @@ You can also provide a custom tick label formatter function that takes a tick va
     # Use a formatter and specify tick spacing
     formatter = lambda v: f"$y={v}$"
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_ticks(
         y_tick_spacing=0.5,
         y_tick_labels=formatter,
@@ -706,7 +748,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_tick_params` method controls tick app
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
 
     # Customize major ticks
     fig.set_tick_params(
@@ -737,7 +779,7 @@ You can also control the presence of ticks and labels on specific sides of the p
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_tick_params(
         axis="x",
         draw_top_ticks=True,
@@ -760,7 +802,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_grid` method enables and customizes g
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
 
     # Basic grid
     fig.set_grid()
@@ -772,7 +814,7 @@ The same parameters are applied to both axes and major and minor grid lines, but
     :context: close-figs
 
     # Customize grid appearance
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_grid(
         visible_x=True,
         visible_y=True,
@@ -844,7 +886,7 @@ Other than adding :class:`~graphinglib.Text` elements directly to subplots, you 
     note2 = gl.Text(0.05, 0.05, "Bottom Left Note", "green")
 
     fig = gl.SmartFigure(
-        elements=[curve1],
+        elements=curve1,
         annotations=[note1, note2]
     )
     fig.show()
@@ -856,7 +898,7 @@ Other than adding :class:`~graphinglib.Text` elements directly to subplots, you 
 Properties That Accept Lists or Single Items
 =============================================
 
-Many properties of the :class:`~graphinglib.SmartFigure` class are typed as ``ListOrItem``, a flexible type that allows you to provide either a single value or a list of values. This feature is essential for customizing multi-subplot figures where different subplots may need different configurations.
+Many properties of the :class:`~graphinglib.SmartFigure` class are typed as ``ListOrItem``, a flexible type that allows you to provide either a single value or a list of values. This feature is essential for customizing figures where different subfigures may need different configurations.
 
 Understanding the ``ListOrItem`` Type
 -------------------------------------
@@ -869,7 +911,7 @@ The ``ListOrItem`` type is a type hint defined as:
 
 where ``T`` is any type. This means that any property documented as ``ListOrItem[float]`` (for example) can accept either a single ``float`` value or a ``list[float]``.
 
-When you provide a **single value**, it is applied to **all subplots**. When you provide a **list of values**, each value is applied to the corresponding subplot from left to right, top to bottom.
+When you provide a **single value**, it is applied to **all subfigures drawn by the SmartFigure**. When you provide a **list of values**, each value is applied to the corresponding subfigure from left to right, top to bottom.
 
 .. _list-length-rules:
 
@@ -878,20 +920,20 @@ List Length and Padding Rules
 
 When using lists with :class:`~graphinglib.SmartFigure`, the following rules apply to list length:
 
-**Shorter than number of non-empty subplots:**
-    The list is padded with the default value for that property. For example, if you have 4 subplots but only provide 2 values in a list, the remaining 2 subplots will use the default value.
+**Shorter than number of subfigures drawn by the SmartFigure:**
+    The list is padded with the default value for that property. For example, if you have 4 subfigures but only provide 2 values in a list, the remaining 2 subfigures will use the default value.
 
-**Equal to number of non-empty subplots:**
-    Perfect! Each value maps exactly to one subplot.
+**Equal to number of subfigures drawn by the SmartFigure:**
+    Perfect! Each value maps exactly to one subfigure.
 
-**Longer than number of non-empty subplots:**
-    An error is raised. The list cannot have more values than there are subplots.
+**Longer than number of subfigures drawn by the SmartFigure:**
+    An error is raised. The list cannot have more values than there are subfigures.
 
 **Special case - Nested SmartFigures:**
-    When a subplot contains a nested :class:`~graphinglib.SmartFigure`, this object will count as a non-empty subplot. As such, you may need to pad your lists with any value to account for nested figures which control their own properties and will ignore this parameter.
+    When a subfigure contains a nested :class:`~graphinglib.SmartFigure`, that nested figure still counts as one entry in the list mapping. Likewise, a child SmartFigure spanning multiple cells still counts as one entry. As such, you may need to pad your lists with any value to account for nested figures which control their own properties and will ignore this parameter.
 
 .. note::
-    The number of non-empty subplots corresponds to the number of subplots that will actually be drawn. This excludes subplots set to ``None`` (not drawn) but includes subplots that are drawn but empty (e.g. set to ``[]``). Subplots that span multiple rows or columns are also counted as one subplot. To get the number of non-empty subplots, use the :py:meth:`~graphinglib.SmartFigure.__len__` method.
+    The number of subfigures drawn by the SmartFigure corresponds to the number of child plots or nested figures that will actually be drawn. This excludes positions set to ``None`` but includes positions that are drawn but empty (for example, set to ``[]``). Subfigures that span multiple rows or columns are also counted as one subfigure. For a SmartFigure used as a layout, the :py:meth:`~graphinglib.SmartFigure.__len__` method returns this number. For a SmartFigure used as a single plot, :py:meth:`~graphinglib.SmartFigure.__len__` instead returns the number of plotted elements in that plot.
 
 Properties That Accept ``ListOrItem``
 --------------------------------------
@@ -1034,7 +1076,7 @@ The ``figure_style`` parameter applies predefined visual themes:
     # GraphingLib built-in styles
     fig = gl.SmartFigure(
         figure_style="dim",
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -1044,7 +1086,7 @@ The ``figure_style`` parameter applies predefined visual themes:
     # Matplotlib styles
     fig = gl.SmartFigure(
         figure_style="seaborn-v0_8",
-        elements=[curve1]
+        elements=curve1,
     )
     fig.show()
 
@@ -1059,7 +1101,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_rc_params` method provides direct acc
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
 
     fig.set_rc_params({
         "axes.facecolor": "#f0f0f0",
@@ -1093,7 +1135,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_visual_params` method provides a conv
     fig = gl.SmartFigure(
         x_label="X",
         y_label="Y",
-        elements=[curve1]
+        elements=curve1,
     )
 
     fig.set_visual_params(
@@ -1129,7 +1171,7 @@ The :py:meth:`~graphinglib.SmartFigure.set_visual_params` method provides a conv
     :context: close-figs
 
     # Hide individual spines
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
     fig.set_visual_params(
         hidden_spines=["top", "right"]
     )
@@ -1215,12 +1257,10 @@ If you have a nested :class:`~graphinglib.SmartFigure`, you can create a general
 
     # Create individual figures
     fig1 = gl.SmartFigure(2, 1, elements=[curve1, curve1])
-    fig2 = gl.SmartFigure(
-        num_cols=2,
-        elements=[curve2, fig1],
-        general_legend=True,
-        legend_loc="upper center"
-    )
+    fig2 = gl.SmartFigure(num_rows=2, num_cols=2, general_legend=True, legend_loc="upper center")
+    fig2[0, 0] = curve2
+    fig2[:, 1] = fig1
+    fig2.show()
 
 You can alternatively choose that each nested figure creates its own general legend, in which case you need to specify ``general_legend=True`` for that nested :class:`~graphinglib.SmartFigure`:
 
@@ -1234,11 +1274,9 @@ You can alternatively choose that each nested figure creates its own general leg
         legend_loc="upper right",
         elements=[curve1, curve1]
     )
-    fig2 = gl.SmartFigure(
-        num_cols=2,
-        legend_loc="center left",
-        elements=[curve2, fig1]
-    )
+    fig2 = gl.SmartFigure(num_rows=2, num_cols=2, legend_loc="center left")
+    fig2[0, 0] = curve2
+    fig2[:, 1] = fig1
 
     fig2.show()
 
@@ -1408,8 +1446,8 @@ Basic Nesting
     :context: close-figs
 
     # Create individual figures
-    fig1 = gl.SmartFigure(elements=[curve1], reference_labels=False)
-    fig2 = gl.SmartFigure(elements=[curve2], reference_labels=True)
+    fig1 = gl.SmartFigure(elements=curve1, reference_labels=False)
+    fig2 = gl.SmartFigure(elements=curve2, reference_labels=True)
 
     # Combine them
     parent = gl.SmartFigure(num_cols=2, elements=[fig1, fig2])
@@ -1422,12 +1460,12 @@ Basic Nesting
     fig1 = gl.SmartFigure(
         x_label="Time (s)",
         y_label="Signal 1",
-        elements=[curve1]
+        elements=curve1,
     )
     fig2 = gl.SmartFigure(
         x_label="Frequency (Hz)",
         y_label="Signal 2",
-        elements=[curve2]
+        elements=curve2,
     )
 
     parent = gl.SmartFigure(
@@ -1442,8 +1480,8 @@ You can also use indexing to modify nested figures after creation:
 .. plot::
     :context: close-figs
 
-    fig1 = gl.SmartFigure(elements=[curve1])
-    fig2 = gl.SmartFigure(elements=[curve2])
+    fig1 = gl.SmartFigure(elements=curve1)
+    fig2 = gl.SmartFigure(elements=curve2)
 
     parent = gl.SmartFigure(num_cols=2, elements=[fig1, fig2])
 
@@ -1462,15 +1500,17 @@ You can nest :class:`~graphinglib.SmartFigure` objects any number of levels deep
     :context: close-figs
 
     # Level 1: Basic figures
-    fig_a = gl.SmartFigure(elements=[curve1]).set_tick_params(color="red", width=10)
-    fig_b = gl.SmartFigure(elements=[curve2]).set_tick_params(color="blue", width=10)
+    fig_a = gl.SmartFigure(elements=curve1).set_tick_params(color="red", width=10)
+    fig_b = gl.SmartFigure(elements=curve2).set_tick_params(color="blue", width=10)
 
     # Level 2: Combine into two other figures
     row = gl.SmartFigure(num_cols=2, elements=[fig_a, fig_b], global_reference_label=True)
     col = gl.SmartFigure(num_rows=2, elements=[fig_a, fig_b], global_reference_label=True)
 
     # Level 3: Combine rows
-    final = gl.SmartFigure(num_rows=2, elements=[row, col])
+    final = gl.SmartFigure(num_rows=2, num_cols=3)
+    final[0, :2] = row
+    final[:, 2] = col
     final.show()
 
 Style Inheritance
@@ -1482,8 +1522,8 @@ The ``figure_style`` and visual parameters are inherited by nested figures:
     :context: close-figs
 
     # Parent style applies to all nested figures
-    fig1 = gl.SmartFigure(elements=[curve1])
-    fig2 = gl.SmartFigure(elements=[curve2])
+    fig1 = gl.SmartFigure(elements=curve1)
+    fig2 = gl.SmartFigure(elements=curve2)
 
     parent = gl.SmartFigure(
         num_cols=2,
@@ -1514,12 +1554,12 @@ The :py:meth:`~graphinglib.SmartFigure.copy_with` method is especially useful wh
     base_fig = gl.SmartFigure(
         x_label="Time",
         y_label="Amplitude",
-        elements=[curve1]
+        elements=curve1
     )
 
     # Create variations
     fig1 = base_fig.copy_with(title="Sine Wave")
-    fig2 = base_fig.copy_with(title="Cosine Wave", elements=[curve2])
+    fig2 = base_fig.copy_with(title="Cosine Wave", elements=curve2)
 
     parent = gl.SmartFigure(num_cols=2, elements=[fig1, fig2])
     parent.show()
@@ -1557,7 +1597,7 @@ Creating Twin Axes
     fig = gl.SmartFigure(
         x_label="Time (h)",
         y_label="Temperature (°C)",
-        elements=[temp_curve]
+        elements=temp_curve,
     )
 
     # Add twin y-axis for humidity data
@@ -1567,7 +1607,7 @@ Creating Twin Axes
     twin_y = fig.create_twin_axis(
         is_y=True,
         label="Humidity (%)",
-        elements=[humidity_curve]
+        elements=humidity_curve,
     )
 
     fig.show()
@@ -1580,7 +1620,7 @@ Creating Twin Axes
     fig = gl.SmartFigure(
         x_label="Time (s)",
         y_label="Amplitude",
-        elements=[time_curve]
+        elements=time_curve,
     )
 
     freq_curve = gl.Curve.from_function(lambda x: np.cos(x), 0, 2*np.pi,
@@ -1589,7 +1629,7 @@ Creating Twin Axes
     twin_x = fig.create_twin_axis(
         is_y=False,
         label="Frequency (Hz)",
-        elements=[freq_curve]
+        elements=freq_curve,
     )
 
     fig.show()
@@ -1607,13 +1647,13 @@ Even if the :class:`~graphinglib.SmartTwinAxis` can not be plotted alone, you ca
         label="Secondary Axis",
         axis_lim=(0, 100),
         log_scale=False,
-        elements=[humidity_curve]
+        elements=humidity_curve,
     )
 
     fig = gl.SmartFigure(
         y_label="Primary Axis",
         twin_y_axis=twin,
-        elements=[temp_curve]
+        elements=temp_curve,
     )
     fig.show()
 
@@ -1623,13 +1663,13 @@ Twin Axis Customization
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[temp_curve])
+    fig = gl.SmartFigure(elements=temp_curve)
 
     twin_y = fig.create_twin_axis(
         is_y=True,
         label="Humidity (%)",
         axis_lim=(0, 100),
-        elements=[humidity_curve]
+        elements=humidity_curve,
     )
 
     # Customize twin axis appearance
@@ -1651,10 +1691,10 @@ Twin Axis Customization
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigure(elements=[temp_curve])
+    fig = gl.SmartFigure(elements=temp_curve)
 
     # Managing twin axis elements
-    twin_y = fig.create_twin_axis(is_y=True, elements=[humidity_curve])
+    twin_y = fig.create_twin_axis(is_y=True, elements=humidity_curve)
 
     # Add more elements
     extra_curve = gl.Curve.from_function(lambda x: 50 + 10*np.sin(2*x), 0, 2*np.pi,
@@ -1713,7 +1753,7 @@ The most common projection is the polar coordinate system:
     fig = gl.SmartFigure(
         projection="polar",
         aspect_ratio="equal",
-        elements=[polar_curve]
+        elements=polar_curve,
     )
     fig.show()
 
@@ -1758,7 +1798,7 @@ Matplotlib provides several map-like projections useful for displaying data on s
     fig = gl.SmartFigure(
         projection="mollweide",
         title="Mollweide Projection",
-        elements=[curve]
+        elements=curve,
     )
     fig.show()
 
@@ -1810,7 +1850,7 @@ Nested figures can have different projections:
         projection="polar",
         aspect_ratio="equal",
         title="Polar",
-        elements=[polar_curve]
+        elements=polar_curve,
     )
 
     # Combine them
@@ -1847,7 +1887,7 @@ The :py:meth:`~graphinglib.SmartFigure.show` method displays a :class:`~graphing
 
 .. code-block:: python
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
 
     # Basic display
     fig.show()
@@ -1865,7 +1905,7 @@ The :py:meth:`~graphinglib.SmartFigure.save` method is used to save the figure t
 
 .. code-block:: python
 
-    fig = gl.SmartFigure(elements=[curve1])
+    fig = gl.SmartFigure(elements=curve1)
 
     # Save as PNG
     fig.save("output.png", dpi=300)
@@ -1913,7 +1953,7 @@ Both :py:meth:`~graphinglib.SmartFigure.copy` and :py:meth:`~graphinglib.SmartFi
 
     original = gl.SmartFigure(
         x_label="Original",
-        elements=[curve1]
+        elements=curve1,
     )
 
     # Deep copy
@@ -1924,7 +1964,7 @@ Both :py:meth:`~graphinglib.SmartFigure.copy` and :py:meth:`~graphinglib.SmartFi
     copy2 = original.copy_with(
         x_label="Copy 2",
         y_label="Modified",
-        elements=[curve2]
+        elements=curve2,
     )
 
     parent = gl.SmartFigure(num_cols=3, size=(10, 5), elements=[original, copy1, copy2])
@@ -1937,21 +1977,21 @@ Inspecting Figures
 
     fig = gl.SmartFigure(2, 3, elements=[curve1]*6)
 
-    # Get number of subplots (elements)
-    print(f"Number of elements: {len(fig)}")  # 6
+    # Get number of child plots in the layout
+    print(f"Number of child plots: {len(fig)}")  # 6
 
     # Get shape
     print(f"Shape: {fig.shape}")  # (2, 3)
 
-    # Check if the figure has a single subplot (1x1)
+    # Check if the figure is currently used as a single plot
     print(f"Is single subplot: {fig.is_single_subplot}")  # False
 
-    single_fig = gl.SmartFigure(elements=[curve1])
+    single_fig = gl.SmartFigure(elements=curve1)
     print(f"Is single subplot: {single_fig.is_single_subplot}")  # True
 
-    # Access specific elements
-    element_list = fig[0, 0]  # Returns list of Plottable objects
-    print(f"Elements in (0,0): {len(element_list)}")
+    # Access a specific child plot
+    child_plot = fig[0, 0]
+    print(f"Elements in (0,0): {len(child_plot.elements)}")
 
 
 Method Chaining
@@ -1962,7 +2002,7 @@ Most methods return ``self`` to enable method chaining:
 .. plot::
     :context: close-figs
 
-    fig = (gl.SmartFigure(elements=[curve1])
+    fig = (gl.SmartFigure(elements=curve1)
            .set_visual_params(axes_edge_color="red")
            .set_ticks(x_tick_spacing=1.0)
            .set_tick_params(direction="out")

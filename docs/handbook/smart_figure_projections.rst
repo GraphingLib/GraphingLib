@@ -86,7 +86,7 @@ Despite these specializations, :class:`~graphinglib.SmartFigureWCS` supports **a
 
 .. note::
 
-    You can also nest :class:`~graphinglib.SmartFigureWCS` objects within standard :class:`~graphinglib.SmartFigure` layouts or vice versa to combine plots with different projections.
+    You can also nest :class:`~graphinglib.SmartFigureWCS` objects within standard :class:`~graphinglib.SmartFigure` layouts or vice versa to combine plots with different projections. Indexing follows the same rules as for :class:`~graphinglib.SmartFigure`, so retrieving ``fig[0, 0]`` returns the child SmartFigure occupying that position.
 
 Getting Started
 ---------------
@@ -115,7 +115,7 @@ The most common workflow involves loading a FITS file that contains WCS informat
     fig = gl.SmartFigureWCS(
         projection=wcs,
         title="Astronomical Image",
-        elements=[heatmap]
+        elements=heatmap
     )
 
 .. note::
@@ -149,7 +149,7 @@ For testing or custom coordinate systems, you can create WCS objects programmati
     fig = gl.SmartFigureWCS(
         projection=wcs,
         title="Synthetic WCS Image",
-        elements=[heatmap]
+        elements=heatmap
     )
     fig.show()
 
@@ -168,7 +168,7 @@ Control how coordinates are displayed:
         projection=wcs,
         x_label="Right Ascension (J2000)",
         y_label="Declination (J2000)",
-        elements=[heatmap]
+        elements=heatmap
     )
 
     # Customize ticks
@@ -195,7 +195,7 @@ WCS coordinate grids follow the curved coordinate system:
 .. plot::
     :context: close-figs
 
-    fig = gl.SmartFigureWCS(projection=wcs, elements=[heatmap])
+    fig = gl.SmartFigureWCS(projection=wcs, elements=heatmap)
 
     # Add coordinate grid
     fig.set_grid(
@@ -238,7 +238,7 @@ All subplots can share the same WCS projection:
         elements=[heatmap1, heatmap2, heatmap3, heatmap4]
     )
 
-Similar to the :class:`~graphinglib.SmartFigure`, you can also specify different WCS projections using a list of WCS objects for the ``projection`` parameter. However, WCS projections must be given for every subplot, i.e. the length of the ``projection`` list must match the number of non-empty subplots (see the :py:meth:`~graphinglib.SmartFigureWCS.__len__` method for more details):
+Similar to the :class:`~graphinglib.SmartFigure`, you can also specify different WCS projections using a list of WCS objects for the ``projection`` parameter. However, WCS projections must be given for every subfigure drawn by the SmartFigure, i.e. the length of the ``projection`` list must match the number of subfigures that will actually be drawn (see the :py:meth:`~graphinglib.SmartFigureWCS.__len__` method for more details):
 
 .. code-block:: python
 
@@ -262,7 +262,7 @@ Combine WCS figures with standard figures:
     wcs_fig = gl.SmartFigureWCS(
         projection=wcs,
         title="Sky Image",
-        elements=[heatmap]
+        elements=heatmap
     )
 
     # Create standard analysis plots
@@ -273,7 +273,7 @@ Combine WCS figures with standard figures:
         title="Analysis",
         x_label="Radius (arcsec)",
         y_label="Intensity",
-        elements=[profile]
+        elements=profile
     )
 
     # Combine them
