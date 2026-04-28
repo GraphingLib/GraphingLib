@@ -1,5 +1,7 @@
 import unittest
 
+from graphinglib import INHERIT
+
 from matplotlib import pyplot as plt
 from numpy import linspace, pi, sin
 
@@ -108,10 +110,10 @@ class TestFigure(unittest.TestCase):
         self.assertTrue(a_figure._show_grid)
 
     def test_element_defaults_are_reset(self):
-        self.testCurve._line_width = "default"
+        self.testCurve._line_width = INHERIT
         self.testFigure.add_elements(self.testCurve)
         self.testFigure._prepare_figure()
-        self.assertEqual(self.testCurve._line_width, "default")
+        self.assertEqual(self.testCurve._line_width, INHERIT)
         self.testFigure._fill_in_missing_params(self.testCurve)
         self.assertEqual(self.testCurve._line_width, 2)
         plt.close("all")

@@ -1,3 +1,3 @@
 Bugfix for `Shapes` in matplotlib styles
 ----------------------------------------
-Fixed a bug where the `Shapes` class was not replacing its `"default"` values when plotting, which caused errors when using matplotlib styles that have default values for these parameters..
+Fixed a bug where the `Shapes` class was not replacing its `Inherit` values when plotting, which caused errors when using matplotlib styles that have default values for these parameters..

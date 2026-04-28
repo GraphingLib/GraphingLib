@@ -1,4 +1,5 @@
 import unittest
+from typing import Literal
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -6,6 +7,8 @@ from matplotlib.colors import to_rgba
 
 from graphinglib.data_plotting_1d import Curve
 from graphinglib.shapes import Arrow, Circle, Ellipse, Line, Polygon, Rectangle
+
+ArrowStyle = Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"]
 
 
 class TestCircle(unittest.TestCase):
@@ -296,7 +299,7 @@ class TestArrow(unittest.TestCase):
         self.assertEqual(shrinkedB[1], 3.4)
 
     def test_styles(self):
-        valid_styles = ["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"]
+        valid_styles: list[ArrowStyle] = ["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"]
         for style in valid_styles:
             arrow = Arrow(
                 pointA=(0, 0),
@@ -319,7 +322,7 @@ class TestArrow(unittest.TestCase):
 
         # Check errors at plotting time
         _, ax = plt.subplots()
-        valid_two_sided_styles = ["->", "-|>", "-["]
+        valid_two_sided_styles: list[Literal["->", "-|>", "-["]] = ["->", "-|>", "-["]
         for style in valid_two_sided_styles:
             arrow = Arrow(
                 pointA=(0, 0),

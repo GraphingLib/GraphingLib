@@ -2,6 +2,8 @@ import os
 import unittest
 import warnings
 
+from graphinglib import INHERIT
+
 from matplotlib import use as matplotlib_use
 
 matplotlib_use("Agg")  # Use non-GUI backend for tests
@@ -89,8 +91,8 @@ class SmartFigurePropertyMixin:
 
         with self.assertRaises(TypeError):
             self.fig.figure_style = 123
-        self.fig.figure_style = "default"
-        self.assertEqual(self.fig.figure_style, "default")
+        self.fig.figure_style = INHERIT
+        self.assertEqual(self.fig.figure_style, INHERIT)
 
         with self.assertRaises(TypeError):
             self.fig.annotations = "not_a_list"
@@ -183,7 +185,7 @@ class TestSmartFigureLeaf(unittest.TestCase, SmartFigurePropertyMixin):
     def test_init_defaults(self):
         self.assertEqual(self.fig.num_rows, 1)
         self.assertEqual(self.fig.num_cols, 1)
-        self.assertEqual(self.fig.figure_style, "default")
+        self.assertEqual(self.fig.figure_style, INHERIT)
         self.assertEqual(len(self.fig), 0)
 
     def test_init_custom_args(self):
@@ -1102,7 +1104,7 @@ class TestSmartTwinAxis(unittest.TestCase):
         self.assertEqual(a_curve._line_width, 3)
 
     def test_element_defaults_are_reset(self):
-        self.curve1._line_width = "default"
+        self.curve1._line_width = INHERIT
         self.twin_axis.add_elements(self.curve1)
         self.twin_axis._default_params = FileLoader("plain").load()
         self.twin_axis._prepare_twin_axis(
@@ -1111,11 +1113,11 @@ class TestSmartTwinAxis(unittest.TestCase):
             plt.rcParams["axes.prop_cycle"].by_key()["color"],
             True,
             0,
-            "default",
+            INHERIT,
         )
-        self.assertEqual(self.curve1._line_width, "default")
+        self.assertEqual(self.curve1._line_width, INHERIT)
         self.twin_axis._default_params = self.plainDefaults
-        self.twin_axis._fill_in_missing_params(self.curve1, "default")
+        self.twin_axis._fill_in_missing_params(self.curve1, INHERIT)
         self.assertEqual(self.curve1._line_width, 2)
         plt.close("all")
 

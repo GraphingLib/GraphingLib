@@ -393,8 +393,8 @@ Control the overall figure size with the ``size`` parameter:
 .. plot::
     :context: close-figs
 
-    # Use "default" to let the style file determine the size
-    fig = gl.SmartFigure(size="default", elements=curve1)
+    # Use INHERIT to let the style file determine the size
+    fig = gl.SmartFigure(size=gl.INHERIT, elements=curve1)
     fig.show()
 
 .. note::

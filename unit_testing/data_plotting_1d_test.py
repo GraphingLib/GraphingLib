@@ -1,6 +1,7 @@
 import unittest
 from random import random
 
+from graphinglib import INHERIT
 from matplotlib.collections import PathCollection
 from matplotlib.colors import to_hex, to_rgba
 from matplotlib.pyplot import close, subplots
@@ -24,7 +25,7 @@ class TestCurve(unittest.TestCase):
         self.assertIsInstance(self.testCurve._y_data, list | ndarray)
 
     def test_default_value(self):
-        self.assertEqual(self.testCurve._line_width, "default")
+        self.assertEqual(self.testCurve._line_width, INHERIT)
 
     def test_color_is_str(self):
         self.assertIsInstance(self.testCurve._color, str)
@@ -376,8 +377,14 @@ class TestScatter(unittest.TestCase):
         self.assertIsInstance(self.testScatter._x_data, list | ndarray)
 
     def test_color_is_str(self):
-        self.assertIsInstance(self.testScatter._face_color, str)
-        self.assertIsInstance(self.testScatter._edge_color, str)
+        self.assertTrue(
+            self.testScatter._face_color is INHERIT
+            or isinstance(self.testScatter._face_color, str)
+        )
+        self.assertTrue(
+            self.testScatter._edge_color is INHERIT
+            or isinstance(self.testScatter._edge_color, str)
+        )
 
     def test_label_is_str(self):
         self.assertIsInstance(self.testScatter._label, str)
@@ -938,10 +945,10 @@ class TestHistogram(unittest.TestCase):
         self.assertEqual(self.testHist._bins, 20)
 
     def test_alpha_is_default(self):
-        self.assertEqual(self.testHist._alpha, "default")
+        self.assertEqual(self.testHist._alpha, INHERIT)
 
     def test_hist_type_is_str(self):
-        self.assertEqual(self.testHist._hist_type, "default")
+        self.assertEqual(self.testHist._hist_type, INHERIT)
 
     def test_plot_residuals_from_fit(self):
         curve = Curve.from_function(lambda x: x**2, 0, 1)
