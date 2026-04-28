@@ -309,9 +309,7 @@ class Curve(Plottable1D, MathematicalObject):
         return self._errorbars_line_width
 
     @errorbars_line_width.setter
-    def errorbars_line_width(
-        self, errorbars_line_width: float | Inherit
-    ) -> None:
+    def errorbars_line_width(self, errorbars_line_width: float | Inherit) -> None:
         self._errorbars_line_width = errorbars_line_width
 
     @property
@@ -367,9 +365,7 @@ class Curve(Plottable1D, MathematicalObject):
         return self._error_curves_line_width
 
     @error_curves_line_width.setter
-    def error_curves_line_width(
-        self, error_curves_line_width: float | Inherit
-    ) -> None:
+    def error_curves_line_width(self, error_curves_line_width: float | Inherit) -> None:
         self._error_curves_line_width = error_curves_line_width
 
     @property

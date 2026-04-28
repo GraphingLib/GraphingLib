@@ -299,7 +299,15 @@ class TestArrow(unittest.TestCase):
         self.assertEqual(shrinkedB[1], 3.4)
 
     def test_styles(self):
-        valid_styles: list[ArrowStyle] = ["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"]
+        valid_styles: list[ArrowStyle] = [
+            "->",
+            "-|>",
+            "-[",
+            "]->",
+            "simple",
+            "fancy",
+            "wedge",
+        ]
         for style in valid_styles:
             arrow = Arrow(
                 pointA=(0, 0),
