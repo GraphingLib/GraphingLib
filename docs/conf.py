@@ -108,7 +108,6 @@ intersphinx_mapping = {
 autodoc_type_aliases = {
     "Iterable": "Iterable",
     "ArrayLike": "ArrayLike",
-    "Inherit": "Inherit",
 }
 
 autosummary_generate = True
