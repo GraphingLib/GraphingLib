@@ -1,3 +1,5 @@
+from .inherit import INHERIT, Inherit, is_inherit
+
 from copy import deepcopy
 from shutil import which
 from typing import Literal, Optional
@@ -61,15 +63,15 @@ class Figure:
         self,
         x_label: Optional[str] = None,
         y_label: Optional[str] = None,
-        size: tuple[float, float] | Literal["default"] = "default",
+        size: tuple[float, float] | Inherit = INHERIT,
         title: Optional[str] = None,
         x_lim: Optional[tuple[float, float]] = None,
         y_lim: Optional[tuple[float, float]] = None,
-        log_scale_x: bool | Literal["default"] = "default",
-        log_scale_y: bool | Literal["default"] = "default",
+        log_scale_x: bool | Inherit = INHERIT,
+        log_scale_y: bool | Inherit = INHERIT,
         remove_axes: bool = False,
         aspect_ratio: float | str = "auto",
-        figure_style: str = "default",
+        figure_style: str | Inherit = INHERIT,
     ) -> None:
         """
         This class implements a general figure object.
@@ -122,11 +124,11 @@ class Figure:
         self.aspect_ratio = aspect_ratio
 
     @property
-    def figure_style(self) -> str:
+    def figure_style(self) -> str | Inherit:
         return self._figure_style
 
     @figure_style.setter
-    def figure_style(self, value: str):
+    def figure_style(self, value: str | Inherit):
         self._figure_style = value
 
     @property
@@ -284,7 +286,7 @@ class Figure:
                 self._fill_in_rc_params()
             figure_params_to_reset = self._fill_in_missing_params(self)
         else:
-            if self._figure_style == "default":
+            if self._figure_style == INHERIT:
                 self._figure_style = get_default_style()
             try:
                 file_loader = FileLoader(self._figure_style)
@@ -534,7 +536,7 @@ class Figure:
         while tries < 2:
             try:
                 for property, value in vars(element).items():
-                    if (type(value) is str) and (value == "default"):
+                    if is_inherit(value):
                         params_to_reset.append(property)
                         default_value = self._default_params[object_type][property]
                         setattr(element, property, default_value)
@@ -561,7 +563,7 @@ class Figure:
             setattr(
                 element,
                 param,
-                "default",
+                INHERIT,
             )
 
     def set_rc_params(
@@ -771,10 +773,10 @@ class Figure:
         visible_y: bool = True,
         which_x: Literal["both", "major", "minor"] = "both",
         which_y: Literal["both", "major", "minor"] = "both",
-        color: str = "default",
-        alpha: float | Literal["default"] = "default",
-        line_style: str = "default",
-        line_width: float | Literal["default"] = "default",
+        color: str | Inherit = INHERIT,
+        alpha: float | Inherit = INHERIT,
+        line_style: str | Inherit = INHERIT,
+        line_width: float | Inherit = INHERIT,
     ) -> None:
         """
         Sets the grid parameters for the figure.
@@ -815,7 +817,7 @@ class Figure:
             "grid.linestyle": line_style,
             "grid.linewidth": line_width,
         }
-        rc_params_dict = {k: v for k, v in rc_params_dict.items() if v != "default"}
+        rc_params_dict = {k: v for k, v in rc_params_dict.items() if v != INHERIT}
         self.set_rc_params(rc_params_dict)
 
     def create_twin_axis(
@@ -945,14 +947,14 @@ class TwinAxis:
         fig_axes: plt.Axes,
         is_matplotlib_style: bool = False,
         default_params: dict = None,
-        figure_style: str = "default",
+        figure_style: str | Inherit = INHERIT,
     ):
         """
         Prepares the :class:`~graphinglib.figure.TwinAxis` to be displayed.
         """
         self._default_params = default_params
         self._figure_style = (
-            figure_style if figure_style != "default" else get_default_style()
+            figure_style if figure_style != INHERIT else get_default_style()
         )
         if self._is_y:
             self._axes = fig_axes.twinx()
@@ -1128,7 +1130,7 @@ class TwinAxis:
         while tries < 2:
             try:
                 for property, value in vars(element).items():
-                    if (type(value) is str) and (value == "default"):
+                    if is_inherit(value):
                         params_to_reset.append(property)
                         default_value = self._default_params[object_type][property]
                         if default_value == "same as curve":
@@ -1164,5 +1166,5 @@ class TwinAxis:
             setattr(
                 element,
                 param,
-                "default",
+                INHERIT,
             )

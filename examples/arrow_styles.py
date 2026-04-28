@@ -6,8 +6,10 @@ _thumb: .4, .4
 """
 
 import graphinglib as gl
+from typing import Literal
 
-arrow_styles = ["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"]
+ArrowStyle = Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"]
+arrow_styles: list[ArrowStyle] = ["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"]
 
 one_sided_arrows = []
 for i, style in enumerate(reversed(arrow_styles)):

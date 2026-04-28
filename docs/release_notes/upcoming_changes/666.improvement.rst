@@ -1,0 +1,7 @@
+Typing for default/inheritance
+------------------------------
+
+GraphingLib's inheritance sentinel was changed from a string to a marker:
+
+- ``Inherit`` is now the marker type used in annotations (for example ``float | Inherit``).
+- ``INHERIT`` is the value used at runtime for defaults, comparisons, and resets.

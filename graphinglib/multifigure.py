@@ -1,7 +1,9 @@
+from .inherit import INHERIT, Inherit, is_inherit
+
 from copy import deepcopy
 from shutil import which
 from string import ascii_lowercase
-from typing import Literal, Optional
+from typing import Optional
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParamsDefault
@@ -70,11 +72,11 @@ class MultiFigure:
         self,
         num_rows: int,
         num_cols: int,
-        size: tuple[float, float] | Literal["default"] = "default",
+        size: tuple[float, float] | Inherit = INHERIT,
         title: Optional[str] = None,
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
-        figure_style: str = "default",
+        figure_style: str | Inherit = INHERIT,
     ) -> None:
         """
         This class implements the "canvas" on which multiple plots are displayed.
@@ -160,19 +162,19 @@ class MultiFigure:
         self._reflabel_loc = reflabel_loc
 
     @property
-    def figure_style(self) -> str:
+    def figure_style(self) -> str | Inherit:
         return self._figure_style
 
     @figure_style.setter
-    def figure_style(self, figure_style: str) -> None:
+    def figure_style(self, figure_style: str | Inherit) -> None:
         self._figure_style = figure_style
 
     @property
-    def size(self) -> tuple[float, float] | Literal["default"]:
+    def size(self) -> tuple[float, float] | Inherit:
         return self._size
 
     @size.setter
-    def size(self, size: tuple[float, float] | Literal["default"]) -> None:
+    def size(self, size: tuple[float, float] | Inherit) -> None:
         self._size = size
 
     def copy(self) -> Self:
@@ -202,11 +204,11 @@ class MultiFigure:
     def from_row(
         cls,
         figures: list[Figure],
-        size: tuple[float, float] | Literal["default"] = "default",
+        size: tuple[float, float] | Inherit = INHERIT,
         title: Optional[str] = None,
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
-        figure_style: str = "default",
+        figure_style: str | Inherit = INHERIT,
     ) -> Self:
         """Creates a MultiFigure with the specified :class:`~graphinglib.figure.Figure` objects in a horizontal configuration.
 
@@ -251,11 +253,11 @@ class MultiFigure:
     def from_stack(
         cls,
         figures: list[Figure],
-        size: tuple[float, float] | Literal["default"] = "default",
+        size: tuple[float, float] | Inherit = INHERIT,
         title: Optional[str] = None,
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
-        figure_style: str = "default",
+        figure_style: str | Inherit = INHERIT,
     ) -> Self:
         """Creates a MultiFigure with the specified :class:`~graphinglib.figure.Figure` objects in a vertical configuration.
 
@@ -301,11 +303,11 @@ class MultiFigure:
         cls,
         figures: list[Figure],
         dimensions: tuple[int, int],
-        size: tuple[float, float] | Literal["default"] = "default",
+        size: tuple[float, float] | Inherit = INHERIT,
         title: Optional[str] = None,
         reference_labels: bool = True,
         reflabel_loc: str = "outside",
-        figure_style: str = "default",
+        figure_style: str | Inherit = INHERIT,
     ) -> Self:
         """Creates a MultiFigure with the specified :class:`~graphinglib.figure.Figure` objects in a grid configuration.
 
@@ -486,7 +488,7 @@ class MultiFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.MultiFigure` to be displayed.
         """
-        if self._figure_style == "default":
+        if self._figure_style == INHERIT:
             self._figure_style = get_default_style()
         try:
             file_loader = FileLoader(self._figure_style)
@@ -617,7 +619,7 @@ class MultiFigure:
         params_to_reset = []
         object_type = type(element).__name__
         for property, value in vars(element).items():
-            if (type(value) is str) and (value == "default"):
+            if is_inherit(value):
                 params_to_reset.append(property)
                 if self._default_params[object_type][property] == "same as curve":
                     element.__dict__["_errorbars_color"] = self._default_params[
@@ -646,7 +648,7 @@ class MultiFigure:
         Resets the parameters that were set to default in the _fill_in_missing_params method.
         """
         for param in params_to_reset:
-            setattr(element, param, "default")
+            setattr(element, param, INHERIT)
 
     def _fill_in_rc_params(self, is_matplotlib_style: bool = False) -> None:
         """

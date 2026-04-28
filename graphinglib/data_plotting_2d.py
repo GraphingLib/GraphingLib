@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from .inherit import INHERIT, Inherit, is_inherit
+
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Callable, Literal, Optional, Protocol, runtime_checkable
+from typing import Callable, Optional, Protocol, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -83,12 +85,12 @@ class Heatmap(Plottable2D):
         y_axis_range: Optional[tuple[float, float]] = None,
         x_mesh: Optional[ArrayLike] = None,
         y_mesh: Optional[ArrayLike] = None,
-        color_map: str | Colormap = "default",
+        color_map: str | Colormap | Inherit = INHERIT,
         color_map_range: Optional[tuple[float, float]] = None,
-        show_color_bar: bool | Literal["default"] = "default",
+        show_color_bar: bool | Inherit = INHERIT,
         alpha: float = 1.0,
-        aspect_ratio: str | float = "default",
-        origin_position: str = "default",
+        aspect_ratio: str | float | Inherit = INHERIT,
+        origin_position: str | Inherit = INHERIT,
         interpolation: str = "none",
         norm: Optional[str | Normalize] = None,
     ) -> None:
@@ -159,12 +161,12 @@ class Heatmap(Plottable2D):
         func: Callable[[ArrayLike, ArrayLike], ArrayLike],
         x_axis_range: tuple[float, float],
         y_axis_range: tuple[float, float],
-        color_map: str | Colormap = "default",
+        color_map: str | Colormap | Inherit = INHERIT,
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool = True,
         alpha: float = 1.0,
-        aspect_ratio: str | float = "default",
-        origin_position: str = "default",
+        aspect_ratio: str | float | Inherit = INHERIT,
+        origin_position: str | Inherit = INHERIT,
         interpolation: str = "none",
         number_of_points: tuple[int, int] = (50, 50),
         norm: Optional[str | Normalize] = None,
@@ -241,12 +243,12 @@ class Heatmap(Plottable2D):
         y_axis_range: tuple[float, float],
         grid_interpolation: str = "nearest",
         fill_value: float = np.nan,
-        color_map: str | Colormap = "default",
+        color_map: str | Colormap | Inherit = INHERIT,
         color_map_range: Optional[tuple[float, float]] = None,
         show_color_bar: bool = True,
         alpha: float = 1.0,
-        aspect_ratio: str | float = "default",
-        origin_position: str = "default",
+        aspect_ratio: str | float | Inherit = INHERIT,
+        origin_position: str | Inherit = INHERIT,
         interpolation: str = "none",
         number_of_points: tuple[int, int] = (50, 50),
         norm: Optional[str | Normalize] = None,
@@ -484,7 +486,7 @@ class Heatmap(Plottable2D):
             params["vmax"] = max(self._color_map_range)
         use_pcolormesh = self._x_mesh is not None and self._y_mesh is not None
         if use_pcolormesh:
-            params = {k: v for k, v in params.items() if v != "default"}
+            params = {k: v for k, v in params.items() if v != INHERIT}
             image = axes.pcolormesh(
                 self._x_mesh,
                 self._y_mesh,
@@ -502,7 +504,7 @@ class Heatmap(Plottable2D):
                 }
             )
 
-            params = {k: v for k, v in params.items() if v != "default"}
+            params = {k: v for k, v in params.items() if v != INHERIT}
             image = axes.imshow(
                 self._image,
                 zorder=z_order,
@@ -546,11 +548,11 @@ class VectorField(Plottable2D):
         y_data: ArrayLike,
         u_data: ArrayLike,
         v_data: ArrayLike,
-        arrow_width: float | Literal["default"] = "default",
-        arrow_head_size: float | Literal["default"] = "default",
+        arrow_width: float | Inherit = INHERIT,
+        arrow_head_size: float | Inherit = INHERIT,
         scale: Optional[float] = None,
         make_angles_axes_independent: bool = False,
-        color: str | Literal["default"] = "default",
+        color: str | Inherit = INHERIT,
     ) -> None:
         """
         This class implements vector fields.
@@ -600,11 +602,11 @@ class VectorField(Plottable2D):
         y_axis_range: tuple[float, float],
         number_of_arrows_x: int = 10,
         number_of_arrows_y: int = 10,
-        arrow_width: float | Literal["default"] = "default",
-        arrow_head_size: float | Literal["default"] = "default",
+        arrow_width: float | Inherit = INHERIT,
+        arrow_head_size: float | Inherit = INHERIT,
         scale: Optional[float] = None,
         make_angles_axes_independent: bool = False,
-        color: str | Literal["default"] = "default",
+        color: str | Inherit = INHERIT,
     ) -> Self:
         """
         Creates a :class:`~graphinglib.data_plotting_2d.VectorField` from a function.
@@ -754,7 +756,7 @@ class VectorField(Plottable2D):
             "scale": 1 / self._scale if self._scale is not None else None,
             "scale_units": "xy",
         }
-        params = {k: v for k, v in params.items() if v != "default"}
+        params = {k: v for k, v in params.items() if v != INHERIT}
         axes.quiver(
             self._x_data,
             self._y_data,
@@ -805,25 +807,25 @@ class Contour(Plottable2D):
     _z_data: ArrayLike
     _x_mesh: ArrayLike
     _y_mesh: ArrayLike
-    _levels: int | Literal["default"] = "default"
-    _color_map: str | Colormap | Literal["default"] = "default"
-    _show_color_bar: bool | Literal["default"] = "default"
-    _filled: bool | Literal["default"] = "default"
-    _alpha: float | Literal["default"] = "default"
-    _line_widths: float | ArrayLike | Literal["default"] = "default"
+    _levels: int | Inherit = INHERIT
+    _color_map: str | Colormap | Inherit = INHERIT
+    _show_color_bar: bool | Inherit = INHERIT
+    _filled: bool | Inherit = INHERIT
+    _alpha: float | Inherit = INHERIT
+    _line_widths: float | ArrayLike | Inherit = INHERIT
 
     def __init__(
         self,
         z_data: ArrayLike,
         x_mesh: Optional[ArrayLike] = None,
         y_mesh: Optional[ArrayLike] = None,
-        levels: int | ArrayLike | Literal["default"] = "default",
-        color_map: str | Colormap | Literal["default"] = "default",
+        levels: int | ArrayLike | Inherit = INHERIT,
+        color_map: str | Colormap | Inherit = INHERIT,
         color_map_range: Optional[tuple[float, float]] = None,
-        show_color_bar: bool | Literal["default"] = "default",
-        filled: bool | Literal["default"] = "default",
-        alpha: float | Literal["default"] = "default",
-        line_widths: float | ArrayLike | Literal["default"] = "default",
+        show_color_bar: bool | Inherit = INHERIT,
+        filled: bool | Inherit = INHERIT,
+        alpha: float | Inherit = INHERIT,
+        line_widths: float | ArrayLike | Inherit = INHERIT,
     ) -> None:
         """
         This class implements contour plots.
@@ -878,13 +880,13 @@ class Contour(Plottable2D):
         func: Callable[[ArrayLike, ArrayLike], ArrayLike],
         x_axis_range: tuple[float, float],
         y_axis_range: tuple[float, float],
-        levels: int | ArrayLike | Literal["default"] = "default",
-        color_map: str | Colormap | Literal["default"] = "default",
+        levels: int | ArrayLike | Inherit = INHERIT,
+        color_map: str | Colormap | Inherit = INHERIT,
         color_map_range: Optional[tuple[float, float]] = None,
-        show_color_bar: bool | Literal["default"] = "default",
-        filled: bool | Literal["default"] = "default",
-        alpha: float | Literal["default"] = "default",
-        line_widths: float | ArrayLike | Literal["default"] = "default",
+        show_color_bar: bool | Inherit = INHERIT,
+        filled: bool | Inherit = INHERIT,
+        alpha: float | Inherit = INHERIT,
+        line_widths: float | ArrayLike | Inherit = INHERIT,
         number_of_points: tuple[int, int] = (500, 500),
     ) -> Self:
         """
@@ -969,11 +971,11 @@ class Contour(Plottable2D):
         self._z_data = np.asarray(z_data)
 
     @property
-    def levels(self) -> int | ArrayLike | Literal["default"]:
+    def levels(self) -> int | ArrayLike | Inherit:
         return self._levels
 
     @levels.setter
-    def levels(self, levels: int | ArrayLike | Literal["default"]) -> None:
+    def levels(self, levels: int | ArrayLike | Inherit) -> None:
         self._levels = levels
 
     @property
@@ -1086,7 +1088,7 @@ class Contour(Plottable2D):
             params["vmax"] = max(self._color_map_range)
 
         params = {
-            k: v for k, v in params.items() if not isinstance(v, str) or v != "default"
+            k: v for k, v in params.items() if not isinstance(v, str) or v != INHERIT
         }
         if self._filled:
             cont = axes.contourf(
@@ -1142,10 +1144,10 @@ class Stream(Plottable2D):
         u_data: ArrayLike,
         v_data: ArrayLike,
         density: float | tuple[float, float] = 1,
-        line_width: float | Literal["default"] = "default",
-        color: str | ArrayLike | Literal["default"] = "default",
-        color_map: str | Colormap | Literal["default"] = "default",
-        arrow_size: float | Literal["default"] = "default",
+        line_width: float | Inherit = INHERIT,
+        color: str | ArrayLike | Inherit = INHERIT,
+        color_map: str | Colormap | Inherit = INHERIT,
+        arrow_size: float | Inherit = INHERIT,
     ) -> None:
         """
         This class implements stream plots.
@@ -1189,10 +1191,10 @@ class Stream(Plottable2D):
         number_of_points_x: int = 30,
         number_of_points_y: int = 30,
         density: float | tuple[float, float] = 1,
-        line_width: float | Literal["default"] = "default",
-        color: str | Literal["default"] = "default",
-        color_map: str | Colormap | Literal["default"] = "default",
-        arrow_size: float | Literal["default"] = "default",
+        line_width: float | Inherit = INHERIT,
+        color: str | Inherit = INHERIT,
+        color_map: str | Colormap | Inherit = INHERIT,
+        arrow_size: float | Inherit = INHERIT,
     ) -> Self:
         """
         Creates a :class:`~graphinglib.data_plotting_2d.Stream` from a function.
@@ -1244,8 +1246,8 @@ class Stream(Plottable2D):
             "cmap": self._color_map,
             "arrowsize": self._arrow_size,
         }
-        params = {k: v for k, v in params.items() if v != "default"}
-        if isinstance(self._color, str) and self._color == "default":
+        params = {k: v for k, v in params.items() if v != INHERIT}
+        if is_inherit(self._color):
             pass
         else:
             params["color"] = self._color

@@ -1,5 +1,7 @@
 from __future__ import annotations as _annotations_
 
+from .inherit import INHERIT, Inherit, is_inherit
+
 from collections import OrderedDict
 from copy import deepcopy
 from logging import warning
@@ -255,7 +257,7 @@ class SmartFigure:
         num_cols: int = 1,
         x_label: str | None = None,
         y_label: str | None = None,
-        size: tuple[float, float] | Literal["default"] = "default",
+        size: tuple[float, float] | Inherit = INHERIT,
         title: str | None = None,
         x_lim: ListOrItem[tuple[float, float] | None] = None,
         y_lim: ListOrItem[tuple[float, float] | None] = None,
@@ -289,7 +291,7 @@ class SmartFigure:
         show_legend: ListOrItem[bool] = True,
         twin_x_axis: SmartTwinAxis | None = None,
         twin_y_axis: SmartTwinAxis | None = None,
-        figure_style: str = "default",
+        figure_style: str | Inherit = INHERIT,
         elements: Plottable
         | Iterable[Plottable | SmartFigure | None]
         | Iterable[Iterable[Plottable | None]] = [],
@@ -458,12 +460,12 @@ class SmartFigure:
         self._y_label = value
 
     @property
-    def size(self) -> tuple[float, float] | Literal["default"]:
+    def size(self) -> tuple[float, float] | Inherit:
         return self._size
 
     @size.setter
-    def size(self, value: tuple[float, float] | Literal["default"]):
-        if not isinstance(value, tuple) and value != "default":
+    def size(self, value: tuple[float, float] | Inherit):
+        if not isinstance(value, tuple) and value != INHERIT:
             raise TypeError("size must be a tuple or 'default'.")
         if isinstance(value, tuple) and len(value) != 2:
             raise ValueError("size must be a tuple of length 2.")
@@ -895,14 +897,14 @@ class SmartFigure:
         self._twin_y_axis = value
 
     @property
-    def figure_style(self) -> str:
+    def figure_style(self) -> str | Inherit:
         return self._figure_style
 
     @figure_style.setter
-    def figure_style(self, value: str) -> None:
-        if not isinstance(value, str):
-            raise TypeError("figure_style must be a string.")
-        available_styles = ["default", "matplotlib"] + get_styles(matplotlib=True)
+    def figure_style(self, value: str | Inherit) -> None:
+        if not isinstance(value, str) and not is_inherit(value):
+            raise TypeError("figure_style must be a string or INHERIT.")
+        available_styles = [INHERIT, "matplotlib"] + get_styles(matplotlib=True)
         if value not in available_styles:
             raise ValueError(f"figure_style must be one of {available_styles}.")
         self._figure_style = value
@@ -1318,7 +1320,7 @@ class SmartFigure:
 
     def _reset_stylable_elements_to_default(self) -> None:
         style_name = self._figure_style
-        if style_name == "default":
+        if style_name == INHERIT:
             style_name = get_default_style()
         try:
             defaults = FileLoader(style_name).load()
@@ -1329,7 +1331,7 @@ class SmartFigure:
             object_type = type(element).__name__
             for property_ in defaults.get(object_type, {}):
                 if hasattr(element, property_):
-                    setattr(element, property_, "default")
+                    setattr(element, property_, INHERIT)
 
     def _iter_all_plottables_recursive(self) -> Iterator[Plottable]:
         if self._mode == "leaf":
@@ -1943,7 +1945,7 @@ class SmartFigure:
         figure style, parameters and matplotlib figure and calls the :meth:`~graphinglib.SmartFigure._prepare_figure`
         method.
         """
-        if self._figure_style == "default":
+        if self._figure_style == INHERIT:
             self._figure_style = get_default_style()
         try:
             file_loader = FileLoader(self._figure_style)
@@ -2710,7 +2712,7 @@ class SmartFigure:
             "format", lambda le: f"{le})"
         )(letter)
         reflabel_params = {
-            k: v for k, v in self._reference_labels_params.items() if v != "default"
+            k: v for k, v in self._reference_labels_params.items() if v != INHERIT
         }
         target.text(
             x=0,
@@ -2844,11 +2846,7 @@ class SmartFigure:
         for try_i in range(2):
             try:
                 for property_, value in vars(element).items():
-                    if (
-                        (type(value) is str)
-                        and (value == "default")
-                        and not (property_ == "_figure_style")
-                    ):
+                    if is_inherit(value) and not (property_ == "_figure_style"):
                         params_to_reset.append(property_)
                         default_value = self._default_params[object_type][property_]
                         setattr(element, property_, default_value)
@@ -2880,7 +2878,7 @@ class SmartFigure:
         method.
         """
         for param in params_to_reset:
-            setattr(element, param, "default")
+            setattr(element, param, INHERIT)
 
     def _fill_in_rc_params(self, is_matplotlib_style: bool = False) -> None:
         """
@@ -3299,10 +3297,10 @@ class SmartFigure:
         visible_y: bool = True,
         which_x: Literal["major", "minor", "both"] = "both",
         which_y: Literal["major", "minor", "both"] = "both",
-        color: str | Literal["default"] = "default",
-        alpha: float | Literal["default"] = "default",
-        line_style: str | Literal["default"] = "default",
-        line_width: float | Literal["default"] = "default",
+        color: str | Inherit = INHERIT,
+        alpha: float | Inherit = INHERIT,
+        line_style: str | Inherit = INHERIT,
+        line_width: float | Inherit = INHERIT,
     ) -> Self:
         """
         Sets the grid parameters for the figure.
@@ -3342,10 +3340,10 @@ class SmartFigure:
             self._grid.clear()
             self._user_rc_dict.update(
                 {
-                    "grid.color": "default",
-                    "grid.alpha": "default",
-                    "grid.linestyle": "default",
-                    "grid.linewidth": "default",
+                    "grid.color": Inherit,
+                    "grid.alpha": Inherit,
+                    "grid.linestyle": Inherit,
+                    "grid.linewidth": Inherit,
                 }
             )
 
@@ -3362,7 +3360,7 @@ class SmartFigure:
             "grid.linestyle": line_style,
             "grid.linewidth": line_width,
         }
-        rc_params_dict = {k: v for k, v in rc_params_dict.items() if v != "default"}
+        rc_params_dict = {k: v for k, v in rc_params_dict.items() if v != INHERIT}
         self.set_rc_params(rc_params_dict)
         return self
 
@@ -3480,10 +3478,10 @@ class SmartFigure:
     def set_reference_labels_params(
         self,
         reset: bool = False,
-        color: str | Literal["default"] | None = None,
+        color: str | Inherit | None = None,
         start_index: int | None = None,
-        font_size: float | Literal["default"] | None = None,
-        font_weight: str | Literal["default"] | None = None,
+        font_size: float | Inherit | None = None,
+        font_weight: str | Inherit | None = None,
         format: Callable = None,
     ) -> Self:
         """
@@ -3495,15 +3493,15 @@ class SmartFigure:
             If ``True``, resets all previously set reference label parameters to their default values before applying
             the new parameters.
             Defaults to ``False``.
-        color : str | Literal["default"], optional
+        color : str | Inherit, optional
             The color of the reference labels. If ``"default"``, the color is set according to the text color of other
             text in the figure.
         start_index : int, optional
             Starting index for the reference labels. This allows to customize the starting label, for example, to start
             labeling from "b)" instead of "a)" by giving ``start_index = 1``.
-        font_size : float | Literal["default"], optional
+        font_size : float | Inherit, optional
             The font size of the reference labels.
-        font_weight : str | Literal["default"], optional
+        font_weight : str | Inherit, optional
             The font weight of the reference labels.
         format : Callable, optional
             A callable function to format the reference labels. By default, the reference labels are formatted as a),
@@ -3815,7 +3813,7 @@ class SmartFigureWCS(SmartFigure):
         num_cols: int = 1,
         x_label: str | None = None,
         y_label: str | None = None,
-        size: tuple[float, float] | Literal["default"] = "default",
+        size: tuple[float, float] | Inherit = INHERIT,
         title: str | None = None,
         x_lim: ListOrItem[tuple[float, float] | None] = None,
         y_lim: ListOrItem[tuple[float, float] | None] = None,
@@ -3848,7 +3846,7 @@ class SmartFigureWCS(SmartFigure):
         show_legend: ListOrItem[bool] = True,
         twin_x_axis: SmartTwinAxis | None = None,
         twin_y_axis: SmartTwinAxis | None = None,
-        figure_style: str = "default",
+        figure_style: str | Inherit = INHERIT,
         elements: Plottable
         | Iterable[Plottable | SmartFigure | None]
         | Iterable[Iterable[Plottable | None]] = [],
@@ -4265,10 +4263,10 @@ class SmartFigureWCS(SmartFigure):
         self,
         visible_x: bool = True,
         visible_y: bool = True,
-        color: str | Literal["default"] = "default",
-        alpha: float | Literal["default"] = "default",
-        line_style: str | Literal["default"] = "default",
-        line_width: float | Literal["default"] = "default",
+        color: str | Inherit = INHERIT,
+        alpha: float | Inherit = INHERIT,
+        line_style: str | Inherit = INHERIT,
+        line_width: float | Inherit = INHERIT,
     ) -> Self:
         """
         Sets the grid parameters for the figure.
@@ -4540,7 +4538,7 @@ class SmartTwinAxis:
         cycle_colors: list[str],
         is_y: bool,
         z_order: int,
-        figure_style: str,
+        figure_style: str | Inherit,
     ) -> tuple[list[str], list[Any]]:
         """
         Prepares the twin axis to be displayed.
@@ -4558,7 +4556,7 @@ class SmartTwinAxis:
         z_order : int
             The z-order for the elements plotted on the twin axis. This is used to ensure that the elements on the twin
             axis are drawn above the elements of the original axis.
-        figure_style : str
+        figure_style : str | Inherit
             The figure style to use for the twin axis. This is used for the
             :meth:`~graphinglib.SmartTwinAxis._fill_in_missing_params` method.
 
@@ -4718,7 +4716,7 @@ class SmartTwinAxis:
             )
 
     def _fill_in_missing_params(
-        self, element: SmartFigure | Plottable, figure_style: str
+        self, element: SmartFigure | Plottable, figure_style: str | Inherit
     ) -> list[str]:
         """
         Fills in the missing parameters for a :class:`~graphinglib.Plottable` from the parent's ``figure_style``.
@@ -4728,11 +4726,7 @@ class SmartTwinAxis:
         for try_i in range(2):
             try:
                 for property_, value in vars(element).items():
-                    if (
-                        (type(value) is str)
-                        and (value == "default")
-                        and not (property_ == "_figure_style")
-                    ):
+                    if is_inherit(value) and not (property_ == "_figure_style"):
                         params_to_reset.append(property_)
                         default_value = self._default_params[object_type][property_]
                         setattr(element, property_, default_value)
@@ -4764,7 +4758,7 @@ class SmartTwinAxis:
         method.
         """
         for param in params_to_reset:
-            setattr(element, param, "default")
+            setattr(element, param, INHERIT)
 
     def set_rc_params(
         self,

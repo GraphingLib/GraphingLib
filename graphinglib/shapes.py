@@ -1,3 +1,5 @@
+from .inherit import INHERIT, Inherit
+
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Literal, Optional
@@ -38,7 +40,7 @@ class Arrow(Plottable):
     head_size : float, optional
         Scales the size of the arrow head.
         Default depends on the ``figure_style`` configuration.
-    style : ``Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"]``, optional
+    style : ``Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"] | Inherit``, optional
         The style of the arrow. For a visual explanation of all available styles, see the gallery
         `Arrow Styles <https://graphinglib.org/latest/examples/arrow_styles.html>`_ example.
         Default depends on the ``figure_style`` configuration.
@@ -61,14 +63,13 @@ class Arrow(Plottable):
         self,
         pointA: tuple[float, float],
         pointB: tuple[float, float],
-        color: str = "default",
-        width: float | Literal["default"] = "default",
-        head_size: float | Literal["default"] = "default",
+        color: str | Inherit = INHERIT,
+        width: float | Inherit = INHERIT,
+        head_size: float | Inherit = INHERIT,
         shrink: float = 0,
-        style: Literal[
-            "->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"
-        ] = "default",
-        alpha: float | Literal["default"] = "default",
+        style: Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"]
+        | Inherit = INHERIT,
+        alpha: float | Inherit = INHERIT,
         two_sided: bool = False,
     ):
         """This class implements an arrow object.
@@ -86,7 +87,7 @@ class Arrow(Plottable):
         head_size : float, optional
             Scales the size of the arrow head.
             Default depends on the ``figure_style`` configuration.
-        style : ``Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge", "default"]``, optional
+        style : ``Literal["->", "-|>", "-[", "]->", "simple", "fancy", "wedge"] | Inherit``, optional
             The style of the arrow. For a visual explanation of all available styles, see the gallery
             `Arrow Styles <https://graphinglib.org/latest/examples/arrow_styles.html>`_ example.
             Default depends on the ``figure_style`` configuration.
@@ -173,11 +174,11 @@ class Arrow(Plottable):
             "simple",
             "fancy",
             "wedge",
-            "default",
+            INHERIT,
         ]:
             raise ValueError(
                 "Invalid head style. Valid options are: '->', '-|>', '-[', ']->', 'simple', 'fancy', "
-                "'wedge', 'default'."
+                "'wedge', or INHERIT."
             )
         self._style = value
 
@@ -234,7 +235,7 @@ class Arrow(Plottable):
         else:
             style = self._style
 
-        if self._head_size != "default":
+        if self._head_size != INHERIT:
             head_length, head_width = self._head_size * 0.4, self._head_size * 0.2
 
             # Set specific arrow properties
@@ -262,7 +263,7 @@ class Arrow(Plottable):
             "linewidth": self._width,
             "alpha": self._alpha,
         }
-        props = {k: v for k, v in props.items() if v != "default"}
+        props = {k: v for k, v in props.items() if v != INHERIT}
         if self._shrink != 0:
             shrinkPointA, shrinkPointB = self._shrink_points()
             axes.annotate(
@@ -311,21 +312,21 @@ class Line(Plottable):
 
     _pointA: tuple[float, float]
     _pointB: tuple[float, float]
-    _color: str = "default"
-    _width: float | Literal["default"] = "default"
+    _color: str | Inherit = INHERIT
+    _width: float | Inherit = INHERIT
     _capped_line: bool = False
-    _cap_width: float | Literal["default"] = "default"
-    _alpha: float | Literal["default"] = "default"
+    _cap_width: float | Inherit = INHERIT
+    _alpha: float | Inherit = INHERIT
 
     def __init__(
         self,
         pointA: tuple[float, float],
         pointB: tuple[float, float],
-        color: str = "default",
-        width: float | Literal["default"] = "default",
+        color: str | Inherit = INHERIT,
+        width: float | Inherit = INHERIT,
         capped_line: bool = False,
-        cap_width: float | Literal["default"] = "default",
-        alpha: float | Literal["default"] = "default",
+        cap_width: float | Inherit = INHERIT,
+        alpha: float | Inherit = INHERIT,
     ):
         self._pointA = pointA
         self._pointB = pointB
@@ -408,7 +409,7 @@ class Line(Plottable):
             "linewidth": self._width,
             "alpha": self._alpha,
         }
-        props = {k: v for k, v in props.items() if v != "default"}
+        props = {k: v for k, v in props.items() if v != INHERIT}
         axes.annotate(
             "",
             self._pointA,
@@ -445,12 +446,12 @@ class Polygon(Plottable):
     def __init__(
         self,
         vertices: list[tuple[float, float]],
-        fill: bool = "default",
-        edge_color: str = "default",
-        fill_color: str = "default",
-        line_width: float | Literal["default"] = "default",
-        line_style: str = "default",
-        fill_alpha: float | Literal["default"] = "default",
+        fill: bool | Inherit = INHERIT,
+        edge_color: str | Inherit = INHERIT,
+        fill_color: str | Inherit = INHERIT,
+        line_width: float | Inherit = INHERIT,
+        line_style: str | Inherit = INHERIT,
+        fill_alpha: float | Inherit = INHERIT,
     ):
         self._fill = fill
         self._edge_color = edge_color
@@ -860,7 +861,7 @@ class Polygon(Plottable):
             }
             if self._fill_color is not None:
                 params["facecolor"] = self._fill_color
-            params = {k: v for k, v in params.items() if v != "default"}
+            params = {k: v for k, v in params.items() if v != INHERIT}
             polygon_fill = MPLPolygon(self.vertices, **params)
             axes.add_patch(polygon_fill)
         # Create a polygon patch for the edge
@@ -872,7 +873,7 @@ class Polygon(Plottable):
                 "edgecolor": self._edge_color,
                 "zorder": z_order,
             }
-            params = {k: v for k, v in params.items() if v != "default"}
+            params = {k: v for k, v in params.items() if v != INHERIT}
             polygon_edge = MPLPolygon(self.vertices, **params)
             axes.add_patch(polygon_edge)
 
@@ -917,12 +918,12 @@ class Circle(Polygon):
         x_center: float,
         y_center: float,
         radius: float,
-        fill: bool = "default",
-        fill_color: str = "default",
-        edge_color: str = "default",
-        line_width: float | Literal["default"] = "default",
-        line_style: str = "default",
-        fill_alpha: float | Literal["default"] = "default",
+        fill: bool | Inherit = INHERIT,
+        fill_color: str | Inherit = INHERIT,
+        edge_color: str | Inherit = INHERIT,
+        line_width: float | Inherit = INHERIT,
+        line_style: str | Inherit = INHERIT,
+        fill_alpha: float | Inherit = INHERIT,
         number_of_points: int = 100,
     ):
         self.number_of_points = number_of_points
@@ -1039,12 +1040,12 @@ class Ellipse(Polygon):
         x_radius: float,
         y_radius: float,
         angle: float = 0,
-        fill: bool = "default",
-        fill_color: str = "default",
-        edge_color: str = "default",
-        line_width: float | Literal["default"] = "default",
-        line_style: str = "default",
-        fill_alpha: float | Literal["default"] = "default",
+        fill: bool | Inherit = INHERIT,
+        fill_color: str | Inherit = INHERIT,
+        edge_color: str | Inherit = INHERIT,
+        line_width: float | Inherit = INHERIT,
+        line_style: str | Inherit = INHERIT,
+        fill_alpha: float | Inherit = INHERIT,
         number_of_points: int = 100,
     ):
         self.number_of_points = number_of_points
@@ -1214,12 +1215,12 @@ class Rectangle(Polygon):
         y_bottom_left: float,
         width: float,
         height: float,
-        fill: bool = "default",
-        fill_color: str = "default",
-        edge_color: str = "default",
-        line_width: float | Literal["default"] = "default",
-        line_style: str = "default",
-        fill_alpha: float | Literal["default"] = "default",
+        fill: bool | Inherit = INHERIT,
+        fill_color: str | Inherit = INHERIT,
+        edge_color: str | Inherit = INHERIT,
+        line_width: float | Inherit = INHERIT,
+        line_style: str | Inherit = INHERIT,
+        fill_alpha: float | Inherit = INHERIT,
     ):
         self._fill = fill
         self._fill_color = fill_color
@@ -1325,12 +1326,12 @@ class Rectangle(Polygon):
         y: float,
         width: float,
         height: float,
-        fill: bool = "default",
-        fill_color: str = "default",
-        edge_color: str = "default",
-        line_width: float | Literal["default"] = "default",
-        line_style: str = "default",
-        fill_alpha: float | Literal["default"] = "default",
+        fill: bool | Inherit = INHERIT,
+        fill_color: str | Inherit = INHERIT,
+        edge_color: str | Inherit = INHERIT,
+        line_width: float | Inherit = INHERIT,
+        line_style: str | Inherit = INHERIT,
+        fill_alpha: float | Inherit = INHERIT,
     ) -> Self:
         """Creates a :class:`~graphinglib.shapes.Rectangle` from its center point, width and height.
 

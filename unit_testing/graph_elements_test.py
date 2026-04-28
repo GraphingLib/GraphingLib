@@ -1,5 +1,6 @@
 import unittest
 
+from graphinglib import INHERIT
 from matplotlib import pyplot as plt
 from matplotlib.colors import to_rgba
 from numpy import ndarray
@@ -29,10 +30,16 @@ class TestHlines(unittest.TestCase):
         self.assertIsInstance(self.testHlines._x_min, list | ndarray | float | int)
 
     def test_colors_is_str_list_or_none(self):
-        self.assertIsInstance(self.testHlines._colors, list | str | None)
+        self.assertTrue(
+            self.testHlines._colors is INHERIT
+            or isinstance(self.testHlines._colors, list | str | None)
+        )
 
     def test_linestyles_is_str_list_or_none(self):
-        self.assertIsInstance(self.testHlines._line_styles, list | str | None)
+        self.assertTrue(
+            self.testHlines._line_styles is INHERIT
+            or isinstance(self.testHlines._line_styles, list | str | None)
+        )
 
     def test_label_is_str(self):
         self.assertIsInstance(self.testHlines._label, str)
@@ -52,7 +59,7 @@ class TestHlines(unittest.TestCase):
         copied = self.testHlines.copy_with(colors="red")
         self.assertIsNot(copied, self.testHlines)
         self.assertEqual(copied.colors, "red")
-        self.assertEqual(self.testHlines.colors, "default")
+        self.assertEqual(self.testHlines.colors, INHERIT)
 
     def test_copy_with_rejects_private_property(self):
         with self.assertRaisesRegex(
@@ -168,10 +175,13 @@ class TestVlines(unittest.TestCase):
         self.assertEqual(self.testVlines._y_max, 1)
 
     def test_colors_is_default(self):
-        self.assertEqual(self.testVlines._colors, "default")
+        self.assertEqual(self.testVlines._colors, INHERIT)
 
     def test_linestyles_is_str_list_or_none(self):
-        self.assertIsInstance(self.testVlines._line_styles, list | str | None)
+        self.assertTrue(
+            self.testVlines._line_styles is INHERIT
+            or isinstance(self.testVlines._line_styles, list | str | None)
+        )
 
     def test_label_is_str(self):
         self.assertEqual(self.testVlines._label, "Test Vlines")
@@ -278,25 +288,25 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(self.testPoint._alpha, 0.7)
 
     def test_colors_is_default(self):
-        self.assertEqual(self.testPoint._face_color, "default")
+        self.assertEqual(self.testPoint._face_color, INHERIT)
 
     def test_edge_color_is_default(self):
-        self.assertEqual(self.testPoint._edge_color, "default")
+        self.assertEqual(self.testPoint._edge_color, INHERIT)
 
     def test_marker_size_is_default(self):
-        self.assertEqual(self.testPoint._marker_size, "default")
+        self.assertEqual(self.testPoint._marker_size, INHERIT)
 
     def test_marker_style_is_default(self):
-        self.assertEqual(self.testPoint._marker_style, "default")
+        self.assertEqual(self.testPoint._marker_style, INHERIT)
 
     def test_edge_width_is_default(self):
-        self.assertEqual(self.testPoint._edge_width, "default")
+        self.assertEqual(self.testPoint._edge_width, INHERIT)
 
     def test_font_size_is_same_as_figure(self):
         self.assertEqual(self.testPoint._font_size, "same as figure")
 
     def test_text_color_is_default(self):
-        self.assertEqual(self.testPoint._text_color, "default")
+        self.assertEqual(self.testPoint._text_color, INHERIT)
 
     def test_h_align_is_left(self):
         self.assertEqual(self.testPoint._h_align, "left")
