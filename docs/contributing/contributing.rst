@@ -92,7 +92,7 @@ You can find a more detailed introduction to Git and GitHub on `GitHub's documen
 Recommended Development Environment
 -----------------------------------
 
-The minimal Python version required for GraphingLib is 3.10. We recommend setting up a dedicated virtual environment to develop your
+The minimal Python version required for GraphingLib is 3.12. We recommend setting up a dedicated virtual environment to develop your
 contributions. Although it is not mandatory, we suggest using ``uv`` to manage your virtual environment. For information on how to
 install and get started with ``uv``, visit `their website <https://docs.astral.sh/uv/getting-started/>`_. Once you have ``uv`` installed
 and your fork is cloned on your computer, run this command from within the main folder to create a virtual environment and install
