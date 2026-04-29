@@ -49,6 +49,7 @@ class MultiFigure:
 
     size : tuple[float, float]
         Overall size of the multifigure.
+        Figure size is in inches; typical width is ``4`` to ``12`` and typical height is ``3`` to ``8``.
         Default depends on the ``figure_style`` configuration.
     title : str, optional
         General title of the figure.
@@ -61,8 +62,8 @@ class MultiFigure:
             to a particular SubFigure in a caption accompanying the MultiFigure.
 
     reflabel_loc : str
-        Location of the reference labels of the SubFigures. Either "inside" or "outside".
-        Defaults to "outside".
+        Location of the reference labels of the SubFigures. Values are ``"inside"`` and ``"outside"``.
+        Defaults to ``"outside"``.
     figure_style : str
         The figure style to use for the figure.
         Default can be set using ``gl.set_default_style()``.
@@ -96,6 +97,7 @@ class MultiFigure:
 
         size : tuple[float, float]
             Overall size of the figure.
+            Figure size is in inches; typical width is ``4`` to ``12`` and typical height is ``3`` to ``8``.
             Default depends on the ``figure_style`` configuration.
         title : str, optional
             General title of the figure.
@@ -108,8 +110,8 @@ class MultiFigure:
                 to a particular SubFigure in a caption accompanying the MultiFigure.
 
         reflabel_loc : str
-            Location of the reference labels of the SubFigures. Either "inside" or "outside".
-            Defaults to "outside".
+            Location of the reference labels of the SubFigures. Values are ``"inside"`` and ``"outside"``.
+            Defaults to ``"outside"``.
         figure_style : str
             The figure style to use for the figure.
             Default can be set using ``gl.set_default_style()``.
@@ -218,6 +220,7 @@ class MultiFigure:
             The :class:`~graphinglib.figure.Figure` objects to add to the MultiFigure, from left to right.
         size : tuple[float, float]
             Overall size of the figure.
+            Figure size is in inches; typical width is ``4`` to ``12`` and typical height is ``3`` to ``8``.
             Default depends on the ``figure_style`` configuration.
         title : str, optional
             Title of the MultiFigure.
@@ -226,8 +229,8 @@ class MultiFigure:
             Whether or not to add reference labels to the SubFigures.
             Defaults to ``True``.
         reflabel_loc : str
-            Location of the reference labels of the SubFigures. Either "inside" or "outside".
-            Defaults to "outside".
+            Location of the reference labels of the SubFigures. Values are ``"inside"`` and ``"outside"``.
+            Defaults to ``"outside"``.
         figure_style : str
             The figure style to use for the figure.
             Default can be set using ``gl.set_default_style()``.
@@ -267,6 +270,7 @@ class MultiFigure:
             The :class:`~graphinglib.figure.Figure` objects to add to the MultiFigure, from top to bottom.
         size : tuple[float, float]
             Overall size of the figure.
+            Figure size is in inches; typical width is ``4`` to ``12`` and typical height is ``3`` to ``8``.
             Default depends on the ``figure_style`` configuration.
         title : str, optional
             Title of the MultiFigure.
@@ -275,8 +279,8 @@ class MultiFigure:
             Whether or not to add reference labels to the SubFigures.
             Defaults to ``True``.
         reflabel_loc : str
-            Location of the reference labels of the SubFigures. Either "inside" or "outside".
-            Defaults to "outside".
+            Location of the reference labels of the SubFigures. Values are ``"inside"`` and ``"outside"``.
+            Defaults to ``"outside"``.
         figure_style : str
             The figure style to use for the figure.
             Default can be set using ``gl.set_default_style()``.
@@ -319,6 +323,7 @@ class MultiFigure:
             The number of rows and columns of the grid (product should equal the number of figures).
         size : tuple[float, float]
             Overall size of the figure.
+            Figure size is in inches; typical width is ``4`` to ``12`` and typical height is ``3`` to ``8``.
             Default depends on the ``figure_style`` configuration.
         title : str, optional
             Title of the MultiFigure.
@@ -327,8 +332,8 @@ class MultiFigure:
             Whether or not to add reference labels to the SubFigures.
             Defaults to ``True``.
         reflabel_loc : str
-            Location of the reference labels of the SubFigures. Either "inside" or "outside".
-            Defaults to "outside".
+            Location of the reference labels of the SubFigures. Values are ``"inside"`` and ``"outside"``.
+            Defaults to ``"outside"``.
         figure_style : str
             The figure style to use for the figure.
             Default can be set using ``gl.set_default_style()``.
@@ -750,6 +755,7 @@ class MultiFigure:
             Defaults to ``None``.
         axes_line_width : float
             The width of the axes lines.
+            Typical range is ``0.5`` to ``3``.
             Defaults to ``None``.
         color_cycle : list[str]
             A list of colors to use for the color cycle.
@@ -771,9 +777,12 @@ class MultiFigure:
             Defaults to ``None``.
         font_size : float
             The font size to use.
+            Typical range is ``8`` to ``20``.
             Defaults to ``None``.
         font_weight : str
             The font weight to use.
+            Values include ``"normal"``, ``"bold"``, ``"light"``, ``"ultralight"``, ``"heavy"``, and
+            ``"black"``.
             Defaults to ``None``.
         text_color : str
             The color of the text.
@@ -783,16 +792,26 @@ class MultiFigure:
             Defaults to ``None``.
         grid_line_style : str
             The style of the grid lines.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Defaults to ``None``.
         grid_line_width : float
             The width of the grid lines.
+            Typical range is ``0.5`` to ``3``.
             Defaults to ``None``.
         grid_color : str
             The color of the grid lines.
             Defaults to ``None``.
         grid_alpha : float
             The alpha of the grid lines.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Defaults to ``None``.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         if color_cycle is not None:
             color_cycle = plt.cycler(color=color_cycle)

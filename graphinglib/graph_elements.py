@@ -112,14 +112,24 @@ class Hlines(Plottable):
     line_widths : list[float]
         Line widths to use for the lines. One width for every line or a width
         per line can be specified.
+        Typical range is ``0.5`` to ``4``.
         Default depends on the ``figure_style`` configuration.
     line_styles : list[str]
         Line styles to use for the lines. One style for every line or a style
         per line can be specified.
+        Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+        ``"dotted"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the lines.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
     """
 
     def __init__(
@@ -386,14 +396,24 @@ class Vlines(Plottable):
     line_widths : list[float]
         Line widths to use for the lines. One width for every line or a width
         per line can be specified.
+        Typical range is ``0.5`` to ``4``.
         Default depends on the ``figure_style`` configuration.
     line_styles : list[str]
         Line styles to use for the lines. One style for every line or a style
         per line can be specified.
+        Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+        ``"dotted"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the lines.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
     """
 
     def __init__(
@@ -654,18 +674,24 @@ class Point(Plottable):
         Default depends on the ``figure_style`` configuration.
     marker_size : float
         Size of the marker.
+        Typical range is ``10`` to ``100``.
         Default depends on the ``figure_style`` configuration.
     marker_style : str
         Style of the marker.
+        Values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``, ``"p"``,
+        ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, and ``"_"``.
         Default depends on the ``figure_style`` configuration.
     edge_width : float
         Edge width of the marker.
+        Typical range is ``0`` to ``3``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the point.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
     font_size : float
         Font size for the text attached to the marker.
+        Typical range is ``8`` to ``20``.
         Default depends on the ``figure_style`` configuration.
     text_color : str
         Color of the text attached to the marker.
@@ -673,7 +699,15 @@ class Point(Plottable):
     h_align, v_align : str
         Horizontal and vertical alignment of the text attached
         to the :class:`~graphinglib.graph_elements.Point`.
+        Horizontal alignment values include ``"left"``, ``"center"``, and ``"right"``. Vertical alignment values
+        include ``"bottom"``, ``"baseline"``, ``"center"``, ``"center_baseline"``, and ``"top"``.
         Defaults to bottom left.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
     """
 
     def __init__(
@@ -712,18 +746,24 @@ class Point(Plottable):
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the marker.
+            Typical range is ``10`` to ``100``.
             Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the marker.
+            Values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``, ``"p"``,
+            ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, and ``"_"``.
             Default depends on the ``figure_style`` configuration.
         edge_width : float
             Edge width of the marker.
+            Typical range is ``0`` to ``3``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the point.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         font_size : float
             Font size for the text attached to the marker.
+            Typical range is ``8`` to ``20``.
             Default depends on the ``figure_style`` configuration.
         text_color : str
             Color of the text attached to the marker.
@@ -731,7 +771,15 @@ class Point(Plottable):
         h_align, v_align : str
             Horizontal and vertical alignment of the text attached
             to the :class:`~graphinglib.graph_elements.Point`.
+            Horizontal alignment values include ``"left"``, ``"center"``, and ``"right"``. Vertical alignment values
+            include ``"bottom"``, ``"baseline"``, ``"center"``, ``"center_baseline"``, and ``"top"``.
             Defaults to bottom left.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         self.x = x
         self.y = y
@@ -998,12 +1046,16 @@ class Text(Plottable):
         Default depends on the ``figure_style`` configuration.
     font_size : float
         Font size of the text.
+        Typical range is ``8`` to ``20``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the text.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
     h_align, v_align : str
         Horizontal and vertical alignment of the text.
+        Horizontal alignment values include ``"left"``, ``"center"``, and ``"right"``. Vertical alignment values
+        include ``"bottom"``, ``"baseline"``, ``"center"``, ``"center_baseline"``, and ``"top"``.
         Default depends on the ``figure_style`` configuration.
     rotation : float
         Rotation angle of the text in degrees.
@@ -1014,10 +1066,17 @@ class Text(Plottable):
         Default is ``None`` (no highlight).
     highlight_alpha : float, optional
         Opacity of the highlight box.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Defaults to 1.0.
     highlight_padding : float, optional
         Padding around the text for the highlight box. A value of 0 means no padding.
         Defaults to 0.1.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
     """
 
     _x: float
@@ -1067,12 +1126,16 @@ class Text(Plottable):
             Default depends on the ``figure_style`` configuration.
         font_size : float
             Font size of the text.
+            Typical range is ``8`` to ``20``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the text.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         h_align, v_align : str
             Horizontal and vertical alignment of the text.
+            Horizontal alignment values include ``"left"``, ``"center"``, and ``"right"``. Vertical alignment values
+            include ``"bottom"``, ``"baseline"``, ``"center"``, ``"center_baseline"``, and ``"top"``.
             Default depends on the ``figure_style`` configuration.
         rotation : float
             Rotation angle of the text in degrees.
@@ -1083,10 +1146,17 @@ class Text(Plottable):
             Default is ``None`` (no highlight).
         highlight_alpha : float, optional
             Opacity of the highlight box.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Defaults to 1.0.
         highlight_padding : float, optional
             Padding around the text for the highlight box. A value of 0 means no padding.
             Defaults to 0.1.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         self._x = x
         self._y = y
@@ -1230,16 +1300,20 @@ class Text(Plottable):
         points_to: tuple[float, float]
             Coordinates at which to point.
         width : float, optional
-            Arrow width.
+            Arrow width, in points.
+            Typical range is ``0.5`` to ``3``.
         shrink : float, optional
             Fraction of the total length of the arrow to shrink from both ends.
-            A value of 0.5 means the arrow is no longer visible.
+            Range is ``0`` to ``0.5``. A value of ``0.5`` means the arrow is no longer visible.
         head_width : float, optional
-            Width of the head of the arrow.
+            Width of the head of the arrow, in points.
+            Typical range is ``3`` to ``10``.
         head_length : float, optional
-            Length of the head of the arrow.
+            Length of the head of the arrow, in points.
+            Typical range is ``3`` to ``10``.
         alpha : float, optional
             Opacity of the arrow.
+            Range is ``0`` (transparent) to ``1`` (opaque).
         """
         self._arrow_pointing_to = points_to
         self._arrow_properties = {}
@@ -1353,6 +1427,7 @@ class Table(Plottable):
         Default depends on the ``figure_style`` configuration.
     edge_width : float or str, optional
         Width of the table's edges.
+        Typical range is ``0.5`` to ``3``.
         Default depends on the ``figure_style`` configuration.
     edge_color : str, optional
         Color of the table's edges.
@@ -1364,11 +1439,17 @@ class Table(Plottable):
         Horizontal and vertical scaling factors to apply to the table.
         Defaults to ``(1, 1.5)``.
     location : str
-        Position of the table inside the axes. Must be one of the following:
-        {'best', 'bottom', 'bottom left', 'bottom right', 'center', 'center left', 'center right',
-        'left', 'lower center', 'lower left', 'lower right', 'right', 'top', 'top left', 'top right',
-        'upper center', 'upper left', 'upper right'}
+        Position of the table inside the axes. Values are ``"best"``, ``"bottom"``, ``"bottom left"``,
+        ``"bottom right"``, ``"center"``, ``"center left"``, ``"center right"``, ``"left"``,
+        ``"lower center"``, ``"lower left"``, ``"lower right"``, ``"right"``, ``"top"``, ``"top left"``,
+        ``"top right"``, ``"upper center"``, ``"upper left"``, and ``"upper right"``.
         Defaults to ``"best"``.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
     """
 
     def __init__(
@@ -1429,6 +1510,7 @@ class Table(Plottable):
             Default depends on the ``figure_style`` configuration.
         edge_width : float or str, optional
             Width of the table's edges.
+            Typical range is ``0.5`` to ``3``.
             Default depends on the ``figure_style`` configuration.
         edge_color : str, optional
             Color of the table's edges.
@@ -1440,11 +1522,17 @@ class Table(Plottable):
             Horizontal and vertical scaling factors to apply to the table.
             Defaults to ``(1, 1.5)``.
         location : str
-            Position of the table inside the axes. Must be one of the following:
-            {'best', 'bottom', 'bottom left', 'bottom right', 'center', 'center left', 'center right',
-            'left', 'lower center', 'lower left', 'lower right', 'right', 'top', 'top left', 'top right',
-            'upper center', 'upper left', 'upper right'}
+            Position of the table inside the axes. Values are ``"best"``, ``"bottom"``, ``"bottom left"``,
+            ``"bottom right"``, ``"center"``, ``"center left"``, ``"center right"``, ``"left"``,
+            ``"lower center"``, ``"lower left"``, ``"lower right"``, ``"right"``, ``"top"``, ``"top left"``,
+            ``"top right"``, ``"upper center"``, ``"upper left"``, and ``"upper right"``.
             Defaults to ``"best"``.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         self._cell_text = cell_text
         self._cell_colors = cell_colors

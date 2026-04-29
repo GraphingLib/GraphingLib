@@ -81,6 +81,7 @@ class SmartFigure:
     size : tuple[float, float], optional
         Overall size of the figure. Note that this option is useless if the SmartFigure is nested inside another
         SmartFigure, as the size is then determined by the parent SmartFigure and the available space.
+        Figure size is in inches; typical width is ``4`` to ``12`` and typical height is ``3`` to ``8``.
         Default depends on the ``figure_style`` configuration.
     title : str, optional
         General title of the figure.
@@ -112,7 +113,7 @@ class SmartFigure:
         space. If set to "equal", the aspect ratio is set to 1:1. If set to a float, the aspect ratio represents the
         ratio of the height to the width of the data. This can be given as a single value or a list of values to apply
         to each subplot.
-        Defaults to "auto".
+        Values are ``"equal"``, ``"auto"``, or a positive float. Defaults to ``"auto"``.
 
         .. warning::
             This parameter must not be confused with the `box_aspect_ratio` parameter, which is the aspect ratio of the
@@ -158,7 +159,7 @@ class SmartFigure:
             of the axes, which may lead to overlapping between axes. Consider modifying the `size` or `width_padding`
             parameters to avoid this issue.
     reference_labels_loc : Literal["inside", "outside"] | tuple[float, float] | list, optional
-        Location of the reference labels of the SubFigures, which can be either "inside", "outside" or a tuple of
+        Location of the reference labels of the SubFigures, which can be either ``"inside"``, ``"outside"``, or a tuple of
         (x, y) relative coordinates to the top-left corner of each subfigure. This can be given as a single value or a
         list of values to apply to each subplot.
         Defaults to ``"outside"``.
@@ -2984,8 +2985,10 @@ class SmartFigure:
             The color of the y axis label.
         axes_label_pad : float, optional
             The padding between the axes labels and the axes.
+            Typical range is ``2`` to ``12``.
         axes_line_width : float, optional
             The width of the axes lines.
+            Typical range is ``0.5`` to ``3``.
         color_cycle : list[str], optional
             A list of colors to use for the color cycle.
         legend_face_color : str, optional
@@ -2994,20 +2997,29 @@ class SmartFigure:
             The color of the legend edge.
         legend_font_size : float, optional
             The font size of the legend.
+            Typical range is ``8`` to ``20``.
         legend_handle_length : float, optional
             The length of the legend handles.
+            Typical range is ``1`` to ``4``.
         legend_handle_text_pad : float, optional
             The padding between the legend handles and the legend text.
+            Typical range is ``0.2`` to ``1.5``.
         font_family : str, optional
             The font family to use.
         font_size : float, optional
             The font size to use.
+            Typical range is ``8`` to ``20``.
         font_weight : str, optional
             The font weight to use.
+            Values include ``"normal"``, ``"bold"``, ``"light"``, ``"ultralight"``, ``"heavy"``, and
+            ``"black"``.
         title_font_size : float, optional
             The font size of the title.
+            Typical range is ``10`` to ``24``.
         title_font_weight : str, optional
             The font weight of the title.
+            Values include ``"normal"``, ``"bold"``, ``"light"``, ``"ultralight"``, ``"heavy"``, and
+            ``"black"``.
         text_color : str, optional
             The color of the text.
         use_latex : bool, optional
@@ -3015,11 +3027,18 @@ class SmartFigure:
         hidden_spines : Iterable[Literal["right", "left", "top", "bottom"]], optional
             The spines to hide. If specified, the corresponding spines will be hidden in the figure. This corresponds to
             the lines that form the borders of the plot.
+            Values are ``"right"``, ``"left"``, ``"top"``, and ``"bottom"``.
 
         Returns
         -------
         Self
             For convenience, the same SmartFigure with the updated visual parameters.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         if color_cycle is not None:
             color_cycle = plt.cycler(color=color_cycle)
@@ -3241,14 +3260,18 @@ class SmartFigure:
             The direction of the ticks.
         length : float, optional
             The length of the ticks.
+            Typical range is ``2`` to ``10``.
         width : float, optional
             The width of the ticks.
+            Typical range is ``0.5`` to ``3``.
         color : str, optional
             The color of the ticks.
         pad : float, optional
             The padding to add between the tick labels and the ticks themselves.
+            Typical range is ``2`` to ``10``.
         label_size : float | str, optional
             The font size of the tick labels. This can be a float or a string (e.g. "large").
+            Typical range is ``8`` to ``20`` when a float is used.
         label_color : str, optional
             The color of the tick labels.
         label_rotation : float, optional
@@ -3262,6 +3285,12 @@ class SmartFigure:
         -------
         Self
             For convenience, the same SmartFigure with the updated tick parameters.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         new_tick_params = {
             "direction": direction,
@@ -3323,18 +3352,28 @@ class SmartFigure:
             Default depends on the ``figure_style`` configuration.
         alpha : float, optional
             Sets the alpha value for the grid lines.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         line_style : str, optional
             Sets the line style of the grid lines.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         line_width : float, optional
             Sets the line width of the grid lines.
+            Typical range is ``0.5`` to ``3``.
             Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
         Self
             For convenience, the same SmartFigure with the updated grid parameters.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         if reset:
             self._grid.clear()
@@ -3501,8 +3540,11 @@ class SmartFigure:
             labeling from "b)" instead of "a)" by giving ``start_index = 1``.
         font_size : float | Inherit, optional
             The font size of the reference labels.
+            Typical range is ``8`` to ``20``.
         font_weight : str | Inherit, optional
             The font weight of the reference labels.
+            Values include ``"normal"``, ``"bold"``, ``"light"``, ``"ultralight"``, ``"heavy"``, and
+            ``"black"``.
         format : Callable, optional
             A callable function to format the reference labels. By default, the reference labels are formatted as a),
             b), etc. The function must take a single str argument (the letter) and return a formatted str. For example,
@@ -3514,6 +3556,12 @@ class SmartFigure:
         -------
         Self
             For convenience, the same SmartFigure with the updated reference labels parameters.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         if start_index is not None:
             if not isinstance(start_index, int):
@@ -3643,6 +3691,7 @@ class SmartFigureWCS(SmartFigure):
     size : tuple[float, float], optional
         Overall size of the figure. Note that this option is useless if the SmartFigure is nested inside another
         SmartFigure, as the size is then determined by the parent SmartFigure and the available space.
+        Figure size is in inches; typical width is ``4`` to ``12`` and typical height is ``3`` to ``8``.
         Default depends on the ``figure_style`` configuration.
     title : str, optional
         General title of the figure.
@@ -3674,7 +3723,7 @@ class SmartFigureWCS(SmartFigure):
         space. If set to "equal", the aspect ratio is set to 1:1. If set to a float, the aspect ratio represents the
         ratio of the height to the width of the data. This can be given as a single value or a list of values to apply
         to each subplot.
-        Defaults to "auto".
+        Values are ``"equal"``, ``"auto"``, or a positive float. Defaults to ``"auto"``.
 
         .. warning::
             This parameter must not be confused with the `box_aspect_ratio` parameter, which is the aspect ratio of the
@@ -3720,7 +3769,7 @@ class SmartFigureWCS(SmartFigure):
             of the axes, which may lead to overlapping between axes. Consider modifying the `size` or `width_padding`
             parameters to avoid this issue.
     reference_labels_loc : Literal["inside", "outside"] | tuple[float, float] | list, optional
-        Location of the reference labels of the SubFigures, which can be either "inside", "outside" or a tuple of
+        Location of the reference labels of the SubFigures, which can be either ``"inside"``, ``"outside"``, or a tuple of
         (x, y) relative coordinates to the top-left corner of each subfigure. This can be given as a single value or a
         list of values to apply to each subplot.
         Defaults to ``"outside"``.
@@ -4201,17 +4250,22 @@ class SmartFigureWCS(SmartFigure):
                 <https://docs.astropy.org/en/stable/api/astropy.visualization.wcsaxes.WCSAxes.html>`_.
         length : float, optional
             The length of the ticks.
+            Typical range is ``2`` to ``10``.
         minor_length : float, optional
             The length of the minor ticks. This is the only parameter that can be set independently from the major ticks
             due to the way the :class:`astropy.visualization.wcsaxes.WCSAxes` are implemented.
+            Typical range is ``1`` to ``6``.
         width : float, optional
             The width of the ticks.
+            Typical range is ``0.5`` to ``3``.
         color : str, optional
             The color of the ticks.
         pad : float, optional
             The padding to add between the tick labels and the ticks themselves.
+            Typical range is ``2`` to ``10``.
         label_size : float | str, optional
             The font size of the tick labels. This can be a float or a string (e.g. "large").
+            Typical range is ``8`` to ``20`` when a float is used.
         label_color : str, optional
             The color of the tick labels.
         label_rotation : float, optional
@@ -4225,6 +4279,12 @@ class SmartFigureWCS(SmartFigure):
         -------
         Self
             For convenience, the same SmartFigure with the updated tick parameters.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         new_tick_params = {
             "direction": direction,
@@ -4287,18 +4347,28 @@ class SmartFigureWCS(SmartFigure):
             Default depends on the ``figure_style`` configuration.
         alpha : float, optional
             Sets the alpha value for the grid lines.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         line_style : str, optional
             Sets the line style of the grid lines.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         line_width : float, optional
             Sets the line width of the grid lines.
+            Typical range is ``0.5`` to ``3``.
             Default depends on the ``figure_style`` configuration.
 
         Returns
         -------
         Self
             For convenience, the same SmartFigure with the updated grid parameters.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         return super().set_grid(
             visible_x=visible_x,
@@ -4822,14 +4892,19 @@ class SmartTwinAxis:
             The color of the label.
         label_pad : float, optional
             The padding between the axis and the label.
+            Typical range is ``2`` to ``12``.
         line_width : float, optional
             The width of the spine.
+            Typical range is ``0.5`` to ``3``.
         font_family : str, optional
             The font family to use.
         font_size : float, optional
             The font size to use.
+            Typical range is ``8`` to ``20``.
         font_weight : str, optional
             The font weight to use.
+            Values include ``"normal"``, ``"bold"``, ``"light"``, ``"ultralight"``, ``"heavy"``, and
+            ``"black"``.
         use_latex : bool, optional
             Whether or not to use latex.
         hide_spine : bool, optional
@@ -4839,6 +4914,12 @@ class SmartTwinAxis:
         -------
         Self
             For convenience, the same SmartTwinAxis with the updated visual parameters.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         rc_params_dict = {
             "axes.labelcolor": label_color,
@@ -4993,14 +5074,18 @@ class SmartTwinAxis:
             The direction of the ticks.
         length : float, optional
             The length of the ticks.
+            Typical range is ``2`` to ``10``.
         width : float, optional
             The width of the ticks.
+            Typical range is ``0.5`` to ``3``.
         color : str, optional
             The color of the ticks.
         pad : float, optional
             The padding to add between the tick labels and the ticks themselves.
+            Typical range is ``2`` to ``10``.
         label_size : float | str, optional
             The font size of the tick labels. This can be a float or a string (e.g. "large").
+            Typical range is ``8`` to ``20`` when a float is used.
         label_color : str, optional
             The color of the tick labels.
         label_rotation : float, optional
@@ -5014,6 +5099,12 @@ class SmartTwinAxis:
         -------
         Self
             For convenience, the same SmartFigure with the updated tick parameters.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         new_tick_params = {
             "direction": direction,
