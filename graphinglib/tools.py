@@ -125,7 +125,11 @@ def get_contrasting_shade(color: str | tuple[int, int, int]) -> str:
     ----------
     color : str or tuple[int, int, int]
         Color that needs to be contrasted. This can either be a known matplotlib color string or a RGB code, given
-        as a tuple of integers that take 0-255.
+        as a tuple of integers between ``0`` and ``255``.
+
+        Accepted string formats include named colors (``"blue"``), short color strings (``"b"``), hex strings
+        (``"#0000ff"``), and grayscale strings (``"0.5"``). RGB tuples use values between ``0`` and ``255``
+        (``(0, 0, 255)``).
 
     Returns
     -------

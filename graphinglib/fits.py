@@ -37,13 +37,23 @@ class GeneralFit(Curve):
         Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
+        Typical range is ``0.5`` to ``4``.
         Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
+        Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+        ``"dotted"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the curve.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
     """
 
     def __init__(
@@ -67,13 +77,23 @@ class GeneralFit(Curve):
             Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         self._curve_to_be_fit = curve_to_be_fit
         self._color = color
@@ -161,16 +181,28 @@ class GeneralFit(Curve):
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the point.
+            Typical range is ``10`` to ``100``.
             Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
+            Common values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``,
+            ``"p"``, ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, ``"_"``,
+            ``"P"``, ``"X"``, ``"None"``, ``" "``, and ``""``.
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the edge of the point.
+            Typical range is ``0`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the point.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -225,16 +257,28 @@ class GeneralFit(Curve):
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the point.
+            Typical range is ``10`` to ``100``.
             Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
+            Common values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``,
+            ``"p"``, ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, ``"_"``,
+            ``"P"``, ``"X"``, ``"None"``, ``" "``, and ``""``.
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the edge of the point.
+            Typical range is ``0`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the point.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -340,7 +384,19 @@ class GeneralFit(Curve):
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Line width of the residual curves.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
+        line_style : str
+            Line style of the residual curves.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
+            Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         self._res_curves_to_be_plotted = True
         self._res_sigma_multiplier = sigma_multiplier
@@ -403,13 +459,23 @@ class FitFromPolynomial(GeneralFit):
         Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the :class:`~graphinglib.data_plotting_1d.Curve`.
+        Typical range is ``0.5`` to ``4``.
         Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the :class:`~graphinglib.data_plotting_1d.Curve`.
+        Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+        ``"dotted"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the :class:`~graphinglib.data_plotting_1d.Curve`.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
     Attributes
     ----------
@@ -452,13 +518,23 @@ class FitFromPolynomial(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the :class:`~graphinglib.data_plotting_1d.Curve`.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the :class:`~graphinglib.data_plotting_1d.Curve`.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the :class:`~graphinglib.data_plotting_1d.Curve`.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Attributes
         ----------
@@ -593,16 +669,27 @@ class FitFromSine(GeneralFit):
         Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
+        Typical range is ``0.5`` to ``4``.
         Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
+        Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+        ``"dotted"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the curve.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
+
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
     Attributes
     ----------
@@ -653,16 +740,27 @@ class FitFromSine(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
             Default is 10000.
+
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Attributes
         ----------
@@ -836,16 +934,27 @@ class FitFromExponential(GeneralFit):
         Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
+        Typical range is ``0.5`` to ``4``.
         Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
+        Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+        ``"dotted"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the curve.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
+
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
     Attributes
     ----------
@@ -888,16 +997,27 @@ class FitFromExponential(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
             Default is 10000.
+
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Attributes
         ----------
@@ -1023,16 +1143,27 @@ class FitFromGaussian(GeneralFit):
         Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
+        Typical range is ``0.5`` to ``4``.
         Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
+        Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+        ``"dotted"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the curve.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
+
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
     Attributes
     ----------
@@ -1086,16 +1217,27 @@ class FitFromGaussian(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
             Default is 10000.
+
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Attributes
         ----------
@@ -1241,16 +1383,27 @@ class FitFromSquareRoot(GeneralFit):
         Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
+        Typical range is ``0.5`` to ``4``.
         Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
+        Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+        ``"dotted"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the curve.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
+
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
     Attributes
     ----------
@@ -1295,16 +1448,27 @@ class FitFromSquareRoot(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
             Default is 10000.
+
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Attributes
         ----------
@@ -1429,16 +1593,27 @@ class FitFromLog(GeneralFit):
         Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
+        Typical range is ``0.5`` to ``4``.
         Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
+        Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+        ``"dotted"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the curve.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
+
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
     Attributes
     ----------
@@ -1487,16 +1662,27 @@ class FitFromLog(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
             Default is 10000.
+
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Attributes
         ----------
@@ -1622,16 +1808,27 @@ class FitFromFunction(GeneralFit):
         Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
+        Typical range is ``0.5`` to ``4``.
         Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
+        Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+        ``"dotted"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the curve.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
+
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
     Attributes
     ----------
@@ -1679,16 +1876,27 @@ class FitFromFunction(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
             Default is 10000.
+
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Attributes
         ----------
@@ -1793,16 +2001,27 @@ class FitFromFOTF(GeneralFit):
         Default depends on the ``figure_style`` configuration.
     line_width : int
         Line width of the curve.
+        Typical range is ``0.5`` to ``4``.
         Default depends on the ``figure_style`` configuration.
     line_style : str
         Line style of the curve.
+        Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+        ``"dotted"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the curve.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
     max_iterations : int
         Maximum number of iterations for the fit.
         Default is 10000.
+
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
     Attributes
     ----------
@@ -1847,16 +2066,27 @@ class FitFromFOTF(GeneralFit):
             Default depends on the ``figure_style`` configuration.
         line_width : int
             Line width of the curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Line style of the curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         max_iterations : int
             Maximum number of iterations for the fit.
             Default is 10000.
+
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Attributes
         ----------

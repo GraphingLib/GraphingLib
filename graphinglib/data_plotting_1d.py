@@ -121,13 +121,23 @@ class Curve(Plottable1D, MathematicalObject):
         Default depends on the ``figure_style`` configuration.
     line_width : float
         Width of the curve.
+        Typical range is ``0.5`` to ``4``.
         Default depends on the ``figure_style`` configuration.
     line_style : str
         Style of the curve.
+        Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+        ``"dotted"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the curve.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
     """
 
     def __init__(
@@ -197,16 +207,26 @@ class Curve(Plottable1D, MathematicalObject):
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         number_of_points : int
             Number of points to be used to plot the curve (resolution).
             Defaults to 500.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -543,17 +563,27 @@ class Curve(Plottable1D, MathematicalObject):
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the slice.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the slice.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the slice.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any
             other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
             will be created with the slicing applied and the parameters passed to this method.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -606,17 +636,27 @@ class Curve(Plottable1D, MathematicalObject):
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the slice.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the slice.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the slice.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the slicing applied. Any
             other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
             will be created with the slicing applied and the parameters passed to this method.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -660,18 +700,29 @@ class Curve(Plottable1D, MathematicalObject):
         ----------
         x_error, y_error : ArrayLike, optional
             Arrays of x and y errors. Use one or both.
+            Values must be non-negative.
         cap_width : float
             Width of the errorbar caps.
+            Typical range is ``0`` to ``10`` points.
             Default depends on the ``figure_style`` configuration.
         errorbars_color : str
             Color of the errorbars.
+            ``"same as curve"`` uses the curve color.
             Default depends on the ``figure_style`` configuration.
         errorbars_line_width : float
             Width of the errorbars.
+            Typical range is ``0.5`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         cap_thickness : float
             Thickness of the errorbar caps.
+            Typical range is ``0.5`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         self._show_errorbars = True
 
@@ -703,16 +754,26 @@ class Curve(Plottable1D, MathematicalObject):
             Array of y errors.
         error_curves_color : str
             Color of the error curves.
+            ``"same as curve"`` uses the curve color.
             Default depends on the ``figure_style`` configuration.
         error_curves_line_style : str
             Line style of the error curves.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         error_curves_line_width : float
             Line width of the error curves.
+            Typical range is ``0.5`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         error_curves_fill_between : bool
             Whether or not to fill the area between the two error curves.
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         self._show_error_curves = True
 
@@ -788,16 +849,28 @@ class Curve(Plottable1D, MathematicalObject):
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the point.
+            Typical range is ``10`` to ``100``.
             Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
+            Common values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``,
+            ``"p"``, ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, ``"_"``,
+            ``"P"``, ``"X"``, ``"None"``, ``" "``, and ``""``.
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the point edge.
+            Typical range is ``0`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the point.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -891,16 +964,28 @@ class Curve(Plottable1D, MathematicalObject):
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the point.
+            Typical range is ``10`` to ``100``.
             Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
+            Common values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``,
+            ``"p"``, ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, ``"_"``,
+            ``"P"``, ``"X"``, ``"None"``, ``" "``, and ``""``.
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the point edge.
+            Typical range is ``0`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the point.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -945,17 +1030,27 @@ class Curve(Plottable1D, MathematicalObject):
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the new curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the new curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the derivative applied. Any
             other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
             will be created with the derivative applied and the parameters passed to this method.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -1005,17 +1100,27 @@ class Curve(Plottable1D, MathematicalObject):
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the new curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the new curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the integral applied. Any
             other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
             will be created with the integral applied and the parameters passed to this method.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -1068,17 +1173,27 @@ class Curve(Plottable1D, MathematicalObject):
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the new curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the new curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the tangent applied. Any
             other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
             will be created with the tangent applied and the parameters passed to this method.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -1133,17 +1248,27 @@ class Curve(Plottable1D, MathematicalObject):
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the new curve.
+            Typical range is ``0.5`` to ``4``.
             Default depends on the ``figure_style`` configuration.
         line_style : str
             Style of the new curve.
+            Values include ``"-"``, ``"--"``, ``"-."``, ``":"``, ``"solid"``, ``"dashed"``, ``"dashdot"``, and
+            ``"dotted"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the new curve.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the curve (with all its parameters) will be returned with the normal applied. Any
             other parameters passed to this method will also be applied to the copied curve. If ``False``, a new curve
             will be created with the normal applied and the parameters passed to this method.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -1232,10 +1357,17 @@ class Curve(Plottable1D, MathematicalObject):
             Defaults to ``False``.
         fill_color : str
             Color of the area between the curve and the x axis when ``fill_between`` is set to ``True``.
+            ``"same as curve"`` uses the curve color.
             Default depends on the ``figure_style`` configuration.
         other_curve : :class:`~graphinglib.data_plotting_1d.Curve`, optional
             If specified, the area between the two curves will be calculated instead of the area between the curve and
             the x axis.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -1371,19 +1503,31 @@ class Curve(Plottable1D, MathematicalObject):
         marker_sizes : list[float] or float
             Sizes of the intersection points.
             If a single float is passed, all intersection points will have the same size.
+            Typical range is ``10`` to ``100``.
             Default depends on the ``figure_style`` configuration.
         marker_styles : list[str] or str
             Styles of the intersection points.
             If a single string is passed, all intersection points will have the same style.
+            Common values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``,
+            ``"p"``, ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, ``"_"``,
+            ``"P"``, ``"X"``, ``"None"``, ``" "``, and ``""``.
             Default depends on the ``figure_style`` configuration.
         edge_widths : list[float] or float
             Widths of the intersection points.
             If a single float is passed, all intersection points will have the same width.
+            Typical range is ``0`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         alphas : list[float] or float
             Opacities of the intersection points.
             If a single float is passed, all intersection points will have the same opacity.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -1609,25 +1753,39 @@ class Scatter(Plottable1D, MathematicalObject):
         map. If None, marker edges are transparent.
         Default depends on the ``figure_style`` configuration.
     color_map : str or Colormap
-        Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+        Color map used when ``face_color`` or ``edge_color`` is an array of intensity values.
+        Examples include ``"viridis"``, ``"plasma"``, and ``"coolwarm"``.
         Default depends on the ``figure_style`` configuration.
     color_map_range: tuple[float, float], optional
-        The data range that the color map will cover.
+        The data range covered by the color map, given as ``(minimum, maximum)``.
     show_color_bar : bool
         Whether or not to display the color bar next to the plot.
         Default depends on the ``figure_style`` configuration.
     marker_size : float
         Size of the points.
+        Typical range is ``10`` to ``100``.
         Default depends on the ``figure_style`` configuration.
     marker_edge_width: float
         Line width of the marker edges.
+        Typical range is ``0`` to ``3`` points.
         Default depends on the ``figure_style`` configuration.
     marker_style : str
         Style of the points.
+        Common values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``,
+        ``"p"``, ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, ``"_"``,
+        ``"P"``, ``"X"``, ``"None"``, ``" "``, and ``""``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the scatter plot.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``). They may also be arrays of
+    intensity values, which are mapped through ``color_map``.
     """
 
     def __init__(
@@ -1663,25 +1821,39 @@ class Scatter(Plottable1D, MathematicalObject):
             color map. If None, marker edges are transparent.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
-            Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+            Color map used when ``face_color`` or ``edge_color`` is an array of intensity values.
+            Examples include ``"viridis"``, ``"plasma"``, and ``"coolwarm"``.
             Default depends on the ``figure_style`` configuration.
         color_map_range: tuple[float, float], optional
-            The data range that the color map will cover.
+            The data range covered by the color map, given as ``(minimum, maximum)``.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the points.
+            Typical range is ``10`` to ``100``.
             Default depends on the ``figure_style`` configuration.
         marker_edge_width: float
             Line width of the marker edges.
+            Typical range is ``0`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the points.
+            Common values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``,
+            ``"p"``, ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, ``"_"``,
+            ``"P"``, ``"X"``, ``"None"``, ``" "``, and ``""``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the scatter plot.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``). They may also be arrays of
+        intensity values, which are mapped through ``color_map``.
         """
         self.handle = None
         self.errorbars_handle = None
@@ -1745,28 +1917,42 @@ class Scatter(Plottable1D, MathematicalObject):
             color map. If None, marker edges are transparent.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
-            Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+            Color map used when ``face_color`` or ``edge_color`` is an array of intensity values.
+            Examples include ``"viridis"``, ``"plasma"``, and ``"coolwarm"``.
             Default depends on the ``figure_style`` configuration.
         color_map_range: tuple[float, float], optional
-            The data range that the color map will cover.
+            The data range covered by the color map, given as ``(minimum, maximum)``.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
         marker_size : int
             Size of the points.
+            Typical range is ``10`` to ``100``.
             Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the points.
+            Common values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``,
+            ``"p"``, ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, ``"_"``,
+            ``"P"``, ``"X"``, ``"None"``, ``" "``, and ``""``.
             Default depends on the ``figure_style`` configuration.
         marker_edge_width: float
             Line width of the marker edges.
+            Typical range is ``0`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the scatter plot.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         number_of_points : int
             Number of points to be plotted.
             Defaults to 30.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``). They may also be arrays of
+        intensity values, which are mapped through ``color_map``.
 
         Returns
         -------
@@ -2103,29 +2289,43 @@ class Scatter(Plottable1D, MathematicalObject):
             color map. If None, marker edges are transparent.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
-            Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+            Color map used when ``face_color`` or ``edge_color`` is an array of intensity values.
+            Examples include ``"viridis"``, ``"plasma"``, and ``"coolwarm"``.
             Default depends on the ``figure_style`` configuration.
         color_map_range: tuple[float, float], optional
-            The data range that the color map will cover.
+            The data range covered by the color map, given as ``(minimum, maximum)``.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the points.
+            Typical range is ``10`` to ``100``.
             Default depends on the ``figure_style`` configuration.
         marker_edge_width: float
             Line width of the marker edges.
+            Typical range is ``0`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the points.
+            Common values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``,
+            ``"p"``, ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, ``"_"``,
+            ``"P"``, ``"X"``, ``"None"``, ``" "``, and ``""``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacities of the points.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied.
             Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a
             new scatter plot will be created with the slice applied and the parameters passed to this method.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``). They may also be arrays of
+        intensity values, which are mapped through ``color_map``.
 
         Returns
         -------
@@ -2208,29 +2408,43 @@ class Scatter(Plottable1D, MathematicalObject):
             color map. If None, marker edges are transparent.
             Default depends on the ``figure_style`` configuration.
         color_map : str or Colormap
-            Color map of the stream lines, to be used in combination with the color parameter to specify intensity.
+            Color map used when ``face_color`` or ``edge_color`` is an array of intensity values.
+            Examples include ``"viridis"``, ``"plasma"``, and ``"coolwarm"``.
             Default depends on the ``figure_style`` configuration.
         color_map_range: tuple[float, float], optional
-            The data range that the color map will cover.
+            The data range covered by the color map, given as ``(minimum, maximum)``.
         show_color_bar : bool
             Whether or not to display the color bar next to the plot.
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the points.
+            Typical range is ``10`` to ``100``.
             Default depends on the ``figure_style`` configuration.
         marker_edge_width: float
             Line width of the marker edges.
+            Typical range is ``0`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the points.
+            Common values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``,
+            ``"p"``, ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, ``"_"``,
+            ``"P"``, ``"X"``, ``"None"``, ``" "``, and ``""``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacities of the points.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         copy_first : bool
             If ``True``, a copy of the scatter plot (with all its parameters) will be returned with the slice applied.
             Any other parameters passed to this method will also be applied to the copied scatter plot. If ``False``, a
             new scatter plot will be created with the slice applied and the parameters passed to this method.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``). They may also be arrays of
+        intensity values, which are mapped through ``color_map``.
 
         Returns
         -------
@@ -2295,18 +2509,29 @@ class Scatter(Plottable1D, MathematicalObject):
         ----------
         x_error, y_error : ArrayLike, optional
             Arrays of x and y errors. Use one or both.
+            Values must be non-negative.
         cap_width : float
             Width of the errorbar caps.
+            Typical range is ``0`` to ``10`` points.
             Default depends on the ``figure_style`` configuration.
         errorbars_color : str
             Color of the errorbars.
+            ``"same as scatter"`` uses the scatter marker color.
             Default depends on the ``figure_style`` configuration.
         errorbars_line_width : float
             Width of the errorbars.
+            Typical range is ``0.5`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         cap_thickness : float
             Thickness of the errorbar caps.
+            Typical range is ``0.5`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         self._show_errorbars = True
 
@@ -2340,6 +2565,7 @@ class Scatter(Plottable1D, MathematicalObject):
             color bar (vertical if the color bar is plotted on the "left" or "right",
             horizontal otherwise). If None, the color bar is plotted on the right
             side of the ``Figure``.
+            Values are ``"left"``, ``"right"``, ``"top"``, and ``"bottom"``.
         **color_bar_params:
             Additional keyword arguments are passed to ``plt.colorbar`` call.
         """
@@ -2413,16 +2639,28 @@ class Scatter(Plottable1D, MathematicalObject):
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the point.
+            Typical range is ``10`` to ``100``.
             Default depends on the ``figure_style`` configuration.
         marker_edge_width : float
             Width of the point edge.
+            Typical range is ``0`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
+            Common values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``,
+            ``"p"``, ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, ``"_"``,
+            ``"P"``, ``"X"``, ``"None"``, ``" "``, and ``""``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the point.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -2517,16 +2755,28 @@ class Scatter(Plottable1D, MathematicalObject):
             Default depends on the ``figure_style`` configuration.
         marker_size : float
             Size of the point.
+            Typical range is ``10`` to ``100``.
             Default depends on the ``figure_style`` configuration.
         marker_edge_width : float
             Width of the point edge.
+            Typical range is ``0`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         marker_style : str
             Style of the point.
+            Common values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``,
+            ``"p"``, ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, ``"_"``,
+            ``"P"``, ``"X"``, ``"None"``, ``" "``, and ``""``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the point.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -2800,24 +3050,33 @@ class Histogram(Plottable1D):
         Edge color of the histogram.
         Default depends on the ``figure_style`` configuration.
     hist_type : str
-        Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
+        Type of the histogram.
+        Values are ``"bar"``, ``"barstacked"``, ``"step"``, and ``"stepfilled"``.
         Default depends on the ``figure_style`` configuration.
     alpha : float
         Opacity of the histogram.
+        Range is ``0`` (transparent) to ``1`` (opaque).
         Default depends on the ``figure_style`` configuration.
     line_width : float
         Width of the histogram edge.
+        Typical range is ``0.5`` to ``3`` points.
         Default depends on the ``figure_style`` configuration.
     normalize : bool
         Whether or not to normalize the histogram.
         Default depends on the ``figure_style`` configuration.
-    show_pdf : str
-        Whether or not to show the probability density function.
-        Can be "normal" or "gaussian".
+    orientation: str
+        Whether to plot the histogram on x-axis or on y-axis.
+        Values are ``"vertical"`` and ``"horizontal"``.
         Default depends on the ``figure_style`` configuration.
     show_params : bool
         Whether or not to show the mean and standard deviation of the data.
         Default depends on the ``figure_style`` configuration.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
     """
 
     def __init__(
@@ -2854,28 +3113,33 @@ class Histogram(Plottable1D):
             Edge color of the histogram.
             Default depends on the ``figure_style`` configuration.
         hist_type : str
-            Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
+            Type of the histogram.
+            Values are ``"bar"``, ``"barstacked"``, ``"step"``, and ``"stepfilled"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the histogram.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the histogram edge.
+            Typical range is ``0.5`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         normalize : bool
             Whether or not to normalize the histogram.
             Default depends on the ``figure_style`` configuration.
         orientation: str
             Whether to plot the histogram on x-axis or on y-axis.
-            Can be "vertical" or "horizontal".
-            Default depends on the ``figure_style`` configuration.
-        show_pdf : str
-            Whether or not to show the probability density function.
-            Can be "normal" or "gaussian".
+            Values are ``"vertical"`` and ``"horizontal"``.
             Default depends on the ``figure_style`` configuration.
         show_params : bool
             Whether or not to show the mean and standard deviation of the data.
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         self._bins = bins
         self._label = label
@@ -2932,28 +3196,33 @@ class Histogram(Plottable1D):
             Edge color of the histogram.
             Default depends on the ``figure_style`` configuration.
         hist_type : str
-            Type of the histogram. Can be "bar", "barstacked", "step", "stepfilled".
+            Type of the histogram.
+            Values are ``"bar"``, ``"barstacked"``, ``"step"``, and ``"stepfilled"``.
             Default depends on the ``figure_style`` configuration.
         alpha : float
             Opacity of the histogram.
+            Range is ``0`` (transparent) to ``1`` (opaque).
             Default depends on the ``figure_style`` configuration.
         line_width : float
             Width of the histogram edge.
+            Typical range is ``0.5`` to ``3`` points.
             Default depends on the ``figure_style`` configuration.
         normalize : bool
             Whether or not to normalize the histogram.
             Default depends on the ``figure_style`` configuration.
         orientation: str
             Whether to plot the histogram on x-axis or on y-axis.
-            Can be "vertical" or "horizontal".
-            Default depends on the ``figure_style`` configuration.
-        show_pdf : str
-            Whether or not to show the probability density function.
-            Can be "normal" or "gaussian".
+            Values are ``"vertical"`` and ``"horizontal"``.
             Default depends on the ``figure_style`` configuration.
         show_params : bool
             Whether or not to show the mean and standard deviation of the data.
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
@@ -3181,7 +3450,7 @@ class Histogram(Plottable1D):
         ----------
         type : str
             The type of probability density function to be shown.
-            Currently only "normal" is supported.
+            Currently only ``"normal"`` is supported.
             Defaults to "normal".
         show_mean : bool
             Whether or not to show the mean of the data.
@@ -3198,6 +3467,12 @@ class Histogram(Plottable1D):
         std_color : str
             Color of the standard deviation lines.
             Default depends on the ``figure_style`` configuration.
+
+        Notes
+        -----
+        Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+        (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+        values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         if type != "normal":
             raise ValueError("Currently, only 'normal' distribution is supported.")

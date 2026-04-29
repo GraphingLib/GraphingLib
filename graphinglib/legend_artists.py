@@ -214,13 +214,12 @@ class LegendLine(LegendElement):
     label : str
         The label for the legend line.
     color : ColorType
-        The color of the line, which can be `any color format supported by Matplotlib
-        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+        The color of the line.
     gap_color : ColorType, optional
-        The color of the gaps in the line (for dashed lines), which can be `any color format supported by Matplotlib
-        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+        The color of the gaps in the line (for dashed lines).
     line_width : float, optional
         The width of the line in points.
+        Typical range is ``0.5`` to ``4``.
         Defaults to ``2.0``.
     line_style : {"-", "--", "-.", ":", "solid", "dashed", "dashdot", "dotted"} or tuple of float and sequence, optional
         The style of the line, which can be `any pattern supported by Matplotlib
@@ -229,6 +228,12 @@ class LegendLine(LegendElement):
     alpha : float, optional
         The transparency level of the line, between ``0`` (fully transparent) and ``1`` (fully opaque).
         Defaults to ``1.0``.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
     """
 
     def __init__(
@@ -320,31 +325,38 @@ class LegendMarker(LegendElement):
     label : str
         The label for the legend line.
     face_color : ColorType
-        The color of the marker, which can be `any color format supported by Matplotlib
-        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+        The color of the marker.
     face_color_alt : ColorType, optional
-        The alternative face color of the marker (for markers with two colors), which can be `any color format
-        supported by Matplotlib
-        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+        The alternative face color of the marker (for markers with two colors).
     edge_color : ColorType, optional
-        The color of the marker edge, which can be `any color format supported by Matplotlib
-        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+        The color of the marker edge.
     edge_width : float, optional
         The width of the marker edge in points.
+        Typical range is ``0`` to ``3``.
         Defaults to ``1.0``.
     marker_size : float, optional
         The size of the marker in points.
+        Typical range is ``4`` to ``12``.
         Defaults to ``6.0``.
     marker_style : Any, optional
         The style of the marker, which can be `any marker style supported by Matplotlib
         <https://matplotlib.org/stable/api/markers_api.html#matplotlib.markers.MarkerStyle>`_.
+        Values include ``"."``, ``","``, ``"o"``, ``"v"``, ``"^"``, ``"<"``, ``">"``, ``"s"``, ``"p"``,
+        ``"*"``, ``"h"``, ``"H"``, ``"+"``, ``"x"``, ``"D"``, ``"d"``, ``"|"``, and ``"_"``.
         Defaults to ``"o"`` (circle).
     fill_style : {"full", "left", "right", "bottom", "top"}, optional
         The fill style of the marker.
+        Values are ``"full"``, ``"left"``, ``"right"``, ``"bottom"``, and ``"top"``.
         Defaults to ``"full"``.
     alpha : float, optional
         The transparency level of the marker, between ``0`` (fully transparent) and ``1`` (fully opaque).
         Defaults to ``1.0``.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
     """
 
     def __init__(
@@ -473,13 +485,12 @@ class LegendPatch(LegendElement):
     label : str
         The label for the legend patch.
     face_color : ColorType
-        The face color of the patch, which can be `any color format supported by Matplotlib
-        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+        The face color of the patch.
     edge_color : ColorType, optional
-        The edge color of the patch, which can be `any color format supported by Matplotlib
-        <https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def>`_.
+        The edge color of the patch.
     line_width : float, optional
         The width of the patch edge and hatch (if present) in points.
+        Typical range is ``0.5`` to ``4``.
         Defaults to ``1.0``.
     line_style : {"-", "--", "-.", ":", "solid", "dashed", "dashdot", "dotted"} or tuple of float and sequence, optional
         The style of the patch edge, which can be `any pattern supported by Matplotlib
@@ -488,9 +499,17 @@ class LegendPatch(LegendElement):
     hatch : {"/", "\\", "|", "-", "+", "x", "o", "O", ".", "*"}, optional
         The hatch pattern of the patch, which can be `any hatch pattern supported by Matplotlib
         <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Patch.html#matplotlib.patches.Patch.set_hatch>`_.
+        Values include ``"/"``, ``"\\"``, ``"|"``, ``"-"``, ``"+"``, ``"x"``, ``"o"``, ``"O"``, ``"."``, and
+        ``"*"``.
     alpha : float, optional
         The transparency level of the patch, between ``0`` (fully transparent) and ``1`` (fully opaque).
         Defaults to ``1.0``.
+
+    Notes
+    -----
+    Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
+    (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
+    values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
     """
 
     def __init__(
