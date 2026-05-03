@@ -10,6 +10,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![PyPi downloads](https://img.shields.io/pypi/dm/graphinglib)](https://pypi.org/project/graphinglib/)
 ![GitHub stars](https://img.shields.io/github/stars/GraphingLib/GraphingLib.svg?style=social&label=Star&maxAge=2592000)
+[![DOI](https://zenodo.org/badge/613172394.svg)](https://doi.org/10.5281/zenodo.19936792)
 
 # GraphingLib
 
