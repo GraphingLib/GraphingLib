@@ -1,9 +1,7 @@
-from .inherit import INHERIT, Inherit, is_inherit
-
 from copy import deepcopy
 from shutil import which
 from string import ascii_lowercase
-from typing import Optional
+from typing import Optional, Self
 from typing_extensions import deprecated
 
 import matplotlib.pyplot as plt
@@ -14,6 +12,7 @@ from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.transforms import ScaledTranslation
 
+from .inherit import INHERIT, Inherit, is_inherit
 from .figure import Figure
 from .file_manager import FileLoader, get_default_style
 from .graph_elements import GraphingException, Plottable
@@ -24,11 +23,6 @@ from .legend_artists import (
     histogram_legend_artist,
 )
 from .tools import _copy_with_overrides
-
-try:
-    from typing import Self
-except ImportError:
-    from typing_extensions import Self
 
 
 @deprecated("Consider using the SmartFigure instead")
