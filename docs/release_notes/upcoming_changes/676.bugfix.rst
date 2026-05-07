@@ -1,0 +1,3 @@
+Fix missing ``typing_extensions`` dependencies
+----------------------------------------------
+Added ``typing_extensions`` to the dependencies to fix import error when installing from PyPI.
