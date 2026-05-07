@@ -11,8 +11,8 @@
     },
     {
         "name": "1.6",
-        "version": "1.6.0",
-        "url": "https://www.graphinglib.org/doc-1.6.0/",
+        "version": "1.6.1",
+        "url": "https://www.graphinglib.org/doc-1.6.1/",
         "preferred": true
     }
 ]
