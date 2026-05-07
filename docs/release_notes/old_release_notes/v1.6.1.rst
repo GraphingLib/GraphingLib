@@ -1,0 +1,31 @@
+
+.. _release_notes_1.6.1:
+
+GraphingLib 1.6.1 Release Notes
+===================================
+
+Bug Fixes
+---------
+
+Fix missing ``typing_extensions`` dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Added ``typing_extensions`` to the dependencies to fix import error when installing from PyPI.
+
+
+(`pr-676 <https://github.com/GraphingLib/GraphingLib/pull/676>`_)
+
+Contributors
+------------
+
+A total of 1 people contributed to this release.
+
+* `@yalap13 <https://github.com/yalap13>`_
+
+Merged Pull Requests
+--------------------
+
+A total of 1 pull requests were merged for this release.
+
+* `#676 <https://github.com/GraphingLib/GraphingLib/pull/676>`_ : bugfix: Added typing_extensions to dependencies
+

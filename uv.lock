@@ -482,6 +482,7 @@ dependencies = [
     { name = "scipy" },
     { name = "setuptools-scm" },
     { name = "shapely" },
+    { name = "typing-extensions" },
 ]
 
 [package.optional-dependencies]
@@ -516,6 +517,7 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.10.1,<2.0.0" },
     { name = "setuptools-scm", specifier = ">=8.0.4,<9.0.0" },
     { name = "shapely", specifier = ">=2.0.3,<3.0.0" },
+    { name = "typing-extensions", specifier = ">=4.15.0" },
 ]
 provides-extras = ["astro"]
 

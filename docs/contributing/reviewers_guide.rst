@@ -86,7 +86,7 @@ Here are the step to make a patch release:
 1. Update the documentation.
 
    * Merge the previous ``doc/X.Y.Z-1`` branch into the ``maintenance/X.Y.x`` branch and **delete** the old documentation branch
-   * Bump ``__version__`` from ``X.Y.Z-1`` to ``X.Y.Z`` in ``_version.py``.
+   * Remove ``.dev`` from the ``__version__`` in ``_version.py``.
    * Build the documentation site locally (:ref:`see how to build the documentation <builddoc>`)
    * If relevant, add a ``highlights.rst`` file with a bulleted list of highlights for the release.
    * Empty the ``doc/release_notes/upcoming_changes`` directory.
@@ -96,7 +96,7 @@ Here are the step to make a patch release:
 2. Draft a release on GitHub. Copy the release notes from the documentation and adapt the syntax for Markdown.
 3. Create the ``vX.Y.Z`` tag.
 4. Create a new ``doc/X.Y.Z`` branch from the ``maintenance/X.Y.Z`` branch.
-5. Bump version to ``X.Y.Z+1`` in ``pyproject.toml`` and ``setup.py``
+5. Bump version to ``X.Y.Z+1`` in ``pyproject.toml`` and ``setup.py`` in the ``maintenance/X.Y.Z`` branch.
 6. Manually trigger a build of the "latest" version on *Read the Docs* to update the project. If the version ``doc-X.Y.Z-1`` is still active, deactivate it. Activate the ``doc-X.Y.Z`` version. If this patch release is on the **latest major/minor version**, set this new version as default in admin settings, else no changes necessary.
 
 .. _backporting:
