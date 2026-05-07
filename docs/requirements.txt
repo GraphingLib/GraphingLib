@@ -8,7 +8,7 @@ platformdirs
 sphinx-favicon
 sphinx-design
 setuptools_scm
-git+https://github.com/GraphingLib/GraphingLib.git
+git+https://github.com/GraphingLib/GraphingLib@doc/1.6.0
 numpydoc
 PyGithub
 pyperclip
