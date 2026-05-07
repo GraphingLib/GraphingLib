@@ -28,8 +28,10 @@ jobs:
         run: uvx --from ruff==0.15.0 ruff format --check .
 
   tests:
+    name: Unit tests - Python ${{ matrix.python-version }}
     needs: lint
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix:
@@ -50,12 +52,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
 
-      - name: Install dependencies
+      - name: Install runtime dependencies only
         run: |
           if [ -f uv.lock ]; then
-            uv sync --locked --all-extras
+            uv sync --locked --no-dev --all-extras
           else
-            uv sync
+            uv sync --no-dev --all-extras
           fi
 
       - name: Prepare Matplotlib cache dir
