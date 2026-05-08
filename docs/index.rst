@@ -238,10 +238,12 @@ GraphingLib allows you to apply prepackaged or custom styles effortlessly. Our :
 Citing GraphingLib
 ------------------
 
-If you want to cite GraphingLib in a publication, you can do so using this DOI (for the 1.6.0 version) ::
+If you want to cite GraphingLib in a publication, you can do so using this DOI for the latest release :
 
-    https://doi.org/10.5281/zenodo.19936793
+.. image:: https://zenodo.org/badge/613172394.svg
+   :target: https://zenodo.org/badge/latestdoi/613172394
 
+.. note:: There is also a DOI for each version from the 1.6.0 release on `zenodo.org <https://zenodo.org/search?q=parent.id%3A19936792&f=allversions%3Atrue&l=list&p=1&s=10&sort=version>`_.
 
 .. toctree::
    :maxdepth: 3
