@@ -37,6 +37,59 @@ class TestHeatmap(unittest.TestCase):
             (min(array_of_data.flatten()), max(array_of_data.flatten())),
         )
 
+    def test_only_x_axis_range_set(self):
+        array_of_data = np.random.rand(10, 10)
+        heatmap = Heatmap(
+            image=array_of_data,
+            x_axis_range=(0, 10),
+            color_map="viridis",
+            show_color_bar=False,
+            aspect_ratio="auto",
+            origin_position="upper",
+            interpolation="nearest",
+        )
+        fig, ax = plt.subplots()
+        heatmap._plot_element(ax, 0)
+        self.assertEqual(ax.get_xlim(), (0, 10))
+        self.assertEqual(ax.get_ylim(), (9.5, -0.5))
+
+    def test_only_y_axis_range_set(self):
+        array_of_data = np.random.rand(10, 10)
+        heatmap = Heatmap(
+            image=array_of_data,
+            y_axis_range=(0, 10),
+            color_map="viridis",
+            show_color_bar=False,
+            aspect_ratio="auto",
+            origin_position="upper",
+            interpolation="nearest",
+        )
+        fig, ax = plt.subplots()
+        heatmap._plot_element(ax, 0)
+        self.assertEqual(ax.get_xlim(), (-0.5, 9.5))
+        self.assertEqual(ax.get_ylim(), (0, 10))
+
+    def test_only_x_axis_range_set_origin_lower(self):
+        array_of_data = np.random.rand(10, 10)
+        heatmap = Heatmap(
+            image=array_of_data,
+            x_axis_range=(0, 10),
+            color_map="viridis",
+            show_color_bar=False,
+            aspect_ratio="auto",
+            origin_position="lower",
+            interpolation="nearest",
+        )
+        fig, ax = plt.subplots()
+        heatmap._plot_element(ax, 0)
+        self.assertEqual(ax.get_xlim(), (0, 10))
+        self.assertEqual(ax.get_ylim(), (-0.5, 9.5))
+
+    def test_xy_range_none_when_no_ranges_set(self):
+        array_of_data = np.random.rand(10, 10)
+        heatmap = Heatmap(image=array_of_data)
+        self.assertIsNone(heatmap._xy_range)
+
     def test_from_function(self):
         heatmap = Heatmap.from_function(
             func=lambda x, y: np.sin(x) + np.cos(y),

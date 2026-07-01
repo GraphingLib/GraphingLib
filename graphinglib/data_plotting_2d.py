@@ -41,8 +41,10 @@ class Heatmap(Plottable2D):
         Image to display. If an array of values is given, the 2D array will be interpreted as the values of the image.
         If a str if given, the corresponding file will be read as an image.
     x_axis_range, y_axis_range : tuple[float, float], optional
-        The range of x and y values used for the axes as tuples containing the start and end of the range. These values
-        are ignored when ``x_mesh`` and ``y_mesh`` are provided.
+        The range of x and y values used for the axes as tuples containing the start and end of the range. These
+        values are ignored when ``x_mesh`` and ``y_mesh`` are provided. ``x_axis_range`` and ``y_axis_range`` can be
+        set independently of one another; the axis left unset defaults to pixel-index coordinates based on the shape
+        of ``image``.
     x_mesh, y_mesh : ArrayLike, optional
         Mesh grids defining the coordinates of the heatmap values. When provided, the heatmap is plotted using
         ``pcolormesh`` instead of ``imshow``.
@@ -111,7 +113,9 @@ class Heatmap(Plottable2D):
             image. If a str if given, the corresponding file will be read as an image.
         x_axis_range, y_axis_range : tuple[float, float], optional
             The range of x and y values used for the axes as tuples containing the start and end of the range. These
-            values are ignored when ``x_mesh`` and ``y_mesh`` are provided.
+            values are ignored when ``x_mesh`` and ``y_mesh`` are provided. ``x_axis_range`` and ``y_axis_range`` can
+            be set independently of one another; the axis left unset defaults to pixel-index coordinates based on
+            the shape of ``image``.
         x_mesh, y_mesh : ArrayLike, optional
             Mesh grids defining the coordinates of the heatmap values. When provided, the heatmap is plotted using
             ``pcolormesh`` instead of ``imshow``.
@@ -461,9 +465,26 @@ class Heatmap(Plottable2D):
 
     @property
     def _xy_range(self) -> Optional[tuple[float, float, float, float]]:
-        if self._x_axis_range is not None and self._y_axis_range is not None:
-            return self._x_axis_range + self._y_axis_range
-        return None
+        if self._x_axis_range is None and self._y_axis_range is None:
+            return None
+        num_rows, num_cols = self._image.shape[:2]
+        x_range = (
+            self._x_axis_range
+            if self._x_axis_range is not None
+            else (-0.5, num_cols - 0.5)
+        )
+        if self._y_axis_range is not None:
+            y_range = self._y_axis_range
+        elif self._origin_position == "lower":
+            y_range = (-0.5, num_rows - 0.5)
+        else:
+            y_range = (num_rows - 0.5, -0.5)
+        return (
+            float(x_range[0]),
+            float(x_range[1]),
+            float(y_range[0]),
+            float(y_range[1]),
+        )
 
     def copy(self) -> Self:
         """
