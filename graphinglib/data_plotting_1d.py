@@ -24,6 +24,8 @@ try:
 except ImportError:
     from typing_extensions import Self
 
+_SNAPPING_INTERPOLATION_METHODS = frozenset({"nearest", "previous", "next"})
+
 
 @runtime_checkable
 class Fit(Protocol):
@@ -802,6 +804,10 @@ class Curve(Plottable1D, MathematicalObject):
 
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
 
+            For ``"nearest"``, ``"previous"``, and ``"next"``, the returned coordinates snap to an
+            actual data point instead of interpolating; for every other kind, the returned x is the
+            same as the queried ``x``.
+
             Defaults to "linear".
 
         Returns
@@ -809,6 +815,12 @@ class Curve(Plottable1D, MathematicalObject):
         tuple[float, float]
             The coordinates of the curve at the given x value.
         """
+        if interpolation_method in _SNAPPING_INTERPOLATION_METHODS:
+            idx_interp = interp1d(
+                self._x_data, np.arange(len(self._x_data)), kind=interpolation_method
+            )
+            idx = int(round(float(idx_interp(x))))
+            return (float(self._x_data[idx]), float(self._y_data[idx]))
         return (
             x,
             float(interp1d(self._x_data, self._y_data, kind=interpolation_method)(x)),
@@ -837,6 +849,10 @@ class Curve(Plottable1D, MathematicalObject):
             The type of interpolation to be used, as defined in ``scipy.interpolate.interp1d``.
 
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+            For ``"nearest"``, ``"previous"``, and ``"next"``, the returned point snaps to an
+            actual data point instead of interpolating; for every other kind, the point's x is the
+            same as the queried ``x``.
 
             Defaults to "linear".
         label : str, optional
@@ -877,9 +893,10 @@ class Curve(Plottable1D, MathematicalObject):
         :class:`~graphinglib.graph_elements.Point`
             The point on the curve at the given x value.
         """
+        x_val, y_val = self.get_coordinates_at_x(x, interpolation_method)
         point = Point(
-            x,
-            self.get_coordinates_at_x(x, interpolation_method)[1],
+            x_val,
+            y_val,
             label=label,
             face_color=face_color,
             edge_color=edge_color,
@@ -908,6 +925,10 @@ class Curve(Plottable1D, MathematicalObject):
 
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
 
+            For ``"nearest"``, ``"previous"``, and ``"next"``, the returned coordinates snap to an
+            actual data point instead of interpolating; for every other kind, the returned y is the
+            same as the queried ``y``.
+
             Defaults to "linear".
 
         Returns
@@ -918,14 +939,17 @@ class Curve(Plottable1D, MathematicalObject):
         xs = self._x_data
         ys = self._y_data
         crossings = np.where(np.diff(np.sign(ys - y)))[0]
-        x_vals: list[float] = []
+        points: list[tuple[float, float]] = []
         for cross in crossings:
             x1, x2 = xs[cross], xs[cross + 1]
             y1, y2 = ys[cross], ys[cross + 1]
-            f = interp1d([y1, y2], [x1, x2], kind=interpolation_method)
-            x_val = f(y)
-            x_vals.append(float(x_val))
-        points = [(x_val, y) for x_val in x_vals]
+            if interpolation_method in _SNAPPING_INTERPOLATION_METHODS:
+                idx_interp = interp1d([y1, y2], [0, 1], kind=interpolation_method)
+                idx = int(round(float(idx_interp(y))))
+                points.append((float((x1, x2)[idx]), float((y1, y2)[idx])))
+            else:
+                f = interp1d([y1, y2], [x1, x2], kind=interpolation_method)
+                points.append((float(f(y)), y))
         return points
 
     def create_points_at_y(
@@ -952,6 +976,10 @@ class Curve(Plottable1D, MathematicalObject):
             The type of interpolation to be used, as defined in ``scipy.interpolate.interp1d``.
 
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+            For ``"nearest"``, ``"previous"``, and ``"next"``, the returned points snap to actual
+            data points instead of interpolating; for every other kind, the points' y is the same
+            as the queried ``y``.
 
             Defaults to "linear".
         label : str, optional
@@ -2592,6 +2620,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
 
+            For ``"nearest"``, ``"previous"``, and ``"next"``, the returned coordinates snap to an
+            actual data point instead of interpolating; for every other kind, the returned x is the
+            same as the queried ``x``.
+
             Defaults to "linear".
 
         Returns
@@ -2599,6 +2631,12 @@ class Scatter(Plottable1D, MathematicalObject):
         tuple[float, float]
             The coordinates of the point on the curve at the given x value.
         """
+        if interpolation_method in _SNAPPING_INTERPOLATION_METHODS:
+            idx_interp = interp1d(
+                self._x_data, np.arange(len(self._x_data)), kind=interpolation_method
+            )
+            idx = int(round(float(idx_interp(x))))
+            return (float(self._x_data[idx]), float(self._y_data[idx]))
         return (
             x,
             float(interp1d(self._x_data, self._y_data, kind=interpolation_method)(x)),
@@ -2627,6 +2665,10 @@ class Scatter(Plottable1D, MathematicalObject):
             The type of interpolation to be used, as defined in ``scipy.interpolate.interp1d``.
 
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+            For ``"nearest"``, ``"previous"``, and ``"next"``, the returned point snaps to an
+            actual data point instead of interpolating; for every other kind, the point's x is the
+            same as the queried ``x``.
 
             Defaults to "linear".
         label : str, optional
@@ -2667,9 +2709,10 @@ class Scatter(Plottable1D, MathematicalObject):
         :class:`~graphinglib.graph_elements.Point`
             The Point on the curve at the given x value.
         """
+        x_val, y_val = self.get_coordinates_at_x(x, interpolation_method)
         point = Point(
-            x,
-            self.get_coordinates_at_x(x, interpolation_method)[1],
+            x_val,
+            y_val,
             label=label,
             face_color=face_color,
             edge_color=edge_color,
@@ -2698,6 +2741,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
 
+            For ``"nearest"``, ``"previous"``, and ``"next"``, the returned coordinates snap to an
+            actual data point instead of interpolating; for every other kind, the returned y is the
+            same as the queried ``y``.
+
             Defaults to "linear".
 
         Returns
@@ -2709,14 +2756,17 @@ class Scatter(Plottable1D, MathematicalObject):
         ys = self._y_data
         assert isinstance(xs, np.ndarray) and isinstance(ys, np.ndarray)
         crossings = np.where(np.diff(np.sign(ys - y)))[0]
-        x_vals: list[float] = []
+        points: list[tuple[float, float]] = []
         for cross in crossings:
             x1, x2 = xs[cross], xs[cross + 1]
             y1, y2 = ys[cross], ys[cross + 1]
-            f = interp1d([y1, y2], [x1, x2], kind=interpolation_method)
-            x_val = f(y)
-            x_vals.append(float(x_val))
-        points = [(x_val, y) for x_val in x_vals]
+            if interpolation_method in _SNAPPING_INTERPOLATION_METHODS:
+                idx_interp = interp1d([y1, y2], [0, 1], kind=interpolation_method)
+                idx = int(round(float(idx_interp(y))))
+                points.append((float((x1, x2)[idx]), float((y1, y2)[idx])))
+            else:
+                f = interp1d([y1, y2], [x1, x2], kind=interpolation_method)
+                points.append((float(f(y)), y))
         return points
 
     def create_points_at_y(
@@ -2743,6 +2793,10 @@ class Scatter(Plottable1D, MathematicalObject):
             The type of interpolation to be used, as defined in ``scipy.interpolate.interp1d``.
 
             .. seealso:: `scipy.interpolate.interp1d <https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp1d.html>`_
+
+            For ``"nearest"``, ``"previous"``, and ``"next"``, the returned points snap to actual
+            data points instead of interpolating; for every other kind, the points' y is the same
+            as the queried ``y``.
 
             Defaults to "linear".
         label : str, optional

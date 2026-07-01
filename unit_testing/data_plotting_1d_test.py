@@ -90,6 +90,22 @@ class TestCurve(unittest.TestCase):
             self.assertEqual(point._y, 0)
             self.assertAlmostEqual(point._x, i * pi, places=3)
 
+    def test_snapping_interpolation_methods(self):
+        curve = Curve([0, 1, 2, 3], [0, 10, 20, 30])
+        expected = {"nearest": (1, 10), "previous": (1, 10), "next": (2, 20)}
+        for method, (x, y) in expected.items():
+            with self.subTest(method=method):
+                self.assertEqual(
+                    curve.get_coordinates_at_x(1.4, interpolation_method=method),
+                    (x, y),
+                )
+        point = curve.create_point_at_x(1.4, interpolation_method="nearest")
+        self.assertEqual((point._x, point._y), (1, 10))
+        self.assertEqual(
+            curve.get_coordinates_at_y(15, interpolation_method="nearest"), [(1, 10)]
+        )
+        self.assertEqual(curve.get_coordinates_at_x(1.4)[0], 1.4)
+
     def test_curve_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
         self.testCurve = Curve(
@@ -446,6 +462,23 @@ class TestScatter(unittest.TestCase):
         for i, point in enumerate(points):
             self.assertEqual(point._y, 0)
             self.assertAlmostEqual(point._x, i * pi, places=3)
+
+    def test_snapping_interpolation_methods(self):
+        scatter = Scatter([0, 1, 2, 3], [0, 10, 20, 30])
+        expected = {"nearest": (1, 10), "previous": (1, 10), "next": (2, 20)}
+        for method, (x, y) in expected.items():
+            with self.subTest(method=method):
+                self.assertEqual(
+                    scatter.get_coordinates_at_x(1.4, interpolation_method=method),
+                    (x, y),
+                )
+        point = scatter.create_point_at_x(1.4, interpolation_method="nearest")
+        self.assertEqual((point._x, point._y), (1, 10))
+        self.assertEqual(
+            scatter.get_coordinates_at_y(15, interpolation_method="nearest"),
+            [(1, 10)],
+        )
+        self.assertEqual(scatter.get_coordinates_at_x(1.4)[0], 1.4)
 
     def test_scatter_is_plotted(self):
         x = linspace(0, 3 * pi, 200)
