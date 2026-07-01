@@ -1,0 +1,3 @@
+Fix `Heatmap` ignoring a single axis range
+------------------------------------------
+Fixed a bug where `Heatmap` would silently ignore `x_axis_range` or `y_axis_range` unless both were specified.
