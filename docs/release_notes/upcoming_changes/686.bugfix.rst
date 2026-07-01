@@ -1,0 +1,3 @@
+Fix incorrect x/y snapping for nearest/previous/next interpolation
+------------------------------------------------------------------
+Fixed a bug where `Curve` and `Scatter` methods that locate a point on the curve (`get_coordinates_at_x`, `create_point_at_x`, `get_coordinates_at_y`, `create_points_at_y`) would snap y value but not x value when using the `"nearest"`, `"previous"`, or `"next"` interpolation methods.
