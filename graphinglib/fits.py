@@ -20,6 +20,22 @@ except ImportError:
     from typing_extensions import Self
 
 
+def _repair_positive_guess(
+    guesses: ArrayLike, index: int, number_of_parameters: int
+) -> np.ndarray:
+    """
+    Copies the initial guesses and forces the guess of a bounded parameter to be strictly positive.
+    """
+    guesses = np.array(guesses, dtype=float)
+    if guesses.shape != (number_of_parameters,):
+        raise ValueError(
+            f"Expected {number_of_parameters} initial guesses, "
+            f"but got an array of shape {guesses.shape}."
+        )
+    guesses[index] = max(abs(guesses[index]), 1e-10)
+    return guesses
+
+
 class GeneralFit(Curve):
     """
     Dummy class for curve fits. Defines the interface for all curve fits.
@@ -106,6 +122,9 @@ class GeneralFit(Curve):
         self._alpha = alpha
 
         self._function: Callable[[np.ndarray], np.ndarray]
+        self._parameters: np.ndarray
+        self._cov_matrix: np.ndarray
+        self._standard_deviation: np.ndarray
 
         self._setup_attributes()
 
@@ -143,6 +162,18 @@ class GeneralFit(Curve):
     @property
     def function(self) -> Callable[[np.ndarray], np.ndarray]:
         return self._function
+
+    @property
+    def parameters(self) -> np.ndarray:
+        return self._parameters
+
+    @property
+    def cov_matrix(self) -> np.ndarray:
+        return self._cov_matrix
+
+    @property
+    def standard_deviation(self) -> np.ndarray:
+        return self._standard_deviation
 
     def __str__(self) -> str:
         """
@@ -426,14 +457,17 @@ class GeneralFit(Curve):
         Rsquared : float
             :math:`R^2` value
         """
-        Rsquared = 1 - (
-            np.sum(self.get_residuals() ** 2)
-            / np.sum(
-                (self._curve_to_be_fit._y_data - np.mean(self._curve_to_be_fit._y_data))
-                ** 2
-            )
-        )
-        return Rsquared
+        y_data = self._curve_to_be_fit._y_data
+        total_variance = np.sum((y_data - np.mean(y_data)) ** 2)
+        if total_variance == 0:
+            # Scale the tolerance to the data's own magnitude, since comparing residuals
+            # to an absolute tolerance of 0 makes np.allclose's rtol term vanish. Only
+            # fall back to an absolute tolerance when the data is identically zero.
+            magnitude = np.max(np.abs(y_data))
+            scale = magnitude if magnitude > 0 else 1.0
+            is_exact_fit = np.allclose(self.get_residuals(), 0, atol=1e-8 * scale)
+            return 1.0 if is_exact_fit else float("nan")
+        return 1 - np.sum(self.get_residuals() ** 2) / total_variance
 
     def copy(self) -> Self:
         return deepcopy(self)
@@ -586,12 +620,8 @@ class FitFromPolynomial(GeneralFit):
         return self._coeffs
 
     @property
-    def cov_matrix(self) -> np.ndarray:
-        return self._cov_matrix
-
-    @property
-    def standard_deviation(self) -> np.ndarray:
-        return self._standard_deviation
+    def parameters(self) -> np.ndarray:
+        return self._coeffs
 
     def __str__(self) -> str:
         """
@@ -841,18 +871,6 @@ class FitFromSine(GeneralFit):
     def vertical_shift(self) -> float:
         return self._vertical_shift
 
-    @property
-    def cov_matrix(self) -> np.ndarray:
-        return self._cov_matrix
-
-    @property
-    def standard_deviation(self) -> np.ndarray:
-        return self._standard_deviation
-
-    @property
-    def parameters(self) -> np.ndarray:
-        return self._parameters
-
     def __str__(self) -> str:
         """
         Creates a string representation of the sine function.
@@ -1061,18 +1079,6 @@ class FitFromExponential(GeneralFit):
     @property
     def max_iterations(self) -> int:
         return self._max_iterations
-
-    @property
-    def parameters(self) -> np.ndarray:
-        return self._parameters
-
-    @property
-    def cov_matrix(self) -> np.ndarray:
-        return self._cov_matrix
-
-    @property
-    def standard_deviation(self) -> np.ndarray:
-        return self._standard_deviation
 
     def __str__(self) -> str:
         """
@@ -1300,19 +1306,13 @@ class FitFromGaussian(GeneralFit):
 
     @property
     def standard_deviation(self) -> float:
+        # Unlike the other fit classes, this is the fitted sigma of the gaussian itself,
+        # not the standard deviation of the fit parameters (see standard_deviation_of_fit_params).
         return self._standard_deviation
-
-    @property
-    def cov_matrix(self) -> np.ndarray:
-        return self._cov_matrix
 
     @property
     def standard_deviation_of_fit_params(self) -> np.ndarray:
         return self._standard_deviation_of_fit_params
-
-    @property
-    def parameters(self) -> np.ndarray:
-        return self._parameters
 
     def __str__(self) -> str:
         """
@@ -1324,12 +1324,18 @@ class FitFromGaussian(GeneralFit):
         """
         Calculates the parameters of the fit.
         """
+        guesses = self._guesses
+        if guesses is not None:
+            # The standard deviation guess must be positive to satisfy the fit's bounds,
+            # regardless of the sign the caller happened to guess.
+            guesses = _repair_positive_guess(guesses, index=2, number_of_parameters=3)
         self._parameters, self._cov_matrix = curve_fit(
             self._gaussian_func_template,
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
-            p0=self._guesses,
+            p0=guesses,
             maxfev=self._max_iterations,
+            bounds=([-np.inf, -np.inf, 1e-10], [np.inf, np.inf, np.inf]),
         )
         self._amplitude = self._parameters[0]
         self._mean = self._parameters[1]
@@ -1512,18 +1518,6 @@ class FitFromSquareRoot(GeneralFit):
     @property
     def max_iterations(self) -> int:
         return self._max_iterations
-
-    @property
-    def parameters(self) -> np.ndarray:
-        return self._parameters
-
-    @property
-    def cov_matrix(self) -> np.ndarray:
-        return self.cov_matrix
-
-    @property
-    def standard_deviation(self) -> np.ndarray:
-        return self.standard_deviation
 
     def __str__(self) -> str:
         """
@@ -1728,18 +1722,6 @@ class FitFromLog(GeneralFit):
     def max_iterations(self) -> int:
         return self._max_iterations
 
-    @property
-    def parameters(self) -> np.ndarray:
-        return self._parameters
-
-    @property
-    def cov_matrix(self) -> np.ndarray:
-        return self._cov_matrix
-
-    @property
-    def standard_deviation(self) -> np.ndarray:
-        return self._standard_deviation
-
     def __str__(self) -> str:
         """
         Creates a string representation of the logarithmic function.
@@ -1920,7 +1902,10 @@ class FitFromFunction(GeneralFit):
 
         self._calculate_parameters()
         self._function = self._get_function_with_params()
-        self._label = label
+        if label:
+            self._label = label + " : " + str(self)
+        else:
+            self._label = str(self)
         self._res_curves_to_be_plotted = False
         number_of_points = (
             len(self._curve_to_be_fit._x_data)
@@ -1940,17 +1925,11 @@ class FitFromFunction(GeneralFit):
     def max_iterations(self) -> int:
         return self._max_iterations
 
-    @property
-    def parameters(self) -> np.ndarray:
-        return self._parameters
-
-    @property
-    def cov_matrix(self) -> np.ndarray:
-        return self._cov_matrix
-
-    @property
-    def standard_deviation(self) -> np.ndarray:
-        return self._standard_deviation
+    def __str__(self) -> str:
+        """
+        Creates a string representation of the fitted function.
+        """
+        return f"Fit from function: {self._function_template.__name__}"
 
     def _calculate_parameters(self) -> None:
         """
@@ -2141,18 +2120,6 @@ class FitFromFOTF(GeneralFit):
     def time_constant(self) -> float:
         return self._time_constant
 
-    @property
-    def cov_matrix(self) -> np.ndarray:
-        return self._cov_matrix
-
-    @property
-    def standard_deviation(self) -> np.ndarray:
-        return self._standard_deviation
-
-    @property
-    def parameters(self) -> np.ndarray:
-        return self._parameters
-
     def __str__(self) -> str:
         """
         Creates a string representation of the first order transfer function.
@@ -2163,12 +2130,18 @@ class FitFromFOTF(GeneralFit):
         """
         Calculates the parameters of the fit.
         """
+        guesses = self._guesses
+        if guesses is not None:
+            # The time constant guess must be positive to satisfy the fit's bounds,
+            # regardless of the sign the caller happened to guess.
+            guesses = _repair_positive_guess(guesses, index=1, number_of_parameters=2)
         self._parameters, self._cov_matrix = curve_fit(
             self._fotf_func_template,
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
-            p0=self._guesses,
+            p0=guesses,
             maxfev=self._max_iterations,
+            bounds=([-np.inf, 1e-10], [np.inf, np.inf]),
         )
         self._gain = self._parameters[0]
         self._time_constant = self._parameters[1]

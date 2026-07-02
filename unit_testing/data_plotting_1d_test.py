@@ -4,8 +4,8 @@ from random import random
 from graphinglib import INHERIT
 from matplotlib.collections import PathCollection
 from matplotlib.colors import to_hex, to_rgba
-from matplotlib.pyplot import close, subplots
-from numpy import linspace, ndarray, pi, sin
+from matplotlib.pyplot import close, sca, subplots
+from numpy import allclose, array, linspace, ndarray, pi, sin
 
 from graphinglib.data_plotting_1d import Curve, Histogram, Scatter
 from graphinglib.figure import Figure
@@ -999,6 +999,54 @@ class TestHistogram(unittest.TestCase):
         self.assertEqual(hist_copy._alpha, self.testHist._alpha)
         self.assertEqual(hist_copy._hist_type, self.testHist._hist_type)
         self.assertListEqual(list(hist_copy._data), list(self.testHist._data))
+
+    def test_bin_centers_non_uniform_bins(self):
+        hist = Histogram(
+            [0.5, 1.5, 3, 3.5, 5, 7, 9],
+            bins=array([0, 1, 2, 4, 6, 10]),
+            normalize=False,
+        )
+        expected = (hist.bin_edges[:-1] + hist.bin_edges[1:]) / 2
+        self.assertTrue(allclose(hist.bin_centers, expected))
+
+    def test_bin_heights_default_to_raw_counts_when_normalize_unresolved(self):
+        hist = Histogram([random() for _ in range(100)], 10)
+        self.assertEqual(hist._normalize, INHERIT)
+        self.assertAlmostEqual(sum(hist.bin_heights), 100)
+
+    def test_bin_heights_not_stale_after_rendering(self):
+        # Regression test: rendering resolves `_normalize` by setting the private
+        # attribute directly (bypassing the `normalize` setter), which used to leave
+        # a stale density-normalized histogram cache behind after the post-render
+        # reset restored INHERIT.
+        hist = Histogram([random() for _ in range(100)], 10)
+        hist.add_pdf()
+        figure = Figure(figure_style="plain")
+        figure.add_elements(hist)
+        figure._prepare_figure()
+        close("all")
+        self.assertEqual(hist._normalize, INHERIT)
+        self.assertAlmostEqual(sum(hist.bin_heights), 100)
+
+    def test_pdf_mean_std_lines_use_correct_axes(self):
+        fig, (ax1, ax2) = subplots(1, 2)
+        sca(ax2)
+        hist = Histogram(
+            [random() for _ in range(100)],
+            10,
+            face_color="silver",
+            edge_color="k",
+            hist_type="stepfilled",
+            alpha=0.5,
+            line_width=1,
+            normalize=True,
+            orientation="vertical",
+            show_params=False,
+        )
+        hist.add_pdf(show_mean=True, show_std=True)
+        hist._plot_element(ax1, 0)
+        self.assertEqual(len(ax2.collections), 0)
+        self.assertEqual(len(ax1.collections), 2)
 
 
 if __name__ == "__main__":
