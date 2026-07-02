@@ -97,6 +97,26 @@ There are again many parameters to control for the Heatmap objects but an import
 
 .. note:: By default, there is no interpolation applied to the data.
 
+It is also possible to create a Heatmap from a page of a PDF file using the :py:meth:`~graphinglib.Heatmap.from_pdf` method. This requires the optional ``graphinglib[pdf]`` extra (install with ``pip install graphinglib[pdf]``):
+
+.. plot::
+
+    map = gl.Heatmap.from_pdf("images/sample_flowchart.pdf")
+    figure = gl.Figure()
+    figure.add_elements(map)
+    figure.show()
+
+By default, the page is kept as an RGB image, the same way a plain image path is displayed. Passing ``grayscale=True`` instead converts the page to scalar intensity data, so that ``color_map`` (which defaults to ``"gray"`` in that case) is applied to it like any other Heatmap:
+
+.. plot::
+
+    map = gl.Heatmap.from_pdf("images/sample_flowchart.pdf", grayscale=True, color_map="viridis")
+    figure = gl.Figure()
+    figure.add_elements(map)
+    figure.show()
+
+The :py:meth:`~graphinglib.Heatmap.from_pdf` method also accepts ``page`` (to pick a page in a multi-page PDF) and ``dpi`` (to control the resolution used to rasterize the page).
+
 The :class:`~graphinglib.data_plotting_2d.Contour` Object
 ---------------------------------------------------------
 

@@ -40,7 +40,7 @@ from .legend_artists import (
     VerticalLineCollection,
     histogram_legend_artist,
 )
-from .tools import _copy_with_overrides
+from .tools import _copy_with_overrides, _require_optional_dependency
 
 T = TypeVar("T")
 ListOrItem = Union[T, list[T]]
@@ -48,11 +48,7 @@ ListOrItem = Union[T, list[T]]
 
 def _require_astropy(feature: str = "this feature") -> None:
     """Raise a clear error when an astro-extra feature is used without the optional dependency installed."""
-    if not _ASTROPY_AVAILABLE:
-        raise GraphingException(
-            f"{feature} requires the optional `graphinglib[astro]` extra (installs Astropy). "
-            "Install it with `pip install graphinglib[astro]`."
-        )
+    _require_optional_dependency(_ASTROPY_AVAILABLE, feature, "astro", "Astropy")
 
 
 HAS_ASTROPY = _ASTROPY_AVAILABLE

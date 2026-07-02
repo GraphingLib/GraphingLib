@@ -66,6 +66,7 @@ uv add graphinglib
 Optional extras:
 
 - Astronomical projections (SmartFigureWCS): install `pip install graphinglib[astro]`
+- Opening PDFs with Heatmap (`Heatmap.from_pdf`): install `pip install graphinglib[pdf]`
 
 ## Contributing
 
