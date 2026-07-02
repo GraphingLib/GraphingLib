@@ -1,4 +1,7 @@
+import os
+import tempfile
 import unittest
+from importlib.util import find_spec
 from unittest.mock import patch
 
 import numpy as np
@@ -7,6 +10,8 @@ from matplotlib.colors import to_rgba
 
 from graphinglib.data_plotting_2d import Contour, Heatmap, Stream, VectorField
 from graphinglib.figure import Figure
+
+HAS_PYPDFIUM2 = find_spec("pypdfium2") is not None
 
 
 class TestHeatmap(unittest.TestCase):
@@ -144,6 +149,57 @@ class TestHeatmap(unittest.TestCase):
         self.assertEqual(len(fig.axes), 2)
         self.assertAlmostEqual(fig.axes[1].get_ylim()[0], min(z), places=3)
         self.assertAlmostEqual(fig.axes[1].get_ylim()[1], max(z), places=3)
+
+    @unittest.skipUnless(
+        HAS_PYPDFIUM2,
+        "Install the optional extra with `pip install graphinglib[pdf]` to run PDF heatmap tests.",
+    )
+    def test_from_pdf(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            pdf_path = os.path.join(tmp_dir, "test.pdf")
+            source_fig, source_ax = plt.subplots(figsize=(2, 2))
+            source_ax.plot([0, 1, 2], [0, 1, 0])
+            source_fig.savefig(pdf_path, format="pdf")
+            plt.close(source_fig)
+
+            heatmap = Heatmap.from_pdf(pdf_path)
+            self.assertIsInstance(heatmap.image, np.ndarray)
+            self.assertEqual(heatmap.image.ndim, 3)
+            self.assertEqual(heatmap.image.shape[2], 3)
+            self.assertFalse(heatmap.show_color_bar)
+
+            # Explicitly requesting a color bar on an RGB-mode page must still be ignored,
+            # same as the existing invariant for file-loaded images.
+            heatmap_override = Heatmap.from_pdf(pdf_path, show_color_bar=True)
+            self.assertFalse(heatmap_override.show_color_bar)
+
+    @unittest.skipUnless(
+        HAS_PYPDFIUM2,
+        "Install the optional extra with `pip install graphinglib[pdf]` to run PDF heatmap tests.",
+    )
+    def test_from_pdf_grayscale(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            pdf_path = os.path.join(tmp_dir, "test.pdf")
+            source_fig, source_ax = plt.subplots(figsize=(2, 2))
+            source_ax.plot([0, 1, 2], [0, 1, 0])
+            source_fig.savefig(pdf_path, format="pdf")
+            plt.close(source_fig)
+
+            heatmap = Heatmap.from_pdf(pdf_path, grayscale=True)
+            self.assertEqual(heatmap.image.ndim, 2)
+            self.assertEqual(heatmap.color_map, "gray")
+            self.assertTrue(heatmap.show_color_bar)
+
+            heatmap_override = Heatmap.from_pdf(
+                pdf_path, grayscale=True, color_map="viridis"
+            )
+            self.assertEqual(heatmap_override.color_map, "viridis")
+
+    def test_image_setter_disables_color_bar_for_rgb_array(self):
+        heatmap = Heatmap(image=np.random.rand(4, 4, 3), show_color_bar=True)
+        self.assertFalse(heatmap._show_color_bar)
+        heatmap_rgba = Heatmap(image=np.random.rand(4, 4, 4), show_color_bar=True)
+        self.assertFalse(heatmap_rgba._show_color_bar)
 
     def test_copy(self):
         array_of_data = np.random.rand(10, 10)

@@ -12,6 +12,19 @@ from matplotlib.colors import to_rgba_array
 T = TypeVar("T")
 
 
+def _require_optional_dependency(
+    available: bool, feature: str, extra: str, package: str
+) -> None:
+    """Raise a clear error when a feature gated behind an optional extra is used without it installed."""
+    if not available:
+        from .graph_elements import GraphingException
+
+        raise GraphingException(
+            f"{feature} requires the optional `graphinglib[{extra}]` extra (installs {package}). "
+            f"Install it with `pip install graphinglib[{extra}]`."
+        )
+
+
 def _copy_with_overrides(instance: T, **kwargs: Any) -> T:
     """
     Returns a deep copy of an instance with selected public writable properties overridden.

@@ -13,4 +13,5 @@ numpydoc
 PyGithub
 pyperclip
 astropy
+pypdfium2
 sphinxext-opengraph

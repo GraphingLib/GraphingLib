@@ -14,11 +14,27 @@ from numpy.typing import ArrayLike
 from scipy.interpolate import griddata
 
 from .graph_elements import Plottable
+from .tools import _require_optional_dependency
 
 try:
     from typing import Self
 except ImportError:
     from typing_extensions import Self
+
+try:  # Optional dependency: pypdfium2
+    import pypdfium2 as pdfium
+
+    _PYPDFIUM2_AVAILABLE = True
+except ImportError:
+    _PYPDFIUM2_AVAILABLE = False
+
+
+def _require_pypdfium2(feature: str = "this feature") -> None:
+    """Raise a clear error when a pdf-extra feature is used without the optional dependency installed."""
+    _require_optional_dependency(_PYPDFIUM2_AVAILABLE, feature, "pdf", "pypdfium2")
+
+
+HAS_PYPDFIUM2 = _PYPDFIUM2_AVAILABLE
 
 
 @runtime_checkable
@@ -359,6 +375,114 @@ class Heatmap(Plottable2D):
             norm=norm,
         )
 
+    @classmethod
+    def from_pdf(
+        cls,
+        path: str,
+        page: int = 0,
+        dpi: float = 200,
+        grayscale: bool = False,
+        x_axis_range: Optional[tuple[float, float]] = None,
+        y_axis_range: Optional[tuple[float, float]] = None,
+        color_map: str | Colormap | Inherit = INHERIT,
+        color_map_range: Optional[tuple[float, float]] = None,
+        show_color_bar: bool = True,
+        alpha: float = 1.0,
+        aspect_ratio: str | float | Inherit = INHERIT,
+        origin_position: str | Inherit = INHERIT,
+        interpolation: str = "none",
+        norm: Optional[str | Normalize] = None,
+    ) -> Self:
+        """
+        Creates a heatmap by rasterizing a page of a PDF file.
+
+        This requires the optional ``graphinglib[pdf]`` extra (installs ``pypdfium2``).
+
+        Parameters
+        ----------
+        path : str
+            Path to the PDF file to open.
+        page : int
+            Index of the page to rasterize.
+            Defaults to ``0``.
+        dpi : float
+            Resolution used to rasterize the page, in dots per inch.
+            Defaults to ``200``.
+        grayscale : bool
+            Whether to rasterize the page directly to a single-channel grayscale array, so that
+            ``color_map`` is applied to it like a regular data heatmap. When ``False``, the page is
+            kept as an RGB image, matching how :class:`~graphinglib.data_plotting_2d.Heatmap`
+            already displays other image file formats; in that case, ``color_map`` and
+            ``show_color_bar`` have no effect, since an RGB image never gets a color bar (same
+            behavior as loading any other image file).
+            Defaults to ``False``.
+        x_axis_range, y_axis_range : tuple[float, float], optional
+            The range of x and y values used for the axes as tuples containing the start and end of the range.
+        color_map : str, Colormap
+            The color map to use for the :class:`~graphinglib.data_plotting_2d.Heatmap`. Only has an effect when
+            ``grayscale`` is ``True``. Can either be specified as a string (named colormap from Matplotlib) or a
+            Colormap object.
+            Examples include ``"viridis"``, ``"plasma"``, and ``"coolwarm"``.
+            Defaults to ``"gray"`` when ``grayscale`` is ``True``; otherwise, default depends on the
+            ``figure_style`` configuration.
+        color_map_range: tuple[float, float], optional
+            The data range covered by the color map, given as ``(minimum, maximum)``.
+        show_color_bar : bool
+            Whether or not to display the color bar next to the plot. Only has an effect when
+            ``grayscale`` is ``True``.
+            Defaults to ``True``.
+        alpha : float
+            Opacity value of the :class:`~graphinglib.data_plotting_2d.Heatmap`.
+            Range is ``0`` (transparent) to ``1`` (opaque).
+            Defaults to 1.0.
+        aspect_ratio : str or float
+            Aspect ratio of the axes.
+            Values include ``"auto"``, ``"equal"``, or a positive float.
+            Default depends on the ``figure_style`` configuration.
+        origin_position : str
+            Position of the origin of the axes (upper left or lower left corner).
+            Values are ``"upper"`` and ``"lower"``.
+            Default depends on the ``figure_style`` configuration.
+        interpolation : str
+            Interpolation method to be applied to the image.
+            Values include ``"none"``, ``"nearest"``, ``"bilinear"``, ``"bicubic"``, ``"spline16"``,
+            ``"spline36"``, ``"hanning"``, ``"hamming"``, ``"hermite"``, ``"kaiser"``, ``"quadric"``,
+            ``"catrom"``, ``"gaussian"``, ``"bessel"``, ``"mitchell"``, ``"sinc"``, and ``"lanczos"``.
+            Defaults to ``"none"``.
+
+            .. seealso::
+                For other interpolation methods, refer to
+                `Interpolations for imshow <https://matplotlib.org/stable/gallery/images_contours_and_fields/interpolation_methods.html>`_.
+
+        norm : str or Normalize, optional
+            Normalization of the colormap. Default is ``None``.
+
+        Returns
+        -------
+        A :class:`~graphinglib.data_plotting_2d.Heatmap` object created from a page of a PDF file.
+        """
+        _require_pypdfium2("Heatmap.from_pdf")
+        with pdfium.PdfDocument(path) as pdf:
+            bitmap = pdf[page].render(
+                scale=dpi / 72, rev_byteorder=True, grayscale=grayscale
+            )
+            image = bitmap.to_numpy()
+        if grayscale and is_inherit(color_map):
+            color_map = "gray"
+        return cls(
+            image=image,
+            x_axis_range=x_axis_range,
+            y_axis_range=y_axis_range,
+            color_map=color_map,
+            color_map_range=color_map_range,
+            show_color_bar=show_color_bar,
+            alpha=alpha,
+            aspect_ratio=aspect_ratio,
+            origin_position=origin_position,
+            interpolation=interpolation,
+            norm=norm,
+        )
+
     @property
     def image(self) -> ArrayLike | str:
         return self._image
@@ -370,6 +494,9 @@ class Heatmap(Plottable2D):
             self._show_color_bar = False
         else:
             self._image = np.asarray(image)
+            if self._image.ndim == 3 and self._image.shape[-1] in (3, 4):
+                # RGB(A) pixel data has no colormap-driven scalar meaning, same as a file-loaded image.
+                self._show_color_bar = False
 
     @property
     def x_axis_range(self) -> Optional[tuple[float, float]]:
