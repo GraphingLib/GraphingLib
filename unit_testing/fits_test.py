@@ -5,6 +5,7 @@ import numpy as np
 from graphinglib.data_plotting_1d import Curve, Scatter
 from graphinglib.fits import (
     FitFromExponential,
+    FitFromFOTF,
     FitFromFunction,
     FitFromGaussian,
     FitFromLog,
@@ -29,6 +30,14 @@ class TestFitFromPolynomial(unittest.TestCase):
     def test_first_degree_coeffs(self):
         self.assertListEqual(
             [round(i, 5) for i in list(self.fit_first_degree._coeffs)], [2, 3]
+        )
+
+    def test_parameters_property(self):
+        # Regression test: this used to raise AttributeError once `parameters` was
+        # centralized onto GeneralFit, since this class stores its fit output in
+        # `_coeffs`, not `_parameters`.
+        self.assertListEqual(
+            [round(i, 5) for i in list(self.fit_first_degree.parameters)], [2, 3]
         )
 
     def test_first_degree_cov(self):
@@ -141,6 +150,17 @@ class TestFitFromPolynomial(unittest.TestCase):
         )
         self.assertEqual(copy._color, self.fit_first_degree._color)
         self.assertEqual(copy._label, self.fit_first_degree._label)
+
+    def test_get_rsquared_perfect_fit(self):
+        self.assertAlmostEqual(self.fit_first_degree.get_Rsquared(), 1.0)
+
+    def test_get_rsquared_constant_data(self):
+        # Regression test: used to silently divide by zero (nan/inf with a RuntimeWarning)
+        # when the fitted data has zero variance.
+        x = np.linspace(-3, 3, 100)
+        flat_scatter = Scatter(x, np.full_like(x, 5.0), "k", "Flat")
+        flat_fit = FitFromPolynomial(flat_scatter, 0, "k", "Constant fit")
+        self.assertAlmostEqual(flat_fit.get_Rsquared(), 1.0)
 
 
 class TestFitFromSine(unittest.TestCase):
@@ -336,6 +356,15 @@ class TestFitFromGaussian(unittest.TestCase):
         self.assertIsInstance(self.fit._standard_deviation_of_fit_params, np.ndarray)
         self.assertEqual(self.fit._standard_deviation_of_fit_params.shape, (3,))
 
+    def test_negative_std_dev_guess_does_not_raise(self):
+        # Regression test: bounds=(...) added to keep standard_deviation positive used
+        # to reject any negative initial guess outright instead of just the fitted result.
+        guesses = np.array([5.0, 1.0, -1.0])
+        fit = FitFromGaussian(self.data, guesses=guesses)
+        self.assertAlmostEqual(fit.standard_deviation, 1, places=2)
+        # The caller's array must not be mutated by the guess repair.
+        self.assertListEqual(list(guesses), [5.0, 1.0, -1.0])
+
     def test_str(self):
         self.assertEqual(str(self.fit), r"$\mu = 1.000, \sigma = 1.000, A = 5.000$")
 
@@ -415,6 +444,16 @@ class TestFitFromSquareRoot(unittest.TestCase):
     def test_std_dev(self):
         self.assertIsInstance(self.fit._standard_deviation, np.ndarray)
         self.assertEqual(self.fit._standard_deviation.shape, (3,))
+
+    def test_cov_matrix_property(self):
+        # Regression test: this property used to recurse into itself infinitely.
+        self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
+        self.assertEqual(self.fit.cov_matrix.shape, (3, 3))
+
+    def test_standard_deviation_property(self):
+        # Regression test: this property used to recurse into itself infinitely.
+        self.assertIsInstance(self.fit.standard_deviation, np.ndarray)
+        self.assertEqual(self.fit.standard_deviation.shape, (3,))
 
     def test_str(self):
         self.assertEqual(str(self.fit), "$3.000 \\sqrt{x + 4.000} + 5.000$")
@@ -569,6 +608,14 @@ class TestFitFromFunction(unittest.TestCase):
         self.assertIsInstance(self.fit._standard_deviation, np.ndarray)
         self.assertEqual(self.fit._standard_deviation.shape, (2,))
 
+    def test_str(self):
+        # Regression test: this used to raise NotImplementedError.
+        self.assertEqual(str(self.fit), "Fit from function: <lambda>")
+
+    def test_default_label(self):
+        # Regression test: this used to be the literal string "None".
+        self.assertEqual(self.fit.label, "Fit from function: <lambda>")
+
     def test_function(self):
         self.assertAlmostEqual(self.fit._function(1), 4, places=3)
 
@@ -607,6 +654,77 @@ class TestFitFromFunction(unittest.TestCase):
     def test_copy(self):
         copy = self.fit.copy()
         # check that all attributes are the same
+        self.assertEqual(list(copy._parameters), list(self.fit._parameters))
+        self.assertEqual(copy._cov_matrix.tolist(), self.fit._cov_matrix.tolist())
+        self.assertEqual(
+            copy._standard_deviation.tolist(),
+            self.fit._standard_deviation.tolist(),
+        )
+        self.assertEqual(copy._color, self.fit._color)
+        self.assertEqual(copy._label, self.fit._label)
+
+
+class TestFitFromFOTF(unittest.TestCase):
+    def setUp(self) -> None:
+        x = np.linspace(0, 20, 1000)
+        self.data = Scatter(x, 5 * (1 - np.exp(-x / 3)), "Data")
+        self.fit = FitFromFOTF(self.data, "FOTF fit")
+
+    def test_parameters(self):
+        rounded_params = [round(i, 3) for i in list(self.fit._parameters)]
+        self.assertListEqual(rounded_params, [5, 3])
+
+    def test_cov(self):
+        self.assertIsInstance(self.fit._cov_matrix, np.ndarray)
+        self.assertEqual(self.fit._cov_matrix.shape, (2, 2))
+
+    def test_std_dev(self):
+        self.assertIsInstance(self.fit._standard_deviation, np.ndarray)
+        self.assertEqual(self.fit._standard_deviation.shape, (2,))
+
+    def test_cov_matrix_property(self):
+        self.assertIsInstance(self.fit.cov_matrix, np.ndarray)
+        self.assertEqual(self.fit.cov_matrix.shape, (2, 2))
+
+    def test_standard_deviation_property(self):
+        self.assertIsInstance(self.fit.standard_deviation, np.ndarray)
+        self.assertEqual(self.fit.standard_deviation.shape, (2,))
+
+    def test_gain(self):
+        self.assertAlmostEqual(self.fit.gain, 5, places=3)
+
+    def test_time_constant(self):
+        self.assertAlmostEqual(self.fit.time_constant, 3, places=3)
+
+    def test_str(self):
+        self.assertEqual(str(self.fit), "$K = 5.000, \\tau = 3.000$")
+
+    def test_function(self):
+        self.assertAlmostEqual(self.fit._function(3), 3.161, places=3)
+
+    def test_get_coordinates_at_x(self):
+        self.assertAlmostEqual(self.fit.get_coordinates_at_x(3)[1], 3.161, places=3)
+
+    def test_create_point_at_x(self):
+        self.assertAlmostEqual(self.fit.create_point_at_x(3)._y, 3.161, places=3)
+
+    def test_get_derivative_curve(self):
+        self.assertIsInstance(self.fit.create_derivative_curve(), Curve)
+
+    def test_get_integral_curve(self):
+        self.assertIsInstance(self.fit.create_integral_curve(), Curve)
+
+    def test_negative_time_constant_guess_does_not_raise(self):
+        # Regression test: bounds=(...) added to keep time_constant positive used to
+        # reject any negative initial guess outright instead of just the fitted result.
+        guesses = np.array([5.0, -3.0])
+        fit = FitFromFOTF(self.data, guesses=guesses)
+        self.assertAlmostEqual(fit.time_constant, 3, places=3)
+        # The caller's array must not be mutated by the guess repair.
+        self.assertListEqual(list(guesses), [5.0, -3.0])
+
+    def test_copy(self):
+        copy = self.fit.copy()
         self.assertEqual(list(copy._parameters), list(self.fit._parameters))
         self.assertEqual(copy._cov_matrix.tolist(), self.fit._cov_matrix.tolist())
         self.assertEqual(

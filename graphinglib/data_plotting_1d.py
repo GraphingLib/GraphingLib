@@ -3205,6 +3205,9 @@ class Histogram(Plottable1D):
         self._normalize = normalize
         self._orientation = orientation
         self._show_params = show_params
+        self._histogram_cache: Optional[tuple[bool, tuple[np.ndarray, np.ndarray]]] = (
+            None
+        )
         self.data = np.asarray(data)
 
         self._show_pdf = False
@@ -3306,13 +3309,7 @@ class Histogram(Plottable1D):
         self._data = np.array(data)
         self._mean = np.mean(self._data)
         self._standard_deviation = np.std(self._data)
-        _parameters = np.histogram(self._data, bins=self._bins, density=self._normalize)
-        self._bin_heights, bin_edges = _parameters[0], _parameters[1]
-        bin_width = bin_edges[1] - bin_edges[0]
-        bin_centers = bin_edges[1:] - bin_width / 2
-        self._bin_width = bin_width
-        self._bin_centers = bin_centers
-        self._bin_edges = bin_edges
+        self._histogram_cache = None
 
     @property
     def bins(self) -> int:
@@ -3321,13 +3318,7 @@ class Histogram(Plottable1D):
     @bins.setter
     def bins(self, bins: int) -> None:
         self._bins = bins
-        _parameters = np.histogram(self._data, bins=self._bins, density=self._normalize)
-        self._bin_heights, bin_edges = _parameters[0], _parameters[1]
-        bin_width = bin_edges[1] - bin_edges[0]
-        bin_centers = bin_edges[1:] - bin_width / 2
-        self._bin_width = bin_width
-        self._bin_centers = bin_centers
-        self._bin_edges = bin_edges
+        self._histogram_cache = None
 
     @property
     def label(self) -> str:
@@ -3384,6 +3375,7 @@ class Histogram(Plottable1D):
     @normalize.setter
     def normalize(self, normalize: bool) -> None:
         self._normalize = normalize
+        self._histogram_cache = None
 
     @property
     def orientation(self) -> str:
@@ -3414,16 +3406,34 @@ class Histogram(Plottable1D):
         return self._mean, self._standard_deviation
 
     @property
-    def bin_heights(self) -> np.ndarray:
-        return self._bin_heights
+    def _resolved_normalize(self) -> bool:
+        return False if is_inherit(self._normalize) else bool(self._normalize)
+
+    def _compute_histogram(self) -> tuple[np.ndarray, np.ndarray]:
+        # The cache remembers which `density` value it was computed with, and is
+        # recomputed if that value has changed since. This is needed because some
+        # code (e.g. figure style resolution) changes `_normalize` without going
+        # through the `normalize` setter, so the setter alone can't clear the cache.
+        density = self._resolved_normalize
+        if self._histogram_cache is None or self._histogram_cache[0] != density:
+            self._histogram_cache = (
+                density,
+                np.histogram(self._data, bins=self._bins, density=density),
+            )
+        return self._histogram_cache[1]
 
     @property
-    def bin_centers(self) -> np.ndarray:
-        return self._bin_centers
+    def bin_heights(self) -> np.ndarray:
+        return self._compute_histogram()[0]
 
     @property
     def bin_edges(self) -> np.ndarray:
-        return self._bin_edges
+        return self._compute_histogram()[1]
+
+    @property
+    def bin_centers(self) -> np.ndarray:
+        edges = self.bin_edges
+        return (edges[:-1] + edges[1:]) / 2
 
     def __eq__(self, other: Self) -> bool:
         """
@@ -3486,7 +3496,9 @@ class Histogram(Plottable1D):
         The corresponding array of y values of the gaussian curve.
         """
         x = np.array(x)
-        return sum(self._bin_heights) * self._bin_width * self._normal_normalized(x)
+        bin_heights, bin_edges = self._compute_histogram()
+        total_area = np.sum(bin_heights * np.diff(bin_edges))
+        return total_area * self._normal_normalized(x)
 
     def add_pdf(
         self,
@@ -3569,6 +3581,7 @@ class Histogram(Plottable1D):
         """
         Plots the element in the specified axes.
         """
+        normalize_resolved = self._resolved_normalize
         params = {
             "facecolor": (
                 to_rgba(self._face_color, self._alpha)
@@ -3600,7 +3613,7 @@ class Histogram(Plottable1D):
             ),
             "histtype": self._hist_type,
             "linewidth": self._line_width,
-            "density": self._normalize,
+            "density": normalize_resolved,
             "orientation": self._orientation,
         }
         params = {k: v for k, v in params.items() if v != INHERIT}
@@ -3614,11 +3627,12 @@ class Histogram(Plottable1D):
         if self._show_pdf:
             normal = (
                 self._normal_normalized
-                if self._normalize
+                if normalize_resolved
                 else self._normal_not_normalized
             )
             num_of_points = 500
-            x_data = np.linspace(self._bin_edges[0], self._bin_edges[-1], num_of_points)
+            bin_edges = self.bin_edges
+            x_data = np.linspace(bin_edges[0], bin_edges[-1], num_of_points)
             y_data = normal(x_data)
             params = {
                 "color": self._pdf_curve_color,
@@ -3651,7 +3665,7 @@ class Histogram(Plottable1D):
 
                 # Plots std on the y-axis if "orientation" is "horizontal".
                 if self._orientation != "vertical":
-                    plt.hlines(
+                    axes.hlines(
                         [
                             self._mean - self._standard_deviation,
                             self._mean + self._standard_deviation,
@@ -3664,7 +3678,7 @@ class Histogram(Plottable1D):
                     )
 
                 else:
-                    plt.vlines(
+                    axes.vlines(
                         [
                             self._mean - self._standard_deviation,
                             self._mean + self._standard_deviation,
@@ -3683,7 +3697,7 @@ class Histogram(Plottable1D):
 
                 # Plots std on the y-axis if "orientation" is "horizontal".
                 if self._orientation != "vertical":
-                    plt.hlines(
+                    axes.hlines(
                         self._mean,
                         0,
                         curve_max_y,
@@ -3693,7 +3707,7 @@ class Histogram(Plottable1D):
                     )
 
                 else:
-                    plt.vlines(
+                    axes.vlines(
                         self._mean,
                         0,
                         curve_max_y,

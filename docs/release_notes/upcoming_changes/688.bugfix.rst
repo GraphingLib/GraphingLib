@@ -1,0 +1,3 @@
+Bugfixes for `Histogram` and the fit classes
+--------------------------------------------
+Fixed several bugs in `Histogram` and the fit classes: `Histogram` now draws its PDF mean and standard deviation lines on the correct axes in multi-panel figures, computes correct `bin_centers` for non-uniform bin edges, and keeps `bin_heights`/`bin_edges`/`bin_centers` consistent with the current `normalize` value. `FitFromSquareRoot.cov_matrix` and `.standard_deviation` no longer crash with a `RecursionError`, `str()` on a `FitFromFunction` no longer raises `NotImplementedError`, `get_Rsquared` now returns a well-defined value for constant data, and `FitFromGaussian`/`FitFromFOTF` fits are now bounded to keep `sigma`/`tau` positive instead of silently producing NaN curves.
