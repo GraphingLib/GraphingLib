@@ -1,0 +1,3 @@
+`Heatmap.from_pdf` classmethod
+==============================
+Added `Heatmap.from_pdf`, which creates a `Heatmap` by rasterizing a page of a PDF file. Requires the optional `graphinglib[pdf]` extra.
