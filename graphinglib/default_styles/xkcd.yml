@@ -1,0 +1,259 @@
+Curve:
+  _color:
+  _line_width: 2
+  _line_style: "-"
+  _alpha: 1.0
+  _cap_width: 3
+  _errorbars_color: "same as curve"
+  _errorbars_line_width: "same as curve"
+  _error_curves_color: same as curve
+  _error_curves_fill_between: true
+  _error_curves_line_style: --
+  _error_curves_line_width: same as curve
+  _cap_thickness: "same as curve"
+  _fill_between_color: "same as curve"
+
+Scatter:
+  _face_color: "color cycle"
+  _edge_color:
+  _color_map: "viridis"
+  _show_color_bar: False
+  _marker_size: 36
+  _marker_edge_width: 1.5
+  _marker_style: "o"
+  _alpha: 1.0
+  _cap_width: 3
+  _errorbars_color: "same as scatter"
+  _errorbars_line_width: 1
+  _cap_thickness: 1
+
+Histogram:
+  _face_color: "#1f77b4"
+  _edge_color: "#1f77b4"
+  _hist_type: "bar"
+  _alpha: 1.0
+  _line_width: 2
+  _normalize: True
+  _orientation: vertical
+  _show_params: True
+  _pdf_show_mean: True
+  _pdf_show_std: True
+  _pdf_curve_color: "k"
+  _pdf_mean_color: "r"
+  _pdf_std_color: "k"
+
+Hlines:
+  _alpha: 1.0
+  _colors: "C0"
+  _line_styles: "-"
+  _line_widths: 2
+
+Vlines:
+  _alpha: 1.0
+  _colors: "C0"
+  _line_styles: "solid"
+  _line_widths: 2
+
+Figure:
+  _size: [6.4, 4.8]
+  _log_scale_x: False
+  _log_scale_y: False
+
+MultiFigure:
+  _size: [6.4, 4.8]
+
+SmartFigure:
+  _size: [6.4, 4.8]
+
+Point:
+  _face_color: "k"
+  _edge_color: null
+  _marker_size: 30
+  _marker_style: "o"
+  _edge_width: 1.5
+  _alpha: 1.0
+  _text_color: "same as point"
+
+FitFromPolynomial:
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _alpha: 1.0
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+
+FitFromExponential:
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _alpha: 1.0
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+
+FitFromGaussian:
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _alpha: 1.0
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+
+FitFromSine:
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _alpha: 1.0
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+
+FitFromSquareRoot:
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _alpha: 1.0
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+
+FitFromLog:
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _alpha: 1.0
+
+FitFromFunction:
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _alpha: 1.0
+
+FitFromFOTF:
+  _res_color: "k"
+  _res_line_width: 1
+  _res_line_style: "--"
+  _color: "k"
+  _line_width: 2
+  _line_style: "-"
+  _alpha: 1.0
+
+Heatmap:
+  _aspect_ratio: "equal"
+  _origin_position: "upper"
+  _color_map: "viridis"
+  _show_color_bar: True
+
+Contour:
+  _levels: 10
+  _color_map: "viridis"
+  _show_color_bar: True
+  _filled: True
+  _alpha: 1.0
+  _line_widths: 1
+
+VectorField:
+  _arrow_width: 1
+  _arrow_head_size: 1
+  _color: "k"
+
+Text:
+  _alpha: 1.0
+  _color: "k"
+  _h_align: "center"
+  _v_align: "baseline"
+
+Table:
+  _cell_colors: "white"
+  _col_colors: "#bfbfbf"
+  _row_colors: "#bfbfbf"
+  _edge_color: "black"
+  _edge_width: 1
+  _text_color: "black"
+  _cell_align: "right"
+  _row_align: "left"
+  _col_align: "center"
+
+Stream:
+  _line_width: 1
+  _color:
+  _color_map:
+  _arrow_size: 1
+
+Circle:
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
+
+Ellipse:
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
+
+Rectangle:
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
+
+Arrow:
+  _alpha: 1.0
+  _color: "black"
+  _head_size: 1
+  _width: 2
+  _style: "-|>"
+
+Line:
+  _alpha: 1.0
+  _color: "black"
+  _width: 2
+  _cap_width: 1
+
+Polygon:
+  _fill: True
+  _fill_alpha: 0.5
+  _fill_color:
+  _edge_color: "black"
+  _line_width: 2
+  _line_style: "-"
+
+# The rc_params below are exactly the ones set by matplotlib's plt.xkcd() (with its
+# default scale/length/randomness); everything omitted falls back to matplotlib's
+# defaults, which is how plt.xkcd() behaves. Three deliberate deviations:
+# - path.effects (white outline behind lines) cannot be expressed in a style file.
+# - The comic fonts are resolved through the "fantasy" generic family instead of
+#   font.family directly, which keeps font lookup silent when they are not installed.
+# - axes.prop_cycle must be stated explicitly because get_colors() reads it from the style file.
+rc_params:
+  font.family: "fantasy"
+  font.fantasy: ["xkcd", "xkcd Script", "Humor Sans", "Comic Neue", "Comic Sans MS", "Chicago", "Charcoal", "Impact", "Western", "fantasy"]
+  font.size: 14.0
+  path.sketch: [1, 100, 2]
+  axes.linewidth: 1.5
+  lines.linewidth: 2.0
+  figure.facecolor: "white"
+  grid.linewidth: 0.0
+  axes.grid: False
+  axes.unicode_minus: False
+  axes.edgecolor: "black"
+  axes.prop_cycle: cycler('color', ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
+  xtick.major.size: 8
+  xtick.major.width: 3
+  ytick.major.size: 8
+  ytick.major.width: 3

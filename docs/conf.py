@@ -10,9 +10,24 @@ import os
 import sys
 import time
 
+import matplotlib
+
 from graphinglib import __version__
 
 sys.path.insert(0, os.path.abspath("sphinxext"))
+
+# The GraphingLib xkcd style resolves its hand-drawn fonts through the "fantasy"
+# generic font family, which matplotlib re-resolves at draw time. GraphingLib resets
+# rcParams to matplotlib defaults after each figure, and the sphinx plot directive
+# only saves figures after the plotted code has run, so the default fantasy list must
+# also prefer the xkcd fonts for the style showcase to render with the intended font.
+matplotlib.rcParamsDefault["font.fantasy"] = [
+    "xkcd",
+    "xkcd Script",
+    "Humor Sans",
+    "Comic Neue",
+    "Comic Sans MS",
+] + matplotlib.rcParamsDefault["font.fantasy"]
 
 project = "GraphingLib"
 copyright = f"2023-{time.strftime('%Y')}, Gustave Coulombe, Yannick Lapointe"
