@@ -122,6 +122,12 @@ class Figure:
         self._remove_axes = remove_axes
         self._twin_x_axis = None
         self._twin_y_axis = None
+        # Grid placement, assigned by MultiFigure.add_figure when this Figure is
+        # used as a subfigure.
+        self._row_start: Optional[int] = None
+        self._col_start: Optional[int] = None
+        self._row_span: Optional[int] = None
+        self._col_span: Optional[int] = None
 
         self.aspect_ratio = aspect_ratio
 
@@ -271,10 +277,10 @@ class Figure:
     def _prepare_figure(
         self,
         legend: bool = True,
-        legend_loc: str = None,
+        legend_loc: Optional[str] = None,
         legend_cols: int = 1,
-        axes: plt.Axes = None,
-        default_params: dict = None,
+        axes: Optional[plt.Axes] = None,
+        default_params: Optional[dict] = None,
         is_matplotlib_style: bool = False,
     ):
         """
@@ -845,7 +851,7 @@ class Figure:
     def create_twin_axis(
         self,
         is_y: bool = True,
-        label: str = None,
+        label: Optional[str] = None,
         log_scale: bool = False,
         axis_lim: Optional[tuple[float, float]] = None,
     ) -> "TwinAxis":
@@ -968,7 +974,7 @@ class TwinAxis:
         self,
         fig_axes: plt.Axes,
         is_matplotlib_style: bool = False,
-        default_params: dict = None,
+        default_params: Optional[dict] = None,
         figure_style: str | Inherit = INHERIT,
     ):
         """

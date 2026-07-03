@@ -15,7 +15,7 @@ from graphinglib.tools import (
 class TestMathematicalObject(unittest.TestCase):
     def test_object_not_implemented(self):
         with self.assertRaises(TypeError):
-            MathematicalObject()
+            MathematicalObject()  # ty: ignore[call-non-callable]
 
     def test_valid_children_class(self):
         class TestObject(MathematicalObject):

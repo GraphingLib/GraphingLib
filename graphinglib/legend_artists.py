@@ -522,7 +522,9 @@ class LegendPatch(LegendElement):
             "-", "--", "-.", ":", "solid", "dashed", "dashdot", "dotted"
         ]
         | tuple[float, Sequence] = "-",
-        hatch: Literal["/", "\\", "|", "-", "+", "x", "o", "O", ".", "*"] = None,
+        hatch: Optional[
+            Literal["/", "\\", "|", "-", "+", "x", "o", "O", ".", "*"]
+        ] = None,
         alpha: float = 1.0,
     ) -> None:
         self.label = label

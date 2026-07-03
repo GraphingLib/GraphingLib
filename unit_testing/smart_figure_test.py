@@ -45,7 +45,9 @@ class DummyPlottable(Plottable):
         )
 
 
-class SmartFigurePropertyMixin:
+class SmartFigurePropertyMixin(unittest.TestCase):
+    fig: SmartFigure
+
     def assert_basic_scalar_property_validation(self):
         with self.assertRaises(TypeError):
             self.fig.size = "big"
@@ -173,7 +175,7 @@ class SmartFigurePropertyMixin:
         self.assertIs(self.fig.set_reference_labels_params(font_size=5.0), self.fig)
 
 
-class TestSmartFigureLeaf(unittest.TestCase, SmartFigurePropertyMixin):
+class TestSmartFigureLeaf(SmartFigurePropertyMixin):
     def setUp(self):
         self.fig = SmartFigure()
         self.twin_axis = SmartTwinAxis()
@@ -369,7 +371,7 @@ class TestSmartFigureLeaf(unittest.TestCase, SmartFigurePropertyMixin):
         self.assertEqual(bad_style_fig.elements[0]._line_width, 10)
 
 
-class TestSmartFigureContainer(unittest.TestCase, SmartFigurePropertyMixin):
+class TestSmartFigureContainer(SmartFigurePropertyMixin):
     def setUp(self):
         self.fig = SmartFigure(2, 3)
         self.child_curve = DummyPlottable("child")

@@ -25,6 +25,7 @@ from matplotlib.axes import Axes
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure, SubFigure
+from matplotlib.layout_engine import ConstrainedLayoutEngine
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.projections import get_projection_names
@@ -275,10 +276,10 @@ class SmartFigure:
         reference_labels_loc: ListOrItem[
             Literal["inside", "outside"] | tuple[float, float]
         ] = "outside",
-        width_padding: float = None,
-        height_padding: float = None,
-        width_ratios: ArrayLike = None,
-        height_ratios: ArrayLike = None,
+        width_padding: float | None = None,
+        height_padding: float | None = None,
+        width_ratios: ArrayLike | None = None,
+        height_ratios: ArrayLike | None = None,
         share_x: bool = False,
         share_y: bool = False,
         projection: ListOrItem[Any | None] = None,
@@ -1973,7 +1974,9 @@ class SmartFigure:
         # The following try/except removes lingering figures when errors occur during the plotting process
         try:
             self._figure = plt.figure(constrained_layout=True, figsize=self._size)
-            self._figure.get_layout_engine().set(w_pad=0, h_pad=0)
+            layout_engine = self._figure.get_layout_engine()
+            assert isinstance(layout_engine, ConstrainedLayoutEngine)
+            layout_engine.set(w_pad=0, h_pad=0)
             self._reference_label_i = self._reference_labels_params.get(
                 "start_index", 0
             )
@@ -2734,7 +2737,10 @@ class SmartFigure:
         if isinstance(target, Axes):
             reflabel_loc = self._subplot_p["reference_labels_loc"][subplot_i]
             if isinstance(reflabel_loc, tuple):
-                return ScaledTranslation(*reflabel_loc, self._figure.dpi_scale_trans)
+                x_offset, y_offset = reflabel_loc
+                return ScaledTranslation(
+                    x_offset, y_offset, self._figure.dpi_scale_trans
+                )
             elif reflabel_loc == "outside":
                 return ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
             elif reflabel_loc == "inside":
@@ -3517,7 +3523,7 @@ class SmartFigure:
         start_index: int | None = None,
         font_size: float | Inherit | None = None,
         font_weight: str | Inherit | None = None,
-        format: Callable = None,
+        format: Callable | None = None,
     ) -> Self:
         """
         Sets advanced parameters for the reference labels that can be added to the subplots.
@@ -3879,10 +3885,10 @@ class SmartFigureWCS(SmartFigure):
         reference_labels_loc: ListOrItem[
             Literal["inside", "outside"] | tuple[float, float]
         ] = "outside",
-        width_padding: float = None,
-        height_padding: float = None,
-        width_ratios: ArrayLike = None,
-        height_ratios: ArrayLike = None,
+        width_padding: float | None = None,
+        height_padding: float | None = None,
+        width_ratios: ArrayLike | None = None,
+        height_ratios: ArrayLike | None = None,
         share_x: bool = False,
         share_y: bool = False,
         general_legend: bool = False,

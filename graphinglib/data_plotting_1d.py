@@ -82,6 +82,8 @@ class Plottable1D(Plottable, Protocol):
         formatted points : str
             A list of tuples representing every data point.
         """
+        x_data = np.asarray(x_data)
+        y_data = np.asarray(y_data)
         sorted_indices = np.argsort(x_data)
         sorted_x_data = x_data[sorted_indices]
         sorted_y_data = y_data[sorted_indices]
