@@ -109,6 +109,13 @@ class TestFigure(unittest.TestCase):
         a_figure.set_grid()
         self.assertTrue(a_figure._show_grid)
 
+    def test_xkcd_style_renders(self):
+        a_figure = Figure(figure_style="xkcd")
+        a_figure.add_elements(self.testCurve)
+        a_figure._prepare_figure()
+        self.assertEqual(plt.rcParams["path.sketch"], (1.0, 100.0, 2.0))
+        plt.close("all")
+
     def test_element_defaults_are_reset(self):
         self.testCurve._line_width = INHERIT
         self.testFigure.add_elements(self.testCurve)

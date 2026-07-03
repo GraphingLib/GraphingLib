@@ -1,0 +1,3 @@
+New `xkcd` figure style
+=======================
+Added a built-in `xkcd` figure style replicating matplotlib's `plt.xkcd()` hand-drawn look. Install the "xkcd" or "Humor Sans" font for the full effect, or without it, text falls back to a comic-style system font when one is available.

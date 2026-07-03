@@ -124,8 +124,17 @@ Here are the currently available built-in styles in GraphingLib:
             "dark",
             "dim",
             "horrible",
+            "xkcd",
         ]:
             create_fig(style)
+
+.. note::
+
+    The ``xkcd`` style approximates matplotlib's ``plt.xkcd()`` hand-drawn look. It reproduces the
+    line wiggle, fonts and tick styling, but not the white outline drawn behind lines (which cannot
+    be expressed in a style file). For the full effect, install the "xkcd" or "Humor Sans" font;
+    without it, text falls back to a comic-style system font (such as Comic Sans MS) when one is
+    available, or the regular default font otherwise.
 
 Here is the code used to generate the above figures if you want to try it out with your own styles:
 
