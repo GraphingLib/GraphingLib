@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 from .inherit import INHERIT, Inherit
 
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal, Optional, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
 import shapely as sh
+import shapely.affinity
 import shapely.ops as ops
 from matplotlib.patches import Polygon as MPLPolygon
 from shapely import LineString
@@ -431,7 +434,7 @@ class Line(Plottable):
         """
         return deepcopy(self)
 
-    def _plot_element(self, axes: plt.axes, z_order: int, **kwargs):
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs):
         if self._capped_line:
             style = f"|-|, widthA={self._cap_width / 2}, widthB={self._cap_width / 2}"
         else:
@@ -491,7 +494,7 @@ class Polygon(Plottable):
 
     def __init__(
         self,
-        vertices: list[tuple[float, float]],
+        vertices: Sequence[tuple[float, float]],
         fill: bool | Inherit = INHERIT,
         edge_color: str | Inherit = INHERIT,
         fill_color: str | Inherit = INHERIT,
@@ -600,7 +603,7 @@ class Polygon(Plottable):
         """
         return Point(*self.get_centroid_coordinates())
 
-    def create_intersection(self, other: Self, copy_style: bool = False) -> Self:
+    def create_intersection(self, other: Self, copy_style: bool = False) -> Polygon:
         """
         Returns the intersection of the polygon with another polygon.
 
@@ -625,7 +628,7 @@ class Polygon(Plottable):
                 list(self._sh_polygon.intersection(other._sh_polygon).exterior.coords)
             )
 
-    def create_union(self, other: Self, copy_style: bool = False) -> Self:
+    def create_union(self, other: Self, copy_style: bool = False) -> Polygon:
         """
         Returns the union of the polygon with another polygon.
 
@@ -650,7 +653,7 @@ class Polygon(Plottable):
                 list(self._sh_polygon.union(other._sh_polygon).exterior.coords)
             )
 
-    def create_difference(self, other: Self, copy_style: bool = False) -> Self:
+    def create_difference(self, other: Self, copy_style: bool = False) -> Polygon:
         """
         Returns the difference of the polygon with another polygon.
 
@@ -677,7 +680,7 @@ class Polygon(Plottable):
 
     def create_symmetric_difference(
         self, other: Self, copy_style: bool = False
-    ) -> list[Self]:
+    ) -> list[Polygon]:
         """
         Returns the symmetric difference of the polygon with another polygon.
 
@@ -695,22 +698,24 @@ class Polygon(Plottable):
         list[:class:`~graphinglib.shapes.Polygon`]
             A list of polygons resulting from the symmetric difference.
         """
-        if copy_style:
-            new_poly = self.copy()
-            new_poly._sh_polygon = self._sh_polygon.symmetric_difference(
-                other._sh_polygon
-            )
-            return new_poly
+        multi_poly = self._sh_polygon.symmetric_difference(other._sh_polygon)
+        if multi_poly.geom_type == "MultiPolygon":
+            polygons = [
+                Polygon(list(p.exterior.coords)) for p in list(multi_poly.geoms)
+            ]
         else:
-            multi_poly = self._sh_polygon.symmetric_difference(other._sh_polygon)
-            if multi_poly.geom_type == "MultiPolygon":
-                return [
-                    Polygon(list(p.exterior.coords)) for p in list(multi_poly.geoms)
-                ]
-            else:
-                return [Polygon(list(multi_poly.exterior.coords))]
+            polygons = [Polygon(list(multi_poly.exterior.coords))]
+        if copy_style:
+            for polygon in polygons:
+                polygon._fill = self._fill
+                polygon._fill_color = self._fill_color
+                polygon._edge_color = self._edge_color
+                polygon._line_width = self._line_width
+                polygon._line_style = self._line_style
+                polygon._fill_alpha = self._fill_alpha
+        return polygons
 
-    def translate(self, dx: float, dy: float) -> Self | None:
+    def translate(self, dx: float, dy: float) -> None:
         """
         Translates the polygon by the specified amount.
 
@@ -728,7 +733,7 @@ class Polygon(Plottable):
         angle: float,
         center: Optional[tuple[float, float]] = None,
         use_rad: bool = False,
-    ) -> Self:
+    ) -> None:
         """
         Rotates the polygon by the specified angle.
 
@@ -754,7 +759,7 @@ class Polygon(Plottable):
         x_scale: float,
         y_scale: float,
         center: Optional[tuple[float, float]] = None,
-    ) -> Self:
+    ) -> None:
         """
         Scales the polygon by the specified factors.
 
@@ -781,7 +786,7 @@ class Polygon(Plottable):
         y_skew: float,
         center: Optional[tuple[float, float]] = None,
         use_rad: bool = False,
-    ) -> Self:
+    ) -> None:
         """
         Skews the polygon by the specified factors.
 
@@ -804,7 +809,7 @@ class Polygon(Plottable):
             self._sh_polygon, xs=x_skew, ys=y_skew, origin=center, use_radians=use_rad
         )
 
-    def split(self, curve: Curve, copy_style: bool = False) -> list[Self]:
+    def split(self, curve: Curve, copy_style: bool = False) -> list[Polygon]:
         """
         Splits the polygon by a curve.
 
@@ -838,7 +843,7 @@ class Polygon(Plottable):
                 polygon._fill_alpha = self._fill_alpha
         return polygons
 
-    def linear_transformation(self, matrix: np.ndarray) -> Self:
+    def linear_transformation(self, matrix: np.ndarray) -> None:
         """
         Applies a transformation matrix to the polygon.
 

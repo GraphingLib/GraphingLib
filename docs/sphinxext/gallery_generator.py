@@ -15,6 +15,7 @@ import tokenize
 import warnings
 
 import matplotlib
+import matplotlib.image
 import numpy as np
 
 matplotlib.use("Agg")

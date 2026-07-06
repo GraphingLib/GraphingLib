@@ -1435,7 +1435,7 @@ class Table(Plottable):
     text_color : str, optional
         Color of the text in the table.
         Default depends on the ``figure_style`` configuration.
-    scaling : tuple[float], optional
+    scaling : tuple[float, float], optional
         Horizontal and vertical scaling factors to apply to the table.
         Defaults to ``(1, 1.5)``.
     location : str
@@ -1518,7 +1518,7 @@ class Table(Plottable):
         text_color : str, optional
             Color of the text within the table.
             Default depends on the ``figure_style`` configuration.
-        scaling : tuple[float], optional
+        scaling : tuple[float, float], optional
             Horizontal and vertical scaling factors to apply to the table.
             Defaults to ``(1, 1.5)``.
         location : str
@@ -1661,11 +1661,11 @@ class Table(Plottable):
             cell.set_text_props(color=self._text_color)
 
     @property
-    def scaling(self) -> tuple[float]:
+    def scaling(self) -> tuple[float, float]:
         return self._scaling
 
     @scaling.setter
-    def scaling(self, scaling: tuple[float]) -> None:
+    def scaling(self, scaling: tuple[float, float]) -> None:
         self._scaling = scaling
 
     @property

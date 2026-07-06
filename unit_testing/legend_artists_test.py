@@ -19,7 +19,7 @@ class TestLegendElement(unittest.TestCase):
         """Test that LegendElement is a runtime checkable protocol."""
         # This should raise an error since it's a protocol
         with self.assertRaises(TypeError):
-            LegendElement()
+            LegendElement()  # ty: ignore[call-non-callable]
 
     def test_legend_element_requires_handle_property(self):
         """Test that LegendElement requires a handle property."""

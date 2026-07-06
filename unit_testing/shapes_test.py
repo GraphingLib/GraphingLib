@@ -614,6 +614,42 @@ class TestPolygon(unittest.TestCase):
         self.assertListEqual(list(difference.vertices[5]), list((1, 0.5)))
         self.assertListEqual(list(difference.vertices[6]), list((1, 0)))
 
+    def test_create_symmetric_difference(self):
+        # Two rectangles overlapping in a cross: the symmetric difference is a
+        # MultiPolygon with four disjoint pieces.
+        vertices_1 = [(0, 0), (4, 0), (4, 2), (0, 2), (0, 0)]
+        vertices_2 = [(1, -1), (3, -1), (3, 3), (1, 3), (1, -1)]
+        polygon_1 = Polygon(vertices_1, line_width=2)
+        polygon_2 = Polygon(vertices_2, line_width=2)
+
+        pieces = polygon_1.create_symmetric_difference(polygon_2)
+
+        self.assertEqual(len(pieces), 4)
+        for piece in pieces:
+            self.assertIsInstance(piece, Polygon)
+            # Each piece must be a plain polygon whose geometry is usable.
+            self.assertEqual(piece._sh_polygon.geom_type, "Polygon")
+            self.assertGreater(len(piece.vertices), 0)
+        total_area = sum(piece.area for piece in pieces)
+        self.assertAlmostEqual(total_area, 4 + 4, places=6)
+
+    def test_create_symmetric_difference_copy_style(self):
+        # Regression test: copy_style=True used to wrap the raw MultiPolygon in a
+        # single Polygon, whose vertices/area then crashed with AttributeError.
+        vertices_1 = [(0, 0), (4, 0), (4, 2), (0, 2), (0, 0)]
+        vertices_2 = [(1, -1), (3, -1), (3, 3), (1, 3), (1, -1)]
+        polygon_1 = Polygon(vertices_1, line_width=7, fill_color="red")
+        polygon_2 = Polygon(vertices_2, line_width=2)
+
+        pieces = polygon_1.create_symmetric_difference(polygon_2, copy_style=True)
+
+        self.assertEqual(len(pieces), 4)
+        for piece in pieces:
+            self.assertEqual(piece._sh_polygon.geom_type, "Polygon")
+            self.assertGreater(len(piece.vertices), 0)
+            self.assertEqual(piece._line_width, 7)
+            self.assertEqual(piece._fill_color, "red")
+
     def test_translate(self):
         vertices = [
             (0, 0),
