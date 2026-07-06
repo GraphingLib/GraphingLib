@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit, is_inherit
+from .inherit import INHERIT, Inherit, is_inherit, resolve_or, strip_inherit
 
 from copy import deepcopy
 from dataclasses import dataclass
@@ -1655,7 +1655,7 @@ class Curve(Plottable1D, MathematicalObject):
                     ),
                 }
             )
-            params = {k: v for k, v in params.items() if v != INHERIT}
+            params = strip_inherit(params)
             self.handle = axes.errorbar(
                 self._x_data,
                 self._y_data,
@@ -1666,7 +1666,7 @@ class Curve(Plottable1D, MathematicalObject):
                 **params,
             )
         else:
-            params = {k: v for k, v in params.items() if v != INHERIT}
+            params = strip_inherit(params)
             self.handle = axes.errorbar(
                 self._x_data,
                 self._y_data,
@@ -1704,7 +1704,7 @@ class Curve(Plottable1D, MathematicalObject):
                 ),
             }
 
-            params = {k: v for k, v in params.items() if v != INHERIT}
+            params = strip_inherit(params)
 
             axes.plot(
                 self._x_data,
@@ -1716,7 +1716,7 @@ class Curve(Plottable1D, MathematicalObject):
                 max_y,
                 **params,
             )
-            if self._error_curves_fill_between:
+            if resolve_or(self._error_curves_fill_between, True):
                 axes.fill_between(
                     self._x_data,
                     max_y,
@@ -1731,7 +1731,7 @@ class Curve(Plottable1D, MathematicalObject):
                 if self._fill_between_color != "same as curve"
                 else self.handle[0].get_color()
             )
-            params = {k: v for k, v in params.items() if v != INHERIT}
+            params = strip_inherit(params)
             if self._fill_between_other_curve:
                 self_y_data = self._y_data
                 self_x_data = self._x_data
@@ -2937,7 +2937,9 @@ class Scatter(Plottable1D, MathematicalObject):
         # Check whether to use color map (one of the colors is an array of intensities)
         if isinstance(self._face_color, (list, tuple, np.ndarray)):
             if all(isinstance(i, (int, float)) for i in self._face_color):
-                color_map = plt.get_cmap(self._color_map)
+                color_map = plt.get_cmap(
+                    resolve_or(self._color_map, plt.rcParams["image.cmap"])
+                )
 
                 # Sets the data range that the color map will cover.
                 if self._color_map_range:
@@ -2952,7 +2954,9 @@ class Scatter(Plottable1D, MathematicalObject):
                 mpl_face_color = [color_map(norm(i)) for i in self._face_color]
         elif isinstance(self._edge_color, (list, tuple, np.ndarray)):
             if all(isinstance(i, (int, float)) for i in self._edge_color):
-                color_map = plt.get_cmap(self._color_map)
+                color_map = plt.get_cmap(
+                    resolve_or(self._color_map, plt.rcParams["image.cmap"])
+                )
 
                 # Sets the data range that the color map will cover.
                 if self._color_map_range:
@@ -2972,7 +2976,7 @@ class Scatter(Plottable1D, MathematicalObject):
             "linewidth": self._marker_edge_width,
             "alpha": self._alpha,
         }
-        params = {k: v for k, v in params.items() if v != INHERIT}
+        params = strip_inherit(params)
         params["facecolors"] = mpl_face_color
         params["edgecolors"] = mpl_edge_color
         self.handle = axes.scatter(
@@ -3018,7 +3022,7 @@ class Scatter(Plottable1D, MathematicalObject):
                 "capthick": self._cap_thickness,
                 "linestyle": "none",
             }
-            errorbar_params = {k: v for k, v in errorbar_params.items() if v != INHERIT}
+            errorbar_params = strip_inherit(errorbar_params)
             errorbar_params["ecolor"] = mpl_errorbars_color
             self.errorbars_handle = axes.errorbar(
                 self._x_data,
@@ -3030,7 +3034,7 @@ class Scatter(Plottable1D, MathematicalObject):
             )
 
         if (
-            self._show_color_bar
+            resolve_or(self._show_color_bar, False)
             and self._face_color is not None
             and not is_inherit(self._face_color)
             and not isinstance(self.face_color, str)
@@ -3057,7 +3061,7 @@ class Scatter(Plottable1D, MathematicalObject):
             plt.colorbar(sm, ax=axes, **self._color_bar_params)
 
         if (
-            self._show_color_bar
+            resolve_or(self._show_color_bar, False)
             and self._edge_color is not None
             and not is_inherit(self._edge_color)
             and not isinstance(self.edge_color, str)
@@ -3451,12 +3455,13 @@ class Histogram(Plottable1D):
         Gives the label of the histogram (with or without parameters).
         """
         lab = self._label
-        if lab and self._show_params:
+        show_params = resolve_or(self._show_params, True)
+        if lab and show_params:
             lab += (
                 " :\n"
                 + rf"$\mu$ = {0 if abs(self._mean) < 1e-3 else self._mean:.3f}, $\sigma$ = {self._standard_deviation:.3f}"
             )
-        elif self._show_params:
+        elif show_params:
             lab = rf"$\mu$ = {0 if abs(self._mean) < 1e-3 else self._mean:.3f}, $\sigma$ = {self._standard_deviation:.3f}"
         return lab
 
@@ -3586,8 +3591,8 @@ class Histogram(Plottable1D):
         normalize_resolved = self._resolved_normalize
         params = {
             "facecolor": (
-                to_rgba(self._face_color, self._alpha)
-                if self._face_color != INHERIT and self._alpha != INHERIT
+                to_rgba(self._face_color, resolve_or(self._alpha, 1.0))
+                if not is_inherit(self._face_color)
                 else INHERIT
             ),
             "edgecolor": (
@@ -3597,15 +3602,15 @@ class Histogram(Plottable1D):
             ),
             "linewidth": self._line_width,
         }
-        params = {k: v for k, v in params.items() if v != INHERIT}
+        params = strip_inherit(params)
         self.handle = Polygon(
             np.array([[0, 2, 2, 3, 3, 1, 1, 0, 0], [0, 0, 1, 1, 2, 2, 3, 3, 0]]).T,
             **params,
         )
         params = {
             "facecolor": (
-                to_rgba(self._face_color, self._alpha)
-                if self._face_color != INHERIT and self._alpha != INHERIT
+                to_rgba(self._face_color, resolve_or(self._alpha, 1.0))
+                if not is_inherit(self._face_color)
                 else INHERIT
             ),
             "edgecolor": (
@@ -3618,7 +3623,7 @@ class Histogram(Plottable1D):
             "density": normalize_resolved,
             "orientation": self._orientation,
         }
-        params = {k: v for k, v in params.items() if v != INHERIT}
+        params = strip_inherit(params)
         axes.hist(
             self._data,
             bins=self._bins,
@@ -3639,10 +3644,10 @@ class Histogram(Plottable1D):
             params = {
                 "color": self._pdf_curve_color,
             }
-            params = {k: v for k, v in params.items() if v != INHERIT}
+            params = strip_inherit(params)
 
             # Plots pdf on the y-axis if "orientation" is "horizontal".
-            if self._orientation != "vertical":
+            if resolve_or(self._orientation, "vertical") != "vertical":
                 axes.plot(
                     y_data,
                     x_data,
@@ -3666,7 +3671,7 @@ class Histogram(Plottable1D):
                     params["colors"] = [self._pdf_std_color, self._pdf_std_color]
 
                 # Plots std on the y-axis if "orientation" is "horizontal".
-                if self._orientation != "vertical":
+                if resolve_or(self._orientation, "vertical") != "vertical":
                     axes.hlines(
                         [
                             self._mean - self._standard_deviation,
@@ -3698,7 +3703,7 @@ class Histogram(Plottable1D):
                     params["colors"] = [self._pdf_mean_color]
 
                 # Plots std on the y-axis if "orientation" is "horizontal".
-                if self._orientation != "vertical":
+                if resolve_or(self._orientation, "vertical") != "vertical":
                     axes.hlines(
                         self._mean,
                         0,

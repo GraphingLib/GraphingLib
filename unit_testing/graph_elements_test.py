@@ -527,7 +527,7 @@ class TestTable(unittest.TestCase):
             location="bottom",
         )
 
-        self.assertListEqual(table._cell_text, data)
+        self.assertEqual(table._cell_text, data)
         self.assertListEqual(table._cell_colors, colors)
         self.assertEqual(table._cell_align, "center")
         self.assertListEqual(table._col_labels, columns)
@@ -676,7 +676,7 @@ class TestTable(unittest.TestCase):
             location="bottom",
         )
         tableCopy = table.copy()
-        self.assertListEqual(tableCopy._cell_text, table._cell_text)
+        self.assertEqual(tableCopy._cell_text, table._cell_text)
         self.assertListEqual(tableCopy._cell_colors, table._cell_colors)
         self.assertEqual(tableCopy._cell_align, table._cell_align)
         self.assertListEqual(tableCopy._col_labels, table._col_labels)

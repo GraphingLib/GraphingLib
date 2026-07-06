@@ -1,4 +1,4 @@
-from .inherit import INHERIT, Inherit, is_inherit
+from .inherit import INHERIT, Inherit, is_inherit, strip_inherit
 
 from copy import deepcopy
 from shutil import which
@@ -845,7 +845,7 @@ class Figure:
             "grid.linestyle": line_style,
             "grid.linewidth": line_width,
         }
-        rc_params_dict = {k: v for k, v in rc_params_dict.items() if v != INHERIT}
+        rc_params_dict = strip_inherit(rc_params_dict)
         self.set_rc_params(rc_params_dict)
 
     def create_twin_axis(

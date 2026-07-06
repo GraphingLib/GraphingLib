@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit
+from .inherit import INHERIT, Inherit, resolve_or, strip_inherit
 
 from copy import deepcopy
 from dataclasses import dataclass
@@ -263,7 +263,8 @@ class Arrow(Plottable):
             style = self._style
 
         if self._head_size != INHERIT:
-            head_length, head_width = self._head_size * 0.4, self._head_size * 0.2
+            head_size = resolve_or(self._head_size, 1)
+            head_length, head_width = head_size * 0.4, head_size * 0.2
 
             # Set specific arrow properties
             match self._style:
@@ -290,7 +291,7 @@ class Arrow(Plottable):
             "linewidth": self._width,
             "alpha": self._alpha,
         }
-        props = {k: v for k, v in props.items() if v != INHERIT}
+        props = strip_inherit(props)
         if self._shrink != 0:
             shrinkPointA, shrinkPointB = self._shrink_points()
             axes.annotate(
@@ -389,19 +390,19 @@ class Line(Plottable):
         self._pointB = value
 
     @property
-    def color(self) -> str:
+    def color(self) -> str | Inherit:
         return self._color
 
     @color.setter
-    def color(self, value: str):
+    def color(self, value: str | Inherit):
         self._color = value
 
     @property
-    def width(self) -> float:
+    def width(self) -> float | Inherit:
         return self._width
 
     @width.setter
-    def width(self, value: float):
+    def width(self, value: float | Inherit):
         self._width = value
 
     @property
@@ -413,19 +414,19 @@ class Line(Plottable):
         self._capped_line = value
 
     @property
-    def cap_width(self) -> float:
+    def cap_width(self) -> float | Inherit:
         return self._cap_width
 
     @cap_width.setter
-    def cap_width(self, value: float):
+    def cap_width(self, value: float | Inherit):
         self._cap_width = value
 
     @property
-    def alpha(self) -> float:
+    def alpha(self) -> float | Inherit:
         return self._alpha
 
     @alpha.setter
-    def alpha(self, value: float):
+    def alpha(self, value: float | Inherit):
         self._alpha = value
 
     def copy(self) -> Self:
@@ -436,7 +437,8 @@ class Line(Plottable):
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs):
         if self._capped_line:
-            style = f"|-|, widthA={self._cap_width / 2}, widthB={self._cap_width / 2}"
+            cap_width = resolve_or(self._cap_width, 1)
+            style = f"|-|, widthA={cap_width / 2}, widthB={cap_width / 2}"
         else:
             style = "-"
         props = {
@@ -445,7 +447,7 @@ class Line(Plottable):
             "linewidth": self._width,
             "alpha": self._alpha,
         }
-        props = {k: v for k, v in props.items() if v != INHERIT}
+        props = strip_inherit(props)
         axes.annotate(
             "",
             self._pointA,
@@ -905,14 +907,14 @@ class Polygon(Plottable):
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs):
         # Create a polygon patch for the fill
-        if self._fill:
+        if resolve_or(self._fill, True):
             params = {
                 "alpha": self._fill_alpha,
                 "zorder": z_order,
             }
             if self._fill_color is not None:
                 params["facecolor"] = self._fill_color
-            params = {k: v for k, v in params.items() if v != INHERIT}
+            params = strip_inherit(params)
             polygon_fill = MPLPolygon(self.vertices, **params)
             axes.add_patch(polygon_fill)
         # Create a polygon patch for the edge
@@ -924,7 +926,7 @@ class Polygon(Plottable):
                 "edgecolor": self._edge_color,
                 "zorder": z_order,
             }
-            params = {k: v for k, v in params.items() if v != INHERIT}
+            params = strip_inherit(params)
             polygon_edge = MPLPolygon(self.vertices, **params)
             axes.add_patch(polygon_edge)
 
