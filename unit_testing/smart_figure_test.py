@@ -345,6 +345,7 @@ class TestSmartFigureLeaf(SmartFigurePropertyMixin):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.fig.show(fullscreen=False)
+        assert isinstance(self.fig._figure, plt.Figure)
         plt.close(self.fig._figure)
 
         self.fig.save("test_smart_figure_output.png")

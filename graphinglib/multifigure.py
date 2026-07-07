@@ -1,7 +1,7 @@
 from copy import deepcopy
 from shutil import which
 from string import ascii_lowercase
-from typing import Optional, Self
+from typing import Any, Optional, Self, cast
 from typing_extensions import deprecated
 
 import matplotlib.pyplot as plt
@@ -15,7 +15,7 @@ from matplotlib.transforms import ScaledTranslation
 from .inherit import INHERIT, Inherit, is_inherit, resolved
 from .figure import Figure
 from .file_manager import FileLoader, get_default_style
-from .graph_elements import GraphingException, Plottable
+from .graph_elements import GraphingException
 from .legend_artists import (
     HandlerMultipleLines,
     HandlerMultipleVerticalLines,
@@ -127,9 +127,9 @@ class MultiFigure:
         self._reflabel_loc = reflabel_loc
         self._figure_style = figure_style
         self._size = size
-        self._sub_figures = []
-        self._rc_dict = {}
-        self._user_rc_dict = {}
+        self._sub_figures: list[Figure] = []
+        self._rc_dict: dict[str, Any] = {}
+        self._user_rc_dict: dict[str, Any] = {}
 
     @property
     def num_rows(self) -> int:
@@ -412,7 +412,7 @@ class MultiFigure:
     def show(
         self,
         general_legend: bool = False,
-        legend_loc: str | tuple = "outside lower center",
+        legend_loc: str | tuple[float, float] = "outside lower center",
         legend_cols: int = 1,
     ) -> None:
         """
@@ -445,7 +445,7 @@ class MultiFigure:
         self,
         file_name: str,
         general_legend: bool = False,
-        legend_loc: str | tuple = "outside lower center",
+        legend_loc: str | tuple[float, float] = "outside lower center",
         legend_cols: int = 1,
         dpi: Optional[int] = None,
     ) -> None:
@@ -487,7 +487,7 @@ class MultiFigure:
     def _prepare_multi_figure(
         self,
         general_legend: bool = False,
-        legend_loc: str = "outside lower center",
+        legend_loc: str | tuple[float, float] = "outside lower center",
         legend_cols: int = 1,
     ) -> None:
         """
@@ -530,7 +530,8 @@ class MultiFigure:
 
         sub_figures_do_legend = True if not general_legend else False
 
-        labels, handles = [], []
+        labels: list[str] = []
+        handles: list[Any] = []
         for i, sub_figure in enumerate(self._sub_figures):
             self._fill_in_rc_params(is_matplotlib_style)
             sub_figure_labels, sub_figure_handles = self._prepare_sub_figure(
@@ -546,7 +547,7 @@ class MultiFigure:
         self._fill_in_rc_params(is_matplotlib_style)
         if general_legend:
             try:
-                _legend = self._figure.legend(
+                _legend = cast(Any, self._figure).legend(
                     handles=handles,
                     labels=labels,
                     handleheight=1.3,
@@ -561,7 +562,7 @@ class MultiFigure:
                 )
                 _legend.set_zorder(10000)
             except TypeError:
-                _legend = self._figure.legend(
+                _legend = cast(Any, self._figure).legend(
                     handles=handles,
                     labels=labels,
                     handleheight=1.3,
@@ -574,7 +575,8 @@ class MultiFigure:
                     ncols=legend_cols,
                 )
                 _legend.set_zorder(10000)
-        self._figure.suptitle(self._title)
+        if self._title is not None:
+            self._figure.suptitle(self._title)
         self._reset_params_to_default(self, multi_figure_params_to_reset)
         self._rc_dict = {}
 
@@ -591,12 +593,20 @@ class MultiFigure:
         Prepares a single subfigure.
         """
         sub_rcs = sub_figure._user_rc_dict
-        plt.rcParams.update(sub_rcs)
+        plt.rcParams.update(cast(Any, sub_rcs))
+        row_start = sub_figure._row_start
+        col_start = sub_figure._col_start
+        row_span = sub_figure._row_span
+        col_span = sub_figure._col_span
+        assert row_start is not None
+        assert col_start is not None
+        assert row_span is not None
+        assert col_span is not None
         axes = plt.subplot(
             grid.new_subplotspec(
-                (sub_figure._row_start, sub_figure._col_start),
-                rowspan=sub_figure._row_span,
-                colspan=sub_figure._col_span,
+                (row_start, col_start),
+                rowspan=row_span,
+                colspan=col_span,
             )
         )
         if self._reference_labels:
@@ -617,7 +627,7 @@ class MultiFigure:
         )
         return labels, handles
 
-    def _fill_in_missing_params(self, element: Plottable) -> list[str]:
+    def _fill_in_missing_params(self, element: object) -> list[str]:
         """
         Fills in the missing parameters from the specified ``figure_style``.
         """
@@ -647,7 +657,7 @@ class MultiFigure:
         return params_to_reset
 
     def _reset_params_to_default(
-        self, element: Plottable, params_to_reset: list[str]
+        self, element: object, params_to_reset: list[str]
     ) -> None:
         """
         Resets the parameters that were set to default in the _fill_in_missing_params method.
@@ -667,7 +677,7 @@ class MultiFigure:
                 plt.style.use("default")
             else:
                 plt.style.use(resolved(self._figure_style))
-            plt.rcParams.update(self._user_rc_dict)
+            plt.rcParams.update(cast(Any, self._user_rc_dict))
         else:
             params = self._default_params["rc_params"]
             for property, value in params.items():
@@ -682,11 +692,11 @@ class MultiFigure:
                     all_rc_params["text.usetex"] = False
             except KeyError:
                 pass
-            plt.rcParams.update(all_rc_params)
+            plt.rcParams.update(cast(Any, all_rc_params))
 
     def set_rc_params(
         self,
-        rc_params_dict: dict[str, str | float] = {},
+        rc_params_dict: dict[str, Any] = {},
         reset: bool = False,
     ) -> None:
         """
@@ -813,8 +823,7 @@ class MultiFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        if color_cycle is not None:
-            color_cycle = plt.cycler(color=color_cycle)
+        prop_cycle = plt.cycler(color=color_cycle) if color_cycle is not None else None
 
         rc_params_dict = {
             "figure.facecolor": figure_face_color,
@@ -822,7 +831,7 @@ class MultiFigure:
             "axes.edgecolor": axes_edge_color,
             "axes.labelcolor": axes_label_color,
             "axes.linewidth": axes_line_width,
-            "axes.prop_cycle": color_cycle,
+            "axes.prop_cycle": prop_cycle,
             "xtick.color": x_tick_color,
             "ytick.color": y_tick_color,
             "legend.facecolor": legend_face_color,

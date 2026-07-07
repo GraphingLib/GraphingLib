@@ -5,7 +5,7 @@ from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inh
 from copy import deepcopy
 from dataclasses import dataclass
 from types import NoneType
-from typing import Callable, Optional, Protocol, runtime_checkable
+from typing import Any, Callable, Optional, Protocol, cast, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -58,55 +58,44 @@ class Plottable1D(Plottable, Protocol):
     Dummy class to allow type hinting of Plottable1D objects.
     """
 
-    @staticmethod
-    def to_desmos(
-        x_data: ArrayLike, y_data: ArrayLike, decimal_precision: int = 2
-    ) -> str:
-        """
-        Gives the data points in a Desmos-readable format. The outputted string can then be pasted into a single Desmos
-        cell and the object's data will be displayed.
+    def to_desmos(self, decimal_precision: int = 2, to_clipboard: bool = False) -> str:
+        pass
 
-        .. note::
-            NaN values are ignored.
 
-        Parameters
-        ----------
-        x_data, y_data : ArrayLike
-            Arrays of x and y values to be plotted.
-        decimal_precision : int, optional
-            Specifies the number of decimals of the formatted points.
-            Defaults to 2.
+def _format_desmos_points(
+    x_data: ArrayLike, y_data: ArrayLike, decimal_precision: int = 2
+) -> str:
+    """
+    Gives the data points in a Desmos-readable format.
 
-        Returns
-        -------
-        formatted points : str
-            A list of tuples representing every data point.
-        """
-        x_data = np.asarray(x_data)
-        y_data = np.asarray(y_data)
-        sorted_indices = np.argsort(x_data)
-        sorted_x_data = x_data[sorted_indices]
-        sorted_y_data = y_data[sorted_indices]
+    .. note::
+        NaN values are ignored.
+    """
+    x_data = np.asarray(x_data)
+    y_data = np.asarray(y_data)
+    sorted_indices = np.argsort(x_data)
+    sorted_x_data = x_data[sorted_indices]
+    sorted_y_data = y_data[sorted_indices]
 
-        # Change exponential formatting to be interpretable by Desmos
-        def format_tex(num: str, exponent: str):
-            num = num.rstrip("0")
-            if exponent == "+00":
-                return str(num)
-            else:
-                return rf"{num}\cdot10^" + "{" + str(int(exponent)) + "}"
+    # Change exponential formatting to be interpretable by Desmos.
+    def format_tex(num: str, exponent: str):
+        num = num.rstrip("0")
+        if exponent == "+00":
+            return str(num)
+        else:
+            return rf"{num}\cdot10^" + "{" + str(int(exponent)) + "}"
 
-        formatted_points = "["
-        for x, y in zip(sorted_x_data, sorted_y_data):
-            if np.isnan(x) or np.isnan(y):
-                continue
-            x_num, x_exponent = f"{x:.{decimal_precision:d}e}".split("e")
-            y_num, y_exponent = f"{y:.{decimal_precision:d}e}".split("e")
-            formatted_points += (
-                f"({format_tex(x_num, x_exponent)},{format_tex(y_num, y_exponent)}),"
-            )
-        formatted_points = formatted_points[:-1] + "]"
-        return formatted_points
+    formatted_points = "["
+    for x, y in zip(sorted_x_data, sorted_y_data):
+        if np.isnan(x) or np.isnan(y):
+            continue
+        x_num, x_exponent = f"{x:.{decimal_precision:d}e}".split("e")
+        y_num, y_exponent = f"{y:.{decimal_precision:d}e}".split("e")
+        formatted_points += (
+            f"({format_tex(x_num, x_exponent)},{format_tex(y_num, y_exponent)}),"
+        )
+    formatted_points = formatted_points[:-1] + "]"
+    return formatted_points
 
 
 @dataclass
@@ -179,13 +168,13 @@ class Curve(Plottable1D, MathematicalObject):
         self._error_curves_line_width: Styled[float | None] = None
 
         self._fill_between_bounds: Optional[tuple[float, float]] = None
-        self._fill_between_other_curve: Optional[Self] = None
+        self._fill_between_other_curve: Curve | None = None
         self._fill_between_color: Styled[str | None] = None
 
     @classmethod
     def from_function(
         cls,
-        func: Callable[[ArrayLike], ArrayLike],
+        func: Callable[[np.ndarray], ArrayLike],
         x_min: float,
         x_max: float,
         label: Optional[str] = None,
@@ -393,19 +382,21 @@ class Curve(Plottable1D, MathematicalObject):
         self._error_curves_line_width = error_curves_line_width
 
     @property
-    def fill_between_bounds(self) -> tuple[float, float]:
+    def fill_between_bounds(self) -> tuple[float, float] | None:
         return self._fill_between_bounds
 
     @fill_between_bounds.setter
-    def fill_between_bounds(self, fill_between_bounds: tuple[float, float]) -> None:
+    def fill_between_bounds(
+        self, fill_between_bounds: tuple[float, float] | None
+    ) -> None:
         self._fill_between_bounds = fill_between_bounds
 
     @property
-    def fill_between_other_curve(self) -> Self:
+    def fill_between_other_curve(self) -> Curve | None:
         return self._fill_between_other_curve
 
     @fill_between_other_curve.setter
-    def fill_between_other_curve(self, fill_between_other_curve: Self) -> None:
+    def fill_between_other_curve(self, fill_between_other_curve: Curve | None) -> None:
         self._fill_between_other_curve = fill_between_other_curve
 
     @property
@@ -416,16 +407,18 @@ class Curve(Plottable1D, MathematicalObject):
     def fill_between_color(self, fill_between_color: Styled[str | None]) -> None:
         self._fill_between_color = fill_between_color
 
-    def __eq__(self, other: Self) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Defines the equality between two curves.
         """
-        return (
+        if not isinstance(other, Curve):
+            return False
+        return bool(
             np.equal(self.x_data, other.x_data).all()
             and np.equal(self.y_data, other.y_data).all()
         )
 
-    def __add__(self, other: Self | float) -> Self:
+    def __add__(self, other: Curve | float) -> Curve:
         """
         Defines the addition of two curves or a curve and a number.
         """
@@ -448,7 +441,7 @@ class Curve(Plottable1D, MathematicalObject):
         else:
             raise TypeError("Can only add a curve to another curve or a number.")
 
-    def __sub__(self, other: Self | float) -> Self:
+    def __sub__(self, other: Curve | float) -> Curve:
         """
         Defines the subtraction of two curves or a curve and a number.
         """
@@ -470,7 +463,7 @@ class Curve(Plottable1D, MathematicalObject):
         else:
             raise TypeError("Can only subtract a curve from another curve or a number.")
 
-    def __mul__(self, other: Self | float) -> Self:
+    def __mul__(self, other: Curve | float) -> Curve:
         """
         Defines the multiplication of two curves or a curve and a number.
         """
@@ -492,7 +485,7 @@ class Curve(Plottable1D, MathematicalObject):
         else:
             raise TypeError("Can only multiply a curve by another curve or a number.")
 
-    def __truediv__(self, other: Self | float) -> Self:
+    def __truediv__(self, other: Curve | float) -> Curve:
         """
         Defines the division of two curves or a curve and a number.
         """
@@ -514,7 +507,7 @@ class Curve(Plottable1D, MathematicalObject):
         else:
             raise TypeError("Can only divide a curve by another curve or a number.")
 
-    def __pow__(self, other: float) -> Self:
+    def __pow__(self, other: float) -> Curve:
         """
         Defines the power of a curve to a number.
         """
@@ -530,7 +523,7 @@ class Curve(Plottable1D, MathematicalObject):
         """
         return iter(self._y_data)
 
-    def __abs__(self) -> Self:
+    def __abs__(self) -> Curve:
         """
         Returns the absolute value of the curve.
         """
@@ -552,7 +545,7 @@ class Curve(Plottable1D, MathematicalObject):
         line_style: str | Inherit = INHERIT,
         alpha: float | Inherit = INHERIT,
         copy_first: bool = False,
-    ) -> Self:
+    ) -> Curve:
         """
         Creates a slice of the curve between two x values.
 
@@ -625,7 +618,7 @@ class Curve(Plottable1D, MathematicalObject):
         line_style: str | Inherit = INHERIT,
         alpha: float | Inherit = INHERIT,
         copy_first: bool = False,
-    ) -> Self:
+    ) -> Curve:
         """
         Creates a slice of the curve between two y values.
 
@@ -1047,7 +1040,7 @@ class Curve(Plottable1D, MathematicalObject):
         line_style: str | Inherit = INHERIT,
         alpha: float | Inherit = INHERIT,
         copy_first: bool = False,
-    ) -> Self:
+    ) -> Curve:
         """
         Creates a new curve which is the derivative of the original curve.
 
@@ -1114,7 +1107,7 @@ class Curve(Plottable1D, MathematicalObject):
         line_style: str | Inherit = INHERIT,
         alpha: float | Inherit = INHERIT,
         copy_first: bool = False,
-    ) -> Self:
+    ) -> Curve:
         """
         Creates a new curve which is the integral of the original curve.
 
@@ -1188,7 +1181,7 @@ class Curve(Plottable1D, MathematicalObject):
         line_style: str | Inherit = INHERIT,
         alpha: float | Inherit = INHERIT,
         copy_first: bool = False,
-    ) -> Self:
+    ) -> Curve:
         """
         Creates a new curve which is the tangent to the original curve at a given x value.
 
@@ -1263,7 +1256,7 @@ class Curve(Plottable1D, MathematicalObject):
         line_style: str | Inherit = INHERIT,
         alpha: float | Inherit = INHERIT,
         copy_first: bool = False,
-    ) -> Self:
+    ) -> Curve:
         """
         Creates a new curve which is the normal to the original curve at a given x value.
 
@@ -1490,7 +1483,7 @@ class Curve(Plottable1D, MathematicalObject):
         formatted points : str
             A list of tuples representing every data point.
         """
-        formatted_points = super().to_desmos(
+        formatted_points = _format_desmos_points(
             self._x_data, self._y_data, decimal_precision
         )
         if to_clipboard:
@@ -1573,40 +1566,73 @@ class Curve(Plottable1D, MathematicalObject):
         point_coords = self.get_intersection_coordinates(other)
         point_objects = []
         for i in range(len(intersections_x)):
-            try:
-                assert isinstance(labels, list)
-                label = labels[i]
-            except (IndexError, TypeError, AssertionError):
+            label: str | None
+            if isinstance(labels, list):
+                try:
+                    label = labels[i]
+                except IndexError:
+                    label = None
+            else:
                 label = labels
-            try:
-                assert isinstance(face_colors, list)
-                face_color = face_colors[i]
-            except (IndexError, TypeError, AssertionError):
+
+            face_color: str | Inherit
+            if isinstance(face_colors, list):
+                face_color_values = cast(list[str], face_colors)
+                try:
+                    face_color = face_color_values[i]
+                except IndexError:
+                    face_color = INHERIT
+            else:
                 face_color = face_colors
-            try:
-                assert isinstance(edge_colors, list)
-                edge_color = edge_colors[i]
-            except (IndexError, TypeError, AssertionError):
+
+            edge_color: str | Inherit
+            if isinstance(edge_colors, list):
+                edge_color_values = cast(list[str], edge_colors)
+                try:
+                    edge_color = edge_color_values[i]
+                except IndexError:
+                    edge_color = INHERIT
+            else:
                 edge_color = edge_colors
-            try:
-                assert isinstance(marker_sizes, list)
-                marker_size = marker_sizes[i]
-            except (IndexError, TypeError, AssertionError):
+
+            marker_size: float | Inherit
+            if isinstance(marker_sizes, list):
+                marker_size_values = cast(list[float], marker_sizes)
+                try:
+                    marker_size = marker_size_values[i]
+                except IndexError:
+                    marker_size = INHERIT
+            else:
                 marker_size = marker_sizes
-            try:
-                assert isinstance(marker_styles, list)
-                marker_style = marker_styles[i]
-            except (IndexError, TypeError, AssertionError):
+
+            marker_style: str | Inherit
+            if isinstance(marker_styles, list):
+                marker_style_values = cast(list[str], marker_styles)
+                try:
+                    marker_style = marker_style_values[i]
+                except IndexError:
+                    marker_style = INHERIT
+            else:
                 marker_style = marker_styles
-            try:
-                assert isinstance(edge_widths, list)
-                edge_width = edge_widths[i]
-            except (IndexError, TypeError, AssertionError):
+
+            edge_width: float | Inherit
+            if isinstance(edge_widths, list):
+                edge_width_values = cast(list[float], edge_widths)
+                try:
+                    edge_width = edge_width_values[i]
+                except IndexError:
+                    edge_width = INHERIT
+            else:
                 edge_width = edge_widths
-            try:
-                assert isinstance(alphas, list)
-                alpha = alphas[i]
-            except (IndexError, TypeError, AssertionError):
+
+            alpha: float | Inherit
+            if isinstance(alphas, list):
+                alpha_values = cast(list[float], alphas)
+                try:
+                    alpha = alpha_values[i]
+                except IndexError:
+                    alpha = INHERIT
+            else:
                 alpha = alphas
             point = point_coords[i]
             point_objects.append(
@@ -1757,7 +1783,7 @@ class Curve(Plottable1D, MathematicalObject):
                 where=np.logical_and(
                     where_x_data >= self._fill_between_bounds[0],
                     where_x_data <= self._fill_between_bounds[1],
-                ),
+                ).tolist(),
                 zorder=z_order - 2,
                 **params,
             )
@@ -1913,7 +1939,7 @@ class Scatter(Plottable1D, MathematicalObject):
     @classmethod
     def from_function(
         cls,
-        func: Callable[[ArrayLike], ArrayLike],
+        func: Callable[[np.ndarray], ArrayLike],
         x_min: float,
         x_max: float,
         label: Optional[str] = None,
@@ -2046,19 +2072,19 @@ class Scatter(Plottable1D, MathematicalObject):
         self._label = label
 
     @property
-    def face_color(self) -> str | ArrayLike:
+    def face_color(self) -> Styled[str | ArrayLike | None]:
         return self._face_color
 
     @face_color.setter
-    def face_color(self, face_color: str | ArrayLike) -> None:
+    def face_color(self, face_color: Styled[str | ArrayLike | None]) -> None:
         self._face_color = face_color
 
     @property
-    def edge_color(self) -> str:
+    def edge_color(self) -> Styled[str | ArrayLike | None]:
         return self._edge_color
 
     @edge_color.setter
-    def edge_color(self, edge_color: str) -> None:
+    def edge_color(self, edge_color: Styled[str | ArrayLike | None]) -> None:
         self._edge_color = edge_color
 
     @property
@@ -2070,11 +2096,11 @@ class Scatter(Plottable1D, MathematicalObject):
         self._color_map = color_map
 
     @property
-    def color_map_range(self) -> tuple[float, float]:
+    def color_map_range(self) -> tuple[float, float] | None:
         return self._color_map_range
 
     @color_map_range.setter
-    def color_map_range(self, color_map_range: tuple[float, float]) -> None:
+    def color_map_range(self, color_map_range: tuple[float, float] | None) -> None:
         self._color_map_range = color_map_range
 
     @property
@@ -2161,16 +2187,18 @@ class Scatter(Plottable1D, MathematicalObject):
     def color_bar_params(self) -> dict:
         return self._color_bar_params
 
-    def __eq__(self, other: Self) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Defines the equality between two scatters.
         """
-        return (
+        if not isinstance(other, Scatter):
+            return False
+        return bool(
             np.equal(self.x_data, other.x_data).all()
             and np.equal(self.y_data, other.y_data).all()
         )
 
-    def __add__(self, other: Self | float) -> Self:
+    def __add__(self, other: Scatter | float) -> Scatter:
         """
         Defines the addition of two scatter plots or a scatter plot and a number.
         """
@@ -2191,7 +2219,7 @@ class Scatter(Plottable1D, MathematicalObject):
                 "Can only add a scatter plot to another scatter plot or a number."
             )
 
-    def __sub__(self, other: Self | float) -> Self:
+    def __sub__(self, other: Scatter | float) -> Scatter:
         """
         Defines the subtraction of two scatter plots or a scatter plot and a number.
         """
@@ -2212,7 +2240,7 @@ class Scatter(Plottable1D, MathematicalObject):
                 "Can only subtract a scatter plot from another scatter plot or a number."
             )
 
-    def __mul__(self, other: Self | float) -> Self:
+    def __mul__(self, other: Scatter | float) -> Scatter:
         """
         Defines the multiplication of two scatter plots or a scatter plot and a number.
         """
@@ -2233,7 +2261,7 @@ class Scatter(Plottable1D, MathematicalObject):
                 "Can only multiply a scatter plot by another scatter plot or a number."
             )
 
-    def __truediv__(self, other: Self | float) -> Self:
+    def __truediv__(self, other: Scatter | float) -> Scatter:
         """
         Defines the division of two scatter plots or a scatter plot and a number.
         """
@@ -2254,7 +2282,7 @@ class Scatter(Plottable1D, MathematicalObject):
                 "Can only divide a scatter plot by another scatter plot or a number."
             )
 
-    def __pow__(self, other: float) -> Self:
+    def __pow__(self, other: float) -> Scatter:
         """
         Defines the power of a scatter plot to a number.
         """
@@ -2272,7 +2300,7 @@ class Scatter(Plottable1D, MathematicalObject):
         """
         return iter(self._y_data)
 
-    def __abs__(self) -> Self:
+    def __abs__(self) -> Scatter:
         """
         Defines the absolute value of a scatter plot.
         """
@@ -2300,7 +2328,7 @@ class Scatter(Plottable1D, MathematicalObject):
         marker_style: str | Inherit = INHERIT,
         alpha: float | Inherit = INHERIT,
         copy_first: bool = False,
-    ) -> Self:
+    ) -> Scatter:
         """
         Creates a slice of the scatter plot between two x values.
 
@@ -2419,7 +2447,7 @@ class Scatter(Plottable1D, MathematicalObject):
         marker_style: str | Inherit = INHERIT,
         alpha: float | Inherit = INHERIT,
         copy_first: bool = False,
-    ) -> Self:
+    ) -> Scatter:
         """
         Creates a slice of the scatter plot between two y values.
 
@@ -2876,7 +2904,7 @@ class Scatter(Plottable1D, MathematicalObject):
         formatted points : str
             A list of tuples representing every data point.
         """
-        formatted_points = super().to_desmos(
+        formatted_points = _format_desmos_points(
             self._x_data, self._y_data, decimal_precision
         )
         if to_clipboard:
@@ -2936,7 +2964,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
         # Check whether to use color map (one of the colors is an array of intensities)
         if isinstance(self._face_color, (list, tuple, np.ndarray)):
-            if all(isinstance(i, (int, float)) for i in self._face_color):
+            face_color_values = cast(
+                list[float] | tuple[float, ...] | np.ndarray, self._face_color
+            )
+            if all(isinstance(i, (int, float)) for i in face_color_values):
                 color_map = plt.get_cmap(
                     resolve_or(self._color_map, plt.rcParams["image.cmap"])
                 )
@@ -2948,12 +2979,15 @@ class Scatter(Plottable1D, MathematicalObject):
                     )
                 else:  # Calculate from the array of intensities
                     norm = Normalize(
-                        vmin=min(self._face_color), vmax=max(self._face_color)
+                        vmin=min(face_color_values), vmax=max(face_color_values)
                     )
 
-                mpl_face_color = [color_map(norm(i)) for i in self._face_color]
+                mpl_face_color = [color_map(norm(float(i))) for i in face_color_values]
         elif isinstance(self._edge_color, (list, tuple, np.ndarray)):
-            if all(isinstance(i, (int, float)) for i in self._edge_color):
+            edge_color_values = cast(
+                list[float] | tuple[float, ...] | np.ndarray, self._edge_color
+            )
+            if all(isinstance(i, (int, float)) for i in edge_color_values):
                 color_map = plt.get_cmap(
                     resolve_or(self._color_map, plt.rcParams["image.cmap"])
                 )
@@ -2965,10 +2999,10 @@ class Scatter(Plottable1D, MathematicalObject):
                     )
                 else:  # Calculate from the array of intensities
                     norm = Normalize(
-                        vmin=min(self._edge_color), vmax=max(self._edge_color)
+                        vmin=min(edge_color_values), vmax=max(edge_color_values)
                     )
 
-                mpl_edge_color = [color_map(norm(i)) for i in self._edge_color]
+                mpl_edge_color = [color_map(norm(float(i))) for i in edge_color_values]
 
         params = {
             "s": self._marker_size,
@@ -3082,7 +3116,10 @@ class Scatter(Plottable1D, MathematicalObject):
                     vmin=min(self._color_map_range), vmax=max(self._color_map_range)
                 )
             else:
-                norm = Normalize(vmin=min(self._edge_color), vmax=max(self._edge_color))
+                edge_color_values = np.asarray(self._edge_color)
+                norm = Normalize(
+                    vmin=np.min(edge_color_values), vmax=np.max(edge_color_values)
+                )
 
             sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
             sm.set_array([])
@@ -3328,11 +3365,11 @@ class Histogram(Plottable1D):
         self._histogram_cache = None
 
     @property
-    def label(self) -> str:
+    def label(self) -> str | None:
         return self._get_label()
 
     @label.setter
-    def label(self, label: str) -> None:
+    def label(self, label: str | None) -> None:
         self._label = label
 
     @property
@@ -3442,16 +3479,18 @@ class Histogram(Plottable1D):
         edges = self.bin_edges
         return (edges[:-1] + edges[1:]) / 2
 
-    def __eq__(self, other: Self) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Defines the equality between two histograms.
         """
-        return (
+        if not isinstance(other, Histogram):
+            return False
+        return bool(
             np.equal(self.bin_heights, other.bin_heights).all()
             and np.equal(self.bin_centers, other.bin_centers).all()
         )
 
-    def _get_label(self) -> None:
+    def _get_label(self) -> str | None:
         """
         Gives the label of the histogram (with or without parameters).
         """
@@ -3578,7 +3617,7 @@ class Histogram(Plottable1D):
         formatted points : str
             A list of tuples representing every data point.
         """
-        formatted_points = super().to_desmos(
+        formatted_points = _format_desmos_points(
             self.bin_centers, self.bin_heights, decimal_precision
         )
         if to_clipboard:
@@ -3667,7 +3706,7 @@ class Histogram(Plottable1D):
             curve_max_y = normal(self._mean)
             curve_std_y = normal(self._mean + self._standard_deviation)
             if self._pdf_show_std:
-                params = {}
+                params: dict[str, Any] = {}
                 if isinstance(self._pdf_std_color, str):
                     params["colors"] = [self._pdf_std_color, self._pdf_std_color]
 
@@ -3680,7 +3719,7 @@ class Histogram(Plottable1D):
                         ],
                         [0, 0],
                         [curve_std_y, curve_std_y],
-                        linestyles=["dashed"],
+                        linestyles="dashed",
                         zorder=z_order - 1,
                         **params,
                     )
@@ -3693,13 +3732,13 @@ class Histogram(Plottable1D):
                         ],
                         [0, 0],
                         [curve_std_y, curve_std_y],
-                        linestyles=["dashed"],
+                        linestyles="dashed",
                         zorder=z_order - 1,
                         **params,
                     )
 
             if self._pdf_show_mean:
-                params = {}
+                params: dict[str, Any] = {}
                 if isinstance(self._pdf_mean_color, str):
                     params["colors"] = [self._pdf_mean_color]
 
@@ -3709,7 +3748,7 @@ class Histogram(Plottable1D):
                         self._mean,
                         0,
                         curve_max_y,
-                        linestyles=["dashed"],
+                        linestyles="dashed",
                         zorder=z_order - 1,
                         **params,
                     )
@@ -3719,7 +3758,7 @@ class Histogram(Plottable1D):
                         self._mean,
                         0,
                         curve_max_y,
-                        linestyles=["dashed"],
+                        linestyles="dashed",
                         zorder=z_order - 1,
                         **params,
                     )

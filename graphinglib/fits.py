@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit, Styled, strip_inherit
-
 from copy import deepcopy
 from functools import partial
-from typing import Callable, Optional
+from inspect import signature
+from typing import Any, Callable, Optional, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,6 +12,7 @@ from scipy.optimize import curve_fit
 
 from .data_plotting_1d import Curve, Scatter
 from .graph_elements import Point
+from .inherit import INHERIT, Inherit, Styled, strip_inherit
 
 try:
     from typing import Self
@@ -121,7 +121,7 @@ class GeneralFit(Curve):
         self._line_style = line_style
         self._alpha = alpha
 
-        self._function: Callable[[np.ndarray], np.ndarray]
+        self._function: Callable[[float | np.ndarray], float | np.ndarray]
         self._parameters: np.ndarray
         self._cov_matrix: np.ndarray
         self._standard_deviation: np.ndarray
@@ -160,7 +160,7 @@ class GeneralFit(Curve):
         self._curve_to_be_fit = curve
 
     @property
-    def function(self) -> Callable[[np.ndarray], np.ndarray]:
+    def function(self) -> Callable[[float | np.ndarray], float | np.ndarray]:
         return self._function
 
     @property
@@ -181,12 +181,19 @@ class GeneralFit(Curve):
         """
         raise NotImplementedError()
 
-    def get_coordinates_at_x(self, x: float) -> tuple[float, float]:
-        return (x, self._function(x))
+    def _evaluate_scalar(self, x: float) -> float:
+        value = self._function(x)
+        return float(np.asarray(value).flat[0])
+
+    def get_coordinates_at_x(
+        self, x: float, interpolation_method: str = "linear"
+    ) -> tuple[float, float]:
+        return (x, self._evaluate_scalar(x))
 
     def create_point_at_x(
         self,
         x: float,
+        interpolation_method: str = "linear",
         label: str | None = None,
         face_color: str | Inherit = INHERIT,
         edge_color: str | Inherit = INHERIT,
@@ -202,6 +209,10 @@ class GeneralFit(Curve):
         ----------
         x : float
             x value of the point.
+        interpolation_method : str
+            Interpolation method parameter.
+            Since fit curves are analytic, this value is ignored.
+            Default is ``"linear"``.
         label : str, optional
             Label to be displayed in the legend.
         face_color : str
@@ -241,7 +252,7 @@ class GeneralFit(Curve):
         """
         return Point(
             x,
-            self._function(x),
+            self._evaluate_scalar(x),
             label=label,
             face_color=face_color,
             edge_color=edge_color,
@@ -259,7 +270,7 @@ class GeneralFit(Curve):
     def create_points_at_y(
         self,
         y: float,
-        interpolation_kind: str = "linear",
+        interpolation_method: str = "linear",
         label: str | None = None,
         face_color: str | Inherit = INHERIT,
         edge_color: str | Inherit = INHERIT,
@@ -275,7 +286,7 @@ class GeneralFit(Curve):
         ----------
         y : float
             y value of the point.
-        interpolation_kind : str
+        interpolation_method : str
             Kind of interpolation to be used.
             Default is "linear".
         label : str, optional
@@ -316,7 +327,7 @@ class GeneralFit(Curve):
         list[:class:`~graphinglib.graph_elements.Point`]
             List of :class:`~graphinglib.graph_elements.Point` objects on the curve at the given y value.
         """
-        coord_pairs = self.get_coordinates_at_y(y, interpolation_kind)
+        coord_pairs = self.get_coordinates_at_y(y, interpolation_method)
         points = [
             Point(
                 coord[0],
@@ -382,7 +393,7 @@ class GeneralFit(Curve):
             if self._fill_between_color:
                 kwargs["color"] = self._fill_between_color
             else:
-                kwargs["color"] = self.handle[0].get_color()
+                kwargs["color"] = self.handle.get_color()
             params = strip_inherit(kwargs)
             axes.fill_between(
                 self._x_data,
@@ -390,7 +401,7 @@ class GeneralFit(Curve):
                 where=np.logical_and(
                     self._x_data >= self._fill_between_bounds[0],
                     self._x_data <= self._fill_between_bounds[1],
-                ),
+                ).tolist(),
                 zorder=z_order - 2,
                 **params,
             )
@@ -1308,7 +1319,7 @@ class FitFromGaussian(GeneralFit):
     def standard_deviation(self) -> float:
         # Unlike the other fit classes, this is the fitted sigma of the gaussian itself,
         # not the standard deviation of the fit parameters (see standard_deviation_of_fit_params).
-        return self._standard_deviation
+        return float(cast(Any, self._standard_deviation))
 
     @property
     def standard_deviation_of_fit_params(self) -> np.ndarray:
@@ -1778,7 +1789,9 @@ class FitFromFunction(GeneralFit):
     Parameters
     ----------
     function : Callable
-        Function to be passed to the curve_fit function.
+        Function to fit. The first argument must be the x values, followed by
+        fit parameters (``f(x, a, b, c, ...)``), and it must return scalar or
+        array-like y values.
     curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
         The object to be fit.
     label : str, optional
@@ -1821,12 +1834,12 @@ class FitFromFunction(GeneralFit):
     standard_deviation : np.ndarray
         Standard deviation of the parameters of the fit.
     function : Callable
-        Function with the parameters of the fit.
+        Fitted function with the parameters bound. Accepts scalar or array x values.
     """
 
     def __init__(
         self,
-        function: Callable,
+        function: Callable[..., float | np.ndarray],
         curve_to_be_fit: Curve | Scatter,
         label: Optional[str] = None,
         guesses: Optional[ArrayLike] = None,
@@ -1846,7 +1859,9 @@ class FitFromFunction(GeneralFit):
         Parameters
         ----------
         function : Callable
-            Function to be passed to the curve_fit function.
+            Function to fit. The first argument must be the x values, followed by
+            fit parameters (``f(x, a, b, c, ...)``), and it must return scalar or
+            array-like y values.
         curve_to_be_fit : :class:`~graphinglib.data_plotting_1d.Curve` or :class:`~graphinglib.data_plotting_1d.Scatter`
             The object to be fit.
         label : str, optional
@@ -1889,7 +1904,7 @@ class FitFromFunction(GeneralFit):
         standard_deviation : np.ndarray
             Standard deviation of the parameters of the fit.
         function : Callable
-            Function with the parameters of the fit.
+            Fitted function with the parameters bound. Accepts scalar or array x values.
         """
         self._function_template = function
         self._curve_to_be_fit = curve_to_be_fit
@@ -1929,7 +1944,12 @@ class FitFromFunction(GeneralFit):
         """
         Creates a string representation of the fitted function.
         """
-        return f"Fit from function: {self._function_template.__name__}"
+        function_name = getattr(
+            self._function_template,
+            "__name__",
+            type(self._function_template).__name__,
+        )
+        return f"Fit from function: {function_name}"
 
     def _calculate_parameters(self) -> None:
         """
@@ -1943,22 +1963,25 @@ class FitFromFunction(GeneralFit):
         )
         self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
 
-    def _get_function_with_params(self) -> Callable:
+    def _get_function_with_params(
+        self,
+    ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         """
         Creates a function with the parameters of the fit.
 
         Returns
         -------
         function : Callable
-            Function with the parameters of the fit.
+            Fitted function with the parameters bound. Accepts scalar or array x values.
         """
-        argument_names = self._function_template.__code__.co_varnames[
-            : self._function_template.__code__.co_argcount
-        ][1:]
+        argument_names = list(signature(self._function_template).parameters)[1:]
         args_dict = {
             argument_names[i]: self._parameters[i] for i in range(len(argument_names))
         }
-        return partial(self._function_template, **args_dict)
+        return cast(
+            Callable[[float | np.ndarray], float | np.ndarray],
+            partial(self._function_template, **args_dict),
+        )
 
 
 class FitFromFOTF(GeneralFit):

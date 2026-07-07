@@ -7,7 +7,18 @@ from copy import deepcopy
 from logging import warning
 from shutil import which
 from string import ascii_lowercase
-from typing import Any, Callable, Iterable, Iterator, Literal, Self, TypeVar, Union
+from collections.abc import Sequence
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    Iterator,
+    Literal,
+    Self,
+    TypeVar,
+    Union,
+    cast,
+)
 
 try:  # Optional dependency: astropy
     from astropy.units import Quantity
@@ -16,8 +27,8 @@ try:  # Optional dependency: astropy
     _ASTROPY_AVAILABLE = True
 except ImportError:
     _ASTROPY_AVAILABLE = False
-    WCS = type("WCSPlaceholder", (), {})  # type: ignore[assignment]
-    Quantity = type("QuantityPlaceholder", (), {})  # type: ignore[assignment]
+    WCS = cast(Any, type("WCSPlaceholder", (), {}))
+    Quantity = cast(Any, type("QuantityPlaceholder", (), {}))
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -25,6 +36,7 @@ from matplotlib.axes import Axes
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure, SubFigure
+from matplotlib.gridspec import GridSpec
 from matplotlib.layout_engine import ConstrainedLayoutEngine
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
@@ -342,12 +354,17 @@ class SmartFigure:
         self.elements = elements
         self.annotations = annotations
 
-        self._figure = None
-        self._gridspec = None
-        self._reference_label_i = None
+        self._figure: Figure | SubFigure | None = None
+        self._gridspec: GridSpec | None = None
+        self._reference_label_i: int | None = None
 
-        self._ticks = {}
-        self._tick_params = {"x major": {}, "y major": {}, "x minor": {}, "y minor": {}}
+        self._ticks: dict[str, Any] = {}
+        self._tick_params: dict[str, dict[str, Any]] = {
+            "x major": {},
+            "y major": {},
+            "x minor": {},
+            "y minor": {},
+        }
         self._pad_params = {}
         self._reference_labels_params = {}
 
@@ -363,9 +380,11 @@ class SmartFigure:
         self._custom_legend_labels = []
 
         self._hidden_spines = None
-        self._user_rc_dict = {}
+        self._user_rc_dict: dict[str, Any] = {}
         self._default_params = {}
-        self._subplot_p = {}  # used to store the ListOrItem parameters that can be different for each subplot
+        self._subplot_p: dict[
+            str, list[Any]
+        ] = {}  # used to store the ListOrItem parameters that can be different for each subplot
 
     @property
     def num_rows(self) -> int:
@@ -446,7 +465,7 @@ class SmartFigure:
         return self._x_label
 
     @x_label.setter
-    def x_label(self, value: str) -> None:
+    def x_label(self, value: str | None) -> None:
         self._x_label = value
 
     @property
@@ -454,7 +473,7 @@ class SmartFigure:
         return self._y_label
 
     @y_label.setter
-    def y_label(self, value: str) -> None:
+    def y_label(self, value: str | None) -> None:
         self._y_label = value
 
     @property
@@ -463,11 +482,14 @@ class SmartFigure:
 
     @size.setter
     def size(self, value: tuple[float, float] | Inherit):
-        if not isinstance(value, tuple) and value != INHERIT:
+        if is_inherit(value):
+            self._size = value
+            return
+        if not isinstance(value, tuple):
             raise TypeError("size must be a tuple or 'default'.")
-        if isinstance(value, tuple) and len(value) != 2:
+        if len(value) != 2:
             raise ValueError("size must be a tuple of length 2.")
-        if isinstance(value, tuple) and (value[0] <= 0 or value[1] <= 0):
+        if value[0] <= 0 or value[1] <= 0:
             raise ValueError("size values must be greater than 0.")
         self._size = value
 
@@ -722,9 +744,10 @@ class SmartFigure:
         if value is not None:
             if not hasattr(value, "__len__"):
                 raise TypeError("width_ratios must be an ArrayLike.")
-            if not all(isinstance(x, (float, int)) for x in value):
+            ratios = cast(Sequence[float], value)
+            if not all(isinstance(x, (float, int)) for x in ratios):
                 raise TypeError("width_ratios must contain only numbers.")
-            if len(value) != self._num_cols:
+            if len(ratios) != self._num_cols:
                 raise ValueError("width_ratios must have the same length as num_cols.")
         self._width_ratios = value
 
@@ -737,9 +760,10 @@ class SmartFigure:
         if value is not None:
             if not hasattr(value, "__len__"):
                 raise TypeError("height_ratios must be an ArrayLike.")
-            if not all(isinstance(x, (float, int)) for x in value):
+            ratios = cast(Sequence[float], value)
+            if not all(isinstance(x, (float, int)) for x in ratios):
                 raise TypeError("height_ratios must contain only numbers.")
-            if len(value) != self._num_rows:
+            if len(ratios) != self._num_rows:
                 raise ValueError("height_ratios must have the same length as num_rows.")
         self._height_ratios = value
 
@@ -1059,7 +1083,7 @@ class SmartFigure:
 
     def __setitem__(
         self,
-        key: int | slice | tuple[int | slice],
+        key: int | slice | tuple[int | slice, ...],
         element: Plottable | Iterable[Plottable | None] | SmartFigure | None,
     ) -> None:
         """
@@ -1069,7 +1093,7 @@ class SmartFigure:
 
         Parameters
         ----------
-        key : int | slice | tuple[int | slice]
+        key : int | slice | tuple[int | slice, ...]
             The key specifying the location(s) in the SmartFigure to assign the element(s). If a tuple of ints is
             provided, the element is placed in the corresponding square of the grid, following classical 2D numpy-like
             indexing. If slices are provided, the element can span multiple squares in the grid. If ``num_rows`` or
@@ -1152,17 +1176,6 @@ class SmartFigure:
                 "Increase num_rows or num_cols first to turn the SmartFigure into a layout."
             )
 
-        if not any(
-            [
-                element is None,
-                isinstance(element, (Plottable, SmartFigure)),
-                SmartFigure._is_iterable_of_plottables(element),
-            ]
-        ):
-            raise TypeError(
-                "Element must be a Plottable, an iterable of Plottables, or a SmartFigure."
-            )
-
         key_ = self._validate_and_normalize_key(key)
         overlapping = self._get_overlapping_elements(key_)
 
@@ -1216,7 +1229,7 @@ class SmartFigure:
         self._children = self._ordered_children()
         self._sync_auto_child_projection(changed_span, changed_child)
 
-    def __getitem__(self, key: int | slice | tuple[int | slice]) -> SmartFigure:
+    def __getitem__(self, key: int | slice | tuple[int | slice, ...]) -> SmartFigure:
         """
         Gives the child SmartFigure at the specified key in the SmartFigure. This can be used to modify or extract
         directly a child figure in a SmartFigure used as a layout. The indexing follows classical 2D numpy-like indexing,
@@ -1224,7 +1237,7 @@ class SmartFigure:
 
         Parameters
         ----------
-        key : int | slice | tuple[int | slice]
+        key : int | slice | tuple[int | slice, ...]
             The key specifying the location(s) in the SmartFigure to access. If a tuple of ints is provided, the child
             figure is accessed in the corresponding square of the grid, following classical 2D numpy-like indexing. If
             slices are provided, a child figure spanning multiple squares in the grid can be retrieved. If ``num_rows`` or
@@ -1354,8 +1367,8 @@ class SmartFigure:
         return ordered
 
     def _validate_and_normalize_key(
-        self, key: int | slice | tuple[int | slice]
-    ) -> tuple[slice]:
+        self, key: int | slice | tuple[int | slice, ...]
+    ) -> tuple[slice, slice]:
         """
         Validates and normalizes the key for indexing into the SmartFigure. This method ensures that the key is
         either a single integer, a slice, or a tuple of integers/slices. It also checks for out-of-bounds indices and
@@ -1364,62 +1377,68 @@ class SmartFigure:
 
         Parameters
         ----------
-        key : int | slice | tuple[int | slice]
+        key : int | slice | tuple[int | slice, ...]
             The key to validate and normalize.
 
         Returns
         -------
-        tuple[slice]
+        tuple[slice, slice]
             The normalized key as a two-tuple of slices.
         """
-        if not isinstance(key, tuple):
-            key = (key,)
+        key_parts = key if isinstance(key, tuple) else (key,)
 
         # 1D SmartFigures
         if self._num_rows == 1 or self._num_cols == 1:
-            if len(key) == 1:
-                key = (0, key[0]) if self._num_rows == 1 else (key[0], 0)
-            elif len(key) != 2:
+            if len(key_parts) == 1:
+                row_key, col_key = (
+                    (0, key_parts[0]) if self._num_rows == 1 else (key_parts[0], 0)
+                )
+            elif len(key_parts) == 2:
+                row_key, col_key = key_parts
+            else:
                 raise ValueError(
                     "Key must be 1D (int or slice) or 2D with one zero index for 1D SmartFigure."
                 )
 
         # 2D SmartFigures
         else:
-            if len(key) != 2:
+            if len(key_parts) != 2:
                 raise ValueError("2D indexing must use a tuple of length 2.")
+            row_key, col_key = key_parts
 
-        # Bounds check
-        new_keys = []
-        for i, (k, axis_size) in enumerate(zip(key, (self._num_rows, self._num_cols))):
-            if isinstance(k, int):
-                new_k = k + axis_size if k < 0 else k
-                if not (0 <= new_k < axis_size):
-                    raise IndexError(
-                        f"Index {k} out of bounds for axis {i} with size {axis_size}."
-                    )
-                new_keys.append(slice(new_k, new_k + 1, None))
-            elif isinstance(k, slice):
-                start = k.start if k.start is not None else 0
-                start = start + axis_size if start < 0 else start
-                stop = k.stop if k.stop is not None else axis_size
-                stop = stop + axis_size if stop < 0 else stop
-                if start < 0 or stop > axis_size:
-                    raise IndexError(
-                        f"{k} out of bounds for axis {i} with size {axis_size}."
-                    )
-                if start >= stop:
-                    raise IndexError(
-                        f"{k} for axis {i} must have stop larger than start."
-                    )
-                if k.step is not None:
-                    raise ValueError(f"{k} step for axis {i} must be None.")
-                new_keys.append(slice(start, stop, None))
-            else:
-                raise TypeError(
-                    f"Key element {k} for axis {i} must be an int or a slice."
+        return (
+            self._normalize_axis_key(row_key, self._num_rows, 0),
+            self._normalize_axis_key(col_key, self._num_cols, 1),
+        )
+
+    @staticmethod
+    def _normalize_axis_key(key: int | slice, axis_size: int, axis_index: int) -> slice:
+        if isinstance(key, int):
+            normalized_key = key + axis_size if key < 0 else key
+            if not (0 <= normalized_key < axis_size):
+                raise IndexError(
+                    f"Index {key} out of bounds for axis {axis_index} with size {axis_size}."
                 )
-        return tuple(new_keys)
+            return slice(normalized_key, normalized_key + 1, None)
+        if isinstance(key, slice):
+            start = key.start if key.start is not None else 0
+            start = start + axis_size if start < 0 else start
+            stop = key.stop if key.stop is not None else axis_size
+            stop = stop + axis_size if stop < 0 else stop
+            if start < 0 or stop > axis_size:
+                raise IndexError(
+                    f"{key} out of bounds for axis {axis_index} with size {axis_size}."
+                )
+            if start >= stop:
+                raise IndexError(
+                    f"{key} for axis {axis_index} must have stop larger than start."
+                )
+            if key.step is not None:
+                raise ValueError(f"{key} step for axis {axis_index} must be None.")
+            return slice(start, stop, None)
+        raise TypeError(
+            f"Key element {key} for axis {axis_index} must be an int or a slice."
+        )
 
     @staticmethod
     def _is_iterable_of_plottables(item: Any) -> bool:
@@ -1525,12 +1544,8 @@ class SmartFigure:
                     continue
                 if isinstance(element, Plottable):
                     self._leaf_elements.append(element)
-                elif SmartFigure._is_iterable_of_plottables(element):
-                    self._leaf_elements.extend(self._normalize_leaf_rhs(element))
                 else:
-                    raise TypeError(
-                        "Leaf SmartFigures only accept Plottables or iterables of Plottables in add_elements."
-                    )
+                    self._leaf_elements.extend(self._normalize_leaf_rhs(element))
             return self
 
         max_cells = self._num_rows * self._num_cols
@@ -1582,11 +1597,15 @@ class SmartFigure:
             )
 
         values = list(other)
-        dense = self.elements
+        dense_children: list[SmartFigure | None] = [None] * (
+            self._num_rows * self._num_cols
+        )
+        for (rows, cols), child in self._iter_child_items():
+            dense_children[rows.start * self._num_cols + cols.start] = child
         for index, value in enumerate(values):
-            if index >= len(dense) or value is None:
+            if index >= len(dense_children) or value is None:
                 continue
-            child = dense[index]
+            child = dense_children[index]
             if child is None:
                 continue
             if isinstance(value, SmartFigure):
@@ -1683,18 +1702,25 @@ class SmartFigure:
         for span, child in self._iter_child_items():
             self._sync_auto_child_projection(span, child)
 
-    def _normalize_leaf_rhs(
-        self, value: Plottable | Iterable[Plottable | None]
-    ) -> list[Plottable]:
+    def _normalize_leaf_rhs(self, value: Any) -> list[Plottable]:
         if isinstance(value, Plottable):
             return [value]
-        if isinstance(value, SmartFigure) or not SmartFigure._is_iterable_of_plottables(
-            value
+        if isinstance(value, (str, bytes, SmartFigure)) or not isinstance(
+            value, Iterable
         ):
             raise TypeError(
                 "Leaf contents must be Plottables or iterables of Plottables."
             )
-        return [element for element in value if element is not None]
+        elements: list[Plottable] = []
+        for element in value:
+            if element is None:
+                continue
+            if not isinstance(element, Plottable):
+                raise TypeError(
+                    "Leaf contents must be Plottables or iterables of Plottables."
+                )
+            elements.append(element)
+        return elements
 
     def _get_selected_child(
         self, key: tuple[slice, slice], original_key: Any = None
@@ -1803,6 +1829,7 @@ class SmartFigure:
             The same SmartFigure instance, allowing for method chaining.
         """
         self._initialize_parent_smart_figure()
+        assert self._figure is not None and self._gridspec is not None
 
         # Create an artificial axis to add padding around the figure
         # This is needed because the figure is created with h_pad=0 and w_pad=0 creating 0 padding
@@ -1838,7 +1865,9 @@ class SmartFigure:
             )
 
         if fullscreen:
-            plt.get_current_fig_manager().full_screen_toggle()
+            fig_manager = plt.get_current_fig_manager()
+            assert fig_manager is not None
+            fig_manager.full_screen_toggle()
 
         plt.show()
         if not any(
@@ -2049,7 +2078,9 @@ class SmartFigure:
         num_cycle_colors = len(cycle_colors)
         subtitles_pad = self._subplot_p["subtitles_pad"]
 
-        self._gridspec = self._figure.add_gridspec(
+        figure = self._figure
+        assert figure is not None
+        gridspec = figure.add_gridspec(
             self._num_rows,
             self._num_cols,
             wspace=self._width_padding,
@@ -2057,10 +2088,11 @@ class SmartFigure:
             width_ratios=self._width_ratios,
             height_ratios=self._height_ratios,
         )
+        self._gridspec = gridspec
 
         if self._global_reference_label:
-            self._create_reference_label(self._figure)
-            self._figure.suptitle(" ")  # Create a blank title to reserve space
+            self._create_reference_label(figure)
+            figure.suptitle(" ")  # Create a blank title to reserve space
 
         ax = None  # keep track of the last plt.Axes object, needed for sharing axes
         default_labels, default_handles = [], []
@@ -2101,7 +2133,7 @@ class SmartFigure:
                     if param_is_none and sub_param is not None:
                         setattr(element, attr, sub_param)
 
-                subfig = self._figure.add_subfigure(self._gridspec[rows, cols])
+                subfig = figure.add_subfigure(gridspec[rows, cols])
                 element._figure = subfig  # associates the current subfigure with the nested SmartFigure
                 element._reference_label_i = self._reference_label_i
                 legend_info = element._prepare_figure(
@@ -2116,7 +2148,7 @@ class SmartFigure:
                 custom_handles += legend_info["handles"]["custom"]
 
                 if is_matplotlib_style:
-                    plt.rcParams.update(parent_rc_params)
+                    plt.rcParams.update(cast(Any, parent_rc_params))
                 else:
                     plt.rcParams.update(
                         self._default_params["rc_params"]
@@ -2131,7 +2163,7 @@ class SmartFigure:
 
             elif isinstance(element, (Plottable, list)):
                 current_elements = element if isinstance(element, list) else [element]
-                subfig = self._figure.add_subfigure(self._gridspec[rows, cols])
+                subfig = figure.add_subfigure(gridspec[rows, cols])
                 ax = subfig.add_subplot(
                     sharex=ax
                     if self._share_x
@@ -2263,7 +2295,7 @@ class SmartFigure:
                         parent_rc_params = None
                         if is_matplotlib_style:
                             parent_rc_params = plt.rcParams.copy()
-                            plt.rcParams.update(twin_axis._user_rc_dict)
+                            plt.rcParams.update(cast(Any, twin_axis._user_rc_dict))
                         else:
                             twin_axis._default_params["rc_params"].update(
                                 twin_axis._user_rc_dict
@@ -2288,7 +2320,7 @@ class SmartFigure:
                         default_handles.extend(twin_handles)
 
                         if is_matplotlib_style:
-                            plt.rcParams.update(parent_rc_params)
+                            plt.rcParams.update(cast(Any, parent_rc_params))
                         else:
                             plt.rcParams.update(
                                 self._default_params["rc_params"]
@@ -2323,6 +2355,7 @@ class SmartFigure:
                             legend_ax = self._twin_x_axis._axes
                         else:
                             legend_ax = ax
+                        assert legend_ax is not None
                         try:
                             _legend = legend_ax.legend(
                                 draggable=True,
@@ -2342,7 +2375,7 @@ class SmartFigure:
                 )
 
         # Set a general axis for adding general labels/title and controlling padding
-        general_ax = self._figure.add_subplot(self._gridspec[:, :], frameon=False)
+        general_ax = figure.add_subplot(gridspec[:, :], frameon=False)
         general_ax.grid(False)
         general_ax.set_facecolor((0, 0, 0, 0))
         general_ax.set_zorder(-1)
@@ -2380,7 +2413,7 @@ class SmartFigure:
         if self._annotations is not None:
             z_order = 5000
             for annotation in self._annotations:
-                annotation._plot_element(self._figure, z_order)
+                annotation._plot_element(cast(Any, figure), z_order)
                 z_order += 5
 
         # Legend parameters
@@ -2398,12 +2431,12 @@ class SmartFigure:
             if labels and self._show_legend:
                 legend_params = self._get_legend_params(labels, handles, 0)
                 try:
-                    _legend = self._figure.legend(
+                    _legend = figure.legend(
                         **legend_params,
                         draggable=True,
                     )
                 except Exception:
-                    _legend = self._figure.legend(
+                    _legend = figure.legend(
                         **legend_params,
                     )
                 _legend.set_zorder(10000)
@@ -2419,7 +2452,7 @@ class SmartFigure:
         self._subplot_p = {}  # clear the ListOrItem subplot parameters to free memory
         return legend_info
 
-    def _fill_per_subplot_params(self) -> dict[str, Any]:
+    def _fill_per_subplot_params(self) -> None:
         """
         Fills the _subplot_p dictionary with parameters that can be broadcasted to all subplots in the
         :class:`~graphinglib.SmartFigure`. If a parameter is given as a single value, it is broadcasted to all
@@ -2430,7 +2463,7 @@ class SmartFigure:
         blank_figure = (
             SmartFigure()
         )  # create a blank SmartFigure to get the default parameter values
-        subplot_p = {
+        defaults: dict[str, Any] = {
             "x_lim": blank_figure._x_lim,
             "y_lim": blank_figure._y_lim,
             "log_scale_x": blank_figure._log_scale_x,
@@ -2458,7 +2491,8 @@ class SmartFigure:
             "subtitles_pad": None,
         }
 
-        for param, default_value in subplot_p.items():
+        subplot_p: dict[str, list[Any]] = {}
+        for param, default_value in defaults.items():
             if param[-3:] == "pad":
                 value = self._pad_params.get(param)
             else:
@@ -2526,9 +2560,9 @@ class SmartFigure:
         tolerance = 0.3  # allowed difference between axes to consider them to be in the same column
         if self._share_x and self._num_rows > 1:
             try:
-                plot_axes = self._get_all_axes_recursive(
-                    self._figure
-                )  # gives all the axes in the figure
+                figure = self._figure
+                assert figure is not None
+                plot_axes = self._get_all_axes_recursive(figure)
                 if len(plot_axes) <= 1:
                     return
 
@@ -2562,12 +2596,12 @@ class SmartFigure:
                     for ax in group:
                         current_pos = ax.get_position()
                         ax.set_position(
-                            [
+                            (
                                 rightmost_left_edge,
                                 current_pos.y0,
                                 aligned_size,
                                 current_pos.height,
-                            ]
+                            )
                         )
 
             except Exception:
@@ -2583,19 +2617,19 @@ class SmartFigure:
         for inheritance to allow each SmartFigure class to customize the ticks their way.
         """
         # Handle x-axis ticks
-        if self._ticks.get("x_ticks") is not None:
+        x_ticks = self._ticks.get("x_ticks")
+        if x_ticks is not None:
             x_labels = self._ticks.get("x_tick_labels")
             if callable(x_labels):
                 # Apply the callable to each tick
-                x_labels = [x_labels(tick) for tick in self._ticks.get("x_ticks")]
-            ax.set_xticks(self._ticks.get("x_ticks"), x_labels)
+                x_labels = [x_labels(tick) for tick in x_ticks]
+            ax.set_xticks(x_ticks, x_labels)
 
         ax.tick_params(axis="x", which="major", **self._tick_params["x major"])
 
-        if self._ticks.get("x_tick_spacing") is not None:
-            ax.xaxis.set_major_locator(
-                ticker.MultipleLocator(self._ticks.get("x_tick_spacing"))
-            )
+        x_tick_spacing = self._ticks.get("x_tick_spacing")
+        if x_tick_spacing is not None:
+            ax.xaxis.set_major_locator(ticker.MultipleLocator(x_tick_spacing))
             # If a callable is provided for x_tick_labels, apply it with a FuncFormatter
             x_labels = self._ticks.get("x_tick_labels")
             if callable(x_labels):
@@ -2604,19 +2638,19 @@ class SmartFigure:
                 )
 
         # Handle y-axis ticks
-        if self._ticks.get("y_ticks") is not None:
+        y_ticks = self._ticks.get("y_ticks")
+        if y_ticks is not None:
             y_labels = self._ticks.get("y_tick_labels")
             if callable(y_labels):
                 # Apply the callable to each tick
-                y_labels = [y_labels(tick) for tick in self._ticks.get("y_ticks")]
-            ax.set_yticks(self._ticks.get("y_ticks"), y_labels)
+                y_labels = [y_labels(tick) for tick in y_ticks]
+            ax.set_yticks(y_ticks, y_labels)
 
         ax.tick_params(axis="y", which="major", **self._tick_params["y major"])
 
-        if self._ticks.get("y_tick_spacing") is not None:
-            ax.yaxis.set_major_locator(
-                ticker.MultipleLocator(self._ticks.get("y_tick_spacing"))
-            )
+        y_tick_spacing = self._ticks.get("y_tick_spacing")
+        if y_tick_spacing is not None:
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_spacing))
             # If a callable is provided for y_tick_labels, apply it with a FuncFormatter
             y_labels = self._ticks.get("y_tick_labels")
             if callable(y_labels):
@@ -2624,21 +2658,21 @@ class SmartFigure:
                     ticker.FuncFormatter(lambda y, pos: y_labels(y))
                 )
 
-        if self._ticks.get("minor_x_ticks") is not None:
-            ax.set_xticks(self._ticks.get("minor_x_ticks"), minor=True)
+        minor_x_ticks = self._ticks.get("minor_x_ticks")
+        if minor_x_ticks is not None:
+            ax.set_xticks(minor_x_ticks, minor=True)
         ax.tick_params(axis="x", which="minor", **self._tick_params["x minor"])
-        if self._ticks.get("minor_x_tick_spacing") is not None:
-            ax.xaxis.set_minor_locator(
-                ticker.MultipleLocator(self._ticks.get("minor_x_tick_spacing"))
-            )
+        minor_x_tick_spacing = self._ticks.get("minor_x_tick_spacing")
+        if minor_x_tick_spacing is not None:
+            ax.xaxis.set_minor_locator(ticker.MultipleLocator(minor_x_tick_spacing))
 
-        if self._ticks.get("minor_y_ticks") is not None:
-            ax.set_yticks(self._ticks.get("minor_y_ticks"), minor=True)
+        minor_y_ticks = self._ticks.get("minor_y_ticks")
+        if minor_y_ticks is not None:
+            ax.set_yticks(minor_y_ticks, minor=True)
         ax.tick_params(axis="y", which="minor", **self._tick_params["y minor"])
-        if self._ticks.get("minor_y_tick_spacing") is not None:
-            ax.yaxis.set_minor_locator(
-                ticker.MultipleLocator(self._ticks.get("minor_y_tick_spacing"))
-            )
+        minor_y_tick_spacing = self._ticks.get("minor_y_tick_spacing")
+        if minor_y_tick_spacing is not None:
+            ax.yaxis.set_minor_locator(ticker.MultipleLocator(minor_y_tick_spacing))
 
         # Remove ticks
         if self._subplot_p["remove_x_ticks"][subplot_i]:
@@ -2709,6 +2743,7 @@ class SmartFigure:
         else:
             raise ValueError("Target must be either Axes, Figure or SubFigure.")
 
+        assert self._reference_label_i is not None
         letter = ascii_lowercase[self._reference_label_i]
         formatted_letter = self._reference_labels_params.get(
             "format", lambda le: f"{le})"
@@ -2734,26 +2769,25 @@ class SmartFigure:
         Gives the translation to apply to the reference label to position it correctly relative to an Axes, Figure or
         SubFigure. The translation varies depending on the location of the reference label.
         """
+        figure = self._figure
+        assert figure is not None
         if isinstance(target, Axes):
+            assert subplot_i is not None
             reflabel_loc = self._subplot_p["reference_labels_loc"][subplot_i]
             if isinstance(reflabel_loc, tuple):
                 x_offset, y_offset = reflabel_loc
-                return ScaledTranslation(
-                    x_offset, y_offset, self._figure.dpi_scale_trans
-                )
+                return ScaledTranslation(x_offset, y_offset, figure.dpi_scale_trans)
             elif reflabel_loc == "outside":
-                return ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
+                return ScaledTranslation(-5 / 72, 10 / 72, figure.dpi_scale_trans)
             elif reflabel_loc == "inside":
-                return ScaledTranslation(
-                    10 / 72, -15 / 72, self._figure.dpi_scale_trans
-                )
+                return ScaledTranslation(10 / 72, -15 / 72, figure.dpi_scale_trans)
             else:
                 raise ValueError(
                     "Invalid reference label location. Please specify either 'inside' or 'outside'."
                 )
 
         elif isinstance(target, (Figure, SubFigure)):
-            return ScaledTranslation(7 / 72, -10 / 72, self._figure.dpi_scale_trans)
+            return ScaledTranslation(7 / 72, -10 / 72, figure.dpi_scale_trans)
         else:
             raise ValueError(
                 "Target must be either an Axes, Figure or SubFigure instance."
@@ -2896,7 +2930,7 @@ class SmartFigure:
                 plt.style.use("default")
             else:
                 plt.style.use(resolved(self._figure_style))
-            plt.rcParams.update(self._user_rc_dict)
+            plt.rcParams.update(cast(Any, self._user_rc_dict))
         else:
             params = self._default_params["rc_params"]
             try:
@@ -2908,7 +2942,7 @@ class SmartFigure:
 
     def set_rc_params(
         self,
-        rc_params_dict: dict[str, str | float] = {},
+        rc_params_dict: dict[str, Any] = {},
         reset: bool = False,
     ) -> Self:
         """
@@ -2919,7 +2953,7 @@ class SmartFigure:
 
         Parameters
         ----------
-        rc_params_dict : dict[str, str | float], optional
+        rc_params_dict : dict[str, Any], optional
             Dictionary of rc parameters to update.
             Defaults to empty dictionary.
         reset : bool, optional
@@ -3042,8 +3076,7 @@ class SmartFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        if color_cycle is not None:
-            color_cycle = plt.cycler(color=color_cycle)
+        prop_cycle = plt.cycler(color=color_cycle) if color_cycle is not None else None
 
         rc_params_dict = {
             "figure.facecolor": figure_face_color,
@@ -3051,7 +3084,7 @@ class SmartFigure:
             "axes.edgecolor": axes_edge_color,
             "axes.labelpad": axes_label_pad,
             "axes.linewidth": axes_line_width,
-            "axes.prop_cycle": color_cycle,
+            "axes.prop_cycle": prop_cycle,
             "legend.facecolor": legend_face_color,
             "legend.edgecolor": legend_edge_color,
             "legend.fontsize": legend_font_size,
@@ -3142,6 +3175,21 @@ class SmartFigure:
         Self
             For convenience, the same SmartFigure with the updated ticks.
         """
+        # Normalize iterable tick/label inputs to lists so their lengths can be compared
+        # and the values reused (a bare iterator would be exhausted after the first pass).
+        if x_ticks is not None:
+            x_ticks = list(x_ticks)
+        if y_ticks is not None:
+            y_ticks = list(y_ticks)
+        if minor_x_ticks is not None:
+            minor_x_ticks = list(minor_x_ticks)
+        if minor_y_ticks is not None:
+            minor_y_ticks = list(minor_y_ticks)
+        if x_tick_labels is not None and not callable(x_tick_labels):
+            x_tick_labels = list(x_tick_labels)
+        if y_tick_labels is not None and not callable(y_tick_labels):
+            y_tick_labels = list(y_tick_labels)
+
         # Check if tick labels are provided without ticks or spacing
         x_has_spacing = x_tick_spacing is not None
         y_has_spacing = y_tick_spacing is not None
@@ -3221,7 +3269,7 @@ class SmartFigure:
     def set_tick_params(
         self,
         axis: Literal["x", "y", "both"] | None = "both",
-        which: Literal["major", "minor", "both"] | None = "major",
+        which: Literal["major", "minor", "both"] = "major",
         reset: bool = False,
         direction: Literal["in", "out", "inout"] | None = None,
         length: float | None = None,
@@ -3995,7 +4043,7 @@ class SmartFigureWCS(SmartFigure):
         Customizes the ticks of the specified Axes according to the SmartFigure's tick parameters. This method is useful
         for inheritance to allow each SmartFigure class to customize the ticks their way.
         """
-        x_axis, y_axis = ax.coords
+        x_axis, y_axis = cast(Any, ax).coords
         x_axis.set_auto_axislabel(False)
         y_axis.set_auto_axislabel(False)
 
@@ -4092,7 +4140,9 @@ class SmartFigureWCS(SmartFigure):
             y_axis.set_ticks_visible(False)
             y_axis.set_ticklabel_visible(False)
 
-    def set_ticks(
+    # WCSAxes uses Astropy Quantity ticks and WCS-specific tick controls, so this
+    # intentionally is not a behavioral substitute for SmartFigure.set_ticks.
+    def set_ticks(  # ty: ignore[invalid-method-override]
         self,
         reset: bool = False,
         x_ticks: list[Quantity] | None = None,
@@ -4159,13 +4209,16 @@ class SmartFigureWCS(SmartFigure):
         Self
             For convenience, the same SmartFigure with the updated ticks.
         """
-        super().set_ticks(
-            reset=reset,
-            x_ticks=x_ticks,
-            y_ticks=y_ticks,
-            x_tick_spacing=x_tick_spacing,
-            y_tick_spacing=y_tick_spacing,
-        )
+        if any(
+            [
+                (x_ticks is not None) and (x_tick_spacing is not None),
+                (y_ticks is not None) and (y_tick_spacing is not None),
+            ]
+        ):
+            raise GraphingException(
+                "Tick spacing and tick positions cannot be set simultaneously."
+            )
+
         if any(
             [
                 (x_ticks is not None) and (number_of_x_ticks is not None),
@@ -4186,7 +4239,14 @@ class SmartFigureWCS(SmartFigure):
                 "Number of ticks and tick spacing cannot be set simultaneously."
             )
 
+        if reset:
+            self._ticks.clear()
+
         params = [
+            "x_ticks",
+            "y_ticks",
+            "x_tick_spacing",
+            "y_tick_spacing",
             "number_of_x_ticks",
             "number_of_y_ticks",
             "x_tick_formatter",
@@ -4201,7 +4261,9 @@ class SmartFigureWCS(SmartFigure):
 
         return self
 
-    def set_tick_params(
+    # WCSAxes cannot express SmartFigure's major/minor split; minor tick length
+    # is the only independent minor-tick control exposed by Astropy.
+    def set_tick_params(  # ty: ignore[invalid-method-override]
         self,
         axis: Literal["x", "y", "both"] | None = "both",
         reset: bool = False,
@@ -4321,7 +4383,9 @@ class SmartFigureWCS(SmartFigure):
                 self._tick_params[f"{axis_i} minor"]["length"] = minor_length
         return self
 
-    def set_grid(
+    # WCSAxes grids only support major grid lines, so SmartFigure's which_x /
+    # which_y controls are intentionally absent from this API.
+    def set_grid(  # ty: ignore[invalid-method-override]
         self,
         visible_x: bool = True,
         visible_y: bool = True,
@@ -4436,14 +4500,16 @@ class SmartTwinAxis:
         self.elements = elements
 
         self._ticks = {}
-        self._tick_params = {"major": {}, "minor": {}}
+        self._tick_params: dict[str, dict[str, Any]] = {"major": {}, "minor": {}}
 
         self._edge_color = None
         self._line_width = None
         self._hide_spine = None
-        self._user_rc_dict = {}
+        self._user_rc_dict: dict[str, Any] = {}
         self._default_params = {}
-        self._axes = None  # used for keeping a reference to the Axes which enables drawing the legend on top
+        self._axes: Axes | None = (
+            None  # used for keeping a reference to the Axes which enables drawing the legend on top
+        )
 
     @property
     def label(self) -> str | None:
@@ -4727,34 +4793,34 @@ class SmartTwinAxis:
         """
         Customizes the ticks of the specified Axes according to the SmartTwinAxis's tick parameters.
         """
+        axes = self._axes
+        assert axes is not None
         if is_y:
             ax_set_ticks, axis_str, ax_axis = (
-                self._axes.set_yticks,
+                axes.set_yticks,
                 "y",
-                self._axes.yaxis,
+                axes.yaxis,
             )
         else:
             ax_set_ticks, axis_str, ax_axis = (
-                self._axes.set_xticks,
+                axes.set_xticks,
                 "x",
-                self._axes.xaxis,
+                axes.xaxis,
             )
 
-        if self._ticks.get("ticks") is not None:
+        ticks = self._ticks.get("ticks")
+        if ticks is not None:
             tick_labels = self._ticks.get("tick_labels")
             if callable(tick_labels):
                 # Apply the callable to each tick
-                tick_labels = [tick_labels(tick) for tick in self._ticks.get("ticks")]
-            ax_set_ticks(self._ticks.get("ticks"), tick_labels)
+                tick_labels = [tick_labels(tick) for tick in ticks]
+            ax_set_ticks(ticks, tick_labels)
 
-        self._axes.tick_params(
-            axis=axis_str, which="major", **self._tick_params["major"]
-        )
+        axes.tick_params(axis=axis_str, which="major", **self._tick_params["major"])
 
-        if self._ticks.get("tick_spacing") is not None:
-            ax_axis.set_major_locator(
-                ticker.MultipleLocator(self._ticks.get("tick_spacing"))
-            )
+        tick_spacing = self._ticks.get("tick_spacing")
+        if tick_spacing is not None:
+            ax_axis.set_major_locator(ticker.MultipleLocator(tick_spacing))
             # If a callable is provided for tick_labels, apply it with a FuncFormatter
             tick_labels = self._ticks.get("tick_labels")
             if callable(tick_labels):
@@ -4762,19 +4828,17 @@ class SmartTwinAxis:
                     ticker.FuncFormatter(lambda pos, x: tick_labels(pos))
                 )
 
-        if self._ticks.get("minor_ticks") is not None:
-            ax_set_ticks(self._ticks.get("minor_ticks"), minor=True)
-        self._axes.tick_params(
-            axis=axis_str, which="minor", **self._tick_params["minor"]
-        )
-        if self._ticks.get("minor_tick_spacing") is not None:
-            ax_axis.set_minor_locator(
-                ticker.MultipleLocator(self._ticks.get("minor_tick_spacing"))
-            )
+        minor_ticks = self._ticks.get("minor_ticks")
+        if minor_ticks is not None:
+            ax_set_ticks(minor_ticks, minor=True)
+        axes.tick_params(axis=axis_str, which="minor", **self._tick_params["minor"])
+        minor_tick_spacing = self._ticks.get("minor_tick_spacing")
+        if minor_tick_spacing is not None:
+            ax_axis.set_minor_locator(ticker.MultipleLocator(minor_tick_spacing))
 
         # Remove ticks
         if self._remove_ticks:
-            self._axes.tick_params(
+            axes.tick_params(
                 axis_str,
                 which="both",
                 labelbottom=False,
@@ -4825,7 +4889,7 @@ class SmartTwinAxis:
         return params_to_reset
 
     def _reset_params_to_default(
-        self, element: Plottable, params_to_reset: list[str]
+        self, element: Plottable | SmartTwinAxis, params_to_reset: list[str]
     ) -> None:
         """
         Resets the parameters that were set to default in the :meth:`~graphinglib.SmartTwinAxis._fill_in_missing_params`
@@ -4836,7 +4900,7 @@ class SmartTwinAxis:
 
     def set_rc_params(
         self,
-        rc_params_dict: dict[str, str | float] = {},
+        rc_params_dict: dict[str, Any] = {},
         reset: bool = False,
     ) -> Self:
         """
@@ -4847,7 +4911,7 @@ class SmartTwinAxis:
 
         Parameters
         ----------
-        rc_params_dict : dict[str, str | float], optional
+        rc_params_dict : dict[str, Any], optional
             Dictionary of rc parameters to update.
             Defaults to empty dictionary.
         reset : bool, optional
@@ -4999,6 +5063,15 @@ class SmartTwinAxis:
         Self
             For convenience, the same SmartTwinAxis with the updated ticks.
         """
+        # Normalize iterable tick/label inputs to lists so their lengths can be compared
+        # and the values reused (a bare iterator would be exhausted after the first pass).
+        if ticks is not None:
+            ticks = list(ticks)
+        if minor_ticks is not None:
+            minor_ticks = list(minor_ticks)
+        if tick_labels is not None and not callable(tick_labels):
+            tick_labels = list(tick_labels)
+
         # Check if tick labels are provided without ticks or spacing
         has_spacing = tick_spacing is not None
         is_callable = callable(tick_labels)
@@ -5048,7 +5121,7 @@ class SmartTwinAxis:
 
     def set_tick_params(
         self,
-        which: Literal["major", "minor", "both"] | None = "major",
+        which: Literal["major", "minor", "both"] = "major",
         reset: bool = False,
         direction: Literal["in", "out", "inout"] | None = None,
         length: float | None = None,
