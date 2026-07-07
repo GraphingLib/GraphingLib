@@ -687,8 +687,9 @@ class Heatmap(Plottable2D):
                 zorder=z_order,
                 **params,
             )
-        fig = axes.get_figure()
         if resolve_or(self._show_color_bar, True):
+            fig = axes.get_figure()
+            assert fig is not None
             fig.colorbar(image, ax=axes, **self._color_bar_params)
 
 
@@ -1323,6 +1324,7 @@ class Contour(Plottable2D):
             )
         if resolve_or(self._show_color_bar, True):
             fig = axes.get_figure()
+            assert fig is not None
             fig.colorbar(cont, ax=axes, **self._color_bar_params)
 
 

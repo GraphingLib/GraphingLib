@@ -813,8 +813,7 @@ class MultiFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        if color_cycle is not None:
-            color_cycle = plt.cycler(color=color_cycle)
+        prop_cycle = plt.cycler(color=color_cycle) if color_cycle is not None else None
 
         rc_params_dict = {
             "figure.facecolor": figure_face_color,
@@ -822,7 +821,7 @@ class MultiFigure:
             "axes.edgecolor": axes_edge_color,
             "axes.labelcolor": axes_label_color,
             "axes.linewidth": axes_line_width,
-            "axes.prop_cycle": color_cycle,
+            "axes.prop_cycle": prop_cycle,
             "xtick.color": x_tick_color,
             "ytick.color": y_tick_color,
             "legend.facecolor": legend_face_color,

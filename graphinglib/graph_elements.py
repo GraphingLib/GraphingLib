@@ -1091,7 +1091,7 @@ class Text(Plottable):
     _highlight_color: Optional[str] = None
     _highlight_alpha: float = 1.0
     _highlight_padding: float = 0.1
-    _arrow_pointing_to: Optional[tuple[float]] = field(default=None, init=False)
+    _arrow_pointing_to: Optional[tuple[float, float]] = field(default=None, init=False)
 
     def __init__(
         self,
@@ -1269,11 +1269,13 @@ class Text(Plottable):
         self._highlight_padding = highlight_padding
 
     @property
-    def arrow_pointing_to(self) -> Optional[tuple[float]]:
+    def arrow_pointing_to(self) -> Optional[tuple[float, float]]:
         return self._arrow_pointing_to
 
     @arrow_pointing_to.setter
-    def arrow_pointing_to(self, arrow_pointing_to: Optional[tuple[float]]) -> None:
+    def arrow_pointing_to(
+        self, arrow_pointing_to: Optional[tuple[float, float]]
+    ) -> None:
         self._arrow_pointing_to = arrow_pointing_to
 
     def copy(self) -> Self:

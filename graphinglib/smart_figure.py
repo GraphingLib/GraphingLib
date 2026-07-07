@@ -7,7 +7,18 @@ from copy import deepcopy
 from logging import warning
 from shutil import which
 from string import ascii_lowercase
-from typing import Any, Callable, Iterable, Iterator, Literal, Self, TypeVar, Union
+from collections.abc import Sequence
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    Iterator,
+    Literal,
+    Self,
+    TypeVar,
+    Union,
+    cast,
+)
 
 try:  # Optional dependency: astropy
     from astropy.units import Quantity
@@ -25,6 +36,7 @@ from matplotlib.axes import Axes
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure, SubFigure
+from matplotlib.gridspec import GridSpec
 from matplotlib.layout_engine import ConstrainedLayoutEngine
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
@@ -342,11 +354,11 @@ class SmartFigure:
         self.elements = elements
         self.annotations = annotations
 
-        self._figure = None
-        self._gridspec = None
-        self._reference_label_i = None
+        self._figure: Figure | SubFigure | None = None
+        self._gridspec: GridSpec | None = None
+        self._reference_label_i: int | None = None
 
-        self._ticks = {}
+        self._ticks: dict[str, Any] = {}
         self._tick_params = {"x major": {}, "y major": {}, "x minor": {}, "y minor": {}}
         self._pad_params = {}
         self._reference_labels_params = {}
@@ -365,7 +377,9 @@ class SmartFigure:
         self._hidden_spines = None
         self._user_rc_dict = {}
         self._default_params = {}
-        self._subplot_p = {}  # used to store the ListOrItem parameters that can be different for each subplot
+        self._subplot_p: dict[
+            str, list[Any]
+        ] = {}  # used to store the ListOrItem parameters that can be different for each subplot
 
     @property
     def num_rows(self) -> int:
@@ -722,9 +736,10 @@ class SmartFigure:
         if value is not None:
             if not hasattr(value, "__len__"):
                 raise TypeError("width_ratios must be an ArrayLike.")
-            if not all(isinstance(x, (float, int)) for x in value):
+            ratios = cast(Sequence[float], value)
+            if not all(isinstance(x, (float, int)) for x in ratios):
                 raise TypeError("width_ratios must contain only numbers.")
-            if len(value) != self._num_cols:
+            if len(ratios) != self._num_cols:
                 raise ValueError("width_ratios must have the same length as num_cols.")
         self._width_ratios = value
 
@@ -737,9 +752,10 @@ class SmartFigure:
         if value is not None:
             if not hasattr(value, "__len__"):
                 raise TypeError("height_ratios must be an ArrayLike.")
-            if not all(isinstance(x, (float, int)) for x in value):
+            ratios = cast(Sequence[float], value)
+            if not all(isinstance(x, (float, int)) for x in ratios):
                 raise TypeError("height_ratios must contain only numbers.")
-            if len(value) != self._num_rows:
+            if len(ratios) != self._num_rows:
                 raise ValueError("height_ratios must have the same length as num_rows.")
         self._height_ratios = value
 
@@ -1803,6 +1819,7 @@ class SmartFigure:
             The same SmartFigure instance, allowing for method chaining.
         """
         self._initialize_parent_smart_figure()
+        assert self._figure is not None and self._gridspec is not None
 
         # Create an artificial axis to add padding around the figure
         # This is needed because the figure is created with h_pad=0 and w_pad=0 creating 0 padding
@@ -1838,7 +1855,9 @@ class SmartFigure:
             )
 
         if fullscreen:
-            plt.get_current_fig_manager().full_screen_toggle()
+            fig_manager = plt.get_current_fig_manager()
+            assert fig_manager is not None
+            fig_manager.full_screen_toggle()
 
         plt.show()
         if not any(
@@ -2049,7 +2068,9 @@ class SmartFigure:
         num_cycle_colors = len(cycle_colors)
         subtitles_pad = self._subplot_p["subtitles_pad"]
 
-        self._gridspec = self._figure.add_gridspec(
+        figure = self._figure
+        assert figure is not None
+        gridspec = figure.add_gridspec(
             self._num_rows,
             self._num_cols,
             wspace=self._width_padding,
@@ -2057,10 +2078,11 @@ class SmartFigure:
             width_ratios=self._width_ratios,
             height_ratios=self._height_ratios,
         )
+        self._gridspec = gridspec
 
         if self._global_reference_label:
             self._create_reference_label(self._figure)
-            self._figure.suptitle(" ")  # Create a blank title to reserve space
+            figure.suptitle(" ")  # Create a blank title to reserve space
 
         ax = None  # keep track of the last plt.Axes object, needed for sharing axes
         default_labels, default_handles = [], []
@@ -2101,7 +2123,7 @@ class SmartFigure:
                     if param_is_none and sub_param is not None:
                         setattr(element, attr, sub_param)
 
-                subfig = self._figure.add_subfigure(self._gridspec[rows, cols])
+                subfig = figure.add_subfigure(gridspec[rows, cols])
                 element._figure = subfig  # associates the current subfigure with the nested SmartFigure
                 element._reference_label_i = self._reference_label_i
                 legend_info = element._prepare_figure(
@@ -2131,7 +2153,7 @@ class SmartFigure:
 
             elif isinstance(element, (Plottable, list)):
                 current_elements = element if isinstance(element, list) else [element]
-                subfig = self._figure.add_subfigure(self._gridspec[rows, cols])
+                subfig = figure.add_subfigure(gridspec[rows, cols])
                 ax = subfig.add_subplot(
                     sharex=ax
                     if self._share_x
@@ -2323,6 +2345,7 @@ class SmartFigure:
                             legend_ax = self._twin_x_axis._axes
                         else:
                             legend_ax = ax
+                        assert legend_ax is not None
                         try:
                             _legend = legend_ax.legend(
                                 draggable=True,
@@ -2342,7 +2365,7 @@ class SmartFigure:
                 )
 
         # Set a general axis for adding general labels/title and controlling padding
-        general_ax = self._figure.add_subplot(self._gridspec[:, :], frameon=False)
+        general_ax = figure.add_subplot(gridspec[:, :], frameon=False)
         general_ax.grid(False)
         general_ax.set_facecolor((0, 0, 0, 0))
         general_ax.set_zorder(-1)
@@ -2398,12 +2421,12 @@ class SmartFigure:
             if labels and self._show_legend:
                 legend_params = self._get_legend_params(labels, handles, 0)
                 try:
-                    _legend = self._figure.legend(
+                    _legend = figure.legend(
                         **legend_params,
                         draggable=True,
                     )
                 except Exception:
-                    _legend = self._figure.legend(
+                    _legend = figure.legend(
                         **legend_params,
                     )
                 _legend.set_zorder(10000)
@@ -2419,7 +2442,7 @@ class SmartFigure:
         self._subplot_p = {}  # clear the ListOrItem subplot parameters to free memory
         return legend_info
 
-    def _fill_per_subplot_params(self) -> dict[str, Any]:
+    def _fill_per_subplot_params(self) -> None:
         """
         Fills the _subplot_p dictionary with parameters that can be broadcasted to all subplots in the
         :class:`~graphinglib.SmartFigure`. If a parameter is given as a single value, it is broadcasted to all
@@ -2430,7 +2453,7 @@ class SmartFigure:
         blank_figure = (
             SmartFigure()
         )  # create a blank SmartFigure to get the default parameter values
-        subplot_p = {
+        defaults: dict[str, Any] = {
             "x_lim": blank_figure._x_lim,
             "y_lim": blank_figure._y_lim,
             "log_scale_x": blank_figure._log_scale_x,
@@ -2458,7 +2481,8 @@ class SmartFigure:
             "subtitles_pad": None,
         }
 
-        for param, default_value in subplot_p.items():
+        subplot_p: dict[str, list[Any]] = {}
+        for param, default_value in defaults.items():
             if param[-3:] == "pad":
                 value = self._pad_params.get(param)
             else:
@@ -2583,19 +2607,19 @@ class SmartFigure:
         for inheritance to allow each SmartFigure class to customize the ticks their way.
         """
         # Handle x-axis ticks
-        if self._ticks.get("x_ticks") is not None:
+        x_ticks = self._ticks.get("x_ticks")
+        if x_ticks is not None:
             x_labels = self._ticks.get("x_tick_labels")
             if callable(x_labels):
                 # Apply the callable to each tick
-                x_labels = [x_labels(tick) for tick in self._ticks.get("x_ticks")]
-            ax.set_xticks(self._ticks.get("x_ticks"), x_labels)
+                x_labels = [x_labels(tick) for tick in x_ticks]
+            ax.set_xticks(x_ticks, x_labels)
 
         ax.tick_params(axis="x", which="major", **self._tick_params["x major"])
 
-        if self._ticks.get("x_tick_spacing") is not None:
-            ax.xaxis.set_major_locator(
-                ticker.MultipleLocator(self._ticks.get("x_tick_spacing"))
-            )
+        x_tick_spacing = self._ticks.get("x_tick_spacing")
+        if x_tick_spacing is not None:
+            ax.xaxis.set_major_locator(ticker.MultipleLocator(x_tick_spacing))
             # If a callable is provided for x_tick_labels, apply it with a FuncFormatter
             x_labels = self._ticks.get("x_tick_labels")
             if callable(x_labels):
@@ -2604,19 +2628,19 @@ class SmartFigure:
                 )
 
         # Handle y-axis ticks
-        if self._ticks.get("y_ticks") is not None:
+        y_ticks = self._ticks.get("y_ticks")
+        if y_ticks is not None:
             y_labels = self._ticks.get("y_tick_labels")
             if callable(y_labels):
                 # Apply the callable to each tick
-                y_labels = [y_labels(tick) for tick in self._ticks.get("y_ticks")]
-            ax.set_yticks(self._ticks.get("y_ticks"), y_labels)
+                y_labels = [y_labels(tick) for tick in y_ticks]
+            ax.set_yticks(y_ticks, y_labels)
 
         ax.tick_params(axis="y", which="major", **self._tick_params["y major"])
 
-        if self._ticks.get("y_tick_spacing") is not None:
-            ax.yaxis.set_major_locator(
-                ticker.MultipleLocator(self._ticks.get("y_tick_spacing"))
-            )
+        y_tick_spacing = self._ticks.get("y_tick_spacing")
+        if y_tick_spacing is not None:
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(y_tick_spacing))
             # If a callable is provided for y_tick_labels, apply it with a FuncFormatter
             y_labels = self._ticks.get("y_tick_labels")
             if callable(y_labels):
@@ -2624,21 +2648,21 @@ class SmartFigure:
                     ticker.FuncFormatter(lambda y, pos: y_labels(y))
                 )
 
-        if self._ticks.get("minor_x_ticks") is not None:
-            ax.set_xticks(self._ticks.get("minor_x_ticks"), minor=True)
+        minor_x_ticks = self._ticks.get("minor_x_ticks")
+        if minor_x_ticks is not None:
+            ax.set_xticks(minor_x_ticks, minor=True)
         ax.tick_params(axis="x", which="minor", **self._tick_params["x minor"])
-        if self._ticks.get("minor_x_tick_spacing") is not None:
-            ax.xaxis.set_minor_locator(
-                ticker.MultipleLocator(self._ticks.get("minor_x_tick_spacing"))
-            )
+        minor_x_tick_spacing = self._ticks.get("minor_x_tick_spacing")
+        if minor_x_tick_spacing is not None:
+            ax.xaxis.set_minor_locator(ticker.MultipleLocator(minor_x_tick_spacing))
 
-        if self._ticks.get("minor_y_ticks") is not None:
-            ax.set_yticks(self._ticks.get("minor_y_ticks"), minor=True)
+        minor_y_ticks = self._ticks.get("minor_y_ticks")
+        if minor_y_ticks is not None:
+            ax.set_yticks(minor_y_ticks, minor=True)
         ax.tick_params(axis="y", which="minor", **self._tick_params["y minor"])
-        if self._ticks.get("minor_y_tick_spacing") is not None:
-            ax.yaxis.set_minor_locator(
-                ticker.MultipleLocator(self._ticks.get("minor_y_tick_spacing"))
-            )
+        minor_y_tick_spacing = self._ticks.get("minor_y_tick_spacing")
+        if minor_y_tick_spacing is not None:
+            ax.yaxis.set_minor_locator(ticker.MultipleLocator(minor_y_tick_spacing))
 
         # Remove ticks
         if self._subplot_p["remove_x_ticks"][subplot_i]:
@@ -2709,6 +2733,7 @@ class SmartFigure:
         else:
             raise ValueError("Target must be either Axes, Figure or SubFigure.")
 
+        assert self._reference_label_i is not None
         letter = ascii_lowercase[self._reference_label_i]
         formatted_letter = self._reference_labels_params.get(
             "format", lambda le: f"{le})"
@@ -2734,26 +2759,25 @@ class SmartFigure:
         Gives the translation to apply to the reference label to position it correctly relative to an Axes, Figure or
         SubFigure. The translation varies depending on the location of the reference label.
         """
+        figure = self._figure
+        assert figure is not None
         if isinstance(target, Axes):
+            assert subplot_i is not None
             reflabel_loc = self._subplot_p["reference_labels_loc"][subplot_i]
             if isinstance(reflabel_loc, tuple):
                 x_offset, y_offset = reflabel_loc
-                return ScaledTranslation(
-                    x_offset, y_offset, self._figure.dpi_scale_trans
-                )
+                return ScaledTranslation(x_offset, y_offset, figure.dpi_scale_trans)
             elif reflabel_loc == "outside":
-                return ScaledTranslation(-5 / 72, 10 / 72, self._figure.dpi_scale_trans)
+                return ScaledTranslation(-5 / 72, 10 / 72, figure.dpi_scale_trans)
             elif reflabel_loc == "inside":
-                return ScaledTranslation(
-                    10 / 72, -15 / 72, self._figure.dpi_scale_trans
-                )
+                return ScaledTranslation(10 / 72, -15 / 72, figure.dpi_scale_trans)
             else:
                 raise ValueError(
                     "Invalid reference label location. Please specify either 'inside' or 'outside'."
                 )
 
         elif isinstance(target, (Figure, SubFigure)):
-            return ScaledTranslation(7 / 72, -10 / 72, self._figure.dpi_scale_trans)
+            return ScaledTranslation(7 / 72, -10 / 72, figure.dpi_scale_trans)
         else:
             raise ValueError(
                 "Target must be either an Axes, Figure or SubFigure instance."
@@ -3042,8 +3066,7 @@ class SmartFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        if color_cycle is not None:
-            color_cycle = plt.cycler(color=color_cycle)
+        prop_cycle = plt.cycler(color=color_cycle) if color_cycle is not None else None
 
         rc_params_dict = {
             "figure.facecolor": figure_face_color,
@@ -3051,7 +3074,7 @@ class SmartFigure:
             "axes.edgecolor": axes_edge_color,
             "axes.labelpad": axes_label_pad,
             "axes.linewidth": axes_line_width,
-            "axes.prop_cycle": color_cycle,
+            "axes.prop_cycle": prop_cycle,
             "legend.facecolor": legend_face_color,
             "legend.edgecolor": legend_edge_color,
             "legend.fontsize": legend_font_size,
@@ -3142,6 +3165,21 @@ class SmartFigure:
         Self
             For convenience, the same SmartFigure with the updated ticks.
         """
+        # Normalize iterable tick/label inputs to lists so their lengths can be compared
+        # and the values reused (a bare iterator would be exhausted after the first pass).
+        if x_ticks is not None:
+            x_ticks = list(x_ticks)
+        if y_ticks is not None:
+            y_ticks = list(y_ticks)
+        if minor_x_ticks is not None:
+            minor_x_ticks = list(minor_x_ticks)
+        if minor_y_ticks is not None:
+            minor_y_ticks = list(minor_y_ticks)
+        if x_tick_labels is not None and not callable(x_tick_labels):
+            x_tick_labels = list(x_tick_labels)
+        if y_tick_labels is not None and not callable(y_tick_labels):
+            y_tick_labels = list(y_tick_labels)
+
         # Check if tick labels are provided without ticks or spacing
         x_has_spacing = x_tick_spacing is not None
         y_has_spacing = y_tick_spacing is not None
@@ -3221,7 +3259,7 @@ class SmartFigure:
     def set_tick_params(
         self,
         axis: Literal["x", "y", "both"] | None = "both",
-        which: Literal["major", "minor", "both"] | None = "major",
+        which: Literal["major", "minor", "both"] = "major",
         reset: bool = False,
         direction: Literal["in", "out", "inout"] | None = None,
         length: float | None = None,
@@ -4443,7 +4481,9 @@ class SmartTwinAxis:
         self._hide_spine = None
         self._user_rc_dict = {}
         self._default_params = {}
-        self._axes = None  # used for keeping a reference to the Axes which enables drawing the legend on top
+        self._axes: Axes | None = (
+            None  # used for keeping a reference to the Axes which enables drawing the legend on top
+        )
 
     @property
     def label(self) -> str | None:
@@ -4727,34 +4767,34 @@ class SmartTwinAxis:
         """
         Customizes the ticks of the specified Axes according to the SmartTwinAxis's tick parameters.
         """
+        axes = self._axes
+        assert axes is not None
         if is_y:
             ax_set_ticks, axis_str, ax_axis = (
-                self._axes.set_yticks,
+                axes.set_yticks,
                 "y",
-                self._axes.yaxis,
+                axes.yaxis,
             )
         else:
             ax_set_ticks, axis_str, ax_axis = (
-                self._axes.set_xticks,
+                axes.set_xticks,
                 "x",
-                self._axes.xaxis,
+                axes.xaxis,
             )
 
-        if self._ticks.get("ticks") is not None:
+        ticks = self._ticks.get("ticks")
+        if ticks is not None:
             tick_labels = self._ticks.get("tick_labels")
             if callable(tick_labels):
                 # Apply the callable to each tick
-                tick_labels = [tick_labels(tick) for tick in self._ticks.get("ticks")]
-            ax_set_ticks(self._ticks.get("ticks"), tick_labels)
+                tick_labels = [tick_labels(tick) for tick in ticks]
+            ax_set_ticks(ticks, tick_labels)
 
-        self._axes.tick_params(
-            axis=axis_str, which="major", **self._tick_params["major"]
-        )
+        axes.tick_params(axis=axis_str, which="major", **self._tick_params["major"])
 
-        if self._ticks.get("tick_spacing") is not None:
-            ax_axis.set_major_locator(
-                ticker.MultipleLocator(self._ticks.get("tick_spacing"))
-            )
+        tick_spacing = self._ticks.get("tick_spacing")
+        if tick_spacing is not None:
+            ax_axis.set_major_locator(ticker.MultipleLocator(tick_spacing))
             # If a callable is provided for tick_labels, apply it with a FuncFormatter
             tick_labels = self._ticks.get("tick_labels")
             if callable(tick_labels):
@@ -4762,19 +4802,17 @@ class SmartTwinAxis:
                     ticker.FuncFormatter(lambda pos, x: tick_labels(pos))
                 )
 
-        if self._ticks.get("minor_ticks") is not None:
-            ax_set_ticks(self._ticks.get("minor_ticks"), minor=True)
-        self._axes.tick_params(
-            axis=axis_str, which="minor", **self._tick_params["minor"]
-        )
-        if self._ticks.get("minor_tick_spacing") is not None:
-            ax_axis.set_minor_locator(
-                ticker.MultipleLocator(self._ticks.get("minor_tick_spacing"))
-            )
+        minor_ticks = self._ticks.get("minor_ticks")
+        if minor_ticks is not None:
+            ax_set_ticks(minor_ticks, minor=True)
+        axes.tick_params(axis=axis_str, which="minor", **self._tick_params["minor"])
+        minor_tick_spacing = self._ticks.get("minor_tick_spacing")
+        if minor_tick_spacing is not None:
+            ax_axis.set_minor_locator(ticker.MultipleLocator(minor_tick_spacing))
 
         # Remove ticks
         if self._remove_ticks:
-            self._axes.tick_params(
+            axes.tick_params(
                 axis_str,
                 which="both",
                 labelbottom=False,
@@ -4999,6 +5037,15 @@ class SmartTwinAxis:
         Self
             For convenience, the same SmartTwinAxis with the updated ticks.
         """
+        # Normalize iterable tick/label inputs to lists so their lengths can be compared
+        # and the values reused (a bare iterator would be exhausted after the first pass).
+        if ticks is not None:
+            ticks = list(ticks)
+        if minor_ticks is not None:
+            minor_ticks = list(minor_ticks)
+        if tick_labels is not None and not callable(tick_labels):
+            tick_labels = list(tick_labels)
+
         # Check if tick labels are provided without ticks or spacing
         has_spacing = tick_spacing is not None
         is_callable = callable(tick_labels)
@@ -5048,7 +5095,7 @@ class SmartTwinAxis:
 
     def set_tick_params(
         self,
-        which: Literal["major", "minor", "both"] | None = "major",
+        which: Literal["major", "minor", "both"] = "major",
         reset: bool = False,
         direction: Literal["in", "out", "inout"] | None = None,
         length: float | None = None,

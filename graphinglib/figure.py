@@ -683,8 +683,7 @@ class Figure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        if color_cycle is not None:
-            color_cycle = plt.cycler(color=color_cycle)
+        prop_cycle = plt.cycler(color=color_cycle) if color_cycle is not None else None
 
         rc_params_dict = {
             "figure.facecolor": figure_face_color,
@@ -692,7 +691,7 @@ class Figure:
             "axes.edgecolor": axes_edge_color,
             "axes.labelcolor": axes_label_color,
             "axes.linewidth": axes_line_width,
-            "axes.prop_cycle": color_cycle,
+            "axes.prop_cycle": prop_cycle,
             "xtick.color": x_tick_color,
             "ytick.color": y_tick_color,
             "legend.facecolor": legend_face_color,
@@ -1161,12 +1160,14 @@ class TwinAxis:
             "_cap_thickness": "_line_width",
             "_fill_under_color": "_color",
         }
+        default_params = self._default_params
+        assert default_params is not None
         while tries < 2:
             try:
                 for property, value in vars(element).items():
                     if is_inherit(value):
                         params_to_reset.append(property)
-                        default_value = self._default_params[object_type][property]
+                        default_value = default_params[object_type][property]
                         if default_value == "same as curve":
                             setattr(
                                 element,
@@ -1187,7 +1188,7 @@ class TwinAxis:
                 file_updater = FileUpdater(resolved(self._figure_style))
                 file_updater.update()
                 file_loader = FileLoader(resolved(self._figure_style))
-                self._default_params = file_loader.load()
+                default_params = self._default_params = file_loader.load()
         return params_to_reset
 
     def _reset_params_to_default(
