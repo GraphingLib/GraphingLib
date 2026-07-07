@@ -4,7 +4,7 @@ from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inh
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any, Literal, Optional, Protocol, Sequence, runtime_checkable
+from typing import Any, Literal, Optional, Protocol, Sequence, cast, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -144,12 +144,12 @@ class Hlines(Plottable):
         alpha: float | Inherit = INHERIT,
     ) -> None:
         self._in_init = True
-        self._y = None
-        self._x_min = None
-        self._x_max = None
-        self._colors = INHERIT
-        self._line_widths = INHERIT
-        self._line_styles = INHERIT
+        self._y: int | float | np.ndarray | None = None
+        self._x_min: int | float | np.ndarray | None = None
+        self._x_max: int | float | np.ndarray | None = None
+        self._colors: Styled[list[str] | str] = INHERIT
+        self._line_widths: Styled[list[float] | float] = INHERIT
+        self._line_styles: Styled[list[str] | str] = INHERIT
         self.y = y
         self.x_min = x_min
         self.x_max = x_max
@@ -207,41 +207,42 @@ class Hlines(Plottable):
                 )
 
     @property
-    def y(self) -> ArrayLike:
+    def y(self) -> int | float | np.ndarray:
+        assert self._y is not None
         return self._y
 
     @y.setter
     def y(self, y: ArrayLike) -> None:
-        if isinstance(y, (list, np.ndarray)):
-            self._y = np.asarray(y)
-        else:
+        if isinstance(y, (int, float)):
             self._y = y
+        else:
+            self._y = np.asarray(y)
         if not self._in_init:
             self._validate_state()
 
     @property
-    def x_min(self) -> ArrayLike | None:
+    def x_min(self) -> int | float | np.ndarray | None:
         return self._x_min
 
     @x_min.setter
     def x_min(self, x_min: Optional[ArrayLike]) -> None:
-        if isinstance(x_min, (list, np.ndarray)):
-            self._x_min = np.asarray(x_min)
-        else:
+        if x_min is None or isinstance(x_min, (int, float)):
             self._x_min = x_min
+        else:
+            self._x_min = np.asarray(x_min)
         if not self._in_init:
             self._validate_state()
 
     @property
-    def x_max(self) -> ArrayLike | None:
+    def x_max(self) -> int | float | np.ndarray | None:
         return self._x_max
 
     @x_max.setter
     def x_max(self, x_max: Optional[ArrayLike]) -> None:
-        if isinstance(x_max, (list, np.ndarray)):
-            self._x_max = np.asarray(x_max)
-        else:
+        if x_max is None or isinstance(x_max, (int, float)):
             self._x_max = x_max
+        else:
+            self._x_max = np.asarray(x_max)
         if not self._in_init:
             self._validate_state()
 
@@ -258,7 +259,7 @@ class Hlines(Plottable):
         return self._colors
 
     @colors.setter
-    def colors(self, colors: list[str] | str) -> None:
+    def colors(self, colors: Styled[list[str] | str]) -> None:
         self._colors = colors
         if not self._in_init:
             self._validate_state()
@@ -268,7 +269,7 @@ class Hlines(Plottable):
         return self._line_widths
 
     @line_widths.setter
-    def line_widths(self, line_widths: list[float] | float) -> None:
+    def line_widths(self, line_widths: Styled[list[float] | float]) -> None:
         self._line_widths = line_widths
         if not self._in_init:
             self._validate_state()
@@ -278,7 +279,7 @@ class Hlines(Plottable):
         return self._line_styles
 
     @line_styles.setter
-    def line_styles(self, line_styles: list[str] | str) -> None:
+    def line_styles(self, line_styles: Styled[list[str] | str]) -> None:
         self._line_styles = line_styles
         if not self._in_init:
             self._validate_state()
@@ -298,8 +299,12 @@ class Hlines(Plottable):
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if isinstance(self._y, (list, np.ndarray)) and len(self._y) > 1:
+        y = self._y
+        assert y is not None
+        if isinstance(y, np.ndarray) and len(y) > 1:
             if self._x_max is not None and self._x_min is not None:
+                x_min = self._x_min
+                x_max = self._x_max
                 params = {
                     "colors": self._colors,
                     "linestyles": self._line_styles,
@@ -308,9 +313,9 @@ class Hlines(Plottable):
                 }
                 params = strip_inherit(params)
                 axes.hlines(
-                    self._y,
-                    self._x_min,
-                    self._x_max,
+                    y,
+                    x_min,
+                    x_max,
                     zorder=z_order,
                     **params,
                 )
@@ -323,22 +328,25 @@ class Hlines(Plottable):
                     "alpha": self._alpha,
                 }
                 params = strip_inherit(params)
-                for i in range(len(self._y)):
+                for i in range(len(y)):
                     axes.axhline(
-                        self._y[i],
+                        float(cast(Any, y)[i]),
                         zorder=z_order,
                         **{
                             k: v if isinstance(v, (int, float, str)) else v[i]
                             for k, v in params.items()
                         },
-                    )
+                )
                 params.pop("linewidth")
             self.handle = LineCollection(
-                [[(0, 0)]] * (len(self._y) if len(self._y) <= 3 else 3),
+                [[(0, 0)]] * (len(y) if len(y) <= 3 else 3),
                 **params,
             )
         else:
+            y_scalar = float(cast(Any, y)[0]) if isinstance(y, np.ndarray) else y
             if self._x_max is not None and self._x_min is not None:
+                x_min = self._x_min
+                x_max = self._x_max
                 params = {
                     "colors": self._colors,
                     "linestyles": self._line_styles,
@@ -347,9 +355,9 @@ class Hlines(Plottable):
                 }
                 params = strip_inherit(params)
                 axes.hlines(
-                    self._y,
-                    self._x_min,
-                    self._x_max,
+                    y_scalar,
+                    x_min,
+                    x_max,
                     zorder=z_order,
                     **params,
                 )
@@ -362,13 +370,13 @@ class Hlines(Plottable):
                     "alpha": self._alpha,
                 }
                 params = strip_inherit(params)
-                axes.axhline(self._y, zorder=z_order, **params)
+                axes.axhline(y_scalar, zorder=z_order, **params)
                 params.pop("linewidth")
-            if isinstance(self._y, (int, float)):
+            if isinstance(y, (int, float)):
                 self.handle = LineCollection([[(0, 0)]] * 1, **params)
             else:
                 self.handle = LineCollection(
-                    [[(0, 0)]] * (len(self._y) if len(self._y) <= 3 else 3),
+                    [[(0, 0)]] * (len(y) if len(y) <= 3 else 3),
                     **params,
                 )
 
@@ -428,12 +436,12 @@ class Vlines(Plottable):
         alpha: float | Inherit = INHERIT,
     ) -> None:
         self._in_init = True
-        self._x = None
-        self._y_min = None
-        self._y_max = None
-        self._colors = INHERIT
-        self._line_styles = INHERIT
-        self._line_widths = INHERIT
+        self._x: int | float | np.ndarray | None = None
+        self._y_min: int | float | np.ndarray | None = None
+        self._y_max: int | float | np.ndarray | None = None
+        self._colors: Styled[list[str] | str] = INHERIT
+        self._line_styles: Styled[list[str] | str] = INHERIT
+        self._line_widths: Styled[list[float] | float] = INHERIT
         self.x = x
         self.y_min = y_min
         self.y_max = y_max
@@ -486,39 +494,40 @@ class Vlines(Plottable):
                 )
 
     @property
-    def x(self) -> ArrayLike:
+    def x(self) -> int | float | np.ndarray:
+        assert self._x is not None
         return self._x
 
     @x.setter
     def x(self, x: ArrayLike) -> None:
-        if isinstance(x, (list, np.ndarray)):
-            self._x = np.asarray(x)
-        else:
+        if isinstance(x, (int, float)):
             self._x = x
+        else:
+            self._x = np.asarray(x)
         if not self._in_init:
             self._validate_state()
 
     @property
-    def y_min(self) -> ArrayLike | None:
+    def y_min(self) -> int | float | np.ndarray | None:
         return self._y_min
 
     @y_min.setter
     def y_min(self, y_min: Optional[ArrayLike]) -> None:
-        if isinstance(y_min, (list, np.ndarray)):
-            self._y_min = np.asarray(y_min)
-        else:
+        if y_min is None or isinstance(y_min, (int, float)):
             self._y_min = y_min
+        else:
+            self._y_min = np.asarray(y_min)
 
     @property
-    def y_max(self) -> ArrayLike | None:
+    def y_max(self) -> int | float | np.ndarray | None:
         return self._y_max
 
     @y_max.setter
     def y_max(self, y_max: Optional[ArrayLike]) -> None:
-        if isinstance(y_max, (list, np.ndarray)):
-            self._y_max = np.asarray(y_max)
-        else:
+        if y_max is None or isinstance(y_max, (int, float)):
             self._y_max = y_max
+        else:
+            self._y_max = np.asarray(y_max)
 
     @property
     def label(self) -> Optional[str]:
@@ -533,7 +542,7 @@ class Vlines(Plottable):
         return self._colors
 
     @colors.setter
-    def colors(self, colors: list[str] | str) -> None:
+    def colors(self, colors: Styled[list[str] | str]) -> None:
         self._colors = colors
         if not self._in_init:
             self._validate_state()
@@ -543,7 +552,7 @@ class Vlines(Plottable):
         return self._line_widths
 
     @line_widths.setter
-    def line_widths(self, line_widths: list[float] | float) -> None:
+    def line_widths(self, line_widths: Styled[list[float] | float]) -> None:
         self._line_widths = line_widths
         if not self._in_init:
             self._validate_state()
@@ -553,7 +562,7 @@ class Vlines(Plottable):
         return self._line_styles
 
     @line_styles.setter
-    def line_styles(self, line_styles: list[str] | str) -> None:
+    def line_styles(self, line_styles: Styled[list[str] | str]) -> None:
         self._line_styles = line_styles
         if not self._in_init:
             self._validate_state()
@@ -577,8 +586,12 @@ class Vlines(Plottable):
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        if isinstance(self._x, (list, np.ndarray)) and len(self._x) > 1:
+        x = self._x
+        assert x is not None
+        if isinstance(x, np.ndarray) and len(x) > 1:
             if self._y_min is not None and self._y_max is not None:
+                y_min = self._y_min
+                y_max = self._y_max
                 params = {
                     "colors": self._colors,
                     "linestyles": self._line_styles,
@@ -587,9 +600,9 @@ class Vlines(Plottable):
                 }
                 params = strip_inherit(params)
                 axes.vlines(
-                    self._x,
-                    self._y_min,
-                    self._y_max,
+                    x,
+                    y_min,
+                    y_max,
                     zorder=z_order,
                     **params,
                 )
@@ -602,22 +615,25 @@ class Vlines(Plottable):
                     "alpha": self._alpha,
                 }
                 params = strip_inherit(params)
-                for i in range(len(self._x)):
+                for i in range(len(x)):
                     axes.axvline(
-                        self._x[i],
+                        float(cast(Any, x)[i]),
                         zorder=z_order,
                         **{
                             k: v if isinstance(v, (int, float, str)) else v[i]
                             for k, v in params.items()
                         },
-                    )
+                )
                 params.pop("linewidth")
             self.handle = VerticalLineCollection(
-                [[(0, 0)]] * (len(self._x) if len(self._x) <= 4 else 4),
+                [[(0, 0)]] * (len(x) if len(x) <= 4 else 4),
                 **params,
             )
         else:
+            x_scalar = float(cast(Any, x)[0]) if isinstance(x, np.ndarray) else x
             if self._y_min is not None and self._y_max is not None:
+                y_min = self._y_min
+                y_max = self._y_max
                 params = {
                     "colors": self._colors,
                     "linestyles": self._line_styles,
@@ -626,9 +642,9 @@ class Vlines(Plottable):
                 }
                 params = strip_inherit(params)
                 axes.vlines(
-                    self._x,
-                    self._y_min,
-                    self._y_max,
+                    x_scalar,
+                    y_min,
+                    y_max,
                     zorder=z_order,
                     **params,
                 )
@@ -641,13 +657,13 @@ class Vlines(Plottable):
                     "alpha": self._alpha,
                 }
                 params = strip_inherit(params)
-                axes.axvline(self._x, zorder=z_order, **params)
+                axes.axvline(x_scalar, zorder=z_order, **params)
                 params.pop("linewidth")
-            if isinstance(self._x, (int, float)):
+            if isinstance(x, (int, float)):
                 self.handle = VerticalLineCollection([[(0, 0)]] * 1, **params)
             else:
                 self.handle = VerticalLineCollection(
-                    [[(0, 0)]] * (len(self._x) if len(self._x) <= 4 else 4),
+                    [[(0, 0)]] * (len(x) if len(x) <= 4 else 4),
                     **params,
                 )
 
@@ -830,19 +846,19 @@ class Point(Plottable):
         self._label = label
 
     @property
-    def face_color(self) -> str | None:
+    def face_color(self) -> Styled[str | None]:
         return self._face_color
 
     @face_color.setter
-    def face_color(self, face_color: str) -> None:
+    def face_color(self, face_color: Styled[str | None]) -> None:
         self._face_color = face_color
 
     @property
-    def edge_color(self) -> str | None:
+    def edge_color(self) -> Styled[str | None]:
         return self._edge_color
 
     @edge_color.setter
-    def edge_color(self, edge_color: str) -> None:
+    def edge_color(self, edge_color: Styled[str | None]) -> None:
         self._edge_color = edge_color
 
     @property
@@ -854,11 +870,11 @@ class Point(Plottable):
         self._marker_size = marker_size
 
     @property
-    def marker_style(self) -> str:
+    def marker_style(self) -> Styled[str]:
         return self._marker_style
 
     @marker_style.setter
-    def marker_style(self, marker_style: str) -> None:
+    def marker_style(self, marker_style: Styled[str]) -> None:
         self._marker_style = marker_style
 
     @property
@@ -886,11 +902,11 @@ class Point(Plottable):
         self._font_size = font_size
 
     @property
-    def text_color(self) -> str:
+    def text_color(self) -> Styled[str]:
         return self._text_color
 
     @text_color.setter
-    def text_color(self, text_color: str) -> None:
+    def text_color(self, text_color: Styled[str]) -> None:
         self._text_color = text_color
 
     @property
@@ -986,7 +1002,7 @@ class Point(Plottable):
         }
         params = strip_inherit(params)
         axes.annotate(
-            point_label,
+            cast(str, point_label),
             (self._x, self._y),
             zorder=z_order,
             **params,
@@ -1331,7 +1347,7 @@ class Text(Plottable):
             self._arrow_properties["alpha"] = alpha
 
     def _plot_element(
-        self, target: plt.Axes | MPLFigure, z_order: int, **kwargs
+        self, axes: plt.Axes | MPLFigure, z_order: int, **kwargs
     ) -> None:
         """
         Plots the element in the specified target, which can be either an
@@ -1359,14 +1375,14 @@ class Text(Plottable):
             params["bbox"] = bbox_dict
 
         params = strip_inherit(params)
-        target.text(
+        axes.text(
             self._x,
             self._y,
             self._text,
             zorder=z_order,
             **params,
         )
-        if self._arrow_pointing_to is not None and isinstance(target, plt.Axes):
+        if self._arrow_pointing_to is not None and isinstance(axes, plt.Axes):
             # Build the arrow properties on a local copy: mutating the instance dict
             # here used to leak an unresolved INHERIT color into it, and the arrow
             # was silently skipped when the color was unresolved.
@@ -1381,7 +1397,7 @@ class Text(Plottable):
             }
             params = strip_inherit(params)
             params["arrowprops"] = arrow_properties
-            target.annotate(
+            axes.annotate(
                 self._text,
                 self._arrow_pointing_to,
                 xytext=(self._x, self._y),
@@ -1568,7 +1584,7 @@ class Table(Plottable):
         return self._cell_colors
 
     @cell_colors.setter
-    def cell_colors(self, cell_colors: list) -> None:
+    def cell_colors(self, cell_colors: Styled[ArrayLike | str]) -> None:
         self._cell_colors = cell_colors
 
     @property
@@ -1576,23 +1592,23 @@ class Table(Plottable):
         return self._cell_align
 
     @cell_align.setter
-    def cell_align(self, cell_align: str) -> None:
+    def cell_align(self, cell_align: Styled[str]) -> None:
         self._cell_align = cell_align
 
     @property
-    def col_labels(self) -> list[str]:
+    def col_labels(self) -> list[str] | None:
         return self._col_labels
 
     @col_labels.setter
-    def col_labels(self, col_labels: list[str]) -> None:
+    def col_labels(self, col_labels: list[str] | None) -> None:
         self._col_labels = col_labels
 
     @property
-    def col_widths(self) -> list[float]:
+    def col_widths(self) -> list[float] | None:
         return self._col_widths
 
     @col_widths.setter
-    def col_widths(self, col_widths: list[float]) -> None:
+    def col_widths(self, col_widths: list[float] | None) -> None:
         self._col_widths = col_widths
 
     @property
@@ -1600,7 +1616,7 @@ class Table(Plottable):
         return self._col_align
 
     @col_align.setter
-    def col_align(self, col_align: str) -> None:
+    def col_align(self, col_align: Styled[str]) -> None:
         self._col_align = col_align
 
     @property
@@ -1608,15 +1624,15 @@ class Table(Plottable):
         return self._col_colors
 
     @col_colors.setter
-    def col_colors(self, col_colors: list) -> None:
+    def col_colors(self, col_colors: Styled[ArrayLike | str]) -> None:
         self._col_colors = col_colors
 
     @property
-    def row_labels(self) -> list[str]:
+    def row_labels(self) -> list[str] | None:
         return self._row_labels
 
     @row_labels.setter
-    def row_labels(self, row_labels: list[str]) -> None:
+    def row_labels(self, row_labels: list[str] | None) -> None:
         self._row_labels = row_labels
 
     @property
@@ -1624,7 +1640,7 @@ class Table(Plottable):
         return self._row_align
 
     @row_align.setter
-    def row_align(self, row_align: str) -> None:
+    def row_align(self, row_align: Styled[str]) -> None:
         self._row_align = row_align
 
     @property
@@ -1632,7 +1648,7 @@ class Table(Plottable):
         return self._row_colors
 
     @row_colors.setter
-    def row_colors(self, row_colors: list) -> None:
+    def row_colors(self, row_colors: Styled[ArrayLike | str]) -> None:
         self._row_colors = row_colors
 
     @property
@@ -1715,12 +1731,12 @@ class Table(Plottable):
 
         self.handle = axes.table(
             cellText=self._cell_text,
-            cellColours=cell_colors,
+            cellColours=cast(Any, cell_colors),
             colLabels=self._col_labels,
             colWidths=self._col_widths,
-            colColours=col_colors,
+            colColours=cast(Any, col_colors),
             rowLabels=self._row_labels,
-            rowColours=row_colors,
+            rowColours=cast(Any, row_colors),
             loc=self._location,
             zorder=z_order,
             **params,

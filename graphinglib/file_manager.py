@@ -1,4 +1,5 @@
 from os import listdir, mkdir, path, remove
+from typing import Literal, overload
 from warnings import warn
 
 import yaml
@@ -189,12 +190,30 @@ def get_color(figure_style: str = "plain", color_number: int = 0) -> str:
     return color
 
 
+@overload
+def get_styles(
+    customs: bool = True,
+    gl: bool = True,
+    matplotlib: bool = False,
+    as_dict: Literal[False] = False,
+) -> list[str]: ...
+
+
+@overload
+def get_styles(
+    customs: bool = True,
+    gl: bool = True,
+    matplotlib: bool = False,
+    as_dict: Literal[True] = True,
+) -> dict[str, list[str]]: ...
+
+
 def get_styles(
     customs: bool = True,
     gl: bool = True,
     matplotlib: bool = False,
     as_dict: bool = False,
-) -> list[str]:
+) -> list[str] | dict[str, list[str]]:
     """
     Returns a list or dict of available styles.
 

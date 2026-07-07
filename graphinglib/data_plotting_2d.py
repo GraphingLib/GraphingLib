@@ -531,27 +531,27 @@ class Heatmap(Plottable2D):
         self._y_mesh = None if y_mesh is None else np.asarray(y_mesh)
 
     @property
-    def color_map(self) -> str | Colormap:
+    def color_map(self) -> Styled[str | Colormap]:
         return self._color_map
 
     @color_map.setter
-    def color_map(self, color_map: str | Colormap) -> None:
+    def color_map(self, color_map: Styled[str | Colormap]) -> None:
         self._color_map = color_map
 
     @property
-    def color_map_range(self) -> tuple[float, float]:
+    def color_map_range(self) -> tuple[float, float] | None:
         return self._color_map_range
 
     @color_map_range.setter
-    def color_map_range(self, color_map_range: tuple[float, float]) -> None:
+    def color_map_range(self, color_map_range: tuple[float, float] | None) -> None:
         self._color_map_range = color_map_range
 
     @property
-    def show_color_bar(self) -> bool:
+    def show_color_bar(self) -> Styled[bool]:
         return self._show_color_bar
 
     @show_color_bar.setter
-    def show_color_bar(self, show_color_bar: bool) -> None:
+    def show_color_bar(self, show_color_bar: Styled[bool]) -> None:
         self._show_color_bar = show_color_bar
 
     @property
@@ -563,19 +563,19 @@ class Heatmap(Plottable2D):
         self._alpha = alpha
 
     @property
-    def aspect_ratio(self) -> str | float:
+    def aspect_ratio(self) -> Styled[str | float]:
         return self._aspect_ratio
 
     @aspect_ratio.setter
-    def aspect_ratio(self, aspect_ratio: str | float) -> None:
+    def aspect_ratio(self, aspect_ratio: Styled[str | float]) -> None:
         self._aspect_ratio = aspect_ratio
 
     @property
-    def origin_position(self) -> str:
+    def origin_position(self) -> Styled[str]:
         return self._origin_position
 
     @origin_position.setter
-    def origin_position(self, origin_position: str) -> None:
+    def origin_position(self, origin_position: Styled[str]) -> None:
         self._origin_position = origin_position
 
     @property
@@ -1012,9 +1012,9 @@ class Contour(Plottable2D):
         Default depends on the ``figure_style`` configuration.
     """
 
-    _z_data: ArrayLike
-    _x_mesh: ArrayLike
-    _y_mesh: ArrayLike
+    _z_data: np.ndarray
+    _x_mesh: np.ndarray | None
+    _y_mesh: np.ndarray | None
     _levels: Styled[int | ArrayLike] = INHERIT
     _color_map: str | Colormap | Inherit = INHERIT
     _show_color_bar: bool | Inherit = INHERIT
@@ -1163,23 +1163,23 @@ class Contour(Plottable2D):
         )
 
     @property
-    def x_mesh(self) -> ArrayLike:
+    def x_mesh(self) -> np.ndarray | None:
         return self._x_mesh
 
     @x_mesh.setter
-    def x_mesh(self, x_mesh: ArrayLike) -> None:
+    def x_mesh(self, x_mesh: ArrayLike | None) -> None:
         self._x_mesh = None if x_mesh is None else np.asarray(x_mesh)
 
     @property
-    def y_mesh(self) -> ArrayLike:
+    def y_mesh(self) -> np.ndarray | None:
         return self._y_mesh
 
     @y_mesh.setter
-    def y_mesh(self, y_mesh: ArrayLike) -> None:
+    def y_mesh(self, y_mesh: ArrayLike | None) -> None:
         self._y_mesh = None if y_mesh is None else np.asarray(y_mesh)
 
     @property
-    def z_data(self) -> ArrayLike:
+    def z_data(self) -> np.ndarray:
         return self._z_data
 
     @z_data.setter
@@ -1199,15 +1199,15 @@ class Contour(Plottable2D):
         return self._color_map
 
     @color_map.setter
-    def color_map(self, color_map: str | Colormap) -> None:
+    def color_map(self, color_map: Styled[str | Colormap]) -> None:
         self._color_map = color_map
 
     @property
-    def color_map_range(self) -> tuple[float, float]:
+    def color_map_range(self) -> tuple[float, float] | None:
         return self._color_map_range
 
     @color_map_range.setter
-    def color_map_range(self, color_map_range: tuple[float, float]) -> None:
+    def color_map_range(self, color_map_range: tuple[float, float] | None) -> None:
         self._color_map_range = color_map_range
 
     @property
@@ -1215,7 +1215,7 @@ class Contour(Plottable2D):
         return self._show_color_bar
 
     @show_color_bar.setter
-    def show_color_bar(self, show_color_bar: bool) -> None:
+    def show_color_bar(self, show_color_bar: Styled[bool]) -> None:
         self._show_color_bar = show_color_bar
 
     @property
@@ -1223,7 +1223,7 @@ class Contour(Plottable2D):
         return self._filled
 
     @filled.setter
-    def filled(self, filled: bool) -> None:
+    def filled(self, filled: Styled[bool]) -> None:
         self._filled = filled
 
     @property
@@ -1231,7 +1231,7 @@ class Contour(Plottable2D):
         return self._alpha
 
     @alpha.setter
-    def alpha(self, alpha: float) -> None:
+    def alpha(self, alpha: Styled[float]) -> None:
         self._alpha = alpha
 
     @property
@@ -1239,7 +1239,7 @@ class Contour(Plottable2D):
         return self._line_widths
 
     @line_widths.setter
-    def line_widths(self, line_widths: float | ArrayLike) -> None:
+    def line_widths(self, line_widths: Styled[float | ArrayLike]) -> None:
         self._line_widths = line_widths
 
     @property

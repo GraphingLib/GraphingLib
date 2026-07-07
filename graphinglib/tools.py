@@ -150,9 +150,9 @@ def get_contrasting_shade(color: str | tuple[int, int, int]) -> str:
         Shade (black/white) that contrasts the most with the given color.
     """
     if isinstance(color, str):
-        color = to_rgba_array(color)[0, :3] * 255
-
-    R, G, B = color
+        R, G, B = [float(channel) for channel in to_rgba_array(color)[0, :3] * 255]
+    else:
+        R, G, B = color
 
     if R <= 10:
         Rg = R / 3294

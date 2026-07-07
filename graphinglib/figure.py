@@ -2,7 +2,7 @@ from .inherit import INHERIT, Inherit, Styled, is_inherit, resolved, strip_inher
 
 from copy import deepcopy
 from shutil import which
-from typing import Literal, Optional
+from typing import Any, Literal, Optional, cast
 from warnings import warn
 
 import matplotlib.pyplot as plt
@@ -110,14 +110,14 @@ class Figure:
         self._log_scale_y = log_scale_y
         self._show_grid = False
         self._elements: list[Plottable] = []
-        self._labels: list[str | None] = []
-        self._handles = []
+        self._labels: list[str] = []
+        self._handles: list[Any] = []
         self._x_axis_name = x_label
         self._y_axis_name = y_label
         self._x_lim = x_lim
         self._y_lim = y_lim
-        self._rc_dict = {}
-        self._user_rc_dict = {}
+        self._rc_dict: dict[str, Any] = {}
+        self._user_rc_dict: dict[str, Any] = {}
         self._custom_ticks = False
         self._remove_axes = remove_axes
         self._twin_x_axis = None
@@ -148,11 +148,11 @@ class Figure:
         self._size = value
 
     @property
-    def title(self) -> str:
+    def title(self) -> str | None:
         return self._title
 
     @title.setter
-    def title(self, value: str):
+    def title(self, value: str | None):
         self._title = value
 
     @property
@@ -180,35 +180,35 @@ class Figure:
         self._show_grid = value
 
     @property
-    def x_axis_name(self) -> str:
+    def x_axis_name(self) -> str | None:
         return self._x_axis_name
 
     @x_axis_name.setter
-    def x_axis_name(self, value: str):
+    def x_axis_name(self, value: str | None):
         self._x_axis_name = value
 
     @property
-    def y_axis_name(self) -> str:
+    def y_axis_name(self) -> str | None:
         return self._y_axis_name
 
     @y_axis_name.setter
-    def y_axis_name(self, value: str):
+    def y_axis_name(self, value: str | None):
         self._y_axis_name = value
 
     @property
-    def x_lim(self) -> tuple[float, float]:
+    def x_lim(self) -> tuple[float, float] | None:
         return self._x_lim
 
     @x_lim.setter
-    def x_lim(self, value: tuple[float, float]):
+    def x_lim(self, value: tuple[float, float] | None):
         self._x_lim = value
 
     @property
-    def y_lim(self) -> tuple[float, float]:
+    def y_lim(self) -> tuple[float, float] | None:
         return self._y_lim
 
     @y_lim.setter
-    def y_lim(self, value: tuple[float, float]):
+    def y_lim(self, value: tuple[float, float] | None):
         self._y_lim = value
 
     @property
@@ -220,7 +220,7 @@ class Figure:
         self._remove_axes = value
 
     @property
-    def aspect_ratio(self) -> float | str:
+    def aspect_ratio(self) -> float | Literal["auto", "equal"]:
         return self._aspect_ratio
 
     @aspect_ratio.setter
@@ -237,7 +237,7 @@ class Figure:
             raise GraphingException(
                 "Aspect ratio must be either 'equal', 'auto' or a float."
             )
-        self._aspect_ratio = value
+        self._aspect_ratio = cast(float | Literal["auto", "equal"], value)
 
     def add_elements(self, *elements: Plottable) -> None:
         """
@@ -277,7 +277,7 @@ class Figure:
     def _prepare_figure(
         self,
         legend: bool = True,
-        legend_loc: Optional[str] = None,
+        legend_loc: str | tuple[float, float] | None = None,
         legend_cols: int = 1,
         axes: Optional[plt.Axes] = None,
         default_params: Optional[dict] = None,
@@ -332,8 +332,8 @@ class Figure:
             self._axes.grid(self._grid_vis_x, self._grid_which_x, "x")
             self._axes.grid(self._grid_vis_y, self._grid_which_y, "y")
 
-        self._axes.set_xlabel(self._x_axis_name)
-        self._axes.set_ylabel(self._y_axis_name)
+        self._axes.set_xlabel(cast(str, self._x_axis_name))
+        self._axes.set_ylabel(cast(str, self._y_axis_name))
         self._axes.set_aspect(self._aspect_ratio)
         if self._custom_ticks:
             if self._xticks:
@@ -397,16 +397,17 @@ class Figure:
                 if not is_matplotlib_style:
                     self._reset_params_to_default(element, params_to_reset)
                 try:
-                    if element.label is not None:
-                        self._handles.append(element.handle)
-                        self._labels.append(element.label)
+                    label = getattr(element, "label", None)
+                    if label is not None:
+                        self._handles.append(getattr(element, "handle"))
+                        self._labels.append(label)
                 except AttributeError:
                     continue
                 z_order += 5
             if not self._labels:
                 legend = False
             if legend:
-                if legend_loc is not None and "outside" in legend_loc:
+                if isinstance(legend_loc, str) and "outside" in legend_loc:
                     outside_coords = {
                         "outside upper center": (0.5, 1),
                         "outside center right": (1, 0.5),
@@ -422,9 +423,9 @@ class Figure:
                         "bbox_to_anchor": outside_coords[legend_loc],
                     }
                 else:
-                    legend_params = {"loc": legend_loc}
+                    legend_params: dict[str, Any] = {"loc": legend_loc}
                 try:
-                    _legend = self._axes.legend(
+                    _legend = cast(Any, self._axes).legend(
                         handles=self._handles,
                         labels=self._labels,
                         handleheight=1.3,
@@ -439,7 +440,7 @@ class Figure:
                     )
                     _legend.set_zorder(10000)
                 except TypeError:
-                    _legend = self._axes.legend(
+                    _legend = cast(Any, self._axes).legend(
                         handles=self._handles,
                         labels=self._labels,
                         handleheight=1.3,
@@ -465,7 +466,7 @@ class Figure:
     def show(
         self,
         legend: bool = True,
-        legend_loc: str | tuple = "best",
+        legend_loc: str | tuple[float, float] = "best",
         legend_cols: int = 1,
     ) -> None:
         """
@@ -497,7 +498,7 @@ class Figure:
         self,
         file_name: str,
         legend: bool = True,
-        legend_loc: str | tuple = "best",
+        legend_loc: str | tuple[float, float] = "best",
         legend_cols: int = 1,
         dpi: Optional[int] = None,
     ) -> None:
@@ -534,7 +535,7 @@ class Figure:
         plt.close()
         plt.rcParams.update(plt.rcParamsDefault)
 
-    def _fill_in_missing_params(self, element: Plottable) -> list[str]:
+    def _fill_in_missing_params(self, element: object) -> list[str]:
         """
         Fills in the missing parameters from the specified ``figure_style``.
         """
@@ -562,7 +563,7 @@ class Figure:
         return params_to_reset
 
     def _reset_params_to_default(
-        self, element: Plottable, params_to_reset: list[str]
+        self, element: object, params_to_reset: list[str]
     ) -> None:
         """
         Resets the parameters that were set to default in the _fill_in_missing_params method.
@@ -576,7 +577,7 @@ class Figure:
 
     def set_rc_params(
         self,
-        rc_params_dict: dict[str, str | float] = {},
+        rc_params_dict: dict[str, Any] = {},
         reset: bool = False,
     ):
         """
@@ -722,7 +723,7 @@ class Figure:
                 all_rc_params["text.usetex"] = False
         except KeyError:
             pass
-        plt.rcParams.update(all_rc_params)
+        plt.rcParams.update(cast(Any, all_rc_params))
 
     def set_ticks(
         self,
@@ -940,8 +941,8 @@ class TwinAxis:
         self._log_scale = log_scale
         self._elements: list[Plottable] = []
         self._custom_ticks = False
-        self._labels: list[str | None] = []
-        self._handles = []
+        self._labels: list[str] = []
+        self._handles: list[Any] = []
         self._figure_style = None
         self._default_params = None
         self._tick_color = None
@@ -950,11 +951,11 @@ class TwinAxis:
         self._axis_lim = axis_lim
 
     @property
-    def label(self) -> str:
+    def label(self) -> str | None:
         return self._label
 
     @label.setter
-    def label(self, value: str):
+    def label(self, value: str | None):
         self._label = value
 
     @property
@@ -966,7 +967,7 @@ class TwinAxis:
         self._log_scale = value
 
     @property
-    def axis_lim(self) -> tuple[float, float]:
+    def axis_lim(self) -> tuple[float, float] | None:
         return self._axis_lim
 
     def _prepare_twin_axis(
@@ -985,12 +986,14 @@ class TwinAxis:
         )
         if self._is_y:
             self._axes = fig_axes.twinx()
-            self._axes.set_ylabel(self._label)
+            if self._label is not None:
+                self._axes.set_ylabel(self._label)
             if self._axis_lim:
                 self._axes.set_ylim(*self._axis_lim)
         else:
             self._axes = fig_axes.twiny()
-            self._axes.set_xlabel(self._label)
+            if self._label is not None:
+                self._axes.set_xlabel(self._label)
             if self._axis_lim:
                 self._axes.set_xlim(*self._axis_lim)
         if self._is_y:
@@ -1035,9 +1038,10 @@ class TwinAxis:
             if not is_matplotlib_style:
                 self._reset_params_to_default(element, params_to_reset)
             try:
-                if element.label is not None:
-                    self._handles.append(element.handle)
-                    self._labels.append(element.label)
+                label = getattr(element, "label", None)
+                if label is not None:
+                    self._handles.append(getattr(element, "handle"))
+                    self._labels.append(label)
             except AttributeError:
                 continue
             z_order += 2
@@ -1147,7 +1151,7 @@ class TwinAxis:
         self._tick_color = tick_color
         self._axes_edge_color = axes_edge_color
 
-    def _fill_in_missing_params(self, element: Plottable) -> list[str]:
+    def _fill_in_missing_params(self, element: object) -> list[str]:
         """
         Fills in the missing parameters from the specified ``figure_style``.
         """
@@ -1175,7 +1179,11 @@ class TwinAxis:
                                 getattr(element, curve_defaults[property]),
                             )
                         elif default_value == "same as scatter":
-                            element.errorbars_color = getattr(element, "_face_color")
+                            setattr(
+                                element,
+                                "errorbars_color",
+                                getattr(element, "_face_color"),
+                            )
                         else:
                             setattr(element, property, default_value)
                 break
@@ -1185,14 +1193,16 @@ class TwinAxis:
                     raise GraphingException(
                         f"There was an error auto updating your {self._figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self._figure_style} style file:\n {e.args[0]}"
                     )
-                file_updater = FileUpdater(resolved(self._figure_style))
+                figure_style = self._figure_style
+                assert figure_style is not None
+                file_updater = FileUpdater(resolved(figure_style))
                 file_updater.update()
-                file_loader = FileLoader(resolved(self._figure_style))
+                file_loader = FileLoader(resolved(figure_style))
                 default_params = self._default_params = file_loader.load()
         return params_to_reset
 
     def _reset_params_to_default(
-        self, element: Plottable, params_to_reset: list[str]
+        self, element: object, params_to_reset: list[str]
     ) -> None:
         """
         Resets the parameters that were set to default in the _fill_in_missing_params method.
