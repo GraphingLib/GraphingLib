@@ -1391,9 +1391,7 @@ class SmartFigure:
         if self._num_rows == 1 or self._num_cols == 1:
             if len(key_parts) == 1:
                 row_key, col_key = (
-                    (0, key_parts[0])
-                    if self._num_rows == 1
-                    else (key_parts[0], 0)
+                    (0, key_parts[0]) if self._num_rows == 1 else (key_parts[0], 0)
                 )
             elif len(key_parts) == 2:
                 row_key, col_key = key_parts
@@ -1414,9 +1412,7 @@ class SmartFigure:
         )
 
     @staticmethod
-    def _normalize_axis_key(
-        key: int | slice, axis_size: int, axis_index: int
-    ) -> slice:
+    def _normalize_axis_key(key: int | slice, axis_size: int, axis_index: int) -> slice:
         if isinstance(key, int):
             normalized_key = key + axis_size if key < 0 else key
             if not (0 <= normalized_key < axis_size):
@@ -1706,14 +1702,11 @@ class SmartFigure:
         for span, child in self._iter_child_items():
             self._sync_auto_child_projection(span, child)
 
-    def _normalize_leaf_rhs(
-        self, value: Any
-    ) -> list[Plottable]:
+    def _normalize_leaf_rhs(self, value: Any) -> list[Plottable]:
         if isinstance(value, Plottable):
             return [value]
-        if (
-            isinstance(value, (str, bytes, SmartFigure))
-            or not isinstance(value, Iterable)
+        if isinstance(value, (str, bytes, SmartFigure)) or not isinstance(
+            value, Iterable
         ):
             raise TypeError(
                 "Leaf contents must be Plottables or iterables of Plottables."

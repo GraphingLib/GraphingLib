@@ -15,7 +15,7 @@ from matplotlib.transforms import ScaledTranslation
 from .inherit import INHERIT, Inherit, is_inherit, resolved
 from .figure import Figure
 from .file_manager import FileLoader, get_default_style
-from .graph_elements import GraphingException, Plottable
+from .graph_elements import GraphingException
 from .legend_artists import (
     HandlerMultipleLines,
     HandlerMultipleVerticalLines,

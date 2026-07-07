@@ -336,7 +336,7 @@ class Hlines(Plottable):
                             k: v if isinstance(v, (int, float, str)) else v[i]
                             for k, v in params.items()
                         },
-                )
+                    )
                 params.pop("linewidth")
             self.handle = LineCollection(
                 [[(0, 0)]] * (len(y) if len(y) <= 3 else 3),
@@ -623,7 +623,7 @@ class Vlines(Plottable):
                             k: v if isinstance(v, (int, float, str)) else v[i]
                             for k, v in params.items()
                         },
-                )
+                    )
                 params.pop("linewidth")
             self.handle = VerticalLineCollection(
                 [[(0, 0)]] * (len(x) if len(x) <= 4 else 4),
@@ -1346,9 +1346,7 @@ class Text(Plottable):
         if alpha is not None:
             self._arrow_properties["alpha"] = alpha
 
-    def _plot_element(
-        self, axes: plt.Axes | MPLFigure, z_order: int, **kwargs
-    ) -> None:
+    def _plot_element(self, axes: plt.Axes | MPLFigure, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified target, which can be either an
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_ or a
