@@ -1075,7 +1075,7 @@ class SmartFigure:
 
     def __setitem__(
         self,
-        key: int | slice | tuple[int | slice],
+        key: int | slice | tuple[int | slice, ...],
         element: Plottable | Iterable[Plottable | None] | SmartFigure | None,
     ) -> None:
         """
@@ -1085,7 +1085,7 @@ class SmartFigure:
 
         Parameters
         ----------
-        key : int | slice | tuple[int | slice]
+        key : int | slice | tuple[int | slice, ...]
             The key specifying the location(s) in the SmartFigure to assign the element(s). If a tuple of ints is
             provided, the element is placed in the corresponding square of the grid, following classical 2D numpy-like
             indexing. If slices are provided, the element can span multiple squares in the grid. If ``num_rows`` or
@@ -1168,17 +1168,6 @@ class SmartFigure:
                 "Increase num_rows or num_cols first to turn the SmartFigure into a layout."
             )
 
-        if not any(
-            [
-                element is None,
-                isinstance(element, (Plottable, SmartFigure)),
-                SmartFigure._is_iterable_of_plottables(element),
-            ]
-        ):
-            raise TypeError(
-                "Element must be a Plottable, an iterable of Plottables, or a SmartFigure."
-            )
-
         key_ = self._validate_and_normalize_key(key)
         overlapping = self._get_overlapping_elements(key_)
 
@@ -1232,7 +1221,7 @@ class SmartFigure:
         self._children = self._ordered_children()
         self._sync_auto_child_projection(changed_span, changed_child)
 
-    def __getitem__(self, key: int | slice | tuple[int | slice]) -> SmartFigure:
+    def __getitem__(self, key: int | slice | tuple[int | slice, ...]) -> SmartFigure:
         """
         Gives the child SmartFigure at the specified key in the SmartFigure. This can be used to modify or extract
         directly a child figure in a SmartFigure used as a layout. The indexing follows classical 2D numpy-like indexing,
@@ -1240,7 +1229,7 @@ class SmartFigure:
 
         Parameters
         ----------
-        key : int | slice | tuple[int | slice]
+        key : int | slice | tuple[int | slice, ...]
             The key specifying the location(s) in the SmartFigure to access. If a tuple of ints is provided, the child
             figure is accessed in the corresponding square of the grid, following classical 2D numpy-like indexing. If
             slices are provided, a child figure spanning multiple squares in the grid can be retrieved. If ``num_rows`` or
@@ -1370,8 +1359,8 @@ class SmartFigure:
         return ordered
 
     def _validate_and_normalize_key(
-        self, key: int | slice | tuple[int | slice]
-    ) -> tuple[slice]:
+        self, key: int | slice | tuple[int | slice, ...]
+    ) -> tuple[slice, slice]:
         """
         Validates and normalizes the key for indexing into the SmartFigure. This method ensures that the key is
         either a single integer, a slice, or a tuple of integers/slices. It also checks for out-of-bounds indices and
@@ -1380,62 +1369,72 @@ class SmartFigure:
 
         Parameters
         ----------
-        key : int | slice | tuple[int | slice]
+        key : int | slice | tuple[int | slice, ...]
             The key to validate and normalize.
 
         Returns
         -------
-        tuple[slice]
+        tuple[slice, slice]
             The normalized key as a two-tuple of slices.
         """
-        if not isinstance(key, tuple):
-            key = (key,)
+        key_parts = key if isinstance(key, tuple) else (key,)
 
         # 1D SmartFigures
         if self._num_rows == 1 or self._num_cols == 1:
-            if len(key) == 1:
-                key = (0, key[0]) if self._num_rows == 1 else (key[0], 0)
-            elif len(key) != 2:
+            if len(key_parts) == 1:
+                row_key, col_key = (
+                    (0, key_parts[0])
+                    if self._num_rows == 1
+                    else (key_parts[0], 0)
+                )
+            elif len(key_parts) == 2:
+                row_key, col_key = key_parts
+            else:
                 raise ValueError(
                     "Key must be 1D (int or slice) or 2D with one zero index for 1D SmartFigure."
                 )
 
         # 2D SmartFigures
         else:
-            if len(key) != 2:
+            if len(key_parts) != 2:
                 raise ValueError("2D indexing must use a tuple of length 2.")
+            row_key, col_key = key_parts
 
-        # Bounds check
-        new_keys = []
-        for i, (k, axis_size) in enumerate(zip(key, (self._num_rows, self._num_cols))):
-            if isinstance(k, int):
-                new_k = k + axis_size if k < 0 else k
-                if not (0 <= new_k < axis_size):
-                    raise IndexError(
-                        f"Index {k} out of bounds for axis {i} with size {axis_size}."
-                    )
-                new_keys.append(slice(new_k, new_k + 1, None))
-            elif isinstance(k, slice):
-                start = k.start if k.start is not None else 0
-                start = start + axis_size if start < 0 else start
-                stop = k.stop if k.stop is not None else axis_size
-                stop = stop + axis_size if stop < 0 else stop
-                if start < 0 or stop > axis_size:
-                    raise IndexError(
-                        f"{k} out of bounds for axis {i} with size {axis_size}."
-                    )
-                if start >= stop:
-                    raise IndexError(
-                        f"{k} for axis {i} must have stop larger than start."
-                    )
-                if k.step is not None:
-                    raise ValueError(f"{k} step for axis {i} must be None.")
-                new_keys.append(slice(start, stop, None))
-            else:
-                raise TypeError(
-                    f"Key element {k} for axis {i} must be an int or a slice."
+        return (
+            self._normalize_axis_key(row_key, self._num_rows, 0),
+            self._normalize_axis_key(col_key, self._num_cols, 1),
+        )
+
+    @staticmethod
+    def _normalize_axis_key(
+        key: int | slice, axis_size: int, axis_index: int
+    ) -> slice:
+        if isinstance(key, int):
+            normalized_key = key + axis_size if key < 0 else key
+            if not (0 <= normalized_key < axis_size):
+                raise IndexError(
+                    f"Index {key} out of bounds for axis {axis_index} with size {axis_size}."
                 )
-        return tuple(new_keys)
+            return slice(normalized_key, normalized_key + 1, None)
+        if isinstance(key, slice):
+            start = key.start if key.start is not None else 0
+            start = start + axis_size if start < 0 else start
+            stop = key.stop if key.stop is not None else axis_size
+            stop = stop + axis_size if stop < 0 else stop
+            if start < 0 or stop > axis_size:
+                raise IndexError(
+                    f"{key} out of bounds for axis {axis_index} with size {axis_size}."
+                )
+            if start >= stop:
+                raise IndexError(
+                    f"{key} for axis {axis_index} must have stop larger than start."
+                )
+            if key.step is not None:
+                raise ValueError(f"{key} step for axis {axis_index} must be None.")
+            return slice(start, stop, None)
+        raise TypeError(
+            f"Key element {key} for axis {axis_index} must be an int or a slice."
+        )
 
     @staticmethod
     def _is_iterable_of_plottables(item: Any) -> bool:
@@ -1541,12 +1540,8 @@ class SmartFigure:
                     continue
                 if isinstance(element, Plottable):
                     self._leaf_elements.append(element)
-                elif SmartFigure._is_iterable_of_plottables(element):
-                    self._leaf_elements.extend(self._normalize_leaf_rhs(element))
                 else:
-                    raise TypeError(
-                        "Leaf SmartFigures only accept Plottables or iterables of Plottables in add_elements."
-                    )
+                    self._leaf_elements.extend(self._normalize_leaf_rhs(element))
             return self
 
         max_cells = self._num_rows * self._num_cols
@@ -1598,11 +1593,15 @@ class SmartFigure:
             )
 
         values = list(other)
-        dense = self.elements
+        dense_children: list[SmartFigure | None] = [None] * (
+            self._num_rows * self._num_cols
+        )
+        for (rows, cols), child in self._iter_child_items():
+            dense_children[rows.start * self._num_cols + cols.start] = child
         for index, value in enumerate(values):
-            if index >= len(dense) or value is None:
+            if index >= len(dense_children) or value is None:
                 continue
-            child = dense[index]
+            child = dense_children[index]
             if child is None:
                 continue
             if isinstance(value, SmartFigure):
@@ -1700,17 +1699,27 @@ class SmartFigure:
             self._sync_auto_child_projection(span, child)
 
     def _normalize_leaf_rhs(
-        self, value: Plottable | Iterable[Plottable | None]
+        self, value: Any
     ) -> list[Plottable]:
         if isinstance(value, Plottable):
             return [value]
-        if isinstance(value, SmartFigure) or not SmartFigure._is_iterable_of_plottables(
-            value
+        if (
+            isinstance(value, (str, bytes, SmartFigure))
+            or not isinstance(value, Iterable)
         ):
             raise TypeError(
                 "Leaf contents must be Plottables or iterables of Plottables."
             )
-        return [element for element in value if element is not None]
+        elements: list[Plottable] = []
+        for element in value:
+            if element is None:
+                continue
+            if not isinstance(element, Plottable):
+                raise TypeError(
+                    "Leaf contents must be Plottables or iterables of Plottables."
+                )
+            elements.append(element)
+        return elements
 
     def _get_selected_child(
         self, key: tuple[slice, slice], original_key: Any = None
