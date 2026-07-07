@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit, is_inherit, resolve_or, strip_inherit
+from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
 
 from copy import deepcopy
 from dataclasses import dataclass
@@ -167,20 +167,20 @@ class Curve(Plottable1D, MathematicalObject):
         self._y_error = None
 
         self._show_errorbars: bool = False
-        self._errorbars_color = None
-        self._errorbars_line_width = None
-        self._cap_thickness = None
-        self._cap_width = None
+        self._errorbars_color: Styled[str | None] = None
+        self._errorbars_line_width: Styled[float | None] = None
+        self._cap_thickness: Styled[float | None] = None
+        self._cap_width: Styled[float | None] = None
 
         self._show_error_curves: bool = False
-        self._error_curves_fill_between: bool = False
-        self._error_curves_color = None
-        self._error_curves_line_style = None
-        self._error_curves_line_width = None
+        self._error_curves_fill_between: Styled[bool] = False
+        self._error_curves_color: Styled[str | None] = None
+        self._error_curves_line_style: Styled[str | None] = None
+        self._error_curves_line_width: Styled[float | None] = None
 
         self._fill_between_bounds: Optional[tuple[float, float]] = None
         self._fill_between_other_curve: Optional[Self] = None
-        self._fill_between_color: Optional[str] = None
+        self._fill_between_color: Styled[str | None] = None
 
     @classmethod
     def from_function(
@@ -281,7 +281,7 @@ class Curve(Plottable1D, MathematicalObject):
         self._label = label
 
     @property
-    def color(self) -> str:
+    def color(self) -> Styled[str]:
         return self._color
 
     @color.setter
@@ -297,7 +297,7 @@ class Curve(Plottable1D, MathematicalObject):
         self._line_width = line_width
 
     @property
-    def line_style(self) -> str:
+    def line_style(self) -> Styled[str]:
         return self._line_style
 
     @line_style.setter
@@ -321,7 +321,7 @@ class Curve(Plottable1D, MathematicalObject):
         self._show_errorbars = show_errorbars
 
     @property
-    def errorbars_color(self) -> str:
+    def errorbars_color(self) -> Styled[str | None]:
         return self._errorbars_color
 
     @errorbars_color.setter
@@ -329,7 +329,7 @@ class Curve(Plottable1D, MathematicalObject):
         self._errorbars_color = errorbars_color
 
     @property
-    def errorbars_line_width(self) -> float | Inherit:
+    def errorbars_line_width(self) -> Styled[float | None]:
         return self._errorbars_line_width
 
     @errorbars_line_width.setter
@@ -337,7 +337,7 @@ class Curve(Plottable1D, MathematicalObject):
         self._errorbars_line_width = errorbars_line_width
 
     @property
-    def cap_thickness(self) -> float | Inherit:
+    def cap_thickness(self) -> Styled[float | None]:
         return self._cap_thickness
 
     @cap_thickness.setter
@@ -345,7 +345,7 @@ class Curve(Plottable1D, MathematicalObject):
         self._cap_thickness = cap_thickness
 
     @property
-    def cap_width(self) -> float | Inherit:
+    def cap_width(self) -> Styled[float | None]:
         return self._cap_width
 
     @cap_width.setter
@@ -361,7 +361,7 @@ class Curve(Plottable1D, MathematicalObject):
         self._show_error_curves = show_error_curves
 
     @property
-    def error_curves_fill_between(self) -> bool:
+    def error_curves_fill_between(self) -> Styled[bool]:
         return self._error_curves_fill_between
 
     @error_curves_fill_between.setter
@@ -369,7 +369,7 @@ class Curve(Plottable1D, MathematicalObject):
         self._error_curves_fill_between = error_curves_fill_between
 
     @property
-    def error_curves_color(self) -> str:
+    def error_curves_color(self) -> Styled[str | None]:
         return self._error_curves_color
 
     @error_curves_color.setter
@@ -377,7 +377,7 @@ class Curve(Plottable1D, MathematicalObject):
         self._error_curves_color = error_curves_color
 
     @property
-    def error_curves_line_style(self) -> str:
+    def error_curves_line_style(self) -> Styled[str | None]:
         return self._error_curves_line_style
 
     @error_curves_line_style.setter
@@ -385,7 +385,7 @@ class Curve(Plottable1D, MathematicalObject):
         self._error_curves_line_style = error_curves_line_style
 
     @property
-    def error_curves_line_width(self) -> float | Inherit:
+    def error_curves_line_width(self) -> Styled[float | None]:
         return self._error_curves_line_width
 
     @error_curves_line_width.setter
@@ -409,11 +409,11 @@ class Curve(Plottable1D, MathematicalObject):
         self._fill_between_other_curve = fill_between_other_curve
 
     @property
-    def fill_between_color(self) -> str:
+    def fill_between_color(self) -> Styled[str | None]:
         return self._fill_between_color
 
     @fill_between_color.setter
-    def fill_between_color(self, fill_between_color: str) -> None:
+    def fill_between_color(self, fill_between_color: Styled[str | None]) -> None:
         self._fill_between_color = fill_between_color
 
     def __eq__(self, other: Self) -> bool:
@@ -1904,10 +1904,10 @@ class Scatter(Plottable1D, MathematicalObject):
         self._y_error = None
 
         self._show_errorbars: bool = False
-        self._errorbars_line_width: float = 1.0
-        self._cap_width: float = 3.0
-        self._cap_thickness: float = 1.0
-        self._errorbars_color: Optional[str] = None
+        self._errorbars_line_width: Styled[float] = 1.0
+        self._cap_width: Styled[float] = 3.0
+        self._cap_thickness: Styled[float] = 1.0
+        self._errorbars_color: Styled[str | None] = None
         self._color_bar_params: dict = {}
 
     @classmethod
@@ -2062,7 +2062,7 @@ class Scatter(Plottable1D, MathematicalObject):
         self._edge_color = edge_color
 
     @property
-    def color_map(self) -> str | Colormap:
+    def color_map(self) -> Styled[str | Colormap]:
         return self._color_map
 
     @color_map.setter
@@ -2078,7 +2078,7 @@ class Scatter(Plottable1D, MathematicalObject):
         self._color_map_range = color_map_range
 
     @property
-    def show_color_bar(self) -> bool:
+    def show_color_bar(self) -> Styled[bool]:
         return self._show_color_bar
 
     @show_color_bar.setter
@@ -2094,7 +2094,7 @@ class Scatter(Plottable1D, MathematicalObject):
         self._marker_size = marker_size
 
     @property
-    def marker_edge_width(self) -> float:
+    def marker_edge_width(self) -> Styled[float]:
         return self._marker_edge_width
 
     @marker_edge_width.setter
@@ -2102,7 +2102,7 @@ class Scatter(Plottable1D, MathematicalObject):
         self._marker_edge_width = value
 
     @property
-    def marker_style(self) -> str:
+    def marker_style(self) -> Styled[str]:
         return self._marker_style
 
     @marker_style.setter
@@ -2126,35 +2126,35 @@ class Scatter(Plottable1D, MathematicalObject):
         self._show_errorbars = show_errorbars
 
     @property
-    def errorbars_line_width(self) -> float:
+    def errorbars_line_width(self) -> Styled[float]:
         return self._errorbars_line_width
 
     @errorbars_line_width.setter
-    def errorbars_line_width(self, errorbars_line_width: float) -> None:
+    def errorbars_line_width(self, errorbars_line_width: Styled[float]) -> None:
         self._errorbars_line_width = errorbars_line_width
 
     @property
-    def cap_width(self) -> float:
+    def cap_width(self) -> Styled[float]:
         return self._cap_width
 
     @cap_width.setter
-    def cap_width(self, cap_width: float) -> None:
+    def cap_width(self, cap_width: Styled[float]) -> None:
         self._cap_width = cap_width
 
     @property
-    def cap_thickness(self) -> float:
+    def cap_thickness(self) -> Styled[float]:
         return self._cap_thickness
 
     @cap_thickness.setter
-    def cap_thickness(self, cap_thickness: float) -> None:
+    def cap_thickness(self, cap_thickness: Styled[float]) -> None:
         self._cap_thickness = cap_thickness
 
     @property
-    def errorbars_color(self) -> str:
+    def errorbars_color(self) -> Styled[str | None]:
         return self._errorbars_color
 
     @errorbars_color.setter
-    def errorbars_color(self, errorbars_color: str) -> None:
+    def errorbars_color(self, errorbars_color: Styled[str | None]) -> None:
         self._errorbars_color = errorbars_color
 
     @property
@@ -3054,7 +3054,8 @@ class Scatter(Plottable1D, MathematicalObject):
                     vmin=min(self._color_map_range), vmax=max(self._color_map_range)
                 )
             else:
-                norm = Normalize(vmin=min(self._face_color), vmax=max(self._face_color))
+                intensities = np.asarray(self._face_color)
+                norm = Normalize(vmin=intensities.min(), vmax=intensities.max())
 
             sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
             sm.set_array([])
@@ -3335,7 +3336,7 @@ class Histogram(Plottable1D):
         self._label = label
 
     @property
-    def face_color(self) -> str:
+    def face_color(self) -> Styled[str]:
         return self._face_color
 
     @face_color.setter
@@ -3343,7 +3344,7 @@ class Histogram(Plottable1D):
         self._face_color = face_color
 
     @property
-    def edge_color(self) -> str:
+    def edge_color(self) -> Styled[str]:
         return self._edge_color
 
     @edge_color.setter
@@ -3351,7 +3352,7 @@ class Histogram(Plottable1D):
         self._edge_color = edge_color
 
     @property
-    def hist_type(self) -> str:
+    def hist_type(self) -> Styled[str]:
         return self._hist_type
 
     @hist_type.setter
@@ -3359,7 +3360,7 @@ class Histogram(Plottable1D):
         self._hist_type = hist_type
 
     @property
-    def alpha(self) -> float:
+    def alpha(self) -> Styled[float]:
         return self._alpha
 
     @alpha.setter
@@ -3367,7 +3368,7 @@ class Histogram(Plottable1D):
         self._alpha = alpha
 
     @property
-    def line_width(self) -> float:
+    def line_width(self) -> Styled[float]:
         return self._line_width
 
     @line_width.setter
@@ -3375,7 +3376,7 @@ class Histogram(Plottable1D):
         self._line_width = line_width
 
     @property
-    def normalize(self) -> bool:
+    def normalize(self) -> Styled[bool]:
         return self._normalize
 
     @normalize.setter
@@ -3384,7 +3385,7 @@ class Histogram(Plottable1D):
         self._histogram_cache = None
 
     @property
-    def orientation(self) -> str:
+    def orientation(self) -> Styled[str]:
         return self._orientation
 
     @orientation.setter
@@ -3392,7 +3393,7 @@ class Histogram(Plottable1D):
         self._orientation = orientation
 
     @property
-    def show_params(self) -> bool:
+    def show_params(self) -> Styled[bool]:
         return self._show_params
 
     @show_params.setter
@@ -3597,7 +3598,7 @@ class Histogram(Plottable1D):
             ),
             "edgecolor": (
                 to_rgba(self._edge_color, 1)
-                if self._edge_color != INHERIT
+                if not is_inherit(self._edge_color)
                 else self._edge_color
             ),
             "linewidth": self._line_width,
@@ -3615,7 +3616,7 @@ class Histogram(Plottable1D):
             ),
             "edgecolor": (
                 to_rgba(self._edge_color, 1)
-                if self._edge_color != INHERIT
+                if not is_inherit(self._edge_color)
                 else self._edge_color
             ),
             "histtype": self._hist_type,
@@ -3667,7 +3668,7 @@ class Histogram(Plottable1D):
             curve_std_y = normal(self._mean + self._standard_deviation)
             if self._pdf_show_std:
                 params = {}
-                if self._pdf_std_color != INHERIT:
+                if isinstance(self._pdf_std_color, str):
                     params["colors"] = [self._pdf_std_color, self._pdf_std_color]
 
                 # Plots std on the y-axis if "orientation" is "horizontal".
@@ -3699,7 +3700,7 @@ class Histogram(Plottable1D):
 
             if self._pdf_show_mean:
                 params = {}
-                if self._pdf_mean_color != INHERIT:
+                if isinstance(self._pdf_mean_color, str):
                     params["colors"] = [self._pdf_mean_color]
 
                 # Plots std on the y-axis if "orientation" is "horizontal".

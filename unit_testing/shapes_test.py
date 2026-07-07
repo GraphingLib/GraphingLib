@@ -325,7 +325,7 @@ class TestArrow(unittest.TestCase):
                 pointB=(1, 1),
                 color="blue",
                 width=3,
-                style="<->",
+                style="<->",  # ty: ignore[invalid-argument-type]  # deliberately invalid
             )
 
         # Check errors at plotting time
@@ -343,7 +343,12 @@ class TestArrow(unittest.TestCase):
                 alpha=1,
             )
             arrow._plot_element(ax, 0)
-        invalid_two_sided_styles = ["]->", "simple", "fancy", "wedge"]
+        invalid_two_sided_styles: list[ArrowStyle] = [
+            "]->",
+            "simple",
+            "fancy",
+            "wedge",
+        ]
         for style in invalid_two_sided_styles:
             arrow = Arrow(
                 pointA=(0, 0),

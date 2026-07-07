@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit, is_inherit, resolve_or, strip_inherit
+from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Literal, Optional, Protocol, Sequence, runtime_checkable
+from typing import Any, Literal, Optional, Protocol, Sequence, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -254,7 +254,7 @@ class Hlines(Plottable):
         self._label = label
 
     @property
-    def colors(self) -> list[str] | str:
+    def colors(self) -> Styled[list[str] | str]:
         return self._colors
 
     @colors.setter
@@ -264,7 +264,7 @@ class Hlines(Plottable):
             self._validate_state()
 
     @property
-    def line_widths(self) -> list[float] | float:
+    def line_widths(self) -> Styled[list[float] | float]:
         return self._line_widths
 
     @line_widths.setter
@@ -274,7 +274,7 @@ class Hlines(Plottable):
             self._validate_state()
 
     @property
-    def line_styles(self) -> list[str] | str:
+    def line_styles(self) -> Styled[list[str] | str]:
         return self._line_styles
 
     @line_styles.setter
@@ -529,7 +529,7 @@ class Vlines(Plottable):
         self._label = label
 
     @property
-    def colors(self) -> list[str] | str:
+    def colors(self) -> Styled[list[str] | str]:
         return self._colors
 
     @colors.setter
@@ -539,7 +539,7 @@ class Vlines(Plottable):
             self._validate_state()
 
     @property
-    def line_widths(self) -> list[float] | float:
+    def line_widths(self) -> Styled[list[float] | float]:
         return self._line_widths
 
     @line_widths.setter
@@ -549,7 +549,7 @@ class Vlines(Plottable):
             self._validate_state()
 
     @property
-    def line_styles(self) -> list[str] | str:
+    def line_styles(self) -> Styled[list[str] | str]:
         return self._line_styles
 
     @line_styles.setter
@@ -1197,7 +1197,7 @@ class Text(Plottable):
         self._text = text
 
     @property
-    def color(self) -> str:
+    def color(self) -> Styled[str]:
         return self._color
 
     @color.setter
@@ -1221,7 +1221,7 @@ class Text(Plottable):
         self._alpha = alpha
 
     @property
-    def h_align(self) -> str:
+    def h_align(self) -> Styled[str]:
         return self._h_align
 
     @h_align.setter
@@ -1229,7 +1229,7 @@ class Text(Plottable):
         self._h_align = h_align
 
     @property
-    def v_align(self) -> str:
+    def v_align(self) -> Styled[str]:
         return self._v_align
 
     @v_align.setter
@@ -1368,7 +1368,7 @@ class Text(Plottable):
             # Build the arrow properties on a local copy: mutating the instance dict
             # here used to leak an unresolved INHERIT color into it, and the arrow
             # was silently skipped when the color was unresolved.
-            arrow_properties = dict(self._arrow_properties)
+            arrow_properties: dict[str, Any] = dict(self._arrow_properties)
             if not is_inherit(self._color):
                 arrow_properties["color"] = self._color
             params = {
@@ -1562,7 +1562,7 @@ class Table(Plottable):
         self._cell_text = cell_text
 
     @property
-    def cell_colors(self) -> ArrayLike | str:
+    def cell_colors(self) -> Styled[ArrayLike | str]:
         return self._cell_colors
 
     @cell_colors.setter
@@ -1570,7 +1570,7 @@ class Table(Plottable):
         self._cell_colors = cell_colors
 
     @property
-    def cell_align(self) -> str:
+    def cell_align(self) -> Styled[str]:
         return self._cell_align
 
     @cell_align.setter
@@ -1594,7 +1594,7 @@ class Table(Plottable):
         self._col_widths = col_widths
 
     @property
-    def col_align(self) -> str:
+    def col_align(self) -> Styled[str]:
         return self._col_align
 
     @col_align.setter
@@ -1602,7 +1602,7 @@ class Table(Plottable):
         self._col_align = col_align
 
     @property
-    def col_colors(self) -> ArrayLike | str:
+    def col_colors(self) -> Styled[ArrayLike | str]:
         return self._col_colors
 
     @col_colors.setter
@@ -1618,7 +1618,7 @@ class Table(Plottable):
         self._row_labels = row_labels
 
     @property
-    def row_align(self) -> str:
+    def row_align(self) -> Styled[str]:
         return self._row_align
 
     @row_align.setter
@@ -1626,7 +1626,7 @@ class Table(Plottable):
         self._row_align = row_align
 
     @property
-    def row_colors(self) -> ArrayLike | str:
+    def row_colors(self) -> Styled[ArrayLike | str]:
         return self._row_colors
 
     @row_colors.setter
@@ -1634,7 +1634,7 @@ class Table(Plottable):
         self._row_colors = row_colors
 
     @property
-    def edge_width(self) -> float:
+    def edge_width(self) -> Styled[float]:
         return self._edge_width
 
     @edge_width.setter
@@ -1644,7 +1644,7 @@ class Table(Plottable):
             cell.set_linewidth(self._edge_width)
 
     @property
-    def edge_color(self) -> str:
+    def edge_color(self) -> Styled[str]:
         return self._edge_color
 
     @edge_color.setter
@@ -1654,7 +1654,7 @@ class Table(Plottable):
             cell.set_edgecolor(self._edge_color)
 
     @property
-    def text_color(self) -> str:
+    def text_color(self) -> Styled[str]:
         return self._text_color
 
     @text_color.setter

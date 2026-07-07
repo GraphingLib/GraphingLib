@@ -1,6 +1,7 @@
 import unittest
 
 from graphinglib import INHERIT
+from graphinglib.inherit import resolved
 
 from matplotlib import pyplot as plt
 from numpy import linspace, pi, sin
@@ -102,7 +103,7 @@ class TestFigure(unittest.TestCase):
         a_figure.add_elements(self.testCurve)
         a_figure._default_params = self.horribleDefaults
         a_figure._fill_in_missing_params(a_figure)
-        self.assertListEqual(list(a_figure._size), [10, 7])
+        self.assertListEqual(list(resolved(a_figure._size)), [10, 7])
 
     def test_assign_figure_params_no_grid(self):
         a_figure = Figure(figure_style="plain")
