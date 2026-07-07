@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit
+from .inherit import INHERIT, Inherit, is_inherit, resolve_or, strip_inherit
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Literal, Optional, Protocol, runtime_checkable
+from typing import Literal, Optional, Protocol, Sequence, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -306,7 +306,7 @@ class Hlines(Plottable):
                     "linewidths": self._line_widths,
                     "alpha": self._alpha,
                 }
-                params = {k: v for k, v in params.items() if v != INHERIT}
+                params = strip_inherit(params)
                 axes.hlines(
                     self._y,
                     self._x_min,
@@ -314,7 +314,7 @@ class Hlines(Plottable):
                     zorder=z_order,
                     **params,
                 )
-                params.pop("linewidths")
+                params.pop("linewidths", None)
             else:
                 params = {
                     "color": self._colors,
@@ -322,7 +322,7 @@ class Hlines(Plottable):
                     "linewidth": self._line_widths,
                     "alpha": self._alpha,
                 }
-                params = {k: v for k, v in params.items() if v != INHERIT}
+                params = strip_inherit(params)
                 for i in range(len(self._y)):
                     axes.axhline(
                         self._y[i],
@@ -345,7 +345,7 @@ class Hlines(Plottable):
                     "linewidths": self._line_widths,
                     "alpha": self._alpha,
                 }
-                params = {k: v for k, v in params.items() if v != INHERIT}
+                params = strip_inherit(params)
                 axes.hlines(
                     self._y,
                     self._x_min,
@@ -353,7 +353,7 @@ class Hlines(Plottable):
                     zorder=z_order,
                     **params,
                 )
-                params.pop("linewidths")
+                params.pop("linewidths", None)
             else:
                 params = {
                     "color": self._colors,
@@ -361,7 +361,7 @@ class Hlines(Plottable):
                     "linewidth": self._line_widths,
                     "alpha": self._alpha,
                 }
-                params = {k: v for k, v in params.items() if v != INHERIT}
+                params = strip_inherit(params)
                 axes.axhline(self._y, zorder=z_order, **params)
                 params.pop("linewidth")
             if isinstance(self._y, (int, float)):
@@ -585,7 +585,7 @@ class Vlines(Plottable):
                     "linewidths": self._line_widths,
                     "alpha": self._alpha,
                 }
-                params = {k: v for k, v in params.items() if v != INHERIT}
+                params = strip_inherit(params)
                 axes.vlines(
                     self._x,
                     self._y_min,
@@ -593,7 +593,7 @@ class Vlines(Plottable):
                     zorder=z_order,
                     **params,
                 )
-                params.pop("linewidths")
+                params.pop("linewidths", None)
             else:
                 params = {
                     "color": self._colors,
@@ -601,7 +601,7 @@ class Vlines(Plottable):
                     "linewidth": self._line_widths,
                     "alpha": self._alpha,
                 }
-                params = {k: v for k, v in params.items() if v != INHERIT}
+                params = strip_inherit(params)
                 for i in range(len(self._x)):
                     axes.axvline(
                         self._x[i],
@@ -624,7 +624,7 @@ class Vlines(Plottable):
                     "linewidths": self._line_widths,
                     "alpha": self._alpha,
                 }
-                params = {k: v for k, v in params.items() if v != INHERIT}
+                params = strip_inherit(params)
                 axes.vlines(
                     self._x,
                     self._y_min,
@@ -632,7 +632,7 @@ class Vlines(Plottable):
                     zorder=z_order,
                     **params,
                 )
-                params.pop("linewidths")
+                params.pop("linewidths", None)
             else:
                 params = {
                     "color": self._colors,
@@ -640,7 +640,7 @@ class Vlines(Plottable):
                     "linewidth": self._line_widths,
                     "alpha": self._alpha,
                 }
-                params = {k: v for k, v in params.items() if v != INHERIT}
+                params = strip_inherit(params)
                 axes.axvline(self._x, zorder=z_order, **params)
                 params.pop("linewidth")
             if isinstance(self._x, (int, float)):
@@ -963,7 +963,7 @@ class Point(Plottable):
             "linewidths": self._edge_width,
             "alpha": self._alpha,
         }
-        params = {k: v for k, v in params.items() if v != INHERIT}
+        params = strip_inherit(params)
         axes.scatter(
             self._x,
             self._y,
@@ -984,7 +984,7 @@ class Point(Plottable):
             "horizontalalignment": self._h_align,
             "verticalalignment": self._v_align,
         }
-        params = {k: v for k, v in params.items() if v != INHERIT}
+        params = strip_inherit(params)
         axes.annotate(
             point_label,
             (self._x, self._y),
@@ -1017,7 +1017,7 @@ class Point(Plottable):
                 "horizontalalignment": self._h_align,
                 "verticalalignment": self._v_align,
             }
-            params = {k: v for k, v in params.items() if v != INHERIT}
+            params = strip_inherit(params)
             axes.annotate(
                 point_label,
                 (self._x, self._y),
@@ -1356,7 +1356,7 @@ class Text(Plottable):
             }
             params["bbox"] = bbox_dict
 
-        params = {k: v for k, v in params.items() if v != INHERIT}
+        params = strip_inherit(params)
         target.text(
             self._x,
             self._y,
@@ -1365,17 +1365,20 @@ class Text(Plottable):
             **params,
         )
         if self._arrow_pointing_to is not None and isinstance(target, plt.Axes):
-            self._arrow_properties["color"] = self._color
+            # Build the arrow properties on a local copy: mutating the instance dict
+            # here used to leak an unresolved INHERIT color into it, and the arrow
+            # was silently skipped when the color was unresolved.
+            arrow_properties = dict(self._arrow_properties)
+            if not is_inherit(self._color):
+                arrow_properties["color"] = self._color
             params = {
                 "color": self._color,
                 "fontsize": size,
                 "horizontalalignment": self._h_align,
                 "verticalalignment": self._v_align,
             }
-            params = {k: v for k, v in params.items() if v != INHERIT}
-            if self._color != INHERIT:
-                self._arrow_properties["color"] = self._color
-                params["arrowprops"] = self._arrow_properties
+            params = strip_inherit(params)
+            params["arrowprops"] = arrow_properties
             target.annotate(
                 self._text,
                 self._arrow_pointing_to,
@@ -1395,8 +1398,8 @@ class Table(Plottable):
 
     Parameters
     ----------
-    cell_text : list[str]
-        Text or data to be displayed in the table. The shape of the provided data
+    cell_text : Sequence[Sequence[str]]
+        Text or data to be displayed in the table, as rows of cell values. The shape of the provided data
         determines the number of columns and rows.
     cell_colors : ArrayLike or str, optional
         Colors to apply to the cells' background. Must be a list of colors the same
@@ -1454,7 +1457,7 @@ class Table(Plottable):
 
     def __init__(
         self,
-        cell_text: list[str],
+        cell_text: Sequence[Sequence[str]],
         cell_colors: ArrayLike | str | Inherit = INHERIT,
         cell_align: str | Inherit = INHERIT,
         col_labels: Optional[list[str]] = None,
@@ -1478,8 +1481,8 @@ class Table(Plottable):
 
         Parameters
         ----------
-        cell_text : list[str]
-            Text or data to be displayed in the table. The shape of the provided data
+        cell_text : Sequence[Sequence[str]]
+            Text or data to be displayed in the table, as rows of cell values. The shape of the provided data
             determines the number of columns and rows.
         cell_colors : ArrayLike or str, optional
             Colors to apply to the cells' background. Must be a list of colors the same
@@ -1551,11 +1554,11 @@ class Table(Plottable):
         self._location = location
 
     @property
-    def cell_text(self) -> list[str]:
+    def cell_text(self) -> Sequence[Sequence[str]]:
         return self._cell_text
 
     @cell_text.setter
-    def cell_text(self, cell_text: list[str]) -> None:
+    def cell_text(self, cell_text: Sequence[Sequence[str]]) -> None:
         self._cell_text = cell_text
 
     @property
@@ -1692,26 +1695,30 @@ class Table(Plottable):
             "colLoc": self._col_align,
             "rowLoc": self._row_align,
         }
-        params = {k: v for k, v in params.items() if v != INHERIT}
+        params = strip_inherit(params)
+
+        cell_colors = resolve_or(self._cell_colors, "white")
+        col_colors = resolve_or(self._col_colors, "#bfbfbf")
+        row_colors = resolve_or(self._row_colors, "#bfbfbf")
 
         # Set colors to correct shape if they are strings
-        if isinstance(self._cell_colors, str):
-            self._cell_colors = [[self._cell_colors] * len(self._cell_text[0])] * len(
+        if isinstance(cell_colors, str):
+            cell_colors = [[cell_colors] * len(self._cell_text[0])] * len(
                 self._cell_text
             )
-        if isinstance(self._col_colors, str):
-            self._col_colors = [self._col_colors] * len(self._cell_text[0])
-        if isinstance(self._row_colors, str):
-            self._row_colors = [self._row_colors] * len(self._cell_text)
+        if isinstance(col_colors, str):
+            col_colors = [col_colors] * len(self._cell_text[0])
+        if isinstance(row_colors, str):
+            row_colors = [row_colors] * len(self._cell_text)
 
         self.handle = axes.table(
             cellText=self._cell_text,
-            cellColours=self._cell_colors,
+            cellColours=cell_colors,
             colLabels=self._col_labels,
             colWidths=self._col_widths,
-            colColours=self._col_colors,
+            colColours=col_colors,
             rowLabels=self._row_labels,
-            rowColours=self._row_colors,
+            rowColours=row_colors,
             loc=self._location,
             zorder=z_order,
             **params,
@@ -1719,9 +1726,9 @@ class Table(Plottable):
         self.handle.auto_set_font_size(False)
         self.handle.scale(self._scaling[0], self._scaling[1])
         for (i, j), cell in self.handle.get_celld().items():
-            cell.set_text_props(color=self._text_color)
-            cell.set_edgecolor(self._edge_color)
-            cell.set_linewidth(self._edge_width)
+            cell.set_text_props(color=resolve_or(self._text_color, "black"))
+            cell.set_edgecolor(resolve_or(self._edge_color, "black"))
+            cell.set_linewidth(resolve_or(self._edge_width, 1))
 
 
 class PlottableAxMethod(Plottable):

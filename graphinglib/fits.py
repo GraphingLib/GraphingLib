@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit
+from .inherit import INHERIT, Inherit, strip_inherit
 
 from copy import deepcopy
 from functools import partial
@@ -344,7 +344,7 @@ class GeneralFit(Curve):
             "linestyle": self._line_style,
             "alpha": self._alpha,
         }
-        params = {key: value for key, value in params.items() if value != INHERIT}
+        params = strip_inherit(params)
         (self.handle,) = axes.plot(
             self._x_data,
             self._y_data,
@@ -364,7 +364,7 @@ class GeneralFit(Curve):
                 "linestyle": self._res_line_style,
                 "alpha": self._alpha,
             }
-            params = {key: value for key, value in params.items() if value != INHERIT}
+            params = strip_inherit(params)
             axes.plot(
                 self._x_data,
                 y_fit_minus_std,
@@ -383,7 +383,7 @@ class GeneralFit(Curve):
                 kwargs["color"] = self._fill_between_color
             else:
                 kwargs["color"] = self.handle[0].get_color()
-            params = {key: value for key, value in kwargs.items() if value != INHERIT}
+            params = strip_inherit(kwargs)
             axes.fill_between(
                 self._x_data,
                 self._y_data,
@@ -530,7 +530,7 @@ class FitFromPolynomial(GeneralFit):
         label: Optional[str] = None,
         color: str | Inherit = INHERIT,
         line_width: int | Inherit = INHERIT,
-        line_style: int | Inherit = INHERIT,
+        line_style: str | Inherit = INHERIT,
         alpha: float | Inherit = INHERIT,
     ) -> None:
         """
@@ -745,7 +745,7 @@ class FitFromSine(GeneralFit):
         label: Optional[str] = None,
         guesses: Optional[ArrayLike] = None,
         color: str | Inherit = INHERIT,
-        line_width: str | Inherit = INHERIT,
+        line_width: float | Inherit = INHERIT,
         line_style: str | Inherit = INHERIT,
         alpha: float | Inherit = INHERIT,
         max_iterations: int = 10000,

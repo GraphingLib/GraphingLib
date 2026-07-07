@@ -1,6 +1,6 @@
 from __future__ import annotations as _annotations_
 
-from .inherit import INHERIT, Inherit, is_inherit
+from .inherit import INHERIT, Inherit, is_inherit, strip_inherit
 
 from collections import OrderedDict
 from copy import deepcopy
@@ -2711,9 +2711,7 @@ class SmartFigure:
         formatted_letter = self._reference_labels_params.get(
             "format", lambda le: f"{le})"
         )(letter)
-        reflabel_params = {
-            k: v for k, v in self._reference_labels_params.items() if v != INHERIT
-        }
+        reflabel_params = strip_inherit(self._reference_labels_params)
         target.text(
             x=0,
             y=1,
@@ -3401,7 +3399,7 @@ class SmartFigure:
             "grid.linestyle": line_style,
             "grid.linewidth": line_width,
         }
-        rc_params_dict = {k: v for k, v in rc_params_dict.items() if v != INHERIT}
+        rc_params_dict = strip_inherit(rc_params_dict)
         self.set_rc_params(rc_params_dict)
         return self
 

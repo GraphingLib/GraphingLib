@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit, is_inherit
+from .inherit import INHERIT, Inherit, is_inherit, resolve_or, strip_inherit
 
 from copy import deepcopy
 from dataclasses import dataclass
@@ -663,7 +663,7 @@ class Heatmap(Plottable2D):
             params["vmax"] = max(self._color_map_range)
         use_pcolormesh = self._x_mesh is not None and self._y_mesh is not None
         if use_pcolormesh:
-            params = {k: v for k, v in params.items() if v != INHERIT}
+            params = strip_inherit(params)
             image = axes.pcolormesh(
                 self._x_mesh,
                 self._y_mesh,
@@ -681,14 +681,14 @@ class Heatmap(Plottable2D):
                 }
             )
 
-            params = {k: v for k, v in params.items() if v != INHERIT}
+            params = strip_inherit(params)
             image = axes.imshow(
                 self._image,
                 zorder=z_order,
                 **params,
             )
         fig = axes.get_figure()
-        if self._show_color_bar:
+        if resolve_or(self._show_color_bar, True):
             fig.colorbar(image, ax=axes, **self._color_bar_params)
 
 
@@ -947,17 +947,19 @@ class VectorField(Plottable2D):
             angle = "uv"
         else:
             angle = "xy"
+        arrow_width = resolve_or(self._arrow_width, 1)
+        arrow_head_size = resolve_or(self._arrow_head_size, 1)
         params = {
             "angles": angle,
-            "width": 0.005 * self._arrow_width,
-            "headwidth": 4 * self._arrow_head_size / self._arrow_width,
-            "headlength": 4 * self._arrow_head_size / self._arrow_width,
-            "headaxislength": 4 * self._arrow_head_size / self._arrow_width,
+            "width": 0.005 * arrow_width,
+            "headwidth": 4 * arrow_head_size / arrow_width,
+            "headlength": 4 * arrow_head_size / arrow_width,
+            "headaxislength": 4 * arrow_head_size / arrow_width,
             "color": self._color,
             "scale": 1 / self._scale if self._scale is not None else None,
             "scale_units": "xy",
         }
-        params = {k: v for k, v in params.items() if v != INHERIT}
+        params = strip_inherit(params)
         axes.quiver(
             self._x_data,
             self._y_data,
@@ -1291,20 +1293,19 @@ class Contour(Plottable2D):
         else:
             x_mesh = self._x_mesh
             y_mesh = self._y_mesh
+        filled = resolve_or(self._filled, True)
         params = {
             "levels": self._levels,
             "cmap": self._color_map,
             "alpha": self._alpha,
-            "linewidths": self._line_widths if not self._filled else None,
+            "linewidths": self._line_widths if not filled else None,
         }
         if self._color_map_range is not None:
             params["vmin"] = min(self._color_map_range)
             params["vmax"] = max(self._color_map_range)
 
-        params = {
-            k: v for k, v in params.items() if not isinstance(v, str) or v != INHERIT
-        }
-        if self._filled:
+        params = strip_inherit(params)
+        if filled:
             cont = axes.contourf(
                 x_mesh,
                 y_mesh,
@@ -1320,7 +1321,7 @@ class Contour(Plottable2D):
                 zorder=z_order,
                 **params,
             )
-        if self._show_color_bar:
+        if resolve_or(self._show_color_bar, True):
             fig = axes.get_figure()
             fig.colorbar(cont, ax=axes, **self._color_bar_params)
 
@@ -1493,7 +1494,7 @@ class Stream(Plottable2D):
             "cmap": self._color_map,
             "arrowsize": self._arrow_size,
         }
-        params = {k: v for k, v in params.items() if v != INHERIT}
+        params = strip_inherit(params)
         if is_inherit(self._color):
             pass
         else:

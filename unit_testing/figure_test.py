@@ -234,6 +234,66 @@ class TestFigure(unittest.TestCase):
         a_figure._prepare_figure()
         plt.close("all")
 
+    def test_matplotlib_style_renders_every_element_type(self):
+        # Under a native matplotlib style, style resolution is skipped and elements
+        # plot with INHERIT still stored in their attributes. This is a regression
+        # test for a family of crashes on that path (Table, Scatter with intensity
+        # colors, VectorField, capped Line, Contour, multi-value Hlines/Vlines).
+        import numpy as np
+
+        import graphinglib as gl
+
+        x = linspace(0.5, 9.5, 40)
+        error_curve = gl.Curve(x, sin(x))
+        error_curve.add_error_curves(y_error=np.full(40, 0.1))
+        area_curve = gl.Curve(x, sin(x))
+        area_curve.get_area_between(1, 5, fill_between=True)
+        errorbar_scatter = gl.Scatter(x, sin(x))
+        errorbar_scatter.add_errorbars(x_error=0.1, y_error=0.1)
+        pdf_histogram = gl.Histogram(np.random.normal(5, 1, 200), 12)
+        pdf_histogram.add_pdf(show_mean=True, show_std=True)
+        arrow_text = gl.Text(3, -0.5, "hello")
+        arrow_text.add_arrow((4, 0.5))
+        elements = [
+            gl.Curve(x, sin(x)),
+            error_curve,
+            area_curve,
+            gl.Scatter(x, sin(x), face_color=linspace(0, 1, 40).tolist()),
+            errorbar_scatter,
+            gl.Histogram(np.random.normal(5, 1, 200), 12),
+            pdf_histogram,
+            gl.Hlines([0.5, 1.0], 0, 10),
+            gl.Vlines([4.0, 5.0], -1, 1),
+            gl.Hlines(0.75, 0, 10),
+            gl.Vlines(4.5, -1, 1),
+            gl.Point(2, 0.5),
+            gl.Text(3, -0.5, "hello"),
+            arrow_text,
+            gl.Table([["1", "2"], ["3", "4"]]),
+            gl.Heatmap(np.random.rand(5, 5)),
+            gl.Contour(*np.meshgrid(np.arange(8), np.arange(8)), np.random.rand(8, 8)),
+            gl.VectorField(
+                *np.meshgrid(np.arange(5), np.arange(5)),
+                np.ones((5, 5)),
+                np.ones((5, 5)),
+            ),
+            gl.Stream(
+                *np.meshgrid(linspace(0, 10, 30), linspace(0, 10, 30)),
+                np.ones((30, 30)),
+                np.ones((30, 30)),
+            ),
+            gl.Circle(5, 0, 1),
+            gl.Rectangle(1, 1, 2, 1),
+            gl.Polygon([(0, 0), (1, 0), (1, 1), (0, 0)]),
+            gl.Arrow((0, 0), (1, 1)),
+            gl.Line((0, 0), (2, 2), capped_line=True),
+            gl.FitFromPolynomial(gl.Scatter(x, 2 * x + 1), 1),
+        ]
+        a_figure = Figure(figure_style="matplotlib")
+        a_figure.add_elements(*elements)
+        a_figure._prepare_figure()
+        plt.close("all")
+
     def test_create_twin_axis(self):
         a_figure = Figure()
         a_figure.add_elements(self.testCurve)
