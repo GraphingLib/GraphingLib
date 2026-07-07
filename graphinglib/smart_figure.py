@@ -4147,7 +4147,9 @@ class SmartFigureWCS(SmartFigure):
             y_axis.set_ticks_visible(False)
             y_axis.set_ticklabel_visible(False)
 
-    def set_ticks(
+    # WCSAxes uses Astropy Quantity ticks and WCS-specific tick controls, so this
+    # intentionally is not a behavioral substitute for SmartFigure.set_ticks.
+    def set_ticks(  # ty: ignore[invalid-method-override]
         self,
         reset: bool = False,
         x_ticks: list[Quantity] | None = None,
@@ -4214,13 +4216,16 @@ class SmartFigureWCS(SmartFigure):
         Self
             For convenience, the same SmartFigure with the updated ticks.
         """
-        super().set_ticks(
-            reset=reset,
-            x_ticks=x_ticks,
-            y_ticks=y_ticks,
-            x_tick_spacing=x_tick_spacing,
-            y_tick_spacing=y_tick_spacing,
-        )
+        if any(
+            [
+                (x_ticks is not None) and (x_tick_spacing is not None),
+                (y_ticks is not None) and (y_tick_spacing is not None),
+            ]
+        ):
+            raise GraphingException(
+                "Tick spacing and tick positions cannot be set simultaneously."
+            )
+
         if any(
             [
                 (x_ticks is not None) and (number_of_x_ticks is not None),
@@ -4241,7 +4246,14 @@ class SmartFigureWCS(SmartFigure):
                 "Number of ticks and tick spacing cannot be set simultaneously."
             )
 
+        if reset:
+            self._ticks.clear()
+
         params = [
+            "x_ticks",
+            "y_ticks",
+            "x_tick_spacing",
+            "y_tick_spacing",
             "number_of_x_ticks",
             "number_of_y_ticks",
             "x_tick_formatter",
@@ -4256,7 +4268,9 @@ class SmartFigureWCS(SmartFigure):
 
         return self
 
-    def set_tick_params(
+    # WCSAxes cannot express SmartFigure's major/minor split; minor tick length
+    # is the only independent minor-tick control exposed by Astropy.
+    def set_tick_params(  # ty: ignore[invalid-method-override]
         self,
         axis: Literal["x", "y", "both"] | None = "both",
         reset: bool = False,
@@ -4376,7 +4390,9 @@ class SmartFigureWCS(SmartFigure):
                 self._tick_params[f"{axis_i} minor"]["length"] = minor_length
         return self
 
-    def set_grid(
+    # WCSAxes grids only support major grid lines, so SmartFigure's which_x /
+    # which_y controls are intentionally absent from this API.
+    def set_grid(  # ty: ignore[invalid-method-override]
         self,
         visible_x: bool = True,
         visible_y: bool = True,
