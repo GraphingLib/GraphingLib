@@ -12,7 +12,7 @@ from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.transforms import ScaledTranslation
 
-from .inherit import INHERIT, Inherit, is_inherit
+from .inherit import INHERIT, Inherit, is_inherit, resolved
 from .figure import Figure
 from .file_manager import FileLoader, get_default_style
 from .graph_elements import GraphingException, Plottable
@@ -493,7 +493,7 @@ class MultiFigure:
         """
         Prepares the :class:`~graphinglib.multifigure.MultiFigure` to be displayed.
         """
-        if self._figure_style == INHERIT:
+        if is_inherit(self._figure_style):
             self._figure_style = get_default_style()
         try:
             file_loader = FileLoader(self._figure_style)
@@ -505,7 +505,7 @@ class MultiFigure:
                 if self._figure_style == "matplotlib":
                     plt.style.use("default")
                 else:
-                    plt.style.use(self._figure_style)
+                    plt.style.use(resolved(self._figure_style))
                 file_loader = FileLoader("plain")
                 self._default_params = file_loader.load()
             except OSError:
@@ -516,7 +516,7 @@ class MultiFigure:
         multi_figure_params_to_reset = self._fill_in_missing_params(self)
 
         self._fill_in_rc_params(is_matplotlib_style)
-        self._figure = plt.figure(layout="constrained", figsize=self._size)
+        self._figure = plt.figure(layout="constrained", figsize=resolved(self._size))
         MultiFigure_grid = GridSpec(self._num_rows, self._num_cols, figure=self._figure)
 
         if self._reflabel_loc == "outside":
@@ -666,7 +666,7 @@ class MultiFigure:
             if self._figure_style == "matplotlib":
                 plt.style.use("default")
             else:
-                plt.style.use(self._figure_style)
+                plt.style.use(resolved(self._figure_style))
             plt.rcParams.update(self._user_rc_dict)
         else:
             params = self._default_params["rc_params"]

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit, strip_inherit
+from .inherit import INHERIT, Inherit, Styled, strip_inherit
 
 from copy import deepcopy
 from functools import partial
@@ -136,10 +136,10 @@ class GeneralFit(Curve):
         self._res_line_style = None
 
         self._show_errorbars: bool = False
-        self._errorbars_color = None
-        self._errorbars_line_width = None
-        self._cap_thickness = None
-        self._cap_width = None
+        self._errorbars_color: Styled[str | None] = None
+        self._errorbars_line_width: Styled[float | None] = None
+        self._cap_thickness: Styled[float | None] = None
+        self._cap_width: Styled[float | None] = None
 
         self._show_error_curves: bool = False
         self._error_curves_fill_between: bool = False

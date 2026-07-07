@@ -1,6 +1,6 @@
 from __future__ import annotations as _annotations_
 
-from .inherit import INHERIT, Inherit, is_inherit, strip_inherit
+from .inherit import INHERIT, Inherit, is_inherit, resolved, strip_inherit
 
 from collections import OrderedDict
 from copy import deepcopy
@@ -1318,7 +1318,7 @@ class SmartFigure:
 
     def _reset_stylable_elements_to_default(self) -> None:
         style_name = self._figure_style
-        if style_name == INHERIT:
+        if is_inherit(style_name):
             style_name = get_default_style()
         try:
             defaults = FileLoader(style_name).load()
@@ -1943,7 +1943,7 @@ class SmartFigure:
         figure style, parameters and matplotlib figure and calls the :meth:`~graphinglib.SmartFigure._prepare_figure`
         method.
         """
-        if self._figure_style == INHERIT:
+        if is_inherit(self._figure_style):
             self._figure_style = get_default_style()
         try:
             file_loader = FileLoader(self._figure_style)
@@ -1955,7 +1955,7 @@ class SmartFigure:
                 if self._figure_style == "matplotlib":
                     plt.style.use("default")
                 else:
-                    plt.style.use(self._figure_style)
+                    plt.style.use(resolved(self._figure_style))
                 file_loader = FileLoader("plain")
                 self._default_params = file_loader.load()
             except OSError:
@@ -1973,7 +1973,9 @@ class SmartFigure:
 
         # The following try/except removes lingering figures when errors occur during the plotting process
         try:
-            self._figure = plt.figure(constrained_layout=True, figsize=self._size)
+            self._figure = plt.figure(
+                constrained_layout=True, figsize=resolved(self._size)
+            )
             layout_engine = self._figure.get_layout_engine()
             assert isinstance(layout_engine, ConstrainedLayoutEngine)
             layout_engine.set(w_pad=0, h_pad=0)
@@ -2860,9 +2862,9 @@ class SmartFigure:
                         " page. In the meantime, you can manually add the following parameter to your "
                         f"{self._figure_style} style file:\n {e.args[0]}."
                     )
-                file_updater = FileUpdater(self._figure_style)
+                file_updater = FileUpdater(resolved(self._figure_style))
                 file_updater.update()
-                file_loader = FileLoader(self._figure_style)
+                file_loader = FileLoader(resolved(self._figure_style))
                 new_defaults = file_loader.load()
                 self._default_params.update(
                     (k, v)
@@ -2893,7 +2895,7 @@ class SmartFigure:
             if self._figure_style == "matplotlib":
                 plt.style.use("default")
             else:
-                plt.style.use(self._figure_style)
+                plt.style.use(resolved(self._figure_style))
             plt.rcParams.update(self._user_rc_dict)
         else:
             params = self._default_params["rc_params"]
@@ -4786,7 +4788,9 @@ class SmartTwinAxis:
             )
 
     def _fill_in_missing_params(
-        self, element: SmartFigure | Plottable, figure_style: str | Inherit
+        self,
+        element: SmartFigure | SmartTwinAxis | Plottable,
+        figure_style: str | Inherit,
     ) -> list[str]:
         """
         Fills in the missing parameters for a :class:`~graphinglib.Plottable` from the parent's ``figure_style``.
@@ -4809,9 +4813,9 @@ class SmartTwinAxis:
                         " page. In the meantime, you can manually add the following parameter to your "
                         f"{figure_style} style file:\n {e.args[0]}."
                     )
-                file_updater = FileUpdater(figure_style)
+                file_updater = FileUpdater(resolved(figure_style))
                 file_updater.update()
-                file_loader = FileLoader(figure_style)
+                file_loader = FileLoader(resolved(figure_style))
                 new_defaults = file_loader.load()
                 self._default_params.update(
                     (k, v)

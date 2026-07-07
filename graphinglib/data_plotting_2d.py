@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit, is_inherit, resolve_or, strip_inherit
+from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
 
 from copy import deepcopy
 from dataclasses import dataclass
@@ -893,7 +893,7 @@ class VectorField(Plottable2D):
         self._v_data = np.asarray(v_data)
 
     @property
-    def arrow_width(self) -> float:
+    def arrow_width(self) -> Styled[float]:
         return self._arrow_width
 
     @arrow_width.setter
@@ -901,7 +901,7 @@ class VectorField(Plottable2D):
         self._arrow_width = arrow_width
 
     @property
-    def arrow_head_size(self) -> float:
+    def arrow_head_size(self) -> Styled[float]:
         return self._arrow_head_size
 
     @arrow_head_size.setter
@@ -925,7 +925,7 @@ class VectorField(Plottable2D):
         self._make_angles_axes_independent = value
 
     @property
-    def color(self) -> str:
+    def color(self) -> Styled[str]:
         return self._color
 
     @color.setter
@@ -1014,7 +1014,7 @@ class Contour(Plottable2D):
     _z_data: ArrayLike
     _x_mesh: ArrayLike
     _y_mesh: ArrayLike
-    _levels: int | Inherit = INHERIT
+    _levels: Styled[int | ArrayLike] = INHERIT
     _color_map: str | Colormap | Inherit = INHERIT
     _show_color_bar: bool | Inherit = INHERIT
     _filled: bool | Inherit = INHERIT
@@ -1186,15 +1186,15 @@ class Contour(Plottable2D):
         self._z_data = np.asarray(z_data)
 
     @property
-    def levels(self) -> int | ArrayLike | Inherit:
+    def levels(self) -> Styled[int | ArrayLike]:
         return self._levels
 
     @levels.setter
-    def levels(self, levels: int | ArrayLike | Inherit) -> None:
+    def levels(self, levels: Styled[int | ArrayLike]) -> None:
         self._levels = levels
 
     @property
-    def color_map(self) -> str | Colormap:
+    def color_map(self) -> Styled[str | Colormap]:
         return self._color_map
 
     @color_map.setter
@@ -1210,7 +1210,7 @@ class Contour(Plottable2D):
         self._color_map_range = color_map_range
 
     @property
-    def show_color_bar(self) -> bool:
+    def show_color_bar(self) -> Styled[bool]:
         return self._show_color_bar
 
     @show_color_bar.setter
@@ -1218,7 +1218,7 @@ class Contour(Plottable2D):
         self._show_color_bar = show_color_bar
 
     @property
-    def filled(self) -> bool:
+    def filled(self) -> Styled[bool]:
         return self._filled
 
     @filled.setter
@@ -1226,7 +1226,7 @@ class Contour(Plottable2D):
         self._filled = filled
 
     @property
-    def alpha(self) -> float:
+    def alpha(self) -> Styled[float]:
         return self._alpha
 
     @alpha.setter
@@ -1234,7 +1234,7 @@ class Contour(Plottable2D):
         self._alpha = alpha
 
     @property
-    def line_widths(self) -> float | ArrayLike:
+    def line_widths(self) -> Styled[float | ArrayLike]:
         return self._line_widths
 
     @line_widths.setter

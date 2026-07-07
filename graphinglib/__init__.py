@@ -52,7 +52,7 @@ from .graph_elements import (
     Vlines,
 )
 from .legend_artists import LegendElement, LegendLine, LegendMarker, LegendPatch
-from .inherit import INHERIT, Inherit
+from .inherit import INHERIT, Inherit, Styled, is_inherit
 from .multifigure import MultiFigure
 from .shapes import Arrow, Circle, Ellipse, Line, Polygon, Rectangle
 from .smart_figure import SmartFigure, SmartFigureWCS, SmartTwinAxis
@@ -97,6 +97,8 @@ __all__ = [
     "LegendPatch",
     "INHERIT",
     "Inherit",
+    "Styled",
+    "is_inherit",
     "MultiFigure",
     "Arrow",
     "Circle",

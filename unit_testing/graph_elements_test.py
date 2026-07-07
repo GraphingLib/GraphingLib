@@ -1,4 +1,5 @@
 import unittest
+from typing import Any
 
 from graphinglib import INHERIT
 from matplotlib import pyplot as plt
@@ -76,7 +77,7 @@ class TestHlines(unittest.TestCase):
             self.testHlines.copy_with(alpha=0.5)
 
     def test_single_line_accepts_single_item_style_lists(self):
-        style_kwargs = [
+        style_kwargs: list[dict[str, Any]] = [
             {"colors": ["r"]},
             {"line_styles": ["--"]},
             {"line_widths": [2.0]},
@@ -89,7 +90,7 @@ class TestHlines(unittest.TestCase):
                     self.fail(f"Single-element style list should be accepted: {exc}")
 
     def test_single_line_rejects_multiple_style_values(self):
-        style_kwargs = [
+        style_kwargs: list[dict[str, Any]] = [
             {"colors": ["r", "g"]},
             {"line_styles": ["--", "-."]},
             {"line_widths": [1.0, 2.0]},
@@ -115,12 +116,12 @@ class TestHlines(unittest.TestCase):
             )
 
     def test_multiple_lines_rejects_mismatched_style_lengths(self):
-        base_kwargs = {
+        base_kwargs: dict[str, Any] = {
             "y": [0, 1],
             "x_min": [0, 0],
             "x_max": [1, 1],
         }
-        cases = [
+        cases: list[dict[str, Any]] = [
             {"colors": ["r"]},
             {"line_styles": ["--"]},
             {"line_widths": [1.0]},
@@ -198,7 +199,7 @@ class TestVlines(unittest.TestCase):
         self.assertEqual(testVlinesCopy._alpha, self.testVlines._alpha)
 
     def test_single_line_accepts_single_item_style_lists(self):
-        style_kwargs = [
+        style_kwargs: list[dict[str, Any]] = [
             {"colors": ["r"]},
             {"line_styles": ["--"]},
             {"line_widths": [2.0]},
@@ -211,7 +212,7 @@ class TestVlines(unittest.TestCase):
                     self.fail(f"Single-element style list should be accepted: {exc}")
 
     def test_single_line_rejects_multiple_style_values(self):
-        style_kwargs = [
+        style_kwargs: list[dict[str, Any]] = [
             {"colors": ["r", "g"]},
             {"line_styles": ["--", "-."]},
             {"line_widths": [1.0, 2.0]},
@@ -237,12 +238,12 @@ class TestVlines(unittest.TestCase):
             )
 
     def test_multiple_lines_rejects_mismatched_style_lengths(self):
-        base_kwargs = {
+        base_kwargs: dict[str, Any] = {
             "x": [0, 1],
             "y_min": [0, 0],
             "y_max": [1, 1],
         }
-        cases = [
+        cases: list[dict[str, Any]] = [
             {"colors": ["r"]},
             {"line_styles": ["--"]},
             {"line_widths": [1.0]},

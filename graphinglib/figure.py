@@ -1,4 +1,4 @@
-from .inherit import INHERIT, Inherit, is_inherit, strip_inherit
+from .inherit import INHERIT, Inherit, Styled, is_inherit, resolved, strip_inherit
 
 from copy import deepcopy
 from shutil import which
@@ -140,7 +140,7 @@ class Figure:
         self._figure_style = value
 
     @property
-    def size(self) -> tuple[float, float]:
+    def size(self) -> Styled[tuple[float, float]]:
         return self._size
 
     @size.setter
@@ -156,7 +156,7 @@ class Figure:
         self._title = value
 
     @property
-    def log_scale_x(self) -> bool:
+    def log_scale_x(self) -> Styled[bool]:
         return self._log_scale_x
 
     @log_scale_x.setter
@@ -164,7 +164,7 @@ class Figure:
         self._log_scale_x = value
 
     @property
-    def log_scale_y(self) -> bool:
+    def log_scale_y(self) -> Styled[bool]:
         return self._log_scale_y
 
     @log_scale_y.setter
@@ -294,7 +294,7 @@ class Figure:
                 self._fill_in_rc_params()
             figure_params_to_reset = self._fill_in_missing_params(self)
         else:
-            if self._figure_style == INHERIT:
+            if is_inherit(self._figure_style):
                 self._figure_style = get_default_style()
             try:
                 file_loader = FileLoader(self._figure_style)
@@ -555,9 +555,9 @@ class Figure:
                     raise GraphingException(
                         f"There was an error auto updating your {self._figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self._figure_style} style file:\n {e.args[0]}"
                     )
-                file_updater = FileUpdater(self._figure_style)
+                file_updater = FileUpdater(resolved(self._figure_style))
                 file_updater.update()
-                file_loader = FileLoader(self._figure_style)
+                file_loader = FileLoader(resolved(self._figure_style))
                 self._default_params = file_loader.load()
         return params_to_reset
 
@@ -982,7 +982,7 @@ class TwinAxis:
         """
         self._default_params = default_params
         self._figure_style = (
-            figure_style if figure_style != INHERIT else get_default_style()
+            get_default_style() if is_inherit(figure_style) else figure_style
         )
         if self._is_y:
             self._axes = fig_axes.twinx()
@@ -1184,9 +1184,9 @@ class TwinAxis:
                     raise GraphingException(
                         f"There was an error auto updating your {self._figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self._figure_style} style file:\n {e.args[0]}"
                     )
-                file_updater = FileUpdater(self._figure_style)
+                file_updater = FileUpdater(resolved(self._figure_style))
                 file_updater.update()
-                file_loader = FileLoader(self._figure_style)
+                file_loader = FileLoader(resolved(self._figure_style))
                 self._default_params = file_loader.load()
         return params_to_reset
 

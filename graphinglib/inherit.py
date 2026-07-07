@@ -1,4 +1,6 @@
-from typing import Any, NoReturn, TypeGuard, TypeVar, cast
+from typing import Any, NoReturn, TypeVar, cast
+
+from typing_extensions import TypeIs
 
 T = TypeVar("T")
 
@@ -31,7 +33,7 @@ type Styled[V] = V | Inherit
 """A style parameter that either holds a concrete value or defers to the figure style."""
 
 
-def is_inherit(value: object) -> TypeGuard[Inherit]:
+def is_inherit(value: object) -> TypeIs[Inherit]:
     return value is INHERIT
 
 
