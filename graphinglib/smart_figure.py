@@ -27,8 +27,8 @@ try:  # Optional dependency: astropy
     _ASTROPY_AVAILABLE = True
 except ImportError:
     _ASTROPY_AVAILABLE = False
-    WCS = type("WCSPlaceholder", (), {})  # type: ignore[assignment]
-    Quantity = type("QuantityPlaceholder", (), {})  # type: ignore[assignment]
+    WCS = cast(Any, type("WCSPlaceholder", (), {}))
+    Quantity = cast(Any, type("QuantityPlaceholder", (), {}))
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -359,7 +359,12 @@ class SmartFigure:
         self._reference_label_i: int | None = None
 
         self._ticks: dict[str, Any] = {}
-        self._tick_params = {"x major": {}, "y major": {}, "x minor": {}, "y minor": {}}
+        self._tick_params: dict[str, dict[str, Any]] = {
+            "x major": {},
+            "y major": {},
+            "x minor": {},
+            "y minor": {},
+        }
         self._pad_params = {}
         self._reference_labels_params = {}
 
@@ -375,7 +380,7 @@ class SmartFigure:
         self._custom_legend_labels = []
 
         self._hidden_spines = None
-        self._user_rc_dict = {}
+        self._user_rc_dict: dict[str, Any] = {}
         self._default_params = {}
         self._subplot_p: dict[
             str, list[Any]
@@ -460,7 +465,7 @@ class SmartFigure:
         return self._x_label
 
     @x_label.setter
-    def x_label(self, value: str) -> None:
+    def x_label(self, value: str | None) -> None:
         self._x_label = value
 
     @property
@@ -468,7 +473,7 @@ class SmartFigure:
         return self._y_label
 
     @y_label.setter
-    def y_label(self, value: str) -> None:
+    def y_label(self, value: str | None) -> None:
         self._y_label = value
 
     @property
@@ -477,11 +482,14 @@ class SmartFigure:
 
     @size.setter
     def size(self, value: tuple[float, float] | Inherit):
-        if not isinstance(value, tuple) and value != INHERIT:
+        if is_inherit(value):
+            self._size = value
+            return
+        if not isinstance(value, tuple):
             raise TypeError("size must be a tuple or 'default'.")
-        if isinstance(value, tuple) and len(value) != 2:
+        if len(value) != 2:
             raise ValueError("size must be a tuple of length 2.")
-        if isinstance(value, tuple) and (value[0] <= 0 or value[1] <= 0):
+        if value[0] <= 0 or value[1] <= 0:
             raise ValueError("size values must be greater than 0.")
         self._size = value
 
@@ -2090,7 +2098,7 @@ class SmartFigure:
         self._gridspec = gridspec
 
         if self._global_reference_label:
-            self._create_reference_label(self._figure)
+            self._create_reference_label(figure)
             figure.suptitle(" ")  # Create a blank title to reserve space
 
         ax = None  # keep track of the last plt.Axes object, needed for sharing axes
@@ -2147,7 +2155,7 @@ class SmartFigure:
                 custom_handles += legend_info["handles"]["custom"]
 
                 if is_matplotlib_style:
-                    plt.rcParams.update(parent_rc_params)
+                    plt.rcParams.update(cast(Any, parent_rc_params))
                 else:
                     plt.rcParams.update(
                         self._default_params["rc_params"]
@@ -2294,7 +2302,7 @@ class SmartFigure:
                         parent_rc_params = None
                         if is_matplotlib_style:
                             parent_rc_params = plt.rcParams.copy()
-                            plt.rcParams.update(twin_axis._user_rc_dict)
+                            plt.rcParams.update(cast(Any, twin_axis._user_rc_dict))
                         else:
                             twin_axis._default_params["rc_params"].update(
                                 twin_axis._user_rc_dict
@@ -2319,7 +2327,7 @@ class SmartFigure:
                         default_handles.extend(twin_handles)
 
                         if is_matplotlib_style:
-                            plt.rcParams.update(parent_rc_params)
+                            plt.rcParams.update(cast(Any, parent_rc_params))
                         else:
                             plt.rcParams.update(
                                 self._default_params["rc_params"]
@@ -2412,7 +2420,7 @@ class SmartFigure:
         if self._annotations is not None:
             z_order = 5000
             for annotation in self._annotations:
-                annotation._plot_element(self._figure, z_order)
+                annotation._plot_element(cast(Any, figure), z_order)
                 z_order += 5
 
         # Legend parameters
@@ -2559,9 +2567,9 @@ class SmartFigure:
         tolerance = 0.3  # allowed difference between axes to consider them to be in the same column
         if self._share_x and self._num_rows > 1:
             try:
-                plot_axes = self._get_all_axes_recursive(
-                    self._figure
-                )  # gives all the axes in the figure
+                figure = self._figure
+                assert figure is not None
+                plot_axes = self._get_all_axes_recursive(figure)
                 if len(plot_axes) <= 1:
                     return
 
@@ -2595,12 +2603,12 @@ class SmartFigure:
                     for ax in group:
                         current_pos = ax.get_position()
                         ax.set_position(
-                            [
+                            (
                                 rightmost_left_edge,
                                 current_pos.y0,
                                 aligned_size,
                                 current_pos.height,
-                            ]
+                            )
                         )
 
             except Exception:
@@ -2929,7 +2937,7 @@ class SmartFigure:
                 plt.style.use("default")
             else:
                 plt.style.use(resolved(self._figure_style))
-            plt.rcParams.update(self._user_rc_dict)
+            plt.rcParams.update(cast(Any, self._user_rc_dict))
         else:
             params = self._default_params["rc_params"]
             try:
@@ -2941,7 +2949,7 @@ class SmartFigure:
 
     def set_rc_params(
         self,
-        rc_params_dict: dict[str, str | float] = {},
+        rc_params_dict: dict[str, Any] = {},
         reset: bool = False,
     ) -> Self:
         """
@@ -2952,7 +2960,7 @@ class SmartFigure:
 
         Parameters
         ----------
-        rc_params_dict : dict[str, str | float], optional
+        rc_params_dict : dict[str, Any], optional
             Dictionary of rc parameters to update.
             Defaults to empty dictionary.
         reset : bool, optional
@@ -4042,7 +4050,7 @@ class SmartFigureWCS(SmartFigure):
         Customizes the ticks of the specified Axes according to the SmartFigure's tick parameters. This method is useful
         for inheritance to allow each SmartFigure class to customize the ticks their way.
         """
-        x_axis, y_axis = ax.coords
+        x_axis, y_axis = cast(Any, ax).coords
         x_axis.set_auto_axislabel(False)
         y_axis.set_auto_axislabel(False)
 
@@ -4483,12 +4491,12 @@ class SmartTwinAxis:
         self.elements = elements
 
         self._ticks = {}
-        self._tick_params = {"major": {}, "minor": {}}
+        self._tick_params: dict[str, dict[str, Any]] = {"major": {}, "minor": {}}
 
         self._edge_color = None
         self._line_width = None
         self._hide_spine = None
-        self._user_rc_dict = {}
+        self._user_rc_dict: dict[str, Any] = {}
         self._default_params = {}
         self._axes: Axes | None = (
             None  # used for keeping a reference to the Axes which enables drawing the legend on top
@@ -4872,7 +4880,7 @@ class SmartTwinAxis:
         return params_to_reset
 
     def _reset_params_to_default(
-        self, element: Plottable, params_to_reset: list[str]
+        self, element: Plottable | SmartTwinAxis, params_to_reset: list[str]
     ) -> None:
         """
         Resets the parameters that were set to default in the :meth:`~graphinglib.SmartTwinAxis._fill_in_missing_params`
@@ -4883,7 +4891,7 @@ class SmartTwinAxis:
 
     def set_rc_params(
         self,
-        rc_params_dict: dict[str, str | float] = {},
+        rc_params_dict: dict[str, Any] = {},
         reset: bool = False,
     ) -> Self:
         """
@@ -4894,7 +4902,7 @@ class SmartTwinAxis:
 
         Parameters
         ----------
-        rc_params_dict : dict[str, str | float], optional
+        rc_params_dict : dict[str, Any], optional
             Dictionary of rc parameters to update.
             Defaults to empty dictionary.
         reset : bool, optional
