@@ -53,7 +53,9 @@ from .graph_elements import (
 )
 from .legend_artists import LegendElement, LegendLine, LegendMarker, LegendPatch
 from .inherit import INHERIT, Inherit, Styled, is_inherit
-from .multifigure import MultiFigure
+
+# MultiFigure is deprecated but intentionally re-exported for backward compatibility.
+from .multifigure import MultiFigure  # ty: ignore[deprecated]
 from .shapes import Arrow, Circle, Ellipse, Line, Polygon, Rectangle
 from .smart_figure import SmartFigure, SmartFigureWCS, SmartTwinAxis
 from .tools import MathematicalObject

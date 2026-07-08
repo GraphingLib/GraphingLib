@@ -269,8 +269,8 @@ class SmartFigure:
         y_label: str | None = None,
         size: tuple[float, float] | Inherit = INHERIT,
         title: str | None = None,
-        x_lim: ListOrItem[tuple[float, float] | None] = None,
-        y_lim: ListOrItem[tuple[float, float] | None] = None,
+        x_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
+        y_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
         sub_x_labels: Iterable[str] | None = None,
         sub_y_labels: Iterable[str] | None = None,
         subtitles: Iterable[str] | None = None,
@@ -303,8 +303,7 @@ class SmartFigure:
         twin_y_axis: SmartTwinAxis | None = None,
         figure_style: str | Inherit = INHERIT,
         elements: Plottable
-        | Iterable[Plottable | SmartFigure | None]
-        | Iterable[Iterable[Plottable | None]] = [],
+        | Iterable[Plottable | SmartFigure | None | Iterable[Plottable | None]] = [],
         annotations: Iterable[Text] | None = None,
     ) -> None:
         self._mode: Literal["leaf", "container"] = "leaf"
@@ -502,11 +501,13 @@ class SmartFigure:
         self._title = value
 
     @property
-    def x_lim(self) -> ListOrItem[tuple[float, float] | None]:
+    def x_lim(self) -> ListOrItem[tuple[float | None, float | None] | None]:
         return self._x_lim
 
     @x_lim.setter
-    def x_lim(self, value: ListOrItem[tuple[float, float] | None]) -> None:
+    def x_lim(
+        self, value: ListOrItem[tuple[float | None, float | None] | None]
+    ) -> None:
         for v in value if isinstance(value, list) else [value]:
             if v is not None:
                 if not isinstance(v, tuple):
@@ -516,11 +517,13 @@ class SmartFigure:
         self._x_lim = value
 
     @property
-    def y_lim(self) -> ListOrItem[tuple[float, float] | None]:
+    def y_lim(self) -> ListOrItem[tuple[float | None, float | None] | None]:
         return self._y_lim
 
     @y_lim.setter
-    def y_lim(self, value: ListOrItem[tuple[float, float] | None]) -> None:
+    def y_lim(
+        self, value: ListOrItem[tuple[float | None, float | None] | None]
+    ) -> None:
         for v in value if isinstance(value, list) else [value]:
             if v is not None:
                 if not isinstance(v, tuple):
@@ -946,8 +949,7 @@ class SmartFigure:
         self,
         value: (
             Plottable
-            | Iterable[Plottable | SmartFigure | None]
-            | Iterable[Iterable[Plottable | None]]
+            | Iterable[Plottable | SmartFigure | None | Iterable[Plottable | None]]
         ),
     ) -> None:
         """
@@ -3914,8 +3916,8 @@ class SmartFigureWCS(SmartFigure):
         y_label: str | None = None,
         size: tuple[float, float] | Inherit = INHERIT,
         title: str | None = None,
-        x_lim: ListOrItem[tuple[float, float] | None] = None,
-        y_lim: ListOrItem[tuple[float, float] | None] = None,
+        x_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
+        y_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
         sub_x_labels: Iterable[str] | None = None,
         sub_y_labels: Iterable[str] | None = None,
         subtitles: Iterable[str] | None = None,
@@ -3947,8 +3949,7 @@ class SmartFigureWCS(SmartFigure):
         twin_y_axis: SmartTwinAxis | None = None,
         figure_style: str | Inherit = INHERIT,
         elements: Plottable
-        | Iterable[Plottable | SmartFigure | None]
-        | Iterable[Iterable[Plottable | None]] = [],
+        | Iterable[Plottable | SmartFigure | None | Iterable[Plottable | None]] = [],
         annotations: Iterable[Text] | None = None,
     ) -> None:
         _require_astropy("SmartFigureWCS")
@@ -4043,6 +4044,7 @@ class SmartFigureWCS(SmartFigure):
         Customizes the ticks of the specified Axes according to the SmartFigure's tick parameters. This method is useful
         for inheritance to allow each SmartFigure class to customize the ticks their way.
         """
+        # ax is a WCSAxes here; its `.coords` accessor is not in matplotlib's Axes stub.
         x_axis, y_axis = cast(Any, ax).coords
         x_axis.set_auto_axislabel(False)
         y_axis.set_auto_axislabel(False)

@@ -48,3 +48,15 @@ build-backend = "hatchling.build"
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+[tool.ty.environment]
+# Type-check against the minimum supported Python version so that anything relying
+# on newer typing behaviour is caught.
+python-version = "3.12"
+
+[tool.ty.src]
+# The test suite deliberately pokes private attributes and matplotlib internals, which
+# exclude it so `ty check` covers the shipping package, examples and docs. CI runs
+# `ty check --exit-zero-on-warning` to gate all of that on errors while tolerating the
+# intentional `MultiFigure` deprecation warnings in examples.
+exclude = ["unit_testing/**"]

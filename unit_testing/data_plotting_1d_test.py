@@ -192,6 +192,26 @@ class TestCurve(unittest.TestCase):
             self.assertAlmostEqual(point._x, points_x[i], places=3)
             self.assertAlmostEqual(point._y, points_y[i], places=3)
 
+    def test_intersection_points_style_list_shorter_than_points(self):
+        # Regression: when a per-point style list is shorter than the number of
+        # intersection points, the surplus points fall back to their defaults
+        # (None label, INHERIT style) instead of receiving the whole list.
+        x = linspace(0, 3 * pi, 1000)
+        other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")
+        points = self.testCurve.create_intersection_points(
+            other_curve,
+            labels=["first", "second"],
+            face_colors=["red", "blue"],
+        )
+        self.assertEqual(len(points), 4)
+        self.assertEqual(
+            [point._label for point in points], ["first", "second", None, None]
+        )
+        self.assertEqual(points[0]._face_color, "red")
+        self.assertEqual(points[1]._face_color, "blue")
+        self.assertIs(points[2]._face_color, INHERIT)
+        self.assertIs(points[3]._face_color, INHERIT)
+
     def test_add_curves(self):
         x = linspace(0, 3 * pi, 200)
         other_curve = Curve(x, 0.005 * x**2 + 0.1, "Other Curve", color="k")

@@ -1,5 +1,3 @@
-from .inherit import INHERIT, Inherit, Styled, is_inherit, resolved, strip_inherit
-
 from copy import deepcopy
 from shutil import which
 from typing import Any, Literal, Optional, cast
@@ -13,6 +11,7 @@ from matplotlib.patches import Polygon
 
 from .file_manager import FileLoader, FileUpdater, get_default_style
 from .graph_elements import GraphingException, Plottable
+from .inherit import INHERIT, Inherit, Styled, is_inherit, resolved, strip_inherit
 from .legend_artists import (
     HandlerMultipleLines,
     HandlerMultipleVerticalLines,
@@ -424,8 +423,10 @@ class Figure:
                     }
                 else:
                     legend_params: dict[str, Any] = {"loc": legend_loc}
+                # matplotlib's legend() stub has no overload accepting handler_map and
+                # handleheight together, so the typing warning is suppressed.
                 try:
-                    _legend = cast(Any, self._axes).legend(
+                    _legend = self._axes.legend(  # ty: ignore[no-matching-overload]
                         handles=self._handles,
                         labels=self._labels,
                         handleheight=1.3,
@@ -440,7 +441,7 @@ class Figure:
                     )
                     _legend.set_zorder(10000)
                 except TypeError:
-                    _legend = cast(Any, self._axes).legend(
+                    _legend = self._axes.legend(  # ty: ignore[no-matching-overload]
                         handles=self._handles,
                         labels=self._labels,
                         handleheight=1.3,
