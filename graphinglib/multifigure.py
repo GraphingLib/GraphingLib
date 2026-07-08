@@ -2,7 +2,6 @@ from copy import deepcopy
 from shutil import which
 from string import ascii_lowercase
 from typing import Any, Optional, Self, cast
-from typing_extensions import deprecated
 
 import matplotlib.pyplot as plt
 from matplotlib import rcParamsDefault
@@ -11,11 +10,12 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.transforms import ScaledTranslation
+from typing_extensions import deprecated
 
-from .inherit import INHERIT, Inherit, is_inherit, resolved
 from .figure import Figure
 from .file_manager import FileLoader, get_default_style
 from .graph_elements import GraphingException
+from .inherit import INHERIT, Inherit, is_inherit, resolved
 from .legend_artists import (
     HandlerMultipleLines,
     HandlerMultipleVerticalLines,
@@ -546,8 +546,10 @@ class MultiFigure:
             handles += sub_figure_handles
         self._fill_in_rc_params(is_matplotlib_style)
         if general_legend:
+            # matplotlib's legend() stub has no overload accepting handler_map and
+            # handleheight together, so the typing warning is suppressed.
             try:
-                _legend = cast(Any, self._figure).legend(
+                _legend = self._figure.legend(  # ty: ignore[no-matching-overload]
                     handles=handles,
                     labels=labels,
                     handleheight=1.3,
@@ -562,7 +564,7 @@ class MultiFigure:
                 )
                 _legend.set_zorder(10000)
             except TypeError:
-                _legend = cast(Any, self._figure).legend(
+                _legend = self._figure.legend(  # ty: ignore[no-matching-overload]
                     handles=handles,
                     labels=labels,
                     handleheight=1.3,

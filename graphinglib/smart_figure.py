@@ -4043,6 +4043,7 @@ class SmartFigureWCS(SmartFigure):
         Customizes the ticks of the specified Axes according to the SmartFigure's tick parameters. This method is useful
         for inheritance to allow each SmartFigure class to customize the ticks their way.
         """
+        # ax is a WCSAxes here; its `.coords` accessor is not in matplotlib's Axes stub.
         x_axis, y_axis = cast(Any, ax).coords
         x_axis.set_auto_axislabel(False)
         y_axis.set_auto_axislabel(False)

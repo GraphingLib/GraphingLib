@@ -1,0 +1,3 @@
+Surplus intersection points fall back to default styles
+-------------------------------------------------------
+When `Curve.create_intersection_points` is given a per-point style list (`labels`, `face_colors`, `edge_colors`, `marker_sizes`, `marker_styles`, `edge_widths` or `alphas`) shorter than the number of intersection points, the surplus points now fall back to their defaults (no label, and the `figure_style` default for each style) instead of being assigned the entire list as a single value.
