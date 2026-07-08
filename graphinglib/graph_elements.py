@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .exceptions import GraphingException
 from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
 
 from copy import deepcopy
@@ -79,14 +80,6 @@ class Plottable(Protocol):
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         pass
-
-
-class GraphingException(Exception):
-    """
-    General exception raised for the GraphingLib modules.
-    """
-
-    pass
 
 
 class Hlines(Plottable):
