@@ -1,6 +1,13 @@
 import unittest
 
+import matplotlib
+
+matplotlib.use("Agg")
+import numpy as np
+
 import graphinglib as gl
+from graphinglib.file_manager import set_default_style
+from graphinglib.tools import _require_optional_dependency
 from graphinglib.exceptions import (
     GraphingException,
     GraphingLibError,
@@ -80,6 +87,106 @@ class TestExceptionHierarchy(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn(name, gl.__all__)
                 self.assertIs(getattr(gl, name), getattr(gl.exceptions, name))
+
+
+def _empty_figure() -> None:
+    gl.Figure()._prepare_figure()
+
+
+def _twin_axis_twice() -> None:
+    sf = gl.SmartFigure(elements=[gl.Curve([0, 1], [0, 1])])
+    sf.create_twin_axis(is_y=True)
+    sf.create_twin_axis(is_y=True)
+
+
+def _assign_into_leaf() -> None:
+    sf = gl.SmartFigure(elements=[gl.Curve([0, 1], [0, 1])])
+    sf[0, 0] = gl.SmartFigure()
+
+
+def _non_converging_fit() -> None:
+    noise = gl.Scatter(np.linspace(0, 10, 50), np.random.rand(50))
+    gl.FitFromSine(noise, guesses=[1, 1, 1, 1], max_iterations=1)
+
+
+# (description, callable that misuses the public API, expected class, built-in it must also be)
+MISUSE_CASES = [
+    (
+        "negative radius",
+        lambda: gl.Circle(0, 0, radius=-1),
+        InvalidParameterError,
+        ValueError,
+    ),
+    (
+        "bad image shape",
+        lambda: gl.Heatmap([1, 2, 3, 4]),
+        InvalidParameterError,
+        ValueError,
+    ),
+    (
+        "unknown style name",
+        lambda: set_default_style("nope_zzz"),
+        InvalidParameterError,
+        ValueError,
+    ),
+    (
+        "mismatched x/y",
+        lambda: gl.Curve([0, 1, 2], [0, 1]),
+        IncompatibleArgumentsError,
+        ValueError,
+    ),
+    (
+        "wrong operand type",
+        lambda: gl.Curve([0, 1], [0, 1]) + "x",
+        InvalidParameterTypeError,
+        TypeError,
+    ),
+    ("nothing to plot", _empty_figure, InvalidOperationError, RuntimeError),
+    ("twin axis twice", _twin_axis_twice, InvalidOperationError, RuntimeError),
+    ("assign into leaf", _assign_into_leaf, LayoutError, RuntimeError),
+    (
+        "unknown figure style",
+        lambda: gl.Figure(figure_style="nope_zzz")._prepare_figure(),
+        StyleNotFoundError,
+        LookupError,
+    ),
+    (
+        "unsupported projection",
+        lambda: gl.SmartFigure(projection="3d"),
+        UnsupportedFeatureError,
+        NotImplementedError,
+    ),
+    (
+        "missing optional dep",
+        lambda: _require_optional_dependency(False, "PDF export", "pdf", "pypdfium2"),
+        MissingOptionalDependencyError,
+        ImportError,
+    ),
+    ("fit does not converge", _non_converging_fit, PlottingError, RuntimeError),
+]
+
+
+class TestPublicMisuseRaisesRightType(unittest.TestCase):
+    """End-to-end contract: a public misuse raises the specific GraphingLib type, and it
+    stays catchable both as the matching built-in and as GraphingException."""
+
+    def test_misuse_raises_specific_type(self):
+        for desc, func, expected, _ in MISUSE_CASES:
+            with self.subTest(case=desc):
+                with self.assertRaises(expected):
+                    func()
+
+    def test_misuse_is_catchable_as_builtin(self):
+        for desc, func, _, builtin in MISUSE_CASES:
+            with self.subTest(case=desc):
+                with self.assertRaises(builtin):
+                    func()
+
+    def test_misuse_is_catchable_as_graphing_exception(self):
+        for desc, func, _, _ in MISUSE_CASES:
+            with self.subTest(case=desc):
+                with self.assertRaises(GraphingException):
+                    func()
 
 
 if __name__ == "__main__":
