@@ -2,6 +2,7 @@ import unittest
 from random import random
 
 from graphinglib import INHERIT
+from graphinglib.exceptions import IncompatibleArgumentsError
 from matplotlib.collections import PathCollection
 from matplotlib.colors import to_hex, to_rgba
 from matplotlib.pyplot import close, sca, subplots
@@ -49,10 +50,27 @@ class TestCurve(unittest.TestCase):
             Curve,
         )
 
+    def test_mismatched_xy_lengths_raise_at_construction(self):
+        # The mistake is reported at the Curve(...) call, not later at plotting time.
+        with self.assertRaises(IncompatibleArgumentsError):
+            Curve([0, 1, 2], [0, 1])
+        # It stays catchable as a plain ValueError for backward compatibility.
+        with self.assertRaises(ValueError):
+            Curve([0, 1, 2], [0, 1])
+
+    def test_mismatched_errorbar_length_raises(self):
+        curve = Curve([0, 1, 2], [0, 1, 2])
+        with self.assertRaises(IncompatibleArgumentsError):
+            curve.add_errorbars(y_error=[0.1, 0.2])
+        # Scalars and matching-length arrays are accepted.
+        curve.add_errorbars(y_error=0.1)
+        curve.add_errorbars(y_error=[0.1, 0.2, 0.3])
+
     def test_add_errorbars(self):
         self.testCurve.add_errorbars(0.1, 0.1)
-        self.testCurve.add_errorbars(0.1, [0.2, 0.3] * 100)
-        self.testCurve.add_errorbars([0.2, 0.3] * 100, 0.1)
+        # testCurve has 1000 points, so array-valued errors must be length 1000.
+        self.testCurve.add_errorbars(0.1, [0.2, 0.3] * 500)
+        self.testCurve.add_errorbars([0.2, 0.3] * 500, 0.1)
         self.testCurve.add_errorbars(0.3, None)
         self.testCurve.add_errorbars(None, 0.3)
         self.testCurve.add_errorbars(

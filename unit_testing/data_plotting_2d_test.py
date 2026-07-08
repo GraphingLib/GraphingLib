@@ -9,12 +9,21 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import to_rgba
 
 from graphinglib.data_plotting_2d import Contour, Heatmap, Stream, VectorField
+from graphinglib.exceptions import InvalidParameterError
 from graphinglib.figure import Figure
 
 HAS_PYPDFIUM2 = find_spec("pypdfium2") is not None
 
 
 class TestHeatmap(unittest.TestCase):
+    def test_invalid_image_shape_raises_at_construction(self):
+        # A 1D array is reported here rather than as a cryptic matplotlib error at plot time.
+        with self.assertRaises(InvalidParameterError):
+            Heatmap([1, 2, 3, 4])
+        # A 2D array and an RGB(A) array are both accepted.
+        Heatmap(np.zeros((4, 4)))
+        Heatmap(np.zeros((4, 4, 3)))
+
     def test_init_and_plot(self):
         array_of_data = np.random.rand(10, 10)
         heatmap = Heatmap(
