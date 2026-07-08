@@ -16,6 +16,11 @@ from pyperclip import copy as copy_to_clipboard
 from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import interp1d
 
+from .exceptions import (
+    IncompatibleArgumentsError,
+    InvalidParameterError,
+    InvalidParameterTypeError,
+)
 from .graph_elements import Plottable, Point
 from .tools import MathematicalObject, get_contrasting_shade
 
@@ -439,7 +444,9 @@ class Curve(Plottable1D, MathematicalObject):
             new_y_data = self._y_data + other
             return Curve(self._x_data, new_y_data)
         else:
-            raise TypeError("Can only add a curve to another curve or a number.")
+            raise InvalidParameterTypeError(
+                "Can only add a curve to another curve or a number."
+            )
 
     def __sub__(self, other: Curve | float) -> Curve:
         """
@@ -461,7 +468,9 @@ class Curve(Plottable1D, MathematicalObject):
             new_y_data = self._y_data - other
             return Curve(self._x_data, new_y_data)
         else:
-            raise TypeError("Can only subtract a curve from another curve or a number.")
+            raise InvalidParameterTypeError(
+                "Can only subtract a curve from another curve or a number."
+            )
 
     def __mul__(self, other: Curve | float) -> Curve:
         """
@@ -483,7 +492,9 @@ class Curve(Plottable1D, MathematicalObject):
             new_y_data = self._y_data * other
             return Curve(self._x_data, new_y_data)
         else:
-            raise TypeError("Can only multiply a curve by another curve or a number.")
+            raise InvalidParameterTypeError(
+                "Can only multiply a curve by another curve or a number."
+            )
 
     def __truediv__(self, other: Curve | float) -> Curve:
         """
@@ -505,7 +516,9 @@ class Curve(Plottable1D, MathematicalObject):
             new_y_data = self._y_data / other
             return Curve(self._x_data, new_y_data)
         else:
-            raise TypeError("Can only divide a curve by another curve or a number.")
+            raise InvalidParameterTypeError(
+                "Can only divide a curve by another curve or a number."
+            )
 
     def __pow__(self, other: float) -> Curve:
         """
@@ -515,7 +528,9 @@ class Curve(Plottable1D, MathematicalObject):
             new_y_data = self._y_data**other
             return Curve(self._x_data, new_y_data)
         else:
-            raise TypeError("Can only raise a curve to another curve or a number.")
+            raise InvalidParameterTypeError(
+                "Can only raise a curve to another curve or a number."
+            )
 
     def __iter__(self):
         """
@@ -2206,7 +2221,7 @@ class Scatter(Plottable1D, MathematicalObject):
             try:
                 assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
-                raise ValueError(
+                raise IncompatibleArgumentsError(
                     "Cannot add two scatter plots with different x values."
                 )
             new_y_data = self._y_data + other._y_data
@@ -2215,7 +2230,7 @@ class Scatter(Plottable1D, MathematicalObject):
             new_y_data = self._y_data + other
             return Scatter(self._x_data, new_y_data)
         else:
-            raise TypeError(
+            raise InvalidParameterTypeError(
                 "Can only add a scatter plot to another scatter plot or a number."
             )
 
@@ -2227,7 +2242,7 @@ class Scatter(Plottable1D, MathematicalObject):
             try:
                 assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
-                raise ValueError(
+                raise IncompatibleArgumentsError(
                     "Cannot subtract two scatter plots with different x values."
                 )
             new_y_data = self._y_data - other._y_data
@@ -2236,7 +2251,7 @@ class Scatter(Plottable1D, MathematicalObject):
             new_y_data = self._y_data - other
             return Scatter(self._x_data, new_y_data)
         else:
-            raise TypeError(
+            raise InvalidParameterTypeError(
                 "Can only subtract a scatter plot from another scatter plot or a number."
             )
 
@@ -2248,7 +2263,7 @@ class Scatter(Plottable1D, MathematicalObject):
             try:
                 assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
-                raise ValueError(
+                raise IncompatibleArgumentsError(
                     "Cannot multiply two scatter plots with different x values."
                 )
             new_y_data = self._y_data * other._y_data
@@ -2257,7 +2272,7 @@ class Scatter(Plottable1D, MathematicalObject):
             new_y_data = self._y_data * other
             return Scatter(self._x_data, new_y_data)
         else:
-            raise TypeError(
+            raise InvalidParameterTypeError(
                 "Can only multiply a scatter plot by another scatter plot or a number."
             )
 
@@ -2269,7 +2284,7 @@ class Scatter(Plottable1D, MathematicalObject):
             try:
                 assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
-                raise ValueError(
+                raise IncompatibleArgumentsError(
                     "Cannot divide two scatter plots with different x values."
                 )
             new_y_data = self._y_data / other._y_data
@@ -2278,7 +2293,7 @@ class Scatter(Plottable1D, MathematicalObject):
             new_y_data = self._y_data / other
             return Scatter(self._x_data, new_y_data)
         else:
-            raise TypeError(
+            raise InvalidParameterTypeError(
                 "Can only divide a scatter plot by another scatter plot or a number."
             )
 
@@ -2290,7 +2305,7 @@ class Scatter(Plottable1D, MathematicalObject):
             new_y_data = self._y_data**other
             return Scatter(self._x_data, new_y_data)
         else:
-            raise TypeError(
+            raise InvalidParameterTypeError(
                 "Can only raise a scatter plot to another scatter plot or a number."
             )
 
@@ -2917,7 +2932,7 @@ class Scatter(Plottable1D, MathematicalObject):
         """
         # Check that either face color or edge color is not None
         if self._face_color is None and self._edge_color is None:
-            raise ValueError(
+            raise IncompatibleArgumentsError(
                 "Both face color and edge color cannot be None. Please set at least one of them to a valid color."
             )
 
@@ -2929,7 +2944,7 @@ class Scatter(Plottable1D, MathematicalObject):
             if len(self._face_color) in [3, 4] or len(self._edge_color) in [3, 4]:
                 pass
             else:
-                raise ValueError(
+                raise IncompatibleArgumentsError(
                     "Both face color and edge color cannot be lists/arrays/tuples of intensities or colors. "
                     "Please set at least one of them to a valid color or set one of them to None."
                 )
@@ -3023,7 +3038,7 @@ class Scatter(Plottable1D, MathematicalObject):
         if self._show_errorbars:
             # Convert errorbars color to matplotlib notation
             if self._errorbars_color is None:
-                raise ValueError(
+                raise InvalidParameterError(
                     "Errorbars color cannot be None. Please set the errorbars color to a valid color."
                 )
             elif is_inherit(self._errorbars_color):
@@ -3046,7 +3061,7 @@ class Scatter(Plottable1D, MathematicalObject):
                 # Use specified color
                 mpl_errorbars_color = self._errorbars_color
             else:
-                raise ValueError("Errorbars color must be a string.")
+                raise InvalidParameterError("Errorbars color must be a string.")
 
             errorbar_params = {
                 "markerfacecolor": None,
@@ -3588,7 +3603,9 @@ class Histogram(Plottable1D):
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         if type != "normal":
-            raise ValueError("Currently, only 'normal' distribution is supported.")
+            raise InvalidParameterError(
+                "Currently, only 'normal' distribution is supported."
+            )
         self._show_pdf = True
         self._pdf_type = type
         self._pdf_show_mean = show_mean

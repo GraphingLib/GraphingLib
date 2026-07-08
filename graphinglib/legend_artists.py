@@ -11,6 +11,8 @@ from matplotlib.typing import ColorType
 from numpy import array, full_like
 from typing import Any, Literal, Optional, Protocol, Sequence, runtime_checkable
 
+from .exceptions import InvalidParameterError, InvalidParameterTypeError
+
 
 class HandlerMultipleLines(HandlerLineCollection):
     """
@@ -169,22 +171,22 @@ class LegendElement(Protocol):
     @alpha.setter
     def alpha(self, value: float) -> None:
         if not isinstance(value, (int, float)):
-            raise TypeError("Alpha value must be a number.")
+            raise InvalidParameterTypeError("Alpha value must be a number.")
         if not (0 <= value <= 1):
-            raise ValueError("Alpha value must be between 0 and 1.")
+            raise InvalidParameterError("Alpha value must be between 0 and 1.")
         self._alpha = value  # ty: ignore[ambiguous-protocol-member]
 
     def _color_setter(self, attr: str, value: Optional[ColorType]) -> None:
         if value is not None:
             if not is_color_like(value):
-                raise ValueError(f"'{value}' is not a valid color.")
+                raise InvalidParameterError(f"'{value}' is not a valid color.")
         setattr(self, f"_{attr}", value)
 
     def _number_setter(self, attr: str, value: float) -> None:
         if not isinstance(value, (int, float)):
-            raise TypeError(f"'{value}' is not a valid number.")
+            raise InvalidParameterTypeError(f"'{value}' is not a valid number.")
         if value < 0:
-            raise ValueError(f"'{value}' cannot be negative.")
+            raise InvalidParameterError(f"'{value}' cannot be negative.")
         setattr(self, f"_{attr}", value)
 
     def _line_style_setter(
@@ -204,14 +206,18 @@ class LegendElement(Protocol):
                 "dashdot",
                 "dotted",
             ]:
-                raise ValueError(f"'{value}' is not a valid line style.")
+                raise InvalidParameterError(f"'{value}' is not a valid line style.")
         elif isinstance(value, tuple):
             if len(value) != 2 or not all(
                 isinstance(x, (int, float)) for x in [value[0], *value[1]]
             ):
-                raise ValueError(f"'{value}' is not a valid line style tuple.")
+                raise InvalidParameterError(
+                    f"'{value}' is not a valid line style tuple."
+                )
         else:
-            raise TypeError(f"'{value}' is not a valid line style type.")
+            raise InvalidParameterTypeError(
+                f"'{value}' is not a valid line style type."
+            )
         setattr(self, f"_{attr}", value)
 
 
@@ -485,7 +491,7 @@ class LegendMarker(LegendElement):
         try:
             MarkerStyle(value)  # Validate the marker style
         except Exception:
-            raise ValueError(f"'{value}' is not a valid marker style.")
+            raise InvalidParameterError(f"'{value}' is not a valid marker style.")
         self._marker_style = value
 
     @property
@@ -498,7 +504,7 @@ class LegendMarker(LegendElement):
     ) -> None:
         if value is not None:
             if value not in MarkerStyle.fillstyles:
-                raise ValueError(f"'{value}' is not a valid fill style.")
+                raise InvalidParameterError(f"'{value}' is not a valid fill style.")
         self._fill_style = value
 
 
@@ -646,5 +652,5 @@ class LegendPatch(LegendElement):
             valid_hatch_patterns = set(r"-+|/\xXoO.*")
             invalids = set(value).difference(valid_hatch_patterns)
             if invalids:
-                raise ValueError(f"Invalid hatch pattern(s): {invalids}")
+                raise InvalidParameterError(f"Invalid hatch pattern(s): {invalids}")
         self._hatch = value

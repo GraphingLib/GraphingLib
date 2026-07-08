@@ -11,6 +11,7 @@ from numpy.typing import ArrayLike
 from scipy.optimize import curve_fit
 
 from .data_plotting_1d import Curve, Scatter
+from .exceptions import InvalidParameterError
 from .graph_elements import Point
 from .inherit import INHERIT, Inherit, Styled, strip_inherit
 
@@ -28,7 +29,7 @@ def _repair_positive_guess(
     """
     guesses = np.array(guesses, dtype=float)
     if guesses.shape != (number_of_parameters,):
-        raise ValueError(
+        raise InvalidParameterError(
             f"Expected {number_of_parameters} initial guesses, "
             f"but got an array of shape {guesses.shape}."
         )

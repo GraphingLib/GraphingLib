@@ -9,7 +9,7 @@ from numpy import linspace, pi, sin
 from graphinglib.data_plotting_1d import Curve
 from graphinglib.figure import Figure, TwinAxis
 from graphinglib.file_manager import FileLoader
-from graphinglib.graph_elements import GraphingException
+from graphinglib.exceptions import GraphingException
 
 
 class TestFigure(unittest.TestCase):

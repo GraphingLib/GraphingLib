@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 
 from graphinglib.data_plotting_1d import Curve
 from graphinglib.figure import Figure
-from graphinglib.graph_elements import GraphingException
+from graphinglib.exceptions import GraphingException
 from graphinglib.multifigure import MultiFigure
 
 
