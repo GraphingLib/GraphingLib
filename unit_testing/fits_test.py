@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 
 from graphinglib.data_plotting_1d import Curve, Scatter
+from graphinglib.exceptions import PlottingError
 from graphinglib.fits import (
     FitFromExponential,
     FitFromFOTF,
@@ -170,6 +171,15 @@ class TestFitFromSine(unittest.TestCase):
         self.fit = FitFromSine(
             self.data, "Sinusoidal fit", guesses=[2.09, 3.1, 4.2, 5.2]
         )
+
+    def test_non_convergence_raises_plotting_error(self):
+        # A fit that cannot converge surfaces as a GraphingLib PlottingError with context,
+        # not a bare scipy RuntimeError. It stays catchable as RuntimeError.
+        noise = Scatter(np.linspace(0, 10, 50), np.random.rand(50), "k", "Noise")
+        with self.assertRaises(PlottingError):
+            FitFromSine(noise, guesses=[1, 1, 1, 1], max_iterations=1)
+        with self.assertRaises(RuntimeError):
+            FitFromSine(noise, guesses=[1, 1, 1, 1], max_iterations=1)
 
     def test_parameters(self):
         self.assertAlmostEqual(self.fit._amplitude, 2.000, places=7)

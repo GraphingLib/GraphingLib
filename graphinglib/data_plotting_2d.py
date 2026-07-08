@@ -11,7 +11,7 @@ from matplotlib.image import imread
 from numpy.typing import ArrayLike
 from scipy.interpolate import griddata
 
-from .exceptions import InvalidParameterError
+from .exceptions import InvalidParameterError, PlottingError
 from .graph_elements import Plottable
 from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
 from .tools import _require_optional_dependency
@@ -354,13 +354,19 @@ class Heatmap(Plottable2D):
         x = np.linspace(x_axis_range[0], x_axis_range[1], number_of_points[0])
         y = np.linspace(y_axis_range[0], y_axis_range[1], number_of_points[1])
         x_grid, y_grid = np.meshgrid(x, y)
-        grid = griddata(
-            points,
-            values,
-            (x_grid, y_grid),
-            method=grid_interpolation,
-            fill_value=fill_value,
-        )
+        try:
+            grid = griddata(
+                points,
+                values,
+                (x_grid, y_grid),
+                method=grid_interpolation,
+                fill_value=fill_value,
+            )
+        except Exception as exc:
+            raise PlottingError(
+                f"Could not interpolate the data onto a grid ({exc}). Check that points "
+                "and values are compatible and that enough points were provided."
+            ) from exc
         return cls(
             image=grid,
             x_axis_range=x_axis_range,
@@ -490,7 +496,14 @@ class Heatmap(Plottable2D):
     @image.setter
     def image(self, image: ArrayLike | str) -> None:
         if isinstance(image, str):
-            self._image = imread(image)
+            try:
+                self._image = imread(image)
+            except FileNotFoundError:
+                raise  # a missing file is already a clear error
+            except Exception as exc:
+                raise PlottingError(
+                    f"Could not read {image!r} as an image ({exc})."
+                ) from exc
             self._show_color_bar = False
         else:
             self._image = np.asarray(image)
@@ -1512,11 +1525,17 @@ class Stream(Plottable2D):
         else:
             params["color"] = self._color
 
-        axes.streamplot(
-            x=self._x_data,
-            y=self._y_data,
-            u=self._u_data,
-            v=self._v_data,
-            zorder=z_order,
-            **params,
-        )
+        try:
+            axes.streamplot(
+                x=self._x_data,
+                y=self._y_data,
+                u=self._u_data,
+                v=self._v_data,
+                zorder=z_order,
+                **params,
+            )
+        except Exception as exc:
+            raise PlottingError(
+                f"Could not draw the Stream ({exc}). Check that x and y are evenly "
+                "spaced 1D arrays and that u and v have shape (len(y), len(x))."
+            ) from exc

@@ -131,9 +131,10 @@ class UnsupportedFeatureError(GraphingLibError, NotImplementedError):
 
 class PlottingError(GraphingLibError, RuntimeError):
     """
-    A matplotlib, scipy, or numpy call failed while rendering an element.
+    A matplotlib, scipy, or numpy call failed while building or rendering an element.
 
-    Use to wrap a lower-level exception raised deep inside a dependency during plotting, so
-    the user sees GraphingLib context instead of a bare backend error. Always chain the
-    original with ``raise PlottingError(...) from exc``. Also a ``RuntimeError``.
+    Use to wrap a lower-level exception raised deep inside a dependency (a failed plot call,
+    a fit that did not converge, an interpolation error, ...) so the user sees GraphingLib
+    context instead of a bare backend error. Always chain the original with
+    ``raise PlottingError(...) from exc``. Also a ``RuntimeError``.
     """

@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import to_rgba
 
 from graphinglib.data_plotting_2d import Contour, Heatmap, Stream, VectorField
-from graphinglib.exceptions import InvalidParameterError
+from graphinglib.exceptions import InvalidParameterError, PlottingError
 from graphinglib.figure import Figure
 
 HAS_PYPDFIUM2 = find_spec("pypdfium2") is not None
@@ -23,6 +23,19 @@ class TestHeatmap(unittest.TestCase):
         # A 2D array and an RGB(A) array are both accepted.
         Heatmap(np.zeros((4, 4)))
         Heatmap(np.zeros((4, 4, 3)))
+
+    def test_unreadable_image_file_raises_plotting_error(self):
+        with tempfile.NamedTemporaryFile(suffix=".txt", mode="w", delete=False) as f:
+            f.write("this is not an image")
+            path = f.name
+        try:
+            with self.assertRaises(PlottingError):
+                Heatmap(path)
+        finally:
+            os.remove(path)
+        # A genuinely missing file stays a plain FileNotFoundError.
+        with self.assertRaises(FileNotFoundError):
+            Heatmap("/nonexistent/definitely/not/here.png")
 
     def test_init_and_plot(self):
         array_of_data = np.random.rand(10, 10)
