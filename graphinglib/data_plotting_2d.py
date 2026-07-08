@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
-
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Callable, Optional, Protocol, runtime_checkable
@@ -14,6 +12,7 @@ from numpy.typing import ArrayLike
 from scipy.interpolate import griddata
 
 from .graph_elements import Plottable
+from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
 from .tools import _require_optional_dependency
 
 try:
@@ -484,7 +483,7 @@ class Heatmap(Plottable2D):
         )
 
     @property
-    def image(self) -> ArrayLike | str:
+    def image(self) -> np.ndarray:
         return self._image
 
     @image.setter

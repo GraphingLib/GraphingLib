@@ -203,7 +203,7 @@ def create_thumbnail(infile, thumbfile):
     dpi = 100
     fig = plt.figure(figsize=(new_width / dpi, new_height / dpi), dpi=dpi)
 
-    ax = fig.add_axes([0, 0, 1, 1], aspect="auto", frameon=False, xticks=[], yticks=[])
+    ax = fig.add_axes((0, 0, 1, 1), aspect="auto", frameon=False, xticks=[], yticks=[])
     if all(thumb.shape):
         ax.imshow(thumb, aspect="auto", resample=True, interpolation="bilinear")
     else:

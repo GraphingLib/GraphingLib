@@ -27,6 +27,37 @@ jobs:
       - name: Ruff format check
         run: uvx --from ruff==0.15.0 ruff format --check .
 
+  typecheck:
+    name: Type check (package)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install uv and set Python version
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.29"
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install dependencies (incl. dev group for ty)
+        run: |
+          if [ -f uv.lock ]; then
+            uv sync --locked --all-extras
+          else
+            uv sync --all-extras
+          fi
+
+      - name: ty type check (tests excluded via pyproject)
+        run: |
+          # Shipping package: fail on any diagnostic, warnings included.
+          uv run ty check graphinglib/
+          # Examples & docs too: fail on errors, but tolerate the intentional
+          # MultiFigure deprecation warnings (which become errors at its removal).
+          uv run ty check --exit-zero-on-warning
+
   tests:
     name: Unit tests - Python ${{ matrix.python-version }}
     needs: lint
