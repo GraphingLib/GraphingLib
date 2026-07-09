@@ -24,8 +24,8 @@ except ImportError:
 
 from graphinglib.data_plotting_1d import Curve
 from graphinglib.file_manager import FileLoader
+from graphinglib.exceptions import GraphingException
 from graphinglib.graph_elements import (
-    GraphingException,
     Plottable,
     Text,
 )

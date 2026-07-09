@@ -16,6 +16,11 @@ from pyperclip import copy as copy_to_clipboard
 from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import interp1d
 
+from .exceptions import (
+    IncompatibleArgumentsError,
+    InvalidParameterError,
+    InvalidParameterTypeError,
+)
 from .graph_elements import Plottable, Point
 from .tools import MathematicalObject, get_contrasting_shade
 
@@ -60,6 +65,42 @@ class Plottable1D(Plottable, Protocol):
 
     def to_desmos(self, decimal_precision: int = 2, to_clipboard: bool = False) -> str:
         pass
+
+
+def _check_same_length(name_a: str, a: np.ndarray, name_b: str, b: np.ndarray) -> None:
+    """
+    Raises an evocative error if two data arrays don't have matching shapes.
+
+    Validating here, at the boundary, surfaces the mistake at the user's call site instead
+    of much later as a cryptic matplotlib error during plotting.
+    """
+    if a.shape != b.shape:
+        raise IncompatibleArgumentsError(
+            f"{name_a} and {name_b} must have the same shape, but got "
+            f"{a.shape} and {b.shape}."
+        )
+
+
+def _check_error_shape(
+    name_err: str, err: np.ndarray, name_data: str, data: np.ndarray
+) -> None:
+    """
+    Raises an evocative error if an error array's shape can't line up with its data.
+
+    Matplotlib accepts a scalar, a length-n 1D array, or a (2, n) array (asymmetric); any
+    other shape is caught here rather than deep inside ``errorbar`` at plotting time.
+    """
+    n = data.shape[0] if data.ndim >= 1 else 1
+    valid = (
+        err.ndim == 0
+        or (err.ndim == 1 and err.shape[0] == n)
+        or (err.ndim == 2 and err.shape == (2, n))
+    )
+    if not valid:
+        raise IncompatibleArgumentsError(
+            f"{name_err} must be a scalar, a length-{n} 1D array, or a (2, {n}) array to "
+            f"match {name_data}, but got shape {err.shape}."
+        )
 
 
 def _format_desmos_points(
@@ -146,6 +187,7 @@ class Curve(Plottable1D, MathematicalObject):
         self.handle = None
         self._x_data = np.asarray(x_data)
         self._y_data = np.asarray(y_data)
+        _check_same_length("x_data", self._x_data, "y_data", self._y_data)
         self._label = label
         self._color = color
         self._line_width = line_width
@@ -439,7 +481,9 @@ class Curve(Plottable1D, MathematicalObject):
             new_y_data = self._y_data + other
             return Curve(self._x_data, new_y_data)
         else:
-            raise TypeError("Can only add a curve to another curve or a number.")
+            raise InvalidParameterTypeError(
+                "Can only add a curve to another curve or a number."
+            )
 
     def __sub__(self, other: Curve | float) -> Curve:
         """
@@ -461,7 +505,9 @@ class Curve(Plottable1D, MathematicalObject):
             new_y_data = self._y_data - other
             return Curve(self._x_data, new_y_data)
         else:
-            raise TypeError("Can only subtract a curve from another curve or a number.")
+            raise InvalidParameterTypeError(
+                "Can only subtract a curve from another curve or a number."
+            )
 
     def __mul__(self, other: Curve | float) -> Curve:
         """
@@ -483,7 +529,9 @@ class Curve(Plottable1D, MathematicalObject):
             new_y_data = self._y_data * other
             return Curve(self._x_data, new_y_data)
         else:
-            raise TypeError("Can only multiply a curve by another curve or a number.")
+            raise InvalidParameterTypeError(
+                "Can only multiply a curve by another curve or a number."
+            )
 
     def __truediv__(self, other: Curve | float) -> Curve:
         """
@@ -505,7 +553,9 @@ class Curve(Plottable1D, MathematicalObject):
             new_y_data = self._y_data / other
             return Curve(self._x_data, new_y_data)
         else:
-            raise TypeError("Can only divide a curve by another curve or a number.")
+            raise InvalidParameterTypeError(
+                "Can only divide a curve by another curve or a number."
+            )
 
     def __pow__(self, other: float) -> Curve:
         """
@@ -515,7 +565,9 @@ class Curve(Plottable1D, MathematicalObject):
             new_y_data = self._y_data**other
             return Curve(self._x_data, new_y_data)
         else:
-            raise TypeError("Can only raise a curve to another curve or a number.")
+            raise InvalidParameterTypeError(
+                "Can only raise a curve to another curve or a number."
+            )
 
     def __iter__(self):
         """
@@ -725,9 +777,11 @@ class Curve(Plottable1D, MathematicalObject):
 
         if x_error is not None:
             self._x_error = np.array(x_error)
+            _check_error_shape("x_error", self._x_error, "x_data", self._x_data)
 
         if y_error is not None:
             self._y_error = np.array(y_error)
+            _check_error_shape("y_error", self._y_error, "y_data", self._y_data)
 
         self._errorbars_color = errorbars_color
         self._errorbars_line_width = errorbars_line_width
@@ -1915,6 +1969,7 @@ class Scatter(Plottable1D, MathematicalObject):
         self.errorbars_handle = None
         self._x_data = np.asarray(x_data)
         self._y_data = np.asarray(y_data)
+        _check_same_length("x_data", self._x_data, "y_data", self._y_data)
         self._label = label
         self._face_color = face_color
         self._edge_color = edge_color
@@ -2206,7 +2261,7 @@ class Scatter(Plottable1D, MathematicalObject):
             try:
                 assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
-                raise ValueError(
+                raise IncompatibleArgumentsError(
                     "Cannot add two scatter plots with different x values."
                 )
             new_y_data = self._y_data + other._y_data
@@ -2215,7 +2270,7 @@ class Scatter(Plottable1D, MathematicalObject):
             new_y_data = self._y_data + other
             return Scatter(self._x_data, new_y_data)
         else:
-            raise TypeError(
+            raise InvalidParameterTypeError(
                 "Can only add a scatter plot to another scatter plot or a number."
             )
 
@@ -2227,7 +2282,7 @@ class Scatter(Plottable1D, MathematicalObject):
             try:
                 assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
-                raise ValueError(
+                raise IncompatibleArgumentsError(
                     "Cannot subtract two scatter plots with different x values."
                 )
             new_y_data = self._y_data - other._y_data
@@ -2236,7 +2291,7 @@ class Scatter(Plottable1D, MathematicalObject):
             new_y_data = self._y_data - other
             return Scatter(self._x_data, new_y_data)
         else:
-            raise TypeError(
+            raise InvalidParameterTypeError(
                 "Can only subtract a scatter plot from another scatter plot or a number."
             )
 
@@ -2248,7 +2303,7 @@ class Scatter(Plottable1D, MathematicalObject):
             try:
                 assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
-                raise ValueError(
+                raise IncompatibleArgumentsError(
                     "Cannot multiply two scatter plots with different x values."
                 )
             new_y_data = self._y_data * other._y_data
@@ -2257,7 +2312,7 @@ class Scatter(Plottable1D, MathematicalObject):
             new_y_data = self._y_data * other
             return Scatter(self._x_data, new_y_data)
         else:
-            raise TypeError(
+            raise InvalidParameterTypeError(
                 "Can only multiply a scatter plot by another scatter plot or a number."
             )
 
@@ -2269,7 +2324,7 @@ class Scatter(Plottable1D, MathematicalObject):
             try:
                 assert np.array_equal(self._x_data, other._x_data)
             except AssertionError:
-                raise ValueError(
+                raise IncompatibleArgumentsError(
                     "Cannot divide two scatter plots with different x values."
                 )
             new_y_data = self._y_data / other._y_data
@@ -2278,7 +2333,7 @@ class Scatter(Plottable1D, MathematicalObject):
             new_y_data = self._y_data / other
             return Scatter(self._x_data, new_y_data)
         else:
-            raise TypeError(
+            raise InvalidParameterTypeError(
                 "Can only divide a scatter plot by another scatter plot or a number."
             )
 
@@ -2290,7 +2345,7 @@ class Scatter(Plottable1D, MathematicalObject):
             new_y_data = self._y_data**other
             return Scatter(self._x_data, new_y_data)
         else:
-            raise TypeError(
+            raise InvalidParameterTypeError(
                 "Can only raise a scatter plot to another scatter plot or a number."
             )
 
@@ -2595,9 +2650,11 @@ class Scatter(Plottable1D, MathematicalObject):
 
         if x_error is not None:
             self._x_error = np.array(x_error)
+            _check_error_shape("x_error", self._x_error, "x_data", self._x_data)
 
         if y_error is not None:
             self._y_error = np.array(y_error)
+            _check_error_shape("y_error", self._y_error, "y_data", self._y_data)
 
         self._errorbars_color = errorbars_color
         self._errorbars_line_width = errorbars_line_width
@@ -2917,7 +2974,7 @@ class Scatter(Plottable1D, MathematicalObject):
         """
         # Check that either face color or edge color is not None
         if self._face_color is None and self._edge_color is None:
-            raise ValueError(
+            raise IncompatibleArgumentsError(
                 "Both face color and edge color cannot be None. Please set at least one of them to a valid color."
             )
 
@@ -2929,7 +2986,7 @@ class Scatter(Plottable1D, MathematicalObject):
             if len(self._face_color) in [3, 4] or len(self._edge_color) in [3, 4]:
                 pass
             else:
-                raise ValueError(
+                raise IncompatibleArgumentsError(
                     "Both face color and edge color cannot be lists/arrays/tuples of intensities or colors. "
                     "Please set at least one of them to a valid color or set one of them to None."
                 )
@@ -3023,7 +3080,7 @@ class Scatter(Plottable1D, MathematicalObject):
         if self._show_errorbars:
             # Convert errorbars color to matplotlib notation
             if self._errorbars_color is None:
-                raise ValueError(
+                raise InvalidParameterError(
                     "Errorbars color cannot be None. Please set the errorbars color to a valid color."
                 )
             elif is_inherit(self._errorbars_color):
@@ -3046,7 +3103,7 @@ class Scatter(Plottable1D, MathematicalObject):
                 # Use specified color
                 mpl_errorbars_color = self._errorbars_color
             else:
-                raise ValueError("Errorbars color must be a string.")
+                raise InvalidParameterError("Errorbars color must be a string.")
 
             errorbar_params = {
                 "markerfacecolor": None,
@@ -3588,7 +3645,9 @@ class Histogram(Plottable1D):
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
         if type != "normal":
-            raise ValueError("Currently, only 'normal' distribution is supported.")
+            raise InvalidParameterError(
+                "Currently, only 'normal' distribution is supported."
+            )
         self._show_pdf = True
         self._pdf_type = type
         self._pdf_show_mean = show_mean

@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from .exceptions import (
+    IncompatibleArgumentsError,
+    InvalidParameterTypeError,
+    PlottingError,
+)
 from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
 
 from copy import deepcopy
@@ -81,14 +86,6 @@ class Plottable(Protocol):
         pass
 
 
-class GraphingException(Exception):
-    """
-    General exception raised for the GraphingLib modules.
-    """
-
-    pass
-
-
 class Hlines(Plottable):
     """
     This class implements simple horizontal lines.
@@ -163,47 +160,47 @@ class Hlines(Plottable):
 
     def _validate_state(self) -> None:
         if (self._x_min is None) ^ (self._x_max is None):
-            raise GraphingException(
-                "Either both x_min and x_max are specified or none of them"
+            raise IncompatibleArgumentsError(
+                "x_min and x_max must both be provided, or neither."
             )
 
         if isinstance(self._y, (int, float)) and isinstance(
             self._colors, (list, np.ndarray)
         ):
             if len(self._colors) > 1:
-                raise GraphingException(
-                    "There can't be multiple colors for a single line!"
+                raise IncompatibleArgumentsError(
+                    "colors must be a single value when there is only one line."
                 )
         if isinstance(self._y, (int, float)) and isinstance(
             self._line_styles, (list, np.ndarray)
         ):
             if len(self._line_styles) > 1:
-                raise GraphingException(
-                    "There can't be multiple line styles for a single line!"
+                raise IncompatibleArgumentsError(
+                    "line_styles must be a single value when there is only one line."
                 )
         if isinstance(self._y, (int, float)) and isinstance(
             self._line_widths, (list, np.ndarray)
         ):
             if len(self._line_widths) > 1:
-                raise GraphingException(
-                    "There can't be multiple line widths for a single line!"
+                raise IncompatibleArgumentsError(
+                    "line_widths must be a single value when there is only one line."
                 )
         if isinstance(self._y, (list, np.ndarray)):
             if isinstance(self._colors, list) and len(self._y) != len(self._colors):
-                raise GraphingException(
-                    "There must be the same number of colors and lines!"
+                raise IncompatibleArgumentsError(
+                    "The number of colors must match the number of lines."
                 )
             if isinstance(self._line_styles, list) and len(self._y) != len(
                 self._line_styles
             ):
-                raise GraphingException(
-                    "There must be the same number of line styles and lines!"
+                raise IncompatibleArgumentsError(
+                    "The number of line styles must match the number of lines."
                 )
             if isinstance(self._line_widths, list) and len(self._y) != len(
                 self._line_widths
             ):
-                raise GraphingException(
-                    "There must be the same number of line widths and lines!"
+                raise IncompatibleArgumentsError(
+                    "The number of line widths must match the number of lines."
                 )
 
     @property
@@ -458,39 +455,39 @@ class Vlines(Plottable):
             self._colors, (list, np.ndarray)
         ):
             if len(self._colors) > 1:
-                raise GraphingException(
-                    "There can't be multiple colors for a single line!"
+                raise IncompatibleArgumentsError(
+                    "colors must be a single value when there is only one line."
                 )
         if isinstance(self._x, (int, float)) and isinstance(
             self._line_styles, (list, np.ndarray)
         ):
             if len(self._line_styles) > 1:
-                raise GraphingException(
-                    "There can't be multiple line styles for a single line!"
+                raise IncompatibleArgumentsError(
+                    "line_styles must be a single value when there is only one line."
                 )
         if isinstance(self._x, (int, float)) and isinstance(
             self._line_widths, (list, np.ndarray)
         ):
             if len(self._line_widths) > 1:
-                raise GraphingException(
-                    "There can't be multiple line widths for a single line!"
+                raise IncompatibleArgumentsError(
+                    "line_widths must be a single value when there is only one line."
                 )
         if isinstance(self._x, (list, np.ndarray)):
             if isinstance(self._colors, list) and len(self._x) != len(self._colors):
-                raise GraphingException(
-                    "There must be the same number of colors and lines!"
+                raise IncompatibleArgumentsError(
+                    "The number of colors must match the number of lines."
                 )
             if isinstance(self._line_styles, list) and len(self._x) != len(
                 self._line_styles
             ):
-                raise GraphingException(
-                    "There must be the same number of line styles and lines!"
+                raise IncompatibleArgumentsError(
+                    "The number of line styles must match the number of lines."
                 )
             if isinstance(self._line_widths, list) and len(self._x) != len(
                 self._line_widths
             ):
-                raise GraphingException(
-                    "There must be the same number of line widths and lines!"
+                raise IncompatibleArgumentsError(
+                    "The number of line widths must match the number of lines."
                 )
 
     @property
@@ -815,8 +812,9 @@ class Point(Plottable):
     @staticmethod
     def _validate_coordinate(value: float) -> None:
         if not isinstance(value, (int, float)) or isinstance(value, bool):
-            raise GraphingException(
-                "The x and y coordinates for a point must be a single number each!"
+            raise InvalidParameterTypeError(
+                "A point's x and y coordinates must each be a single number; got "
+                f"{type(value).__name__}."
             )
 
     @property
@@ -961,8 +959,9 @@ class Point(Plottable):
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         if self._face_color is None and self._edge_color is None:
-            raise GraphingException(
-                "Both the face color and edge color of the point can't be None. Set at least one of them."
+            raise IncompatibleArgumentsError(
+                "A point's face_color and edge_color cannot both be None; set at least "
+                "one of them."
             )
         size = self._font_size if self._font_size != "same as figure" else None
         prefix = " " if self._h_align == "left" else ""
@@ -1796,12 +1795,14 @@ class PlottableAxMethod(Plottable):
                     if isinstance(attrs, list) and len(attrs) > 0:
                         self.handle = attrs[0]
                 except Exception as e2:
-                    raise GraphingException(
-                        f"Failed to call Axes method '{self.meth}' with provided arguments. Please check that all "
-                        "provided arguments are valid for the given method."
+                    raise PlottingError(
+                        f"Failed to call Axes method '{self.meth}' with the provided "
+                        "arguments. Please check that all provided arguments are valid "
+                        "for the given method."
                     ) from e2
             else:
-                raise GraphingException(
-                    f"Failed to call Axes method '{self.meth}' with provided arguments. Please check that all "
-                    "provided arguments are valid for the given method."
+                raise PlottingError(
+                    f"Failed to call Axes method '{self.meth}' with the provided "
+                    "arguments. Please check that all provided arguments are valid for "
+                    "the given method."
                 ) from e

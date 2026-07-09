@@ -95,3 +95,23 @@ Tools
     :nosignatures:
 
     MathematicalObject
+
+Errors
+------
+Every exception GraphingLib raises derives from :class:`GraphingLibError` (also available
+under its alias ``GraphingException``), so ``except graphinglib.GraphingException`` catches
+anything the library raises. Most also derive from the matching built-in exception
+(``ValueError``, ``TypeError``, ...), so existing ``except ValueError`` / ``except TypeError``
+code keeps working too.
+
+.. autoexception:: GraphingLibError
+.. autoexception:: InvalidParameterError
+.. autoexception:: InvalidParameterTypeError
+.. autoexception:: IncompatibleArgumentsError
+.. autoexception:: InvalidOperationError
+.. autoexception:: LayoutError
+.. autoexception:: StyleNotFoundError
+.. autoexception:: StyleFileError
+.. autoexception:: MissingOptionalDependencyError
+.. autoexception:: UnsupportedFeatureError
+.. autoexception:: PlottingError

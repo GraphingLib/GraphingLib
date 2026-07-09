@@ -9,6 +9,8 @@ except ImportError:
 
 from matplotlib.colors import to_rgba_array
 
+from .exceptions import MissingOptionalDependencyError
+
 T = TypeVar("T")
 
 
@@ -17,9 +19,7 @@ def _require_optional_dependency(
 ) -> None:
     """Raise a clear error when a feature gated behind an optional extra is used without it installed."""
     if not available:
-        from .graph_elements import GraphingException
-
-        raise GraphingException(
+        raise MissingOptionalDependencyError(
             f"{feature} requires the optional `graphinglib[{extra}]` extra (installs {package}). "
             f"Install it with `pip install graphinglib[{extra}]`."
         )

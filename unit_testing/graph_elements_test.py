@@ -6,8 +6,8 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import to_rgba
 from numpy import ndarray
 
+from graphinglib.exceptions import GraphingException
 from graphinglib.graph_elements import (
-    GraphingException,
     Hlines,
     PlottableAxMethod,
     Point,

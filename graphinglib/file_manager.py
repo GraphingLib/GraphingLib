@@ -6,6 +6,8 @@ import yaml
 from matplotlib import pyplot as plt
 from platformdirs import user_config_dir
 
+from .exceptions import InvalidParameterError, StyleFileError
+
 # Force yaml to ignore aliases when dumping
 yaml.Dumper.ignore_aliases = lambda *args: True  # type: ignore
 
@@ -44,7 +46,7 @@ class FileLoader:
         try:
             assert info is not None
         except AssertionError:
-            raise TypeError(
+            raise StyleFileError(
                 f"Could not load the file {self._file_name}.yml. Please check that the file is in the correct format."
             )
         return info
@@ -342,7 +344,7 @@ def set_default_style(style: str) -> None:
     # Ensure the style exists
     available_styles = get_styles(matplotlib=True)
     if style not in available_styles + ["matplotlib"]:
-        raise ValueError(f"Style '{style}' does not exist.")
+        raise InvalidParameterError(f"Style '{style}' does not exist.")
 
     # Set the default style
     config_dir = user_config_dir(

@@ -16,6 +16,11 @@ from shapely import LineString
 from shapely import Polygon as ShPolygon
 
 from .data_plotting_1d import Curve
+from .exceptions import (
+    IncompatibleArgumentsError,
+    InvalidParameterError,
+    InvalidParameterTypeError,
+)
 from .graph_elements import Plottable, Point
 
 try:
@@ -203,9 +208,9 @@ class Arrow(Plottable):
             "wedge",
             INHERIT,
         ]:
-            raise ValueError(
-                "Invalid head style. Valid options are: '->', '-|>', '-[', ']->', 'simple', 'fancy', "
-                "'wedge', or INHERIT."
+            raise InvalidParameterError(
+                "style must be one of '->', '-|>', '-[', ']->', 'simple', 'fancy', "
+                f"'wedge', or INHERIT; got {value!r}."
             )
         self._style = value
 
@@ -256,8 +261,9 @@ class Arrow(Plottable):
                 case "-[":
                     style = "]-["
                 case _:
-                    raise ValueError(
-                        "The head style must be '->', '-|>' or '-[' for two-sided arrows."
+                    raise IncompatibleArgumentsError(
+                        "A two-sided arrow requires a head style of '->', '-|>', or "
+                        f"'-['; got {self._style!r}."
                     )
         else:
             style = self._style
@@ -828,7 +834,9 @@ class Polygon(Plottable):
             The list of polygons resulting from the split.
         """
         if not isinstance(curve, Curve):
-            raise TypeError("The curve must be a Curve object")
+            raise InvalidParameterTypeError(
+                f"curve must be a Curve; got {type(curve).__name__}."
+            )
         sh_curve = LineString([(x, y) for x, y in zip(curve._x_data, curve._y_data)])
         split_sh_polygons = ops.split(self._sh_polygon, sh_curve)
         split_sh_polygons = [
@@ -903,7 +911,9 @@ class Polygon(Plottable):
             )
             return [Point(p.x, p.y) for p in intersection.geoms]
         else:
-            raise TypeError("The other object must be a Polygon or a Curve")
+            raise InvalidParameterTypeError(
+                f"other must be a Polygon or a Curve; got {type(other).__name__}."
+            )
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs):
         # Create a polygon patch for the fill
@@ -1028,7 +1038,7 @@ class Circle(Polygon):
     @radius.setter
     def radius(self, value):
         if value <= 0:
-            raise ValueError("The radius must be positive")
+            raise InvalidParameterError(f"radius must be positive; got {value}.")
         self._sh_polygon = sh.geometry.Point(self.x_center, self.y_center).buffer(
             value, self._num_points // 4
         )
@@ -1048,7 +1058,9 @@ class Circle(Polygon):
     @number_of_points.setter
     def number_of_points(self, value):
         if value < 4:
-            raise ValueError("The number of points must be greater than or equal to 4")
+            raise InvalidParameterError(
+                f"number_of_points must be at least 4; got {value}."
+            )
         self._num_points = value
 
     @property
@@ -1186,7 +1198,7 @@ class Ellipse(Polygon):
     @x_radius.setter
     def x_radius(self, value):
         if value <= 0:
-            raise ValueError("The x radius must be positive")
+            raise InvalidParameterError(f"x_radius must be positive; got {value}.")
         self._rebuild(self.x_center, self.y_center, value, self._y_radius, self._angle)
 
     @property
@@ -1196,7 +1208,7 @@ class Ellipse(Polygon):
     @y_radius.setter
     def y_radius(self, value):
         if value <= 0:
-            raise ValueError("The y radius must be positive")
+            raise InvalidParameterError(f"y_radius must be positive; got {value}.")
         self._rebuild(self.x_center, self.y_center, self._x_radius, value, self._angle)
 
     @property
@@ -1216,7 +1228,9 @@ class Ellipse(Polygon):
     @number_of_points.setter
     def number_of_points(self, value):
         if value < 4:
-            raise ValueError("The number of points must be greater than or equal to 4")
+            raise InvalidParameterError(
+                f"number_of_points must be at least 4; got {value}."
+            )
         self._num_points = value
 
     @property
@@ -1228,7 +1242,7 @@ class Ellipse(Polygon):
     def width(self, value):
         """Controls the width of the ellipse along the x axis."""
         if value <= 0:
-            raise ValueError("The width must be positive")
+            raise InvalidParameterError(f"width must be positive; got {value}.")
         self.x_radius = value / 2
 
     @property
@@ -1240,7 +1254,7 @@ class Ellipse(Polygon):
     def height(self, value):
         """Controls the height of the ellipse along the y axis."""
         if value <= 0:
-            raise ValueError("The height must be positive")
+            raise InvalidParameterError(f"height must be positive; got {value}.")
         self.y_radius = value / 2
 
     @property
@@ -1359,7 +1373,7 @@ class Rectangle(Polygon):
     @width.setter
     def width(self, value):
         if value <= 0:
-            raise ValueError("The width must be positive")
+            raise InvalidParameterError(f"width must be positive; got {value}.")
         self._sh_polygon = ShPolygon(
             [
                 (self.x_bottom_left, self.y_bottom_left),
@@ -1376,7 +1390,7 @@ class Rectangle(Polygon):
     @height.setter
     def height(self, value):
         if value <= 0:
-            raise ValueError("The height must be positive")
+            raise InvalidParameterError(f"height must be positive; got {value}.")
         self._sh_polygon = ShPolygon(
             [
                 (self.x_bottom_left, self.y_bottom_left),

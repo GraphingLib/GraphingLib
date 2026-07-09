@@ -10,7 +10,14 @@ from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 
 from .file_manager import FileLoader, FileUpdater, get_default_style
-from .graph_elements import GraphingException, Plottable
+from .exceptions import (
+    IncompatibleArgumentsError,
+    InvalidOperationError,
+    InvalidParameterError,
+    StyleFileError,
+    StyleNotFoundError,
+)
+from .graph_elements import Plottable
 from .inherit import INHERIT, Inherit, Styled, is_inherit, resolved, strip_inherit
 from .legend_artists import (
     HandlerMultipleLines,
@@ -226,15 +233,19 @@ class Figure:
     def aspect_ratio(self, value: float | str):
         if isinstance(value, str):
             if value not in ["equal", "auto"]:
-                raise GraphingException(
-                    "Aspect ratio must be either 'equal', 'auto' or a float."
+                raise InvalidParameterError(
+                    "aspect_ratio must be 'equal', 'auto', or a positive float; got "
+                    f"{value!r}."
                 )
         elif isinstance(value, (int, float)) and not isinstance(value, bool):
             if value <= 0:
-                raise GraphingException("Aspect ratio must be a positive float.")
+                raise InvalidParameterError(
+                    f"aspect_ratio must be a positive float; got {value}."
+                )
         else:
-            raise GraphingException(
-                "Aspect ratio must be either 'equal', 'auto' or a float."
+            raise InvalidParameterError(
+                "aspect_ratio must be 'equal', 'auto', or a positive float; got "
+                f"{value!r}."
             )
         self._aspect_ratio = cast(float | Literal["auto", "equal"], value)
 
@@ -311,8 +322,9 @@ class Figure:
                     file_loader = FileLoader("plain")
                     self._default_params = file_loader.load()
                 except OSError:
-                    raise GraphingException(
-                        f"The figure style {self._figure_style} was not found. Please choose a different style."
+                    raise StyleNotFoundError(
+                        f"The figure style {self._figure_style!r} was not found. Please "
+                        "choose a different style."
                     )
             figure_params_to_reset = self._fill_in_missing_params(self)
 
@@ -455,7 +467,9 @@ class Figure:
                     )
                     _legend.set_zorder(10000)
         else:
-            raise GraphingException("No curves to be plotted!")
+            raise InvalidOperationError(
+                "There are no elements to plot; add at least one with add_elements()."
+            )
         self._reset_params_to_default(self, figure_params_to_reset)
         temp_handles = self._handles
         temp_labels = self._labels
@@ -554,9 +568,9 @@ class Figure:
             except KeyError as e:
                 tries += 1
                 if tries >= 2:
-                    raise GraphingException(
+                    raise StyleFileError(
                         f"There was an error auto updating your {self._figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self._figure_style} style file:\n {e.args[0]}"
-                    )
+                    ) from e
                 file_updater = FileUpdater(resolved(self._figure_style))
                 file_updater.update()
                 file_loader = FileLoader(resolved(self._figure_style))
@@ -770,20 +784,22 @@ class Figure:
         self._ytick_spacing = ytick_spacing
         if self._xticklabels is not None or self._yticklabels is not None:
             if self._yticklabels and not self._yticks:
-                raise GraphingException(
-                    "Ticks position must be specified when ticks labels are specified"
+                raise IncompatibleArgumentsError(
+                    "Tick positions must be provided when tick labels are set."
                 )
             if self._xticklabels and not self._xticks:
-                raise GraphingException(
-                    "Ticks position must be specified when ticks labels are specified"
+                raise IncompatibleArgumentsError(
+                    "Tick positions must be provided when tick labels are set."
                 )
         if self._xticks is not None and self._xtick_spacing is not None:
-            raise GraphingException(
-                "Tick spacing and tick positions cannot be set simultaneously"
+            raise IncompatibleArgumentsError(
+                "Tick spacing and tick positions cannot be set at the same time; provide "
+                "only one."
             )
         if self._yticks is not None and self._ytick_spacing is not None:
-            raise GraphingException(
-                "Tick spacing and tick positions cannot be set simultaneously"
+            raise IncompatibleArgumentsError(
+                "Tick spacing and tick positions cannot be set at the same time; provide "
+                "only one."
             )
 
     def set_grid(
@@ -877,8 +893,8 @@ class Figure:
             The created twin axis.
         """
         if self._remove_axes:
-            raise GraphingException(
-                "Axis in this figure were removed, therefore twin-axis can't be added."
+            raise InvalidOperationError(
+                "A twin axis cannot be added because this figure's axes were removed."
             )
         twin = TwinAxis(is_y, label, log_scale, axis_lim)
         if is_y:
@@ -1072,12 +1088,13 @@ class TwinAxis:
             Rotation value for the tick labels.
         """
         if not ticks or not ticklabels:
-            raise GraphingException(
-                "Ticks position and corresponding labels must both be specified for the twin axis."
+            raise IncompatibleArgumentsError(
+                "Tick positions and their labels must both be provided for the twin axis."
             )
         if len(ticks) != len(ticklabels):
-            raise GraphingException(
-                f"Number of ticks ({len(ticks)}) and number of tick labels ({len(ticklabels)}) must be the same."
+            raise IncompatibleArgumentsError(
+                f"The number of ticks ({len(ticks)}) and tick labels "
+                f"({len(ticklabels)}) must be the same."
             )
         self._custom_ticks = True
         self._ticks = ticks
@@ -1191,9 +1208,9 @@ class TwinAxis:
             except KeyError as e:
                 tries += 1
                 if tries >= 2:
-                    raise GraphingException(
+                    raise StyleFileError(
                         f"There was an error auto updating your {self._figure_style} style file following the recent GraphingLib update. Please notify the developers by creating an issue on GraphingLib's GitHub page. In the meantime, you can manually add the following parameter to your {self._figure_style} style file:\n {e.args[0]}"
-                    )
+                    ) from e
                 figure_style = self._figure_style
                 assert figure_style is not None
                 file_updater = FileUpdater(resolved(figure_style))

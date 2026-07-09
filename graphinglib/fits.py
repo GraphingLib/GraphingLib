@@ -11,6 +11,7 @@ from numpy.typing import ArrayLike
 from scipy.optimize import curve_fit
 
 from .data_plotting_1d import Curve, Scatter
+from .exceptions import InvalidParameterError, PlottingError
 from .graph_elements import Point
 from .inherit import INHERIT, Inherit, Styled, strip_inherit
 
@@ -18,6 +19,22 @@ try:
     from typing import Self
 except ImportError:
     from typing_extensions import Self
+
+
+def _run_curve_fit(func, x_data, y_data, **kwargs):
+    """
+    Runs ``scipy.optimize.curve_fit`` and wraps any failure with GraphingLib context.
+
+    A non-converging fit otherwise surfaces as a bare scipy ``RuntimeError`` with no
+    indication that it came from a GraphingLib fit.
+    """
+    try:
+        return curve_fit(func, x_data, y_data, **kwargs)
+    except Exception as exc:
+        raise PlottingError(
+            f"The curve fit did not succeed ({exc}). Try adjusting the initial guesses "
+            "or increasing the maximum number of iterations."
+        ) from exc
 
 
 def _repair_positive_guess(
@@ -28,7 +45,7 @@ def _repair_positive_guess(
     """
     guesses = np.array(guesses, dtype=float)
     if guesses.shape != (number_of_parameters,):
-        raise ValueError(
+        raise InvalidParameterError(
             f"Expected {number_of_parameters} initial guesses, "
             f"but got an array of shape {guesses.shape}."
         )
@@ -903,7 +920,7 @@ class FitFromSine(GeneralFit):
         """
         Calculates the parameters of the fit.
         """
-        self._parameters, self._cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = _run_curve_fit(
             self._sine_func_template,
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
@@ -1107,7 +1124,7 @@ class FitFromExponential(GeneralFit):
         """
         Calculates the parameters of the fit.
         """
-        self._parameters, self._cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = _run_curve_fit(
             self._exp_func_template,
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
@@ -1340,7 +1357,7 @@ class FitFromGaussian(GeneralFit):
             # The standard deviation guess must be positive to satisfy the fit's bounds,
             # regardless of the sign the caller happened to guess.
             guesses = _repair_positive_guess(guesses, index=2, number_of_parameters=3)
-        self._parameters, self._cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = _run_curve_fit(
             self._gaussian_func_template,
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
@@ -1540,7 +1557,7 @@ class FitFromSquareRoot(GeneralFit):
         """
         Calculates the parameters of the fit.
         """
-        self._parameters, self._cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = _run_curve_fit(
             self._square_root_func_template,
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
@@ -1743,7 +1760,7 @@ class FitFromLog(GeneralFit):
         """
         Calculates the parameters of the fit.
         """
-        self._parameters, self._cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = _run_curve_fit(
             self._log_func_template(),
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
@@ -1955,7 +1972,7 @@ class FitFromFunction(GeneralFit):
         """
         Calculates the parameters of the fit.
         """
-        self._parameters, self._cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = _run_curve_fit(
             self._function_template,
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
@@ -2158,7 +2175,7 @@ class FitFromFOTF(GeneralFit):
             # The time constant guess must be positive to satisfy the fit's bounds,
             # regardless of the sign the caller happened to guess.
             guesses = _repair_positive_guess(guesses, index=1, number_of_parameters=2)
-        self._parameters, self._cov_matrix = curve_fit(
+        self._parameters, self._cov_matrix = _run_curve_fit(
             self._fotf_func_template,
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,

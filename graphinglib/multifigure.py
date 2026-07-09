@@ -14,7 +14,11 @@ from typing_extensions import deprecated
 
 from .figure import Figure
 from .file_manager import FileLoader, get_default_style
-from .graph_elements import GraphingException
+from .exceptions import (
+    InvalidParameterError,
+    InvalidParameterTypeError,
+    StyleNotFoundError,
+)
 from .inherit import INHERIT, Inherit, is_inherit, resolved
 from .legend_artists import (
     HandlerMultipleLines,
@@ -117,9 +121,13 @@ class MultiFigure:
             Default can be set using ``gl.set_default_style()``.
         """
         if type(num_rows) is not int or type(num_cols) is not int:
-            raise TypeError("The number of rows and columns must be integers.")
+            raise InvalidParameterTypeError(
+                "The number of rows and columns must be integers."
+            )
         if num_rows < 1 or num_cols < 1:
-            raise ValueError("The number of rows and columns must be greater than 0.")
+            raise InvalidParameterError(
+                "The number of rows and columns must be greater than 0."
+            )
         self._num_rows = num_rows
         self._num_cols = num_cols
         self._title = title
@@ -344,7 +352,7 @@ class MultiFigure:
         """
         num_rows, num_cols = dimensions
         if num_rows * num_cols < len(figures):
-            raise ValueError(
+            raise InvalidParameterError(
                 f"The product of the dimensions ({num_rows} x {num_cols}) must be greater than or equal to the number of figures ({len(figures)})."
             )
         multi_fig = cls(
@@ -388,18 +396,18 @@ class MultiFigure:
         """
 
         if type(row_start) is not int or type(col_start) is not int:
-            raise TypeError("The placement values must be integers.")
+            raise InvalidParameterTypeError("The placement values must be integers.")
         if row_start < 0 or col_start < 0:
-            raise ValueError("The placement values cannot be negative.")
+            raise InvalidParameterError("The placement values cannot be negative.")
         if type(row_span) is not int or type(col_span) is not int:
-            raise TypeError("The span values must be integers.")
+            raise InvalidParameterTypeError("The span values must be integers.")
         if row_span < 1 or col_span < 1:
-            raise ValueError("The span values must be greater than 0.")
+            raise InvalidParameterError("The span values must be greater than 0.")
         if (
             row_start + row_span > self._num_rows
             or col_start + col_span > self._num_cols
         ):
-            raise ValueError(
+            raise InvalidParameterError(
                 "The placement values and span values must be inside the size of the MultiFigure."
             )
         # Add location and span to the SubFigure (create new attributes)
@@ -509,7 +517,7 @@ class MultiFigure:
                 file_loader = FileLoader("plain")
                 self._default_params = file_loader.load()
             except OSError:
-                raise GraphingException(
+                raise StyleNotFoundError(
                     f"The figure style {self._figure_style} was not found. Please choose a different style."
                 )
 
@@ -524,7 +532,7 @@ class MultiFigure:
         elif self._reflabel_loc == "inside":
             trans = ScaledTranslation(10 / 72, -15 / 72, self._figure.dpi_scale_trans)
         else:
-            raise ValueError(
+            raise InvalidParameterError(
                 "Invalid reference label location. Please specify either 'inside' or 'outside'."
             )
 
