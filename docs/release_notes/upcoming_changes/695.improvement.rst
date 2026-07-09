@@ -1,0 +1,3 @@
+Clearer and more consistent error handling
+------------------------------------------
+GraphingLib now raises a small hierarchy of specific, descriptive exceptions instead of a mix of generic errors. Every exception derives from the new `GraphingLibError` base, and new classes such as `InvalidParameterError`, `InvalidParameterTypeError`, `IncompatibleArgumentsError`, `InvalidOperationError`, `StyleNotFoundError`, `MissingOptionalDependencyError` and `PlottingError` make failures easier to identify and catch.
