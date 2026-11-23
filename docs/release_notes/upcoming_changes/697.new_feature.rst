@@ -1,0 +1,5 @@
+Opt-in autosizing for SmartFigure
+---------------------------------
+Pass ``size="auto"`` to scale a SmartFigure's style size by its outer grid.
+Use ``show(fit_to_window=True)`` on Qt or pass explicit preview bounds to
+fit the preview while preserving the saved dimensions.
