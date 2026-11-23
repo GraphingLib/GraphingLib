@@ -1580,6 +1580,45 @@ It can also be used to combine figures into a parent figure by changing seamless
     )
     parent.show()
 
+Inset Axes
+==========
+
+Use :meth:`~graphinglib.SmartFigure.create_inset` to add a smaller plot inside a
+subplot. Bounds are given as ``(left, bottom, width, height)`` in fractions of the
+host axes, with ``(0, 0)`` at the lower left. Supply the inset's plottables
+directly or add them later with :meth:`~graphinglib.SmartInset.add_elements`.
+
+.. code-block:: python
+
+    fig = gl.SmartFigure(2, 2)
+    fig[0, :] = curve1
+    host = fig[0, 1]  # Either cell in the span selects the same host plot.
+    detail = host.create_inset(
+        (0.58, 0.52, 0.36, 0.42),
+        elements=curve1.copy(),
+        x_lim=(4.85, 5.75),
+        y_lim=(0.10, 0.65),
+        indicate_zoom=True,
+    )
+    fig.show()
+
+For a nested layout, continue indexing until you reach the host plot. For
+example, ``root[0, 1][1].create_inset(...)`` attaches the inset to the second
+plot in the nested single-column figure. The root figure renders the inset with
+its host in ``show()``, ``save()``, and split PDF export. A nested layout stays
+together on its page when splitting its parent.
+
+An inset uses the host's effective style and has its own color cycle and limits.
+Its artists are excluded from the host and general legends. A zoom indicator
+requires both limit pairs in the host's data coordinates and uses the host's
+linear or logarithmic scales. Insets are supported on Cartesian plots and can
+be stacked in creation order. Same-plot twin axes and inset colorbars are
+currently unsupported. Use a copy when plotting the same element in both the
+host and the inset so that each has its own artist handles.
+
+Inspect a plot's insets with ``host.insets`` and remove one with
+``host.remove_inset(detail)``.
+
 Twin Axes
 =========
 

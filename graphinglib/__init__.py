@@ -70,7 +70,7 @@ from .inherit import INHERIT, Inherit, Styled, is_inherit
 # MultiFigure is deprecated but intentionally re-exported for backward compatibility.
 from .multifigure import MultiFigure  # ty: ignore[deprecated]
 from .shapes import Arrow, Circle, Ellipse, Line, Polygon, Rectangle
-from .smart_figure import SmartFigure, SmartFigureWCS, SmartTwinAxis
+from .smart_figure import SmartFigure, SmartFigureWCS, SmartInset, SmartTwinAxis
 from .tools import MathematicalObject
 
 __all__ = [
@@ -134,6 +134,7 @@ __all__ = [
     "Rectangle",
     "SmartFigure",
     "SmartFigureWCS",
+    "SmartInset",
     "SmartTwinAxis",
     "MathematicalObject",
 ]

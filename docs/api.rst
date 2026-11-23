@@ -27,6 +27,13 @@ Figure and MultiFigure
     SmartFigureWCS
     SmartTwinAxis
 
+.. autosummary::
+    :toctree: generated/
+    :template: class
+    :nosignatures:
+
+    SmartInset
+
 Plottables
 ----------
 
