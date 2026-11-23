@@ -569,6 +569,9 @@ class Curve(Plottable1D, MathematicalObject):
                 "Can only raise a curve to another curve or a number."
             )
 
+    # Explicitly retain the protocol stub so type checkers treat Curve as concrete.
+    __rpow__ = MathematicalObject.__rpow__
+
     def __iter__(self):
         """
         Defines the iteration of a curve. Returns the y values.
@@ -2348,6 +2351,9 @@ class Scatter(Plottable1D, MathematicalObject):
             raise InvalidParameterTypeError(
                 "Can only raise a scatter plot to another scatter plot or a number."
             )
+
+    # Explicitly retain the protocol stub so type checkers treat Scatter as concrete.
+    __rpow__ = MathematicalObject.__rpow__
 
     def __iter__(self):
         """
