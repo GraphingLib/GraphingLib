@@ -3,12 +3,13 @@ from __future__ import annotations
 from copy import deepcopy
 from functools import partial
 from inspect import signature
-from typing import Any, Callable, Optional, cast
+from typing import Callable, Generic, Optional, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import ArrayLike
 from scipy.optimize import curve_fit
+from typing_extensions import TypeVar
 
 from .data_plotting_1d import Curve, Scatter
 from .exceptions import InvalidParameterError, PlottingError
@@ -19,6 +20,8 @@ try:
     from typing import Self
 except ImportError:
     from typing_extensions import Self
+
+_StandardDeviation = TypeVar("_StandardDeviation", default=np.ndarray)
 
 
 def _run_curve_fit(func, x_data, y_data, **kwargs):
@@ -53,7 +56,7 @@ def _repair_positive_guess(
     return guesses
 
 
-class GeneralFit(Curve):
+class GeneralFit(Curve, Generic[_StandardDeviation]):
     """
     Dummy class for curve fits. Defines the interface for all curve fits.
 
@@ -141,7 +144,7 @@ class GeneralFit(Curve):
         self._function: Callable[[float | np.ndarray], float | np.ndarray]
         self._parameters: np.ndarray
         self._cov_matrix: np.ndarray
-        self._standard_deviation: np.ndarray
+        self._standard_deviation: _StandardDeviation
 
         self._setup_attributes()
 
@@ -165,7 +168,7 @@ class GeneralFit(Curve):
         self._error_curves_line_width = None
 
         self._fill_between_bounds: Optional[tuple[float, float]] = None
-        self._fill_between_other_curve: Optional[Self] = None
+        self._fill_between_other_curve = None
         self._fill_between_color: Optional[str] = None
 
     @property
@@ -189,7 +192,7 @@ class GeneralFit(Curve):
         return self._cov_matrix
 
     @property
-    def standard_deviation(self) -> np.ndarray:
+    def standard_deviation(self) -> _StandardDeviation:
         return self._standard_deviation
 
     def __str__(self) -> str:
@@ -1156,7 +1159,7 @@ class FitFromExponential(GeneralFit):
         )
 
 
-class FitFromGaussian(GeneralFit):
+class FitFromGaussian(GeneralFit[float | np.floating]):
     """
     Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
     :class:`~graphinglib.data_plotting_1d.Curve` object using a gaussian fit.
@@ -1336,7 +1339,7 @@ class FitFromGaussian(GeneralFit):
     def standard_deviation(self) -> float:
         # Unlike the other fit classes, this is the fitted sigma of the gaussian itself,
         # not the standard deviation of the fit parameters (see standard_deviation_of_fit_params).
-        return float(cast(Any, self._standard_deviation))
+        return float(self._standard_deviation)
 
     @property
     def standard_deviation_of_fit_params(self) -> np.ndarray:
