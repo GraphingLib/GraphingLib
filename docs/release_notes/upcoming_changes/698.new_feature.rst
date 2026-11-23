@@ -1,0 +1,5 @@
+Inset axes for SmartFigure
+--------------------------
+Use ``SmartFigure.create_inset()`` to add a detail plot with its own elements
+and limits, with optional zoom markers. Insets stay with their host plot in
+nested and spanning layouts, including split PDF exports.
