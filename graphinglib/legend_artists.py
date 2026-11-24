@@ -10,10 +10,17 @@ from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Patch, Polygon
 from matplotlib.transforms import Transform
-from matplotlib.typing import ColorType
 from numpy import array, asarray, atleast_1d, full_like
 
 from .exceptions import InvalidParameterError, InvalidParameterTypeError
+
+try:
+    from matplotlib.typing import ColorType
+except ModuleNotFoundError as exc:
+    if exc.name != "matplotlib.typing":
+        raise
+    # Matplotlib 3.7 has no typing module.
+    ColorType = str | tuple[float, float, float] | tuple[float, float, float, float]
 
 
 def _reference_line_style(line: Line2D) -> dict[str, Any]:

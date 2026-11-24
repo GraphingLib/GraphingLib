@@ -991,23 +991,25 @@ class _LiveQuiver(Quiver):
         self.set_offsets(self.XY)
         self.set_UVC(u, v)
 
-    def _angles_lengths(self, XY, U, V, eps=1):
+    def _angles_lengths(self, *args, eps=1):
         # Matplotlib derives eps from the data limits in screen-angle mode.
         # They can be zero at the origin or infinite after an empty setup.
         if not isfinite(eps) or eps <= 0:
             eps = 0.001
-        return super()._angles_lengths(XY, U, V, eps)  # ty: ignore[unresolved-attribute]
+        return super()._angles_lengths(*args, eps=eps)  # ty: ignore[unresolved-attribute]
 
-    def _make_verts(self, XY, U, V, angles):
+    def _make_verts(self, *args):
+        # Older Matplotlib passes (U, V, angles). Newer versions prepend XY.
+        u, v = args[-3:-1]
         if self.scale is not None or np.any(
-            np.logical_not(self.Umask) & ((U != 0) | (V != 0))
+            np.logical_not(self.Umask) & ((u != 0) | (v != 0))
         ):
-            return super()._make_verts(XY, U, V, angles)  # ty: ignore[unresolved-attribute]
+            return super()._make_verts(*args)  # ty: ignore[unresolved-attribute]
         # An empty, masked, or zero field has no auto scale. Render that
         # frame without freezing the scale used by the first nonzero field.
         self.scale = 1
         try:
-            return super()._make_verts(XY, U, V, angles)  # ty: ignore[unresolved-attribute]
+            return super()._make_verts(*args)  # ty: ignore[unresolved-attribute]
         finally:
             self.scale = None
 
@@ -2238,7 +2240,7 @@ class Contour(Plottable2D):
         bar = None
         live_paths = session is not None and hasattr(cont, "set_paths")
         show_colorbar = resolve_or(self._show_color_bar, True)
-        if show_colorbar or (live_paths and self._reserve_color_bar):
+        if show_colorbar or (session is not None and self._reserve_color_bar):
             fig = axes.get_figure()
             assert fig is not None
             levels = np.asarray(cont.levels)
@@ -2255,21 +2257,21 @@ class Contour(Plottable2D):
                 bar = fig.colorbar(cont, ax=axes, **self._color_bar_params)
         if session is not None:
             session.mark_present(self)
+            if bar is not None:
+                session.bind_colorbar(
+                    self,
+                    bar,
+                    initially_visible=show_colorbar,
+                    default_locator=(
+                        lambda: FixedLocator(
+                            np.asarray(cont.levels).tolist(), nbins=10
+                        )
+                    )
+                    if self._color_bar_params.get("ticks") is None
+                    else None,
+                )
             # Matplotlib 3.8 moved all levels into one collection.
             if live_paths:
-                if bar is not None:
-                    session.bind_colorbar(
-                        self,
-                        bar,
-                        initially_visible=show_colorbar,
-                        default_locator=(
-                            lambda: FixedLocator(
-                                np.asarray(cont.levels).tolist(), nbins=10
-                            )
-                        )
-                        if self._color_bar_params.get("ticks") is None
-                        else None,
-                    )
                 self._bind_live_contour(session, cont, bar, filled)
 
 

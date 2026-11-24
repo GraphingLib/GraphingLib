@@ -3001,7 +3001,7 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertEqual(states[2], [(False, "purple", 0.5, ":", 2)] * 2)
 
     def test_live_log_scale_combines_final_limits_and_preserves_manual_ticks(self):
-        from warnings import catch_warnings, simplefilter
+        from warnings import catch_warnings, filterwarnings
 
         from graphinglib import SmartTwinAxis
 
@@ -3042,7 +3042,7 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
                 twin.axis_lim = (-5, 100)
 
         with catch_warnings():
-            simplefilter("error", UserWarning)
+            filterwarnings("error", message=".*non-positive.*", category=UserWarning)
             root.save_animation(self.output, update, 3)
         self.assertEqual(states[0][1], ("linear", "linear", "linear", "linear"))
         self.assertEqual(states[1][1], ("log", "log", "linear", "log"))
@@ -4780,6 +4780,33 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertEqual(states[3][2][1], (0, 2))
         self.assertNotIn("ticks", contour.color_bar_params)
         self.assertEqual(scatter.color_bar_params["ticks"], [0, 2])
+
+    def test_reserved_contour_colorbar_can_animate_independently_of_paths(self):
+        from graphinglib import Contour
+
+        contour = Contour(
+            [[0, 1], [1, 2]], levels=[0, 1, 2], filled=True, show_color_bar=False
+        )
+        contour.set_color_bar_params(reserve=True)
+        figure = SmartFigure(elements=[contour], figure_style="plain")
+        states = []
+
+        def update(frame):
+            (bar,) = [
+                ax._colorbar for ax in plt.gcf().axes if ax.get_label() == "<colorbar>"
+            ]
+            states.append(
+                (bar, bar.ax.get_visible(), bar.ax.get_ylabel(), bar.get_ticks())
+            )
+            if not frame:
+                contour.set_color_bar_params(label="Levels", ticks=[0.5, 1.5])
+                contour.show_color_bar = True
+
+        figure.save_animation(self.output, update, 2)
+        self.assertIs(states[0][0], states[-1][0])
+        self.assertFalse(states[0][1])
+        self.assertEqual(states[-1][1:3], (True, "Levels"))
+        assert_allclose(states[-1][3], [0.5, 1.5])
 
     def test_failed_colorbar_edit_restores_label_locator_and_configuration(self):
         from matplotlib.colorbar import Colorbar

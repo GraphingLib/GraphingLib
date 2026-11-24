@@ -143,6 +143,11 @@ def _reference_line_styles(params: dict[str, Any], count: int) -> list[dict[str,
     return styles
 
 
+def _interpolate_spanning_line(line: Line2D) -> None:
+    # Older Matplotlib leaves the default straight path on polar axes.
+    cast(Any, line.get_path())._interpolation_steps = GRIDLINE_INTERPOLATION_STEPS
+
+
 def _draw_reference_lines(
     element: Hlines | Vlines,
     axes: plt.Axes,
@@ -186,6 +191,8 @@ def _draw_reference_lines(
                 coords, _reference_line_styles(params, len(coords)), strict=True
             )
         ]
+        for line in lines:
+            _interpolate_spanning_line(line)
         _bind_spanning_reference_lines(
             element, axes, lines, position, params, z_order, horizontal
         )
@@ -319,10 +326,7 @@ def _bind_spanning_reference_lines(
             across, along = [float(coord)] * 2, [0, 1]
             x, y = (along, across) if horizontal else (across, along)
             line = Line2D(x, y, transform=transform, zorder=z_order, **style)
-            # Match the projection-aware path of axhline and axvline.
-            cast(
-                Any, line.get_path()
-            )._interpolation_steps = GRIDLINE_INTERPOLATION_STEPS
+            _interpolate_spanning_line(line)
             additions.append(line)
 
         def apply() -> None:

@@ -19,7 +19,7 @@ from matplotlib.patches import Polygon, Rectangle
 from matplotlib.transforms import nonsingular
 from numpy.typing import ArrayLike
 from pyperclip import copy as copy_to_clipboard
-from scipy.integrate import cumulative_trapezoid
+from scipy.integrate import cumulative_trapezoid, trapezoid
 from scipy.interpolate import interp1d
 
 from ._animation import (
@@ -1548,7 +1548,7 @@ class Curve(Plottable1D, MathematicalObject):
         # y = f(x)
         x = x_data[(x_data >= x1) & (x_data <= x2)]
         y = y_data[(x_data >= x1) & (x_data <= x2)]
-        return np.trapezoid(np.sqrt(1 + np.gradient(y, x) ** 2), x)
+        return trapezoid(np.sqrt(1 + np.gradient(y, x) ** 2), x)
 
     def get_area_between(
         self,
@@ -1597,7 +1597,7 @@ class Curve(Plottable1D, MathematicalObject):
             mask = (x_data >= x1) & (x_data <= x2)
             y = y_data[mask]
             x = x_data[mask]
-            return np.trapezoid(y, x)
+            return trapezoid(y, x)
         else:
             if fill_between:
                 _reject_live_update(self, "Configure curve fills before animating.")
@@ -1623,7 +1623,7 @@ class Curve(Plottable1D, MathematicalObject):
                 y2 = np.interp(common_x, other_curve._x_data, other_curve._y_data)
 
             difference = y1 - y2
-            area = np.trapezoid(difference, common_x)
+            area = trapezoid(difference, common_x)
             return area
 
     def get_intersection_coordinates(
