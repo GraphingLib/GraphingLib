@@ -797,6 +797,175 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(label.get_bbox_patch().get_facecolor(), to_rgba("gold"))
         self.assertEqual(label.get_bbox_patch().get_boxstyle().pad, 0.2)
 
+    def test_arrowhead_modes_and_line_caps_reuse_patches(self):
+        from warnings import catch_warnings, simplefilter
+
+        from matplotlib.text import Annotation
+
+        from graphinglib import Arrow, Line
+
+        arrow = Arrow((0, 0), (4, 1), style="->")
+        line = Line((0, 2), (4, 2), capped_line=False)
+        nested = SmartFigure(elements=[arrow, line], x_lim=(-1, 5), y_lim=(-1, 5))
+        root = SmartFigure(2, 2, figure_style="plain", x_lim=(-1, 5), y_lim=(-1, 5))
+        root[0, 0] = nested
+        root[1, :] = [arrow, line]
+        artists = []
+        observations = {}
+
+        def update(i):
+            annotations = [
+                item
+                for axes in plt.gcf().axes
+                for item in axes.texts
+                if isinstance(item, Annotation) and item.arrow_patch is not None
+            ]
+            captured = [(item, item.arrow_patch) for item in annotations]
+            self.assertEqual(len(captured), 4)
+            if artists:
+                self.assertEqual(captured, artists)
+            else:
+                artists.extend(captured)
+            observations[i] = [
+                (
+                    item.arrowprops["arrowstyle"],
+                    item.xy,
+                    item.get_position(),
+                    patch.get_visible(),
+                )
+                for item, patch in captured
+            ]
+            arrow.style = ("-[", "-|>", "fancy", "->")[i]
+            arrow.two_sided = i < 2
+            arrow.head_size = (2, 3, 0, 0.75)[i]
+            arrow.shrink = (0.125, 0.5, 0, 0)[i]
+            arrow.pointB = (4, 1 + i / 2)
+            line.capped_line = True
+            line.cap_width = (4, 0, 2, 6)[i]
+            line.pointA = (0, 2 + i / 4)
+
+        with catch_warnings():
+            simplefilter("error", RuntimeWarning)
+            root.save_animation(self.output, update, 4)
+        for i in (0, 2):
+            self.assertIn("]-[", observations[1][i][0])
+            self.assertIn("widthA=0.4", observations[1][i][0])
+            self.assertIn("widthB=0.4", observations[1][i][0])
+            self.assertEqual(observations[1][i][1:3], ((3.5, 0.875), (0.5, 0.125)))
+            self.assertIn("<|-|>", observations[2][i][0])
+            self.assertEqual(observations[2][i][1], observations[2][i][2])
+            self.assertFalse(observations[2][i][3])
+            self.assertEqual(observations[3][i][0], "-")
+            self.assertTrue(observations[3][i][3])
+            arrow_style = artists[i][1].get_arrowstyle()
+            self.assertAlmostEqual(arrow_style.head_width, 0.15)
+            self.assertAlmostEqual(arrow_style.head_length, 0.3)
+            self.assertIn("|-|", observations[1][i + 1][0])
+            self.assertEqual(observations[2][i + 1][0], "-")
+            line_style = artists[i + 1][1].get_arrowstyle()
+            self.assertEqual(line_style.widthA, 3)
+            self.assertEqual(line_style.widthB, 3)
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 4)
+
+    def test_polygon_layers_toggle_and_round_shapes_resample_in_place(self):
+        from matplotlib.colors import to_rgba
+
+        from graphinglib import Circle, Ellipse, Polygon
+
+        polygon = Polygon([], fill=False, edge_color=None)
+        circle = Circle(-2, -1, 1, number_of_points=16)
+        ellipse = Ellipse(2, 2, 2, 1, angle=25, number_of_points=20)
+        ellipse.scale(1.5, 0.8)
+        ellipse.skew(10, 0)
+        figure = SmartFigure(
+            elements=[polygon, circle, ellipse],
+            figure_style="plain",
+            x_lim=(-4, 7),
+            y_lim=(-4, 6),
+        )
+        before_circle = circle.vertices.copy()
+        before_ellipse = ellipse.vertices.copy()
+        artists = []
+        layer_states = {}
+
+        def update(i):
+            patches = list(plt.gcf().axes[0].patches)
+            if artists:
+                self.assertEqual(artists, patches)
+            else:
+                self.assertEqual(len(patches), 6)
+                artists.extend(patches)
+            layer_states[i] = [
+                (
+                    patch.get_visible(),
+                    patch.get_facecolor(),
+                    patch.get_edgecolor(),
+                    len(patch.get_xy()),
+                )
+                for patch in patches[:2]
+            ]
+            polygon.vertices = [] if i == 1 else [(0, 0), (0, 1 + i), (1, 0)]
+            polygon.fill = i != 1
+            polygon.fill_color = "orange"
+            polygon.fill_alpha = 0.4
+            polygon.edge_color = None if i == 1 else "green"
+            polygon.line_width = 4
+            polygon.line_style = ":"
+            circle.number_of_points = (32, 4, 16)[i]
+            ellipse.number_of_points = (40, 4, 20)[i]
+            circle.x_center = -2 if i == 2 else -1
+            ellipse.y_center = 2 if i == 2 else 3
+
+        figure.save_animation(self.output, update, 3)
+        self.assertEqual([row[0] for row in layer_states[0]], [False, False])
+        self.assertEqual([row[3] for row in layer_states[0]], [0, 0])
+        self.assertEqual([row[0] for row in layer_states[1]], [True, True])
+        self.assertEqual([row[3] for row in layer_states[1]], [4, 4])
+        self.assertEqual([row[0] for row in layer_states[2]], [False, False])
+        assert_allclose(artists[0].get_facecolor(), to_rgba("orange", 0.4))
+        assert_allclose(artists[1].get_edgecolor(), to_rgba("green"))
+        self.assertEqual(artists[1].get_linewidth(), 4)
+        self.assertEqual(artists[1].get_linestyle(), ":")
+        assert_allclose(circle.vertices, before_circle, atol=1e-12)
+        assert_allclose(ellipse.vertices, before_ellipse, atol=1e-12)
+        for artist in artists[2:4]:
+            assert_allclose(artist.get_xy(), circle.vertices)
+        for artist in artists[4:]:
+            assert_allclose(artist.get_xy(), ellipse.vertices)
+
+    def test_failed_shape_update_restores_style_visibility_and_resolution(self):
+        from graphinglib import Arrow, Circle
+
+        arrow = Arrow((0, 0), (2, 2), style="->")
+        circle = Circle(1, 1, 1, fill=False, edge_color=None, number_of_points=16)
+        figure = SmartFigure(
+            elements=[arrow, circle], figure_style="plain", x_lim=(-1, 4), y_lim=(-1, 4)
+        )
+        artists = []
+
+        def update(i):
+            axis = plt.gcf().axes[0]
+            artists[:] = [axis.texts[0], *axis.patches]
+            arrow.two_sided = not i
+            arrow.head_size = i + 1
+            circle.number_of_points = (32, 4)[i]
+            circle.fill = bool(i)
+            circle.edge_color = "invalid color" if i else "purple"
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            figure.save_animation(self.output, update, 2)
+        self.assertFalse(self.output.exists())
+        self.assertTrue(arrow.two_sided)
+        self.assertEqual(arrow.head_size, 1)
+        self.assertTrue(artists[0].arrowprops["arrowstyle"].startswith("<->"))
+        self.assertEqual(circle.number_of_points, 32)
+        self.assertEqual(len(circle.vertices), 33)
+        self.assertFalse(circle.fill)
+        self.assertFalse(artists[1].get_visible())
+        self.assertTrue(artists[2].get_visible())
+        assert_allclose(artists[2].get_xy(), circle.vertices)
+
     def test_mesh_quiver_and_contour_keep_their_artists(self):
         from matplotlib.collections import QuadMesh
         from matplotlib.contour import QuadContourSet

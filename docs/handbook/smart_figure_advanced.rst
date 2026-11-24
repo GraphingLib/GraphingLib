@@ -2016,15 +2016,18 @@ Live update support
        color and alignment, even if the point starts without a label.
      - The point and its caption use subplot data coordinates.
    * - :class:`~graphinglib.Arrow`, :class:`~graphinglib.Line`
-     - Endpoints, width, color, opacity, and the arrow shrink fraction.
-     - Arrow head and cap geometry.
+     - Endpoints, width, color and opacity. Arrows can change head style,
+       head size, number of heads and shrink. Lines can show or hide caps
+       and change their width.
+     - Two-sided arrows require a compatible head style.
    * - :class:`~graphinglib.Polygon`, :class:`~graphinglib.Circle`,
        :class:`~graphinglib.Ellipse`, :class:`~graphinglib.Rectangle`
-     - Vertices, translations and transforms, and shape-specific position and
-       dimensions. Existing fills and edges support fill color and opacity,
-       and edge width and style, respectively.
-     - Whether fill and edge artists exist, edge color, and shape sampling
-       resolution.
+     - Vertices, transformations, position and dimensions. Assign ``fill``
+       to show or hide the fill, and ``edge_color = None`` to hide the edge.
+       Fill color and opacity, and edge color, width and style, can change.
+       Circles and ellipses can change their sampling resolution.
+     - Live sampling resolution uses the outline produced by a circle or
+       ellipse, including affine transforms of that outline.
    * - :class:`~graphinglib.Table`
      - Body and header text, colors and alignment, cell borders, column
        widths, absolute scaling, and placement.
