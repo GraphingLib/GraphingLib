@@ -1833,6 +1833,16 @@ class Curve(Plottable1D, MathematicalObject):
             )
         return point_objects
 
+    def _shared_fill_data(
+        self, other: Curve, bounds: tuple[float, float]
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        x = np.linspace(*bounds, max(len(self._x_data), len(other._x_data)))
+        return (
+            x,
+            interp1d(self._x_data, self._y_data)(x),
+            interp1d(other._x_data, other._y_data)(x),
+        )
+
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified axes.
@@ -1933,22 +1943,12 @@ class Curve(Plottable1D, MathematicalObject):
                 else self.handle[0].get_color()
             )
             params = strip_inherit(params)
-            if self._fill_between_other_curve:
-                self_y_data = self._y_data
-                self_x_data = self._x_data
-                other_y_data = self._fill_between_other_curve._y_data
-                other_x_data = self._fill_between_other_curve._x_data
-                x_data = np.linspace(
-                    self._fill_between_bounds[0],
-                    self._fill_between_bounds[1],
-                    max(len(self_x_data), len(other_x_data)),
+            if self._fill_between_other_curve is not None:
+                x, y1, y2 = self._shared_fill_data(
+                    self._fill_between_other_curve, self._fill_between_bounds
                 )
-                self_y_data = interp1d(self_x_data, self_y_data)(x_data)
-                other_y_data = interp1d(other_x_data, other_y_data)(x_data)
-                params["x"] = x_data
-                params["y1"] = self_y_data
-                params["y2"] = other_y_data
-                where_x_data = x_data
+                params.update(x=x, y1=y1, y2=y2)
+                where_x_data = x
             else:
                 params["x"] = self._x_data
                 params["y1"] = self._y_data
@@ -1965,17 +1965,25 @@ class Curve(Plottable1D, MathematicalObject):
 
         session = _DRAW_SESSION.get()
         if session is not None:
+            other = self._fill_between_other_curve
+            bounds = self._fill_between_bounds
             session.bind_curve(
                 self,
                 self.handle,
-                has_unsupported_artists=bool(
-                    self._fill_between_bounds
-                    and self._fill_between_other_curve is not None
-                ),
                 bands=_CurveBands(
-                    lower, upper, error_fill, area_fill, self._fill_between_bounds
+                    lower,
+                    upper,
+                    error_fill,
+                    area_fill if other is None else None,
+                    bounds,
                 ),
             )
+            if area_fill is not None and bounds is not None and other is not None:
+                session.bind_point_dependent(
+                    (self, other),
+                    area_fill,
+                    lambda: self._shared_fill_data(other, bounds),
+                )
             line = self.handle.lines[0]
             if line is not None and not (
                 self._show_error_curves
@@ -1989,8 +1997,6 @@ class Curve(Plottable1D, MathematicalObject):
                     ("_alpha", "alpha"),
                 ):
                     session.bind_property(self, name, line, mpl_name)
-            if self._fill_between_bounds and self._fill_between_other_curve is not None:
-                session.block_curve_updates(self._fill_between_other_curve)
 
 
 @dataclass
@@ -2293,8 +2299,8 @@ class Scatter(Plottable1D, MathematicalObject):
         The coordinate arrays must be one-dimensional and match in length.
         Errors can be scalars, per-point arrays, or lower/upper arrays.
         Omitted errors keep their current values. Pass None to clear an error
-        direction outside animation. While animating, the point count and
-        configured errorbar directions remain fixed.
+        direction outside animation. While animating, errorbar directions
+        remain fixed. Point counts may vary with uniform marker colors.
         """
         _set_point_data(self, x_data, y_data, x_error, y_error)
         return self

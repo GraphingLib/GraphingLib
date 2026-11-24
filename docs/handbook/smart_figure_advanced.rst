@@ -1971,19 +1971,24 @@ Live update support
      - Set up before animation
    * - :class:`~graphinglib.Curve`
      - Coordinates and errors, configured error curves and bands, and area
-       fills to zero. Plain lines can change color, width, style and opacity.
+       fills to zero or between two curves. Each shared fill uses both curves'
+       final coordinates for the frame. Plain lines can change color, width,
+       style and opacity.
      - Errorbar directions and caps, legend, and style for decorated curves.
-       A fill that depends on two curves needs a coordinated update contract.
+       Both curves must continue to cover the configured fill interval.
    * - :class:`~graphinglib.Scatter`
      - Coordinates, configured errors, marker size and edge width, and opacity.
-     - Point count, marker shape, color mapping, legend, and errorbar directions
-       and caps.
+       Point counts can vary, including empty frames, with uniform marker colors.
+     - Point count when colors are assigned per point, marker shape, color
+       mapping, legend, and errorbar directions and caps.
    * - :class:`~graphinglib.Heatmap`
      - Image values on a fixed raster or mesh, opacity, and interpolation for
-       rasters. Scalar data can change colormap and explicit linear color
-       limits, including the displayed colorbar.
-     - Data shape, grid, extent, origin, aspect, normalization type, and
-       colorbar layout. Implicit color limits use the initial frame.
+       rasters. Rasters can change pixel dimensions within their initial
+       extent. Scalar data can change colormap and explicit linear color limits,
+       including the displayed colorbar.
+     - Mesh data shape, grid, extent, origin, aspect, scalar or RGB(A) mode,
+       normalization type, and colorbar layout. Implicit color limits use the
+       initial frame.
    * - :class:`~graphinglib.Text`
      - Content and position, including figure annotations. Plain text can
        change its font size, color, opacity, alignment and rotation. An

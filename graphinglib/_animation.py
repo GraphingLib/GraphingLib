@@ -3,6 +3,7 @@
 from collections.abc import Callable
 from contextvars import ContextVar
 from dataclasses import dataclass
+from itertools import chain
 from typing import Any
 
 import numpy as np
@@ -138,6 +139,8 @@ class _AnimationSession:
         self._artists: dict[int, list[_Binding]] = {}
         self._properties: dict[tuple[int, str], list[Callable[[Any], _ArtistEdit]]] = {}
         self._updates: dict[tuple[int, str], list[_ArtistEdit]] = {}
+        self._point_dependents: dict[int, dict[int, Callable[[], _ArtistEdit]]] = {}
+        self._dirty_dependents: dict[int, Callable[[], _ArtistEdit]] = {}
         self._rollback: dict[tuple[int, str], Callable[[], None]] = {}
         self._cleanup: list[Callable[[], None]] = []
         self.failure: BaseException | None = None
@@ -187,10 +190,23 @@ class _AnimationSession:
             )
         self._stage(element, name, [prepare(value) for prepare in prepares], restore)
 
+    def bind_point_dependent(
+        self,
+        elements: tuple[object, object],
+        artist: PolyCollection,
+        coordinates: Callable[[], tuple[np.ndarray, np.ndarray, np.ndarray]],
+    ) -> None:
+        def prepare() -> _ArtistEdit:
+            return _fill_edit(artist, *coordinates())
+
+        for element in elements:
+            self.mark_present(element)
+            self._point_dependents.setdefault(id(element), {})[id(artist)] = prepare
+
     def block_curve_updates(
         self,
         curve: object,
-        reason: str = "Animating a fill shared by two curves is unsupported.",
+        reason: str,
     ) -> None:
         self._artists.setdefault(id(curve), []).append(reason)
 
@@ -206,21 +222,24 @@ class _AnimationSession:
         curve: object,
         handle: ErrorbarContainer,
         *,
-        has_unsupported_artists: bool,
         bands: _CurveBands,
     ) -> None:
         data_line = handle.lines[0]
-        if has_unsupported_artists or not isinstance(data_line, Line2D):
-            self.block_curve_updates(curve)
+        if not isinstance(data_line, Line2D):
+            self.block_curve_updates(curve, "This curve has no line artist to update.")
             return
         self._bind_points(curve, data_line, handle, bands=bands)
 
     def bind_scatter(
         self, scatter: object, points: PathCollection, errors: ErrorbarContainer | None
     ) -> None:
-        self._bind_points(
-            scatter, points, errors, fixed_count=len(np.asarray(points.get_offsets()))
+        # A scalar or uniform marker appearance broadcasts to any number of offsets.
+        # Per-point color assignments need a matching update contract before resizing.
+        per_point_colors = (
+            len(points.get_facecolor()) > 1 or len(points.get_edgecolor()) > 1
         )
+        count = len(np.asarray(points.get_offsets())) if per_point_colors else None
+        self._bind_points(scatter, points, errors, fixed_count=count)
 
     def _bind_points(
         self,
@@ -275,9 +294,8 @@ class _AnimationSession:
         show_errorbars: bool,
         restore: Callable[[], None],
     ) -> None:
-        bindings = self._artists.get(id(element))
-        if not bindings:
-            return
+        bindings = self._artists.get(id(element), ())
+        dependents = self._point_dependents.get(id(element))
         if x.dtype.kind not in "biuf" or y.dtype.kind not in "biuf":
             raise InvalidParameterError(
                 "Animated plot coordinates must be real numeric values."
@@ -294,7 +312,7 @@ class _AnimationSession:
                 )
             if binding.fixed_count is not None and x.size != binding.fixed_count:
                 raise InvalidParameterError(
-                    "An animated Scatter must keep its original point count."
+                    "A Scatter with per-point colors must keep its original point count."
                 )
             if (binding.x_error is None) != (horizontal is None) or (
                 binding.y_error is None
@@ -325,6 +343,9 @@ class _AnimationSession:
                     self._error_update(binding.y_error, y, x, vertical, is_x=False)
                 )
         self._stage(element, "point_data", updates, restore)
+        if dependents:
+            self.remember(element, "point_data", restore)
+            self._dirty_dependents.update(dependents)
 
     @staticmethod
     def _error_update(
@@ -364,9 +385,13 @@ class _AnimationSession:
                 raise UnsupportedFeatureError(
                     "This Heatmap has no supported image artist."
                 )
-            if image.shape != binding.shape:
+            if isinstance(binding.image, QuadMesh) and image.shape != binding.shape:
                 raise InvalidParameterError(
-                    "An animated Heatmap image must keep its original shape."
+                    "An animated mesh Heatmap must keep its original shape."
+                )
+            if image.ndim != len(binding.shape):
+                raise InvalidParameterError(
+                    "An animated Heatmap must keep its initial scalar or RGB(A) data mode."
                 )
             if not np.can_cast(image.dtype, float, casting="same_kind"):
                 raise InvalidParameterError(
@@ -417,7 +442,9 @@ class _AnimationSession:
         applied = []
         try:
             update(index)
-            for updates in self._updates.values():
+            # Derive each fill once from both final frame inputs, before mutating artists.
+            dependent_edits = [prepare() for prepare in self._dirty_dependents.values()]
+            for updates in chain(self._updates.values(), (dependent_edits,)):
                 for edit in updates:
                     applied.append(edit)
                     try:
@@ -442,12 +469,15 @@ class _AnimationSession:
             raise
         finally:
             self._updates.clear()
+            self._dirty_dependents.clear()
             self._rollback.clear()
             _FRAME_SESSION.reset(token)
 
     def clear(self) -> None:
         self._artists.clear()
         self._properties.clear()
+        self._point_dependents.clear()
+        self._dirty_dependents.clear()
         for callback in reversed(self._cleanup):
             callback()
         self._cleanup.clear()

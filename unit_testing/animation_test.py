@@ -165,9 +165,9 @@ class TestAnimation(unittest.TestCase):
             label.x = 0.3 + index / 10
             label.text = f"frame {index}"
             if index:
-                points.set_data([1], [2])
+                points.set_data([1], [2, 3])
 
-        with self.assertRaisesRegex(ValueError, "original point count"):
+        with self.assertRaisesRegex(ValueError, "same length"):
             fig.save_animation(str(self.output), update, 3)
         assert_allclose(points.y_data, [3, 4])
         self.assertEqual(label.text, "frame 0")
@@ -216,14 +216,12 @@ class TestAnimation(unittest.TestCase):
                 2,
             )
         assert_allclose(curve.y_data, [1, 2])
-        other = Curve([0, 1], [2, 3])
-        curve.get_area_between(0, 1, other_curve=other, fill_between=True)
-        with self.assertRaisesRegex(GraphingException, "fill"):
-            fig.save_animation(
-                str(self.output), lambda i: setattr(curve, "y_data", [2, 3]), 2
-            )
-
-        heatmap = Heatmap([[0, 1], [1, 0]], show_color_bar=False)
+        heatmap = Heatmap(
+            [[0, 1], [1, 0]],
+            x_mesh=[[0, 1], [0, 1]],
+            y_mesh=[[0, 0], [1, 1]],
+            show_color_bar=False,
+        )
         fig = SmartFigure(elements=[heatmap], figure_style="plain")
         with self.assertRaisesRegex(ValueError, "original shape"):
             fig.save_animation(
@@ -684,3 +682,96 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertIsNone(nested._figure)
         self.assertIsNone(root._figure)
         self.assertEqual(self.output.read_bytes(), b"existing")
+
+    def test_resizes_scatter_and_keeps_error_artists_through_empty_frames(self):
+        scatter = Scatter([0, 1], [2, 3], face_color="navy")
+        scatter.add_errorbars(y_error=[0.1, 0.2], cap_width=4)
+        figure = SmartFigure(
+            elements=[scatter], figure_style="plain", x_lim=(-1, 4), y_lim=(-1, 5)
+        )
+        snapshots = []
+
+        def update(frame):
+            bars = scatter.errorbars_handle.lines
+            snapshots.append((scatter.handle, bars, len(scatter.handle.get_offsets())))
+            x = np.arange([0, 3, 1, 2][frame])
+            scatter.set_data(x, x + 1, y_error=np.full(x.size, 0.25))
+
+        figure.save_animation(self.output, update, 4)
+        self.assertEqual([item[2] for item in snapshots], [2, 0, 3, 1])
+        collection, bars, _ = snapshots[0]
+        self.assertTrue(
+            all(item[0] is collection and item[1] is bars for item in snapshots)
+        )
+        assert_allclose(collection.get_offsets(), [[0, 1], [1, 2]])
+        assert_allclose(
+            bars[2][0].get_segments(), [[[0, 0.75], [0, 1.25]], [[1, 1.75], [1, 2.25]]]
+        )
+        assert_allclose(bars[1][0].get_ydata(), [0.75, 1.75])
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 4)
+
+    def test_shared_fills_update_from_both_curves_including_an_unplotted_boundary(self):
+        first = Curve([0, 1, 2], [0, 1, 0])
+        second = Curve([0, 2], [3, 3])
+        first.get_area_between(0.5, 1.5, other_curve=second, fill_between=True)
+        figure = SmartFigure(
+            1, 2, elements=[[first], [first]], figure_style="plain", y_lim=(-1, 6)
+        )
+        seen = []
+
+        def update(frame):
+            artists = tuple(
+                axis.collections[0] for axis in plt.gcf().axes if axis.collections
+            )
+            seen.append(artists)
+            if frame == 0:
+                second.y_data = [4, 4]
+            if frame == 1:
+                first.y_data = [0, 2, 0]
+                second.y_data = [5, 5]
+            if frame == 2:
+                first.set_data([1, 2], [0, 1])
+
+        self.output.write_bytes(b"previous")
+        with self.assertRaisesRegex(ValueError, "interpolation range"):
+            figure.save_animation(self.output, update, 3)
+        self.assertEqual(self.output.read_bytes(), b"previous")
+        self.assertTrue(all(items == seen[0] for items in seen))
+        self.assertEqual(len(seen[0]), 2)
+        for artist in seen[0]:
+            vertices = artist.get_paths()[0].vertices
+            assert_allclose([vertices[:, 1].min(), vertices[:, 1].max()], [1, 5])
+        assert_allclose(first.x_data, [0, 1, 2])
+        assert_allclose(second.y_data, [5, 5])
+
+    def test_resamples_raster_at_the_same_physical_extent(self):
+        heat = Heatmap([[0, 1], [1, 0]], show_color_bar=False, color_map_range=(0, 1))
+        figure = SmartFigure(elements=[heat], figure_style="plain")
+        seen = []
+
+        def update(frame):
+            (artist,) = [image for axes in plt.gcf().axes for image in axes.images]
+            seen.append((artist, tuple(artist.get_extent()), artist.get_array().shape))
+            heat.image = np.eye(frame + 3)
+
+        figure.save_animation(self.output, update, 3)
+        self.assertTrue(
+            all(
+                artist is seen[0][0] and extent == seen[0][1]
+                for artist, extent, _ in seen
+            )
+        )
+        self.assertEqual([shape for _, _, shape in seen], [(2, 2), (3, 3), (4, 4)])
+        self.assertEqual(seen[0][0].get_array().shape, (5, 5))
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 3)
+
+    def test_rejects_resizing_scatter_with_per_point_colors(self):
+        scatter = Scatter([0, 1], [2, 3], face_color=["red", "blue"])
+        figure = SmartFigure(elements=[scatter], figure_style="plain")
+        with self.assertRaisesRegex(ValueError, "per-point colors"):
+            figure.save_animation(self.output, lambda _: scatter.set_data([0], [2]), 1)
+        assert_allclose(scatter.handle.get_offsets(), [[0, 2], [1, 3]])
+        assert_allclose(scatter.x_data, [0, 1])
+        self.assertFalse(self.output.exists())
