@@ -47,6 +47,7 @@ from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.gridspec import GridSpec
 from matplotlib.layout_engine import ConstrainedLayoutEngine
+from matplotlib.legend import Legend
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.projections import get_projection_names
@@ -267,7 +268,7 @@ class SmartFigure:
         Number of columns to display the labels in the legend. This is only used if the legend is displayed. This can be
         given as a single value or a list of values to apply to each subplot.
         Defaults to ``1``.
-    show_legend : bool | list[bool], optional
+    show_legend : bool | list[bool | None], optional
         Whether to show the legend for the figure. This allows to easily toggle the visibility of the legend. This can
         be given as a single value or a list of values to apply to each subplot.
         Defaults to ``True``.
@@ -342,7 +343,7 @@ class SmartFigure:
         general_legend: bool = False,
         legend_loc: ListOrItem[str | tuple | None] = None,
         legend_cols: ListOrItem[int] = 1,
-        show_legend: ListOrItem[bool] = True,
+        show_legend: bool | list[bool | None] = True,
         twin_x_axis: SmartTwinAxis | None = None,
         twin_y_axis: SmartTwinAxis | None = None,
         figure_style: str | Inherit = INHERIT,
@@ -973,16 +974,20 @@ class SmartFigure:
         self._legend_cols = value
 
     @property
-    def show_legend(self) -> ListOrItem[bool]:
+    def show_legend(self) -> bool | list[bool | None]:
         return self._show_legend
 
     @show_legend.setter
-    def show_legend(self, value: ListOrItem[bool]) -> None:
-        _reject_animated_layout(self)
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("show_legend must be a bool.")
-        self._show_legend = value
+    def show_legend(self, value: bool | list[bool | None]) -> None:
+        if (
+            self._general_legend
+            and isinstance(value, list)
+            and _bound_session(self) is not None
+        ):
+            raise IncompatibleArgumentsError(
+                "A general legend requires a single show_legend boolean."
+            )
+        self._show_legend = self._stage_view_flag("show_legend", value)
 
     @property
     def twin_x_axis(self) -> SmartTwinAxis | None:
@@ -2278,6 +2283,7 @@ class SmartFigure:
 
         try:
             figure.set_layout_engine("none")
+            session.hide_initial_legends()
             for axes in figure.axes:
                 axes.set_autoscale_on(False)
             frame_style = plt.rcParams.copy()
@@ -2524,6 +2530,7 @@ class SmartFigure:
                 session.mark_present(child)
 
         limit_axes: list[tuple[int, Axes]] = []
+        legend_targets: dict[int, Legend | None] = {}
         visibility: dict[str, dict[int, Callable[[bool], _ArtistEdit]]] = {
             name: {} for name in ("remove_axes", "remove_x_ticks", "remove_y_ticks")
         }
@@ -2807,7 +2814,10 @@ class SmartFigure:
                     labels = default_labels + custom_labels
                     handles = default_handles + custom_handles
 
-                    if self._subplot_p["show_legend"][subplot_i] and labels:
+                    show_legend = self._subplot_p["show_legend"][subplot_i] is not False
+                    if session is not None:
+                        legend_targets[subplot_i] = None
+                    if labels and (show_legend or session is not None):
                         legend_params = self._get_legend_params(
                             labels, handles, -0.1, subplot_i
                         )
@@ -2830,7 +2840,10 @@ class SmartFigure:
                             )
                         _legend.set_zorder(10000)
                         if session is not None:
-                            session.bind_legend(_legend, handles)
+                            legend_targets[subplot_i] = _legend
+                            session.bind_legend(
+                                _legend, handles, initially_visible=show_legend
+                            )
                     default_labels, default_handles = [], []
                     custom_labels, custom_handles = [], []
 
@@ -2841,6 +2854,8 @@ class SmartFigure:
 
         if session is not None:
             subplot_count = len(self._ordered_elements)
+            if legend_targets:
+                session.bind_legend_visibility(self, legend_targets, subplot_count)
             for name, targets in visibility.items():
                 session.bind_axis_visibility(self, f"_{name}", targets, subplot_count)
             if limit_axes:
@@ -2924,8 +2939,15 @@ class SmartFigure:
         ):  # making a general legend is priorized over make_legend=False
             labels = default_labels + custom_labels
             handles = default_handles + custom_handles
-            if labels and self._show_legend:
+            general_legend: Legend | None = None
+            if labels and (self._show_legend or session is not None):
                 legend_params = self._get_legend_params(labels, handles, 0)
+                if session is not None:
+                    location = self._legend_loc
+                    if isinstance(location, str) and location.startswith("outside "):
+                        # Native outside placement participates in constrained layout.
+                        legend_params.pop("bbox_to_anchor", None)
+                        legend_params["loc"] = location
                 try:
                     _legend = figure.legend(
                         **legend_params,
@@ -2936,8 +2958,13 @@ class SmartFigure:
                         **legend_params,
                     )
                 _legend.set_zorder(10000)
+                general_legend = _legend
                 if session is not None:
-                    session.bind_legend(_legend, handles)
+                    session.bind_legend(
+                        _legend, handles, initially_visible=bool(self._show_legend)
+                    )
+            if session is not None:
+                session.bind_legend_visibility(self, {0: general_legend}, 1)
             legend_info = {
                 "labels": {"default": [], "custom": []},
                 "handles": {"default": [], "custom": []},
@@ -4576,7 +4603,7 @@ class SmartFigureWCS(SmartFigure):
         Number of columns to display the labels in the legend. This is only used if the legend is displayed. This can be
         given as a single value or a list of values to apply to each subplot.
         Defaults to ``1``.
-    show_legend : bool | list[bool], optional
+    show_legend : bool | list[bool | None], optional
         Whether to show the legend for the figure. This allows to easily toggle the visibility of the legend. This can
         be given as a single value or a list of values to apply to each subplot.
         Defaults to ``True``.
@@ -4652,7 +4679,7 @@ class SmartFigureWCS(SmartFigure):
         general_legend: bool = False,
         legend_loc: ListOrItem[str | tuple | None] = None,
         legend_cols: ListOrItem[int] = 1,
-        show_legend: ListOrItem[bool] = True,
+        show_legend: bool | list[bool | None] = True,
         twin_x_axis: SmartTwinAxis | None = None,
         twin_y_axis: SmartTwinAxis | None = None,
         figure_style: str | Inherit = INHERIT,

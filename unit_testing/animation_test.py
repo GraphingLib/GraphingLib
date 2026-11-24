@@ -4427,6 +4427,114 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             [4],
         )
 
+    def test_local_legend_visibility_over_nested_and_spanning_plots(self):
+        inner = Curve([0, 1], [0, 1], label="Nested")
+        span = Curve([0, 1], [1, 0], label="Spanning")
+        unlabeled = Curve([0, 1], [1, 0])
+        nested = SmartFigure(elements=[inner], show_legend=False)
+        root = SmartFigure(2, 3, figure_style="plain", show_legend=[None, False, True])
+        root[:, 0] = nested
+        root[0, 1:3] = [span]
+        root[1, 1:3] = [unlabeled]
+        snapshots = []
+
+        def update(frame):
+            a, b, c = (
+                curve.handle.lines[0].axes.get_legend()
+                for curve in (inner, span, unlabeled)
+            )
+            snapshots.append(
+                (
+                    (a, b, c),
+                    (a.get_visible(), b.get_visible()),
+                    b.get_texts()[0].get_text(),
+                )
+            )
+            if frame == 0:
+                root.show_legend = [None, True, False]
+                span.label = "New name"
+            elif frame == 1:
+                nested.show_legend = True
+                root.show_legend = False
+
+        root.save_animation(self.output, update, 3)
+        self.assertTrue(all(s[0] == snapshots[0][0] for s in snapshots))
+        self.assertIsNone(snapshots[0][0][2])
+        self.assertEqual(
+            [s[1] for s in snapshots], [(False, False), (False, True), (True, False)]
+        )
+        self.assertEqual(snapshots[1][2], "New name")
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 2)
+
+    def test_initially_hidden_outside_general_legend_reserves_fixed_space(self):
+        curve = Curve([0, 1], [0, 1], label="A legend that needs some width")
+        root = SmartFigure(
+            elements=[curve],
+            figure_style="plain",
+            general_legend=True,
+            legend_loc="outside center right",
+            show_legend=False,
+        )
+        states = []
+
+        def update(frame):
+            (legend,) = plt.gcf().legends
+            bbox = legend.get_window_extent()
+            fig_bbox = plt.gcf().bbox
+            states.append(
+                (
+                    legend,
+                    legend.get_visible(),
+                    curve.handle.lines[0].axes.get_position().bounds,
+                )
+            )
+            self.assertGreaterEqual(bbox.xmin, fig_bbox.xmin)
+            self.assertLessEqual(bbox.xmax, fig_bbox.xmax)
+            if frame == 0:
+                with self.assertRaisesRegex(ValueError, "requires a single"):
+                    root.show_legend = [True]
+                root.show_legend = True
+
+        root.save_animation(self.output, update, 2)
+        self.assertIs(states[0][0], states[1][0])
+        self.assertEqual([s[1] for s in states], [False, True])
+        self.assertEqual(states[0][2], states[1][2])
+
+    def test_failed_legend_visibility_edit_restores_previous_visibility(self):
+        first, second = (
+            Curve([0, 1], [0, 1], label=label) for label in ("First", "Second")
+        )
+        root = SmartFigure(
+            1, 2, elements=[first, second], figure_style="plain", show_legend=False
+        )
+        self.output.write_bytes(b"existing")
+        legends = []
+
+        def update(frame):
+            if not frame:
+                return
+            a, b = (
+                curve.handle.lines[0].axes.get_legend() for curve in (first, second)
+            )
+            legends.extend((a, b))
+            original = b.set_visible
+
+            def fail_after_change(visible):
+                original(visible)
+                if visible:
+                    self.assertTrue(a.get_visible())
+                    raise ValueError("failed after changing legend visibility")
+
+            self.enterContext(patch.object(b, "set_visible", fail_after_change))
+            root.show_legend = True
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        self.assertEqual([legend.get_visible() for legend in legends], [False, False])
+        self.assertFalse(root.show_legend)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_raster_extent_and_origin_update_without_panning_view(self):
         heat = Heatmap([[0, 1], [0, 0]], origin_position="upper", show_color_bar=False)
         root = SmartFigure(

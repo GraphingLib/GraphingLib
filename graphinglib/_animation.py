@@ -368,6 +368,7 @@ class _AnimationSession:
         ] = {}
         self._dirty_dependents: dict[int, Callable[[], _ArtistEdit]] = {}
         self._legend_swatch_prepares: set[int] = set()
+        self._initially_hidden_legends: list[Legend] = []
         self._legend_sources: dict[
             int, tuple[object, Callable[[], str | None], tuple[str, ...]]
         ] = {}
@@ -784,7 +785,35 @@ class _AnimationSession:
     ) -> None:
         self._reference_legend_sources[id(handle)] = (properties, read_styles)
 
-    def bind_legend(self, legend: Legend, handles: list[Any]) -> None:
+    def bind_legend_visibility(
+        self,
+        element: object,
+        targets: dict[int, Legend | None],
+        subplot_count: int,
+    ) -> None:
+        def prepare(value: bool | list[bool | None]) -> _ArtistEdit:
+            entries = _subplot_visibility_entries(value, targets, subplot_count)
+            return _combine_edits(
+                [
+                    _edit(legend.set_visible, legend.get_visible(), show)
+                    for index, show in entries.items()
+                    if (legend := targets[index]) is not None
+                ]
+            )
+
+        self.bind_update(element, "_show_legend", prepare)
+
+    def hide_initial_legends(self) -> None:
+        for legend in self._initially_hidden_legends:
+            legend.set_visible(False)
+        self._initially_hidden_legends.clear()
+
+    def bind_legend(
+        self, legend: Legend, handles: list[Any], *, initially_visible: bool = True
+    ) -> None:
+        if not initially_visible:
+            # Reserve layout space for legends that may be revealed during playback.
+            self._initially_hidden_legends.append(legend)
         texts = iter(legend.get_texts())
         groups = {
             id(children[0]): children
@@ -1188,6 +1217,7 @@ class _AnimationSession:
         self._properties.clear()
         self._dependents.clear()
         self._legend_sources.clear()
+        self._initially_hidden_legends.clear()
         self._reference_legend_sources.clear()
         self._legend_swatch_prepares.clear()
         self._dirty_dependents.clear()

@@ -2133,7 +2133,13 @@ title or label takes precedence over the parent entry. Set the nested
 figure's property to ``None`` to use the parent's current text.
 
 Grid layout, legend entries, and colorbar placement are established from the
-initial figure. Assign ``label`` to rename existing entries for curves, fits,
+initial figure. Assign ``show_legend`` to show or hide a legend, even if it
+starts hidden. Pass a boolean for all direct subplots or use a list with
+``None`` for untouched slots. Control nested or shared legends on the
+SmartFigure that owns them. A general legend takes one boolean. Outside
+legends reserve space before playback so toggling them preserves the layout.
+
+Assign ``label`` to rename existing entries for curves, fits,
 scatter plots, histograms, and reference lines. Assigning ``None`` clears the
 text when there is no generated label, and keeps the entry's swatch. Choose a
 starting label for every plottable that needs a legend entry during playback.
