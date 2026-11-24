@@ -421,6 +421,24 @@ class _AnimationSession:
 
         self.bind_update(element, name, prepare)
 
+    def bind_resolved_axis_text(
+        self,
+        sources: list[tuple[object, str]],
+        resolve: Callable[[], str | None],
+        read: Callable[[], str | None],
+        write: Callable[[str], Any],
+    ) -> None:
+        def prepare() -> _ArtistEdit:
+            value = resolve()
+            if value is not None and not isinstance(value, str):
+                raise InvalidParameterError(
+                    "Animated axis text must be a string or None."
+                )
+            return _edit(write, read() or "", value or "")
+
+        for element, name in sources:
+            self.bind_derived(element, (name,), prepare)
+
     def bind_axis_visibility(
         self,
         element: object,

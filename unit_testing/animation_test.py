@@ -2899,6 +2899,149 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         with Image.open(self.output) as gif:
             self.assertEqual(gif.n_frames, 2)
 
+    def test_live_subplot_text_handles_spans_and_nested_fallback(self):
+        first = Curve([0, 1], [0, 1])
+        second = Curve([0, 1], [0, 1])
+        inner = Curve([0, 1], [0, 1])
+        nested = SmartFigure(elements=[inner], x_label="Child x")
+        root = SmartFigure(
+            2,
+            3,
+            figure_style="plain",
+            title="Overview",
+            subtitles=("Inherited", "Upper", "Lower"),
+            sub_x_labels=["Parent x", "Upper x"],
+        )
+        root[:, 0] = nested
+        root[0, 1:3] = [first]
+        root[1, 1:3] = [second]
+        root.set_text_padding_params(sub_x_labels_pad=[0, 14, 20])
+        captures = []
+
+        def update(frame):
+            axes = [curve.handle.lines[0].axes for curve in (inner, first, second)]
+            artists = tuple((ax.title, ax.xaxis.label, ax.yaxis.label) for ax in axes)
+            captures.append(
+                (
+                    artists,
+                    tuple(
+                        tuple(text.get_text() for text in group) for group in artists
+                    ),
+                )
+            )
+            if frame == 0:
+                root.subtitles = ("Live parent", "Changing", None)
+                root.sub_x_labels = (label for label in ("Changed x", None, "Lower x"))
+                root.sub_y_labels = ["Nested y", "Upper y", "Lower y"]
+                nested.title = "Child title"
+                nested.x_label = None
+            elif frame == 1:
+                nested.title = None
+                root.subtitles = ["Fallback title"]
+                root.sub_x_labels = None
+                nested.sub_x_labels = ["Child subplot x"]
+                root.sub_y_labels = [None, "Upper y"]
+            self.assertEqual(axes[-1].xaxis.labelpad, 20)
+            self.assertTrue(any(ax.get_title() == "Overview" for ax in plt.gcf().axes))
+
+        root.save_animation(self.output, update, 3)
+        self.assertEqual(
+            [capture[1] for capture in captures],
+            [
+                (
+                    ("Inherited", "Child x", ""),
+                    ("Upper", "Upper x", ""),
+                    ("Lower", "", ""),
+                ),
+                (
+                    ("Child title", "Changed x", "Nested y"),
+                    ("Changing", "", "Upper y"),
+                    ("", "Lower x", "Lower y"),
+                ),
+                (
+                    ("Fallback title", "Child subplot x", ""),
+                    ("", "", "Upper y"),
+                    ("", "", ""),
+                ),
+            ],
+        )
+        self.assertTrue(all(capture[0] == captures[0][0] for capture in captures))
+
+    def test_live_subplot_text_uses_wcs_coordinate_labels(self):
+        from graphinglib.smart_figure import HAS_ASTROPY, SmartFigureWCS
+
+        if not HAS_ASTROPY:
+            self.skipTest("Astropy is required for WCSAxes")
+        from astropy.wcs import WCS
+
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+        first, second = (Curve([0, 1], [0, 1]) for _ in range(2))
+        root = SmartFigureWCS(
+            projection=wcs,
+            num_rows=1,
+            num_cols=2,
+            figure_style="plain",
+            elements=[first, second],
+        )
+        labels = []
+
+        def update(frame):
+            labels.append(
+                [
+                    (axes.get_xlabel(), axes.get_ylabel())
+                    for axes in (
+                        curve.handle.lines[0].axes for curve in (first, second)
+                    )
+                ]
+            )
+            if frame == 0:
+                root.sub_x_labels = ["RA one", "RA two"]
+                root.sub_y_labels = ["Dec one", "Dec two"]
+
+        root.save_animation(self.output, update, 2)
+        self.assertEqual(labels[1], [("RA one", "Dec one"), ("RA two", "Dec two")])
+
+    def test_failed_subplot_text_commit_restores_other_titles(self):
+        from matplotlib.text import Text as MatplotlibText
+
+        first, second = (Curve([0, 1], [0, 1]) for _ in range(2))
+        root = SmartFigure(
+            1,
+            2,
+            elements=[first, second],
+            subtitles=["One", "Two"],
+            figure_style="plain",
+        )
+        before = MatplotlibText.set_text
+        self.output.write_bytes(b"existing")
+        did_apply = []
+
+        def fail_on_title(artist, text):
+            before(artist, text)
+            if text == "fail-on-write":
+                did_apply.append(first.handle.lines[0].axes.title.get_text())
+                raise ValueError("failed writing subplot title")
+
+        def update(frame):
+            if frame == 0:
+                root.subtitles = ["First", "Second"]
+            else:
+                root.subtitles = ["Changed first", "fail-on-write"]
+
+        with (
+            patch.object(MatplotlibText, "set_text", fail_on_title),
+            self.assertRaisesRegex(GraphingException, "animation frame 1"),
+        ):
+            root.save_animation(self.output, update, 2)
+        self.assertEqual(did_apply, ["Changed first"])
+        self.assertEqual(root.subtitles, ["First", "Second"])
+        self.assertEqual(
+            [curve.handle.lines[0].axes.title.get_text() for curve in (first, second)],
+            ["First", "Second"],
+        )
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_artist_commit_failure_restores_shared_viewports_and_labels(self):
         moving = Scatter([0, 6], [0, 6], face_color="navy")
         fixed = Curve([0, 6], [1, 5])

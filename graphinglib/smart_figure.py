@@ -57,6 +57,7 @@ from ._animation import (
     _AnimationSession,
     _ArtistEdit,
     _axis_removal,
+    _bound_session,
     _edit,
     _reject_live_update,
     _stage_live_value,
@@ -85,6 +86,11 @@ from .tools import _copy_with_overrides, _require_optional_dependency
 
 T = TypeVar("T")
 ListOrItem = Union[T, list[T]]
+_SUBPLOT_TEXT = {
+    "_x_label": "_sub_x_labels",
+    "_y_label": "_sub_y_labels",
+    "_title": "_subtitles",
+}
 
 
 def _require_astropy(feature: str = "this feature") -> None:
@@ -131,13 +137,13 @@ class SmartFigure:
     x_lim, y_lim : tuple[float, float] | list[tuple[float, float]], optional
         Limits for the x and y axes of the figure. This can be given as a single value or a list of values to apply to
         each subplot.
-    sub_x_labels, sub_y_labels : Iterable[str], optional
+    sub_x_labels, sub_y_labels : Iterable[str | None], optional
         Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
         single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
         :class:`~graphinglib.SmartFigure` objects for each subfigure only to set the x and y labels. This list cannot
         be longer than the number of subfigures drawn by the SmartFigure and None values can be used to skip specific
         subfigures.
-    subtitles : Iterable[str], optional
+    subtitles : Iterable[str | None], optional
         Labels for the subtitles of each subfigure, respectively. Similarly to `sub_x_labels` and `sub_y_labels`, this
         allows to set subtitles for each subfigure without needing to create nested
         :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
@@ -305,9 +311,9 @@ class SmartFigure:
         title: str | None = None,
         x_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
         y_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
-        sub_x_labels: Iterable[str] | None = None,
-        sub_y_labels: Iterable[str] | None = None,
-        subtitles: Iterable[str] | None = None,
+        sub_x_labels: Iterable[str | None] | None = None,
+        sub_y_labels: Iterable[str | None] | None = None,
+        subtitles: Iterable[str | None] | None = None,
         log_scale_x: bool | list[bool | None] = False,
         log_scale_y: bool | list[bool | None] = False,
         remove_axes: bool | list[bool | None] = False,
@@ -572,46 +578,50 @@ class SmartFigure:
         self._y_lim = _stage_live_value(self, "_y_lim", value)
 
     @property
-    def sub_x_labels(self) -> Iterable[str] | None:
+    def sub_x_labels(self) -> Iterable[str | None] | None:
         return self._sub_x_labels
 
     @sub_x_labels.setter
-    def sub_x_labels(self, value: Iterable[str] | None) -> None:
-        _reject_animated_layout(self)
-        if value is not None:
-            if not isinstance(value, Iterable):
-                raise InvalidParameterTypeError(
-                    "sub_x_labels must be an iterable of strings."
-                )
-        self._sub_x_labels = value
+    def sub_x_labels(self, value: Iterable[str | None] | None) -> None:
+        self._sub_x_labels = self._stage_subplot_text("_sub_x_labels", value)
 
     @property
-    def sub_y_labels(self) -> Iterable[str] | None:
+    def sub_y_labels(self) -> Iterable[str | None] | None:
         return self._sub_y_labels
 
     @sub_y_labels.setter
-    def sub_y_labels(self, value: Iterable[str] | None) -> None:
-        _reject_animated_layout(self)
-        if value is not None:
-            if not isinstance(value, Iterable):
-                raise InvalidParameterTypeError(
-                    "sub_y_labels must be an iterable of strings."
-                )
-        self._sub_y_labels = value
+    def sub_y_labels(self, value: Iterable[str | None] | None) -> None:
+        self._sub_y_labels = self._stage_subplot_text("_sub_y_labels", value)
 
     @property
-    def subtitles(self) -> Iterable[str] | None:
+    def subtitles(self) -> Iterable[str | None] | None:
         return self._subtitles
 
     @subtitles.setter
-    def subtitles(self, value: Iterable[str] | None) -> None:
-        _reject_animated_layout(self)
-        if value is not None:
+    def subtitles(self, value: Iterable[str | None] | None) -> None:
+        self._subtitles = self._stage_subplot_text("_subtitles", value)
+
+    def _stage_subplot_text(
+        self, name: str, value: Iterable[str | None] | None
+    ) -> str | list[str | None] | None:
+        if value is not None and not isinstance(value, str):
             if not isinstance(value, Iterable):
                 raise InvalidParameterTypeError(
-                    "subtitles must be an iterable of strings."
+                    f"{name[1:]} must be an iterable of strings or None."
                 )
-        self._subtitles = value
+            value = value if isinstance(value, list) else list(value)
+            if _bound_session(self) is not None:
+                if len(value) > len(self._ordered_elements):
+                    raise InvalidParameterError(
+                        f"Too many {name[1:]} entries for this SmartFigure."
+                    )
+                if any(
+                    item is not None and not isinstance(item, str) for item in value
+                ):
+                    raise InvalidParameterTypeError(
+                        f"{name[1:]} entries must be strings or None."
+                    )
+        return _stage_live_value(self, name, value)
 
     def _stage_view_flag(
         self, name: str, value: bool | list[bool | None]
@@ -2417,6 +2427,8 @@ class SmartFigure:
         self,
         is_matplotlib_style: bool = False,
         make_legend: bool = True,
+        *,
+        animation_parent: tuple[SmartFigure, int] | None = None,
     ) -> dict[str, dict[str, list[str | Any]]]:
         """
         Prepares the figure for plotting. This method sets up the figure, axes, and any other necessary elements
@@ -2549,6 +2561,11 @@ class SmartFigure:
                     legend_info = element._prepare_figure(
                         is_matplotlib_style=is_matplotlib_style,
                         make_legend=(not self._general_legend and make_legend),
+                        **(
+                            {"animation_parent": (self, subplot_i)}
+                            if session is not None
+                            else {}
+                        ),
                     )
 
                     self._reference_label_i = element._reference_label_i
@@ -2706,6 +2723,8 @@ class SmartFigure:
 
                 # Axes sub_labels
                 self._customize_ax_label(ax, subplot_i)
+                if session is not None and not self.is_single_subplot:
+                    self._bind_subplot_animation_text(session, ax, subplot_i)
 
                 # Hidden spines
                 if self._hidden_spines is not None:
@@ -2848,70 +2867,15 @@ class SmartFigure:
         label_axes = ax if self.is_single_subplot else general_ax
         if label_axes is not None:
             self._customize_ax_label(label_axes)
-            if session is not None:
-                x_pad, y_pad = (
-                    self._pad_params.get("x_label_pad"),
-                    self._pad_params.get("y_label_pad"),
-                )
-                x_color, y_color = self._x_axis_label_color, self._y_axis_label_color
-                if isinstance(self, SmartFigureWCS) and label_axes is ax:
-                    session.bind_axis_text(
-                        self,
-                        "_x_label",
-                        label_axes.get_xlabel,
-                        lambda text: label_axes.set_xlabel(
-                            text, labelpad=x_pad, color=x_color
-                        ),
-                    )
-                    session.bind_axis_text(
-                        self,
-                        "_y_label",
-                        label_axes.get_ylabel,
-                        lambda text: label_axes.set_ylabel(
-                            text, labelpad=y_pad, color=y_color
-                        ),
-                    )
-                else:
-                    for prop, artist, color, pad, set_label in (
-                        (
-                            "_x_label",
-                            label_axes.xaxis.label,
-                            x_color,
-                            x_pad,
-                            label_axes.set_xlabel,
-                        ),
-                        (
-                            "_y_label",
-                            label_axes.yaxis.label,
-                            y_color,
-                            y_pad,
-                            label_axes.set_ylabel,
-                        ),
-                    ):
-                        if not artist.get_text():
-                            set_label("", labelpad=pad, color=color)
-                        session.bind_axis_text(
-                            self, prop, artist.get_text, artist.set_text
-                        )
-
         title_axes = label_axes if label_axes is not None else general_ax
         title_pad = self._pad_params.get("title_pad")
         if session is not None:
-            if (
-                not self._title
-                and title_axes is ax
-                and self._subtitles is not None
-                and subtitles_pad is not None
-            ):
-                title_pad = subtitles_pad[limit_axes[-1][0]]
-            title_location = plt.rcParams["axes.titlelocation"]
-            title_artist = title_axes.set_title(
-                self._title or title_axes.get_title(loc=title_location),
-                pad=title_pad,
-                loc=title_location,
-            )
-            session.bind_axis_text(
-                self, "_title", title_artist.get_text, title_artist.set_text
+            self._bind_subplot_animation_text(
+                session,
+                title_axes,
+                limit_axes[-1][0] if self.is_single_subplot and limit_axes else None,
+                general=True,
+                parent=animation_parent,
             )
         elif self._title:
             title_axes.set_title(self._title, pad=title_pad)
@@ -3220,6 +3184,92 @@ class SmartFigure:
             ax.set_xlabel(x_label, labelpad=x_pad, color=self._x_axis_label_color)
         if y_label is not None:
             ax.set_ylabel(y_label, labelpad=y_pad, color=self._y_axis_label_color)
+
+    def _bind_subplot_animation_text(
+        self,
+        session: _AnimationSession,
+        ax: Axes,
+        index: int | None,
+        *,
+        general: bool = False,
+        parent: tuple[SmartFigure, int] | None = None,
+    ) -> None:
+        def bind(
+            name: str,
+            read: Callable[[], str | None],
+            write: Callable[[str], Any],
+        ) -> None:
+            sub_name = _SUBPLOT_TEXT[name]
+
+            def subplot_text(owner: SmartFigure, slot: int) -> str | None:
+                values = getattr(owner, sub_name)
+                if isinstance(values, list):
+                    return values[slot] if slot < len(values) else None
+                return values
+
+            def resolve() -> str | None:
+                if general:
+                    value = getattr(self, name)
+                    if value is None and parent is not None:
+                        value = subplot_text(*parent)
+                    if value is not None and not (
+                        name == "_title" and isinstance(value, str) and not value
+                    ):
+                        return value
+                return subplot_text(self, index) if index is not None else None
+
+            sources: list[tuple[object, str]] = [(self, name)] if general else []
+            if parent is not None:
+                sources.append((parent[0], sub_name))
+            if index is not None:
+                sources.append((self, sub_name))
+            if index is None and parent is None:
+                session.bind_axis_text(self, name, read, write)
+            else:
+                session.bind_resolved_axis_text(sources, resolve, read, write)
+
+        use_wcs = isinstance(self, SmartFigureWCS) and index is not None
+        label_axes = (
+            ("x", ax.xaxis, self._x_axis_label_color),
+            ("y", ax.yaxis, self._y_axis_label_color),
+        )
+        if general and self.is_single_subplot and index is None:
+            label_axes = ()
+        for name, axis, color in label_axes:
+            artist = axis.label
+            read_label, set_label = (
+                (ax.get_xlabel, ax.set_xlabel)
+                if name == "x"
+                else (ax.get_ylabel, ax.set_ylabel)
+            )
+            pad = self._pad_params.get(f"{name}_label_pad") if general else None
+            if index is not None and (
+                not general or (pad is None and getattr(self, f"_{name}_label") is None)
+            ):
+                pad = self._subplot_p[f"sub_{name}_labels_pad"][index]
+            if use_wcs:
+                bind(
+                    f"_{name}_label",
+                    read_label,
+                    partial(set_label, labelpad=pad, color=color),
+                )
+            else:
+                if not artist.get_text():
+                    set_label("", labelpad=pad, color=color)
+                bind(f"_{name}_label", artist.get_text, artist.set_text)
+
+        title_pad = self._pad_params.get("title_pad") if general else None
+        if index is not None and (
+            not general
+            or (not self._title and (self._subtitles is not None or title_pad is None))
+        ):
+            title_pad = self._subplot_p["subtitles_pad"][index]
+        title_location = plt.rcParams["axes.titlelocation"]
+        title = self._title if general else None
+        artist = ax.set_title(
+            title or ax.get_title(loc=title_location), pad=title_pad, loc=title_location
+        )
+        bind("_title", artist.get_text, artist.set_text)
 
     def _create_reference_label(
         self,
@@ -4256,13 +4306,13 @@ class SmartFigureWCS(SmartFigure):
     x_lim, y_lim : tuple[float, float] | list[tuple[float, float]], optional
         Limits for the x and y axes of the figure. This can be given as a single value or a list of values to apply to
         each subplot.
-    sub_x_labels, sub_y_labels : Iterable[str], optional
+    sub_x_labels, sub_y_labels : Iterable[str | None], optional
         Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
         single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
         :class:`~graphinglib.SmartFigure` objects for each subfigure only to set the x and y labels. This list cannot
         be longer than the number of subfigures drawn by the SmartFigure and None values can be used to skip specific
         subfigures.
-    subtitles : Iterable[str], optional
+    subtitles : Iterable[str | None], optional
         Labels for the subtitles of each subfigure, respectively. Similarly to `sub_x_labels` and `sub_y_labels`, this
         allows to set subtitles for each subfigure without needing to create nested
         :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
@@ -4424,9 +4474,9 @@ class SmartFigureWCS(SmartFigure):
         title: str | None = None,
         x_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
         y_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
-        sub_x_labels: Iterable[str] | None = None,
-        sub_y_labels: Iterable[str] | None = None,
-        subtitles: Iterable[str] | None = None,
+        sub_x_labels: Iterable[str | None] | None = None,
+        sub_y_labels: Iterable[str | None] | None = None,
+        subtitles: Iterable[str | None] | None = None,
         log_scale_x: bool | list[bool | None] = False,
         log_scale_y: bool | list[bool | None] = False,
         remove_axes: bool | list[bool | None] = False,
@@ -4530,6 +4580,8 @@ class SmartFigureWCS(SmartFigure):
         self,
         is_matplotlib_style: bool = False,
         make_legend: bool = True,
+        *,
+        animation_parent: tuple[SmartFigure, int] | None = None,
     ) -> dict[str, dict[str, list[str | Any]]]:
         """
         Wraps the parent method to check if the number of projections matches the number of subfigures drawn by the
@@ -4540,7 +4592,9 @@ class SmartFigureWCS(SmartFigure):
                 f"Number of WCS projections ({len(self._projection)}) must be equal to the number of subfigures "
                 f"({len(self)})."
             )
-        return super()._prepare_figure(is_matplotlib_style, make_legend)
+        return super()._prepare_figure(
+            is_matplotlib_style, make_legend, animation_parent=animation_parent
+        )
 
     def _customize_ticks(
         self,

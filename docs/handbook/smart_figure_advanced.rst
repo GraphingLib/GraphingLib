@@ -2114,6 +2114,12 @@ Assign ``title``,
 ``label`` on a twin axis. Use ``None`` to clear the text. Keep the initial
 figure's margins wide enough for the longest labels in the animation.
 
+Assign ``subtitles``, ``sub_x_labels``, or ``sub_y_labels`` to update text
+in subplot order. A spanning plot occupies one entry. An omitted entry or
+``None`` clears the corresponding subplot text. A nested figure's own
+title or label takes precedence over the parent entry. Set the nested
+figure's property to ``None`` to use the parent's current text.
+
 Grid layout, legend entries, and colorbar placement are established from the
 initial figure. Assign ``label`` to rename existing entries for curves, fits,
 scatter plots, histograms, and reference lines. Assigning ``None`` clears the
