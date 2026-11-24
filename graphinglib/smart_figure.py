@@ -63,6 +63,7 @@ from ._animation import (
     _edit,
     _reject_live_update,
     _stage_live_value,
+    _subplot_visibility_entries,
     _tick_removal,
 )
 from .exceptions import (
@@ -88,6 +89,7 @@ from .tools import _copy_with_overrides, _require_optional_dependency
 
 T = TypeVar("T")
 ListOrItem = Union[T, list[T]]
+_GRID_RC = ("grid.color", "grid.alpha", "grid.linestyle", "grid.linewidth")
 _SUBPLOT_TEXT = {
     "_x_label": "_sub_x_labels",
     "_y_label": "_sub_y_labels",
@@ -2391,6 +2393,17 @@ class SmartFigure:
         parent_figure_params_to_reset = self._fill_in_missing_params(
             self
         )  # Fill "default" parameters
+        animation_grid_defaults = None
+        if _DRAW_SESSION.get() is not None:
+            style = (
+                plt.rcParams
+                if is_matplotlib_style
+                else self._default_params["rc_params"]
+            )
+            animation_grid_defaults = {
+                key: style.get(key, plt.rcParams[key]) for key in _GRID_RC
+            }
+
         self._default_params["rc_params"].update(
             self._user_rc_dict
         )  # Custom rc parameters supersede the defaults
@@ -2407,7 +2420,12 @@ class SmartFigure:
             self._reference_label_i = self._reference_labels_params.get(
                 "start_index", 0
             )
-            self._prepare_figure(is_matplotlib_style)
+            if animation_grid_defaults is None:
+                self._prepare_figure(is_matplotlib_style)
+            else:
+                self._prepare_figure(
+                    is_matplotlib_style, animation_grid_defaults=animation_grid_defaults
+                )
             figure.canvas.draw()
             self._align_shared_x_spines()
         except BaseException:
@@ -2426,6 +2444,7 @@ class SmartFigure:
         make_legend: bool = True,
         *,
         animation_parent: tuple[SmartFigure, int] | None = None,
+        animation_grid_defaults: dict[str, Any] | None = None,
     ) -> dict[str, dict[str, list[str | Any]]]:
         """
         Prepares the figure for plotting. This method sets up the figure, axes, and any other necessary elements
@@ -2506,9 +2525,10 @@ class SmartFigure:
 
         limit_axes: list[tuple[int, Axes]] = []
         visibility: dict[str, dict[int, Callable[[bool], _ArtistEdit]]] = {
-            name: {}
-            for name in ("remove_axes", "remove_x_ticks", "remove_y_ticks", "show_grid")
+            name: {} for name in ("remove_axes", "remove_x_ticks", "remove_y_ticks")
         }
+        grid_defaults = self._grid_defaults()
+        grid_options = self._grid_options(grid_defaults)
         # Plottable and subfigure plotting
         for subplot_i, ((rows, cols), element) in enumerate(
             self._ordered_elements.items()
@@ -2517,6 +2537,11 @@ class SmartFigure:
                 element._default_params = deepcopy(self._default_params)
                 subfig_params_to_reset = []
                 parent_rc_params = None
+                local_grid_defaults = (
+                    {key: plt.rcParams[key] for key in _GRID_RC}
+                    if session is not None
+                    else None
+                )
                 if is_matplotlib_style:
                     parent_rc_params = plt.rcParams.copy()
                     plt.rcParams.update(element._user_rc_dict)
@@ -2560,7 +2585,10 @@ class SmartFigure:
                         is_matplotlib_style=is_matplotlib_style,
                         make_legend=(not self._general_legend and make_legend),
                         **(
-                            {"animation_parent": (self, subplot_i)}
+                            {
+                                "animation_parent": (self, subplot_i),
+                                "animation_grid_defaults": local_grid_defaults,
+                            }
                             if session is not None
                             else {}
                         ),
@@ -2700,17 +2728,8 @@ class SmartFigure:
                             visibility[name][subplot_i] = prepare
 
                 show_grid = self._subplot_p["show_grid"][subplot_i]
-                if show_grid is not None or session is not None:
-                    grid_options = self._grid_options()
-                    if session is not None or show_grid is False:
-                        grid_edit = self._prepare_grid_visibility(ax, grid_options)
-                        if show_grid is False:
-                            grid_edit(False).apply()
-                        if session is not None:
-                            visibility["show_grid"][subplot_i] = grid_edit
-                    if show_grid:
-                        for dimension, (which, visible) in grid_options.items():
-                            ax.grid(visible, which=which, axis=dimension)
+                if show_grid is not None:
+                    self._prepare_grid(ax, show_grid, grid_options).apply()
 
                 # Axes subtitles
                 if self._subtitles is not None:
@@ -2824,6 +2843,14 @@ class SmartFigure:
             subplot_count = len(self._ordered_elements)
             for name, targets in visibility.items():
                 session.bind_axis_visibility(self, f"_{name}", targets, subplot_count)
+            if limit_axes:
+                self._bind_animation_grid(
+                    session,
+                    limit_axes,
+                    subplot_count,
+                    grid_defaults,
+                    animation_grid_defaults,
+                )
             for dimension in ("x", "y"):
                 session.bind_axis_view(
                     self,
@@ -3145,43 +3172,115 @@ class SmartFigure:
         if minor_y_tick_spacing is not None:
             ax.yaxis.set_minor_locator(ticker.MultipleLocator(minor_y_tick_spacing))
 
-    def _grid_options(self) -> dict[str, tuple[str, bool]]:
+    @staticmethod
+    def _grid_defaults() -> dict[str, tuple[str, bool]]:
         return {
             dimension: (
-                self._grid.get(f"which_{dimension}", plt.rcParams["axes.grid.which"]),
-                self._grid.get(
-                    f"visible_{dimension}",
-                    plt.rcParams["axes.grid.axis"] in ("both", dimension),
-                ),
+                plt.rcParams["axes.grid.which"],
+                plt.rcParams["axes.grid.axis"] in ("both", dimension),
             )
             for dimension in ("x", "y")
         }
 
-    def _prepare_grid_visibility(
-        self, ax: Axes, options: dict[str, tuple[str, bool]]
-    ) -> Callable[[bool], _ArtistEdit]:
-        groups = []
-        for dimension, (selected, enabled) in options.items():
-            axis = ax.xaxis if dimension == "x" else ax.yaxis
-            for which in ("major", "minor"):
-                read = partial(self._native_grid_visible, axis, which)
-                write = partial(axis.grid, which=which)
-                visible = enabled if selected in (which, "both") else read()
-                groups.append((read, write, visible))
+    def _grid_options(
+        self, defaults: dict[str, tuple[str, bool]]
+    ) -> dict[str, tuple[str, bool]]:
+        return {
+            dimension: (
+                self._grid.get(f"which_{dimension}", which),
+                self._grid.get(f"visible_{dimension}", visible),
+            )
+            for dimension, (which, visible) in defaults.items()
+        }
 
-        def prepare(show: bool) -> _ArtistEdit:
+    def _bind_animation_grid(
+        self,
+        session: _AnimationSession,
+        axes: list[tuple[int, Axes]],
+        subplot_count: int,
+        defaults: dict[str, tuple[str, bool]],
+        base_style: dict[str, Any] | None,
+    ) -> None:
+        targets = dict(axes)
+        initial_linestyle = plt.rcParams["grid.linestyle"]
+        inherited_style = (
+            base_style
+            if base_style is not None
+            else {key: plt.rcParams[key] for key in _GRID_RC}
+        )
+
+        def prepare() -> _ArtistEdit:
+            assert self._show_grid is not None
+            entries = _subplot_visibility_entries(
+                self._show_grid, targets, subplot_count
+            )
+            options = self._grid_options(defaults)
+            style = {
+                key: self._user_rc_dict.get(key, inherited_style[key])
+                for key in _GRID_RC
+            }
             return _combine_edits(
                 [
-                    _edit(write, read(), show and visible)
-                    for read, write, visible in groups
+                    self._prepare_grid(
+                        targets[index], show, options, style, initial_linestyle
+                    )
+                    for index, show in entries.items()
                 ]
             )
 
-        return prepare
+        session.bind_derived(self, ("_show_grid", "_grid"), prepare)
+
+    def _prepare_grid(
+        self,
+        ax: Axes,
+        show: bool,
+        options: dict[str, tuple[str, bool]],
+        style: dict[str, Any] | None = None,
+        initial_linestyle: Any = None,
+    ) -> _ArtistEdit:
+        edits = []
+        for dimension, (selected, enabled) in options.items():
+            axis = ax.xaxis if dimension == "x" else ax.yaxis
+            for which in ("major", "minor"):
+                edits.append(
+                    self._prepare_native_grid_group(
+                        axis,
+                        which,
+                        show and enabled and selected in (which, "both"),
+                        style,
+                        initial_linestyle,
+                    )
+                )
+        return _combine_edits(edits)
 
     @staticmethod
-    def _native_grid_visible(axis: Axis, which: Literal["major", "minor"]) -> bool:
-        return bool(axis.get_tick_params(which=which).get("gridOn", False))
+    def _prepare_native_grid_group(
+        axis: Axis,
+        which: Literal["major", "minor"],
+        visible: bool,
+        style: dict[str, Any] | None,
+        initial_linestyle: Any,
+    ) -> _ArtistEdit:
+        params = axis.get_tick_params(which=which)
+        old = {"gridOn": params.get("gridOn", False)}
+        new: dict[str, Any] = {"gridOn": visible}
+        if style is not None:
+            get_ticks = (
+                axis.get_major_ticks if which == "major" else axis.get_minor_ticks
+            )
+            gridline = get_ticks(1)[0].gridline
+            old.update(
+                grid_color=gridline.get_color(),
+                grid_alpha=gridline.get_alpha(),
+                grid_linestyle=params.get("grid_linestyle", initial_linestyle),
+                grid_linewidth=gridline.get_linewidth(),
+            )
+            new.update({key.replace(".", "_"): value for key, value in style.items()})
+
+        def write(params: dict[str, Any]) -> None:
+            axis.set_tick_params(which=which, **params)
+
+        return _edit(write, old, new)
 
     def _prepare_tick_removal(
         self, ax: Axes, dimension: str
@@ -4011,33 +4110,50 @@ class SmartFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        _reject_animated_layout(self)
-        if reset:
-            self._grid.clear()
-            self._user_rc_dict.update(
-                {
-                    "grid.color": Inherit,
-                    "grid.alpha": Inherit,
-                    "grid.linestyle": Inherit,
-                    "grid.linewidth": Inherit,
-                }
+        if any(
+            value not in (None, "major", "minor", "both")
+            for value in (which_x, which_y)
+        ):
+            raise InvalidParameterError(
+                "Grid tick groups must be 'major', 'minor' or 'both'."
             )
 
-        self._show_grid = True
-        params = ["visible_x", "visible_y", "which_x", "which_y"]
-        for param in params:
-            value = locals()[param]
-            if value is not None:
-                self._grid[param] = value
-
-        rc_params_dict = {
-            "grid.color": color,
-            "grid.alpha": alpha,
-            "grid.linestyle": line_style,
-            "grid.linewidth": line_width,
+        grid = {} if reset else self._grid.copy()
+        new_options = {
+            "visible_x": visible_x,
+            "visible_y": visible_y,
+            "which_x": which_x,
+            "which_y": which_y,
         }
-        rc_params_dict = strip_inherit(rc_params_dict)
-        self.set_rc_params(rc_params_dict)
+        grid.update(
+            (name, value) for name, value in new_options.items() if value is not None
+        )
+        explicit_style = strip_inherit(
+            dict(zip(_GRID_RC, (color, alpha, line_style, line_width), strict=True))
+        )
+        rc = self._user_rc_dict.copy()
+        if reset:
+            for key in _GRID_RC:
+                rc.pop(key, None)
+        rc.update(explicit_style)
+
+        session = _bound_session(self)
+        if session is not None:
+            for key, value in explicit_style.items():
+                rc[key] = plt.rcParams.validate[key](value)
+            previous_rc = self._user_rc_dict
+            self._grid = _stage_live_value(self, "_grid", grid)
+            session.remember(
+                self,
+                "_user_rc_dict",
+                lambda: setattr(self, "_user_rc_dict", previous_rc),
+            )
+            self._user_rc_dict = rc
+            self.show_grid = True
+        else:
+            self._grid = grid
+            self._user_rc_dict = rc
+            self._show_grid = True
         return self
 
     def set_custom_legend(
@@ -4618,6 +4734,7 @@ class SmartFigureWCS(SmartFigure):
         make_legend: bool = True,
         *,
         animation_parent: tuple[SmartFigure, int] | None = None,
+        animation_grid_defaults: dict[str, Any] | None = None,
     ) -> dict[str, dict[str, list[str | Any]]]:
         """
         Wraps the parent method to check if the number of projections matches the number of subfigures drawn by the
@@ -4629,7 +4746,10 @@ class SmartFigureWCS(SmartFigure):
                 f"({len(self)})."
             )
         return super()._prepare_figure(
-            is_matplotlib_style, make_legend, animation_parent=animation_parent
+            is_matplotlib_style,
+            make_legend,
+            animation_parent=animation_parent,
+            animation_grid_defaults=animation_grid_defaults,
         )
 
     def _customize_ticks(
@@ -4731,29 +4851,48 @@ class SmartFigureWCS(SmartFigure):
                 length=self._tick_params["y minor"].get("length"),
             )
 
-    def _grid_options(self) -> dict[str, tuple[str, bool]]:
+    def _grid_options(
+        self, defaults: dict[str, tuple[str, bool]]
+    ) -> dict[str, tuple[str, bool]]:
         return {
             dimension: ("major", enabled)
-            for dimension, (_, enabled) in super()._grid_options().items()
+            for dimension, (_, enabled) in super()._grid_options(defaults).items()
         }
 
-    def _prepare_grid_visibility(
-        self, ax: Axes, options: dict[str, tuple[str, bool]]
-    ) -> Callable[[bool], _ArtistEdit]:
-        def prepare(show: bool) -> _ArtistEdit:
-            edits = []
-            for index, dimension in enumerate(("x", "y")):
-                coordinate = cast(Any, ax).coords[index]
-                _, enabled = options[dimension]
-                # CoordinateHelper exposes grid visibility through its drawing options.
-                before = coordinate._grid_lines_kwargs["visible"]
-                write = partial(
-                    coordinate.grid, grid_type=getattr(coordinate, "_grid_type", None)
+    def _prepare_grid(
+        self,
+        ax: Axes,
+        show: bool,
+        options: dict[str, tuple[str, bool]],
+        style: dict[str, Any] | None = None,
+        initial_linestyle: Any = None,
+    ) -> _ArtistEdit:
+        edits = []
+        for index, dimension in enumerate(("x", "y")):
+            coordinate = cast(Any, ax).coords[index]
+            _, enabled = options[dimension]
+            # CoordinateHelper exposes grid visibility through its drawing options.
+            previous = coordinate._grid_lines_kwargs
+            old = {"draw_grid": previous["visible"]}
+            new = {"draw_grid": show and enabled}
+            if style is not None:
+                new.update(
+                    {
+                        "edgecolor": style["grid.color"],
+                        "alpha": style["grid.alpha"],
+                        "linestyle": style["grid.linestyle"],
+                        "linewidth": style["grid.linewidth"],
+                    }
                 )
-                edits.append(_edit(write, before, show and enabled))
-            return _combine_edits(edits)
+                old.update(
+                    {name: previous[name] for name in new if name != "draw_grid"}
+                )
 
-        return prepare
+            def write(params, coord=coordinate) -> None:
+                coord.grid(grid_type=getattr(coord, "_grid_type", None), **params)
+
+            edits.append(_edit(write, old, new))
+        return _combine_edits(edits)
 
     def _prepare_tick_removal(
         self, ax: Axes, dimension: str
@@ -5072,7 +5211,6 @@ class SmartFigureWCS(SmartFigure):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        _reject_animated_layout(self)
         return super().set_grid(
             visible_x=visible_x,
             visible_y=visible_y,

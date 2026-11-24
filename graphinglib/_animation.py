@@ -1,6 +1,6 @@
 """Artist bindings for one SmartFigure animation."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from contextvars import ContextVar
 from dataclasses import dataclass
 from itertools import chain
@@ -63,6 +63,21 @@ _ERROR_STYLE_PROPERTIES = (
     "_cap_width",
     "_cap_thickness",
 )
+
+
+def _subplot_visibility_entries(
+    value: bool | list[bool | None], slots: Collection[int], subplot_count: int
+) -> dict[int, bool]:
+    if isinstance(value, bool):
+        return dict.fromkeys(slots, value)
+    if len(value) > subplot_count:
+        raise InvalidParameterError("Too many visibility entries for this SmartFigure.")
+    entries = {index: flag for index, flag in enumerate(value) if flag is not None}
+    if any(index not in slots for index in entries):
+        raise InvalidParameterError(
+            "Set axis properties on a nested SmartFigure directly."
+        )
+    return entries
 
 
 def _axis_removal(axes: Axes, remove: bool) -> _ArtistEdit:
@@ -450,22 +465,10 @@ class _AnimationSession:
             return
 
         def prepare(value: bool | list[bool | None]) -> _ArtistEdit:
-            if isinstance(value, bool):
-                return _combine_edits([target(value) for target in targets.values()])
-            if len(value) > subplot_count:
-                raise InvalidParameterError(
-                    "Too many visibility entries for this SmartFigure."
-                )
-            edits = []
-            for index, remove in enumerate(value):
-                if remove is None:
-                    continue
-                if index not in targets:
-                    raise InvalidParameterError(
-                        "Set axis properties on a nested SmartFigure directly."
-                    )
-                edits.append(targets[index](remove))
-            return _combine_edits(edits)
+            entries = _subplot_visibility_entries(value, targets, subplot_count)
+            return _combine_edits(
+                [targets[index](flag) for index, flag in entries.items()]
+            )
 
         self.bind_update(element, name, prepare)
 

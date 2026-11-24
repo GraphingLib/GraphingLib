@@ -2109,10 +2109,13 @@ Tick flags hide both marks and labels, and switching them off restores the
 initial side and label settings. Use ``remove_axes`` and ``remove_ticks`` on
 a twin axis to control its decorations separately.
 
-Assign ``show_grid`` to toggle grid lines in the same way. Configure the
-directions, tick groups, and appearance with ``set_grid(...)`` before
-playback. Without an explicit grid setup, showing the grid uses the
-figure style's grid axes and tick groups. WCS grids use major ticks.
+Assign ``show_grid`` to toggle grid lines in the same way. Call
+``set_grid(...)`` during a frame to change directions, tick groups, or
+appearance. It turns on the new grid for direct subplots. Assign
+``show_grid`` afterward in the same callback to choose where to show it.
+Use ``reset=True`` to restore the grid style the figure inherited at setup
+before applying new settings. Without an explicit grid setup, showing the grid
+uses the figure style's grid axes and tick groups. WCS grids use major ticks.
 
 Assign ``title``,
 ``x_label``, or ``y_label`` to change a SmartFigure's text, or assign

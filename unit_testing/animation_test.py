@@ -2839,6 +2839,167 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         figure.save_animation(self.output, update, 3)
         self.assertEqual(states, [(False, False), (True, False), (False, False)])
 
+    def test_live_set_grid_changes_groups_and_styles_and_restores_style_defaults(self):
+        from matplotlib.colors import to_rgba
+
+        from graphinglib.file_manager import FileLoader
+
+        left, upper, lower = (Curve([1, 10], [1, 10]) for _ in range(3))
+        nested = SmartFigure(elements=[left])
+        root = SmartFigure(2, 3, share_x=True, figure_style="plain")
+        root[:, 0] = nested
+        root[0, 1:3] = [upper]
+        root[1, 1:3] = [lower]
+        root.set_ticks(minor_x_ticks=[3, 5, 7])
+        root.set_grid(visible_y=False, which_x="major", color="red")
+        nested.set_grid(visible_y=False, color="orange")
+        seen = []
+
+        def state(ax):
+            x_major = ax.xaxis.get_major_ticks(1)[0].gridline
+            x_minor = ax.xaxis.get_minor_ticks(1)[0].gridline
+            y_major = ax.yaxis.get_major_ticks(1)[0].gridline
+            return (
+                (x_major.get_visible(), x_minor.get_visible(), y_major.get_visible()),
+                to_rgba(x_major.get_color()),
+                x_major.get_alpha(),
+                x_major.get_linestyle(),
+                x_major.get_linewidth(),
+            )
+
+        def update(frame):
+            a, b, c = (obj.handle.lines[0].axes for obj in (left, upper, lower))
+            seen.append(
+                (
+                    tuple(state(ax) for ax in (a, b, c)),
+                    tuple(a.lines + b.lines + c.lines),
+                )
+            )
+            if frame == 0:
+                root.set_grid(
+                    visible_y=False,
+                    which_x="minor",
+                    color="blue",
+                    alpha=0.35,
+                    line_style="--",
+                    line_width=3,
+                )
+                root.show_grid = [None, True, False]
+                nested.set_grid(reset=True, visible_y=False)
+            elif frame == 1:
+                root.set_grid(reset=True, visible_x=False, which_y="major")
+                root.x_lim = (1, 100)
+                root.log_scale_x = True
+
+        root.save_animation(self.output, update, 3)
+        self.assertEqual(seen[0][0][0][1], to_rgba("orange"))
+        self.assertEqual(seen[1][0][0][1], to_rgba("red"))
+        self.assertEqual(
+            seen[1][0][1], ((False, True, False), to_rgba("blue"), 0.35, "--", 3)
+        )
+        self.assertEqual(seen[1][0][2][0], (False, False, False))
+        defaults = FileLoader("plain").load()["rc_params"]
+        for states, handles in seen:
+            self.assertEqual(handles, seen[0][1])
+        for flags, color, alpha, _, width in seen[2][0][1:]:
+            self.assertEqual(flags, (False, False, True))
+            self.assertEqual(color, to_rgba(defaults["grid.color"]))
+            self.assertEqual(alpha, defaults["grid.alpha"])
+            self.assertEqual(width, defaults["grid.linewidth"])
+
+        root.save(str(self.output.with_suffix(".png")))
+        self.assertEqual(state(upper.handle.lines[0].axes), seen[2][0][1])
+
+    def test_failed_live_set_grid_restores_style_and_model(self):
+        curve = Curve([1, 10], [1, 10])
+        root = SmartFigure(elements=[curve], figure_style="plain")
+        root.set_grid(visible_y=False, color="orange")
+        dash_pattern = (1, (2, 5))
+        root.set_rc_params({"grid.linestyle": dash_pattern})
+        self.output.write_bytes(b"existing")
+        applied = []
+
+        def update(frame):
+            if not frame:
+                return
+            ax = curve.handle.lines[0].axes
+            original = ax.yaxis.set_tick_params
+            root.set_grid(visible_x=False, color="red", line_style="-")
+            root.show_grid = False
+
+            def fail_after_apply(*args, **kwargs):
+                original(*args, **kwargs)
+                if kwargs.get("grid_color") == "red":
+                    applied.append(ax.xaxis.get_gridlines()[0].get_color())
+                    raise ValueError("failed after setting grid style")
+
+            self.enterContext(
+                patch.object(ax.yaxis, "set_tick_params", fail_after_apply)
+            )
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        self.assertEqual(applied, ["red"])
+        self.assertTrue(root.show_grid)
+        self.assertEqual(root._user_rc_dict["grid.color"], "orange")
+        self.assertTrue(root._grid["visible_x"])
+        self.assertFalse(root._grid["visible_y"])
+        ax = curve.handle.lines[0].axes
+        self.assertTrue(ax.xaxis.get_gridlines()[0].get_visible())
+        self.assertEqual(ax.xaxis.get_gridlines()[0].get_color(), "orange")
+        self.assertEqual(ax.xaxis.get_gridlines()[0]._unscaled_dash_pattern, dash_pattern)
+        self.assertFalse(ax.yaxis.get_gridlines()[0].get_visible())
+        self.assertEqual(ax.yaxis.get_gridlines()[0].get_color(), "orange")
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
+    def test_live_set_grid_changes_wcs_coordinate_and_style(self):
+        from graphinglib.smart_figure import HAS_ASTROPY, SmartFigureWCS
+
+        if not HAS_ASTROPY:
+            self.skipTest("Astropy is required for WCSAxes")
+        from astropy.wcs import WCS
+
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+        curve = Curve([1, 10], [1, 10])
+        figure = SmartFigureWCS(wcs, elements=[curve], figure_style="plain")
+        figure.set_grid(visible_y=False, color="red")
+        states = []
+
+        def update(frame):
+            x, y = curve.handle.lines[0].axes.coords
+            states.append(
+                [
+                    (
+                        p["visible"],
+                        p["edgecolor"],
+                        p["alpha"],
+                        p["linestyle"],
+                        p["linewidth"],
+                    )
+                    for p in (x._grid_lines_kwargs, y._grid_lines_kwargs)
+                ]
+            )
+            if frame == 0:
+                figure.set_grid(
+                    visible_x=False,
+                    color="purple",
+                    alpha=0.5,
+                    line_style=":",
+                    line_width=2,
+                )
+            elif frame == 1:
+                figure.show_grid = False
+
+        figure.save_animation(self.output, update, 3)
+        self.assertEqual(
+            [pair[:2] for pair in states[0]], [(True, "red"), (False, "red")]
+        )
+        self.assertEqual(
+            states[1], [(False, "purple", 0.5, ":", 2), (True, "purple", 0.5, ":", 2)]
+        )
+        self.assertEqual(states[2], [(False, "purple", 0.5, ":", 2)] * 2)
+
     def test_live_log_scale_combines_final_limits_and_preserves_manual_ticks(self):
         from warnings import catch_warnings, simplefilter
 
