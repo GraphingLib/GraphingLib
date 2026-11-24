@@ -2133,7 +2133,12 @@ title or label takes precedence over the parent entry. Set the nested
 figure's property to ``None`` to use the parent's current text.
 
 Grid layout, legend entries, and colorbar placement are established from the
-initial figure. Assign ``show_legend`` to show or hide a legend, even if it
+initial figure. For a scalar Heatmap, Contour, or Scatter with an intensity
+array, call ``set_color_bar_params(reserve=True)`` before playback to reserve
+space for a colorbar while starting with ``show_color_bar=False``. Assign
+``show_color_bar=True`` in a callback to reveal it.
+
+Assign ``show_legend`` to show or hide a legend, even if it
 starts hidden. Pass a boolean for all direct subplots or use a list with
 ``None`` for untouched slots. Control nested or shared legends on the
 SmartFigure that owns them. A general legend takes one boolean. Outside

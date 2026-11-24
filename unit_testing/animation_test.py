@@ -4535,6 +4535,75 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertFalse(root.show_legend)
         self.assertEqual(self.output.read_bytes(), b"existing")
 
+    def test_reserved_colorbars_start_hidden_and_follow_frame_colors(self):
+        from graphinglib import Contour
+
+        heat = Heatmap([[0, 1], [1, 2]], show_color_bar=False)
+        contour = Contour(
+            [[0, 1], [1, 2]], levels=[0, 1, 2], filled=True, show_color_bar=False
+        )
+        scatter = Scatter([0, 1], [1, 0], face_color=[1.0, 2.0], show_color_bar=False)
+        for element, label in ((heat, "Heat"), (contour, "Contour"), (scatter, "Scatter")):
+            element.set_color_bar_params(reserve=True, label=label)
+        inner = SmartFigure(elements=[heat])
+        figure = SmartFigure(2, 3, figure_style="plain", size=(9, 5))
+        figure[:, 0] = inner
+        figure[0, 1:3] = [contour]
+        figure[1, 1:3] = [scatter]
+        states = []
+
+        def update(frame):
+            bars = {
+                ax.get_ylabel(): ax for ax in plt.gcf().axes if ax.get_label() == "<colorbar>"
+            }
+            states.append({
+                name: (ax, ax.get_visible(), ax._colorbar.mappable.get_clim(),
+                       ax._colorbar.mappable.get_cmap().name)
+                for name, ax in bars.items()
+            })
+            if frame == 0:
+                heat.color_map_range = (0, 4)
+                contour.color_map_range = (0, 6)
+                scatter.color_map_range = (0, 8)
+                for element in (heat, contour, scatter):
+                    element.color_map = "plasma"
+            elif frame == 1:
+                for element in (heat, contour, scatter):
+                    element.show_color_bar = True
+
+        figure.save_animation(self.output, update, 3)
+        self.assertEqual(set(states[0]), {"Heat", "Contour", "Scatter"})
+        for name, scale in (("Heat", 4), ("Contour", 6), ("Scatter", 8)):
+            before, changed, shown = (state[name] for state in states)
+            self.assertIs(before[0], changed[0])
+            self.assertIs(before[0], shown[0])
+            self.assertFalse(before[1])
+            self.assertEqual(changed[1:], (False, (0, scale), "plasma"))
+            self.assertEqual(shown[1:], (True, (0, scale), "plasma"))
+
+    def test_reservation_keeps_regular_static_and_non_scalar_plots_unchanged(self):
+        heat = Heatmap([[0, 1], [1, 2]], show_color_bar=False)
+        heat.set_color_bar_params(reserve=True)
+        figure = SmartFigure(elements=[heat], figure_style="plain")
+        figure._initialize_parent_smart_figure()
+        self.assertFalse(any(ax.get_label() == "<colorbar>" for ax in figure._figure.axes))
+        plt.close(figure._figure)
+
+        rgb = Heatmap(np.zeros((2, 2, 3)))
+        rgb.set_color_bar_params(reserve=True)
+        scatter = Scatter([0, 1], [1, 0], face_color="navy", show_color_bar=False)
+        scatter.set_color_bar_params(reserve=True)
+        plain_heat = Heatmap([[0, 1], [1, 2]], show_color_bar=False)
+        root = SmartFigure(1, 3, elements=[rgb, scatter, plain_heat], figure_style="plain")
+        did_draw = []
+
+        def update(frame):
+            self.assertFalse(any(ax.get_label() == "<colorbar>" for ax in plt.gcf().axes))
+            did_draw.append(frame)
+
+        root.save_animation(self.output, update, 1)
+        self.assertEqual(did_draw, [0])
+
     def test_raster_extent_and_origin_update_without_panning_view(self):
         heat = Heatmap([[0, 1], [0, 0]], origin_position="upper", show_color_bar=False)
         root = SmartFigure(

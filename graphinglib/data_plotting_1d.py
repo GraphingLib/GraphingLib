@@ -2356,6 +2356,7 @@ class Scatter(Plottable1D, MathematicalObject):
         self._cap_thickness: Styled[float] = 1.0
         self._errorbars_color: Styled[str | None] = None
         self._color_bar_params: dict = {}
+        self._reserve_color_bar = False
 
     @classmethod
     def from_function(
@@ -3075,6 +3076,8 @@ class Scatter(Plottable1D, MathematicalObject):
         self,
         label: Optional[str] = None,
         position: Optional[str] = None,
+        *,
+        reserve: bool = False,
         **color_bar_params,
     ) -> None:
         """
@@ -3091,11 +3094,16 @@ class Scatter(Plottable1D, MathematicalObject):
             horizontal otherwise). If None, the color bar is plotted on the right
             side of the ``Figure``.
             Values are ``"left"``, ``"right"``, ``"top"``, and ``"bottom"``.
+        reserve : bool, optional
+            Allocate space for a color bar at animation setup, even when
+            ``show_color_bar=False``. Set ``show_color_bar=True`` in a callback
+            to reveal it. Applies to data with a color scale. Defaults to ``False``.
         **color_bar_params:
             Additional keyword arguments are passed to ``plt.colorbar`` call.
         """
         _reject_live_update(self, "Configure the Scatter colorbar layout before animating.")
         self._color_bar_params = color_bar_params
+        self._reserve_color_bar = reserve
         if label is not None:
             self._color_bar_params["label"] = label
         if position is not None:
@@ -3659,6 +3667,9 @@ class Scatter(Plottable1D, MathematicalObject):
         session = _DRAW_SESSION.get()
         colorbars: dict[str, ScalarMappable] = {}
         show_colorbars = resolve_or(self._show_color_bar, False)
+        prepare_colorbars = show_colorbars or (
+            session is not None and self._reserve_color_bar
+        )
 
         def marker_color(name: str, value: Any, cycle: str | None) -> Any:
             values = self._color_intensities(value)
@@ -3673,10 +3684,10 @@ class Scatter(Plottable1D, MathematicalObject):
                     low, high = (finite.min(), finite.max()) if finite.size else (0, 1)
                 # Colorbar expands a constant range. Map the starting markers
                 # with that same range so unrelated frame edits cannot shift colors.
-                if show_colorbars:
+                if prepare_colorbars:
                     low, high = nonsingular(low, high, expander=0.1)
                 norm = Normalize(low, high)
-                if show_colorbars:
+                if prepare_colorbars:
                     colorbars[name] = ScalarMappable(cmap=cmap, norm=norm)
                 return cmap(norm(values))
             if value is None:
@@ -3761,7 +3772,9 @@ class Scatter(Plottable1D, MathematicalObject):
         for mappable in colorbars.values():
             bar = plt.colorbar(mappable, ax=axes, **self._color_bar_params)
             if session is not None:
-                session.bind_property(self, "_show_color_bar", bar.ax, "visible")
+                session.bind_colorbar_visibility(
+                    self, bar.ax, initially_visible=show_colorbars
+                )
 
         if session is not None:
             session.bind_legend_source(self, self.handle, lambda: self.label)

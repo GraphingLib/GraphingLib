@@ -2283,7 +2283,7 @@ class SmartFigure:
 
         try:
             figure.set_layout_engine("none")
-            session.hide_initial_legends()
+            session.apply_initial_visibility()
             for axes in figure.axes:
                 axes.set_autoscale_on(False)
             frame_style = plt.rcParams.copy()

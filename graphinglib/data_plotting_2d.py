@@ -212,6 +212,7 @@ class Heatmap(Plottable2D):
         self._norm = norm
 
         self._color_bar_params: dict = {}
+        self._reserve_color_bar = False
 
     @classmethod
     def from_function(
@@ -708,6 +709,8 @@ class Heatmap(Plottable2D):
         self,
         label: Optional[str] = None,
         position: Optional[str] = None,
+        *,
+        reserve: bool = False,
         **color_bar_params,
     ) -> None:
         """
@@ -724,6 +727,10 @@ class Heatmap(Plottable2D):
             horizontal otherwise). If None, the color bar is plotted on the right
             side of the ``Figure``.
             Values are ``"left"``, ``"right"``, ``"top"``, and ``"bottom"``.
+        reserve : bool, optional
+            Allocate space for a color bar at animation setup, even when
+            ``show_color_bar=False``. Set ``show_color_bar=True`` in a callback
+            to reveal it. Applies to data with a color scale. Defaults to ``False``.
         **color_bar_params:
             Additional keyword arguments are passed to ``plt.colorbar`` call.
         """
@@ -731,6 +738,7 @@ class Heatmap(Plottable2D):
             self, "Configure the Heatmap colorbar layout before animating."
         )
         self._color_bar_params = color_bar_params
+        self._reserve_color_bar = reserve
         if label is not None:
             self._color_bar_params["label"] = label
         if position is not None:
@@ -850,15 +858,20 @@ class Heatmap(Plottable2D):
                 zorder=z_order,
                 **params,
             )
+        session = _DRAW_SESSION.get()
+        show_colorbar = resolve_or(self._show_color_bar, True)
         bar = None
-        if resolve_or(self._show_color_bar, True):
+        if show_colorbar or (
+            session is not None and self._reserve_color_bar and self._image.ndim == 2
+        ):
             fig = axes.get_figure()
             assert fig is not None
             bar = fig.colorbar(image, ax=axes, **self._color_bar_params)
-        session = _DRAW_SESSION.get()
         if session is not None:
             if bar is not None:
-                session.bind_property(self, "_show_color_bar", bar.ax, "visible")
+                session.bind_colorbar_visibility(
+                    self, bar.ax, initially_visible=show_colorbar
+                )
             session.bind_property(self, "_alpha", image, "alpha")
             if self._image.ndim == 2:
                 initial_clim = image.get_clim()
@@ -1708,6 +1721,7 @@ class Contour(Plottable2D):
         self._line_widths = line_widths
 
         self._color_bar_params: dict = {}
+        self._reserve_color_bar = False
 
     @classmethod
     def from_function(
@@ -1909,6 +1923,8 @@ class Contour(Plottable2D):
         self,
         label: Optional[str] = None,
         position: Optional[str] = None,
+        *,
+        reserve: bool = False,
         **color_bar_params,
     ) -> None:
         """
@@ -1925,11 +1941,16 @@ class Contour(Plottable2D):
             horizontal otherwise). If None, the color bar is plotted on the right
             side of the ``Figure``.
             Values are ``"left"``, ``"right"``, ``"top"``, and ``"bottom"``.
+        reserve : bool, optional
+            Allocate space for a color bar at animation setup, even when
+            ``show_color_bar=False``. Set ``show_color_bar=True`` in a callback
+            to reveal it. Applies to data with a color scale. Defaults to ``False``.
         **color_bar_params:
             Additional keyword arguments are passed to ``plt.colorbar`` call.
         """
         _reject_live_update(self, "Configure the Contour colorbar before animating.")
         self._color_bar_params = color_bar_params
+        self._reserve_color_bar = reserve
         if label is not None:
             self._color_bar_params["label"] = label
         if position is not None:
@@ -2139,8 +2160,6 @@ class Contour(Plottable2D):
             "_line_widths",
         )
         session.bind_derived(self, properties, prepare)
-        if bar is not None:
-            session.bind_property(self, "_show_color_bar", bar.ax, "visible")
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -2202,7 +2221,8 @@ class Contour(Plottable2D):
             )
         bar = None
         live_paths = session is not None and hasattr(cont, "set_paths")
-        if resolve_or(self._show_color_bar, True):
+        show_colorbar = resolve_or(self._show_color_bar, True)
+        if show_colorbar or (live_paths and self._reserve_color_bar):
             fig = axes.get_figure()
             assert fig is not None
             levels = np.asarray(cont.levels)
@@ -2221,6 +2241,10 @@ class Contour(Plottable2D):
             session.mark_present(self)
             # Matplotlib 3.8 moved all levels into one collection.
             if live_paths:
+                if bar is not None:
+                    session.bind_colorbar_visibility(
+                        self, bar.ax, initially_visible=show_colorbar
+                    )
                 self._bind_live_contour(session, cont, bar, filled)
 
 

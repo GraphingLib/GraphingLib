@@ -368,7 +368,7 @@ class _AnimationSession:
         ] = {}
         self._dirty_dependents: dict[int, Callable[[], _ArtistEdit]] = {}
         self._legend_swatch_prepares: set[int] = set()
-        self._initially_hidden_legends: list[Legend] = []
+        self._initially_hidden_artists: list[Artist] = []
         self._legend_sources: dict[
             int, tuple[object, Callable[[], str | None], tuple[str, ...]]
         ] = {}
@@ -803,17 +803,24 @@ class _AnimationSession:
 
         self.bind_update(element, "_show_legend", prepare)
 
-    def hide_initial_legends(self) -> None:
-        for legend in self._initially_hidden_legends:
-            legend.set_visible(False)
-        self._initially_hidden_legends.clear()
+    def apply_initial_visibility(self) -> None:
+        for artist in self._initially_hidden_artists:
+            artist.set_visible(False)
+        self._initially_hidden_artists.clear()
+
+    def bind_colorbar_visibility(
+        self, element: object, axes: Axes, *, initially_visible: bool
+    ) -> None:
+        self.bind_property(element, "_show_color_bar", axes, "visible")
+        if not initially_visible:
+            self._initially_hidden_artists.append(axes)
 
     def bind_legend(
         self, legend: Legend, handles: list[Any], *, initially_visible: bool = True
     ) -> None:
         if not initially_visible:
             # Reserve layout space for legends that may be revealed during playback.
-            self._initially_hidden_legends.append(legend)
+            self._initially_hidden_artists.append(legend)
         texts = iter(legend.get_texts())
         groups = {
             id(children[0]): children
@@ -1217,7 +1224,7 @@ class _AnimationSession:
         self._properties.clear()
         self._dependents.clear()
         self._legend_sources.clear()
-        self._initially_hidden_legends.clear()
+        self._initially_hidden_artists.clear()
         self._reference_legend_sources.clear()
         self._legend_swatch_prepares.clear()
         self._dirty_dependents.clear()
