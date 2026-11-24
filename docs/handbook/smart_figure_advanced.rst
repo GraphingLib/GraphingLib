@@ -2036,9 +2036,11 @@ Live update support
      - Live sampling resolution uses the outline produced by a circle or
        ellipse, including affine transforms of that outline.
    * - :class:`~graphinglib.Table`
-     - Body and header text, colors and alignment, cell borders, column
-       widths, absolute scaling, and placement.
-     - Row and column count and which header rows and columns exist.
+     - Body and header text, colors and alignment, row and column count,
+       cell borders, column widths, absolute scaling, and placement. To remove
+       a header, set both its labels and its colors to ``None``.
+     - Supply a nonempty rectangular body. Explicit labels, color arrays and
+       widths must match the final dimensions in the same callback.
    * - :class:`~graphinglib.VectorField`
      - Positions and components via
        ``set_data(u, v, x_data=x, y_data=y)``. Frames can change arrow count.

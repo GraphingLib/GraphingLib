@@ -3016,6 +3016,90 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         with Image.open(self.output) as gif:
             self.assertEqual(gif.n_frames, 3)
 
+    def test_table_resizes_and_reuses_body_and_headers_by_logical_position(self):
+        from graphinglib import Table
+
+        table = Table([["old", "second"]])
+        nested = SmartFigure(elements=[table])
+        root = SmartFigure(2, 2, figure_style="plain")
+        root[0, 0] = nested
+        root[1, :] = [table]
+        snapshots = {}
+        widths = np.array([0.2, 0.3, 0.4])
+
+        def update(i):
+            handles = [item for ax in plt.gcf().axes for item in ax.tables]
+            self.assertEqual(len(handles), 2)
+            snapshots[i] = [(item, dict(item.get_celld())) for item in handles]
+            if i == 1:
+                table.cell_text = [["only"]]
+                table.col_labels = table.row_labels = None
+                table.col_colors = table.row_colors = None
+                table.col_widths = None
+            else:
+                table.col_labels = ["A", "B", "C"]
+                table.row_labels = ["first", "second"]
+                table.col_colors = "orange"
+                table.row_colors = "gray"
+                table.cell_text = [[f"frame {i}"] * 3, ["past", "row", "end"]]
+                table.col_widths = widths
+                table.scaling = (1.5, 2)
+
+        root.save_animation(self.output, update, 3)
+        assert_allclose(widths, [0.2, 0.3, 0.4])
+        for original, expanded, contracted in zip(
+            snapshots[0], snapshots[1], snapshots[2], strict=True
+        ):
+            handle, start = original
+            _, larger = expanded
+            _, smaller = contracted
+            self.assertIs(handle, expanded[0])
+            self.assertIs(handle, contracted[0])
+            self.assertEqual(smaller.keys(), {(0, 0)})
+            final = handle.get_celld()
+            self.assertEqual(final.keys(), larger.keys())
+            self.assertIs(start[1, 0], larger[1, 0])
+            self.assertIs(larger[1, 0], smaller[0, 0])
+            self.assertTrue(all(final[key] is larger[key] for key in larger))
+            self.assertEqual(final[1, 0].get_text().get_text(), "frame 2")
+            self.assertEqual(final[0, 2].get_text().get_text(), "C")
+            self.assertEqual(final[2, -1].get_text().get_text(), "second")
+            assert_allclose([final[1, c].get_width() for c in range(3)], widths * 1.5)
+
+    def test_failed_table_frame_restores_cell_map_and_dimensions(self):
+        from graphinglib import Table
+
+        table = Table([["start"]], col_colors=None, row_colors=None)
+        scatter = Scatter([0, 1], [1, 0])
+        root = SmartFigure(elements=[table, scatter], figure_style="plain")
+        observed = []
+
+        def update(i):
+            observed[:] = [table.handle.get_celld()[0, 0]]
+            table.cell_text = [["retained"]] if i == 0 else [["expanded", "new"]]
+            if i:
+                table.col_labels = ["new header", "another"]
+                scatter.face_color = "red"
+                original = scatter.handle.set_facecolor
+
+                def fail_after_colors(value):
+                    original(value)
+                    if np.allclose(value, [[1, 0, 0, 1]]):
+                        self.assertEqual(len(table.handle.get_celld()), 4)
+                        raise ValueError("could not set scatter colors")
+
+                self.enterContext(
+                    patch.object(scatter.handle, "set_facecolor", fail_after_colors)
+                )
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        self.assertEqual(table.cell_text, [["retained"]])
+        self.assertIsNone(table.col_labels)
+        self.assertEqual(table.handle.get_celld(), {(0, 0): observed[0]})
+        self.assertEqual(observed[0].get_text().get_text(), "retained")
+        self.assertFalse(self.output.exists())
+
     def test_reference_line_styles_and_bounded_counts_animate(self):
         from matplotlib.colors import to_rgba
 

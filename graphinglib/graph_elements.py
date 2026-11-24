@@ -12,6 +12,7 @@ from matplotlib.collections import LineCollection, PathCollection
 from matplotlib.figure import Figure as MPLFigure
 from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
+from matplotlib.table import Cell
 from matplotlib.text import Annotation
 from matplotlib.text import Text as TextArtist
 from numpy.typing import ArrayLike
@@ -1880,22 +1881,22 @@ class Table(Plottable):
         Alignment of the cells' text. Must be one of the following:
         {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
     col_labels : list[str], optional
-        List of labels for the rows of the table. If none are specified, no row labels are displayed.
+        List of column labels. Set both these labels and col_colors to None to omit the column header.
     col_widths : list[float], optional
         Widths to apply to the columns. Must be a list the same length as the number of columns.
     col_align : str
         Alignment of the column labels' text. Must be one of the following:
         {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
-    col_colors : ArrayLike or str, optional
+    col_colors : ArrayLike, str or None, optional
         Colors to apply to the column labels' background. Must be a list of colors the same
         length as the number of columns.
         Default depends on the ``figure_style`` configuration.
     row_labels : list[str], optional
-        List of labels for the rows of the table. If none are specified, no row labels are displayed.
+        List of row labels. Set both these labels and row_colors to None to omit the row header.
     row_align : str
         Alignment of the row labels' text. Must be one of the following:
         {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
-    row_colors : ArrayLike or str, optional
+    row_colors : ArrayLike, str or None, optional
         Colors to apply to the row labels' background. Must be a list of colors the same
         length as the number of rows.
         Default depends on the ``figure_style`` configuration.
@@ -1934,10 +1935,10 @@ class Table(Plottable):
         col_labels: Optional[list[str]] = None,
         col_widths: Optional[list[float]] = None,
         col_align: str | Inherit = INHERIT,
-        col_colors: ArrayLike | str | Inherit = INHERIT,
+        col_colors: ArrayLike | str | None | Inherit = INHERIT,
         row_labels: Optional[list[str]] = None,
         row_align: str | Inherit = INHERIT,
-        row_colors: ArrayLike | str | Inherit = INHERIT,
+        row_colors: ArrayLike | str | None | Inherit = INHERIT,
         edge_width: float | Inherit = INHERIT,
         edge_color: str | Inherit = INHERIT,
         text_color: str | Inherit = INHERIT,
@@ -1963,22 +1964,22 @@ class Table(Plottable):
             Alignment of the cells' text. Must be one of the following:
             {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
         col_labels : list[str], optional
-            List of labels for the rows of the table. If none are specified, no row labels are displayed.
+            List of column labels. Set both these labels and col_colors to None to omit the column header.
         col_widths : list[float], optional
             Widths to apply to the columns. Must be a list the same length as the number of columns.
         col_align : str
             Alignment of the column labels' text. Must be one of the following:
             {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
-        col_colors : ArrayLike or str, optional
+        col_colors : ArrayLike, str or None, optional
             Colors to apply to the column labels' background. Must be a list of colors the same
             length as the number of columns.
             Default depends on the ``figure_style`` configuration
         row_labels : list[str], optional
-            List of labels for the rows of the table. If none are specified, no row labels are displayed.
+            List of row labels. Set both these labels and row_colors to None to omit the row header.
         row_align : str
             Alignment of the row labels' text. Must be one of the following:
             {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
-        row_colors : ArrayLike or str, optional
+        row_colors : ArrayLike, str or None, optional
             Colors to apply to the row labels' background. Must be a list of colors the same
             length as the number of rows.
             Default depends on the ``figure_style`` configuration.
@@ -2073,11 +2074,11 @@ class Table(Plottable):
         self._col_align = _stage_live_value(self, "_col_align", col_align)
 
     @property
-    def col_colors(self) -> Styled[ArrayLike | str]:
+    def col_colors(self) -> Styled[ArrayLike | str | None]:
         return self._col_colors
 
     @col_colors.setter
-    def col_colors(self, col_colors: Styled[ArrayLike | str]) -> None:
+    def col_colors(self, col_colors: Styled[ArrayLike | str | None]) -> None:
         self._col_colors = _stage_live_value(self, "_col_colors", col_colors)
 
     @property
@@ -2097,11 +2098,11 @@ class Table(Plottable):
         self._row_align = _stage_live_value(self, "_row_align", row_align)
 
     @property
-    def row_colors(self) -> Styled[ArrayLike | str]:
+    def row_colors(self) -> Styled[ArrayLike | str | None]:
         return self._row_colors
 
     @row_colors.setter
-    def row_colors(self, row_colors: Styled[ArrayLike | str]) -> None:
+    def row_colors(self, row_colors: Styled[ArrayLike | str | None]) -> None:
         self._row_colors = _stage_live_value(self, "_row_colors", row_colors)
 
     @property
@@ -2199,10 +2200,10 @@ class Table(Plottable):
         )
         # Capture the unscaled height for absolute frame-to-frame size assignments.
         session = _DRAW_SESSION.get()
-        heights = (
-            {key: cell.get_height() for key, cell in self.handle.get_celld().items()}
+        base_height = (
+            next(iter(self.handle.get_celld().values())).get_height()
             if session is not None
-            else {}
+            else 0
         )
         self.handle.auto_set_font_size(False)
         self.handle.scale(self._scaling[0], self._scaling[1])
@@ -2212,143 +2213,195 @@ class Table(Plottable):
             cell.set_linewidth(resolve_or(self._edge_width, 1))
 
         if session is not None:
-            self._bind_table(session, heights)
+            self._bind_table(session, base_height)
 
-    def _bind_table(
-        self, session: _AnimationSession, base_heights: dict[tuple[int, int], float]
-    ) -> None:
+    def _bind_table(self, session: _AnimationSession, base_height: float) -> None:
         table = self.handle
         cells = table.get_celld()
-        rows, columns = len(self._cell_text), len(self._cell_text[0])
-        row_offset = int(self._col_labels is not None)
-        body = [cells[i + row_offset, j] for i in range(rows) for j in range(columns)]
-        row_headers = (
-            [cells[i + row_offset, -1] for i in range(rows)]
-            if self._row_labels is not None
-            else []
+        backend_table = cast(Any, table)
+        defaults = {
+            "_cell_colors": resolve_or(self._cell_colors, "white"),
+            "_col_colors": resolve_or(self._col_colors, "#bfbfbf"),
+            "_row_colors": resolve_or(self._row_colors, "#bfbfbf"),
+            "_cell_align": resolve_or(self._cell_align, "right"),
+            "_col_align": resolve_or(self._col_align, "center"),
+            "_row_align": resolve_or(self._row_align, "left"),
+            "_edge_color": resolve_or(self._edge_color, "black"),
+            "_edge_width": resolve_or(self._edge_width, 1),
+            "_text_color": resolve_or(self._text_color, "black"),
+        }
+        offset = int(
+            self._col_labels is not None or defaults["_col_colors"] is not None
         )
-        col_headers = (
-            [cells[0, j] for j in range(columns)]
-            if self._col_labels is not None
-            else []
-        )
+        # A header changes Matplotlib's row indices. Logical body coordinates
+        # and separate header keys keep the same cell alive through that shift.
+        pool = {(row - offset, column): cell for (row, column), cell in cells.items()}
+        reference_cell = next(iter(cells.values()))
+        initial_font_size = reference_cell.get_fontsize()
 
-        def bind_values(prop, targets, field, flatten):
-            def prepare(value) -> _ArtistEdit:
-                values = flatten(value)
-                if len(values) != len(targets):
-                    raise InvalidParameterError(
-                        f"Animated Table {prop.removeprefix('_')} must match the initial cells."
-                    )
-                return _combine_edits(
-                    [
-                        _edit(
-                            getattr(target, f"set_{field}"),
-                            getattr(target, f"get_{field}")(),
-                            item,
-                        )
-                        for target, item in zip(targets, values)
-                    ]
-                )
+        def read(name: str):
+            return resolve_or(getattr(self, name), defaults[name])
 
-            session.bind_update(self, prop, prepare)
-
-        def body_values(value):
-            grid = tuple(tuple(line) for line in value)
-            if len(grid) != rows or any(len(line) != columns for line in grid):
+        def header(labels, colors, count, name):
+            if labels is None and colors is None:
+                return []
+            text = [""] * count if labels is None else list(labels)
+            palette = (
+                ["white" if colors is None else colors] * count
+                if colors is None or isinstance(colors, str)
+                else list(colors)
+            )
+            if len(text) != count or len(palette) != count:
                 raise InvalidParameterError(
-                    "An animated Table must retain its original row and column count."
+                    f"Animated Table {name} labels and colors must match the final table dimensions."
                 )
-            return [entry for row in grid for entry in row]
+            return list(zip(text, palette, strict=True))
 
-        bind_values(
-            "_cell_text", [cell.get_text() for cell in body], "text", body_values
-        )
-        bind_values(
-            "_cell_colors",
-            body,
-            "facecolor",
-            lambda value: (
-                [value] * len(body) if isinstance(value, str) else body_values(value)
-            ),
-        )
-        for prefix, headers in (("row", row_headers), ("col", col_headers)):
-            if not headers:
-                continue
-
-            def labels(value):
-                if value is None:
-                    raise InvalidParameterError(
-                        "Animated Tables must retain their configured headers."
-                    )
-                return list(value)
-
-            header_count = len(headers)
-
-            def colors(value, count=header_count):
-                return [value] * count if isinstance(value, str) else list(value)
-
-            bind_values(
-                f"_{prefix}_labels",
-                [cell.get_text() for cell in headers],
-                "text",
-                labels,
-            )
-            bind_values(f"_{prefix}_colors", headers, "facecolor", colors)
-            for cell in headers:
-                session.bind_property(
-                    self, f"_{prefix}_align", cell.get_text(), "horizontalalignment"
+        def prepare() -> _ArtistEdit:
+            grid = tuple(tuple(row) for row in self._cell_text)
+            rows = len(grid)
+            columns = len(grid[0]) if rows else 0
+            if not columns or any(len(row) != columns for row in grid):
+                raise InvalidParameterError(
+                    "Animated Table cell_text must be a nonempty rectangular grid."
                 )
-
-        for cell in body:
-            session.bind_property(
-                self, "_cell_align", cell.get_text(), "horizontalalignment"
+            colors = read("_cell_colors")
+            if isinstance(colors, str):
+                colors = [[colors] * columns] * rows
+            elif len(colors) != rows or any(len(row) != columns for row in colors):
+                raise InvalidParameterError(
+                    "Animated Table cell_colors must match the final table dimensions."
+                )
+            row_entries = header(self._row_labels, read("_row_colors"), rows, "row")
+            col_entries = header(
+                self._col_labels, read("_col_colors"), columns, "column"
             )
-        for cell in cells.values():
-            session.bind_property(self, "_edge_color", cell, "edgecolor")
-            session.bind_property(self, "_edge_width", cell, "linewidth")
-            session.bind_property(self, "_text_color", cell.get_text(), "color")
-
-        def prepare_dimensions() -> _ArtistEdit:
             scale = np.asarray(self._scaling, dtype=float)
-            raw_widths = self._col_widths
             widths = np.asarray(
-                raw_widths if raw_widths is not None else [1 / columns] * columns,
+                self._col_widths
+                if self._col_widths is not None
+                else [1 / columns] * columns,
                 dtype=float,
             )
             if (
                 scale.shape != (2,)
                 or widths.shape != (columns,)
-                or not (
-                    np.isfinite(scale).all()
-                    and np.isfinite(widths).all()
-                    and (scale > 0).all()
-                    and (widths > 0).all()
-                )
+                or not np.isfinite(scale).all()
+                or not np.isfinite(widths).all()
+                or (scale <= 0).any()
+                or (widths <= 0).any()
             ):
                 raise InvalidParameterError(
                     "Animated Table widths and scales must be finite, positive, and match the table."
                 )
-            x_scale, y_scale = scale
-            edits = [
-                _edit(cell.set_height, cell.get_height(), base_heights[key] * y_scale)
-                for key, cell in cells.items()
-            ]
-            edits.extend(
-                _edit(cell.set_width, cell.get_width(), widths[col] * x_scale)
-                for (_, col), cell in cells.items()
-                if col >= 0
+            widths = widths * scale[0]
+            height = base_height * scale[1]
+            text_color, edge, edge_width = (
+                read("_text_color"),
+                read("_edge_color"),
+                read("_edge_width"),
             )
+            column_offset = int(bool(col_entries))
+            row_auto = bool(row_entries) and self._row_labels is not None
+            row_width = 1e-15 if row_auto else widths[0]
+            planned: dict[tuple[int, int], Cell] = {}
+            added: dict[tuple[int, int], Cell] = {}
+            edits = []
+
+            def plan(key, text, face, align, width):
+                row, column = key
+                position = (0 if row < 0 else row + column_offset, column)
+                cell = pool.get(key)
+                if cell is None:
+                    cell = Cell((0, 0), width, height, visible_edges=table.edges)
+                    cell.set_fontsize(initial_font_size)
+                    added[key] = cell
+                label = cell.get_text()
+                for artist, field, value in (
+                    (cell, "width", width),
+                    (cell, "height", height),
+                    (cell, "facecolor", face),
+                    (cell, "edgecolor", edge),
+                    (cell, "linewidth", edge_width),
+                    (label, "text", text),
+                    (label, "color", text_color),
+                    (label, "horizontalalignment", align),
+                ):
+                    edits.append(
+                        _edit(
+                            getattr(artist, f"set_{field}"),
+                            getattr(artist, f"get_{field}")(),
+                            value,
+                        )
+                    )
+                planned[position] = cell
+
+            body_align, col_align, row_align = (
+                read("_cell_align"),
+                read("_col_align"),
+                read("_row_align"),
+            )
+            for row, entries in enumerate(grid):
+                for col, text in enumerate(entries):
+                    plan(
+                        (row, col),
+                        text,
+                        colors[row][col],
+                        body_align,
+                        widths[col],
+                    )
+            for col, (text, face) in enumerate(col_entries):
+                plan((-1, col), text, face, col_align, widths[col])
+            for row, (text, face) in enumerate(row_entries):
+                plan((row, -1), text, face, row_align, row_width)
+
+            previous = dict(cells)
+            previous_auto = backend_table._autoColumns.copy()
+
+            def apply_layout() -> None:
+                cells.clear()
+                for position, cell in planned.items():
+                    if cell.get_figure() is None:
+                        table[position] = cell
+                    else:
+                        cells[position] = cell
+                pool.update(added)
+                backend_table._autoColumns[:] = [
+                    col for col in previous_auto if col != -1
+                ]
+                if row_auto:
+                    table.auto_set_column_width(-1)
+                table.stale = True
+
+            def undo_layout() -> None:
+                cells.clear()
+                cells.update(previous)
+                for key in added:
+                    pool.pop(key, None)
+                backend_table._autoColumns[:] = previous_auto
+                table.stale = True
+
+            edits.append(_ArtistEdit(apply_layout, undo_layout))
             return _combine_edits(edits)
 
-        session.bind_derived(self, ("_scaling", "_col_widths"), prepare_dimensions)
+        session.bind_derived(
+            self,
+            (
+                "_cell_text",
+                "_col_labels",
+                "_row_labels",
+                "_col_widths",
+                "_scaling",
+                *defaults,
+            ),
+            prepare,
+        )
 
         def prepare_location(value: str) -> _ArtistEdit:
             if value not in table.codes:
                 raise InvalidParameterError(f"Unknown Table location {value!r}.")
-            # Matplotlib uses this placement code at draw time and offers no setter.
-            backend_table = cast(Any, table)
 
+            # Matplotlib uses this placement code at draw time and offers no setter.
             def set_location(code: int) -> None:
                 backend_table._loc = code
                 table.stale = True
