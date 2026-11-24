@@ -3,19 +3,29 @@ from __future__ import annotations
 from copy import deepcopy
 from functools import partial
 from inspect import signature
-from typing import Callable, Generic, Optional, cast
+from math import isfinite
+from numbers import Real
+from typing import Any, Callable, Generic, Optional, cast
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.collections import PolyCollection
+from matplotlib.lines import Line2D
 from numpy.typing import ArrayLike
 from scipy.optimize import curve_fit
 from typing_extensions import TypeVar
 
 from ._animation import (
     _DRAW_SESSION,
+    _AnimationSession,
+    _ArtistEdit,
+    _attach_artists,
     _bound_session,
+    _combine_edits,
     _CurveBands,
+    _edit,
     _reject_live_update,
+    _stage_live_value,
 )
 from .data_plotting_1d import _KEEP_ERROR, Curve, Scatter, _KeepError
 from .exceptions import InvalidParameterError, InvalidParameterTypeError, PlottingError
@@ -259,7 +269,7 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
                     self._x_data,
                     self._y_data,
                     None,
-                    self._residual_error(),
+                    None,
                     show_errorbars=False,
                     restore=restore,
                 )
@@ -547,28 +557,88 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
         session = _DRAW_SESSION.get()
         if session is not None:
             line = self.handle
-            session.bind_curve(
-                self,
-                line,
-                bands=_CurveBands(
-                    lower, upper, None, area_fill if other is None else None, bounds
-                ),
+            session.bind_curve(self, line)
+            session.bind_legend_source(
+                self, line, lambda: self.label, ("_label", "point_data")
             )
-            session.bind_legend_source(self, line, lambda: self.label, ("_label", "point_data"))
-            if other is not None and bounds is not None and area_fill is not None:
-                session.bind_point_dependent(
-                    (self, other),
-                    area_fill,
-                    lambda: self._shared_fill_data(other, bounds),
+            for name, mpl_name in (
+                ("_color", "color"),
+                ("_line_style", "linestyle"),
+                ("_line_width", "linewidth"),
+                ("_alpha", "alpha"),
+            ):
+                session.bind_property(self, name, line, mpl_name)
+
+            if lower is None or upper is None:
+                residual_style: dict[str, Any] = {
+                    "color": line.get_color(),
+                    "linewidth": line.get_linewidth(),
+                    "linestyle": "--",
+                    "alpha": line.get_alpha(),
+                    "zorder": z_order,
+                    "visible": False,
+                }
+                lower, upper = (Line2D([], [], **residual_style) for _ in range(2))
+            self._bind_live_residuals(session, axes, line, lower, upper)
+
+            if area_fill is None:
+                area_fill = PolyCollection(
+                    [],
+                    facecolor=line.get_color(),
+                    alpha=0.2,
+                    zorder=z_order - 2,
+                    visible=False,
                 )
-            if not self._res_curves_to_be_plotted and not self._fill_between_bounds:
-                for name, mpl_name in (
-                    ("_color", "color"),
-                    ("_line_style", "linestyle"),
-                    ("_line_width", "linewidth"),
-                    ("_alpha", "alpha"),
-                ):
-                    session.bind_property(self, name, self.handle, mpl_name)
+            self._bind_live_area(session, axes, area_fill)
+            self._bind_curve_decoration_style(
+                session,
+                line,
+                (area_fill,),
+                "_fill_between_color",
+                "facecolor",
+                "_color",
+            )
+
+    def _bind_live_residuals(
+        self,
+        session: _AnimationSession,
+        axes: plt.Axes,
+        line: Line2D,
+        lower: Line2D,
+        upper: Line2D,
+    ) -> None:
+        artists = (lower, upper)
+        bands = _CurveBands(lower, upper, None)
+
+        def prepare() -> _ArtistEdit:
+            error = self._residual_error()
+            visible = error is not None
+            edits = []
+            if visible:
+                if lower.axes is None:
+                    edits.append(_attach_artists(axes, artists))
+                edits.extend(bands.edits(self._x_data, self._y_data, error))
+            edits.extend(
+                _edit(artist.set_visible, artist.get_visible(), visible)
+                for artist in artists
+            )
+            return _combine_edits(edits)
+
+        session.bind_derived(
+            self,
+            ("point_data", "_res_curves_to_be_plotted", "_res_sigma_multiplier"),
+            prepare,
+        )
+        for name, field, source in (
+            ("_res_color", "color", "_color"),
+            ("_res_line_width", "linewidth", "_line_width"),
+            ("_res_line_style", "linestyle", "_line_style"),
+        ):
+            self._bind_curve_decoration_style(
+                session, line, artists, name, field, source
+            )
+        for artist in artists:
+            session.bind_property(self, "_alpha", artist, "alpha")
 
     def get_area_between(
         self,
@@ -600,6 +670,9 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
         """
         Displays two curves ``"sigma_multiplier"`` standard deviations above and below the fit curve.
 
+        This method can also show or restyle the residual curves during
+        animation. Omitted style arguments keep their current settings in a frame.
+
         Parameters
         ----------
         sigma_multiplier : float
@@ -624,12 +697,40 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        _reject_live_update(self, "Configure fit residual curves before animating.")
+        if _bound_session(self) is not None:
+            if (
+                not isinstance(sigma_multiplier, Real)
+                or not isfinite(sigma_multiplier)
+                or sigma_multiplier < 0
+            ):
+                raise InvalidParameterError(
+                    "The animated residual sigma multiplier must be finite and nonnegative."
+                )
+            self._res_sigma_multiplier = _stage_live_value(
+                self, "_res_sigma_multiplier", sigma_multiplier
+            )
+            for name, value in (
+                ("_res_color", color),
+                ("_res_line_width", line_width),
+                ("_res_line_style", line_style),
+            ):
+                if not is_inherit(value):
+                    setattr(self, name, _stage_live_value(self, name, value))
+            self._res_curves_to_be_plotted = _stage_live_value(
+                self, "_res_curves_to_be_plotted", True
+            )
+            return
         self._res_curves_to_be_plotted = True
         self._res_sigma_multiplier = sigma_multiplier
         self._res_color = color
         self._res_line_width = line_width
         self._res_line_style = line_style
+
+    def hide_residual_curves(self) -> None:
+        """Hide both residual curves, including during animation."""
+        self._res_curves_to_be_plotted = _stage_live_value(
+            self, "_res_curves_to_be_plotted", False
+        )
 
     def get_residuals(self) -> np.ndarray:
         """

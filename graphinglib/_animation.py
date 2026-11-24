@@ -436,8 +436,6 @@ class _CurveBands:
     lower: Line2D | None
     upper: Line2D | None
     error_fill: PolyCollection | None
-    area_fill: PolyCollection | None
-    area_bounds: tuple[float, float] | None
 
     def edits(
         self, x: np.ndarray, y: np.ndarray, error: np.ndarray | None
@@ -449,9 +447,6 @@ class _CurveBands:
             edits.append(_edit(self.upper.set_data, self.upper.get_data(), (x, high)))
             if self.error_fill is not None:
                 edits.append(_fill_edit(self.error_fill, x, high, low))
-        if self.area_fill is not None and self.area_bounds is not None:
-            within = (x >= self.area_bounds[0]) & (x <= self.area_bounds[1])
-            edits.append(_fill_edit(self.area_fill, x, y, np.zeros_like(y), within))
         return edits
 
 
@@ -1408,18 +1403,6 @@ class _AnimationSession:
         self._post_artist_prepares.add(id(prepare))
         self.bind_derived(element, supported, prepare)
 
-    def bind_point_dependent(
-        self,
-        elements: tuple[object, object],
-        artist: PolyCollection,
-        coordinates: Callable[[], tuple[np.ndarray, np.ndarray, np.ndarray]],
-    ) -> None:
-        def prepare() -> _ArtistEdit:
-            return _fill_edit(artist, *coordinates())
-
-        for element in elements:
-            self.bind_derived(element, ("point_data",), prepare)
-
     def block_curve_updates(
         self,
         curve: object,
@@ -1439,7 +1422,7 @@ class _AnimationSession:
         curve: object,
         handle: ErrorbarContainer | Line2D,
         *,
-        bands: _CurveBands,
+        bands: _CurveBands | None = None,
         reserved_errors: ErrorbarContainer | None = None,
     ) -> None:
         data_line = handle if isinstance(handle, Line2D) else handle.lines[0]

@@ -3684,6 +3684,124 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
                 with Image.open(self.output) as gif:
                     self.assertEqual(gif.n_frames, 2)
 
+    def test_fit_adds_residuals_and_area_from_final_frame_values(self):
+        from graphinglib import FitFromPolynomial
+
+        x = np.linspace(0, 4, 9)
+        disturbance = np.sin(3 * x)
+        source = Scatter(x, x + disturbance)
+        fit = FitFromPolynomial(source, degree=1, label="Trend", color="navy")
+        boundary = Curve([0, 4], [8, 8])
+        panel = SmartFigure(elements=[fit])
+        root = SmartFigure(2, 2, figure_style="plain", y_lim=(-4, 14))
+        root[:, 0] = panel
+        root[:, 1] = [fit]
+        snapshots = []
+
+        def update(i):
+            axes = [ax for ax in plt.gcf().axes if ax.lines]
+            plots = tuple((tuple(ax.lines), tuple(ax.collections)) for ax in axes)
+            snapshots.append(plots)
+            if i == 0:
+                self.assertTrue(
+                    all(len(lines) == 1 and not fills for lines, fills in plots)
+                )
+                fit.show_residual_curves(2, color="red")
+                source.set_data(x, 1 + x + 2 * disturbance)
+                fit.refit()
+                fit.get_area_between(0, 4, fill_between=True, other_curve=boundary)
+                boundary.y_data = [9, 9]
+            elif i == 1:
+                spread = 2 * np.std(fit.get_residuals())
+                for (trend, low, high), (fill,) in plots:
+                    assert_allclose(low.get_ydata(), trend.get_ydata() - spread)
+                    assert_allclose(high.get_ydata(), trend.get_ydata() + spread)
+                    self.assertEqual(high.get_color(), "red")
+                    self.assertAlmostEqual(fill.get_paths()[0].vertices[:, 1].max(), 9)
+                fit.hide_residual_curves()
+                fit.fill_between_other_curve = None
+            elif i == 2:
+                self.assertTrue(
+                    all(
+                        not line.get_visible()
+                        for lines, _ in plots
+                        for line in lines[1:]
+                    )
+                )
+                self.assertTrue(
+                    all(
+                        fill[0].get_paths()[0].vertices[:, 1].min() == 0
+                        for _, fill in plots
+                    )
+                )
+                fit.refit(Scatter(x, 2 + x + disturbance))
+                fit.show_residual_curves(3, line_width=4, line_style=":")
+                fit.color = "green"
+                fit.alpha = 0.5
+
+        with patch.object(
+            root, "_prepare_figure", wraps=root._prepare_figure
+        ) as prepare:
+            root.save_animation(self.output, update, 4)
+        prepare.assert_called_once()
+        self.assertEqual(len(snapshots[1]), 2)
+        self.assertEqual(snapshots[1], snapshots[2])
+        self.assertEqual(snapshots[1], snapshots[3])
+        spread = 3 * np.std(fit.get_residuals())
+        for (trend, low, high), (fill,) in snapshots[3]:
+            self.assertEqual(trend.get_color(), "green")
+            self.assertTrue(high.get_visible())
+            self.assertEqual(high.get_color(), "red")
+            self.assertEqual(high.get_linewidth(), 4)
+            self.assertEqual(high.get_linestyle(), ":")
+            self.assertEqual(high.get_alpha(), 0.5)
+            assert_allclose(low.get_ydata(), trend.get_ydata() - spread)
+            assert_allclose(high.get_ydata(), trend.get_ydata() + spread)
+            assert_allclose(fill.get_facecolor()[0], [0, 128 / 255, 0, 0.2])
+
+    def test_failed_late_fit_overlay_restores_residual_state_and_refit(self):
+        from matplotlib.lines import Line2D
+
+        from graphinglib import FitFromPolynomial
+
+        source = Curve([0, 1, 2, 3], [0, 1.1, 1.8, 3.2])
+        fit = FitFromPolynomial(source, degree=1)
+        root = SmartFigure(elements=[fit], figure_style="plain")
+        original = fit.parameters.copy()
+        self.output.write_bytes(b"existing")
+        seen = []
+        set_ydata = Line2D.set_ydata
+
+        def fail_when_attached(line, data):
+            set_ydata(line, data)
+            if seen and line.axes is seen[0] and line is not fit.handle and len(data):
+                raise ValueError("residual artist could not update")
+
+        def update(frame):
+            seen.append(fit.handle.axes)
+            fit.show_residual_curves(2, color="orange")
+            fit.refit(Curve([0, 1, 2, 3], [1, 3, 4.9, 7]))
+            fit.fill_between_bounds = (0, 3)
+
+        with (
+            patch.object(Line2D, "set_ydata", fail_when_attached),
+            self.assertRaisesRegex(
+                GraphingException, "residual artist could not update"
+            ),
+        ):
+            root.save_animation(self.output, update, 1)
+        (ax,) = seen
+        self.assertEqual(tuple(ax.lines), (fit.handle,))
+        self.assertFalse(ax.collections)
+        self.assertFalse(fit._res_curves_to_be_plotted)
+        self.assertIsNone(fit._res_sigma_multiplier)
+        self.assertIsNone(fit._res_color)
+        self.assertIsNone(fit.fill_between_bounds)
+        self.assertIs(fit.curve_to_be_fit, source)
+        assert_allclose(fit.parameters, original)
+        assert_allclose(fit.handle.get_ydata(), fit.y_data)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_refit_updates_residuals_fills_and_rolls_back_after_artist_failure(self):
         from graphinglib import FitFromPolynomial
 

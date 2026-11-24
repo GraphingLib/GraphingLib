@@ -2076,12 +2076,13 @@ Live update support
        collections for each level.
    * - Fit classes
      - Call ``fit.refit()`` after updating the source, or ``fit.refit(source)``
-       to use new data. All built-in models update their fitted line and any
-       configured residual curves or fills. Plain fitted lines may also change
-       visual styles.
-     - Model type, solver options, residual and fill configuration. The
-       fit's generated equation label refreshes in the model, on the
-       plot line, and in an existing legend entry.
+       to use new data. Call ``show_residual_curves(...)`` to add residual
+       curves or change their multiplier and styling, and
+       ``hide_residual_curves()`` to hide them. Residuals use the final fit
+       and multiplier in each frame. Fitted lines can change style and
+       create or retarget area fills using the same methods as Curve.
+     - Model type and solver options. The generated equation label refreshes
+       in the model, on the plot line, and in an existing legend entry.
    * - :class:`~graphinglib.Stream`
      - Grid and velocity field via ``set_data(u, v, x_data=x, y_data=y)``,
        density, color and line width (uniform or grid-mapped), colormap,

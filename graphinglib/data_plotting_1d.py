@@ -2085,7 +2085,7 @@ class Curve(Plottable1D, MathematicalObject):
                             additions = (*additions, error_fill)
                         edits.append(_attach_artists(axes, additions))
                     edits.extend(
-                        _CurveBands(lower, upper, error_fill, None, None).edits(
+                        _CurveBands(lower, upper, error_fill).edits(
                             self._x_data, self._y_data, self._y_error
                         )
                     )
@@ -2310,7 +2310,7 @@ class Curve(Plottable1D, MathematicalObject):
 
         if session is not None:
             line = self.handle[0]
-            existing_bands = _CurveBands(lower, upper, error_fill, None, None)
+            existing_bands = _CurveBands(lower, upper, error_fill)
             if lower is None:
                 color = resolve_or(self._error_curves_color, None)
                 width = resolve_or(self._error_curves_line_width, None)
