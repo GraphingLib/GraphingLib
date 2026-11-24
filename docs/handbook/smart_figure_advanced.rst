@@ -1933,7 +1933,7 @@ Use assignments through the public API so the animation can update each
 appearance of the same object, including appearances in nested or spanning
 plots. Editing an array in place does not schedule an artist update.
 
-The same callback can update geometry, vectors and fixed-size table cells.
+The same callback can update geometry, vectors and table cells.
 
 .. code-block:: python
 
@@ -2101,6 +2101,14 @@ same list rules. The final limits must be positive on a logarithmic axis,
 and explicitly configured tick positions and labels are preserved. Shared
 axes use one set of limits, direction and scale. Twin axes accept
 ``axis_lim``, ``invert_axis`` and ``log_scale``.
+
+Use ``remove_axes``, ``remove_x_ticks`` or ``remove_y_ticks`` to hide and reveal
+decorations on direct subplots. These flags follow the same list rules and
+apply to each subplot individually, including when the viewport is shared.
+Tick flags hide both marks and labels, and switching them off restores the
+initial side and label settings. Use ``remove_axes`` and ``remove_ticks`` on
+a twin axis to control its decorations separately.
+
 Assign ``title``,
 ``x_label``, or ``y_label`` to change a SmartFigure's text, or assign
 ``label`` on a twin axis. Use ``None`` to clear the text. Keep the initial

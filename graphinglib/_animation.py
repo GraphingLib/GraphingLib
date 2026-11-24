@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from itertools import chain
 from math import isfinite
 from numbers import Real
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import numpy as np
 from matplotlib import rcParams
@@ -63,6 +63,54 @@ _ERROR_STYLE_PROPERTIES = (
     "_cap_width",
     "_cap_thickness",
 )
+
+
+def _axis_removal(axes: Axes, remove: bool) -> _ArtistEdit:
+    def write(hidden: bool) -> None:
+        if hidden:
+            axes.set_axis_off()
+        else:
+            axes.set_axis_on()
+
+    return _edit(write, not axes.axison, remove)
+
+
+def _tick_removal(axis: Axis, dimension: str) -> Callable[[bool], _ArtistEdit]:
+    sides = ("bottom", "top") if dimension == "x" else ("left", "right")
+    keys = (*sides, *(f"label{side}" for side in sides))
+    attributes = ("tick1line", "tick2line", "label1", "label2")
+    groups: tuple[Literal["major"], Literal["minor"]] = ("major", "minor")
+
+    def read() -> dict[Literal["major", "minor"], dict[str, bool]]:
+        flags = {}
+        for which in groups:
+            params = axis.get_tick_params(which=which)
+            if not all(key in params for key in keys):
+                # Matplotlib may omit flags which still use the Tick defaults.
+                get_ticks = (
+                    axis.get_major_ticks if which == "major" else axis.get_minor_ticks
+                )
+                tick = get_ticks(1)[0]
+            else:
+                flags[which] = {key: params[key] for key in keys}
+                continue
+            flags[which] = {
+                key: params[key] if key in params else getattr(tick, attr).get_visible()
+                for key, attr in zip(keys, attributes, strict=True)
+            }
+        return flags
+
+    initial = read()
+    hidden = {which: dict.fromkeys(keys, False) for which in groups}
+
+    def write(flags: dict[Literal["major", "minor"], dict[str, bool]]) -> None:
+        for which, params in flags.items():
+            axis.set_tick_params(which=which, **params)
+
+    def prepare(remove: bool) -> _ArtistEdit:
+        return _edit(write, read(), hidden if remove else initial)
+
+    return prepare
 
 
 def _draw_live_errorbars(
@@ -370,6 +418,36 @@ class _AnimationSession:
                     "Animated axis text must be a string or None."
                 )
             return _edit(write, read() or "", value or "")
+
+        self.bind_update(element, name, prepare)
+
+    def bind_axis_visibility(
+        self,
+        element: object,
+        name: str,
+        targets: dict[int, Callable[[bool], _ArtistEdit]],
+        subplot_count: int,
+    ) -> None:
+        if not targets:
+            return
+
+        def prepare(value: bool | list[bool | None]) -> _ArtistEdit:
+            if isinstance(value, bool):
+                return _combine_edits([target(value) for target in targets.values()])
+            if len(value) > subplot_count:
+                raise InvalidParameterError(
+                    "Too many visibility entries for this SmartFigure."
+                )
+            edits = []
+            for index, remove in enumerate(value):
+                if remove is None:
+                    continue
+                if index not in targets:
+                    raise InvalidParameterError(
+                        "Set axis properties on a nested SmartFigure directly."
+                    )
+                edits.append(targets[index](remove))
+            return _combine_edits(edits)
 
         self.bind_update(element, name, prepare)
 

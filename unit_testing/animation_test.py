@@ -2538,6 +2538,172 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             assert_allclose(curve.handle.lines[0].axes.get_xlim(), (1, 5))
             assert_allclose(curve.handle.lines[0].axes.get_ylim(), (0, 5))
 
+    def test_live_axis_visibility_is_local_to_nested_spanning_and_twin_axes(self):
+        from graphinglib import SmartTwinAxis
+
+        upper, lower, inner, secondary = (Curve([1, 10], [1, 10]) for _ in range(4))
+        twin = SmartTwinAxis(elements=[secondary], remove_axes=True, remove_ticks=True)
+        nested = SmartFigure(elements=[inner], twin_y_axis=twin, y_label="Nested")
+        root = SmartFigure(
+            2,
+            3,
+            share_x=True,
+            remove_x_ticks=True,
+            x_lim=(1, 10),
+            figure_style="plain",
+        )
+        root[:, 0] = nested
+        root[0, 1:3] = [upper]
+        root[1, 1:3] = [lower]
+        root.set_ticks(
+            x_ticks=[1, 10], x_tick_labels=["one", "ten"], minor_x_ticks=[5]
+        )
+        root.set_tick_params("x", "minor", draw_bottom_ticks=False, draw_top_ticks=True)
+        snapshots = []
+
+        def update(i):
+            artists = tuple(
+                curve.handle.lines[0] for curve in (upper, lower, inner, secondary)
+            )
+            a, b, c, d = (artist.axes for artist in artists)
+            snapshots.append(
+                (
+                    artists,
+                    (a.axison, b.axison, c.axison, d.axison),
+                    tuple(
+                        (
+                            tick.tick1line.get_visible(),
+                            tick.tick2line.get_visible(),
+                            tick.label1.get_visible(),
+                            tick.label2.get_visible(),
+                        )
+                        for tick in (
+                            a.xaxis.get_major_ticks(1)[0],
+                            b.xaxis.get_major_ticks(1)[0],
+                            c.yaxis.get_major_ticks(1)[0],
+                            d.yaxis.get_major_ticks(1)[0],
+                        )
+                    ),
+                    c.get_ylabel(),
+                    b.get_xlim(),
+                    b.get_xscale(),
+                    b.xaxis.get_major_locator(),
+                    tuple(
+                        ax.xaxis.get_minor_ticks(1)[0].tick2line.get_visible()
+                        for ax in (a, b)
+                    ),
+                )
+            )
+            if i == 0:
+                root.remove_x_ticks = False
+                root.remove_axes = [None, True, None]
+                root.log_scale_x = True
+                root.x_lim = (1, 100)
+                nested.remove_y_ticks = True
+                twin.remove_axes = False
+                twin.remove_ticks = False
+            elif i == 1:
+                root.remove_x_ticks = [None, None, True]
+                root.remove_axes = False
+                nested.remove_y_ticks = False
+                twin.remove_ticks = True
+
+        root.save_animation(self.output, update, 3, interval=100)
+        off = (False, False, False, False)
+        self.assertEqual(snapshots[0][1], (True, True, True, False))
+        self.assertEqual(snapshots[0][2], (off, off, (True, False, True, False), off))
+        self.assertEqual(snapshots[1][1], (False, True, True, True))
+        self.assertEqual(
+            snapshots[1][2],
+            (
+                (True, False, False, False),
+                (True, False, True, False),
+                off,
+                (False, True, False, True),
+            ),
+        )
+        self.assertEqual(snapshots[2][1], (True,) * 4)
+        self.assertEqual(
+            snapshots[2][2],
+            ((True, False, False, False), off, (True, False, True, False), off),
+        )
+        self.assertEqual(snapshots[1][3:6], ("Nested", (1, 100), "log"))
+        self.assertEqual(
+            [snapshot[7] for snapshot in snapshots],
+            [(False, False), (True, True), (True, False)],
+        )
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 2)
+            self.assertEqual(gif.info["duration"], 100)
+            gif.seek(1)
+            self.assertEqual(gif.info["duration"], 200)
+        for snapshot in snapshots:
+            self.assertEqual(snapshot[0], snapshots[0][0])
+            self.assertIs(snapshot[6], snapshots[0][6])
+
+    def test_failed_frame_restores_axis_and_tick_visibility(self):
+        scatter = Scatter([1, 10], [1, 10], face_color="navy")
+        root = SmartFigure(
+            elements=[scatter], remove_x_ticks=True, figure_style="plain"
+        )
+
+        def update(i):
+            if not i:
+                return
+            axes = scatter.handle.axes
+            root.remove_axes = True
+            root.remove_x_ticks = False
+            scatter.face_color = "red"
+            original = scatter.handle.set_facecolor
+
+            def fail_after_change(colors):
+                original(colors)
+                if np.allclose(colors, [[1, 0, 0, 1]]):
+                    self.assertFalse(axes.axison)
+                    self.assertTrue(
+                        axes.xaxis.get_major_ticks(1)[0].label1.get_visible()
+                    )
+                    raise ValueError("failed after changing visibility")
+
+            self.enterContext(
+                patch.object(scatter.handle, "set_facecolor", fail_after_change)
+            )
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        axes = scatter.handle.axes
+        self.assertTrue(axes.axison)
+        self.assertFalse(axes.xaxis.get_major_ticks(1)[0].label1.get_visible())
+        self.assertFalse(root.remove_axes)
+        self.assertTrue(root.remove_x_ticks)
+
+    def test_live_toggle_wcs_tick_marks_and_labels(self):
+        from graphinglib.smart_figure import HAS_ASTROPY, SmartFigureWCS
+
+        if not HAS_ASTROPY:
+            self.skipTest("Astropy is required for WCSAxes")
+        from astropy.wcs import WCS
+
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+        curve = Curve([1, 10], [1, 10])
+        figure = SmartFigureWCS(
+            projection=wcs, elements=[curve], remove_x_ticks=True, figure_style="plain"
+        )
+        snapshots = []
+
+        def update(i):
+            x, y = curve.handle.lines[0].axes.coords
+            snapshots.append(
+                tuple((axis.get_ticks_visible(), axis.get_ticklabel_visible()) for axis in (x, y))
+            )
+            if i == 0:
+                figure.remove_x_ticks = False
+                figure.remove_y_ticks = True
+
+        figure.save_animation(self.output, update, 2)
+        self.assertEqual(snapshots, [((False, False), (True, True)), ((True, True), (False, False))])
+
     def test_live_log_scale_combines_final_limits_and_preserves_manual_ticks(self):
         from warnings import catch_warnings, simplefilter
 

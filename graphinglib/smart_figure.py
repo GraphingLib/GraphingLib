@@ -4,6 +4,7 @@ from collections import OrderedDict
 from collections.abc import Sequence
 from copy import deepcopy
 from fractions import Fraction
+from functools import partial
 from inspect import iscoroutinefunction, signature
 from logging import warning
 from math import isfinite
@@ -54,8 +55,12 @@ from numpy.typing import ArrayLike
 from ._animation import (
     _DRAW_SESSION,
     _AnimationSession,
+    _ArtistEdit,
+    _axis_removal,
+    _edit,
     _reject_live_update,
     _stage_live_value,
+    _tick_removal,
 )
 from .exceptions import (
     IncompatibleArgumentsError,
@@ -142,7 +147,7 @@ class SmartFigure:
         Whether to use a logarithmic scale for the x and y axes, respectively. This can be given as a single value or
         a list of values to apply to each subplot.
         Defaults to ``False``.
-    remove_axes : bool | list[bool], optional
+    remove_axes : bool | list[bool | None], optional
         Whether to remove the axes from the figure. This can be given as a single boolean or a list of booleans to apply
         to each subplot.
         Defaults to ``False``.
@@ -167,7 +172,7 @@ class SmartFigure:
             data itself. The `box_aspect_ratio` parameter changes the size of the plot, which does not affect the
             figure's axes.
 
-    remove_x_ticks, remove_y_ticks : bool | list[bool], optional
+    remove_x_ticks, remove_y_ticks : bool | list[bool | None], optional
         Whether to remove the x and y ticks from the figure, respectively. This can be given as a single value or a list
         of values to apply to each subplot.
         Defaults to ``False``.
@@ -305,11 +310,11 @@ class SmartFigure:
         subtitles: Iterable[str] | None = None,
         log_scale_x: bool | list[bool | None] = False,
         log_scale_y: bool | list[bool | None] = False,
-        remove_axes: ListOrItem[bool] = False,
+        remove_axes: bool | list[bool | None] = False,
         aspect_ratio: ListOrItem[float | Literal["auto", "equal"]] = "auto",
         box_aspect_ratio: ListOrItem[float | None] = None,
-        remove_x_ticks: ListOrItem[bool] = False,
-        remove_y_ticks: ListOrItem[bool] = False,
+        remove_x_ticks: bool | list[bool | None] = False,
+        remove_y_ticks: bool | list[bool | None] = False,
         invert_x_axis: bool | list[bool | None] = False,
         invert_y_axis: bool | list[bool | None] = False,
         reference_labels: ListOrItem[bool] = True,
@@ -639,16 +644,12 @@ class SmartFigure:
         self._log_scale_y = self._stage_view_flag("log_scale_y", value)
 
     @property
-    def remove_axes(self) -> ListOrItem[bool]:
+    def remove_axes(self) -> bool | list[bool | None]:
         return self._remove_axes
 
     @remove_axes.setter
-    def remove_axes(self, value: ListOrItem[bool]) -> None:
-        _reject_animated_layout(self)
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("remove_axes must be a bool.")
-        self._remove_axes = value
+    def remove_axes(self, value: bool | list[bool | None]) -> None:
+        self._remove_axes = self._stage_view_flag("remove_axes", value)
 
     @property
     def aspect_ratio(self) -> ListOrItem[float | Literal["auto", "equal"]]:
@@ -686,28 +687,20 @@ class SmartFigure:
         self._box_aspect_ratio = value
 
     @property
-    def remove_x_ticks(self) -> ListOrItem[bool]:
+    def remove_x_ticks(self) -> bool | list[bool | None]:
         return self._remove_x_ticks
 
     @remove_x_ticks.setter
-    def remove_x_ticks(self, value: ListOrItem[bool]) -> None:
-        _reject_animated_layout(self)
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("remove_x_ticks must be a bool.")
-        self._remove_x_ticks = value
+    def remove_x_ticks(self, value: bool | list[bool | None]) -> None:
+        self._remove_x_ticks = self._stage_view_flag("remove_x_ticks", value)
 
     @property
-    def remove_y_ticks(self) -> ListOrItem[bool]:
+    def remove_y_ticks(self) -> bool | list[bool | None]:
         return self._remove_y_ticks
 
     @remove_y_ticks.setter
-    def remove_y_ticks(self, value: ListOrItem[bool]) -> None:
-        _reject_animated_layout(self)
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("remove_y_ticks must be a bool.")
-        self._remove_y_ticks = value
+    def remove_y_ticks(self, value: bool | list[bool | None]) -> None:
+        self._remove_y_ticks = self._stage_view_flag("remove_y_ticks", value)
 
     @property
     def invert_x_axis(self) -> bool | list[bool | None]:
@@ -2503,6 +2496,9 @@ class SmartFigure:
                 session.mark_present(child)
 
         limit_axes: list[tuple[int, Axes]] = []
+        visibility: dict[str, dict[int, Callable[[bool], _ArtistEdit]]] = {
+            name: {} for name in ("remove_axes", "remove_x_ticks", "remove_y_ticks")
+        }
         # Plottable and subfigure plotting
         for subplot_i, ((rows, cols), element) in enumerate(
             self._ordered_elements.items()
@@ -2639,9 +2635,10 @@ class SmartFigure:
                 if self._subplot_p["log_scale_y"][subplot_i]:
                     ax.set_yscale("log")
 
-                # Remove axes
                 if self._subplot_p["remove_axes"][subplot_i]:
-                    ax.axis("off")
+                    ax.set_axis_off()
+                if session is not None:
+                    visibility["remove_axes"][subplot_i] = partial(_axis_removal, ax)
 
                 ax.set_aspect(self._subplot_p["aspect_ratio"][subplot_i])
                 ax.set_box_aspect(self._subplot_p["box_aspect_ratio"][subplot_i])
@@ -2676,6 +2673,16 @@ class SmartFigure:
                         ax.tick_params(axis="y", labelleft=False)
                     if cols.stop != self._num_cols:
                         ax.tick_params(axis="y", labelright=False)
+
+                for dimension in ("x", "y"):
+                    name = f"remove_{dimension}_ticks"
+                    hidden = self._subplot_p[name][subplot_i]
+                    if session is not None or hidden:
+                        prepare = self._prepare_tick_removal(ax, dimension)
+                        if hidden:
+                            prepare(True).apply()
+                        if session is not None:
+                            visibility[name][subplot_i] = prepare
 
                 # Customize grid
                 if self._subplot_p["show_grid"][subplot_i]:
@@ -2798,6 +2805,8 @@ class SmartFigure:
 
         if session is not None:
             subplot_count = len(self._ordered_elements)
+            for name, targets in visibility.items():
+                session.bind_axis_visibility(self, f"_{name}", targets, subplot_count)
             for dimension in ("x", "y"):
                 session.bind_axis_view(
                     self,
@@ -3174,25 +3183,10 @@ class SmartFigure:
         if minor_y_tick_spacing is not None:
             ax.yaxis.set_minor_locator(ticker.MultipleLocator(minor_y_tick_spacing))
 
-        # Remove ticks
-        if self._subplot_p["remove_x_ticks"][subplot_i]:
-            ax.tick_params(
-                "x",
-                which="both",
-                labelbottom=False,
-                labeltop=False,
-                bottom=False,
-                top=False,
-            )
-        if self._subplot_p["remove_y_ticks"][subplot_i]:
-            ax.tick_params(
-                "y",
-                which="both",
-                labelleft=False,
-                labelright=False,
-                left=False,
-                right=False,
-            )
+    def _prepare_tick_removal(
+        self, ax: Axes, dimension: str
+    ) -> Callable[[bool], _ArtistEdit]:
+        return _tick_removal(ax.xaxis if dimension == "x" else ax.yaxis, dimension)
 
     def _customize_ax_label(
         self,
@@ -4278,7 +4272,7 @@ class SmartFigureWCS(SmartFigure):
         Whether to use a logarithmic scale for the x and y axes, respectively. This can be given as a single value or
         a list of values to apply to each subplot.
         Defaults to ``False``.
-    remove_axes : bool | list[bool], optional
+    remove_axes : bool | list[bool | None], optional
         Whether to remove the axes from the figure. This can be given as a single boolean or a list of booleans to apply
         to each subplot.
         Defaults to ``False``.
@@ -4303,7 +4297,7 @@ class SmartFigureWCS(SmartFigure):
             data itself. The `box_aspect_ratio` parameter changes the size of the plot, which does not affect the
             figure's axes.
 
-    remove_x_ticks, remove_y_ticks : bool | list[bool], optional
+    remove_x_ticks, remove_y_ticks : bool | list[bool | None], optional
         Whether to remove the x and y ticks from the figure, respectively. This can be given as a single value or a list
         of values to apply to each subplot.
         Defaults to ``False``.
@@ -4435,11 +4429,11 @@ class SmartFigureWCS(SmartFigure):
         subtitles: Iterable[str] | None = None,
         log_scale_x: bool | list[bool | None] = False,
         log_scale_y: bool | list[bool | None] = False,
-        remove_axes: ListOrItem[bool] = False,
+        remove_axes: bool | list[bool | None] = False,
         aspect_ratio: ListOrItem[float | Literal["auto", "equal"]] = "auto",
         box_aspect_ratio: ListOrItem[float | None] = None,
-        remove_x_ticks: ListOrItem[bool] = False,
-        remove_y_ticks: ListOrItem[bool] = False,
+        remove_x_ticks: bool | list[bool | None] = False,
+        remove_y_ticks: bool | list[bool | None] = False,
         invert_x_axis: bool | list[bool | None] = False,
         invert_y_axis: bool | list[bool | None] = False,
         reference_labels: ListOrItem[bool] = True,
@@ -4647,13 +4641,24 @@ class SmartFigureWCS(SmartFigure):
                 length=self._tick_params["y minor"].get("length"),
             )
 
-        # Remove ticks
-        if self._subplot_p["remove_x_ticks"][subplot_i]:
-            x_axis.set_ticks_visible(False)
-            x_axis.set_ticklabel_visible(False)
-        if self._subplot_p["remove_y_ticks"][subplot_i]:
-            y_axis.set_ticks_visible(False)
-            y_axis.set_ticklabel_visible(False)
+    def _prepare_tick_removal(
+        self, ax: Axes, dimension: str
+    ) -> Callable[[bool], _ArtistEdit]:
+        axis = cast(Any, ax).coords[0 if dimension == "x" else 1]
+
+        def read() -> tuple[bool, bool]:
+            return axis.get_ticks_visible(), axis.get_ticklabel_visible()
+
+        def write(flags: tuple[bool, bool]) -> None:
+            axis.set_ticks_visible(flags[0])
+            axis.set_ticklabel_visible(flags[1])
+
+        initial = read()
+
+        def prepare(remove: bool) -> _ArtistEdit:
+            return _edit(write, read(), (False, False) if remove else initial)
+
+        return prepare
 
     # WCSAxes uses Astropy Quantity ticks and WCS-specific tick controls, so this
     # intentionally is not a behavioral substitute for SmartFigure.set_ticks.
@@ -5066,10 +5071,9 @@ class SmartTwinAxis:
 
     @remove_axes.setter
     def remove_axes(self, value: bool) -> None:
-        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("remove_axes must be a bool.")
-        self._remove_axes = value
+        self._remove_axes = _stage_live_value(self, "_remove_axes", value)
 
     @property
     def remove_ticks(self) -> bool:
@@ -5077,10 +5081,9 @@ class SmartTwinAxis:
 
     @remove_ticks.setter
     def remove_ticks(self, value: bool) -> None:
-        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("remove_ticks must be a bool.")
-        self._remove_ticks = value
+        self._remove_ticks = _stage_live_value(self, "_remove_ticks", value)
 
     @property
     def invert_axis(self) -> bool:
@@ -5282,9 +5285,16 @@ class SmartTwinAxis:
         if self._log_scale:
             ax_set_scale("log")
 
-        # Remove axes
         if self._remove_axes:
-            ax.axis("off")
+            ax.set_axis_off()
+        if self._remove_ticks or session is not None:
+            prepare_ticks = _tick_removal(
+                ax.yaxis if is_y else ax.xaxis, "y" if is_y else "x"
+            )
+            if self._remove_ticks:
+                prepare_ticks(True).apply()
+            if session is not None:
+                session.bind_update(self, "_remove_ticks", prepare_ticks)
 
         # Invert axis
         if self.invert_axis:
@@ -5294,6 +5304,7 @@ class SmartTwinAxis:
                 ax.invert_xaxis()
 
         if session is not None:
+            session.bind_update(self, "_remove_axes", partial(_axis_removal, ax))
             session.bind_axis_view(
                 self,
                 "_axis_lim",
@@ -5385,21 +5396,6 @@ class SmartTwinAxis:
         minor_tick_spacing = self._ticks.get("minor_tick_spacing")
         if minor_tick_spacing is not None:
             ax_axis.set_minor_locator(ticker.MultipleLocator(minor_tick_spacing))
-
-        # Remove ticks
-        if self._remove_ticks:
-            axes.tick_params(
-                axis_str,
-                which="both",
-                labelbottom=False,
-                labelleft=False,
-                labelright=False,
-                labeltop=False,
-                bottom=False,
-                left=False,
-                right=False,
-                top=False,
-            )
 
     def _fill_in_missing_params(
         self,
