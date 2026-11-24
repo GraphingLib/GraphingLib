@@ -859,3 +859,178 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(
             scatter.errorbars_handle.lines[2][0].get_color(), [[0.0, 0.5, 0.0, 1.0]]
         )
+
+    def test_animates_limits_on_spanning_shared_and_nested_axes(self):
+        first = Curve([0, 6], [0, 6], label="first")
+        second = Curve([0, 6], [1, 5], label="second")
+        nested_curve = Curve([0, 6], [2, 5], label="nested")
+        nested = SmartFigure(elements=[nested_curve], x_lim=(0, 6), y_lim=(0, 6))
+        root = SmartFigure(
+            2,
+            3,
+            figure_style="plain",
+            share_x=True,
+            x_lim=(0, 6),
+            y_lim=(0, 6),
+            invert_y_axis=True,
+        )
+        root[:, 0] = nested
+        root[0, 1:3] = [first]
+        root[1, 1:3] = [second]
+        seen = []
+
+        def update(frame):
+            axes = tuple(
+                artist.handle.lines[0].axes for artist in (first, second, nested_curve)
+            )
+            seen.append(
+                (axes, [ax.get_xlim() for ax in axes], [ax.get_ylim() for ax in axes])
+            )
+            self.assertTrue(axes[0].get_shared_x_axes().joined(*axes[:2]))
+            if frame == 0:
+                root.x_lim = [None, (1, 5), None]
+                root.y_lim = [None, (1, 4), (2, 5)]
+                nested.x_lim = (2, 6)
+            elif frame == 1:
+                root.x_lim = (None, 4)
+                root.y_lim = None
+                nested.x_lim = (None, 5)
+            else:
+                root.x_lim = None
+
+        root.save_animation(self.output, update, 3)
+        self.assertTrue(all(axes == seen[0][0] for axes, _, _ in seen))
+        assert_allclose(seen[1][1], [(1, 5), (1, 5), (2, 6)])
+        assert_allclose(seen[1][2], [(4, 1), (5, 2), (0, 6)])
+        assert_allclose(seen[2][1], [(1, 4), (1, 4), (2, 5)])
+        assert_allclose(seen[2][2], [(6, 0), (6, 0), (0, 6)])
+        assert_allclose([ax.get_xlim() for ax in seen[-1][0]], [(0, 6), (0, 6), (2, 5)])
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 3)
+
+    def test_shared_axis_conflict_restores_live_limits_and_models(self):
+        first = Curve([0, 6], [0, 6])
+        second = Curve([0, 6], [1, 5])
+        root = SmartFigure(
+            1,
+            2,
+            elements=[first, second],
+            figure_style="plain",
+            share_x=True,
+            x_lim=(0, 6),
+            y_lim=(0, 6),
+        )
+        self.output.write_bytes(b"existing")
+
+        def update(frame):
+            root.y_lim = (frame, 5)
+            root.x_lim = (1, 5) if frame == 0 else [(0, 4), (1, 4)]
+
+        with self.assertRaisesRegex(ValueError, "Shared axes"):
+            root.save_animation(self.output, update, 2)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+        self.assertEqual(root.x_lim, (1, 5))
+        self.assertEqual(root.y_lim, (0, 5))
+        for curve in first, second:
+            assert_allclose(curve.handle.lines[0].axes.get_xlim(), (1, 5))
+            assert_allclose(curve.handle.lines[0].axes.get_ylim(), (0, 5))
+
+    def test_updates_twin_log_limits_and_leaves_shared_primary_dimension_intact(self):
+        from graphinglib import SmartTwinAxis
+
+        main = Curve([1, 5], [1, 6])
+        secondary = Curve([1, 5], [10, 100])
+        twin = SmartTwinAxis(
+            elements=[secondary], log_scale=True, axis_lim=(1, 1000), invert_axis=True
+        )
+        root = SmartFigure(
+            elements=[main],
+            figure_style="plain",
+            twin_y_axis=twin,
+            x_lim=(1, 5),
+            y_lim=(0, 6),
+        )
+        self.output.write_bytes(b"existing")
+
+        def update(frame):
+            root.x_lim = (1, 4 - frame)
+            twin.axis_lim = (10, 100) if frame == 0 else (0, 200)
+
+        with self.assertRaisesRegex(
+            ValueError, "logarithmic axis limits must be positive"
+        ):
+            root.save_animation(self.output, update, 2)
+        axes = main.handle.lines[0].axes
+        twin_axes = secondary.handle.lines[0].axes
+        assert_allclose(axes.get_xlim(), (1, 4))
+        assert_allclose(twin_axes.get_xlim(), (1, 4))
+        assert_allclose(axes.get_ylim(), (0, 6))
+        assert_allclose(twin_axes.get_ylim(), (100, 10))
+        self.assertEqual(twin.axis_lim, (10, 100))
+        self.assertEqual(root.x_lim, (1, 4))
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
+    def test_animates_figure_axis_and_twin_text_without_replacing_artists(self):
+        from graphinglib import SmartTwinAxis
+
+        main = Curve([0, 1], [0, 1])
+        second = Curve([0, 1], [1, 0])
+        twin = SmartTwinAxis(label="Right scale", elements=[second])
+        nested = SmartFigure(elements=[main], title="Initial", twin_y_axis=twin)
+        root = SmartFigure(2, 2, figure_style="plain", title="Root", x_label="Root x")
+        root[:, :] = nested
+        identities = []
+        root_axes = []
+
+        def update(frame):
+            root_axes[:] = plt.gcf().axes
+            axes = main.handle.lines[0].axes
+            secondary = second.handle.lines[0].axes
+            identities.append(
+                (axes.title, axes.xaxis.label, axes.yaxis.label, secondary.yaxis.label)
+            )
+            nested.title = f"Section {frame}"
+            nested.x_label = f"Position {frame}"
+            nested.y_label = "Value" if frame == 0 else None
+            twin.label = f"Right scale {frame}"
+            root.title = f"Overview {frame}"
+
+        root.save_animation(self.output, update, 2)
+        self.assertEqual(identities[0], identities[1])
+        self.assertEqual(
+            [artist.get_text() for artist in identities[0]],
+            ["Section 1", "Position 1", "", "Right scale 1"],
+        )
+        self.assertTrue(any(axis.get_title() == "Overview 1" for axis in root_axes))
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 2)
+
+    def test_artist_commit_failure_restores_shared_viewports_and_labels(self):
+        moving = Curve([0, 6], [0, 6], color="navy")
+        fixed = Curve([0, 6], [1, 5])
+        root = SmartFigure(
+            1,
+            2,
+            elements=[moving, fixed],
+            figure_style="plain",
+            share_x=True,
+            x_lim=(0, 6),
+        )
+        self.output.write_bytes(b"existing")
+        titles = []
+
+        def update(frame):
+            titles[:] = [axis.title for axis in plt.gcf().axes]
+            root.x_lim = (1, 5) if frame == 0 else (2, 4)
+            root.title = "valid" if frame == 0 else "failed"
+            moving.color = "navy" if frame == 0 else "invalid-color"
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+        self.assertEqual(root.x_lim, (1, 5))
+        self.assertEqual(root.title, "valid")
+        self.assertIn("valid", [artist.get_text() for artist in titles])
+        self.assertNotIn("failed", [artist.get_text() for artist in titles])
+        for curve in (moving, fixed):
+            assert_allclose(curve.handle.lines[0].axes.get_xlim(), (1, 5))

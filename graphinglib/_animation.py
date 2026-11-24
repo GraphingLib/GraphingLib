@@ -4,10 +4,13 @@ from collections.abc import Callable
 from contextvars import ContextVar
 from dataclasses import dataclass
 from itertools import chain
+from math import isfinite
+from numbers import Real
 from typing import Any
 
 import numpy as np
 from matplotlib.artist import Artist
+from matplotlib.axes import Axes
 from matplotlib.collections import (
     LineCollection,
     PathCollection,
@@ -190,6 +193,125 @@ class _AnimationSession:
                 "Use an explicit style value during animation."
             )
         self._stage(element, name, [prepare(value) for prepare in prepares], restore)
+
+    def bind_axis_text(
+        self,
+        element: object,
+        name: str,
+        read: Callable[[], str | None],
+        write: Callable[[str], Any],
+    ) -> None:
+        def prepare(value: str | None) -> _ArtistEdit:
+            if value is not None and not isinstance(value, str):
+                raise InvalidParameterError(
+                    "Animated axis text must be a string or None."
+                )
+            return _edit(write, read() or "", value or "")
+
+        self.bind_update(element, name, prepare)
+
+    def bind_axis_limits(
+        self,
+        element: object,
+        name: str,
+        dimension: str,
+        targets: list[tuple[int, Axes, bool]],
+        subplot_count: int,
+    ) -> None:
+        """Bind explicit limits to the existing axes drawn by this figure or twin."""
+        if not targets:
+            return
+        initial: dict[Axes, tuple[float, float]] = {}
+
+        def read(axes: Axes) -> tuple[float, float]:
+            return axes.get_xlim() if dimension == "x" else axes.get_ylim()
+
+        def write(axes: Axes, limits: tuple[float, float], *, emit: bool) -> None:
+            if dimension == "x":
+                axes.set_xlim(*limits, emit=emit, auto=False)
+            else:
+                axes.set_ylim(*limits, emit=emit, auto=False)
+
+        def prepare(value: Any) -> _ArtistEdit:
+            if isinstance(value, list):
+                if len(value) > subplot_count:
+                    raise InvalidParameterError(
+                        f"Too many {dimension}-axis limit entries for this SmartFigure."
+                    )
+                available = {index for index, _, _ in targets}
+                if any(
+                    item is not None and index not in available
+                    for index, item in enumerate(value)
+                ):
+                    raise InvalidParameterError(
+                        "Set limits on a nested SmartFigure directly."
+                    )
+
+            groups: dict[frozenset[Axes], tuple[Axes, tuple[float, float]]] = {}
+            old: dict[Axes, tuple[float, float]] = {}
+            for index, axes, invert in targets:
+                initial.setdefault(axes, read(axes))
+                if isinstance(value, list):
+                    if index >= len(value) or value[index] is None:
+                        continue
+                    requested = value[index]
+                else:
+                    requested = value
+                if requested is None:
+                    bounds = initial[axes]
+                else:
+                    previous = read(axes)
+                    if invert:
+                        previous = previous[::-1]
+                    effective = tuple(
+                        prior if bound is None else bound
+                        for bound, prior in zip(requested, previous)
+                    )
+                    low, high = effective
+                    if (
+                        not all(
+                            isinstance(bound, Real) and isfinite(bound)
+                            for bound in effective
+                        )
+                        or low == high
+                    ):
+                        raise InvalidParameterError(
+                            "Animated axis limits must be distinct finite numbers."
+                        )
+                    scale = axes.get_xscale() if dimension == "x" else axes.get_yscale()
+                    if scale == "log" and min(low, high) <= 0:
+                        raise InvalidParameterError(
+                            "Animated logarithmic axis limits must be positive."
+                        )
+                    bounds = (float(low), float(high))
+                    if invert and bounds[0] < bounds[1]:
+                        bounds = bounds[::-1]
+
+                shared = (
+                    axes.get_shared_x_axes()
+                    if dimension == "x"
+                    else axes.get_shared_y_axes()
+                )
+                siblings = frozenset(shared.get_siblings(axes))
+                if siblings in groups and groups[siblings][1] != bounds:
+                    raise InvalidParameterError(
+                        "Shared axes must receive matching limits within a frame."
+                    )
+                groups[siblings] = axes, bounds
+                for sibling in siblings:
+                    old.setdefault(sibling, read(sibling))
+
+            def apply() -> None:
+                for axes, bounds in groups.values():
+                    write(axes, bounds, emit=True)
+
+            def undo() -> None:
+                for axes, bounds in old.items():
+                    write(axes, bounds, emit=False)
+
+            return _ArtistEdit(apply, undo)
+
+        self.bind_update(element, name, prepare)
 
     def bind_derived(
         self,

@@ -2045,9 +2045,21 @@ Live update support
      - Arbitrary Axes methods can return many kinds of objects and have no
        common update contract.
 
-Axes limits, grid layout, legends, and colorbar placement are established
-from the initial figure. Provide bounds for the whole animation when later
-frames run outside the initial view. Use explicit style values in callbacks.
+Axes keep their initial viewport until you assign ``x_lim`` or ``y_lim`` on
+the SmartFigure that draws the axes. For a layout, a tuple applies to its
+direct subplots. A list follows subplot order, including slots occupied by
+nested SmartFigures. Leave those slots as ``None`` and change each nested
+figure directly. List entries of ``None`` leave individual subplots alone.
+Assigning ``None`` to the property restores the initial limits. Within a
+tuple, ``None`` keeps that endpoint. All explicit limits for a shared axis
+must agree, and logarithmic limits must be positive. A twin axis accepts
+viewport updates through its ``axis_lim`` property. Assign ``title``,
+``x_label``, or ``y_label`` to change a SmartFigure's text, or assign
+``label`` on a twin axis. Use ``None`` to clear the text. Keep the initial
+figure's margins wide enough for the longest labels in the animation.
+
+Grid layout, legends, and colorbar placement are established from the
+initial figure. Use explicit style values in callbacks.
 Some styles copy example artists into a legend. The legend keeps its initial
 appearance while the plotted artist changes.
 

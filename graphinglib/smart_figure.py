@@ -51,7 +51,12 @@ from matplotlib.projections import get_projection_names
 from matplotlib.transforms import ScaledTranslation
 from numpy.typing import ArrayLike
 
-from ._animation import _DRAW_SESSION, _AnimationSession, _reject_live_update
+from ._animation import (
+    _DRAW_SESSION,
+    _AnimationSession,
+    _reject_live_update,
+    _stage_live_value,
+)
 from .exceptions import (
     IncompatibleArgumentsError,
     InvalidOperationError,
@@ -493,8 +498,7 @@ class SmartFigure:
 
     @x_label.setter
     def x_label(self, value: str | None) -> None:
-        _reject_animated_layout(self)
-        self._x_label = value
+        self._x_label = _stage_live_value(self, "_x_label", value)
 
     @property
     def y_label(self) -> str | None:
@@ -502,8 +506,7 @@ class SmartFigure:
 
     @y_label.setter
     def y_label(self, value: str | None) -> None:
-        _reject_animated_layout(self)
-        self._y_label = value
+        self._y_label = _stage_live_value(self, "_y_label", value)
 
     @property
     def size(self) -> tuple[float, float] | Inherit:
@@ -529,8 +532,7 @@ class SmartFigure:
 
     @title.setter
     def title(self, value: str | None) -> None:
-        _reject_animated_layout(self)
-        self._title = value
+        self._title = _stage_live_value(self, "_title", value)
 
     @property
     def x_lim(self) -> ListOrItem[tuple[float | None, float | None] | None]:
@@ -540,14 +542,13 @@ class SmartFigure:
     def x_lim(
         self, value: ListOrItem[tuple[float | None, float | None] | None]
     ) -> None:
-        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if v is not None:
                 if not isinstance(v, tuple):
                     raise InvalidParameterTypeError("x_lim must be a tuple.")
                 if len(v) != 2:
                     raise InvalidParameterError("x_lim must be a tuple of length 2.")
-        self._x_lim = value
+        self._x_lim = _stage_live_value(self, "_x_lim", value)
 
     @property
     def y_lim(self) -> ListOrItem[tuple[float | None, float | None] | None]:
@@ -557,14 +558,13 @@ class SmartFigure:
     def y_lim(
         self, value: ListOrItem[tuple[float | None, float | None] | None]
     ) -> None:
-        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if v is not None:
                 if not isinstance(v, tuple):
                     raise InvalidParameterTypeError("y_lim must be a tuple.")
                 if len(v) != 2:
                     raise InvalidParameterError("y_lim must be a tuple of length 2.")
-        self._y_lim = value
+        self._y_lim = _stage_live_value(self, "_y_lim", value)
 
     @property
     def sub_x_labels(self) -> Iterable[str] | None:
@@ -2504,6 +2504,7 @@ class SmartFigure:
             for child in self._children.values():
                 session.mark_present(child)
 
+        limit_axes: list[tuple[int, Axes]] = []
         # Plottable and subfigure plotting
         for subplot_i, ((rows, cols), element) in enumerate(
             self._ordered_elements.items()
@@ -2590,6 +2591,9 @@ class SmartFigure:
                     else None,  # but it does not remove the ticklabels
                     projection=self._subplot_p["projection"][subplot_i],
                 )
+
+                if session is not None:
+                    limit_axes.append((subplot_i, ax))
 
                 # Plotting loop
                 z_order = 2
@@ -2792,6 +2796,24 @@ class SmartFigure:
                     f"Unsupported element type in list: {type(element).__name__}."
                 )
 
+        if session is not None:
+            subplot_count = len(self._ordered_elements)
+            for dimension in ("x", "y"):
+                session.bind_axis_limits(
+                    self,
+                    f"_{dimension}_lim",
+                    dimension,
+                    [
+                        (
+                            index,
+                            axes,
+                            bool(self._subplot_p[f"invert_{dimension}_axis"][index]),
+                        )
+                        for index, axes in limit_axes
+                    ],
+                    subplot_count,
+                )
+
         # Set a general axis for adding general labels/title and controlling padding
         general_ax = figure.add_subplot(gridspec[:, :], frameon=False)
         general_ax.grid(False)
@@ -2811,21 +2833,77 @@ class SmartFigure:
             right=False,
         )
 
-        # General labels
-        if self.is_single_subplot:
-            if (
-                ax is not None
-            ):  # makes sure an element was plotted and that an axis was created
-                self._customize_ax_label(ax)
-        else:
-            self._customize_ax_label(general_ax)
+        # General labels and title
+        label_axes = ax if self.is_single_subplot else general_ax
+        if label_axes is not None:
+            self._customize_ax_label(label_axes)
+            if session is not None:
+                x_pad, y_pad = (
+                    self._pad_params.get("x_label_pad"),
+                    self._pad_params.get("y_label_pad"),
+                )
+                x_color, y_color = self._x_axis_label_color, self._y_axis_label_color
+                if isinstance(self, SmartFigureWCS) and label_axes is ax:
+                    session.bind_axis_text(
+                        self,
+                        "_x_label",
+                        label_axes.get_xlabel,
+                        lambda text: label_axes.set_xlabel(
+                            text, labelpad=x_pad, color=x_color
+                        ),
+                    )
+                    session.bind_axis_text(
+                        self,
+                        "_y_label",
+                        label_axes.get_ylabel,
+                        lambda text: label_axes.set_ylabel(
+                            text, labelpad=y_pad, color=y_color
+                        ),
+                    )
+                else:
+                    for prop, artist, color, pad, set_label in (
+                        (
+                            "_x_label",
+                            label_axes.xaxis.label,
+                            x_color,
+                            x_pad,
+                            label_axes.set_xlabel,
+                        ),
+                        (
+                            "_y_label",
+                            label_axes.yaxis.label,
+                            y_color,
+                            y_pad,
+                            label_axes.set_ylabel,
+                        ),
+                    ):
+                        if not artist.get_text():
+                            set_label("", labelpad=pad, color=color)
+                        session.bind_axis_text(
+                            self, prop, artist.get_text, artist.set_text
+                        )
 
-        # Title (if the SmartFigure is not a single subplot)
-        if self._title:
-            if self.is_single_subplot and ax is not None:
-                ax.set_title(self._title, pad=self._pad_params.get("title_pad"))
-            else:
-                general_ax.set_title(self._title, pad=self._pad_params.get("title_pad"))
+        title_axes = label_axes if label_axes is not None else general_ax
+        title_pad = self._pad_params.get("title_pad")
+        if session is not None:
+            if (
+                not self._title
+                and title_axes is ax
+                and self._subtitles is not None
+                and subtitles_pad is not None
+            ):
+                title_pad = subtitles_pad[limit_axes[-1][0]]
+            title_location = plt.rcParams["axes.titlelocation"]
+            title_artist = title_axes.set_title(
+                self._title or title_axes.get_title(loc=title_location),
+                pad=title_pad,
+                loc=title_location,
+            )
+            session.bind_axis_text(
+                self, "_title", title_artist.get_text, title_artist.set_text
+            )
+        elif self._title:
+            title_axes.set_title(self._title, pad=title_pad)
 
         # Annotations
         if self._annotations is not None:
@@ -4953,8 +5031,7 @@ class SmartTwinAxis:
 
     @label.setter
     def label(self, value: str | None) -> None:
-        _reject_animated_layout(self)
-        self._label = value
+        self._label = _stage_live_value(self, "_label", value)
 
     @property
     def axis_lim(self) -> tuple[float, float] | None:
@@ -4962,13 +5039,12 @@ class SmartTwinAxis:
 
     @axis_lim.setter
     def axis_lim(self, value: tuple[float, float] | None) -> None:
-        _reject_animated_layout(self)
         if value is not None:
             if not isinstance(value, tuple):
                 raise InvalidParameterTypeError("axis_lim must be a tuple.")
             if len(value) != 2:
                 raise InvalidParameterError("axis_lim must be a tuple of length 2.")
-        self._axis_lim = value
+        self._axis_lim = _stage_live_value(self, "_axis_lim", value)
 
     @property
     def log_scale(self) -> bool:
@@ -5182,6 +5258,10 @@ class SmartTwinAxis:
 
         if self._label:
             ax_set_label(self._label)
+        if session is not None:
+            session.bind_axis_text(
+                self, "_label", ax.get_ylabel if is_y else ax.get_xlabel, ax_set_label
+            )
         if self._axis_lim:
             ax_set_lim(*self._axis_lim)
 
@@ -5206,10 +5286,15 @@ class SmartTwinAxis:
 
         # Invert axis
         if self.invert_axis:
-            if is_y:
+            if is_y and not ax.yaxis_inverted():
                 ax.invert_yaxis()
-            else:
+            elif not is_y and not ax.xaxis_inverted():
                 ax.invert_xaxis()
+
+        if session is not None:
+            session.bind_axis_limits(
+                self, "_axis_lim", "y" if is_y else "x", [(0, ax, self.invert_axis)], 1
+            )
 
         # Plotting loop
         num_cycle_colors = len(cycle_colors)
