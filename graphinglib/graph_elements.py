@@ -34,7 +34,12 @@ from .exceptions import (
     PlottingError,
 )
 from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
-from .legend_artists import VerticalLineCollection
+from .legend_artists import (
+    VerticalLineCollection,
+    _reference_collection_styles,
+    _reference_line_style,
+    _ReferenceLegendCollection,
+)
 from .tools import _copy_with_overrides
 
 try:
@@ -148,6 +153,7 @@ def _draw_reference_lines(
     params = strip_inherit(
         {field: getattr(element, attr) for attr, field in _REFERENCE_LINE_STYLE.items()}
     )
+    capacity = 3 if horizontal else 4
     if low is not None and high is not None:
         plot = axes.hlines if horizontal else axes.vlines
         collection = plot(
@@ -161,6 +167,13 @@ def _draw_reference_lines(
             },
         )
         _bind_bounded_reference_lines(element, collection, names, horizontal)
+        properties = (*names, *_REFERENCE_LINE_STYLE)
+
+        def read_styles() -> list[dict[str, Any]]:
+            return _reference_collection_styles(
+                collection, min(len(collection.get_paths()), capacity)
+            )
+
     else:
         plot = axes.axhline if horizontal else axes.axvline
         lines = [
@@ -172,20 +185,33 @@ def _draw_reference_lines(
         _bind_spanning_reference_lines(
             element, axes, lines, position, params, z_order, horizontal
         )
+        properties = (position, *_REFERENCE_LINE_STYLE)
 
-    # Reserve a simple legend swatch even when the data start empty.
-    proxy_type = LineCollection if horizontal else VerticalLineCollection
-    swatch_count = max(1, min(len(coords), 3 if horizontal else 4))
+        def read_styles() -> list[dict[str, Any]]:
+            return [
+                _reference_line_style(line)
+                for line in lines[:capacity]
+                if line.get_visible()
+            ]
+
+    swatch_count = min(len(coords), capacity)
     legend_style = {
         name: value
         for name, value in params.items()
-        if name != "linewidth"
-        and (len(coords) or not isinstance(value, (list, np.ndarray)))
+        if len(coords) or not isinstance(value, (list, np.ndarray))
     }
-    handle = proxy_type([[(0, 0)]] * swatch_count, **legend_style)
     session = _DRAW_SESSION.get()
     if session is not None:
+        handle = _ReferenceLegendCollection(
+            swatch_count, horizontal=horizontal, **legend_style
+        )
         session.bind_legend_source(element, handle, lambda: element.label)
+        session.bind_reference_legend(handle, properties, read_styles)
+    else:
+        # Keep a static legend sample for empty plots.
+        proxy_type = LineCollection if horizontal else VerticalLineCollection
+        legend_style.pop("linewidth", None)
+        handle = proxy_type([[(0, 0)]] * max(1, swatch_count), **legend_style)
     return handle
 
 
@@ -277,14 +303,7 @@ def _bind_spanning_reference_lines(
             (
                 get_coordinates(line),
                 line.get_visible(),
-                {
-                    field: (
-                        cast(Any, line)._unscaled_dash_pattern
-                        if field == "linestyle" and line.get_linestyle() == "--"
-                        else getattr(line, f"get_{field}")()
-                    )
-                    for field in _REFERENCE_LINE_STYLE.values()
-                },
+                _reference_line_style(line),
             )
             for line in lines[: len(positions)]
         ]
@@ -534,6 +553,10 @@ class Hlines(Plottable):
     @property
     def alpha(self) -> float | Inherit:
         return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float | Inherit) -> None:
+        self._alpha = _stage_live_value(self, "_alpha", alpha)
 
     def copy(self) -> Self:
         """

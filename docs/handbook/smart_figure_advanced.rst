@@ -2012,8 +2012,9 @@ Live update support
        ``arrow_pointing_to = None`` hides it.
      - Placement on a subplot or the figure. Arrows use subplot coordinates.
    * - :class:`~graphinglib.Hlines`, :class:`~graphinglib.Vlines`
-     - Line positions, colors, widths, and line styles. Vertical line
-       opacity can change. Counts can grow, shrink, or reach zero.
+     - Line positions, colors, widths, styles, and opacity. Counts can
+       grow, shrink, or reach zero. Existing legend samples follow these
+       changes and show up to three horizontal or four vertical lines.
        Supply matching positions, per-line styles, and any per-line bounds
        in the same callback. Axes-spanning lines keep following the viewport.
      - Choose axes-spanning lines or explicit bounds during setup.
@@ -2134,8 +2135,9 @@ scatter plots, histograms, and reference lines. Assigning ``None`` clears the
 text when there is no generated label, and keeps the entry's swatch. Choose a
 starting label for every plottable that needs a legend entry during playback.
 Existing swatches for plain fitted lines, curves (including configured error
-bars), and scatter plots follow supported visual styles. Custom entries and
-other swatches retain their initial styling. Use explicit style values in callbacks.
+bars), scatter plots, and reference lines follow supported visual styles.
+Custom entries and other swatches retain their initial styling. Use explicit
+style values in callbacks.
 
 Successful frames leave their assignments in the plottables. If the callback
 or application of its artist edits fails, pending changes roll back to the

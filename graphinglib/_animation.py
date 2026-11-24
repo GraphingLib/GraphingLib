@@ -33,6 +33,7 @@ from .exceptions import (
     UnsupportedFeatureError,
 )
 from .inherit import is_inherit
+from .legend_artists import _reference_line_style, _ReferenceLegendSwatch
 
 
 @dataclass
@@ -367,6 +368,9 @@ class _AnimationSession:
         self._legend_swatch_prepares: set[int] = set()
         self._legend_sources: dict[
             int, tuple[object, Callable[[], str | None], tuple[str, ...]]
+        ] = {}
+        self._reference_legend_sources: dict[
+            int, tuple[tuple[str, ...], Callable[[], list[dict[str, Any]]]]
         ] = {}
         self._rollback: dict[tuple[int, str], Callable[[], None]] = {}
         self._cleanup: list[Callable[[], None]] = []
@@ -722,6 +726,14 @@ class _AnimationSession:
 
         self.bind_derived(element, properties, prepare)
 
+    def bind_reference_legend(
+        self,
+        handle: LineCollection,
+        properties: tuple[str, ...],
+        read_styles: Callable[[], list[dict[str, Any]]],
+    ) -> None:
+        self._reference_legend_sources[id(handle)] = (properties, read_styles)
+
     def bind_legend(self, legend: Legend, handles: list[Any]) -> None:
         texts = iter(legend.get_texts())
         groups = {
@@ -743,12 +755,51 @@ class _AnimationSession:
                 return _edit(text.set_text, text.get_text(), read_label() or "")
 
             self.bind_derived(element, properties, prepare)
-            if isinstance(handle, ErrorbarContainer) and (
+            swatch_group = groups.get(id(swatch), [])
+            if reference := self._reference_legend_sources.get(id(handle)):
+                self._bind_reference_swatches(element, swatch_group, *reference)
+            elif isinstance(handle, ErrorbarContainer) and (
                 handle.has_xerr or handle.has_yerr
             ):
-                self._bind_errorbar_swatch(element, handle, groups.get(id(swatch), []))
+                self._bind_errorbar_swatch(element, handle, swatch_group)
             else:
                 self._bind_legend_swatch(element, handle, swatch, legend.markerscale)
+
+    def _bind_reference_swatches(
+        self,
+        element: object,
+        group: list[Artist],
+        properties: tuple[str, ...],
+        read_styles: Callable[[], list[dict[str, Any]]],
+    ) -> None:
+        swatches = [
+            swatch for swatch in group if isinstance(swatch, _ReferenceLegendSwatch)
+        ]
+        if not swatches:
+            return
+
+        def prepare() -> _ArtistEdit:
+            before = [
+                (swatch.get_data(), swatch.get_visible(), _reference_line_style(swatch))
+                for swatch in swatches
+            ]
+
+            def apply() -> None:
+                styles = read_styles()[: len(swatches)]
+                for index, swatch in enumerate(swatches):
+                    swatch.update_sample(index, styles)
+
+            def undo() -> None:
+                for swatch, (data, visible, style) in zip(
+                    swatches, before, strict=True
+                ):
+                    swatch.set_data(*data)
+                    swatch.set(visible=visible, **style)
+
+            return _ArtistEdit(apply, undo)
+
+        self._legend_swatch_prepares.add(id(prepare))
+        self.bind_derived(element, properties, prepare)
 
     def _bind_errorbar_swatch(
         self, element: object, source: ErrorbarContainer, swatches: list[Artist]
@@ -1086,6 +1137,7 @@ class _AnimationSession:
         self._properties.clear()
         self._dependents.clear()
         self._legend_sources.clear()
+        self._reference_legend_sources.clear()
         self._legend_swatch_prepares.clear()
         self._dirty_dependents.clear()
         for callback in reversed(self._cleanup):

@@ -4158,6 +4158,158 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(snapshots[1][1], [[[1, 0], [1, 1]], [[2, 1], [2, 3]]])
         self.assertEqual(snapshots[2][1], [])
 
+    def test_reference_line_legend_swatches_follow_visible_counts_and_styles(self):
+        from matplotlib.colors import to_rgba
+        from matplotlib.lines import Line2D
+        from matplotlib.offsetbox import DrawingArea
+
+        from graphinglib import Hlines, Vlines
+
+        horizontal = Hlines(
+            [1],
+            x_min=0,
+            x_max=3,
+            colors="red",
+            line_widths=4,
+            alpha=0.25,
+            label="Horizontal",
+        )
+        vertical = Vlines([], label="Vertical")
+        panel = SmartFigure(elements=[horizontal, vertical], x_lim=(0, 4), y_lim=(0, 4))
+        root = SmartFigure(
+            1,
+            2,
+            elements=[panel, Curve([0, 4], [0, 4])],
+            figure_style="plain",
+            general_legend=True,
+        )
+        seen = []
+
+        def update(frame):
+            (legend,) = plt.gcf().legends
+            swatches = tuple(
+                tuple(area.get_children()) for area in legend.findobj(DrawingArea)
+            )
+            data = tuple(
+                tuple(
+                    (
+                        to_rgba(line.get_color(), line.get_alpha()),
+                        line.get_linewidth(),
+                        line._unscaled_dash_pattern,
+                        tuple(line.get_xdata()),
+                    )
+                    for line in group
+                    if line.get_visible()
+                )
+                for group in swatches
+            )
+            seen.append((legend, swatches, data))
+            if frame == 0:
+                horizontal.y = [0, 1, 2, 3]
+                horizontal.colors = ["navy", "olive", "orange", "red"]
+                horizontal.line_widths = [1, 2, 3, 4]
+                horizontal.line_styles = ["--", ":", "-.", "-"]
+                horizontal.alpha = 0.6
+                vertical.x = [1, 2, 3]
+                vertical.colors = ["black", "orange", "green"]
+                vertical.line_widths = [3, 4, 5]
+                vertical.alpha = 0.4
+            elif frame == 1:
+                horizontal.y = []
+                horizontal.colors = []
+                horizontal.line_widths = []
+                horizontal.line_styles = []
+                vertical.x = 2
+                vertical.colors = "orange"
+                vertical.line_widths = 8
+
+        root.save_animation(self.output, update, 3)
+        self.assertEqual([len(group) for group in seen[0][1]], [3, 4])
+        self.assertTrue(all(result[:2] == seen[0][:2] for result in seen))
+        self.assertEqual([len(group) for group in seen[0][2]], [1, 0])
+        self.assertEqual(seen[0][2][0][0][:2], (to_rgba("red", 0.25), 4))
+        self.assertEqual(
+            [line[:3] for line in seen[1][2][0]],
+            [
+                (
+                    to_rgba(color, 0.6),
+                    width,
+                    Line2D([], [], linestyle=style)._unscaled_dash_pattern,
+                )
+                for color, width, style in (
+                    ("navy", 1, "--"),
+                    ("olive", 2, ":"),
+                    ("orange", 3, "-."),
+                )
+            ],
+        )
+        self.assertEqual(
+            [line[:2] for line in seen[1][2][1]],
+            [
+                (to_rgba("black", 0.4), 3),
+                (to_rgba("orange", 0.4), 4),
+                (to_rgba("green", 0.4), 5),
+            ],
+        )
+        self.assertFalse(seen[2][2][0])
+        (one,) = seen[2][2][1]
+        self.assertEqual(one[:2], (to_rgba("orange", 0.4), 8))
+        self.assertEqual(one[3], seen[1][2][1][1][3])
+
+    def test_failed_reference_legend_edit_rolls_back_swatch_and_plot(self):
+        from matplotlib.colors import to_rgba
+        from matplotlib.offsetbox import DrawingArea
+
+        from graphinglib import Hlines
+
+        horizontal = Hlines(1, colors="green", line_widths=2, alpha=0.5, label="Rule")
+        root = SmartFigure(elements=[horizontal], figure_style="plain", y_lim=(0, 4))
+        supplied = []
+        self.output.write_bytes(b"existing")
+
+        def update(frame):
+            axes = next(ax for ax in plt.gcf().axes if ax.lines)
+            legend = axes.get_legend()
+            (area,) = legend.findobj(DrawingArea)
+            swatches = area.get_children()
+            if frame == 0:
+                supplied.extend((axes, tuple(swatches), tuple(swatches[0].get_ydata())))
+                return
+            horizontal.y = [1, 3]
+            horizontal.colors = ["red", "blue"]
+            horizontal.line_widths = 4
+            horizontal.alpha = 0.8
+            original = swatches[1].set_color
+
+            def fail_after_style(color):
+                original(color)
+                if to_rgba(color)[:3] == to_rgba("blue")[:3]:
+                    self.assertEqual(len(axes.lines), 2)
+                    self.assertEqual(
+                        to_rgba(swatches[0].get_color())[:3], to_rgba("red")[:3]
+                    )
+                    raise ValueError("could not update the second legend sample")
+
+            self.enterContext(patch.object(swatches[1], "set_color", fail_after_style))
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        ax, swatches, initial_y = supplied
+        self.assertEqual(len(ax.lines), 1)
+        self.assertEqual(horizontal.y, 1)
+        self.assertEqual(horizontal.colors, "green")
+        self.assertEqual(horizontal.alpha, 0.5)
+        self.assertEqual(
+            [line.get_visible() for line in swatches], [True, False, False]
+        )
+        self.assertEqual(
+            to_rgba(swatches[0].get_color(), swatches[0].get_alpha()),
+            to_rgba("green", 0.5),
+        )
+        self.assertEqual(tuple(swatches[0].get_ydata()), initial_y)
+        self.assertEqual(swatches[0].get_linewidth(), 2)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_raster_extent_and_origin_update_without_panning_view(self):
         heat = Heatmap([[0, 1], [0, 0]], origin_position="upper", show_color_bar=False)
         root = SmartFigure(

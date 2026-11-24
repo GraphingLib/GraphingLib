@@ -72,9 +72,10 @@ class TestHlines(unittest.TestCase):
         with self.assertRaisesRegex(AttributeError, "Did you mean 'colors'"):
             self.testHlines.copy_with(colrs="red")
 
-    def test_copy_with_rejects_read_only_property(self):
-        with self.assertRaisesRegex(AttributeError, "read-only property"):
-            self.testHlines.copy_with(alpha=0.5)
+    def test_copy_with_accepts_alpha(self):
+        copied = self.testHlines.copy_with(alpha=0.5)
+        self.assertEqual(copied.alpha, 0.5)
+        self.assertEqual(self.testHlines.alpha, INHERIT)
 
     def test_single_line_accepts_single_item_style_lists(self):
         style_kwargs: list[dict[str, Any]] = [

@@ -1,3 +1,6 @@
+from collections.abc import Callable
+from typing import Any, Literal, Optional, Protocol, Sequence, cast, runtime_checkable
+
 from matplotlib.artist import Artist
 from matplotlib.collections import LineCollection
 from matplotlib.colors import is_color_like
@@ -5,13 +8,91 @@ from matplotlib.legend import Legend
 from matplotlib.legend_handler import HandlerLineCollection
 from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
-from matplotlib.patches import Polygon, Patch
+from matplotlib.patches import Patch, Polygon
 from matplotlib.transforms import Transform
 from matplotlib.typing import ColorType
-from numpy import array, full_like
-from typing import Any, Literal, Optional, Protocol, Sequence, runtime_checkable
+from numpy import array, asarray, atleast_1d, full_like
 
 from .exceptions import InvalidParameterError, InvalidParameterTypeError
+
+
+def _reference_line_style(line: Line2D) -> dict[str, Any]:
+    linestyle = line.get_linestyle()
+    if linestyle == "--":
+        # Preserve a custom dash pattern rather than its normalized style name.
+        linestyle = cast(Any, line)._unscaled_dash_pattern
+    return {
+        "color": line.get_color(),
+        "linewidth": line.get_linewidth(),
+        "linestyle": linestyle,
+        "alpha": line.get_alpha(),
+    }
+
+
+def _reference_collection_styles(
+    collection: LineCollection, count: int
+) -> list[dict[str, Any]]:
+    colors = asarray(collection.get_colors())
+    widths = atleast_1d(collection.get_linewidth())
+    dashes = cast(Any, collection)._us_linestyles
+    alpha = collection.get_alpha()
+    return [
+        {
+            "color": tuple(colors[i % len(colors)]) if len(colors) else "none",
+            "linewidth": widths[i % len(widths)] if len(widths) else 0,
+            "linestyle": dashes[i % len(dashes)] if len(dashes) else "-",
+            "alpha": alpha,
+        }
+        for i in range(count)
+    ]
+
+
+class _ReferenceLegendSwatch(Line2D):
+    def __init__(
+        self,
+        place: Callable[[int, int], tuple[Any, Any]],
+        transform: Transform,
+    ) -> None:
+        super().__init__([], [], visible=False, transform=transform)
+        self.place = place
+
+    def update_sample(self, index: int, styles: list[dict[str, Any]]) -> None:
+        if index >= len(styles):
+            self.set_visible(False)
+        else:
+            self.set_data(*self.place(index, len(styles)))
+            self.set(visible=True, **styles[index])
+
+
+class _ReferenceLegendCollection(LineCollection):
+    def __init__(self, initial_count: int, *, horizontal: bool, **style: Any) -> None:
+        super().__init__([[(0, 0)]] * initial_count, **style)
+        self.horizontal = horizontal
+        self.capacity = 3 if horizontal else 4
+
+    def create_swatches(
+        self,
+        xdata: Any,
+        xdescent: float,
+        ydescent: float,
+        width: float,
+        height: float,
+        transform: Transform,
+    ) -> list[Line2D]:
+        def place(index: int, count: int) -> tuple[Any, Any]:
+            fraction = (count - index) / (count + 1)
+            if self.horizontal:
+                return xdata, full_like(xdata, height * fraction - ydescent)
+            x = width * fraction - xdescent
+            return [x, x], [0, height]
+
+        styles = _reference_collection_styles(self, len(self.get_paths()))
+        artists: list[Line2D] = []
+        for index in range(self.capacity):
+            swatch = _ReferenceLegendSwatch(place, transform)
+            swatch.update_sample(index, styles)
+            artists.append(swatch)
+        return artists
 
 
 class HandlerMultipleLines(HandlerLineCollection):
@@ -33,8 +114,12 @@ class HandlerMultipleLines(HandlerLineCollection):
         trans: Transform,
     ) -> list[Line2D]:
         assert isinstance(orig_handle, LineCollection)
-        numlines = len(orig_handle.get_segments())
         xdata, _ = self.get_xdata(legend, xdescent, ydescent, width, height, fontsize)
+        if isinstance(orig_handle, _ReferenceLegendCollection):
+            return orig_handle.create_swatches(
+                xdata, xdescent, ydescent, width, height, trans
+            )
+        numlines = len(orig_handle.get_segments())
         lines = []
         ydata = full_like(xdata, height / (numlines + 1))
         colors = orig_handle.get_colors()
