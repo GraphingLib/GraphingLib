@@ -376,14 +376,16 @@ class _AnimationSession:
         self,
         element: object,
         name: str,
+        inversion_name: str,
         dimension: str,
         targets: list[tuple[int, Axes, bool]],
         subplot_count: int,
     ) -> None:
-        """Bind explicit limits to the existing axes drawn by this figure or twin."""
+        """Bind limits and direction to the same shared viewport."""
         if not targets:
             return
-        initial: dict[Axes, tuple[float, float]] = {}
+        initial: dict[frozenset[Axes], tuple[float, float]] = {}
+        directions: dict[frozenset[Axes], bool | None] = {}
 
         def read(axes: Axes) -> tuple[float, float]:
             return axes.get_xlim() if dimension == "x" else axes.get_ylim()
@@ -394,46 +396,93 @@ class _AnimationSession:
             else:
                 axes.set_ylim(*limits, emit=emit, auto=False)
 
-        def prepare(value: Any) -> _ArtistEdit:
-            if isinstance(value, list):
-                if len(value) > subplot_count:
-                    raise InvalidParameterError(
-                        f"Too many {dimension}-axis limit entries for this SmartFigure."
-                    )
-                available = {index for index, _, _ in targets}
-                if any(
-                    item is not None and index not in available
-                    for index, item in enumerate(value)
-                ):
-                    raise InvalidParameterError(
-                        "Set limits on a nested SmartFigure directly."
-                    )
+        def read_entries(property_name: str, reset_all: bool) -> dict[int, Any]:
+            if not self.has_frame_update(element, property_name):
+                return {}
+            value = getattr(element, property_name)
+            if not isinstance(value, list):
+                if value is None and not reset_all:
+                    return {}
+                return {index: value for index, _, _ in targets}
+            if len(value) > subplot_count:
+                raise InvalidParameterError(
+                    f"Too many {dimension}-axis entries for this SmartFigure."
+                )
+            available = {index for index, _, _ in targets}
+            result = {
+                index: item for index, item in enumerate(value) if item is not None
+            }
+            if result.keys() - available:
+                raise InvalidParameterError(
+                    "Set axis properties on a nested SmartFigure directly."
+                )
+            return result
 
-            groups: dict[frozenset[Axes], tuple[Axes, tuple[float, float]]] = {}
-            old: dict[Axes, tuple[float, float]] = {}
-            for index, axes, invert in targets:
-                initial.setdefault(axes, read(axes))
-                if isinstance(value, list):
-                    if index >= len(value) or value[index] is None:
-                        continue
-                    requested = value[index]
-                else:
-                    requested = value
-                if requested is None:
-                    bounds = initial[axes]
-                else:
-                    previous = read(axes)
-                    if invert:
-                        previous = previous[::-1]
-                    effective = tuple(
-                        prior if bound is None else bound
-                        for bound, prior in zip(requested, previous)
+        def orient(
+            bounds: tuple[float, float], direction: bool | None
+        ) -> tuple[float, float]:
+            if direction is not None and (bounds[0] > bounds[1]) != direction:
+                return bounds[::-1]
+            return bounds
+
+        def prepare() -> _ArtistEdit:
+            grouped: dict[frozenset[Axes], list[tuple[int, Axes, bool]]] = {}
+            for index, axes, initially_inverted in targets:
+                shared = (
+                    axes.get_shared_x_axes()
+                    if dimension == "x"
+                    else axes.get_shared_y_axes()
+                )
+                siblings = frozenset(shared.get_siblings(axes))
+                grouped.setdefault(siblings, []).append(
+                    (index, axes, initially_inverted)
+                )
+            limits = read_entries(name, reset_all=True)
+            inversions = read_entries(inversion_name, reset_all=False)
+            changes: list[
+                tuple[frozenset[Axes], Axes, tuple[float, float], bool | None]
+            ] = []
+            old_limits: dict[Axes, tuple[float, float]] = {}
+            old_directions: dict[frozenset[Axes], bool | None] = {}
+
+            for siblings, members in grouped.items():
+                axes = members[0][1]
+                previous = read(axes)
+                initial.setdefault(siblings, previous)
+                before = directions.setdefault(
+                    siblings, True if any(flag for _, _, flag in members) else None
+                )
+                requested = [
+                    limits[index] for index, _, _ in members if index in limits
+                ]
+                flags = {
+                    inversions[index] for index, _, _ in members if index in inversions
+                }
+                if len(flags) > 1:
+                    raise InvalidParameterError(
+                        "Shared axes must receive matching inversion settings within a frame."
                     )
-                    low, high = effective
+                if not requested and not flags:
+                    continue
+                direction = next(iter(flags), before)
+
+                # Partial limits use logical endpoint order for an explicitly
+                # oriented axis, independent of callback assignment order.
+                force_order = bool(flags) or direction is True
+                base = tuple(sorted(previous)) if force_order else previous
+                options = []
+                for item in requested:
+                    if item is None:
+                        options.append(orient(initial[siblings], direction))
+                        continue
+                    low, high = (
+                        prior if bound is None else bound
+                        for bound, prior in zip(item, base, strict=True)
+                    )
                     if (
                         not all(
                             isinstance(bound, Real) and isfinite(bound)
-                            for bound in effective
+                            for bound in (low, high)
                         )
                         or low == high
                     ):
@@ -445,35 +494,30 @@ class _AnimationSession:
                         raise InvalidParameterError(
                             "Animated logarithmic axis limits must be positive."
                         )
-                    bounds = (float(low), float(high))
-                    if invert and bounds[0] < bounds[1]:
-                        bounds = bounds[::-1]
-
-                shared = (
-                    axes.get_shared_x_axes()
-                    if dimension == "x"
-                    else axes.get_shared_y_axes()
-                )
-                siblings = frozenset(shared.get_siblings(axes))
-                if siblings in groups and groups[siblings][1] != bounds:
+                    bounds = float(low), float(high)
+                    options.append(orient(bounds, direction) if force_order else bounds)
+                bounds = options[0] if options else orient(previous, direction)
+                if any(option != bounds for option in options):
                     raise InvalidParameterError(
                         "Shared axes must receive matching limits within a frame."
                     )
-                groups[siblings] = axes, bounds
-                for sibling in siblings:
-                    old.setdefault(sibling, read(sibling))
+                changes.append((siblings, axes, bounds, direction))
+                old_limits.update((sibling, read(sibling)) for sibling in siblings)
+                old_directions[siblings] = before
 
             def apply() -> None:
-                for axes, bounds in groups.values():
+                for siblings, axes, bounds, direction in changes:
                     write(axes, bounds, emit=True)
+                    directions[siblings] = direction
 
             def undo() -> None:
-                for axes, bounds in old.items():
+                for axes, bounds in old_limits.items():
                     write(axes, bounds, emit=False)
+                directions.update(old_directions)
 
             return _ArtistEdit(apply, undo)
 
-        self.bind_update(element, name, prepare)
+        self.bind_derived(element, (name, inversion_name), prepare)
 
     def bind_derived(
         self,

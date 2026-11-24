@@ -171,9 +171,9 @@ class SmartFigure:
         Whether to remove the x and y ticks from the figure, respectively. This can be given as a single value or a list
         of values to apply to each subplot.
         Defaults to ``False``.
-    invert_x_axis, invert_y_axis : bool | list[bool], optional
-        Whether to invert the x and y axes, respectively. This can be given as a single value or a list of values to
-        apply to each subplot.
+    invert_x_axis, invert_y_axis : bool | list[bool | None], optional
+        Whether to invert the x and y axes, respectively. Use a single value or a list aligned with the subplots.
+        During animation, a list entry of ``None`` leaves that subplot alone.
         Defaults to ``False``.
     reference_labels : bool | list[bool], optional
         Whether or not to add reference labels to the subfigures. If set to ``True``, each subfigure will be labeled
@@ -310,8 +310,8 @@ class SmartFigure:
         box_aspect_ratio: ListOrItem[float | None] = None,
         remove_x_ticks: ListOrItem[bool] = False,
         remove_y_ticks: ListOrItem[bool] = False,
-        invert_x_axis: ListOrItem[bool] = False,
-        invert_y_axis: ListOrItem[bool] = False,
+        invert_x_axis: bool | list[bool | None] = False,
+        invert_y_axis: bool | list[bool | None] = False,
         reference_labels: ListOrItem[bool] = True,
         global_reference_label: bool = False,
         reference_labels_loc: ListOrItem[
@@ -704,28 +704,38 @@ class SmartFigure:
         self._remove_y_ticks = value
 
     @property
-    def invert_x_axis(self) -> ListOrItem[bool]:
+    def invert_x_axis(self) -> bool | list[bool | None]:
         return self._invert_x_axis
 
     @invert_x_axis.setter
-    def invert_x_axis(self, value: ListOrItem[bool]) -> None:
-        _reject_animated_layout(self)
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("invert_x_axis must be a bool.")
-        self._invert_x_axis = value
+    def invert_x_axis(self, value: bool | list[bool | None]) -> None:
+        valid = (
+            all(v is None or isinstance(v, bool) for v in value)
+            if isinstance(value, list)
+            else isinstance(value, bool)
+        )
+        if not valid:
+            raise InvalidParameterTypeError(
+                "invert_x_axis must be a bool or a list of bool or None."
+            )
+        self._invert_x_axis = _stage_live_value(self, "_invert_x_axis", value)
 
     @property
-    def invert_y_axis(self) -> ListOrItem[bool]:
+    def invert_y_axis(self) -> bool | list[bool | None]:
         return self._invert_y_axis
 
     @invert_y_axis.setter
-    def invert_y_axis(self, value: ListOrItem[bool]) -> None:
-        _reject_animated_layout(self)
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("invert_y_axis must be a bool.")
-        self._invert_y_axis = value
+    def invert_y_axis(self, value: bool | list[bool | None]) -> None:
+        valid = (
+            all(v is None or isinstance(v, bool) for v in value)
+            if isinstance(value, list)
+            else isinstance(value, bool)
+        )
+        if not valid:
+            raise InvalidParameterTypeError(
+                "invert_y_axis must be a bool or a list of bool or None."
+            )
+        self._invert_y_axis = _stage_live_value(self, "_invert_y_axis", value)
 
     @property
     def reference_labels(self) -> ListOrItem[bool]:
@@ -2804,6 +2814,7 @@ class SmartFigure:
                 session.bind_axis_limits(
                     self,
                     f"_{dimension}_lim",
+                    f"_invert_{dimension}_axis",
                     dimension,
                     [
                         (
@@ -4307,9 +4318,9 @@ class SmartFigureWCS(SmartFigure):
         Whether to remove the x and y ticks from the figure, respectively. This can be given as a single value or a list
         of values to apply to each subplot.
         Defaults to ``False``.
-    invert_x_axis, invert_y_axis : bool | list[bool], optional
-        Whether to invert the x and y axes, respectively. This can be given as a single value or a list of values to
-        apply to each subplot.
+    invert_x_axis, invert_y_axis : bool | list[bool | None], optional
+        Whether to invert the x and y axes, respectively. Use a single value or a list aligned with the subplots.
+        During animation, a list entry of ``None`` leaves that subplot alone.
         Defaults to ``False``.
     reference_labels : bool | list[bool], optional
         Whether or not to add reference labels to the subfigures. If set to ``True``, each subfigure will be labeled
@@ -4440,8 +4451,8 @@ class SmartFigureWCS(SmartFigure):
         box_aspect_ratio: ListOrItem[float | None] = None,
         remove_x_ticks: ListOrItem[bool] = False,
         remove_y_ticks: ListOrItem[bool] = False,
-        invert_x_axis: ListOrItem[bool] = False,
-        invert_y_axis: ListOrItem[bool] = False,
+        invert_x_axis: bool | list[bool | None] = False,
+        invert_y_axis: bool | list[bool | None] = False,
         reference_labels: ListOrItem[bool] = True,
         global_reference_label: bool = False,
         reference_labels_loc: ListOrItem[
@@ -5089,10 +5100,9 @@ class SmartTwinAxis:
 
     @invert_axis.setter
     def invert_axis(self, value: bool) -> None:
-        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("invert_axis must be a bool.")
-        self._invert_axis = value
+        self._invert_axis = _stage_live_value(self, "_invert_axis", value)
 
     @property
     def elements(self) -> list[Plottable | None]:
@@ -5297,7 +5307,12 @@ class SmartTwinAxis:
 
         if session is not None:
             session.bind_axis_limits(
-                self, "_axis_lim", "y" if is_y else "x", [(0, ax, self.invert_axis)], 1
+                self,
+                "_axis_lim",
+                "_invert_axis",
+                "y" if is_y else "x",
+                [(0, ax, self.invert_axis)],
+                1,
             )
 
         # Plotting loop

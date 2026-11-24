@@ -2092,9 +2092,13 @@ direct subplots. A list follows subplot order, including slots occupied by
 nested SmartFigures. Leave those slots as ``None`` and change each nested
 figure directly. List entries of ``None`` leave individual subplots alone.
 Assigning ``None`` to the property restores the initial limits. Within a
-tuple, ``None`` keeps that endpoint. All explicit limits for a shared axis
-must agree, and logarithmic limits must be positive. A twin axis accepts
-viewport updates through its ``axis_lim`` property. Assign ``title``,
+tuple, ``None`` keeps that endpoint. Set ``invert_x_axis`` or
+``invert_y_axis`` to change direction, using a bool for all direct plots or
+a list with ``None`` for untouched slots. Limits and inversion assigned in
+the same callback use the final direction. All explicit limits and
+inversion settings for a shared axis must agree, and logarithmic limits
+must be positive. Twin axes accept ``axis_lim`` and ``invert_axis``.
+Assign ``title``,
 ``x_label``, or ``y_label`` to change a SmartFigure's text, or assign
 ``label`` on a twin axis. Use ``None`` to clear the text. Keep the initial
 figure's margins wide enough for the longest labels in the animation.

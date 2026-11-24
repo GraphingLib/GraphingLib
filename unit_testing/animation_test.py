@@ -2436,6 +2436,81 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         with Image.open(self.output) as gif:
             self.assertEqual(gif.n_frames, 3)
 
+    def test_axis_inversion_combines_with_shared_spanning_and_twin_limits(self):
+        from graphinglib import SmartTwinAxis
+
+        a = Curve([0, 6], [0, 6])
+        b = Curve([0, 6], [1, 2])
+        c = Curve([0, 6], [2, 3])
+        right = Curve([0, 6], [10, 30])
+        twin = SmartTwinAxis(elements=[right], axis_lim=(5, 50))
+        nested = SmartFigure(elements=[c], x_lim=(0, 6), y_lim=(0, 6), twin_y_axis=twin)
+        root = SmartFigure(
+            2, 3, share_x=True, x_lim=(0, 6), y_lim=(0, 6), figure_style="plain"
+        )
+        root[:, 0] = nested
+        root[0, 1:3] = [a]
+        root[1, 1:3] = [b]
+        views = []
+
+        def update(i):
+            axes = tuple(curve.handle.lines[0].axes for curve in (a, b, c, right))
+            views.append(
+                (
+                    axes,
+                    tuple(ax.get_xlim() for ax in axes),
+                    tuple(ax.get_ylim() for ax in axes),
+                )
+            )
+            if i == 0:
+                root.x_lim = [None, (1, 5), None]
+                root.invert_x_axis = [None, None, True]
+                nested.invert_y_axis = True
+                nested.y_lim = (2, None)
+                twin.invert_axis = True
+                twin.axis_lim = (10, 40)
+            elif i == 1:
+                root.x_lim = (None, 4)
+                twin.axis_lim = (20, 30)
+                nested.y_lim = None
+                nested.invert_y_axis = False
+            else:
+                root.invert_x_axis = False
+                root.x_lim = None
+                twin.invert_axis = False
+
+        root.save_animation(self.output, update, 3)
+        self.assertTrue(all(record[0] == views[0][0] for record in views))
+        self.assertEqual(views[1][1], ((5, 1), (5, 1), (0, 6), (0, 6)))
+        self.assertEqual(views[1][2], ((0, 6), (0, 6), (6, 2), (40, 10)))
+        self.assertEqual(views[2][1][:2], ((4, 1), (4, 1)))
+        self.assertEqual(views[2][2][2:], ((0, 6), (30, 20)))
+        a_axes, b_axes, nested_axes, twin_axes = views[-1][0]
+        self.assertEqual(a_axes.get_xlim(), (0, 6))
+        self.assertEqual(b_axes.get_xlim(), (0, 6))
+        self.assertEqual(nested_axes.get_ylim(), (0, 6))
+        self.assertEqual(twin_axes.get_ylim(), (20, 30))
+
+    def test_conflicting_inversion_of_shared_axes_restores_previous_state(self):
+        a = Curve([0, 6], [0, 6])
+        b = Curve([0, 6], [1, 5])
+        root = SmartFigure(
+            1, 2, elements=[a, b], share_x=True, x_lim=(0, 6), figure_style="plain"
+        )
+        self.output.write_bytes(b"existing")
+
+        def update(i):
+            root.invert_x_axis = True if i == 0 else [True, False]
+            root.x_lim = (1, 4) if i == 0 else (0, 6)
+
+        with self.assertRaisesRegex(ValueError, "matching inversion settings"):
+            root.save_animation(self.output, update, 2)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+        self.assertIs(root.invert_x_axis, True)
+        self.assertEqual(root.x_lim, (1, 4))
+        for curve in (a, b):
+            self.assertEqual(curve.handle.lines[0].axes.get_xlim(), (4, 1))
+
     def test_shared_axis_conflict_restores_live_limits_and_models(self):
         first = Curve([0, 6], [0, 6])
         second = Curve([0, 6], [1, 5])
@@ -2534,7 +2609,7 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             self.assertEqual(gif.n_frames, 2)
 
     def test_artist_commit_failure_restores_shared_viewports_and_labels(self):
-        moving = Curve([0, 6], [0, 6], color="navy")
+        moving = Scatter([0, 6], [0, 6], face_color="navy")
         fixed = Curve([0, 6], [1, 5])
         root = SmartFigure(
             1,
@@ -2551,7 +2626,20 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             titles[:] = [axis.title for axis in plt.gcf().axes]
             root.x_lim = (1, 5) if frame == 0 else (2, 4)
             root.title = "valid" if frame == 0 else "failed"
-            moving.color = "navy" if frame == 0 else "invalid-color"
+            if frame:
+                root.invert_x_axis = True
+                moving.face_color = "red"
+                original = moving.handle.set_facecolor
+
+                def fail_after_edit(color):
+                    original(color)
+                    if np.allclose(color, [[1, 0, 0, 1]]):
+                        self.assertEqual(moving.handle.axes.get_xlim(), (4, 2))
+                        raise ValueError("could not set marker color")
+
+                self.enterContext(
+                    patch.object(moving.handle, "set_facecolor", fail_after_edit)
+                )
 
         with self.assertRaisesRegex(GraphingException, "animation frame 1"):
             root.save_animation(self.output, update, 2)
@@ -2560,8 +2648,9 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertEqual(root.title, "valid")
         self.assertIn("valid", [artist.get_text() for artist in titles])
         self.assertNotIn("failed", [artist.get_text() for artist in titles])
-        for curve in (moving, fixed):
-            assert_allclose(curve.handle.lines[0].axes.get_xlim(), (1, 5))
+        self.assertFalse(root.invert_x_axis)
+        for axes in (moving.handle.axes, fixed.handle.lines[0].axes):
+            assert_allclose(axes.get_xlim(), (1, 5))
 
     def test_refits_every_builtin_model_on_existing_artists(self):
         from graphinglib import (
