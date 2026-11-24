@@ -3962,6 +3962,202 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         with Image.open(self.output) as gif:
             self.assertEqual(gif.n_frames, 2)
 
+    def test_spanning_reference_line_counts_grow_hide_and_reuse_across_plots(self):
+        from graphinglib import Hlines, Vlines
+
+        horizontal = Hlines(1, colors=["navy"], label="Horizontal")
+        vertical = Vlines([], colors=[], label="Vertical")
+        anchors = [Curve([-1, 3], [-1, 3], color="gray") for _ in range(2)]
+        nested = SmartFigure(elements=[anchors[0], horizontal, vertical])
+        root = SmartFigure(2, 2, figure_style="plain")
+        root[:, 0] = nested
+        root[:, 1] = [anchors[1], horizontal, vertical]
+        captures = []
+
+        def visible_data(lines, *, horizontal):
+            return tuple(
+                (
+                    tuple(line.get_ydata() if horizontal else line.get_xdata()),
+                    tuple(line.get_xdata() if horizontal else line.get_ydata()),
+                    line.get_color(),
+                )
+                for line in lines
+                if line.get_visible()
+            )
+
+        def update(frame):
+            result = []
+            for anchor in anchors:
+                ax = anchor.handle.lines[0].axes
+                h = tuple(
+                    line
+                    for line in ax.lines
+                    if line.get_transform() is ax.get_yaxis_transform()
+                )
+                v = tuple(
+                    line
+                    for line in ax.lines
+                    if line.get_transform() is ax.get_xaxis_transform()
+                )
+                result.append(
+                    (
+                        h,
+                        v,
+                        visible_data(h, horizontal=True),
+                        visible_data(v, horizontal=False),
+                        tuple(ax.dataLim.extents),
+                        ax.get_xlim(),
+                        ax.get_ylim(),
+                    )
+                )
+                self.assertTrue(
+                    any(
+                        text.get_text() == "Vertical"
+                        for text in ax.get_legend().get_texts()
+                    )
+                )
+            captures.append(result)
+
+            if frame == 0:
+                horizontal.y = [0, 2, 30]
+                horizontal.colors = ["red", "green", "blue"]
+                vertical.x = [0.5, 1.5, 20]
+                vertical.colors = ["orange", "purple", "black"]
+            elif frame == 1:
+                horizontal.colors = []
+                vertical.colors = []
+                horizontal.y = []
+                vertical.x = []
+            elif frame == 2:
+                horizontal.y = [0, 2]
+                horizontal.colors = "brown"
+                vertical.x = [0.5, 1.5]
+                vertical.colors = "red"
+
+        root.save_animation(self.output, update, 4)
+        self.assertEqual(len(captures), 4)
+        for initial, grown, hidden, reused in zip(*captures, strict=True):
+            self.assertEqual(initial[0], grown[0][:1])
+            self.assertFalse(initial[1])
+            self.assertEqual(grown[:2], hidden[:2])
+            self.assertEqual(grown[:2], reused[:2])
+            self.assertEqual(
+                grown[2],
+                (
+                    ((0, 0), (0, 1), "red"),
+                    ((2, 2), (0, 1), "green"),
+                    ((30, 30), (0, 1), "blue"),
+                ),
+            )
+            self.assertEqual(grown[3][-1], ((20, 20), (0, 1), "black"))
+            self.assertEqual(hidden[2:4], ((), ()))
+            self.assertEqual(
+                reused[2], (((0, 0), (0, 1), "brown"), ((2, 2), (0, 1), "brown"))
+            )
+            self.assertEqual(
+                reused[3], (((0.5, 0.5), (0, 1), "red"), ((1.5, 1.5), (0, 1), "red"))
+            )
+            self.assertEqual(initial[4:], grown[4:])
+            self.assertEqual(initial[4:], hidden[4:])
+            self.assertEqual(initial[4:], reused[4:])
+
+    def test_growing_polar_reference_lines_keep_interpolated_arcs(self):
+        from graphinglib import Hlines
+
+        lines = Hlines(1)
+        figure = SmartFigure(
+            elements=[lines], figure_style="plain", projection="polar", y_lim=(0, 3)
+        )
+        captured = []
+
+        def update(frame):
+            if frame == 0:
+                lines.y = [1, 2]
+            else:
+                captured.extend(
+                    next(ax for ax in plt.gcf().axes if ax.name == "polar").lines
+                )
+
+        figure.save_animation(self.output, update, 2)
+        self.assertEqual(len(captured), 2)
+        for line in captured:
+            arc = line.get_transform().transform_path(line.get_path())
+            self.assertGreater(len(arc.vertices), 2)
+
+    def test_failed_frame_removes_new_spanning_lines_and_restores_old_style(self):
+        from graphinglib import Hlines
+
+        lines = Hlines([1], colors=["navy"])
+        scatter = Scatter([1, 2], [1, 2], face_color="navy")
+        root = SmartFigure(elements=[lines, scatter], figure_style="plain")
+        saved = []
+        self.output.write_bytes(b"existing")
+
+        def update(frame):
+            ax = scatter.handle.axes
+            saved.append(ax.lines[0])
+            if frame == 0:
+                return
+            lines.y = [0, 10, 20]
+            lines.colors = ["red", "green", "blue"]
+            scatter.face_color = "red"
+            original = scatter.handle.set_facecolor
+
+            def fail_after_apply(colors):
+                original(colors)
+                if np.allclose(colors, [[1, 0, 0, 1]]):
+                    self.assertEqual(len(ax.lines), 3)
+                    self.assertEqual(ax.lines[0].get_color(), "red")
+                    raise ValueError("could not update after adding reference lines")
+
+            self.enterContext(
+                patch.object(scatter.handle, "set_facecolor", fail_after_apply)
+            )
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        line = saved[0]
+        self.assertEqual(tuple(line.axes.lines), (line,))
+        self.assertEqual(line.get_color(), "navy")
+        self.assertTrue(line.get_visible())
+        self.assertEqual(tuple(line.get_ydata()), (1, 1))
+        self.assertEqual(tuple(lines.y), (1,))
+        self.assertEqual(lines.colors, ["navy"])
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
+    def test_bounded_reference_lines_can_start_empty_and_change_paired_bound_arrays(
+        self,
+    ):
+        from graphinglib import Vlines
+
+        lines = Vlines([], y_min=[], y_max=[], colors=[])
+        root = SmartFigure(
+            elements=[lines], figure_style="plain", x_lim=(0, 3), y_lim=(0, 3)
+        )
+        snapshots = []
+
+        def update(frame):
+            collection = next(
+                artist for ax in plt.gcf().axes for artist in ax.collections
+            )
+            snapshots.append((collection, collection.get_segments()))
+            if frame == 0:
+                lines.x = [1, 2]
+                lines.y_min = [0, 1]
+                lines.y_max = [1, 3]
+                lines.colors = ["red", "blue"]
+            elif frame == 1:
+                lines.x = []
+                lines.y_min = []
+                lines.y_max = []
+                lines.colors = []
+
+        root.save_animation(self.output, update, 3)
+        self.assertIs(snapshots[0][0], snapshots[2][0])
+        self.assertEqual(snapshots[0][1], [])
+        assert_allclose(snapshots[1][1], [[[1, 0], [1, 1]], [[2, 1], [2, 3]]])
+        self.assertEqual(snapshots[2][1], [])
+
     def test_raster_extent_and_origin_update_without_panning_view(self):
         heat = Heatmap([[0, 1], [0, 0]], origin_position="upper", show_color_bar=False)
         root = SmartFigure(

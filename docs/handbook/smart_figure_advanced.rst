@@ -2013,10 +2013,10 @@ Live update support
      - Placement on a subplot or the figure. Arrows use subplot coordinates.
    * - :class:`~graphinglib.Hlines`, :class:`~graphinglib.Vlines`
      - Line positions, colors, widths, and line styles. Vertical line
-       opacity can change. Bounded lines can change their count and
-       endpoints with compatible bounds and styles.
-     - Axes-spanning line count and whether lines span the axes or use
-       explicit bounds.
+       opacity can change. Counts can grow, shrink, or reach zero.
+       Supply matching positions, per-line styles, and any per-line bounds
+       in the same callback. Axes-spanning lines keep following the viewport.
+     - Choose axes-spanning lines or explicit bounds during setup.
    * - :class:`~graphinglib.Point`
      - Position, marker shape, size, face and edge colors, edge width and
        opacity. The caption can change its label, coordinate display, font size,

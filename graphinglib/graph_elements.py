@@ -8,6 +8,7 @@ from typing import Any, Literal, Optional, Protocol, Sequence, cast, runtime_che
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.axis import GRIDLINE_INTERPOLATION_STEPS
 from matplotlib.collections import LineCollection, PathCollection
 from matplotlib.figure import Figure as MPLFigure
 from matplotlib.lines import Line2D
@@ -102,118 +103,235 @@ class Plottable(Protocol):
         pass
 
 
-def _bind_reference_styles(
-    element: Plottable, artists: list[Line2D | LineCollection]
-) -> None:
-    session = _DRAW_SESSION.get()
-    assert session is not None
-    fields = (
-        ("_colors", "color"),
-        ("_line_widths", "linewidth"),
-        ("_line_styles", "linestyle"),
-        ("_alpha", "alpha"),
-    )
-    if isinstance(artists[0], LineCollection):
-        collection = artists[0]
-        for prop, field in fields:
-            if prop != "_line_styles":
-                session.bind_property(element, prop, collection, field)
+_REFERENCE_LINE_STYLE = {
+    "_colors": "color",
+    "_line_widths": "linewidth",
+    "_line_styles": "linestyle",
+    "_alpha": "alpha",
+}
 
-        def prepare_dashes(value: Any) -> _ArtistEdit:
-            # The public getter returns width-scaled dashes. Restore the unscaled pattern.
-            original = cast(Any, collection)._us_linestyles
-            return _edit(collection.set_linestyle, original, value)
 
-        session.bind_update(element, "_line_styles", prepare_dashes)
-        return
+def _reference_positions(values: ArrayLike) -> np.ndarray:
+    positions = np.atleast_1d(values)
+    if positions.ndim != 1:
+        raise InvalidParameterError("Reference-line positions must be one-dimensional.")
+    return positions
 
-    for prop, field in fields:
 
-        def prepare(value: Any, field=field) -> _ArtistEdit:
-            values = value if isinstance(value, list) else [value] * len(artists)
-            if len(values) != len(artists):
+def _reference_line_styles(params: dict[str, Any], count: int) -> list[dict[str, Any]]:
+    styles: list[dict[str, Any]] = [{} for _ in range(count)]
+    for name, value in params.items():
+        if isinstance(value, (list, np.ndarray)):
+            if len(value) != count:
                 raise InvalidParameterError(
-                    "Animated reference-line styles must match the line count."
+                    "Reference-line styles must match the line count."
                 )
-            return _combine_edits(
-                [
-                    _edit(
-                        getattr(artist, f"set_{field}"),
-                        getattr(artist, f"get_{field}")(),
-                        item,
-                    )
-                    for artist, item in zip(artists, values)
-                ]
-            )
-
-        session.bind_update(element, prop, prepare)
+            for style, item in zip(styles, value, strict=True):
+                style[name] = item
+        else:
+            for style in styles:
+                style[name] = value
+    return styles
 
 
-def _bind_reference_lines(
-    element: Plottable,
-    artists: list[Line2D | LineCollection],
+def _draw_reference_lines(
+    element: Hlines | Vlines,
+    axes: plt.Axes,
+    z_order: int,
     names: tuple[str, str, str],
     *,
+    horizontal: bool,
+) -> LineCollection:
+    position, start, end = names
+    coords = _reference_positions(getattr(element, position))
+    low, high = getattr(element, start), getattr(element, end)
+    params = strip_inherit(
+        {field: getattr(element, attr) for attr, field in _REFERENCE_LINE_STYLE.items()}
+    )
+    if low is not None and high is not None:
+        plot = axes.hlines if horizontal else axes.vlines
+        collection = plot(
+            coords,
+            low,
+            high,
+            zorder=z_order,
+            **{
+                ("alpha" if field == "alpha" else f"{field}s"): value
+                for field, value in params.items()
+            },
+        )
+        _bind_bounded_reference_lines(element, collection, names, horizontal)
+    else:
+        plot = axes.axhline if horizontal else axes.axvline
+        lines = [
+            plot(float(coord), zorder=z_order, **style)
+            for coord, style in zip(
+                coords, _reference_line_styles(params, len(coords)), strict=True
+            )
+        ]
+        _bind_spanning_reference_lines(
+            element, axes, lines, position, params, z_order, horizontal
+        )
+
+    # Reserve a simple legend swatch even when the data start empty.
+    proxy_type = LineCollection if horizontal else VerticalLineCollection
+    swatch_count = max(1, min(len(coords), 3 if horizontal else 4))
+    legend_style = {
+        name: value
+        for name, value in params.items()
+        if name != "linewidth"
+        and (len(coords) or not isinstance(value, (list, np.ndarray)))
+    }
+    handle = proxy_type([[(0, 0)]] * swatch_count, **legend_style)
+    session = _DRAW_SESSION.get()
+    if session is not None:
+        session.bind_legend_source(element, handle, lambda: element.label)
+    return handle
+
+
+def _bind_bounded_reference_lines(
+    element: Hlines | Vlines,
+    collection: LineCollection,
+    names: tuple[str, str, str],
+    horizontal: bool,
+) -> None:
+    if (draw_session := _DRAW_SESSION.get()) is None:
+        return
+    session = draw_session
+
+    for attr, field in _REFERENCE_LINE_STYLE.items():
+        if attr != "_line_styles":
+            session.bind_property(element, attr, collection, field)
+
+    def prepare_dashes(value: Any) -> _ArtistEdit:
+        # The public getter returns width-scaled dashes.
+        original = cast(Any, collection)._us_linestyles
+        return _edit(collection.set_linestyle, original, value)
+
+    session.bind_update(element, "_line_styles", prepare_dashes)
+    position, start, end = names
+
+    def prepare_geometry() -> _ArtistEdit:
+        element._validate_state()
+        if not any(session.has_frame_update(element, name) for name in names):
+            return _combine_edits([])
+        positions = _reference_positions(getattr(element, position))
+        low, high = getattr(element, start), getattr(element, end)
+        if low is None or high is None:
+            raise InvalidParameterError(
+                "An animated bounded reference line must retain both bounds."
+            )
+        low, high = (
+            np.broadcast_to(low, positions.shape),
+            np.broadcast_to(high, positions.shape),
+        )
+        ends = np.stack((low, high), axis=-1)
+        across = np.repeat(positions[:, None], 2, axis=1)
+        x, y = (ends, across) if horizontal else (across, ends)
+        segments = list(np.stack((x, y), axis=-1))
+        before = [path.vertices for path in collection.get_paths()]
+        return _edit(collection.set_segments, before, segments)
+
+    session.bind_derived(element, (*names, *_REFERENCE_LINE_STYLE), prepare_geometry)
+
+
+def _bind_spanning_reference_lines(
+    element: Hlines | Vlines,
+    axes: plt.Axes,
+    lines: list[Line2D],
+    position: str,
+    initial_style: dict[str, Any],
+    z_order: int,
     horizontal: bool,
 ) -> None:
     session = _DRAW_SESSION.get()
     if session is None:
         return
-    _bind_reference_styles(element, artists)
-    position, start, end = names
-    first = artists[0]
-    if isinstance(first, LineCollection):
+    defaults = {
+        "color": plt.rcParams["lines.color"],
+        "linewidth": plt.rcParams["lines.linewidth"],
+        "linestyle": plt.rcParams["lines.linestyle"],
+        "alpha": None,
+        **initial_style,
+    }
+    transform = (
+        axes.get_yaxis_transform(which="grid")
+        if horizontal
+        else axes.get_xaxis_transform(which="grid")
+    )
+    get_coordinates = Line2D.get_ydata if horizontal else Line2D.get_xdata
+    set_coordinates = Line2D.set_ydata if horizontal else Line2D.set_xdata
 
-        def prepare(value: Any) -> _ArtistEdit:
-            before = [path.vertices for path in first.get_paths()]
-
-            def apply() -> None:
-                positions = np.atleast_1d(getattr(element, position))
-                low, high = getattr(element, start), getattr(element, end)
-                if low is None or high is None:
-                    raise InvalidParameterError(
-                        "An animated bounded reference line must retain both bounds."
+    def prepare() -> _ArtistEdit:
+        element._validate_state()
+        positions = _reference_positions(getattr(element, position))
+        styles = _reference_line_styles(
+            {
+                field: resolve_or(getattr(element, attr), defaults[field])
+                for attr, field in _REFERENCE_LINE_STYLE.items()
+            },
+            len(positions),
+        )
+        original_count = len(lines)
+        before = [
+            (
+                get_coordinates(line),
+                line.get_visible(),
+                {
+                    field: (
+                        cast(Any, line)._unscaled_dash_pattern
+                        if field == "linestyle" and line.get_linestyle() == "--"
+                        else getattr(line, f"get_{field}")()
                     )
-                low, high = (
-                    np.broadcast_to(low, positions.shape),
-                    np.broadcast_to(high, positions.shape),
-                )
-                x, y = (
-                    np.stack((low, high), axis=-1),
-                    np.repeat(positions[:, None], 2, axis=1),
-                )
-                first.set_segments(
-                    list(np.stack((x, y) if horizontal else (y, x), axis=-1))
-                )
+                    for field in _REFERENCE_LINE_STYLE.values()
+                },
+            )
+            for line in lines[: len(positions)]
+        ]
+        previous_visibility = [line.get_visible() for line in lines[len(positions) :]]
+        additions = []
+        for coord, style in zip(
+            positions[original_count:], styles[original_count:], strict=True
+        ):
+            across, along = [float(coord)] * 2, [0, 1]
+            x, y = (along, across) if horizontal else (across, along)
+            line = Line2D(x, y, transform=transform, zorder=z_order, **style)
+            # Match the projection-aware path of axhline and axvline.
+            cast(
+                Any, line.get_path()
+            )._interpolation_steps = GRIDLINE_INTERPOLATION_STEPS
+            additions.append(line)
 
-            return _ArtistEdit(apply, lambda: first.set_segments(before))
+        def apply() -> None:
+            for line, coord, style in zip(lines, positions, styles):
+                set_coordinates(line, [float(coord)] * 2)
+                line.set(visible=True, **style)
+            for line in lines[len(positions) :]:
+                line.set_visible(False)
+            for line in additions:
+                # Adding the artist directly leaves the established data limits alone.
+                lines.append(line)
+                axes.add_artist(line)
 
-        for name in names:
-            session.bind_update(element, name, prepare)
-    else:
-        lines = [artist for artist in artists if isinstance(artist, Line2D)]
-        getters = [line.get_ydata if horizontal else line.get_xdata for line in lines]
-        setters = [line.set_ydata if horizontal else line.set_xdata for line in lines]
+        def undo() -> None:
+            added = lines[original_count:]
+            if added:
+                attached = set(axes.lines)
+                for line in reversed(added):
+                    if line in attached:
+                        line.remove()
+            del lines[original_count:]
+            for line, (coordinates, visible, style) in zip(lines, before):
+                set_coordinates(line, coordinates)
+                line.set(visible=visible, **style)
+            for line, visible in zip(
+                lines[len(positions) :], previous_visibility, strict=True
+            ):
+                line.set_visible(visible)
 
-        def prepare(value: Any) -> _ArtistEdit:
-            positions = np.atleast_1d(value)
-            if len(positions) != len(lines):
-                raise InvalidParameterError(
-                    "An animated reference line must retain its original count."
-                )
-            before = [get() for get in getters]
+        return _ArtistEdit(apply, undo)
 
-            def apply() -> None:
-                for setter, coordinate in zip(setters, positions):
-                    setter([coordinate, coordinate])
-
-            def undo() -> None:
-                for setter, original in zip(setters, before):
-                    setter(original)
-
-            return _ArtistEdit(apply, undo)
-
-        session.bind_update(element, position, prepare)
+    session.bind_derived(element, (position, *_REFERENCE_LINE_STYLE), prepare)
 
 
 class Hlines(Plottable):
@@ -342,7 +460,7 @@ class Hlines(Plottable):
     def y(self, y: ArrayLike) -> None:
         value = y if isinstance(y, (int, float)) else np.asarray(y)
         self._y = _stage_live_value(self, "_y", value)
-        if not self._in_init:
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -357,7 +475,7 @@ class Hlines(Plottable):
             else np.asarray(x_min)
         )
         self._x_min = _stage_live_value(self, "_x_min", value)
-        if not self._in_init:
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -372,7 +490,7 @@ class Hlines(Plottable):
             else np.asarray(x_max)
         )
         self._x_max = _stage_live_value(self, "_x_max", value)
-        if not self._in_init:
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -390,7 +508,7 @@ class Hlines(Plottable):
     @colors.setter
     def colors(self, colors: Styled[list[str] | str]) -> None:
         self._colors = _stage_live_value(self, "_colors", colors)
-        if not self._in_init:
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -400,7 +518,7 @@ class Hlines(Plottable):
     @line_widths.setter
     def line_widths(self, line_widths: Styled[list[float] | float]) -> None:
         self._line_widths = _stage_live_value(self, "_line_widths", line_widths)
-        if not self._in_init:
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -410,7 +528,7 @@ class Hlines(Plottable):
     @line_styles.setter
     def line_styles(self, line_styles: Styled[list[str] | str]) -> None:
         self._line_styles = _stage_live_value(self, "_line_styles", line_styles)
-        if not self._in_init:
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -428,98 +546,8 @@ class Hlines(Plottable):
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        artists: list[Line2D | LineCollection] = []
-        y = self._y
-        assert y is not None
-        if isinstance(y, np.ndarray) and len(y) > 1:
-            if self._x_max is not None and self._x_min is not None:
-                x_min = self._x_min
-                x_max = self._x_max
-                params = {
-                    "colors": self._colors,
-                    "linestyles": self._line_styles,
-                    "linewidths": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                artists.append(
-                    axes.hlines(
-                        y,
-                        x_min,
-                        x_max,
-                        zorder=z_order,
-                        **params,
-                    )
-                )
-                params.pop("linewidths", None)
-            else:
-                params = {
-                    "color": self._colors,
-                    "linestyle": self._line_styles,
-                    "linewidth": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                for i in range(len(y)):
-                    artists.append(
-                        axes.axhline(
-                            float(cast(Any, y)[i]),
-                            zorder=z_order,
-                            **{
-                                k: v if isinstance(v, (int, float, str)) else v[i]
-                                for k, v in params.items()
-                            },
-                        )
-                    )
-                params.pop("linewidth")
-            self.handle = LineCollection(
-                [[(0, 0)]] * (len(y) if len(y) <= 3 else 3),
-                **params,
-            )
-        else:
-            y_scalar = float(cast(Any, y)[0]) if isinstance(y, np.ndarray) else y
-            if self._x_max is not None and self._x_min is not None:
-                x_min = self._x_min
-                x_max = self._x_max
-                params = {
-                    "colors": self._colors,
-                    "linestyles": self._line_styles,
-                    "linewidths": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                artists.append(
-                    axes.hlines(
-                        y_scalar,
-                        x_min,
-                        x_max,
-                        zorder=z_order,
-                        **params,
-                    )
-                )
-                params.pop("linewidths", None)
-            else:
-                params = {
-                    "color": self._colors,
-                    "linestyle": self._line_styles,
-                    "linewidth": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                artists.append(axes.axhline(y_scalar, zorder=z_order, **params))
-                params.pop("linewidth")
-            if isinstance(y, (int, float)):
-                self.handle = LineCollection([[(0, 0)]] * 1, **params)
-            else:
-                self.handle = LineCollection(
-                    [[(0, 0)]] * (len(y) if len(y) <= 3 else 3),
-                    **params,
-                )
-        session = _DRAW_SESSION.get()
-        if session is not None:
-            session.bind_legend_source(self, self.handle, lambda: self.label)
-        _bind_reference_lines(
-            self, artists, ("_y", "_x_min", "_x_max"), horizontal=True
+        self.handle = _draw_reference_lines(
+            self, axes, z_order, ("_y", "_x_min", "_x_max"), horizontal=True
         )
 
 
@@ -644,7 +672,7 @@ class Vlines(Plottable):
     def x(self, x: ArrayLike) -> None:
         value = x if isinstance(x, (int, float)) else np.asarray(x)
         self._x = _stage_live_value(self, "_x", value)
-        if not self._in_init:
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -688,7 +716,7 @@ class Vlines(Plottable):
     @colors.setter
     def colors(self, colors: Styled[list[str] | str]) -> None:
         self._colors = _stage_live_value(self, "_colors", colors)
-        if not self._in_init:
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -698,7 +726,7 @@ class Vlines(Plottable):
     @line_widths.setter
     def line_widths(self, line_widths: Styled[list[float] | float]) -> None:
         self._line_widths = _stage_live_value(self, "_line_widths", line_widths)
-        if not self._in_init:
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -708,7 +736,7 @@ class Vlines(Plottable):
     @line_styles.setter
     def line_styles(self, line_styles: Styled[list[str] | str]) -> None:
         self._line_styles = _stage_live_value(self, "_line_styles", line_styles)
-        if not self._in_init:
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -730,98 +758,8 @@ class Vlines(Plottable):
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        artists: list[Line2D | LineCollection] = []
-        x = self._x
-        assert x is not None
-        if isinstance(x, np.ndarray) and len(x) > 1:
-            if self._y_min is not None and self._y_max is not None:
-                y_min = self._y_min
-                y_max = self._y_max
-                params = {
-                    "colors": self._colors,
-                    "linestyles": self._line_styles,
-                    "linewidths": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                artists.append(
-                    axes.vlines(
-                        x,
-                        y_min,
-                        y_max,
-                        zorder=z_order,
-                        **params,
-                    )
-                )
-                params.pop("linewidths", None)
-            else:
-                params = {
-                    "color": self._colors,
-                    "linestyle": self._line_styles,
-                    "linewidth": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                for i in range(len(x)):
-                    artists.append(
-                        axes.axvline(
-                            float(cast(Any, x)[i]),
-                            zorder=z_order,
-                            **{
-                                k: v if isinstance(v, (int, float, str)) else v[i]
-                                for k, v in params.items()
-                            },
-                        )
-                    )
-                params.pop("linewidth")
-            self.handle = VerticalLineCollection(
-                [[(0, 0)]] * (len(x) if len(x) <= 4 else 4),
-                **params,
-            )
-        else:
-            x_scalar = float(cast(Any, x)[0]) if isinstance(x, np.ndarray) else x
-            if self._y_min is not None and self._y_max is not None:
-                y_min = self._y_min
-                y_max = self._y_max
-                params = {
-                    "colors": self._colors,
-                    "linestyles": self._line_styles,
-                    "linewidths": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                artists.append(
-                    axes.vlines(
-                        x_scalar,
-                        y_min,
-                        y_max,
-                        zorder=z_order,
-                        **params,
-                    )
-                )
-                params.pop("linewidths", None)
-            else:
-                params = {
-                    "color": self._colors,
-                    "linestyle": self._line_styles,
-                    "linewidth": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                artists.append(axes.axvline(x_scalar, zorder=z_order, **params))
-                params.pop("linewidth")
-            if isinstance(x, (int, float)):
-                self.handle = VerticalLineCollection([[(0, 0)]] * 1, **params)
-            else:
-                self.handle = VerticalLineCollection(
-                    [[(0, 0)]] * (len(x) if len(x) <= 4 else 4),
-                    **params,
-                )
-        session = _DRAW_SESSION.get()
-        if session is not None:
-            session.bind_legend_source(self, self.handle, lambda: self.label)
-        _bind_reference_lines(
-            self, artists, ("_x", "_y_min", "_y_max"), horizontal=False
+        self.handle = _draw_reference_lines(
+            self, axes, z_order, ("_x", "_y_min", "_y_max"), horizontal=False
         )
 
 
