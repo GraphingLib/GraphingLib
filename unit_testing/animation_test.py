@@ -628,7 +628,9 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             stream.color = ["navy", "red"][i]
             stream.line_width = 1 + i
 
-        root.save_animation(self.output, update, 2)
+        with patch.object(stream, "_draw_stream", wraps=stream._draw_stream) as draw:
+            root.save_animation(self.output, update, 2)
+        draw.assert_called_once()
         self.assertEqual(captures[0], captures[1])
         lines, arrows = captures[-1]
         self.assertTrue(arrows)
@@ -1287,3 +1289,152 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         )
         with Image.open(self.output) as gif:
             self.assertEqual(gif.n_frames, 3)
+
+    def test_stream_fields_change_trajectories_and_reuse_arrowheads(self):
+        from graphinglib import Stream
+
+        grid = np.linspace(0, 1, 7)
+        uniform = np.ones((7, 7))
+        stream = Stream(grid, grid, uniform, 0 * uniform, density=0.5, color="navy")
+        figure = SmartFigure(
+            elements=[stream], figure_style="plain", x_lim=(0, 1), y_lim=(0, 1)
+        )
+        history = []
+
+        def update(i):
+            axis = next(axis for axis in plt.gcf().axes if axis.collections)
+            (lines,) = axis.collections
+            history.append(
+                (
+                    lines,
+                    lines.get_segments(),
+                    tuple(axis.patches),
+                    sum(patch.get_visible() for patch in axis.patches),
+                )
+            )
+            if i == 0:
+                stream.set_data(0 * uniform, 0 * uniform)
+            elif i == 1:
+                field = np.ones((9, 9))
+                coords = np.linspace(0, 1, 9)
+                stream.set_data(0 * field, field, x_data=coords, y_data=coords)
+                stream.density = 1.2
+                stream.color = "red"
+                stream.arrow_size = 2
+            else:
+                stream.density = 0.4
+
+        figure.save_animation(self.output, update, 3)
+        line, horizontal, old_arrows, initial_count = history[0]
+        self.assertTrue(all(item[0] is line for item in history))
+        self.assertGreater(initial_count, 0)
+        self.assertEqual(len(history[1][1]), 0)
+        self.assertEqual(history[1][-1], 0)
+        self.assertEqual(history[1][2], old_arrows)
+        self.assertGreater(history[2][-1], initial_count)
+        self.assertEqual(history[2][2][:initial_count], old_arrows)
+        for segment in horizontal:
+            self.assertAlmostEqual(np.ptp(segment[:, 1]), 0)
+        for segment in line.get_segments():
+            self.assertAlmostEqual(np.ptp(segment[:, 0]), 0)
+        self.assertLess(sum(p.get_visible() for p in line.axes.patches), history[2][-1])
+        self.assertTrue(all(p.get_mutation_scale() == 20 for p in line.axes.patches))
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 3)
+
+    def test_stream_mapped_styles_follow_field_and_keep_initial_color_range(self):
+        from graphinglib import Stream
+
+        coords = np.linspace(0, 1, 7)
+        x, y = np.meshgrid(coords, coords)
+        stream = Stream(
+            coords,
+            coords,
+            np.ones_like(x),
+            0.2 + 0 * x,
+            color=x + y,
+            line_width=1 + x,
+            density=0.5,
+            color_map="viridis",
+        )
+        figure = SmartFigure(elements=[stream], figure_style="plain")
+        items = []
+
+        def update(i):
+            axis = next(axis for axis in plt.gcf().axes if axis.collections)
+            items.append((axis.collections[0], axis.collections[0].get_clim()))
+            stream.u_data = 0.2 + 0 * x
+            stream.v_data = np.ones_like(x)
+            stream.color = 10 * i + x + y
+            stream.line_width = 2 + y
+            stream.color_map = "magma"
+
+        figure.save_animation(self.output, update, 2)
+        self.assertIs(items[0][0], items[1][0])
+        (line, scale) = items[0]
+        self.assertEqual(scale, (0, 2))
+        self.assertEqual(line.get_clim(), (0, 2))
+        self.assertEqual(line.get_cmap().name, "magma")
+        self.assertGreater(min(line.get_array()), 9)
+        self.assertGreater(max(line.get_linewidth()), 2)
+        self.assertTrue(all(p.get_mutation_scale() > 0 for p in line.axes.patches))
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 2)
+
+    def test_failed_stream_artist_commit_restores_arrow_pool_and_field(self):
+        from graphinglib import Stream
+
+        grid = np.linspace(0, 1, 7)
+        ones = np.ones((7, 7))
+        stream = Stream(grid, grid, ones, 0 * ones, density=0.5)
+        figure = SmartFigure(elements=[stream], figure_style="plain")
+        previous = []
+        attempts = []
+        self.output.write_bytes(b"existing")
+
+        def update(i):
+            axis = next(axis for axis in plt.gcf().axes if axis.collections)
+            if i == 0:
+                stream.color = "green"
+                return
+
+            (lines,) = axis.collections
+            previous.append(
+                (
+                    axis,
+                    lines,
+                    lines.get_segments(),
+                    tuple(axis.patches),
+                    axis.dataLim.get_points().copy(),
+                )
+            )
+            add_artist = axis.add_artist
+
+            def fail_on_second_arrow(artist):
+                attempts.append(artist)
+                if len(attempts) == 2:
+                    raise ValueError("failed to attach arrow")
+                return add_artist(artist)
+
+            self.enterContext(
+                patch.object(axis, "add_artist", side_effect=fail_on_second_arrow)
+            )
+            stream.set_data(0 * ones, ones)
+            stream.density = 2
+            stream.color = "red"
+
+        with self.assertRaisesRegex(GraphingException, "failed to attach arrow"):
+            figure.save_animation(self.output, update, 2)
+        self.assertEqual(len(attempts), 2)
+        axis, lines, segments, old_arrows, data_limits = previous[0]
+        self.assertEqual(tuple(axis.patches), old_arrows)
+        self.assertIsNone(attempts[0].axes)
+        self.assertTrue(all(arrow.get_visible() for arrow in old_arrows))
+        for current, old in zip(lines.get_segments(), segments, strict=True):
+            assert_allclose(current, old)
+        assert_allclose(axis.dataLim.get_points(), data_limits)
+        assert_allclose(stream.u_data, ones)
+        assert_allclose(stream.v_data, 0 * ones)
+        self.assertEqual(stream.density, 0.5)
+        self.assertEqual(stream.color, "green")
+        self.assertEqual(self.output.read_bytes(), b"existing")

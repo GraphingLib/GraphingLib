@@ -2044,9 +2044,12 @@ Live update support
        fit's generated equation label refreshes in the model, on the
        plot line, and in an existing legend entry.
    * - :class:`~graphinglib.Stream`
-     - Uniform color and line width, including arrowheads.
-     - Vector field, density, and styles mapped over the field. Changing
-       streamline geometry needs a policy for varying arrow counts.
+     - Grid and velocity field via ``set_data(u, v, x_data=x, y_data=y)``,
+       density, color and line width (uniform or grid-mapped), colormap,
+       and arrow size. Streamlines and arrowheads follow the new field,
+       including frames with no trajectories.
+     - Axis scale and limits follow the same viewport rules as other plots.
+       Intensity colors use the initial range, or 0–1 if added during playback.
    * - :class:`~graphinglib.PlottableAxMethod`
      - Static context.
      - Arbitrary Axes methods can return many kinds of objects and have no

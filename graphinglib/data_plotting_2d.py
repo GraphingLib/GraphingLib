@@ -3,14 +3,18 @@ from __future__ import annotations
 from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Callable, Optional, Protocol, cast, runtime_checkable
+from typing import Any, Callable, Optional, Protocol, cast, runtime_checkable
 
 import contourpy
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import Colormap, Normalize, is_color_like
+from matplotlib.collections import LineCollection
+from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba
+from matplotlib.figure import Figure
 from matplotlib.image import imread
+from matplotlib.patches import FancyArrowPatch
 from matplotlib.path import Path as MplPath
+from matplotlib.streamplot import StreamplotSet
 from numpy.typing import ArrayLike
 from scipy.interpolate import griddata
 
@@ -1552,8 +1556,9 @@ class Stream(Plottable2D):
         Density of stream lines. Can be specified independently for the x and y coordinates
         by specifying a density tuple instead. Defaults to 1.
         Typical range is ``0.5`` to ``3``.
-    line_width : float
-        Width of the stream lines. Default depends on the ``figure_style`` configuration.
+    line_width : float or ArrayLike
+        Width of the stream lines. An array specifies widths at grid points.
+        Default depends on the ``figure_style`` configuration.
         Typical range is ``0.5`` to ``3`` points.
     color : str or ArrayLike
         Color of the stream lines. If an array of intensities is provided, the values are mapped to the specified color map.
@@ -1581,7 +1586,7 @@ class Stream(Plottable2D):
         u_data: ArrayLike,
         v_data: ArrayLike,
         density: float | tuple[float, float] = 1,
-        line_width: float | Inherit = INHERIT,
+        line_width: float | ArrayLike | Inherit = INHERIT,
         color: str | ArrayLike | Inherit = INHERIT,
         color_map: str | Colormap | Inherit = INHERIT,
         arrow_size: float | Inherit = INHERIT,
@@ -1599,7 +1604,7 @@ class Stream(Plottable2D):
             Density of stream lines. Can be specified independently for the x and y coordinates
             by specifying a density tuple instead. Defaults to 1.
             Typical range is ``0.5`` to ``3``.
-        line_width : float
+        line_width : float or ArrayLike
             Width of the stream lines. Default depends on the ``figure_style`` configuration.
             Typical range is ``0.5`` to ``3`` points.
         color : str or ArrayLike
@@ -1622,8 +1627,8 @@ class Stream(Plottable2D):
         """
         self._x_data = np.asarray(x_data)
         self._y_data = np.asarray(y_data)
-        self._u_data = np.asarray(u_data)
-        self._v_data = np.asarray(v_data)
+        self._u_data = np.ma.asarray(u_data)
+        self._v_data = np.ma.asarray(v_data)
         self._density = density
         self._line_width = line_width
         self._color = color
@@ -1639,8 +1644,8 @@ class Stream(Plottable2D):
         number_of_points_x: int = 30,
         number_of_points_y: int = 30,
         density: float | tuple[float, float] = 1,
-        line_width: float | Inherit = INHERIT,
-        color: str | Inherit = INHERIT,
+        line_width: float | ArrayLike | Inherit = INHERIT,
+        color: str | ArrayLike | Inherit = INHERIT,
         color_map: str | Colormap | Inherit = INHERIT,
         arrow_size: float | Inherit = INHERIT,
     ) -> Self:
@@ -1660,7 +1665,7 @@ class Stream(Plottable2D):
             Density of stream lines. Can be specified independently for the x and y coordinates
             by specifying a density tuple instead. Defaults to 1.
             Typical range is ``0.5`` to ``3``.
-        line_width : float
+        line_width : float or ArrayLike
             Width of the stream lines. Default depends on the ``figure_style`` configuration.
             Typical range is ``0.5`` to ``3`` points.
         color : str
@@ -1690,6 +1695,89 @@ class Stream(Plottable2D):
         return cls(x, y, u, v, density, line_width, color, color_map, arrow_size)
 
     @property
+    def x_data(self) -> np.ndarray:
+        return self._x_data
+
+    @x_data.setter
+    def x_data(self, value: ArrayLike) -> None:
+        self._x_data = _stage_live_value(self, "_x_data", np.array(value, copy=True))
+
+    @property
+    def y_data(self) -> np.ndarray:
+        return self._y_data
+
+    @y_data.setter
+    def y_data(self, value: ArrayLike) -> None:
+        self._y_data = _stage_live_value(self, "_y_data", np.array(value, copy=True))
+
+    @property
+    def u_data(self) -> np.ndarray:
+        return self._u_data
+
+    @u_data.setter
+    def u_data(self, value: ArrayLike) -> None:
+        self._u_data = _stage_live_value(self, "_u_data", np.ma.array(value, copy=True))
+
+    @property
+    def v_data(self) -> np.ndarray:
+        return self._v_data
+
+    @v_data.setter
+    def v_data(self, value: ArrayLike) -> None:
+        self._v_data = _stage_live_value(self, "_v_data", np.ma.array(value, copy=True))
+
+    def set_data(
+        self,
+        u_data: ArrayLike,
+        v_data: ArrayLike,
+        *,
+        x_data: ArrayLike | None = None,
+        y_data: ArrayLike | None = None,
+    ) -> Self:
+        """Assign both velocity components and optionally replace the coordinate grid.
+
+        Components must match the grid. During animation the final field is
+        integrated once per occurrence, even when several setters change it.
+        """
+        x = self._x_data if x_data is None else np.array(x_data, copy=True)
+        y = self._y_data if y_data is None else np.array(y_data, copy=True)
+        u, v = np.ma.array(u_data, copy=True), np.ma.array(v_data, copy=True)
+        session = _bound_session(self)
+        if session is not None:
+            previous = self._x_data, self._y_data, self._u_data, self._v_data
+
+            def restore() -> None:
+                self._x_data, self._y_data, self._u_data, self._v_data = previous
+
+            session.queue_property(self, "field", None, restore)
+        self._x_data, self._y_data, self._u_data, self._v_data = x, y, u, v
+        return self
+
+    @property
+    def density(self) -> float | tuple[float, float]:
+        return self._density
+
+    @density.setter
+    def density(self, value: float | tuple[float, float]) -> None:
+        self._density = _stage_live_value(self, "_density", value)
+
+    @property
+    def arrow_size(self) -> Styled[float]:
+        return self._arrow_size
+
+    @arrow_size.setter
+    def arrow_size(self, value: Styled[float]) -> None:
+        self._arrow_size = _stage_live_value(self, "_arrow_size", value)
+
+    @property
+    def color_map(self) -> Styled[str | Colormap]:
+        return self._color_map
+
+    @color_map.setter
+    def color_map(self, value: Styled[str | Colormap]) -> None:
+        self._color_map = _stage_live_value(self, "_color_map", value)
+
+    @property
     def color(self) -> Styled[str | ArrayLike]:
         """Color of the streamlines and their arrowheads."""
         return self._color
@@ -1713,97 +1801,255 @@ class Stream(Plottable2D):
         """
         return deepcopy(self)
 
-    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
-        """
-        Plots the element in the specified Axes.
-        """
-        params = {
-            "density": self._density,
-            "linewidth": self._line_width,
-            "cmap": self._color_map,
-            "arrowsize": self._arrow_size,
-        }
-        params = strip_inherit(params)
-        if is_inherit(self._color):
-            pass
-        else:
-            params["color"] = self._color
+    def _field(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        return self._x_data, self._y_data, self._u_data, self._v_data
 
-        session = _DRAW_SESSION.get()
-        patch_start = len(axes.patches) if session is not None else 0
+    def _draw_stream(
+        self, axes: plt.Axes, z_order: int, params: dict[str, Any]
+    ) -> StreamplotSet:
+        x, y, u, v = self._field()
         try:
-            result = axes.streamplot(
-                x=self._x_data,
-                y=self._y_data,
-                u=self._u_data,
-                v=self._v_data,
-                zorder=z_order,
-                **params,
-            )
+            return axes.streamplot(x, y, u, v, zorder=z_order, **params)
         except Exception as exc:
             raise PlottingError(
-                f"Could not draw the Stream ({exc}). Check that x and y are evenly "
-                "spaced 1D arrays and that u and v have shape (len(y), len(x))."
+                f"Could not draw the Stream ({exc}). Check that the grid is evenly "
+                "spaced and that u and v have shape (len(y), len(x))."
             ) from exc
 
-        if session is not None:
-            session.mark_present(self)
-            arrows = axes.patches[patch_start:]
+    def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
+        params = strip_inherit(
+            {
+                "density": self._density,
+                "linewidth": self._line_width,
+                "cmap": self._color_map,
+                "arrowsize": self._arrow_size,
+                "color": self._color,
+            }
+        )
+        session = _DRAW_SESSION.get()
+        patch_start = len(axes.patches) if session is not None else 0
+        result = self._draw_stream(axes, z_order, params)
+        if session is None:
+            return
+
+        lines = result.lines
+        pool = [
+            patch
+            for patch in axes.patches[patch_start:]
+            if isinstance(patch, FancyArrowPatch)
+        ]
+        field = self._field()
+        density = self._density
+        scratch = None
+        initial_color = params.get("color")
+        initial_colors = np.asarray(lines.get_color())
+        default_color = tuple(initial_colors[0]) if initial_colors.size else "C0"
+        default_width = params.get("linewidth")
+        if default_width is None:
+            default_width = plt.rcParams["lines.linewidth"]
+        initial_map = params.get("cmap") or plt.rcParams["image.cmap"]
+        initial_size = params.get("arrowsize", 1.0)
+        lo, hi = lines.get_clim()
+        color_range = (lo, hi) if lo is not None and hi is not None else (0.0, 1.0)
+
+        def prepare() -> _ArtistEdit:
+            nonlocal scratch
+            color = resolve_or(self._color, initial_color)
+            if color is None:
+                color = default_color
+            widths = np.asarray(
+                resolve_or(self._line_width, default_width), dtype=float
+            )
+            cmap = resolve_or(self._color_map, initial_map)
+            size = resolve_or(self._arrow_size, initial_size)
+            new_field = self._field()
+            new_density = self._density
+            if not np.isfinite(size) or size < 0:
+                raise InvalidParameterError(
+                    "Stream arrow_size must be finite and nonnegative."
+                )
             if (
-                self._color is None
-                or is_inherit(self._color)
-                or is_color_like(self._color)
+                not np.isfinite(new_density).all()
+                or (np.asarray(new_density) <= 0).any()
             ):
-
-                def prepare_color(value: str) -> _ArtistEdit:
-                    if not is_color_like(value):
-                        raise InvalidParameterError(
-                            "An animated Stream color must be a single Matplotlib color."
-                        )
-                    before = result.lines.get_color()
-                    arrow_colors = [
-                        (arrow.get_edgecolor(), arrow.get_facecolor())
-                        for arrow in arrows
-                    ]
-
-                    def apply() -> None:
-                        result.lines.set_color(value)
-                        for arrow in arrows:
-                            arrow.set_color(value)
-
-                    def undo() -> None:
-                        result.lines.set_color(before)
-                        for arrow, (edge, face) in zip(arrows, arrow_colors):
-                            arrow.set_edgecolor(edge)
-                            arrow.set_facecolor(face)
-
-                    return _ArtistEdit(apply, undo)
-
-                session.bind_update(self, "_color", prepare_color)
+                raise InvalidParameterError(
+                    "Stream density must be finite and positive."
+                )
+            if not np.isfinite(widths).all() or (widths < 0).any():
+                raise InvalidParameterError(
+                    "Stream line widths must be finite and nonnegative."
+                )
+            width = float(widths.item()) if widths.ndim == 0 else widths
+            uniform_color = is_color_like(color)
+            same_field = all(
+                before is after for before, after in zip(field, new_field)
+            ) and np.array_equal(density, new_density)
             if (
-                self._line_width is None
-                or is_inherit(self._line_width)
-                or np.ndim(self._line_width) == 0
+                same_field
+                and uniform_color
+                and isinstance(width, float)
+                and lines.get_array() is None
+                and np.size(lines.get_linewidth()) == 1
             ):
+                # Uniform styling does not require integrating the vector field again.
+                return _stream_style_edit(lines, pool, color, width, size)
 
-                def prepare_width(value: float) -> _ArtistEdit:
-                    if np.ndim(value) != 0 or not np.isfinite(value) or value < 0:
-                        raise InvalidParameterError(
-                            "An animated Stream line_width must be finite and nonnegative."
+            if scratch is None:
+                scratch = Figure().add_axes((0, 0, 1, 1))
+            generated = self._draw_stream(
+                scratch,
+                z_order,
+                {
+                    "density": new_density,
+                    "linewidth": width,
+                    "cmap": cmap,
+                    "arrowsize": size,
+                    "color": to_rgba(cast(Any, color))
+                    if uniform_color
+                    else np.ma.asarray(color),
+                    "norm": Normalize(*color_range),
+                },
+            )
+            scratch_arrows = list(scratch.patches)
+            try:
+                previous_lines = _stream_line_state(lines)
+                next_lines = _stream_line_state(generated.lines)
+                previous_arrows = [_StreamArrow.capture(patch) for patch in pool]
+                next_arrows = [
+                    _StreamArrow.capture(cast(FancyArrowPatch, patch))
+                    for patch in scratch_arrows
+                ]
+            finally:
+                generated.lines.remove()
+                for arrow in scratch_arrows:
+                    arrow.remove()
+
+            previous_field, previous_density = field, density
+
+            def apply() -> None:
+                nonlocal field, density
+                _set_stream_line_state(lines, next_lines)
+                for index, arrow in enumerate(next_arrows):
+                    if index == len(pool):
+                        patch = FancyArrowPatch(
+                            *arrow.endpoints,
+                            arrowstyle="-|>",
+                            transform=axes.transData,
+                            zorder=z_order,
                         )
-                    old_line = result.lines.get_linewidth()
-                    old_arrows = [arrow.get_linewidth() for arrow in arrows]
+                        # add_artist preserves the manual view and the axes' data limits.
+                        axes.add_artist(patch)
+                        pool.append(patch)
+                    arrow.apply(pool[index])
+                for patch in pool[len(next_arrows) :]:
+                    patch.set_visible(False)
+                field, density = new_field, new_density
 
-                    def apply() -> None:
-                        result.lines.set_linewidth(value)
-                        for arrow in arrows:
-                            arrow.set_linewidth(value)
+            def undo() -> None:
+                nonlocal field, density
+                _set_stream_line_state(lines, previous_lines)
+                for patch in pool[len(previous_arrows) :]:
+                    patch.remove()
+                del pool[len(previous_arrows) :]
+                for previous, patch in zip(previous_arrows, pool):
+                    previous.apply(patch)
+                field, density = previous_field, previous_density
 
-                    def undo() -> None:
-                        result.lines.set_linewidth(old_line)
-                        for arrow, width in zip(arrows, old_arrows):
-                            arrow.set_linewidth(width)
+            return _ArtistEdit(apply, undo)
 
-                    return _ArtistEdit(apply, undo)
+        session.bind_derived(
+            self,
+            (
+                "field",
+                "_x_data",
+                "_y_data",
+                "_u_data",
+                "_v_data",
+                "_density",
+                "_color",
+                "_line_width",
+                "_color_map",
+                "_arrow_size",
+            ),
+            prepare,
+        )
 
-                session.bind_update(self, "_line_width", prepare_width)
+
+@dataclass
+class _StreamArrow:
+    endpoints: tuple[Any, Any]
+    edge: Any
+    face: Any
+    width: float
+    scale: float
+    visible: bool
+
+    @classmethod
+    def capture(cls, patch: FancyArrowPatch) -> Self:
+        # FancyArrowPatch exposes set_positions, but has no public endpoint getter.
+        ends = cast(Any, patch)._posA_posB
+        return cls(
+            (ends[0], ends[1]),
+            patch.get_edgecolor(),
+            patch.get_facecolor(),
+            patch.get_linewidth(),
+            patch.get_mutation_scale(),
+            patch.get_visible(),
+        )
+
+    def apply(self, patch: FancyArrowPatch) -> None:
+        patch.set_positions(*self.endpoints)
+        patch.set_edgecolor(self.edge)
+        patch.set_facecolor(self.face)
+        patch.set_linewidth(self.width)
+        patch.set_mutation_scale(self.scale)
+        patch.set_visible(self.visible)
+
+
+def _stream_line_state(lines: LineCollection) -> tuple[Any, ...]:
+    return (
+        lines.get_segments(),
+        lines.get_array(),
+        lines.get_cmap(),
+        lines.norm,
+        lines.get_color(),
+        lines.get_linewidth(),
+    )
+
+
+def _set_stream_line_state(lines: LineCollection, state: tuple[Any, ...]) -> None:
+    segments, mapped, cmap, norm, color, width = state
+    lines.set_segments(segments)
+    lines.set_cmap(cmap)
+    lines.set_norm(norm)
+    lines.set_array(mapped)
+    lines.set_color(color)
+    lines.set_linewidth(width)
+
+
+def _stream_style_edit(
+    lines: LineCollection,
+    arrows: list[FancyArrowPatch],
+    color: Any,
+    width: float,
+    size: float,
+) -> _ArtistEdit:
+    original_line = lines.get_color(), lines.get_linewidth()
+    original_arrows = [_StreamArrow.capture(arrow) for arrow in arrows]
+
+    def apply() -> None:
+        lines.set_color(color)
+        lines.set_linewidth(width)
+        for arrow in arrows:
+            arrow.set_color(color)
+            arrow.set_linewidth(width)
+            arrow.set_mutation_scale(10 * size)
+
+    def undo() -> None:
+        old_color, old_width = original_line
+        lines.set_color(old_color)
+        lines.set_linewidth(old_width)
+        for state, arrow in zip(original_arrows, arrows):
+            state.apply(arrow)
+
+    return _ArtistEdit(apply, undo)
