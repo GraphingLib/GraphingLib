@@ -2704,6 +2704,141 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         figure.save_animation(self.output, update, 2)
         self.assertEqual(snapshots, [((False, False), (True, True)), ((True, True), (False, False))])
 
+    def test_live_grid_visibility_is_local_and_keeps_configured_axes_and_style(self):
+        upper, lower, inner = (Curve([1, 10], [1, 10]) for _ in range(3))
+        nested = SmartFigure(
+            elements=[inner],
+            x_lim=(1, 10),
+            y_lim=(1, 10),
+        )
+        root = SmartFigure(2, 3, share_x=True, x_lim=(1, 10), figure_style="plain")
+        root[:, 0] = nested
+        root[0, 1:3] = [upper]
+        root[1, 1:3] = [lower]
+        root.set_ticks(minor_x_ticks=[5])
+        root.set_grid(
+            visible_y=False, which_x="minor", color="tab:purple", line_width=2
+        )
+        root.show_grid = False
+        captures = []
+
+        def update(frame):
+            axes = [curve.handle.lines[0].axes for curve in (upper, lower, inner)]
+            captures.append(
+                [
+                    (
+                        ax.xaxis.get_tick_params(which="major")["gridOn"],
+                        ax.xaxis.get_tick_params(which="minor")["gridOn"],
+                        ax.yaxis.get_tick_params(which="major")["gridOn"],
+                    )
+                    for ax in axes
+                ]
+            )
+            gridline = axes[-2].xaxis.get_minor_ticks(1)[0].gridline
+            self.assertEqual(gridline.get_color(), "tab:purple")
+            self.assertEqual(gridline.get_linewidth(), 2)
+            if frame == 0:
+                root.show_grid = [None, True, True]
+                nested.show_grid = True
+            elif frame == 1:
+                root.show_grid = [None, False, None]
+                root.x_lim = (1, 100)
+                root.log_scale_x = True
+                nested.show_grid = False
+            self.assertTrue(axes[0].get_shared_x_axes().joined(*axes[:2]))
+
+        root.save_animation(self.output, update, 3, interval=100)
+        off = (False, False, False)
+        minor = (False, True, False)
+        self.assertEqual(
+            captures,
+            [
+                [off, off, off],
+                [minor, minor, (True, False, True)],
+                [off, minor, off],
+            ],
+        )
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 2)
+            self.assertEqual(gif.info["duration"], 100)
+            gif.seek(1)
+            self.assertEqual(gif.info["duration"], 200)
+
+    def test_grid_visibility_mask_respects_initial_style_and_rolls_back(self):
+        scatter = Scatter([1, 10], [1, 10], face_color="navy")
+        figure = SmartFigure(elements=[scatter], figure_style="plain")
+        figure.set_rc_params({"axes.grid": True, "axes.grid.axis": "y"})
+        gridlines = []
+
+        def update(frame):
+            axes = scatter.handle.axes
+            y_grid = axes.yaxis.get_gridlines()[0]
+            gridlines.append(y_grid)
+            self.assertTrue(y_grid.get_visible())
+            self.assertFalse(axes.xaxis.get_gridlines()[0].get_visible())
+            if frame:
+                figure.show_grid = False
+                scatter.face_color = "red"
+                before = scatter.handle.set_facecolor
+
+                def fail_after_change(color):
+                    before(color)
+                    if np.allclose(color, [[1, 0, 0, 1]]):
+                        self.assertFalse(y_grid.get_visible())
+                        raise ValueError("failed after changing grid visibility")
+
+                self.enterContext(
+                    patch.object(scatter.handle, "set_facecolor", fail_after_change)
+                )
+            else:
+                figure.show_grid = True
+
+        self.output.write_bytes(b"existing")
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            figure.save_animation(self.output, update, 2)
+        self.assertTrue(figure.show_grid)
+        self.assertIs(gridlines[0], gridlines[1])
+        self.assertTrue(gridlines[0].get_visible())
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
+    def test_static_grid_toggle_can_hide_style_default_and_restore_it(self):
+        curve = Curve([1, 10], [1, 10])
+        figure = SmartFigure(elements=[curve], figure_style="plain")
+        figure.set_rc_params({"axes.grid": True, "axes.grid.axis": "y"})
+
+        for show_grid, expected in ((None, True), (False, False), (True, True)):
+            if show_grid is not None:
+                figure.show_grid = show_grid
+            figure.save(str(self.output.with_suffix(".png")))
+            axes = curve.handle.lines[0].axes
+            self.assertFalse(axes.xaxis.get_gridlines()[0].get_visible())
+            self.assertIs(axes.yaxis.get_gridlines()[0].get_visible(), expected)
+
+    def test_live_wcs_grid_visibility_restores_the_configured_coordinate(self):
+        from graphinglib.smart_figure import HAS_ASTROPY, SmartFigureWCS
+
+        if not HAS_ASTROPY:
+            self.skipTest("Astropy is required for WCSAxes")
+        from astropy.wcs import WCS
+
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+        curve = Curve([1, 10], [1, 10])
+        figure = SmartFigureWCS(wcs, elements=[curve], figure_style="plain")
+        figure.set_grid(visible_y=False, color="red")
+        figure.show_grid = False
+        states = []
+
+        def update(frame):
+            x, y = curve.handle.lines[0].axes.coords
+            states.append(
+                tuple(coord._grid_lines_kwargs["visible"] for coord in (x, y))
+            )
+            figure.show_grid = frame == 0
+
+        figure.save_animation(self.output, update, 3)
+        self.assertEqual(states, [(False, False), (True, False), (False, False)])
+
     def test_live_log_scale_combines_final_limits_and_preserves_manual_ticks(self):
         from warnings import catch_warnings, simplefilter
 

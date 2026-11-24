@@ -2109,6 +2109,11 @@ Tick flags hide both marks and labels, and switching them off restores the
 initial side and label settings. Use ``remove_axes`` and ``remove_ticks`` on
 a twin axis to control its decorations separately.
 
+Assign ``show_grid`` to toggle grid lines in the same way. Configure the
+directions, tick groups, and appearance with ``set_grid(...)`` before
+playback. Without an explicit grid setup, showing the grid uses the
+figure style's grid axes and tick groups. WCS grids use major ticks.
+
 Assign ``title``,
 ``x_label``, or ``y_label`` to change a SmartFigure's text, or assign
 ``label`` on a twin axis. Use ``None`` to clear the text. Keep the initial

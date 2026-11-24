@@ -41,6 +41,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.animation import FuncAnimation, writers
 from matplotlib.axes import Axes
+from matplotlib.axis import Axis
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure, SubFigure
@@ -58,6 +59,7 @@ from ._animation import (
     _ArtistEdit,
     _axis_removal,
     _bound_session,
+    _combine_edits,
     _edit,
     _reject_live_update,
     _stage_live_value,
@@ -411,7 +413,7 @@ class SmartFigure:
         self._x_axis_label_color = "k"
         self._y_axis_label_color = "k"
 
-        self.show_grid = False
+        self._show_grid: bool | list[bool | None] | None = None
         self._grid = {}
 
         self.hide_custom_legend_elements = False
@@ -1102,21 +1104,16 @@ class SmartFigure:
         self._annotations = value
 
     @property
-    def show_grid(self) -> ListOrItem[bool]:
+    def show_grid(self) -> bool | list[bool | None]:
         """
-        Whether to show the grid lines on the figure. A grid first needs to be created using the
-        :meth: `~graphinglib.SmartFigure.set_grid` method. This can be used to easily toggle the visibility of a
-        previously created grid.
+        Whether to show the grid lines on the figure. The figure style supplies
+        the default grid. Use :meth:`~graphinglib.SmartFigure.set_grid` to configure it.
         """
-        return self._show_grid
+        return self._show_grid if self._show_grid is not None else False
 
     @show_grid.setter
-    def show_grid(self, value: ListOrItem[bool]) -> None:
-        _reject_animated_layout(self)
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("show_grid must be a bool.")
-        self._show_grid = value
+    def show_grid(self, value: bool | list[bool | None]) -> None:
+        self._show_grid = self._stage_view_flag("show_grid", value)
 
     @property
     def hide_custom_legend_elements(self) -> bool:
@@ -2509,7 +2506,8 @@ class SmartFigure:
 
         limit_axes: list[tuple[int, Axes]] = []
         visibility: dict[str, dict[int, Callable[[bool], _ArtistEdit]]] = {
-            name: {} for name in ("remove_axes", "remove_x_ticks", "remove_y_ticks")
+            name: {}
+            for name in ("remove_axes", "remove_x_ticks", "remove_y_ticks", "show_grid")
         }
         # Plottable and subfigure plotting
         for subplot_i, ((rows, cols), element) in enumerate(
@@ -2701,18 +2699,18 @@ class SmartFigure:
                         if session is not None:
                             visibility[name][subplot_i] = prepare
 
-                # Customize grid
-                if self._subplot_p["show_grid"][subplot_i]:
-                    ax.grid(
-                        self._grid.get("visible_x"),
-                        which=self._grid.get("which_x"),
-                        axis="x",
-                    )
-                    ax.grid(
-                        self._grid.get("visible_y"),
-                        which=self._grid.get("which_y"),
-                        axis="y",
-                    )
+                show_grid = self._subplot_p["show_grid"][subplot_i]
+                if show_grid is not None or session is not None:
+                    grid_options = self._grid_options()
+                    if session is not None or show_grid is False:
+                        grid_edit = self._prepare_grid_visibility(ax, grid_options)
+                        if show_grid is False:
+                            grid_edit(False).apply()
+                        if session is not None:
+                            visibility["show_grid"][subplot_i] = grid_edit
+                    if show_grid:
+                        for dimension, (which, visible) in grid_options.items():
+                            ax.grid(visible, which=which, axis=dimension)
 
                 # Axes subtitles
                 if self._subtitles is not None:
@@ -3146,6 +3144,44 @@ class SmartFigure:
         minor_y_tick_spacing = self._ticks.get("minor_y_tick_spacing")
         if minor_y_tick_spacing is not None:
             ax.yaxis.set_minor_locator(ticker.MultipleLocator(minor_y_tick_spacing))
+
+    def _grid_options(self) -> dict[str, tuple[str, bool]]:
+        return {
+            dimension: (
+                self._grid.get(f"which_{dimension}", plt.rcParams["axes.grid.which"]),
+                self._grid.get(
+                    f"visible_{dimension}",
+                    plt.rcParams["axes.grid.axis"] in ("both", dimension),
+                ),
+            )
+            for dimension in ("x", "y")
+        }
+
+    def _prepare_grid_visibility(
+        self, ax: Axes, options: dict[str, tuple[str, bool]]
+    ) -> Callable[[bool], _ArtistEdit]:
+        groups = []
+        for dimension, (selected, enabled) in options.items():
+            axis = ax.xaxis if dimension == "x" else ax.yaxis
+            for which in ("major", "minor"):
+                read = partial(self._native_grid_visible, axis, which)
+                write = partial(axis.grid, which=which)
+                visible = enabled if selected in (which, "both") else read()
+                groups.append((read, write, visible))
+
+        def prepare(show: bool) -> _ArtistEdit:
+            return _combine_edits(
+                [
+                    _edit(write, read(), show and visible)
+                    for read, write, visible in groups
+                ]
+            )
+
+        return prepare
+
+    @staticmethod
+    def _native_grid_visible(axis: Axis, which: Literal["major", "minor"]) -> bool:
+        return bool(axis.get_tick_params(which=which).get("gridOn", False))
 
     def _prepare_tick_removal(
         self, ax: Axes, dimension: str
@@ -4694,6 +4730,30 @@ class SmartFigureWCS(SmartFigure):
                 which="minor",
                 length=self._tick_params["y minor"].get("length"),
             )
+
+    def _grid_options(self) -> dict[str, tuple[str, bool]]:
+        return {
+            dimension: ("major", enabled)
+            for dimension, (_, enabled) in super()._grid_options().items()
+        }
+
+    def _prepare_grid_visibility(
+        self, ax: Axes, options: dict[str, tuple[str, bool]]
+    ) -> Callable[[bool], _ArtistEdit]:
+        def prepare(show: bool) -> _ArtistEdit:
+            edits = []
+            for index, dimension in enumerate(("x", "y")):
+                coordinate = cast(Any, ax).coords[index]
+                _, enabled = options[dimension]
+                # CoordinateHelper exposes grid visibility through its drawing options.
+                before = coordinate._grid_lines_kwargs["visible"]
+                write = partial(
+                    coordinate.grid, grid_type=getattr(coordinate, "_grid_type", None)
+                )
+                edits.append(_edit(write, before, show and enabled))
+            return _combine_edits(edits)
+
+        return prepare
 
     def _prepare_tick_removal(
         self, ax: Axes, dimension: str
