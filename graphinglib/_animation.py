@@ -21,6 +21,7 @@ from matplotlib.container import ErrorbarContainer
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import DrawingArea
+from matplotlib.patches import Polygon
 from matplotlib.text import Text as TextArtist
 from numpy.typing import ArrayLike
 
@@ -531,6 +532,9 @@ class _AnimationSession:
                 "_marker_edge_width",
             )
             fields = ("alpha", "paths", "facecolor", "edgecolor", "linewidth", "sizes")
+        elif isinstance(source, Polygon) and isinstance(swatch, Polygon):
+            properties = ("_face_color", "_edge_color", "_alpha", "_line_width")
+            fields = ("facecolor", "edgecolor", "linewidth")
         else:
             return
 

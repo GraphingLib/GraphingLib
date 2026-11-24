@@ -2041,13 +2041,13 @@ Live update support
        scaling uses the first frame with a nonzero, unmasked vector. Assign
        ``scale = None`` to request a new automatic scale.
    * - :class:`~graphinglib.Histogram`
-     - Sample data for bars, steps and filled steps, the normal density
-       overlay and its guides, and labels showing summary statistics.
-       Integer bins recalculate their edges from each frame's data. Explicit
-       edges keep their positions. The density overlay is hidden when the
-       standard deviation is zero.
-     - Bin count, orientation, normalization, styling, and whether to show
-       the density and its guides.
+     - Sample data, bin count or explicit edges, orientation, normalization,
+       face and edge colors, opacity, line width and summary statistics.
+       Existing density overlays and guides follow the data, orientation and
+       normalization. A zero standard deviation hides the overlay.
+     - Bar, step or filled-step mode, and which density overlays and guides
+       are present. Integer bins recalculate their edges from each frame's
+       data. Explicit edges stay fixed until reassigned.
    * - :class:`~graphinglib.Contour`
      - Scalar data and mesh via ``set_data(z, x_mesh=x, y_mesh=y)``, levels,
        filled or line mode, opacity, colormap, color limits, and line widths.

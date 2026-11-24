@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import partial
+from numbers import Integral
 from types import NoneType
 from typing import Any, Callable, Optional, Protocol, cast, runtime_checkable
 
@@ -14,7 +15,7 @@ from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba, to_rg
 from matplotlib.container import BarContainer, ErrorbarContainer
 from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
-from matplotlib.patches import Polygon
+from matplotlib.patches import Polygon, Rectangle
 from numpy.typing import ArrayLike
 from pyperclip import copy as copy_to_clipboard
 from scipy.integrate import cumulative_trapezoid
@@ -3902,39 +3903,47 @@ class Histogram(Plottable1D):
     def data(self, data: ArrayLike) -> None:
         values = np.array(data)
         session = _bound_session(self)
-        if session is not None:
-            previous = (
-                self._data,
-                self._mean,
-                self._standard_deviation,
-                self._histogram_cache,
+        if session is not None and (
+            values.ndim != 1
+            or values.dtype.kind not in "biuf"
+            or not np.isfinite(values).all()
+        ):
+            raise InvalidParameterError(
+                "Animated Histogram data must be a one-dimensional array of finite numbers."
             )
+        mean = np.mean(values) if values.size else float("nan")
+        deviation = np.std(values) if values.size else float("nan")
+        if session is not None:
+            previous = self._data, self._mean, self._standard_deviation
 
             def restore() -> None:
-                (
-                    self._data,
-                    self._mean,
-                    self._standard_deviation,
-                    self._histogram_cache,
-                ) = previous
+                self._data, self._mean, self._standard_deviation = previous
 
             session.queue_property(self, "_data", values, restore)
-        self._data = values
-        self._mean = np.mean(values)
-        self._standard_deviation = np.std(values)
+        self._invalidate_histogram_cache()
+        self._data, self._mean, self._standard_deviation = values, mean, deviation
+
+    def _invalidate_histogram_cache(self) -> None:
+        session = _bound_session(self)
+        if session is not None:
+            before = self._histogram_cache
+            session.remember(
+                self,
+                "_histogram_cache",
+                lambda: setattr(self, "_histogram_cache", before),
+            )
         self._histogram_cache = None
 
     @property
-    def bins(self) -> int:
+    def bins(self) -> int | ArrayLike:
         return self._bins
 
     @bins.setter
-    def bins(self, bins: int) -> None:
-        _reject_live_update(
-            self, "Configure histogram bins, decorations and styles before animating."
-        )
-        self._bins = bins
-        self._histogram_cache = None
+    def bins(self, bins: int | ArrayLike) -> None:
+        if _bound_session(self) is not None and not isinstance(bins, (Integral, str)):
+            bins = np.array(bins, copy=True)
+        self._bins = _stage_live_value(self, "_bins", bins)
+        self._invalidate_histogram_cache()
 
     @property
     def label(self) -> str | None:
@@ -3950,10 +3959,7 @@ class Histogram(Plottable1D):
 
     @face_color.setter
     def face_color(self, face_color: str) -> None:
-        _reject_live_update(
-            self, "Configure histogram bins, decorations and styles before animating."
-        )
-        self._face_color = face_color
+        self._face_color = _stage_live_value(self, "_face_color", face_color)
 
     @property
     def edge_color(self) -> Styled[str]:
@@ -3961,10 +3967,7 @@ class Histogram(Plottable1D):
 
     @edge_color.setter
     def edge_color(self, edge_color: str) -> None:
-        _reject_live_update(
-            self, "Configure histogram bins, decorations and styles before animating."
-        )
-        self._edge_color = edge_color
+        self._edge_color = _stage_live_value(self, "_edge_color", edge_color)
 
     @property
     def hist_type(self) -> Styled[str]:
@@ -3983,10 +3986,7 @@ class Histogram(Plottable1D):
 
     @alpha.setter
     def alpha(self, alpha: float) -> None:
-        _reject_live_update(
-            self, "Configure histogram bins, decorations and styles before animating."
-        )
-        self._alpha = alpha
+        self._alpha = _stage_live_value(self, "_alpha", alpha)
 
     @property
     def line_width(self) -> Styled[float]:
@@ -3994,10 +3994,7 @@ class Histogram(Plottable1D):
 
     @line_width.setter
     def line_width(self, line_width: float) -> None:
-        _reject_live_update(
-            self, "Configure histogram bins, decorations and styles before animating."
-        )
-        self._line_width = line_width
+        self._line_width = _stage_live_value(self, "_line_width", line_width)
 
     @property
     def normalize(self) -> Styled[bool]:
@@ -4005,11 +4002,8 @@ class Histogram(Plottable1D):
 
     @normalize.setter
     def normalize(self, normalize: bool) -> None:
-        _reject_live_update(
-            self, "Configure histogram bins, decorations and styles before animating."
-        )
-        self._normalize = normalize
-        self._histogram_cache = None
+        self._normalize = _stage_live_value(self, "_normalize", normalize)
+        self._invalidate_histogram_cache()
 
     @property
     def orientation(self) -> Styled[str]:
@@ -4017,10 +4011,7 @@ class Histogram(Plottable1D):
 
     @orientation.setter
     def orientation(self, orientation: str) -> None:
-        _reject_live_update(
-            self, "Configure histogram bins, decorations and styles before animating."
-        )
-        self._orientation = orientation
+        self._orientation = _stage_live_value(self, "_orientation", orientation)
 
     @property
     def show_params(self) -> Styled[bool]:
@@ -4028,10 +4019,7 @@ class Histogram(Plottable1D):
 
     @show_params.setter
     def show_params(self, show_params: bool) -> None:
-        _reject_live_update(
-            self, "Configure histogram bins, decorations and styles before animating."
-        )
-        self._show_params = show_params
+        self._show_params = _stage_live_value(self, "_show_params", show_params)
 
     @property
     def mean(self) -> float:
@@ -4086,12 +4074,12 @@ class Histogram(Plottable1D):
             and np.equal(self.bin_centers, other.bin_centers).all()
         )
 
-    def _get_label(self) -> str | None:
+    def _get_label(self, default_show_params: bool = True) -> str | None:
         """
         Gives the label of the histogram (with or without parameters).
         """
         lab = self._label
-        show_params = resolve_or(self._show_params, True)
+        show_params = resolve_or(self._show_params, default_show_params)
         if lab and show_params:
             lab += (
                 " :\n"
@@ -4223,6 +4211,152 @@ class Histogram(Plottable1D):
             copy_to_clipboard(formatted_points)
         return formatted_points
 
+    def _live_histogram(self, normalize: bool) -> tuple[np.ndarray, np.ndarray]:
+        if (
+            self._data.ndim != 1
+            or self._data.dtype.kind not in "biuf"
+            or not np.isfinite(self._data).all()
+        ):
+            raise InvalidParameterError(
+                "Animated Histogram data must be a one-dimensional array of finite numbers."
+            )
+        try:
+            values = (
+                self._data.astype(np.uint8)
+                if self._data.dtype.kind == "b"
+                else self._data
+            )
+            counts, edges = np.histogram(values, bins=self._bins)
+        except (TypeError, ValueError) as exc:
+            raise InvalidParameterError(
+                f"Invalid animated Histogram bins ({exc})."
+            ) from exc
+        widths = np.diff(edges)
+        if not np.isfinite(edges).all() or not (widths > 0).all():
+            raise InvalidParameterError(
+                "Animated Histogram bin edges must be finite and strictly increasing."
+            )
+        if normalize:
+            total = counts.sum()
+            counts = (
+                counts / widths / total
+                if total
+                else np.zeros(counts.shape, dtype=float)
+            )
+        return counts, edges
+
+    def _bind_live_histogram(
+        self,
+        session: _AnimationSession,
+        axes: plt.Axes,
+        artists,
+        z_order: int,
+        get_geometry,
+    ) -> None:
+        handle = self.handle
+        assert isinstance(handle, Polygon)
+        bars = list(artists.patches) if isinstance(artists, BarContainer) else []
+        step = artists[0] if isinstance(artists, list) else None
+        filled = step is not None and step.get_fill()
+        initial_face = self._face_color
+        initial_edge = self._edge_color
+        initial_width = resolve_or(self._line_width, handle.get_linewidth())
+        initial_alpha = resolve_or(self._alpha, 1.0)
+        original_face = handle.get_facecolor()
+        original_edge = handle.get_edgecolor()
+
+        def prepare() -> _ArtistEdit:
+            heights, edges, horizontal, _ = get_geometry()
+            face = to_rgba(
+                resolve_or(self._face_color, resolve_or(initial_face, original_face)),
+                resolve_or(self._alpha, initial_alpha),
+            )
+            configured_edge = resolve_or(self._edge_color, initial_edge)
+            edge = (
+                original_edge
+                if is_inherit(configured_edge)
+                else to_rgba(configured_edge, 1)
+            )
+            width = resolve_or(self._line_width, initial_width)
+            edits = []
+            targets = [handle]
+            if step is not None:
+                x = np.repeat(edges, 2)
+                y = np.r_[0, np.repeat(heights, 2), 0]
+                xy = np.column_stack((y, x) if horizontal else (x, y))
+                edits.append(_edit(step.set_xy, step.get_xy(), xy))
+                targets.append(step)
+            else:
+                size = len(bars)
+                widths = np.diff(edges)
+                bounds = (
+                    list(zip(np.zeros_like(heights), edges[:-1], heights, widths))
+                    if horizontal
+                    else list(zip(edges[:-1], np.zeros_like(heights), widths, heights))
+                )
+                for index, bar in enumerate(bars):
+                    visible = index < len(bounds)
+                    if visible:
+                        edits.append(
+                            _edit(
+                                lambda value, bar=bar: bar.set_bounds(*value),
+                                bar.get_bbox().bounds,
+                                bounds[index],
+                            )
+                        )
+                    edits.append(_edit(bar.set_visible, bar.get_visible(), visible))
+                targets.extend(bars)
+
+                def grow() -> None:
+                    for x, y, w, h in bounds[size:]:
+                        bar = Rectangle(
+                            (x, y),
+                            w,
+                            h,
+                            facecolor=face,
+                            edgecolor=edge,
+                            linewidth=width,
+                            zorder=z_order - 1,
+                        )
+                        bars.append(bar)
+                        axes.add_artist(bar)
+
+                def shrink() -> None:
+                    for bar in reversed(bars[size:]):
+                        if bar.axes is not None:
+                            bar.remove()
+                    del bars[size:]
+
+                edits.append(_ArtistEdit(grow, shrink))
+
+            for target in targets:
+                if target is not step or filled:
+                    edits.append(
+                        _edit(target.set_facecolor, target.get_facecolor(), face)
+                    )
+                edits.extend(
+                    (
+                        _edit(target.set_edgecolor, target.get_edgecolor(), edge),
+                        _edit(target.set_linewidth, target.get_linewidth(), width),
+                    )
+                )
+            return _combine_edits(edits)
+
+        session.bind_derived(
+            self,
+            (
+                "_data",
+                "_bins",
+                "_normalize",
+                "_orientation",
+                "_face_color",
+                "_edge_color",
+                "_alpha",
+                "_line_width",
+            ),
+            prepare,
+        )
+
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified axes.
@@ -4265,67 +4399,50 @@ class Histogram(Plottable1D):
         params = strip_inherit(params)
         heights, edges, artists = axes.hist(
             self._data,
-            bins=self._bins,
+            bins=cast(Any, self._bins),
             label=self.label,  # uses the get_label() method
             zorder=z_order - 1,
             **params,
         )
-        horizontal = resolve_or(self._orientation, "vertical") == "horizontal"
+        orientation = resolve_or(self._orientation, "vertical")
+        horizontal = orientation == "horizontal"
         session = _DRAW_SESSION.get()
-        live_bins = False
-        if session is not None:
-            bins = self._bins
-            if isinstance(artists, BarContainer):
 
-                def prepare_bars(data: np.ndarray) -> _ArtistEdit:
-                    heights, edges = np.histogram(
-                        data, bins=bins, density=normalize_resolved
-                    )
-                    if len(heights) != len(artists.patches):
-                        raise InvalidParameterError(
-                            "An animated Histogram must retain its original number of bins."
-                        )
-                    before = [patch.get_bbox().bounds for patch in artists.patches]
-                    widths = np.diff(edges)
-                    bounds = (
-                        list(zip(np.zeros_like(heights), edges[:-1], heights, widths))
-                        if horizontal
-                        else list(
-                            zip(edges[:-1], np.zeros_like(heights), widths, heights)
-                        )
-                    )
+        cached_data = cached_bins = cached_density = None
+        cached_geometry = None
 
-                    def apply(items) -> None:
-                        for patch, item in zip(artists.patches, items):
-                            patch.set_bounds(*item)
-
-                    return _ArtistEdit(lambda: apply(bounds), lambda: apply(before))
-
-                session.bind_update(self, "_data", prepare_bars)
-                live_bins = True
-            elif (
-                isinstance(artists, list)
-                and len(artists) == 1
-                and isinstance(artists[0], Polygon)
+        def geometry():
+            nonlocal cached_data, cached_bins, cached_density, cached_geometry
+            direction = resolve_or(self._orientation, orientation)
+            if direction not in ("vertical", "horizontal"):
+                raise InvalidParameterError(
+                    "Histogram orientation must be 'vertical' or 'horizontal'."
+                )
+            density = resolve_or(self._normalize, normalize_resolved)
+            if not isinstance(density, (bool, np.bool_)):
+                raise InvalidParameterError("Histogram normalize must be a boolean.")
+            if (
+                cached_geometry is None
+                or cached_data is not self._data
+                or cached_bins is not self._bins
+                or cached_density != density
             ):
-                patch = artists[0]
+                cached_geometry = self._live_histogram(density)
+                cached_data, cached_bins, cached_density = (
+                    self._data,
+                    self._bins,
+                    density,
+                )
+            return *cached_geometry, direction == "horizontal", density
 
-                def prepare_steps(data: np.ndarray) -> _ArtistEdit:
-                    heights, edges = np.histogram(
-                        data, bins=bins, density=normalize_resolved
-                    )
-                    x = np.repeat(edges, 2)
-                    y = np.r_[0, np.repeat(heights, 2), 0]
-                    xy = np.column_stack((y, x) if horizontal else (x, y))
-                    return _edit(patch.set_xy, patch.get_xy(), xy)
-
-                session.bind_update(self, "_data", prepare_steps)
-                live_bins = True
+        if session is not None:
+            self._bind_live_histogram(session, axes, artists, z_order, geometry)
+            show_params = resolve_or(self._show_params, True)
             session.bind_legend_source(
                 self,
                 self.handle,
-                lambda: self.label,
-                ("_label", "_data") if live_bins else ("_label",),
+                lambda: self._get_label(show_params),
+                ("_label", "_data", "_show_params"),
             )
         if self._show_pdf:
             self._plot_pdf(
@@ -4335,7 +4452,8 @@ class Histogram(Plottable1D):
                 edges,
                 horizontal,
                 normalize_resolved,
-                session if live_bins else None,
+                session,
+                geometry,
             )
 
     def _plot_pdf(
@@ -4347,8 +4465,14 @@ class Histogram(Plottable1D):
         horizontal: bool,
         normalize: bool,
         session: _AnimationSession | None,
+        get_geometry,
     ) -> None:
-        def coordinates(counts: np.ndarray, boundaries: np.ndarray):
+        def coordinates(
+            counts: np.ndarray,
+            boundaries: np.ndarray,
+            horizontal: bool,
+            normalize: bool,
+        ):
             mean, std = self.parameters
             if not np.isfinite(std) or std <= 0:
                 empty = np.empty(0)
@@ -4372,7 +4496,9 @@ class Histogram(Plottable1D):
                 ),
             )
 
-        line_data, mean_data, std_data = coordinates(heights, edges)
+        line_data, mean_data, std_data = coordinates(
+            heights, edges, horizontal, normalize
+        )
         (pdf,) = axes.plot(
             *line_data,
             zorder=z_order,
@@ -4401,10 +4527,8 @@ class Histogram(Plottable1D):
         if session is not None:
 
             def prepare() -> _ArtistEdit:
-                counts, boundaries = np.histogram(
-                    self._data, bins=self._bins, density=normalize
-                )
-                geometry = coordinates(counts, boundaries)
+                counts, boundaries, horizontal, normalize = get_geometry()
+                geometry = coordinates(counts, boundaries, horizontal, normalize)
                 line_before = pdf.get_data()
                 guides = []
                 for artist, index in guide_artists:
@@ -4434,4 +4558,6 @@ class Histogram(Plottable1D):
 
                 return _ArtistEdit(apply, undo)
 
-            session.bind_derived(self, ("_data",), prepare)
+            session.bind_derived(
+                self, ("_data", "_bins", "_orientation", "_normalize"), prepare
+            )

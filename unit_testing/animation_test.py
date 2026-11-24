@@ -1621,6 +1621,109 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(steps.get_xy()[:, 0].max(), 3)
         assert_allclose(steps.get_xy()[:, 1].max(), 4)
 
+    def test_histogram_reuses_bars_and_updates_orientation_density_and_styles(self):
+        from matplotlib.colors import to_rgba
+        from matplotlib.patches import Rectangle
+
+        from graphinglib import Histogram
+
+        data = [0, 1, 1, 2, 3, 5]
+        hist = Histogram(
+            data, bins=2, label="Values", show_params=True, hist_type="bar"
+        )
+        hist.add_pdf(show_mean=True, show_std=True)
+        nested = SmartFigure(
+            elements=[hist], show_legend=True, x_lim=(0, 7), y_lim=(0, 7)
+        )
+        root = SmartFigure(
+            1,
+            2,
+            elements=[nested, hist],
+            figure_style="plain",
+            x_lim=(0, 7),
+            y_lim=(0, 7),
+        )
+        items = []
+
+        def update(i):
+            axes = [ax for ax in plt.gcf().axes if ax.patches]
+            items.append(
+                [
+                    [bar for bar in ax.patches if isinstance(bar, Rectangle)]
+                    for ax in axes
+                ]
+            )
+            hist.bins = (5, 1, [0, 1, 3, 6])[i]
+            hist.normalize = i == 2
+            hist.orientation = "horizontal" if i == 2 else "vertical"
+            hist.show_params = i != 2
+            hist.face_color = "orange"
+            hist.edge_color = "purple"
+            hist.alpha = 0.4
+            hist.line_width = 3
+
+        root.save_animation(self.output, update, 3)
+        self.assertEqual([len(group) for group in items[0]], [2, 2])
+        self.assertEqual([len(group) for group in items[1]], [5, 5])
+        self.assertEqual(items[1], items[2])
+        expected = [1 / 6, 1 / 4, 1 / 9]
+        for initial, final in zip(items[0], items[-1], strict=True):
+            self.assertEqual(initial, final[:2])
+            self.assertEqual(
+                [patch.get_visible() for patch in final],
+                [True, True, True, False, False],
+            )
+            assert_allclose([patch.get_width() for patch in final[:3]], expected)
+            assert_allclose([patch.get_y() for patch in final[:3]], [0, 1, 3])
+            assert_allclose([patch.get_height() for patch in final[:3]], [1, 2, 3])
+            for bar in final[:3]:
+                assert_allclose(bar.get_facecolor(), to_rgba("orange", 0.4))
+                assert_allclose(bar.get_edgecolor(), to_rgba("purple"))
+                self.assertEqual(bar.get_linewidth(), 3)
+            axes = final[0].axes
+            assert_allclose(axes.lines[0].get_ydata()[[0, -1]], [0, 6])
+            mean = axes.collections[1].get_segments()[0]
+            assert_allclose(mean[:, 1], [hist.mean, hist.mean])
+            if axes.get_legend() is not None:
+                legend = axes.get_legend()
+                self.assertEqual(legend.get_texts()[0].get_text(), "Values")
+                assert_allclose(
+                    legend.legend_handles[0].get_facecolor(), to_rgba("orange", 0.4)
+                )
+
+    def test_histogram_failed_growth_rolls_back_new_bars_and_normalized_state(self):
+        from graphinglib import Histogram
+
+        hist = Histogram([0, 1, 2, 3], bins=2, normalize=False, hist_type="bar")
+        root = SmartFigure(elements=[hist], figure_style="plain")
+        observed = []
+
+        def update(i):
+            axis = plt.gcf().axes[0]
+            observed[:] = [axis, *axis.patches]
+            hist.bins = 5 if i else 2
+            hist.normalize = bool(i)
+            hist.data = [0, 1, 2, 3, 4] if i else [0, 1, 2, 3]
+            if i:
+                original = axis.add_artist
+
+                def fail_after_attach(artist):
+                    original(artist)
+                    raise ValueError("failed to add bar")
+
+                self.enterContext(patch.object(axis, "add_artist", fail_after_attach))
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        axis, *bars = observed
+        self.assertEqual(list(axis.patches), bars)
+        self.assertEqual(hist.bins, 2)
+        self.assertFalse(hist.normalize)
+        assert_allclose(hist.data, [0, 1, 2, 3])
+        assert_allclose(hist.bin_heights, [2, 2])
+        assert_allclose([patch.get_height() for patch in bars], [2, 2])
+        self.assertFalse(self.output.exists())
+
     def test_rejects_layout_mutation_and_preserves_spanning_plot(self):
         original = Curve([0, 1], [0, 1])
         leaf = SmartFigure(elements=[original])
