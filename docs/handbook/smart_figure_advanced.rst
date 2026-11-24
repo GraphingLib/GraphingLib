@@ -1974,13 +1974,16 @@ Live update support
        to change the interval of a configured fill, or ``None`` to hide it.
        Each shared fill uses both curves' final coordinates for the frame. Lines can change color, width,
        style and opacity. Configured error bars, error curves and fills can
-       change their styles. On Cartesian plots, ``show_errorbars`` can show or
-       hide configured bars, including bars initially hidden. Use a cap width
-       of zero to hide caps independently. Use ``show_error_curves`` to show
+       change their styles. On Cartesian plots, call ``add_errorbars(...)``
+       in a frame to introduce bars. Pass an error of ``None`` to
+       ``set_data(...)`` to remove that direction. Assign ``show_errorbars``
+       to toggle both directions. Omitted live styles keep their current
+       values. Set ``cap_width=0`` to hide caps. Use ``show_error_curves`` to show
        or hide configured bands and ``error_curves_fill_between`` to toggle
        their shading.
-     - Error-bar directions, the initial band and area-fill configuration, and
-       legend entry availability. Set up a nonempty Cartesian plot for live caps.
+     - The initial band and area-fill configuration. The legend uses the
+       error-bar directions present at setup. Polar error-bar directions
+       are fixed. Set up a nonempty Cartesian plot to animate existing caps.
        Both curves must continue to cover the configured fill interval.
    * - :class:`~graphinglib.Scatter`
      - Coordinates, configured errors, marker shape, size, edge width,
@@ -1989,10 +1992,10 @@ Live update support
        can be shown or hidden and continue to track their intensity channels.
        Assign ``color_map_range = None`` to restore their individual initial
        scales. Configured error bars can change color,
-       line width, cap width and cap thickness. Use ``show_errorbars`` to
-       hide or show them on Cartesian plots.
-     - Legend entry availability, colorbar placement and error-bar directions.
-       Set up a nonempty Cartesian plot for live caps. Colorbars need an
+       line width, cap width and cap thickness. Cartesian error bars use
+       the same live addition, removal and visibility rules as Curve.
+     - Legend entry availability and colorbar placement.
+       Set up a nonempty Cartesian plot to animate existing caps. Colorbars need an
        intensity array at setup. An intensity channel introduced during
        playback without an explicit range starts with a 0–1 scale.
    * - :class:`~graphinglib.Heatmap`

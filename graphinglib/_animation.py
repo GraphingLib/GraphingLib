@@ -226,6 +226,47 @@ def _draw_live_errorbars(
     return handle
 
 
+def _reserve_errorbar_directions(
+    axes: Axes,
+    existing: ErrorbarContainer | None,
+    *,
+    color: Any,
+    zorder: float,
+    cap_width: float | None,
+) -> ErrorbarContainer | None:
+    if axes.name == "polar":
+        return None
+    missing_x = existing is None or not existing.has_xerr
+    missing_y = existing is None or not existing.has_yerr
+    if not (missing_x or missing_y):
+        return None
+    cap_width = rcParams["errorbar.capsize"] if cap_width is None else cap_width
+    segments, caps = [], []
+    for missing, marker in ((missing_x, "|"), (missing_y, "_")):
+        if missing:
+            segments.append(
+                LineCollection([], colors=color, zorder=zorder, visible=False)
+            )
+            caps.extend(
+                Line2D(
+                    [],
+                    [],
+                    linestyle="none",
+                    marker=marker,
+                    color=color,
+                    markersize=2 * cap_width,
+                    zorder=zorder,
+                    visible=False,
+                )
+                for _ in range(2)
+            )
+    return ErrorbarContainer(
+        (None, tuple(caps), tuple(segments)),  # ty: ignore[invalid-argument-type] (fmt="none")
+        has_xerr=missing_x,
+        has_yerr=missing_y,
+    )
+
+
 def _error_style_edits(
     handle: ErrorbarContainer,
     *,
@@ -235,6 +276,10 @@ def _error_style_edits(
     cap_thickness: float | None,
     alpha: float | None,
     show: bool,
+    directions: tuple[bool, bool] | None = None,
+    reserved_axes: Axes | None = None,
+    reserved_data: tuple[np.ndarray, np.ndarray, np.ndarray | None, np.ndarray | None]
+    | None = None,
 ) -> list[_ArtistEdit]:
     if not isinstance(show, (bool, np.bool_)):
         raise InvalidParameterError("show_errorbars must be a boolean.")
@@ -250,14 +295,27 @@ def _error_style_edits(
             raise InvalidParameterError(
                 f"Animated errorbar {name} must be a finite, nonnegative number."
             )
-    if cap_width and (not caps or any(cap.axes is None for cap in caps)):
+    if cap_width and (
+        not caps or reserved_axes is None and any(cap.axes is None for cap in caps)
+    ):
         raise UnsupportedFeatureError(
             "This plot has no live errorbar cap artists. Use a nonempty initial "
             "dataset on a Cartesian plot to animate cap width."
         )
 
     edits = []
-    for segment in segments:
+    present = (
+        [
+            value
+            for value, exists in zip(
+                directions, (handle.has_xerr, handle.has_yerr), strict=True
+            )
+            if exists
+        ]
+        if directions is not None
+        else [True] * len(segments)
+    )
+    for segment, exists in zip(segments, present, strict=True):
         if color is not None:
             edits.append(_edit(segment.set_color, segment.get_color(), color))
         if line_width is not None:
@@ -265,8 +323,9 @@ def _error_style_edits(
                 _edit(segment.set_linewidth, segment.get_linewidth(), line_width)
             )
         edits.append(_edit(segment.set_alpha, segment.get_alpha(), alpha))
-        edits.append(_edit(segment.set_visible, segment.get_visible(), show))
-    for cap in caps:
+        edits.append(_edit(segment.set_visible, segment.get_visible(), show and exists))
+    for index, cap in enumerate(caps):
+        exists = present[index // 2] if len(caps) == 2 * len(segments) else True
         if color is not None:
             edits.append(
                 _edit(cap.set_markeredgecolor, cap.get_markeredgecolor(), color)
@@ -278,15 +337,51 @@ def _error_style_edits(
         size = cap.get_markersize()
         if cap_width is not None:
             edits.append(_edit(cap.set_markersize, size, 2 * cap_width))
-        if cap.axes is not None:
+        if cap.axes is not None or reserved_axes is not None:
             edits.append(
                 _edit(
                     cap.set_visible,
                     cap.get_visible(),
-                    show and (size > 0 if cap_width is None else cap_width > 0),
+                    show
+                    and exists
+                    and (size > 0 if cap_width is None else cap_width > 0),
                 )
             )
         edits.append(_edit(cap.set_alpha, cap.get_alpha(), alpha))
+    if reserved_axes is not None and show and any(present) and segments[0].axes is None:
+        artists = (*segments, *caps)
+
+        def attach() -> None:
+            for artist in artists:
+                reserved_axes.add_artist(artist)
+
+        def detach() -> None:
+            for artist in artists:
+                if artist.axes is reserved_axes:
+                    artist.remove()
+
+        edits.insert(0, _ArtistEdit(attach, detach))
+    if reserved_data is not None and show:
+        x, y, dx, dy = reserved_data
+        inputs = [
+            values
+            for exists, values in (
+                (handle.has_xerr, (x, y, dx, True)),
+                (handle.has_yerr, (y, x, dy, False)),
+            )
+            if exists
+        ]
+        for index, (changing, fixed, error, is_x) in enumerate(inputs):
+            if error is not None:
+                edits.append(
+                    _error_update(
+                        _ErrorArtists(segments[index], caps[2 * index : 2 * index + 2]),
+                        changing,
+                        fixed,
+                        error,
+                        is_x=is_x,
+                    )
+                )
     return edits
 
 
@@ -331,6 +426,7 @@ class _PointArtists:
     x_error: _ErrorArtists | None
     y_error: _ErrorArtists | None
     bands: "_CurveBands | None" = None
+    flexible_errors: bool = False
 
 
 @dataclass
@@ -1195,6 +1291,7 @@ class _AnimationSession:
         properties = (
             *_ERROR_STYLE_PROPERTIES,
             "_show_errorbars",
+            "point_data",
             "_color",
             "_line_width",
             "_line_style",
@@ -1322,6 +1419,7 @@ class _AnimationSession:
         handle: ErrorbarContainer | Line2D,
         *,
         bands: _CurveBands,
+        reserved_errors: ErrorbarContainer | None = None,
     ) -> None:
         data_line = handle if isinstance(handle, Line2D) else handle.lines[0]
         if not isinstance(data_line, Line2D):
@@ -1332,12 +1430,17 @@ class _AnimationSession:
             data_line,
             handle if isinstance(handle, ErrorbarContainer) else None,
             bands=bands,
+            reserved_errors=reserved_errors,
         )
 
     def bind_scatter(
-        self, scatter: object, points: PathCollection, errors: ErrorbarContainer | None
+        self,
+        scatter: object,
+        points: PathCollection,
+        errors: ErrorbarContainer | None,
+        reserved_errors: ErrorbarContainer | None = None,
     ) -> None:
-        self._bind_points(scatter, points, errors)
+        self._bind_points(scatter, points, errors, reserved_errors=reserved_errors)
 
     def _bind_points(
         self,
@@ -1346,26 +1449,41 @@ class _AnimationSession:
         handle: ErrorbarContainer | None,
         *,
         bands: _CurveBands | None = None,
+        reserved_errors: ErrorbarContainer | None = None,
     ) -> None:
-        if handle is None:
-            self._artists.setdefault(id(element), []).append(
-                _PointArtists(points, None, None, bands)
-            )
-            return
-        _, caps, segments = handle.lines
-        directions = int(handle.has_xerr) + int(handle.has_yerr)
-        if len(segments) != directions or len(caps) not in (0, 2 * directions):
-            self._artists.setdefault(id(element), []).append(None)
-            return
-        # Matplotlib builds the horizontal error artists before the vertical ones.
-        errors = [
-            _ErrorArtists(collection, tuple(caps[2 * i : 2 * i + 2]))
-            for i, collection in enumerate(segments)
-        ]
-        x_error = errors[0] if handle.has_xerr else None
-        y_error = errors[-1] if handle.has_yerr else None
+        by_direction = {}
+        if handle is not None:
+            _, caps, segments = handle.lines
+            directions = [
+                is_x
+                for is_x, present in ((True, handle.has_xerr), (False, handle.has_yerr))
+                if present
+            ]
+            if len(segments) != len(directions) or len(caps) not in (
+                0,
+                2 * len(directions),
+            ):
+                self._artists.setdefault(id(element), []).append(None)
+                return
+            for index, (is_x, collection) in enumerate(
+                zip(directions, segments, strict=True)
+            ):
+                by_direction[is_x] = _ErrorArtists(
+                    collection, caps[2 * index : 2 * index + 2]
+                )
         self._artists.setdefault(id(element), []).append(
-            _PointArtists(points, x_error, y_error, bands)
+            _PointArtists(
+                points,
+                by_direction.get(True),
+                by_direction.get(False),
+                bands,
+                reserved_errors is not None
+                or (
+                    points.axes is not None
+                    and points.axes.name != "polar"
+                    and len(by_direction) == 2
+                ),
+            )
         )
 
     def bind_text(self, text: object, artist: TextArtist) -> None:
@@ -1402,9 +1520,10 @@ class _AnimationSession:
             )
             horizontal = dx if configured else None
             vertical = dy if configured else None
-            if (binding.x_error is None) != (horizontal is None) or (
-                binding.y_error is None
-            ) != (vertical is None):
+            if not binding.flexible_errors and (
+                (binding.x_error is None) != (horizontal is None)
+                or (binding.y_error is None) != (vertical is None)
+            ):
                 raise UnsupportedFeatureError(
                     "An animation cannot add or remove errorbar directions."
                 )

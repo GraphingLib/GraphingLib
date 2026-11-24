@@ -10,6 +10,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backend_bases import CloseEvent
+from matplotlib.collections import LineCollection
 from matplotlib.container import ErrorbarContainer
 from numpy.testing import assert_allclose
 from PIL import Image, ImageSequence
@@ -218,17 +219,96 @@ class TestAnimation(unittest.TestCase):
         with Image.open(self.output) as gif:
             self.assertEqual(gif.n_frames, 2)
 
-    def test_rejects_unsupported_live_changes(self):
-        curve = Curve([0, 1], [1, 2])
-        curve.add_errorbars(y_error=0.2)
-        fig = SmartFigure(elements=[curve], figure_style="plain")
-        with self.assertRaisesRegex(GraphingException, "errorbar directions"):
-            fig.save_animation(
-                str(self.output),
-                lambda i: curve.set_data([0, 1], [2, 3], y_error=None),
-                2,
+    def test_add_and_remove_live_error_directions_across_nested_appearances(self):
+        curve = Curve([10, 11], [10, 12], color="navy")
+        scatter = Scatter([10, 11], [12, 10], face_color="green")
+        scatter.add_errorbars(y_error=0.1, cap_width=2)
+        panel = SmartFigure(elements=[curve, scatter])
+        root = SmartFigure(1, 2, elements=[panel, curve], figure_style="plain")
+        seen = []
+
+        def update(frame):
+            axes = tuple(axis for axis in plt.gcf().axes if axis.lines)
+            visible = tuple(
+                tuple(
+                    collection
+                    for collection in axis.collections
+                    if isinstance(collection, LineCollection)
+                    and collection.get_visible()
+                )
+                for axis in axes
             )
-        assert_allclose(curve.y_data, [1, 2])
+            seen.append(
+                (visible, tuple((axis.get_xlim(), axis.get_ylim()) for axis in axes))
+            )
+            if frame == 1:
+                (bars,) = visible[1]
+                self.assertIs(bars.get_transform(), axes[1].transData)
+                self.assertEqual(
+                    [
+                        (cap.get_marker(), cap.get_markersize())
+                        for cap in axes[1].lines[1:]
+                        if cap.get_visible()
+                    ],
+                    [("|", 6), ("|", 6)],
+                )
+            if frame == 0:
+                curve.add_errorbars(x_error=0.2, cap_width=3, errorbars_color="red")
+                scatter.set_data([10, 11], [12, 10], x_error=0.3, y_error=None)
+            elif frame == 1:
+                curve.set_data([10, 11], [10, 12], x_error=None)
+            elif frame == 2:
+                curve.set_data([10, 11], [10, 12], x_error=[[0.1, 0.2], [0.3, 0.4]])
+
+        with patch.object(
+            root, "_prepare_figure", wraps=root._prepare_figure
+        ) as prepare:
+            root.save_animation(self.output, update, 4)
+        prepare.assert_called_once()
+        self.assertEqual(
+            [tuple(map(len, rows)) for rows, _ in seen],
+            [(1, 0), (2, 1), (1, 0), (2, 1)],
+        )
+        self.assertTrue(all(limits == seen[0][1] for _, limits in seen))
+        self.assertIs(seen[1][0][1][0], seen[3][0][1][0])
+        assert_allclose(
+            seen[3][0][1][0].get_segments(),
+            [[[9.9, 10], [10.3, 10]], [[10.8, 12], [11.4, 12]]],
+        )
+
+    def test_failed_first_errorbar_frame_detaches_reserved_artists(self):
+        curve = Curve([0, 1], [1, 2])
+        root = SmartFigure(elements=[curve], figure_style="plain")
+        self.output.write_bytes(b"previous")
+        captured = []
+        set_segments = LineCollection.set_segments
+
+        def fail_after_attach(collection, segments):
+            set_segments(collection, segments)
+            if len(segments) and captured:
+                self.assertIs(collection.axes, captured[0][0])
+                raise ValueError("cannot apply new error geometry")
+
+        def update(frame):
+            axis = curve.handle.lines[0].axes
+            captured.append((axis, tuple(axis.lines), tuple(axis.collections)))
+            curve.add_errorbars(y_error=0.3, cap_width=3)
+
+        with (
+            patch.object(LineCollection, "set_segments", fail_after_attach),
+            self.assertRaisesRegex(
+                GraphingException, "cannot apply new error geometry"
+            ),
+        ):
+            root.save_animation(self.output, update, 1)
+        ((axis, lines, collections),) = captured
+        self.assertEqual(tuple(axis.lines), lines)
+        self.assertEqual(tuple(axis.collections), collections)
+        self.assertFalse(curve.show_errorbars)
+        self.assertIsNone(curve.y_error)
+        self.assertEqual(self.output.read_bytes(), b"previous")
+
+    def test_rejects_mesh_resize_without_matching_coordinates(self):
         heatmap = Heatmap(
             [[0, 1], [1, 0]],
             x_mesh=[[0, 1], [0, 1]],
