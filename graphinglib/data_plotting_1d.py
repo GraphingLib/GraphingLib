@@ -27,6 +27,7 @@ from ._animation import (
     _ERROR_STYLE_PROPERTIES,
     _AnimationSession,
     _ArtistEdit,
+    _attach_artists,
     _bound_session,
     _combine_edits,
     _CurveBands,
@@ -36,7 +37,6 @@ from ._animation import (
     _error_bounds,
     _error_style_edits,
     _fill_edit,
-    _reject_live_update,
     _reserve_errorbar_directions,
     _stage_live_value,
 )
@@ -530,14 +530,9 @@ class Curve(Plottable1D, MathematicalObject):
 
     @error_curves_fill_between.setter
     def error_curves_fill_between(self, error_curves_fill_between: bool) -> None:
-        self._error_curves_fill_between = _stage_live_value(self, "_error_curves_fill_between", error_curves_fill_between)
-
-    def _check_animated_uncertainty(self) -> None:
-        session = _bound_session(self)
-        if session is not None:
-            session.reject_structural_update(
-                self, "Configure curve error decorations before animating."
-            )
+        self._error_curves_fill_between = _stage_live_value(
+            self, "_error_curves_fill_between", error_curves_fill_between
+        )
 
     @property
     def error_curves_color(self) -> Styled[str | None]:
@@ -587,8 +582,30 @@ class Curve(Plottable1D, MathematicalObject):
 
     @fill_between_other_curve.setter
     def fill_between_other_curve(self, fill_between_other_curve: Curve | None) -> None:
-        _reject_live_update(self, "Configure curve labels and fills before animating.")
-        self._fill_between_other_curve = fill_between_other_curve
+        session = _bound_session(self)
+        name = "_fill_between_other_curve"
+        previous = self._fill_between_other_curve
+        if (
+            session is not None
+            and fill_between_other_curve is not None
+            and not isinstance(fill_between_other_curve, Curve)
+        ):
+            raise InvalidParameterTypeError(
+                "The fill boundary must be a Curve or None."
+            )
+        self._fill_between_other_curve = _stage_live_value(
+            self, name, fill_between_other_curve
+        )
+        if session is not None:
+
+            def restore_link() -> None:
+                session.link_point_source(
+                    self, name, self._fill_between_other_curve, previous
+                )
+
+            # Restore the link before the separate rollback of the property value.
+            session.remember(self, "fill_boundary_link", restore_link)
+            session.link_point_source(self, name, previous, fill_between_other_curve)
 
     @property
     def fill_between_color(self) -> Styled[str | None]:
@@ -990,7 +1007,19 @@ class Curve(Plottable1D, MathematicalObject):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        self._check_animated_uncertainty()
+        if _bound_session(self) is not None:
+            if y_error is not None:
+                self.set_data(self._x_data, self._y_data, y_error=y_error)
+            for name, value in (
+                ("error_curves_color", error_curves_color),
+                ("error_curves_line_style", error_curves_line_style),
+                ("error_curves_line_width", error_curves_line_width),
+                ("error_curves_fill_between", error_curves_fill_between),
+            ):
+                if not is_inherit(value):
+                    setattr(self, name, value)
+            self.show_error_curves = True
+            return
         self._show_error_curves = True
         self._error_curves_configured = True
 
@@ -1616,9 +1645,15 @@ class Curve(Plottable1D, MathematicalObject):
         -------
         The area (float) between the curve and the x axis (or between the two curves) between the two given x values.
         """
+        if fill_between and _bound_session(self) is not None:
+            area = self.get_area_between(x1, x2, other_curve=other_curve)
+            self.fill_between_other_curve = other_curve
+            self.fill_between_bounds = (x1, x2)
+            if not is_inherit(fill_color):
+                self.fill_between_color = fill_color
+            return area
         if other_curve is None:
             if fill_between:
-                _reject_live_update(self, "Configure curve fills before animating.")
                 self.fill_between_bounds = (x1, x2)
                 self._fill_between_color = fill_color
             y_data = self._y_data
@@ -1629,7 +1664,6 @@ class Curve(Plottable1D, MathematicalObject):
             return trapezoid(y, x)
         else:
             if fill_between:
-                _reject_live_update(self, "Configure curve fills before animating.")
                 self.fill_between_bounds = (x1, x2)
                 self._fill_between_color = fill_color
                 self._fill_between_other_curve = other_curve
@@ -1883,7 +1917,7 @@ class Curve(Plottable1D, MathematicalObject):
         )
 
     def _bind_live_area(
-        self, session: _AnimationSession, fill: PolyCollection, other: Curve | None
+        self, session: _AnimationSession, axes: plt.Axes, fill: PolyCollection
     ) -> None:
         def prepare() -> _ArtistEdit:
             bounds = self._fill_between_bounds
@@ -1902,6 +1936,7 @@ class Curve(Plottable1D, MathematicalObject):
             left, right = limits
             if left == right:
                 return _edit(fill.set_visible, fill.get_visible(), False)
+            other = self._fill_between_other_curve
             if other is None:
                 x, y = self._x_data, self._y_data
                 within = (x >= left) & (x <= right)
@@ -1914,20 +1949,22 @@ class Curve(Plottable1D, MathematicalObject):
                         "Both curves must cover the animated fill interval."
                     ) from exc
                 geometry = _fill_edit(fill, x, y, boundary)
-            return _combine_edits(
-                [
-                    geometry,
-                    _edit(fill.set_visible, fill.get_visible(), True),
-                ]
-            )
+            edits = []
+            if fill.axes is None:
+                edits.append(_attach_artists(axes, (fill,)))
+            edits.extend((geometry, _edit(fill.set_visible, fill.get_visible(), True)))
+            return _combine_edits(edits)
 
-        session.bind_derived(self, ("point_data", "_fill_between_bounds"), prepare)
-        if other is not None:
-            session.bind_derived(other, ("point_data",), prepare)
+        boundary = "_fill_between_other_curve"
+        session.bind_derived(
+            self, ("point_data", "_fill_between_bounds", boundary), prepare
+        )
+        session.link_point_source(self, boundary, None, self._fill_between_other_curve)
 
     def _bind_live_styles(
         self,
         session: _AnimationSession,
+        axes: plt.Axes,
         handle: ErrorbarContainer,
         lower: Line2D | None,
         upper: Line2D | None,
@@ -2028,6 +2065,7 @@ class Curve(Plottable1D, MathematicalObject):
             session.bind_derived(self, error_properties, prepare_errorbars)
 
         if lower is not None and upper is not None:
+            detached = lower.axes is None
             initial_fill = resolve_or(self._error_curves_fill_between, True)
 
             def prepare_visibility() -> _ArtistEdit:
@@ -2039,10 +2077,22 @@ class Curve(Plottable1D, MathematicalObject):
                     raise InvalidParameterError(
                         "show_error_curves and error_curves_fill_between must be booleans."
                     )
-                edits = [
+                edits = []
+                if detached and shown:
+                    if lower.axes is None:
+                        additions = (lower, upper)
+                        if error_fill is not None:
+                            additions = (*additions, error_fill)
+                        edits.append(_attach_artists(axes, additions))
+                    edits.extend(
+                        _CurveBands(lower, upper, error_fill, None, None).edits(
+                            self._x_data, self._y_data, self._y_error
+                        )
+                    )
+                edits.extend(
                     _edit(artist.set_visible, artist.get_visible(), shown)
                     for artist in (lower, upper)
-                ]
+                )
                 if error_fill is not None:
                     edits.append(
                         _edit(
@@ -2053,11 +2103,10 @@ class Curve(Plottable1D, MathematicalObject):
                     )
                 return _combine_edits(edits)
 
-            session.bind_derived(
-                self,
-                ("_show_error_curves", "_error_curves_fill_between"),
-                prepare_visibility,
-            )
+            properties = ("_show_error_curves", "_error_curves_fill_between")
+            if detached:
+                properties += ("point_data",)
+            session.bind_derived(self, properties, prepare_visibility)
             for name, field, source in (
                 ("_error_curves_color", "color", "_color"),
                 ("_error_curves_line_style", "linestyle", "_line_style"),
@@ -2260,6 +2309,40 @@ class Curve(Plottable1D, MathematicalObject):
                 )
 
         if session is not None:
+            line = self.handle[0]
+            existing_bands = _CurveBands(lower, upper, error_fill, None, None)
+            if lower is None:
+                color = resolve_or(self._error_curves_color, None)
+                width = resolve_or(self._error_curves_line_width, None)
+                style = resolve_or(self._error_curves_line_style, None)
+                band_style: dict[str, Any] = {
+                    "color": line.get_color()
+                    if color in (None, "same as curve")
+                    else color,
+                    "linewidth": line.get_linewidth()
+                    if width in (None, "same as curve")
+                    else width,
+                    "linestyle": line.get_linestyle()
+                    if style == "same as curve"
+                    else style or "--",
+                }
+                lower, upper = (
+                    Line2D([], [], visible=False, **band_style) for _ in range(2)
+                )
+                error_fill = PolyCollection(
+                    [], facecolor=line.get_color(), alpha=0.2, visible=False
+                )
+            if area_fill is None:
+                color = resolve_or(self._fill_between_color, None)
+                area_fill = PolyCollection(
+                    [],
+                    facecolor=line.get_color()
+                    if color in (None, "same as curve")
+                    else color,
+                    alpha=0.2,
+                    zorder=z_order - 2,
+                    visible=False,
+                )
             reserved_errors = _reserve_errorbar_directions(
                 axes,
                 self.handle,
@@ -2271,13 +2354,13 @@ class Curve(Plottable1D, MathematicalObject):
             session.bind_curve(
                 self,
                 self.handle,
-                bands=_CurveBands(lower, upper, error_fill, None, None),
+                bands=existing_bands,
                 reserved_errors=reserved_errors,
             )
-            if area_fill is not None:
-                self._bind_live_area(session, area_fill, self._fill_between_other_curve)
+            self._bind_live_area(session, axes, area_fill)
             self._bind_live_styles(
                 session,
+                axes,
                 self.handle,
                 lower,
                 upper,

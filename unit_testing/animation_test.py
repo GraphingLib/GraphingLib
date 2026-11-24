@@ -2263,6 +2263,124 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(first.x_data, [0, 1, 2])
         assert_allclose(second.y_data, [5, 5])
 
+    def test_curve_adds_bands_and_retargets_live_fills_without_rebuilding(self):
+        from matplotlib.colors import to_rgba
+
+        curve = Curve([0, 1, 2], [1, 2, 1], color="navy")
+        first = Curve([0, 2], [4, 4])
+        second = Curve([0, 2], [8, 8])
+        left = SmartFigure(elements=[curve])
+        root = SmartFigure(
+            1, 2, elements=[left, curve], figure_style="plain", y_lim=(-1, 12)
+        )
+        areas, bands, ranges = [], [], []
+
+        def update(frame):
+            axes = [axis for axis in plt.gcf().axes if axis.lines]
+            artists = [tuple(axis.collections) for axis in axes]
+            if frame == 0:
+                self.assertEqual(artists, [(), ()])
+                curve.add_error_curves(
+                    [[0.1, 0.2, 0.1], [0.3, 0.4, 0.3]],
+                    error_curves_color="purple",
+                    error_curves_fill_between=True,
+                )
+                self.assertAlmostEqual(
+                    curve.get_area_between(
+                        0, 2, fill_between=True, fill_color="orange"
+                    ),
+                    3,
+                )
+                return
+            fills = tuple(
+                next(
+                    item
+                    for item in group
+                    if np.allclose(item.get_facecolor()[0], to_rgba("orange", 0.2))
+                )
+                for group in artists
+            )
+            areas.append(fills)
+            bands.append(tuple(tuple(axis.lines[1:]) for axis in axes))
+            ranges.append([fill.get_paths()[0].vertices[:, 1].max() for fill in fills])
+            if frame == 1:
+                for lower, upper in bands[0]:
+                    assert_allclose(lower.get_ydata(), [0.9, 1.8, 0.9])
+                    assert_allclose(upper.get_ydata(), [1.3, 2.4, 1.3])
+                    self.assertEqual(upper.get_color(), "purple")
+                curve.show_error_curves = False
+                curve.fill_between_other_curve = first
+                first.y_data = [6, 6]
+            elif frame == 2:
+                self.assertTrue(
+                    all(not line.get_visible() for group in bands[-1] for line in group)
+                )
+                curve.fill_between_other_curve = second
+                second.y_data = [9, 9]
+            elif frame == 3:
+                # Only the current, unplotted boundary should drive this fill.
+                first.set_data([0.75, 1.25], [5, 5])
+                second.y_data = [11, 11]
+                curve.show_error_curves = True
+
+        with patch.object(
+            root, "_prepare_figure", wraps=root._prepare_figure
+        ) as prepare:
+            root.save_animation(self.output, update, 5)
+        prepare.assert_called_once()
+        self.assertIs(curve.fill_between_other_curve, second)
+        self.assertEqual(ranges, [[2, 2], [6, 6], [9, 9], [11, 11]])
+        self.assertTrue(all(fills == areas[0] for fills in areas))
+        self.assertTrue(all(lines == bands[0] for lines in bands))
+        self.assertTrue(
+            all(line.get_visible() for group in bands[-1] for line in group)
+        )
+
+    def test_failed_curve_decoration_frame_rolls_back_artists_and_boundary(self):
+        from matplotlib.collections import PolyCollection
+
+        curve = Curve([0, 1, 2], [1, 2, 1])
+        other = Curve([0, 1, 2], [4, 4, 4])
+        root = SmartFigure(elements=[curve], figure_style="plain")
+        self.output.write_bytes(b"existing")
+        state = []
+        set_verts = PolyCollection.set_verts
+
+        def fail_after_attachment(artist, verts, *args, **kwargs):
+            set_verts(artist, verts, *args, **kwargs)
+            if (
+                len(verts)
+                and state
+                and artist.get_alpha() == 0.2
+                and len(state[0].lines) == 3
+            ):
+                self.assertIs(artist.axes, state[0])
+                raise ValueError("failed applying new uncertainty fill")
+
+        def update(frame):
+            state.append(curve.handle[0].axes)
+            curve.add_error_curves(0.3, error_curves_fill_between=True)
+            curve.get_area_between(0, 2, fill_between=True, other_curve=other)
+            other.y_data = [5, 5, 5]
+
+        with (
+            patch.object(PolyCollection, "set_verts", fail_after_attachment),
+            self.assertRaisesRegex(
+                GraphingException, "failed applying new uncertainty fill"
+            ),
+        ):
+            root.save_animation(self.output, update, 1)
+        (axis,) = state
+        self.assertEqual(tuple(axis.lines), (curve.handle[0],))
+        self.assertFalse(axis.collections)
+        self.assertFalse(curve.show_error_curves)
+        self.assertFalse(curve.error_curves_fill_between)
+        self.assertIsNone(curve.y_error)
+        self.assertIsNone(curve.fill_between_other_curve)
+        self.assertIsNone(curve.fill_between_bounds)
+        assert_allclose(other.y_data, [4, 4, 4])
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_curve_fill_intervals_hide_and_follow_both_curves(self):
         x = [0, 1, 2, 3]
         zero = Curve(x, [2, 3, 4, 5])

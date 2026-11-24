@@ -61,6 +61,19 @@ def _combine_edits(edits: list[_ArtistEdit]) -> _ArtistEdit:
     return _ArtistEdit(apply, undo)
 
 
+def _attach_artists(axes: Axes, artists: tuple[Artist, ...]) -> _ArtistEdit:
+    def attach() -> None:
+        for artist in artists:
+            axes.add_artist(artist)
+
+    def detach() -> None:
+        for artist in artists:
+            if artist.axes is axes:
+                artist.remove()
+
+    return _ArtistEdit(attach, detach)
+
+
 _ERROR_STYLE_PROPERTIES = (
     "_errorbars_color",
     "_errorbars_line_width",
@@ -349,18 +362,7 @@ def _error_style_edits(
             )
         edits.append(_edit(cap.set_alpha, cap.get_alpha(), alpha))
     if reserved_axes is not None and show and any(present) and segments[0].axes is None:
-        artists = (*segments, *caps)
-
-        def attach() -> None:
-            for artist in artists:
-                reserved_axes.add_artist(artist)
-
-        def detach() -> None:
-            for artist in artists:
-                if artist.axes is reserved_axes:
-                    artist.remove()
-
-        edits.insert(0, _ArtistEdit(attach, detach))
+        edits.insert(0, _attach_artists(reserved_axes, (*segments, *caps)))
     if reserved_data is not None and show:
         x, y, dx, dy = reserved_data
         inputs = [
@@ -562,6 +564,9 @@ class _AnimationSession:
         self._updates: dict[tuple[int, str], list[_ArtistEdit]] = {}
         self._dependents: dict[
             tuple[int, str], dict[int, Callable[[], _ArtistEdit]]
+        ] = {}
+        self._point_links: dict[
+            int, dict[int, dict[int, Callable[[], _ArtistEdit]]]
         ] = {}
         self._dirty_dependents: dict[int, Callable[[], _ArtistEdit]] = {}
         self._post_artist_prepares: set[int] = set()
@@ -1034,6 +1039,22 @@ class _AnimationSession:
             # One artist can have independent data, color, and label updates.
             self._dependents.setdefault((id(element), name), {})[id(prepare)] = prepare
 
+    def link_point_source(
+        self, owner: object, property_name: str, old: object | None, new: object | None
+    ) -> None:
+        if old is new:
+            return
+        owner_id = id(owner)
+        if old is not None:
+            links = self._point_links.get(id(old))
+            if links is not None:
+                links.pop(owner_id, None)
+                if not links:
+                    del self._point_links[id(old)]
+        if new is not None:
+            prepares = self._dependents[(owner_id, property_name)]
+            self._point_links.setdefault(id(new), {})[owner_id] = prepares
+
     def can_reserve_legend_entry(self, handle: object) -> bool:
         return self._reserve_legend_entries and id(handle) in self._legend_sources
 
@@ -1407,7 +1428,7 @@ class _AnimationSession:
         self._artists.setdefault(id(curve), []).append(reason)
 
     def has_binding(self, element: object) -> bool:
-        return id(element) in self._artists
+        return id(element) in self._artists or id(element) in self._point_links
 
     def reject_structural_update(self, element: object, message: str) -> None:
         if self.has_binding(element):
@@ -1583,7 +1604,11 @@ class _AnimationSession:
         dependents = self._dependents.get(key)
         if dependents:
             self._dirty_dependents.update(dependents)
-        if updates or dependents:
+        links = self._point_links.get(id(element)) if name == "point_data" else None
+        if links:
+            for prepares in links.values():
+                self._dirty_dependents.update(prepares)
+        if updates or dependents or links:
             self.remember(element, name, restore)
 
     def draw_frame(self, update: Callable[[int], object], index: int) -> None:
@@ -1636,6 +1661,7 @@ class _AnimationSession:
         self._axes_method_artists.clear()
         self._properties.clear()
         self._dependents.clear()
+        self._point_links.clear()
         self._legend_sources.clear()
         self._initially_hidden_artists.clear()
         self._legend_rows.clear()

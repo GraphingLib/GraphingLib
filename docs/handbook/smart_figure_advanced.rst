@@ -1969,22 +1969,25 @@ Live update support
      - Live assignments
      - Set up before animation
    * - :class:`~graphinglib.Curve`
-     - Coordinates and errors, configured error curves and bands, and area
-       fills to zero or between two curves. Assign ``fill_between_bounds``
-       to change the interval of a configured fill, or ``None`` to hide it.
-       Each shared fill uses both curves' final coordinates for the frame. Lines can change color, width,
-       style and opacity. Configured error bars, error curves and fills can
-       change their styles. On Cartesian plots, call ``add_errorbars(...)``
-       in a frame to introduce bars. Pass an error of ``None`` to
-       ``set_data(...)`` to remove that direction. Assign ``show_errorbars``
-       to toggle both directions. Omitted live styles keep their current
-       values. Set ``cap_width=0`` to hide caps. Use ``show_error_curves`` to show
-       or hide configured bands and ``error_curves_fill_between`` to toggle
-       their shading.
-     - The initial band and area-fill configuration. The legend uses the
-       error-bar directions present at setup. Polar error-bar directions
-       are fixed. Set up a nonempty Cartesian plot to animate existing caps.
-       Both curves must continue to cover the configured fill interval.
+     - Coordinates, errors, line styles, uncertainty bands, and area fills.
+       Call ``add_error_curves(...)`` in a frame to introduce a band. Pass
+       ``error_curves_fill_between=True`` to shade it, or assign
+       ``show_error_curves=False`` to hide it. Call
+       ``get_area_between(..., fill_between=True)`` to introduce a fill.
+       Assign ``fill_between_bounds`` to change its interval, or ``None``
+       to hide it. Assign ``fill_between_other_curve`` to change the
+       boundary, or ``None`` to fill to zero. The fill uses the final
+       coordinates of both curves in the frame. When switching to an
+       unplotted boundary, assign it before updating its data so the
+       session can roll back both changes if the frame fails.
+       On Cartesian plots, call ``add_errorbars(...)`` to introduce bars.
+       Pass an error of ``None`` to ``set_data(...)`` to remove that direction.
+       Assign ``show_errorbars`` to toggle both directions. Omitted live
+       styles keep their current values. Set ``cap_width=0`` to hide caps.
+     - The legend uses the error-bar directions present at setup. Polar
+       error-bar directions are fixed. Set up a nonempty Cartesian plot
+       to animate existing caps. Both curves must continue to cover the
+       configured fill interval.
    * - :class:`~graphinglib.Scatter`
      - Coordinates, configured errors, marker shape, size, edge width,
        opacity, face and edge colors, colormap, and color range. Set per-point
