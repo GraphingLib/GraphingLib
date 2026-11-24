@@ -2174,9 +2174,7 @@ class Curve(Plottable1D, MathematicalObject):
             "alpha": self._alpha,
         }
         if self._show_errorbars or (
-            session is not None
-            and axes.name != "polar"
-            and getattr(self, "_errorbars_configured", False)
+            session is not None and getattr(self, "_errorbars_configured", False)
         ):
             params.update(
                 {
@@ -3922,9 +3920,7 @@ class Scatter(Plottable1D, MathematicalObject):
         )
         errorbars = None
         if self._show_errorbars or (
-            session is not None
-            and axes.name != "polar"
-            and getattr(self, "_errorbars_configured", False)
+            session is not None and getattr(self, "_errorbars_configured", False)
         ):
             # Convert errorbars color to matplotlib notation
             if self._errorbars_color is None:

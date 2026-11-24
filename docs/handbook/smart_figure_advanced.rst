@@ -1980,13 +1980,13 @@ Live update support
        coordinates of both curves in the frame. When switching to an
        unplotted boundary, assign it before updating its data so the
        session can roll back both changes if the frame fails.
-       On Cartesian plots, call ``add_errorbars(...)`` to introduce bars.
+       On Cartesian and polar plots, call ``add_errorbars(...)`` to introduce bars.
        Pass an error of ``None`` to ``set_data(...)`` to remove that direction.
        Assign ``show_errorbars`` to toggle both directions. Omitted live
        styles keep their current values. Set ``cap_width=0`` to hide caps.
-     - Polar error-bar directions are fixed. Set up a nonempty Cartesian plot
-       to animate existing caps. Both curves must continue to cover the
-       configured fill interval.
+     - Set up a nonempty Cartesian plot to animate caps on an existing
+       error-bar direction. Both curves must continue to cover the configured
+       fill interval.
    * - :class:`~graphinglib.Scatter`
      - Coordinates, configured errors, marker shape, size, edge width,
        opacity, face and edge colors, colormap, and color range. Set per-point
@@ -1994,8 +1994,8 @@ Live update support
        can be shown or hidden and continue to track their intensity channels.
        Assign ``color_map_range = None`` to restore their individual initial
        scales. Configured error bars can change color,
-       line width, cap width and cap thickness. Cartesian error bars use
-       the same live addition, removal and visibility rules as Curve.
+       line width, cap width and cap thickness. Cartesian and polar error
+       bars use the same live addition, removal and visibility rules as Curve.
      - Legend entry availability and colorbar placement.
        Set up a nonempty Cartesian plot to animate existing caps. Colorbars need an
        intensity array at setup. An intensity channel introduced during
@@ -2219,7 +2219,7 @@ an empty string to hide it again. For an outside legend, leave enough
 space for the longest label you plan to display.
 Existing swatches for plain fitted lines, curves, scatter plots, and
 reference lines follow supported visual styles. A Curve swatch also follows
-error-bar directions and caps introduced during Cartesian playback.
+error-bar directions and caps introduced during Cartesian or polar playback.
 Custom entries and other swatches retain their initial styling. Use explicit
 style values in callbacks.
 

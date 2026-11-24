@@ -455,6 +455,153 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(max(axes.collections[0].get_paths()[0].vertices[:, 1]), 4.5)
         assert_allclose(max(axes.collections[1].get_paths()[0].vertices[:, 1]), 4.0)
 
+    def test_live_polar_errorbars_change_directions_cap_geometry_and_count(self):
+        from graphinglib._animation import _PolarErrorCap
+
+        curve = Curve([0.7, 1.2], [2, 3], label="Model", color="navy")
+        curve.add_errorbars(x_error=0.1, cap_width=2)
+        scatter = Scatter([0.8, 1.3], [2.5, 3.5], face_color="orange")
+        leaf = SmartFigure(
+            elements=[curve, scatter],
+            projection="polar",
+            x_lim=(0.2, 1.8),
+            y_lim=(0, 5),
+        )
+        root = SmartFigure(
+            1,
+            2,
+            elements=[leaf, [curve, scatter]],
+            projection="polar",
+            x_lim=(0.2, 1.8),
+            y_lim=(0, 5),
+            figure_style="plain",
+        )
+        history = []
+
+        def check_cap(artist, points, angular):
+            theta, radius = points
+            centered = artist.get_transform().transform(np.column_stack(points))
+            displayed = artist._display_segments(3)
+            self.assertEqual(len(displayed), len(theta))
+            assert_allclose(displayed.mean(axis=1), centered)
+            delta = displayed[:, 1] - displayed[:, 0]
+            assert_allclose(np.linalg.norm(delta, axis=1), 6)
+            eps = 0.0001
+            dx, dy = (eps, 0) if angular else (0, eps)
+            tangent = artist.get_transform().transform(
+                np.column_stack((theta + dx, radius + dy))
+            ) - artist.get_transform().transform(
+                np.column_stack((theta - dx, radius - dy))
+            )
+            assert_allclose(np.sum(delta * tangent, axis=1), 0, atol=1e-8)
+            self.assertEqual(artist.get_marker(), "|" if angular else "_")
+
+        def update(frame):
+            axes = [ax for ax in plt.gcf().axes if ax.name == "polar"]
+            per_axis = []
+            self.assertEqual(len(axes), 2)
+            for ax in axes:
+                caps = tuple(
+                    line
+                    for line in ax.lines
+                    if isinstance(line, _PolarErrorCap) and line.get_visible()
+                )
+                per_axis.append(caps)
+                self.assertEqual(ax.get_ylim(), (0, 5))
+                children = ax.get_legend().findobj(LineCollection)
+                if frame == 0:
+                    self.assertEqual(len(caps), 2)
+                    ax.set_theta_direction(-1)
+                    ax.set_theta_offset(0.65)
+                elif frame == 1:
+                    self.assertEqual(len(caps), 4)
+                    (radial_low, radial_high) = [cap for cap in caps if not cap.angular]
+                    (angle_low, angle_high) = [cap for cap in caps if cap.angular]
+                    curve_theta = np.array([0.75, 1.25, 1.5])
+                    scatter_theta = np.array([0.8, 1.3])
+                    scatter_radius = np.array([2.5, 3.5])
+                    for cap, radii in (
+                        (radial_low, np.array([1.7, 2.6, 3.1])),
+                        (radial_high, np.array([2.6, 3.2, 3.9])),
+                    ):
+                        assert_allclose(cap.get_xdata(), curve_theta)
+                        assert_allclose(cap.get_ydata(), radii)
+                        check_cap(cap, (curve_theta, radii), False)
+                    for cap, angles in (
+                        (angle_low, scatter_theta - 0.2),
+                        (angle_high, scatter_theta + 0.2),
+                    ):
+                        assert_allclose(cap.get_xdata(), angles)
+                        assert_allclose(cap.get_ydata(), scatter_radius)
+                        check_cap(cap, (angles, scatter_radius), True)
+                    self.assertEqual(
+                        sum(artist.get_visible() for artist in children), 1
+                    )
+                elif frame == 2:
+                    self.assertFalse(caps)
+                else:
+                    self.assertEqual(caps, history[1][len(per_axis) - 1])
+            history.append(tuple(per_axis))
+            if frame == 0:
+                curve.set_data(
+                    [0.75, 1.25, 1.5],
+                    [2, 3, 3.5],
+                    x_error=None,
+                    y_error=[[0.3, 0.4, 0.4], [0.6, 0.2, 0.4]],
+                )
+                scatter.add_errorbars(x_error=0.2, cap_width=3)
+            elif frame == 1:
+                scatter.show_errorbars = False
+                curve.cap_width = 0
+            elif frame == 2:
+                scatter.show_errorbars = True
+                curve.cap_width = 2
+
+        with patch.object(
+            root, "_prepare_figure", wraps=root._prepare_figure
+        ) as prepare:
+            root.save_animation(self.output, update, 4)
+        prepare.assert_called_once()
+
+    def test_live_polar_errorbar_failure_restores_modes_caps_and_export(self):
+        from graphinglib._animation import _PolarErrorCap
+
+        curve = Curve([0.8, 1.3], [2, 3], color="navy")
+        curve.add_errorbars(x_error=0.1, cap_width=2)
+        fig = SmartFigure(elements=[curve], projection="polar", figure_style="plain")
+        self.output.write_bytes(b"existing")
+        initial = []
+        set_data = _PolarErrorCap.set_data
+
+        def fail_on_radial(cap, *args):
+            set_data(cap, *args)
+            if (
+                initial
+                and cap.axes is initial[0][0]
+                and not cap.angular
+                and len(cap.get_xdata())
+            ):
+                raise ValueError("polar cap update failed after attachment")
+
+        def update(frame):
+            ax = curve.handle[0].axes
+            initial.append((ax, tuple(ax.lines), tuple(ax.collections)))
+            self.enterContext(patch.object(_PolarErrorCap, "set_data", fail_on_radial))
+            curve.set_data([0.7, 1.2], [2.5, 3.5], x_error=None, y_error=0.2)
+
+        with self.assertRaisesRegex(
+            GraphingException, "polar cap update failed after attachment"
+        ):
+            fig.save_animation(self.output, update, 1)
+        ((ax, lines, bars),) = initial
+        self.assertEqual(tuple(ax.lines), lines)
+        self.assertEqual(tuple(ax.collections), bars)
+        assert_allclose(curve.x_error, 0.1)
+        self.assertIsNone(curve.y_error)
+        self.assertTrue(all(artist.get_visible() for artist in bars))
+        self.assertTrue(all(line.get_visible() for line in lines))
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_polar_angular_error_updates_keep_curved_segments(self):
         curve = Curve([0.4, 1.2], [1, 2])
         curve.add_errorbars(x_error=0.25, cap_width=0)

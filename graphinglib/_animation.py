@@ -14,12 +14,14 @@ from matplotlib import rcParams
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.axis import Axis
+from matplotlib.backend_bases import RendererBase
 from matplotlib.collections import (
     LineCollection,
     PathCollection,
     PolyCollection,
 )
 from matplotlib.colorbar import Colorbar
+from matplotlib.colors import to_rgba
 from matplotlib.container import ErrorbarContainer
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.layout_engine import ConstrainedLayoutEngine
@@ -28,8 +30,10 @@ from matplotlib.legend_handler import HandlerErrorbar
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import DrawingArea, VPacker
 from matplotlib.patches import Polygon
+from matplotlib.path import Path
 from matplotlib.text import Text as TextArtist
 from matplotlib.ticker import FixedLocator, FuncFormatter, Locator, MultipleLocator
+from matplotlib.transforms import IdentityTransform
 from numpy.typing import ArrayLike
 
 from .exceptions import (
@@ -400,6 +404,127 @@ class _WCSTickStyle:
         return _ArtistEdit(apply, undo)
 
 
+class _PolarErrorCap(Line2D):
+    """Draw point-sized caps perpendicular to the projected error bars."""
+
+    def __init__(self, theta, radius, *, angular: bool, **kwargs: Any) -> None:
+        self.angular = angular
+        super().__init__(
+            theta, radius, marker="|" if angular else "_", linestyle="none", **kwargs
+        )
+
+    def _display_segments(self, half_width: float) -> np.ndarray:
+        axes = cast(Any, self.axes)
+        points = np.asarray(self.get_path().vertices)
+        centers = self.get_transform().transform(points)
+        valid = np.isfinite(centers).all(axis=1)
+        centers = centers[valid]
+        angle = axes.transShift.transform(axes.transScale.transform(points[valid]))[
+            :, 0
+        ]
+        polar_affine = axes.transProjectionAffine + axes.transWedge + axes.transAxes
+        basis = np.column_stack(
+            (-np.sin(angle), np.cos(angle))
+            if self.angular
+            else (np.cos(angle), np.sin(angle))
+        )
+        # Form the normal after projecting the tangent. This also handles
+        # unequal display scales and a viewport covering only a polar sector.
+        tangent = basis @ polar_affine.get_matrix()[:2, :2].T
+        normal = np.column_stack((-tangent[:, 1], tangent[:, 0]))
+        size = np.linalg.norm(normal, axis=1, keepdims=True)
+        offsets = half_width * np.divide(
+            normal, size, out=np.zeros_like(normal), where=size > 0
+        )
+        return np.stack((centers - offsets, centers + offsets), axis=1)
+
+    def draw(self, renderer: RendererBase) -> None:
+        if (
+            not self.get_visible()
+            or self.get_markersize() <= 0
+            or self.get_markeredgewidth() <= 0
+        ):
+            return
+        segments = self._display_segments(
+            cast(float, renderer.points_to_pixels(self.get_markersize() / 2))
+        )
+        if len(segments):
+            path = Path(
+                segments.reshape(-1, 2),
+                np.tile([Path.MOVETO, Path.LINETO], len(segments)),
+            )
+            gc = renderer.new_gc()
+            try:
+                cast(Any, self)._set_gc_clip(gc)
+                gc.set_foreground(
+                    to_rgba(self.get_markeredgecolor(), self.get_alpha()), isRGBA=True
+                )
+                gc.set_linewidth(self.get_markeredgewidth())
+                gc.set_antialiased(self.get_antialiased())
+                gc.set_capstyle("butt")
+                renderer.draw_path(gc, path, IdentityTransform())
+            finally:
+                gc.restore()
+        self.stale = False
+
+
+def _attach_initial_polar_caps(
+    axes: Axes,
+    handle: ErrorbarContainer,
+    cap_width: float,
+    *,
+    show: bool,
+    params: dict[str, Any],
+) -> ErrorbarContainer:
+    line, _, segments = handle.lines
+    directions = [
+        angular
+        for angular, present in ((True, handle.has_xerr), (False, handle.has_yerr))
+        if present
+    ]
+    if not directions:
+        return handle
+    thickness = params.get("markeredgewidth", params.get("capthick"))
+    if thickness is None:
+        thickness = rcParams["lines.markeredgewidth"]
+    caps = []
+    for angular, segments_artist in zip(directions, segments, strict=True):
+        ends = np.asarray(
+            [
+                path.vertices
+                for path in segments_artist.get_paths()
+                if len(np.asarray(path.vertices)) == 2
+            ]
+        ).reshape((-1, 2, 2))
+        colors = segments_artist.get_edgecolor()
+        color = colors[0] if len(colors) else "none"
+        for theta, radius in (ends[:, 0].T, ends[:, 1].T):
+            cap = _PolarErrorCap(
+                theta,
+                radius,
+                angular=angular,
+                visible=show and cap_width > 0,
+                color=color,
+                markersize=2 * cap_width,
+                markeredgewidth=thickness,
+                alpha=segments_artist.get_alpha(),
+                zorder=segments_artist.get_zorder(),
+            )
+            axes.add_artist(cap)
+            caps.append(cap)
+    # Keep native collections and the central line, replacing only the
+    # container metadata so the legend handler can find the live caps.
+    axes.containers.remove(handle)
+    updated = ErrorbarContainer(
+        (line, tuple(caps), segments),
+        has_xerr=handle.has_xerr,
+        has_yerr=handle.has_yerr,
+        label=handle.get_label(),
+    )
+    axes.add_container(updated)
+    return updated
+
+
 def _draw_live_errorbars(
     axes: Axes, x: Any, y: Any, *, show: bool = True, **params: Any
 ) -> ErrorbarContainer:
@@ -420,7 +545,15 @@ def _draw_live_errorbars(
         # extents in the initial axes limits.
         params["xerr"] = None if errors[0] is None else 0
         params["yerr"] = None if errors[1] is None else 0
+    polar = axes.name == "polar"
+    if polar:
+        # Native polar caps are per-point clones without a container binding.
+        params["capsize"] = 0
     handle = axes.errorbar(x, y, **params)
+    if polar:
+        handle = _attach_initial_polar_caps(
+            axes, handle, cap_width, show=show, params=params
+        )
     if hide_caps:
         for cap in handle.lines[1]:
             cap.set_markersize(0)
@@ -454,32 +587,36 @@ def _reserve_errorbar_directions(
     zorder: float,
     cap_width: float | None,
 ) -> ErrorbarContainer | None:
-    if axes.name == "polar":
-        return None
+    polar = axes.name == "polar"
     missing_x = existing is None or not existing.has_xerr
     missing_y = existing is None or not existing.has_yerr
     if not (missing_x or missing_y):
         return None
     cap_width = rcParams["errorbar.capsize"] if cap_width is None else cap_width
     segments, caps = [], []
-    for missing, marker in ((missing_x, "|"), (missing_y, "_")):
+    for angular, missing in ((True, missing_x), (False, missing_y)):
         if missing:
             segments.append(
                 LineCollection([], colors=color, zorder=zorder, visible=False)
             )
-            caps.extend(
-                Line2D(
-                    [],
-                    [],
-                    linestyle="none",
-                    marker=marker,
-                    color=color,
-                    markersize=2 * cap_width,
-                    zorder=zorder,
-                    visible=False,
-                )
-                for _ in range(2)
-            )
+            style: dict[str, Any] = {
+                "color": color,
+                "markersize": 2 * cap_width,
+                "zorder": zorder,
+                "visible": False,
+            }
+            for _ in range(2):
+                if polar:
+                    cap = _PolarErrorCap([], [], angular=angular, **style)
+                else:
+                    cap = Line2D(
+                        [],
+                        [],
+                        linestyle="none",
+                        marker="|" if angular else "_",
+                        **style,
+                    )
+                caps.append(cap)
     return ErrorbarContainer(
         (None, tuple(caps), tuple(segments)),  # ty: ignore[invalid-argument-type] (fmt="none")
         has_xerr=missing_x,
@@ -619,7 +756,10 @@ def _error_update(
     old_caps = tuple(cap.get_data() for cap in artists.caps)
 
     axes = artists.segments.axes
-    angular = is_x and axes is not None and axes.name == "polar"
+    angular = is_x and (
+        (axes is not None and axes.name == "polar")
+        or any(isinstance(cap, _PolarErrorCap) for cap in artists.caps)
+    )
 
     def update(new_segments: Any, cap_data: Any) -> None:
         artists.segments.set_segments(new_segments)
@@ -1802,7 +1942,9 @@ class _AnimationSession:
             originals.extend((line, line))
         # HandlerErrorbar returns segments, caps, the line, and its marker.
         if len(originals) != len(swatches) or any(
-            not isinstance(swatch, type(target))
+            not isinstance(
+                swatch, Line2D if isinstance(target, Line2D) else LineCollection
+            )
             for target, swatch in zip(originals, swatches)
         ):
             return
@@ -1984,12 +2126,7 @@ class _AnimationSession:
                 by_direction.get(True),
                 by_direction.get(False),
                 bands,
-                reserved_errors is not None
-                or (
-                    points.axes is not None
-                    and points.axes.name != "polar"
-                    and len(by_direction) == 2
-                ),
+                reserved_errors is not None or len(by_direction) == 2,
             )
         )
 
