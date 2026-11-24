@@ -1998,10 +1998,12 @@ Live update support
        normalization type, and colorbar layout. Implicit color limits use the
        initial frame.
    * - :class:`~graphinglib.Text`
-     - Content and position, including figure annotations. Plain text can
-       change its font size, color, opacity, alignment and rotation. An
-       already-configured arrow on an Axes can change its target.
-     - Coordinate system, highlight box styling, and whether to draw an arrow.
+     - Content, position, font size, color, opacity, alignment, rotation,
+       and highlight color, opacity and padding, including figure annotations.
+       Set ``highlight_color = None`` to hide the box. On a subplot,
+       ``add_arrow(...)`` can show or restyle an arrow, and setting
+       ``arrow_pointing_to = None`` hides it.
+     - Placement on a subplot or the figure. Arrows use subplot coordinates.
    * - :class:`~graphinglib.Hlines`, :class:`~graphinglib.Vlines`
      - Line positions, colors, widths, and line styles. Vertical line
        opacity can change. Bounded lines can change their count and
@@ -2009,9 +2011,10 @@ Live update support
      - Axes-spanning line count and whether lines span the axes or use
        explicit bounds.
    * - :class:`~graphinglib.Point`
-     - Position, including its label and displayed coordinates, marker size,
-       edge width, and opacity.
-     - Label, annotation choices and colors, and marker shape.
+     - Position, marker shape, size, face and edge colors, edge width and
+       opacity. The caption can change its label, coordinate display, font size,
+       color and alignment, even if the point starts without a label.
+     - The point and its caption use subplot data coordinates.
    * - :class:`~graphinglib.Arrow`, :class:`~graphinglib.Line`
      - Endpoints, width, color, opacity, and the arrow shrink fraction.
      - Arrow head and cap geometry.

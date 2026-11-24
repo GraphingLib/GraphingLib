@@ -8,10 +8,12 @@ from typing import Any, Literal, Optional, Protocol, Sequence, cast, runtime_che
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.collections import LineCollection
+from matplotlib.collections import LineCollection, PathCollection
 from matplotlib.figure import Figure as MPLFigure
 from matplotlib.lines import Line2D
+from matplotlib.markers import MarkerStyle
 from matplotlib.text import Annotation
+from matplotlib.text import Text as TextArtist
 from numpy.typing import ArrayLike
 
 from ._animation import (
@@ -21,7 +23,6 @@ from ._animation import (
     _bound_session,
     _combine_edits,
     _edit,
-    _reject_live_update,
     _stage_live_value,
 )
 from .exceptions import (
@@ -1014,10 +1015,7 @@ class Point(Plottable):
 
     @label.setter
     def label(self, label: Optional[str]) -> None:
-        _reject_live_update(
-            self, "Configure Point labels and annotation styles before animating."
-        )
-        self._label = label
+        self._label = _stage_live_value(self, "_label", label)
 
     @property
     def face_color(self) -> Styled[str | None]:
@@ -1025,10 +1023,7 @@ class Point(Plottable):
 
     @face_color.setter
     def face_color(self, face_color: Styled[str | None]) -> None:
-        _reject_live_update(
-            self, "Configure Point labels and annotation styles before animating."
-        )
-        self._face_color = face_color
+        self._face_color = _stage_live_value(self, "_face_color", face_color)
 
     @property
     def edge_color(self) -> Styled[str | None]:
@@ -1036,10 +1031,7 @@ class Point(Plottable):
 
     @edge_color.setter
     def edge_color(self, edge_color: Styled[str | None]) -> None:
-        _reject_live_update(
-            self, "Configure Point labels and annotation styles before animating."
-        )
-        self._edge_color = edge_color
+        self._edge_color = _stage_live_value(self, "_edge_color", edge_color)
 
     @property
     def marker_size(self) -> float | Inherit:
@@ -1055,10 +1047,7 @@ class Point(Plottable):
 
     @marker_style.setter
     def marker_style(self, marker_style: Styled[str]) -> None:
-        _reject_live_update(
-            self, "Configure Point labels and annotation styles before animating."
-        )
-        self._marker_style = marker_style
+        self._marker_style = _stage_live_value(self, "_marker_style", marker_style)
 
     @property
     def edge_width(self) -> float | Inherit:
@@ -1082,10 +1071,7 @@ class Point(Plottable):
 
     @font_size.setter
     def font_size(self, font_size: float | Literal["same as figure"]) -> None:
-        _reject_live_update(
-            self, "Configure Point labels and annotation styles before animating."
-        )
-        self._font_size = font_size
+        self._font_size = _stage_live_value(self, "_font_size", font_size)
 
     @property
     def text_color(self) -> Styled[str]:
@@ -1093,10 +1079,7 @@ class Point(Plottable):
 
     @text_color.setter
     def text_color(self, text_color: Styled[str]) -> None:
-        _reject_live_update(
-            self, "Configure Point labels and annotation styles before animating."
-        )
-        self._text_color = text_color
+        self._text_color = _stage_live_value(self, "_text_color", text_color)
 
     @property
     def h_align(self) -> str:
@@ -1104,10 +1087,7 @@ class Point(Plottable):
 
     @h_align.setter
     def h_align(self, h_align: str) -> None:
-        _reject_live_update(
-            self, "Configure Point labels and annotation styles before animating."
-        )
-        self._h_align = h_align
+        self._h_align = _stage_live_value(self, "_h_align", h_align)
 
     @property
     def v_align(self) -> str:
@@ -1115,10 +1095,7 @@ class Point(Plottable):
 
     @v_align.setter
     def v_align(self, v_align: str) -> None:
-        _reject_live_update(
-            self, "Configure Point labels and annotation styles before animating."
-        )
-        self._v_align = v_align
+        self._v_align = _stage_live_value(self, "_v_align", v_align)
 
     @property
     def show_coordinates(self) -> bool:
@@ -1126,10 +1103,9 @@ class Point(Plottable):
 
     @show_coordinates.setter
     def show_coordinates(self, show_coordinates: bool) -> None:
-        _reject_live_update(
-            self, "Configure Point labels and annotation styles before animating."
+        self._show_coordinates = _stage_live_value(
+            self, "_show_coordinates", show_coordinates
         )
-        self._show_coordinates = show_coordinates
 
     @property
     def coordinates(self) -> tuple[float, float]:
@@ -1162,6 +1138,140 @@ class Point(Plottable):
         """
         self.show_coordinates = True
 
+    def _caption(self) -> str:
+        text = self._label
+        if text is not None and not isinstance(text, str):
+            raise InvalidParameterTypeError("A Point label must be a string or None.")
+        if self._show_coordinates:
+            coordinates = f"({self._x:.3f}, {self._y:.3f})"
+            text = coordinates if text is None else f"{text} : {coordinates}"
+        if text is None:
+            return ""
+        prefix = " " if self._h_align == "left" else ""
+        suffix = " " if self._h_align == "right" else ""
+        return f"{prefix}{text}{suffix}"
+
+    @staticmethod
+    def _annotation_color(color: Any, face: Any, edge: Any) -> Any:
+        if isinstance(color, str) and color == "same as point":
+            if edge is None or isinstance(edge, str) and edge == "face":
+                return face
+            return edge
+        return color
+
+    def _bind_live_point(
+        self,
+        session: _AnimationSession,
+        marker: PathCollection,
+        annotation: Annotation,
+    ) -> None:
+        figure_font_size = plt.rcParams["font.size"]
+        scatter_style = plt.rcParams["scatter.marker"]
+        initial_style = resolve_or(self._marker_style, scatter_style)
+        initial_face = self._face_color
+        if is_inherit(initial_face):
+            initial_face = marker.get_facecolor()
+            if not len(initial_face):
+                initial_face = marker.get_edgecolor()
+            initial_face = initial_face[0] if len(initial_face) else "none"
+        initial_edge = resolve_or(self._edge_color, plt.rcParams["scatter.edgecolors"])
+        initial_text_color = resolve_or(self._text_color, annotation.get_color())
+
+        def marker_colors(style: MarkerStyle, face: Any, edge: Any) -> tuple[Any, Any]:
+            if face is None and edge is None:
+                raise IncompatibleArgumentsError(
+                    "A point's face_color and edge_color cannot both be None; set at least one of them."
+                )
+            face = "none" if face is None else face
+            edge = "none" if edge is None else edge
+            if style.is_filled():
+                return face, edge
+            if style.get_fillstyle() == "none":
+                return "none", face
+            return face, "face"
+
+        active_style = MarkerStyle(initial_style)
+        active_colors = marker_colors(active_style, initial_face, initial_edge)
+        active = marker.get_paths(), *active_colors
+
+        def prepare_marker() -> _ArtistEdit:
+            style = MarkerStyle(resolve_or(self._marker_style, initial_style))
+            path = style.get_path().transformed(style.get_transform())
+            colors = marker_colors(
+                style,
+                resolve_or(self._face_color, initial_face),
+                resolve_or(self._edge_color, initial_edge),
+            )
+
+            def set_marker(state) -> None:
+                nonlocal active
+                paths, face, edge = state
+                marker.set_paths(paths)
+                marker.set_facecolor(face)
+                marker.set_edgecolor(edge)
+                active = state
+
+            return _edit(set_marker, active, ([path], *colors))
+
+        def prepare_text_color() -> _ArtistEdit:
+            color = self._annotation_color(
+                resolve_or(self._text_color, initial_text_color),
+                resolve_or(self._face_color, initial_face),
+                resolve_or(self._edge_color, initial_edge),
+            )
+            return _edit(annotation.set_color, annotation.get_color(), color)
+
+        def prepare_position(position: tuple[float, float]) -> _ArtistEdit:
+            if not all(isfinite(coord) for coord in position):
+                raise InvalidParameterError(
+                    "Animated Point coordinates must be finite."
+                )
+
+            def move(xy: tuple[float, float]) -> None:
+                annotation.xy = xy
+                annotation.set_position(xy)
+
+            return _combine_edits(
+                [
+                    _edit(marker.set_offsets, marker.get_offsets(), [position]),
+                    _edit(move, annotation.xy, position),
+                ]
+            )
+
+        def prepare_caption() -> _ArtistEdit:
+            if not isinstance(self._show_coordinates, (bool, np.bool_)):
+                raise InvalidParameterTypeError(
+                    "Point.show_coordinates must be a boolean."
+                )
+            return _edit(annotation.set_text, annotation.get_text(), self._caption())
+
+        session.bind_update(self, "coordinates", prepare_position)
+        session.bind_derived(
+            self,
+            ("coordinates", "_label", "_show_coordinates", "_h_align"),
+            prepare_caption,
+        )
+        session.bind_derived(
+            self, ("_marker_style", "_face_color", "_edge_color"), prepare_marker
+        )
+        session.bind_derived(
+            self, ("_text_color", "_face_color", "_edge_color"), prepare_text_color
+        )
+        session.bind_property(
+            self, "_marker_size", marker, "sizes", lambda value: [value]
+        )
+        session.bind_property(self, "_edge_width", marker, "linewidth")
+        session.bind_property(self, "_alpha", marker, "alpha")
+        session.bind_property(
+            self,
+            "_font_size",
+            annotation,
+            "fontsize",
+            lambda value: figure_font_size if value == "same as figure" else value,
+        )
+        session.bind_property(self, "_h_align", annotation, "horizontalalignment")
+        session.bind_property(self, "_v_align", annotation, "verticalalignment")
+
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
@@ -1172,13 +1282,8 @@ class Point(Plottable):
                 "A point's face_color and edge_color cannot both be None; set at least "
                 "one of them."
             )
+        session = _DRAW_SESSION.get()
         size = self._font_size if self._font_size != "same as figure" else None
-        prefix = " " if self._h_align == "left" else ""
-        postfix = " " if self._h_align == "right" else ""
-        if self._label is not None and not self._show_coordinates:
-            point_label = prefix + self._label + postfix
-        else:
-            point_label = None
         params = {
             "c": self._face_color if self._face_color is not None else "none",
             "edgecolors": self._edge_color if self._edge_color is not None else "none",
@@ -1187,115 +1292,42 @@ class Point(Plottable):
             "linewidths": self._edge_width,
             "alpha": self._alpha,
         }
-        params = strip_inherit(params)
-        marker = axes.scatter(
-            self._x,
-            self._y,
-            zorder=z_order,
-            **params,
-        )
-        # get text color. if _text_color is "same as point", use the color of the point (prioritize edge color, then face color)
-        if self._text_color == "same as point":
-            if self._edge_color is not None:
-                text_color = self._edge_color
-            else:
-                text_color = self._face_color
-        else:
-            text_color = self._text_color
-        params = {
-            "color": text_color,
-            "fontsize": size,
-            "horizontalalignment": self._h_align,
-            "verticalalignment": self._v_align,
-        }
-        params = strip_inherit(params)
-        label = axes.annotate(
-            cast(str, point_label),
-            (self._x, self._y),
-            zorder=z_order,
-            **params,
-        )
-        if self._show_coordinates:
-            prefix = " " if self._h_align == "left" else ""
-            postfix = " " if self._h_align == "right" else ""
-            if self._label is not None:
-                point_label = (
-                    prefix
-                    + self._label
-                    + " : "
-                    + f"({self._x:.3f}, {self._y:.3f})"
-                    + postfix
-                )
-            else:
-                point_label = prefix + f"({self._x:.3f}, {self._y:.3f})" + postfix
-            if self._text_color == "same as point":
-                if self._edge_color is not None:
-                    text_color = self._edge_color
-                else:
-                    text_color = self._face_color
-            else:
-                text_color = self._text_color
-            params = {
-                "color": text_color,
+        marker = axes.scatter(self._x, self._y, zorder=z_order, **strip_inherit(params))
+        params = strip_inherit(
+            {
+                "color": self._annotation_color(
+                    self._text_color, self._face_color, self._edge_color
+                ),
                 "fontsize": size,
                 "horizontalalignment": self._h_align,
                 "verticalalignment": self._v_align,
             }
-            params = strip_inherit(params)
-            coordinates = axes.annotate(
-                point_label,
-                (self._x, self._y),
-                zorder=z_order,
-                **params,
-            )
-        session = _DRAW_SESSION.get()
+        )
+        if session is None and self._show_coordinates:
+            # Keep the empty label slot created by the static plotting path.
+            axes.annotate("", self.coordinates, zorder=z_order, **params)
+        label = axes.annotate(
+            self._caption(), self.coordinates, zorder=z_order, **params
+        )
         if session is not None:
-            session.bind_property(
-                self, "_marker_size", marker, "sizes", lambda value: [value]
-            )
-            session.bind_property(self, "_edge_width", marker, "linewidth")
-            session.bind_property(self, "_alpha", marker, "alpha")
-            # Alignment is resolved for each occurrence, including reused Points.
-            show_coordinates = self._show_coordinates
-            prefix = " " if self._h_align == "left" else ""
-            postfix = " " if self._h_align == "right" else ""
+            self._bind_live_point(session, marker, label)
 
-            def prepare(position: tuple[float, float]) -> _ArtistEdit:
-                if not all(isfinite(coord) for coord in position):
-                    raise InvalidParameterError(
-                        "Animated Point coordinates must be finite."
-                    )
-                before = marker.get_offsets()
 
-                def move(artist: Annotation, xy: tuple[float, float]) -> None:
-                    artist.xy = xy
-                    artist.set_position(xy)
+class _LiveTextAnnotation(Annotation):
+    """Use one text artist and clip only its optional arrow at the target."""
 
-                def update() -> None:
-                    marker.set_offsets([position])
-                    move(label, position)
-                    if show_coordinates:
-                        move(coordinates, position)
-                        x, y = position
-                        caption = f"{self._label} : " if self._label is not None else ""
-                        coordinates.set_text(
-                            f"{prefix}{caption}({x:.3f}, {y:.3f}){postfix}"
-                        )
+    def _check_xy(self, renderer=None) -> bool:
+        if self.arrow_patch is not None:
+            if self.arrowprops is None:
+                self.arrow_patch.set_visible(False)
+            else:
+                self.arrow_patch.set_visible(super()._check_xy(renderer))  # ty: ignore[unresolved-attribute]
+        return True
 
-                def restore() -> None:
-                    marker.set_offsets(before)
-                    move(label, old_label_position)
-                    if show_coordinates:
-                        move(coordinates, old_coordinates_position)
-                        coordinates.set_text(old_content)
-
-                old_label_position = label.xy
-                if show_coordinates:
-                    old_coordinates_position = coordinates.xy
-                    old_content = coordinates.get_text()
-                return _ArtistEdit(update, restore)
-
-            session.bind_update(self, "coordinates", prepare)
+    def get_window_extent(self, renderer=None):
+        # The Text extent is independent of the optional arrow and is already
+        # in data coordinates before the first render.
+        return TextArtist.get_window_extent(self, renderer)
 
 
 @dataclass
@@ -1443,6 +1475,7 @@ class Text(Plottable):
         self._highlight_alpha = highlight_alpha
         self._highlight_padding = highlight_padding
         self._arrow_pointing_to = None
+        self._arrow_properties: dict[str, float] = {}
 
     @property
     def x(self) -> float:
@@ -1539,8 +1572,9 @@ class Text(Plottable):
 
     @highlight_color.setter
     def highlight_color(self, highlight_color: Optional[str]) -> None:
-        _reject_live_update(self, "Configure Text highlights before animating.")
-        self._highlight_color = highlight_color
+        self._highlight_color = _stage_live_value(
+            self, "_highlight_color", highlight_color
+        )
 
     @property
     def highlight_alpha(self) -> float:
@@ -1548,8 +1582,9 @@ class Text(Plottable):
 
     @highlight_alpha.setter
     def highlight_alpha(self, highlight_alpha: float) -> None:
-        _reject_live_update(self, "Configure Text highlights before animating.")
-        self._highlight_alpha = highlight_alpha
+        self._highlight_alpha = _stage_live_value(
+            self, "_highlight_alpha", highlight_alpha
+        )
 
     @property
     def highlight_padding(self) -> float:
@@ -1557,8 +1592,9 @@ class Text(Plottable):
 
     @highlight_padding.setter
     def highlight_padding(self, highlight_padding: float) -> None:
-        _reject_live_update(self, "Configure Text highlights before animating.")
-        self._highlight_padding = highlight_padding
+        self._highlight_padding = _stage_live_value(
+            self, "_highlight_padding", highlight_padding
+        )
 
     @property
     def arrow_pointing_to(self) -> Optional[tuple[float, float]]:
@@ -1611,23 +1647,135 @@ class Text(Plottable):
             Opacity of the arrow.
             Range is ``0`` (transparent) to ``1`` (opaque).
         """
-        session = _bound_session(self)
-        if session is not None:
-            session.reject_structural_update(
-                self, "Configure Text arrows before animating."
+        properties = {
+            key: value
+            for key, value in (
+                ("width", width),
+                ("shrink", shrink),
+                ("headwidth", head_width),
+                ("headlength", head_length),
+                ("alpha", alpha),
             )
-        self._arrow_pointing_to = points_to
-        self._arrow_properties = {}
-        if width is not None:
-            self._arrow_properties["width"] = width
-        if shrink is not None:
-            self._arrow_properties["shrink"] = shrink
-        if head_width is not None:
-            self._arrow_properties["headwidth"] = head_width
-        if head_length is not None:
-            self._arrow_properties["headlength"] = head_length
-        if alpha is not None:
-            self._arrow_properties["alpha"] = alpha
+            if value is not None
+        }
+        self._arrow_properties = _stage_live_value(
+            self, "_arrow_properties", properties
+        )
+        self.arrow_pointing_to = points_to
+
+    def _bind_live_text(self, session: _AnimationSession, artist: TextArtist) -> None:
+        session.bind_text(self, artist)
+        figure_font_size = plt.rcParams["font.size"]
+        session.bind_property(
+            self,
+            "_font_size",
+            artist,
+            "fontsize",
+            lambda value: figure_font_size if value == "same as figure" else value,
+        )
+        for name, mpl_name in (
+            ("_color", "color"),
+            ("_alpha", "alpha"),
+            ("_h_align", "horizontalalignment"),
+            ("_v_align", "verticalalignment"),
+            ("_rotation", "rotation"),
+        ):
+            session.bind_property(self, name, artist, mpl_name)
+
+        box = artist.get_bbox_patch()
+        assert box is not None
+        box.set_visible(self._highlight_color is not None)
+
+        def prepare_highlight() -> _ArtistEdit:
+            color, alpha, padding = (
+                self._highlight_color,
+                self._highlight_alpha,
+                self._highlight_padding,
+            )
+            if not isinstance(padding, Real) or not isfinite(padding) or padding < 0:
+                raise InvalidParameterError(
+                    "Text highlight padding must be finite and nonnegative."
+                )
+            return _combine_edits(
+                [
+                    _edit(
+                        box.set_facecolor,
+                        box.get_facecolor(),
+                        "none" if color is None else color,
+                    ),
+                    _edit(box.set_alpha, box.get_alpha(), alpha),
+                    _edit(
+                        box.set_boxstyle, box.get_boxstyle(), f"square,pad={padding}"
+                    ),
+                    _edit(box.set_visible, box.get_visible(), color is not None),
+                ]
+            )
+
+        session.bind_derived(
+            self,
+            ("_highlight_color", "_highlight_alpha", "_highlight_padding"),
+            prepare_highlight,
+        )
+
+    def _bind_live_text_arrow(
+        self, session: _AnimationSession, annotation: _LiveTextAnnotation
+    ) -> None:
+        initial_color = annotation.get_color()
+        patch = annotation.arrow_patch
+        assert patch is not None
+
+        def prepare_arrow() -> _ArtistEdit:
+            target = self._arrow_pointing_to
+            if target is not None and (
+                len(target) != 2
+                or not all(
+                    isinstance(value, Real) and isfinite(value) for value in target
+                )
+            ):
+                raise InvalidParameterError(
+                    "An animated Text arrow needs a finite target."
+                )
+            options = self._arrow_properties
+            for name, value in options.items():
+                if not isinstance(value, Real) or not isfinite(value) or value < 0:
+                    raise InvalidParameterError(
+                        "Text arrow options must be finite and nonnegative."
+                    )
+                if (name == "shrink" and value > 0.5) or (
+                    name == "alpha" and value > 1
+                ):
+                    raise InvalidParameterError(
+                        "Text arrow shrink must be at most 0.5 and alpha at most 1."
+                    )
+            return _combine_edits(
+                [
+                    _edit(
+                        lambda value: setattr(annotation, "xy", value),
+                        annotation.xy,
+                        (self._x, self._y) if target is None else tuple(target),
+                    ),
+                    _edit(
+                        lambda value: setattr(annotation, "arrowprops", value),
+                        annotation.arrowprops,
+                        None if target is None else dict(options),
+                    ),
+                    _edit(
+                        patch.set_color,
+                        patch.get_facecolor(),
+                        resolve_or(self._color, initial_color),
+                    ),
+                    _edit(patch.set_alpha, patch.get_alpha(), options.get("alpha")),
+                    _edit(
+                        patch.set_visible,
+                        patch.get_visible(),
+                        target is not None,
+                    ),
+                ]
+            )
+
+        session.bind_derived(
+            self, ("_arrow_pointing_to", "_arrow_properties", "_color"), prepare_arrow
+        )
 
     def _plot_element(self, axes: plt.Axes | MPLFigure, z_order: int, **kwargs) -> None:
         """
@@ -1635,6 +1783,7 @@ class Text(Plottable):
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_ or a
         `Figure <https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html>`.
         """
+        session = _DRAW_SESSION.get()
         size = self._font_size if self._font_size != "same as figure" else None
         params = {
             "color": self._color,
@@ -1646,36 +1795,46 @@ class Text(Plottable):
         }
 
         # Add highlight/background box if highlight_color is specified
-        if self._highlight_color is not None:
+        if self._highlight_color is not None or session is not None:
             bbox_dict = {
                 "boxstyle": f"square,pad={self._highlight_padding}",
-                "facecolor": self._highlight_color,
+                "facecolor": "none"
+                if self._highlight_color is None
+                else self._highlight_color,
                 "edgecolor": "none",
                 "alpha": self._highlight_alpha,
             }
             params["bbox"] = bbox_dict
 
         params = strip_inherit(params)
-        artist = axes.text(
-            self._x,
-            self._y,
-            self._text,
-            zorder=z_order,
-            **params,
-        )
-        session = _DRAW_SESSION.get()
+        if session is not None and isinstance(axes, plt.Axes):
+            target = self._arrow_pointing_to
+            position = self._x, self._y
+            arrow_options: dict[str, Any] = dict(self._arrow_properties)
+            arrow_options["color"] = resolve_or(self._color, plt.rcParams["text.color"])
+            annotation = _LiveTextAnnotation(
+                self._text,
+                position if target is None else target,
+                xytext=position,
+                zorder=z_order,
+                clip_on=False,
+                arrowprops=arrow_options,
+                **params,
+            )
+            annotation.set_transform(axes.transData)
+            if target is None:
+                annotation.arrowprops = None
+                assert annotation.arrow_patch is not None
+                annotation.arrow_patch.set_visible(False)
+            axes.add_artist(annotation)
+            self._bind_live_text(session, annotation)
+            self._bind_live_text_arrow(session, annotation)
+            return
+
+        artist = axes.text(self._x, self._y, self._text, zorder=z_order, **params)
         if session is not None:
-            session.bind_text(self, artist)
-            if self._arrow_pointing_to is None:
-                for name, mpl_name in (
-                    ("_color", "color"),
-                    ("_font_size", "fontsize"),
-                    ("_alpha", "alpha"),
-                    ("_h_align", "horizontalalignment"),
-                    ("_v_align", "verticalalignment"),
-                    ("_rotation", "rotation"),
-                ):
-                    session.bind_property(self, name, artist, mpl_name)
+            self._bind_live_text(session, artist)
+            return
         if self._arrow_pointing_to is not None and isinstance(axes, plt.Axes):
             # Build the arrow properties on a local copy: mutating the instance dict
             # here used to leak an unresolved INHERIT color into it, and the arrow
@@ -1691,32 +1850,13 @@ class Text(Plottable):
             }
             params = strip_inherit(params)
             params["arrowprops"] = arrow_properties
-            annotation = axes.annotate(
+            axes.annotate(
                 self._text,
                 self._arrow_pointing_to,
                 xytext=(self._x, self._y),
                 zorder=z_order,
                 **params,
             )
-            if session is not None:
-                session.bind_text(self, annotation)
-
-                def prepare_target(target: tuple[float, float] | None) -> _ArtistEdit:
-                    if (
-                        target is None
-                        or len(target) != 2
-                        or not all(isfinite(value) for value in target)
-                    ):
-                        raise InvalidParameterError(
-                            "An animated Text arrow needs a finite target."
-                        )
-                    before = annotation.xy
-                    return _ArtistEdit(
-                        lambda: setattr(annotation, "xy", target),
-                        lambda: setattr(annotation, "xy", before),
-                    )
-
-                session.bind_update(self, "_arrow_pointing_to", prepare_target)
 
 
 @dataclass

@@ -593,6 +593,210 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertEqual(table.handle[0, 0].get_text().get_text(), "header")
         self.assertEqual(table.handle[1, 0].get_text().get_color(), "purple")
 
+    def test_point_marker_and_caption_styles_update_in_every_occurrence(self):
+        from matplotlib.colors import to_rgba
+        from matplotlib.text import Annotation
+
+        from graphinglib import Point
+
+        point = Point(1, 1)
+        nested = SmartFigure(elements=[point], x_lim=(0, 4), y_lim=(0, 4))
+        root = SmartFigure(2, 2, figure_style="plain", x_lim=(0, 4), y_lim=(0, 4))
+        root[0, 0] = nested
+        root[1, :] = [point]
+        bindings = []
+        states = {}
+
+        def update(i):
+            pairs = [
+                (axis.collections[0], axis.texts[0])
+                for axis in plt.gcf().axes
+                if len(axis.collections)
+                and len(axis.texts)
+                and isinstance(axis.texts[0], Annotation)
+            ]
+            self.assertEqual(len(pairs), 2)
+            if bindings:
+                self.assertEqual(pairs, bindings)
+            else:
+                bindings.extend(pairs)
+            states[i] = [
+                (
+                    note.get_text(),
+                    note.get_color(),
+                    note.get_fontsize(),
+                    marker.get_edgecolor().copy(),
+                )
+                for marker, note in pairs
+            ]
+            point.coordinates = (i + 1, i + 1)
+            point.marker_style = ("s", "x", "^")[i]
+            point.face_color = ("blue", "orange", None)[i]
+            point.edge_color = ("red", "blue", "green")[i]
+            point.label = "sample" if i < 2 else None
+            point.show_coordinates = i != 0
+            point.h_align = "right"
+            point.v_align = "top"
+            point.font_size = 16 if i == 0 else "same as figure"
+            point.marker_size = 50
+            point.edge_width = 2.5
+            point.alpha = 0.75
+
+        root.save_animation(self.output, update, 3)
+        for text, color, size, stroke in states[1]:
+            self.assertEqual((text, color, size), ("sample ", "red", 16))
+            assert_allclose(stroke, [to_rgba("red", 0.75)])
+        for text, color, _, stroke in states[2]:
+            self.assertEqual((text, color), ("sample : (2.000, 2.000) ", "blue"))
+            assert_allclose(stroke, [to_rgba("orange", 0.75)])
+        for (marker, note), (_, _, starting_size, _) in zip(
+            bindings, states[0], strict=True
+        ):
+            self.assertEqual(note.get_text(), "(3.000, 3.000) ")
+            self.assertEqual(note.get_color(), "green")
+            self.assertEqual(note.get_fontsize(), starting_size)
+            self.assertEqual(note.get_horizontalalignment(), "right")
+            self.assertEqual(note.get_verticalalignment(), "top")
+            self.assertEqual(note.xy, (3, 3))
+            assert_allclose(marker.get_offsets(), [[3, 3]])
+            assert_allclose(marker.get_sizes(), [50])
+            assert_allclose(marker.get_linewidth(), [2.5])
+            assert_allclose(marker.get_edgecolor(), [to_rgba("green", 0.75)])
+            self.assertEqual(len(marker.get_facecolor()), 0)
+            self.assertEqual(len(marker.get_paths()[0].vertices), 4)
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 3)
+
+    def test_text_highlight_and_arrow_can_appear_and_clear_during_playback(self):
+        from matplotlib.colors import to_rgba
+        from matplotlib.text import Annotation
+
+        text = Text(1, 2, "start", color="black", font_size=14)
+        heading = Text(0.5, 0.96, "heading")
+        root = SmartFigure(
+            elements=[text],
+            annotations=[heading],
+            figure_style="plain",
+            x_lim=(0, 6),
+            y_lim=(0, 6),
+        )
+        artists = []
+        states = {}
+
+        def update(i):
+            fig = plt.gcf()
+            (body,) = fig.axes[0].texts
+            self.assertIsInstance(body, Annotation)
+            arrow = body.arrow_patch
+            panel = fig.texts[0]
+            box, panel_box = body.get_bbox_patch(), panel.get_bbox_patch()
+            if artists:
+                self.assertEqual(artists, [body, arrow, box, panel, panel_box])
+            else:
+                artists.extend([body, arrow, box, panel, panel_box])
+            states[i] = (
+                body.xy,
+                arrow.get_visible(),
+                box.get_visible(),
+                box.get_facecolor(),
+                box.get_boxstyle().pad,
+                arrow.get_facecolor(),
+                panel_box.get_visible(),
+            )
+            text.x = 1 + i / 4
+            text.text = f"sample {i}"
+            text.color = "purple"
+            text.font_size = 15
+            text.h_align = "center"
+            text.v_align = "top"
+            text.alpha = 0.7
+            text.rotation = 15
+            text.highlight_color = None if i == 1 else "gold"
+            text.highlight_alpha = 0.4
+            text.highlight_padding = 0.3
+            heading.highlight_color = "cyan"
+            heading.highlight_padding = 0.2
+            if i == 0:
+                text.add_arrow(
+                    (4, 4), width=1, head_width=6, head_length=5, shrink=0.15, alpha=0.6
+                )
+            elif i == 1:
+                text.arrow_pointing_to = None
+            elif i == 2:
+                text.arrow_pointing_to = (8, 3)
+            else:
+                text.arrow_pointing_to = (5, 3)
+
+        root.save_animation(self.output, update, 4)
+        self.assertEqual(states[0][1:3], (False, False))
+        self.assertFalse(states[0][-1])
+        self.assertEqual(states[1][:3], ((4, 4), True, True))
+        assert_allclose(states[1][3], to_rgba("gold", 0.4))
+        self.assertEqual(states[1][4], 0.3)
+        assert_allclose(states[1][5], to_rgba("purple", 0.6))
+        self.assertEqual(states[2][1:3], (False, False))
+        self.assertEqual(states[3][:3], ((8, 3), False, True))
+        body, arrow, box, _, panel_box = artists
+        self.assertEqual(body.xy, (5, 3))
+        self.assertEqual(
+            body.arrowprops,
+            {"width": 1, "headwidth": 6, "headlength": 5, "shrink": 0.15, "alpha": 0.6},
+        )
+        self.assertTrue(arrow.get_visible())
+        self.assertEqual(body.get_text(), "sample 3")
+        self.assertEqual(body.get_position(), (1.75, 2))
+        self.assertEqual(body.get_fontsize(), 15)
+        self.assertEqual(body.get_rotation(), 15)
+        self.assertEqual(body.get_horizontalalignment(), "center")
+        self.assertEqual(body.get_verticalalignment(), "top")
+        self.assertAlmostEqual(body.get_alpha(), 0.7)
+        assert_allclose(arrow.get_facecolor(), to_rgba("purple", 0.6))
+        self.assertTrue(box.get_visible())
+        self.assertTrue(panel_box.get_visible())
+        self.assertEqual(panel_box.get_boxstyle().pad, 0.2)
+
+    def test_failed_point_and_text_styles_restore_previous_artists(self):
+        from matplotlib.colors import to_rgba
+
+        from graphinglib import Point
+
+        point = Point(0, 0, label="base", face_color="blue")
+        text = Text(1, 1, "start")
+        figure = SmartFigure(
+            elements=[point, text], figure_style="plain", x_lim=(0, 4), y_lim=(0, 4)
+        )
+        artists = []
+
+        def update(i):
+            axis = plt.gcf().axes[0]
+            artists[:] = [axis.collections[0], *axis.texts]
+            text.highlight_color = "pink" if i else "gold"
+            text.highlight_padding = 0.4 if i else 0.2
+            text.add_arrow((3, 3) if i else (2, 2), width=3 if i else 2)
+            point.coordinates = (i + 1, i + 1)
+            point.label = f"point {i}"
+            point.marker_style = "D" if i else "s"
+            point.face_color = "invalid color" if i else "purple"
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            figure.save_animation(self.output, update, 2)
+        self.assertFalse(self.output.exists())
+        marker, caption, label = artists
+        self.assertEqual(point.coordinates, (1, 1))
+        self.assertEqual(point.marker_style, "s")
+        self.assertEqual(point.label, "point 0")
+        self.assertEqual(caption.get_text(), " point 0")
+        self.assertEqual(caption.xy, (1, 1))
+        assert_allclose(marker.get_offsets(), [[1, 1]])
+        assert_allclose(marker.get_facecolor(), [to_rgba("purple")])
+        self.assertEqual(len(marker.get_paths()[0].vertices), 5)
+        self.assertEqual(text.highlight_color, "gold")
+        self.assertEqual(text.arrow_pointing_to, (2, 2))
+        self.assertEqual(label.xy, (2, 2))
+        self.assertEqual(label.arrowprops["width"], 2)
+        assert_allclose(label.get_bbox_patch().get_facecolor(), to_rgba("gold"))
+        self.assertEqual(label.get_bbox_patch().get_boxstyle().pad, 0.2)
+
     def test_mesh_quiver_and_contour_keep_their_artists(self):
         from matplotlib.collections import QuadMesh
         from matplotlib.contour import QuadContourSet
