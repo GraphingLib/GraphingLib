@@ -2114,6 +2114,14 @@ and explicitly configured tick positions and labels are preserved. Shared
 axes use one set of limits, direction and scale. Twin axes accept
 ``axis_lim``, ``invert_axis`` and ``log_scale``.
 
+Assign ``aspect_ratio`` or ``box_aspect_ratio`` to change the data scale
+ratio or the physical shape of direct subplots. Lists follow subplot order
+and use the usual defaults for omitted entries. Assign nested figures
+directly. Use ``"auto"`` for the data aspect or ``None`` for the box
+aspect to restore automatic sizing. A fixed box combined with a fixed data
+aspect can move the limits of a free axis. If both axes are shared, the
+requested ratios must agree with the shared limits.
+
 Use ``set_ticks(...)`` in a callback to change tick positions, spacing, and
 major tick labels on standard plots and twin axes. Tick updates use the
 frame's final scale and keep the view limits fixed. ``reset=True`` restores
@@ -2160,6 +2168,11 @@ in subplot order. A spanning plot occupies one entry. An omitted entry or
 ``None`` clears the corresponding subplot text. A nested figure's own
 title or label takes precedence over the parent entry. Set the nested
 figure's property to ``None`` to use the parent's current text.
+
+Call ``set_text_padding_params(...)`` to change title and label padding.
+Subplot padding follows subplot order. A nested figure can override the
+parent slot padding with its own settings. Use ``reset=True`` to clear
+that figure's overrides and fall back to inherited or figure style padding.
 
 Grid layout, legend entries, and colorbar placement are established from the
 initial figure. For a scalar Heatmap, Contour, or Scatter with an intensity

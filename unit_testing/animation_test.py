@@ -3570,6 +3570,145 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         with Image.open(self.output) as gif:
             self.assertEqual(gif.n_frames, 2)
 
+    def test_live_aspect_ratios_update_spans_and_twin_boxes(self):
+        from graphinglib import SmartTwinAxis
+
+        inner, auxiliary, wide, bottom = (Curve([0, 4], [0, 2]) for _ in range(4))
+        nested = SmartFigure(
+            elements=[inner],
+            twin_y_axis=SmartTwinAxis(elements=[auxiliary]),
+            x_lim=(0, 4),
+            y_lim=(0, 2),
+        )
+        root = SmartFigure(2, 3, figure_style="plain", x_lim=(0, 4), y_lim=(0, 2))
+        root[:, 0] = nested
+        root[0, 1:3] = [wide]
+        root[1, 1:3] = [bottom]
+        states = []
+
+        def update(frame):
+            axes = tuple(
+                curve.handle.lines[0].axes for curve in (inner, auxiliary, wide, bottom)
+            )
+            states.append(axes)
+            if frame == 0:
+                root.aspect_ratio = ["auto", "equal"]
+                root.box_aspect_ratio = [None, None, 0.7]
+                nested.box_aspect_ratio = 0.6
+            elif frame == 1:
+                main, twin, span, lower = axes
+                self.assertEqual(main.get_box_aspect(), 0.6)
+                self.assertEqual(twin.get_box_aspect(), 0.6)
+                self.assertEqual(span.get_aspect(), 1)
+                self.assertAlmostEqual(span.bbox.height / span.bbox.width, 0.5)
+                self.assertAlmostEqual(lower.bbox.height / lower.bbox.width, 0.7)
+                for controlled in (main, span, lower):
+                    self.assertEqual(controlled.get_xlim(), (0, 4))
+                    self.assertEqual(controlled.get_ylim(), (0, 2))
+                root.aspect_ratio = "auto"
+                root.box_aspect_ratio = None
+                nested.box_aspect_ratio = None
+
+        with patch.object(
+            root, "_prepare_figure", wraps=root._prepare_figure
+        ) as prepare:
+            root.save_animation(self.output, update, 3)
+        prepare.assert_called_once()
+        self.assertTrue(all(state == states[0] for state in states))
+        self.assertTrue(all(ax.get_box_aspect() is None for ax in states[-1]))
+        self.assertTrue(all(ax.get_aspect() == "auto" for ax in states[-1]))
+        self.assertEqual(states[-1][-1].get_adjustable(), "box")
+
+    def test_live_shared_aspect_checks_final_limits_and_rolls_back_conflict(self):
+        first, second = (Curve([0, 4], [0, 2]) for _ in range(2))
+        root = SmartFigure(
+            1,
+            2,
+            elements=[first, second],
+            share_x=True,
+            share_y=True,
+            figure_style="plain",
+        )
+        self.output.write_bytes(b"existing")
+
+        def update(frame):
+            if frame == 0:
+                root.aspect_ratio = "equal"
+                root.box_aspect_ratio = 0.5
+                root.x_lim = (0, 4)
+                root.y_lim = (0, 2)
+            else:
+                root.box_aspect_ratio = 0.8
+
+        with self.assertRaisesRegex(GraphingException, "when both axes are shared"):
+            root.save_animation(self.output, update, 2)
+        self.assertEqual(root.box_aspect_ratio, 0.5)
+        for curve in (first, second):
+            axes = curve.handle.lines[0].axes
+            self.assertEqual(axes.get_box_aspect(), 0.5)
+            self.assertEqual(axes.get_xlim(), (0, 4))
+            self.assertEqual(axes.get_ylim(), (0, 2))
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
+    def test_live_text_padding_inherits_and_resets_on_nested_and_spanning_plots(self):
+        first, inner = (Curve([0, 4], [0, 2]) for _ in range(2))
+        nested = SmartFigure(elements=[inner], x_label="Child")
+        root = SmartFigure(
+            2,
+            2,
+            figure_style="plain",
+            title="Root",
+            subtitles=["Nested title", "Span title"],
+            sub_x_labels=["Inherited", "Span x"],
+        )
+        root[:, 0] = nested
+        root[:, 1] = [first]
+        root.set_rc_params({"axes.titlepad": 7, "axes.labelpad": 4})
+        root.set_text_padding_params(subtitles_pad=[10, 11], sub_x_labels_pad=[12, 13])
+        seen = []
+
+        def title_pad(axis):
+            return 72 * axis.titleOffsetTrans.get_matrix()[1, 2] / axis.figure.dpi
+
+        def update(frame):
+            child, span = (curve.handle.lines[0].axes for curve in (inner, first))
+            general = next(
+                axis for axis in plt.gcf().axes if axis.get_title() == "Root"
+            )
+            seen.append(
+                (
+                    title_pad(child),
+                    child.xaxis.labelpad,
+                    title_pad(span),
+                    span.xaxis.labelpad,
+                    title_pad(general),
+                )
+            )
+            if frame == 0:
+                root.set_text_padding_params(
+                    title_pad=23,
+                    subtitles_pad=(14, 15),
+                    sub_x_labels_pad=(p for p in (16, 17)),
+                )
+                nested.set_text_padding_params(x_label_pad=19)
+                nested.x_label = "Live Child"
+            elif frame == 1:
+                self.assertEqual(child.get_xlabel(), "Live Child")
+                nested.set_text_padding_params(reset=True)
+            elif frame == 2:
+                root.set_text_padding_params(reset=True)
+
+        root.save_animation(self.output, update, 4)
+        assert_allclose(
+            seen,
+            [
+                (10, 12, 11, 13, 7),
+                (14, 19, 15, 17, 23),
+                (14, 16, 15, 17, 23),
+                (7, 4, 7, 4, 7),
+            ],
+        )
+
     def test_live_subplot_text_handles_spans_and_nested_fallback(self):
         first = Curve([0, 1], [0, 1])
         second = Curve([0, 1], [0, 1])
@@ -3655,7 +3794,7 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             figure_style="plain",
             elements=[first, second],
         )
-        labels = []
+        labels, pads = [], []
 
         def update(frame):
             labels.append(
@@ -3666,12 +3805,28 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
                     )
                 ]
             )
+            pads.append(
+                [
+                    curve.handle.lines[0].axes.coords[0]._axislabels.get_minpad("b")
+                    for curve in (first, second)
+                ]
+            )
             if frame == 0:
+                root.set_text_padding_params(sub_x_labels_pad=[2, 3])
                 root.sub_x_labels = ["RA one", "RA two"]
                 root.sub_y_labels = ["Dec one", "Dec two"]
 
-        root.save_animation(self.output, update, 2)
+            elif frame == 1:
+                root.sub_x_labels = ["Updated RA one", "Updated RA two"]
+            elif frame == 2:
+                root.set_text_padding_params(reset=True)
+
+        root.save_animation(self.output, update, 4)
         self.assertEqual(labels[1], [("RA one", "Dec one"), ("RA two", "Dec two")])
+        self.assertEqual(
+            labels[2], [("Updated RA one", "Dec one"), ("Updated RA two", "Dec two")]
+        )
+        self.assertEqual(pads, [[1, 1], [2, 3], [2, 3], [1, 1]])
 
     def test_failed_subplot_text_commit_restores_other_titles(self):
         from matplotlib.text import Text as MatplotlibText

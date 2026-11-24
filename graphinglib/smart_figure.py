@@ -423,7 +423,7 @@ class SmartFigure:
             "x minor": {},
             "y minor": {},
         }
-        self._pad_params = {}
+        self._pad_params: dict[str, Any] = {}
         self._reference_labels_params = {}
 
         self._x_axis_label_color = "k"
@@ -685,15 +685,16 @@ class SmartFigure:
 
     @aspect_ratio.setter
     def aspect_ratio(self, value: ListOrItem[float | Literal["auto", "equal"]]) -> None:
-        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, (float, int)) and v != "auto" and v != "equal":
                 raise InvalidParameterTypeError(
                     "aspect_ratio must be a float, 'auto' or 'equal'."
                 )
-            if isinstance(v, (float, int)) and v <= 0:
+            if isinstance(v, (float, int)) and (not isfinite(v) or v <= 0):
                 raise InvalidParameterError("aspect_ratio must be greater than 0.")
-        self._aspect_ratio = value
+        self._aspect_ratio = _stage_live_value(
+            self, "_aspect_ratio", list(value) if isinstance(value, list) else value
+        )
 
     @property
     def box_aspect_ratio(self) -> ListOrItem[float | None]:
@@ -701,18 +702,19 @@ class SmartFigure:
 
     @box_aspect_ratio.setter
     def box_aspect_ratio(self, value: ListOrItem[float | None]) -> None:
-        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if v is not None:
                 if not isinstance(v, (float, int)):
                     raise InvalidParameterTypeError(
                         "box_aspect_ratio must be a number."
                     )
-                if v <= 0:
+                if not isfinite(v) or v <= 0:
                     raise InvalidParameterError(
                         "box_aspect_ratio must be greater than 0."
                     )
-        self._box_aspect_ratio = value
+        self._box_aspect_ratio = _stage_live_value(
+            self, "_box_aspect_ratio", list(value) if isinstance(value, list) else value
+        )
 
     @property
     def remove_x_ticks(self) -> bool | list[bool | None]:
@@ -2605,6 +2607,7 @@ class SmartFigure:
 
         limit_axes: list[tuple[int, Axes]] = []
         legend_targets: dict[int, Legend | None] = {}
+        adjustable_defaults: dict[int, Literal["box", "datalim"]] = {}
         axis_visibility: dict[int, Callable[[bool], _ArtistEdit]] = {}
         tick_styles: dict[str, dict[int, _TickStyle]] = {"x": {}, "y": {}}
         grid_defaults = self._grid_defaults()
@@ -2782,6 +2785,8 @@ class SmartFigure:
                 if session is not None:
                     axis_visibility[subplot_i] = partial(_axis_removal, ax)
 
+                if session is not None:
+                    adjustable_defaults[subplot_i] = ax.get_adjustable()
                 ax.set_aspect(self._subplot_p["aspect_ratio"][subplot_i])
                 ax.set_box_aspect(self._subplot_p["box_aspect_ratio"][subplot_i])
                 ax.set_axisbelow(
@@ -3038,6 +3043,10 @@ class SmartFigure:
                     ],
                     subplot_count,
                 )
+
+            self._bind_animation_aspect(
+                session, limit_axes, adjustable_defaults, subplot_count
+            )
 
         # Set a general axis for adding general labels/title and controlling padding
         general_ax = figure.add_subplot(gridspec[:, :], frameon=False)
@@ -3499,6 +3508,92 @@ class SmartFigure:
 
         return _edit(write, old, new)
 
+    def _bind_animation_aspect(
+        self,
+        session: _AnimationSession,
+        targets: list[tuple[int, Axes]],
+        adjustable_defaults: dict[int, Literal["box", "datalim"]],
+        subplot_count: int,
+    ) -> None:
+        def entries(value, default):
+            if not isinstance(value, list):
+                return [value] * subplot_count
+            if len(value) > subplot_count:
+                raise InvalidParameterError(
+                    "Too many aspect ratios for this SmartFigure."
+                )
+            return value + [default] * (subplot_count - len(value))
+
+        def prepare() -> _ArtistEdit:
+            data = entries(self._aspect_ratio, "auto")
+            boxes = entries(self._box_aspect_ratio, None)
+            changed = []
+
+            def apply() -> None:
+                for index, ax in targets:
+                    aspect = 1 if data[index] == "equal" else data[index]
+                    box = boxes[index]
+                    twins = tuple(cast(Any, ax)._twinned_axes.get_siblings(ax))
+                    adjustable = (
+                        "datalim"
+                        if box is not None or len(twins) > 1
+                        else adjustable_defaults[index]
+                    )
+                    if (
+                        aspect != "auto"
+                        and adjustable == "datalim"
+                        and len(ax.get_shared_x_axes().get_siblings(ax)) > 1
+                        and len(ax.get_shared_y_axes().get_siblings(ax)) > 1
+                        and (
+                            box is None
+                            or abs(box / (aspect * ax.get_data_ratio()) - 1) >= 0.005
+                        )
+                    ):
+                        raise InvalidParameterError(
+                            "The data and box aspect ratios must agree with the limits "
+                            "when both axes are shared."
+                        )
+                    previous = ax.get_aspect(), ax.get_box_aspect(), ax.get_adjustable()
+                    if previous != (aspect, box, adjustable):
+                        changed.append(
+                            (
+                                ax,
+                                previous,
+                                [
+                                    (twin, twin.get_box_aspect(), twin.get_adjustable())
+                                    for twin in twins
+                                ],
+                            )
+                        )
+                        if previous[1] != box:
+                            ax.set_box_aspect(box)
+                        ax.set_aspect(aspect, adjustable=adjustable)
+
+            def undo() -> None:
+                for ax, (aspect, _, adjustable), twins in reversed(changed):
+                    # Native box setters change the whole twin group at once.
+                    for twin, old_box, old_adjustable in twins:
+                        cast(Any, twin)._box_aspect = old_box
+                        twin.set_adjustable(old_adjustable)
+                    ax.set_aspect(aspect, adjustable=adjustable)
+
+            return _ArtistEdit(apply, undo)
+
+        if targets:
+            session.bind_derived(
+                self,
+                (
+                    "_aspect_ratio",
+                    "_box_aspect_ratio",
+                    "_x_lim",
+                    "_y_lim",
+                    "_log_scale_x",
+                    "_log_scale_y",
+                ),
+                prepare,
+                after_artists=True,
+            )
+
     def _animation_tick_style(self, ax: Axes, dimension: str) -> _TickStyle:
         return _NativeTickStyle(ax.xaxis if dimension == "x" else ax.yaxis, dimension)
 
@@ -3583,6 +3678,40 @@ class SmartFigure:
             else:
                 session.bind_resolved_axis_text(sources, resolve, read, write)
 
+        def bind_padding(
+            name: str,
+            read: Callable[[], Any],
+            write: Callable[[Any], None],
+            default: float,
+        ) -> None:
+            subplot_name = (
+                "subtitles_pad" if name == "title" else f"sub_{name}_labels_pad"
+            )
+            main_name = "title_pad" if name == "title" else f"{name}_label_pad"
+
+            def subplot_pad(owner: SmartFigure, slot: int) -> float | None:
+                values = owner._pad_params.get(subplot_name)
+                return (
+                    values[slot] if values is not None and slot < len(values) else None
+                )
+
+            def resolve() -> float:
+                value = self._pad_params.get(main_name) if general else None
+                if value is None and index is not None:
+                    value = subplot_pad(self, index)
+                if value is None and parent is not None:
+                    value = subplot_pad(*parent)
+                return default if value is None else value
+
+            write(resolve())
+
+            def prepare() -> _ArtistEdit:
+                return _edit(write, read(), resolve())
+
+            session.bind_derived(self, ("_pad_params",), prepare)
+            if parent is not None:
+                session.bind_derived(parent[0], ("_pad_params",), prepare)
+
         use_wcs = isinstance(self, SmartFigureWCS) and index is not None
         label_axes = (
             ("x", ax.xaxis, self._x_axis_label_color),
@@ -3603,15 +3732,52 @@ class SmartFigure:
             ):
                 pad = self._subplot_p[f"sub_{name}_labels_pad"][index]
             if use_wcs:
-                bind(
-                    f"_{name}_label",
-                    read_label,
-                    partial(set_label, labelpad=pad, color=color),
-                )
+                coords = cast(Any, ax).coords
+                sides = frozenset("bh" if name == "x" else "lc")
+
+                def coordinate_label(coords=coords, sides=sides, refresh=read_label):
+                    refresh()
+                    for coord in coords:
+                        label = coord._axislabels
+                        if sides.intersection(label.get_visible_axes()):
+                            return label
+                    return None
+
+                def read_pad(find=coordinate_label, axis=axis):
+                    label = find()
+                    return (
+                        deepcopy(label._minpad) if label is not None else axis.labelpad
+                    )
+
+                def write_pad(value, find=coordinate_label, axis=axis):
+                    label = find()
+                    if label is not None:
+                        label.set_minpad(value)
+                    else:
+                        axis.labelpad = value
+
+                def write_label(
+                    value, setter=set_label, read_pad=read_pad, color=color
+                ):
+                    setter(value, labelpad=read_pad(), color=color)
+
+                bind(f"_{name}_label", read_label, write_label)
+                bind_padding(name, read_pad, write_pad, 1)
             else:
                 if not artist.get_text():
                     set_label("", labelpad=pad, color=color)
                 bind(f"_{name}_label", artist.get_text, artist.set_text)
+
+                def write_pad(value, axis=axis):
+                    axis.labelpad = value
+                    axis.stale = True
+
+                bind_padding(
+                    name,
+                    lambda axis=axis: axis.labelpad,
+                    write_pad,
+                    plt.rcParams["axes.labelpad"],
+                )
 
         title_pad = self._pad_params.get("title_pad") if general else None
         if index is not None and (
@@ -3625,6 +3791,18 @@ class SmartFigure:
             title or ax.get_title(loc=title_location), pad=title_pad, loc=title_location
         )
         bind("_title", artist.get_text, artist.set_text)
+
+        default_title_pad = plt.rcParams["axes.titlepad"]
+        current_title_pad = default_title_pad
+
+        def write_title_pad(value: float) -> None:
+            nonlocal current_title_pad
+            cast(Any, ax)._set_title_offset_trans(value)
+            current_title_pad = value
+
+        bind_padding(
+            "title", lambda: current_title_pad, write_title_pad, default_title_pad
+        )
 
     def _create_reference_label(
         self,
@@ -4488,39 +4666,53 @@ class SmartFigure:
         Self
             For convenience, the same SmartFigure with the updated text padding parameters.
         """
-        _reject_animated_layout(self)
         for pad_param in [x_label_pad, y_label_pad, title_pad]:
             if pad_param is not None and not isinstance(pad_param, (int, float)):
                 raise InvalidParameterTypeError(
                     f"Padding parameters must be of type int or float, got {type(pad_param).__name__}."
                 )
-        for sub_pad_param in [sub_x_labels_pad, sub_y_labels_pad, subtitles_pad]:
-            if sub_pad_param is not None and (
-                not isinstance(sub_pad_param, Iterable)
-                or not all(
-                    isinstance(p, (int, float, type(None))) for p in sub_pad_param
-                )
-            ):
+        changes = {
+            "x_label_pad": x_label_pad,
+            "y_label_pad": y_label_pad,
+            "title_pad": title_pad,
+        }
+        for name, values in (
+            ("sub_x_labels_pad", sub_x_labels_pad),
+            ("sub_y_labels_pad", sub_y_labels_pad),
+            ("subtitles_pad", subtitles_pad),
+        ):
+            if values is None:
+                continue
+            if not isinstance(values, Iterable):
                 raise InvalidParameterTypeError(
-                    "Subfigure padding parameters must be an iterable of ints or floats."
+                    "Subfigure padding must be an iterable of numbers."
                 )
+            pads = list(values)
+            if not all(isinstance(pad, (int, float, type(None))) for pad in pads):
+                raise InvalidParameterTypeError(
+                    "Subfigure padding must contain numbers or None."
+                )
+            if _bound_session(self) is not None and len(pads) > (
+                1 if self._mode == "leaf" else len(self)
+            ):
+                raise InvalidParameterError(
+                    f"Too many {name} entries for this SmartFigure."
+                )
+            changes[name] = pads
 
-        if reset:
-            self._pad_params.clear()
-
-        params = [
-            "x_label_pad",
-            "y_label_pad",
-            "title_pad",
-            "sub_x_labels_pad",
-            "sub_y_labels_pad",
-            "subtitles_pad",
-        ]
-        for param in params:
-            value = locals()[param]
-            if value is not None:
-                self._pad_params[param] = value
-
+        config = {} if reset else self._pad_params
+        if _bound_session(self) is not None and any(
+            pad is not None and not isfinite(pad)
+            for value in changes.values()
+            for pad in (value if isinstance(value, list) else (value,))
+        ):
+            raise InvalidParameterError("Animated text padding must be finite.")
+        self._pad_params = _stage_live_value(
+            self,
+            "_pad_params",
+            config
+            | {key: value for key, value in changes.items() if value is not None},
+        )
         return self
 
     def set_reference_labels_params(

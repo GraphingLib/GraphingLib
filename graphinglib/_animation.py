@@ -1263,8 +1263,12 @@ class _AnimationSession:
         element: object,
         properties: tuple[str, ...],
         prepare: Callable[[], _ArtistEdit],
+        *,
+        after_artists: bool = False,
     ) -> None:
         self.mark_present(element)
+        if after_artists:
+            self._post_artist_prepares.add(id(prepare))
         for name in properties:
             # One artist can have independent data, color, and label updates.
             self._dependents.setdefault((id(element), name), {})[id(prepare)] = prepare
