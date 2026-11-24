@@ -5171,6 +5171,116 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertTrue(root.hide_default_legend_elements)
         self.assertEqual(self.output.read_bytes(), b"existing")
 
+    def test_reserved_labels_join_nested_and_twin_general_legend(self):
+        from matplotlib.colors import to_rgba
+
+        from graphinglib import SmartTwinAxis
+
+        nested_curve = Curve([0, 1], [0, 1])
+        twin_curve = Curve([0, 1], [2, 4], color="navy")
+        twin = SmartTwinAxis(elements=[twin_curve])
+        nested = SmartFigure(elements=[nested_curve], twin_y_axis=twin)
+        scatter = Scatter([0, 1], [1, 0], face_color="green")
+        root = SmartFigure(
+            2, 2, figure_style="plain", general_legend=True, legend_cols=2
+        )
+        root[:, 0] = nested
+        root[:, 1] = [scatter]
+        states = []
+
+        def update(frame):
+            (legend,) = plt.gcf().legends
+            rows = tuple(
+                row
+                for col in legend._legend_handle_box.get_children()
+                for row in col.get_children()
+            )
+            texts = legend.get_texts()
+            states.append(
+                (
+                    legend,
+                    rows,
+                    legend.get_visible(),
+                    tuple(
+                        text.get_text()
+                        for text, row in zip(texts, rows, strict=True)
+                        if row.get_visible()
+                    ),
+                    to_rgba(legend.legend_handles[1].get_color()),
+                )
+            )
+            if frame == 0:
+                nested_curve.label = "Nested"
+                twin_curve.label = "Twin"
+                twin_curve.color = "orange"
+                scatter.label = "Scatter"
+            elif frame == 1:
+                nested_curve.label = None
+                twin_curve.label = ""
+                root.hide_default_legend_elements = True
+            elif frame == 2:
+                root.hide_default_legend_elements = False
+
+        root.save_animation(self.output, update, 4, reserve_legend_entries=True)
+        self.assertTrue(all(state[:2] == states[0][:2] for state in states))
+        self.assertEqual(
+            [state[2:4] for state in states],
+            [
+                (False, ()),
+                (True, ("Nested", "Twin", "Scatter")),
+                (False, ()),
+                (True, ("Scatter",)),
+            ],
+        )
+        self.assertEqual(states[1][4], to_rgba("orange"))
+
+    def test_unlabeled_plots_keep_default_legend_setup_without_reservation(self):
+        curve = Curve([0, 1], [0, 1])
+        figure = SmartFigure(elements=[curve], figure_style="plain")
+        snapshots = []
+
+        def update(frame):
+            snapshots.append(curve.handle.lines[0].axes.get_legend())
+            if not frame:
+                curve.label = "Late label"
+
+        figure.save_animation(self.output, update, 2)
+        self.assertEqual(snapshots, [None, None])
+
+    def test_failed_legend_label_reveal_restores_an_unlabeled_slot(self):
+        from matplotlib.text import Text as MatplotlibText
+
+        curve = Curve([0, 1], [0, 1])
+        figure = SmartFigure(elements=[curve], figure_style="plain")
+        self.output.write_bytes(b"existing")
+        saved = []
+
+        def update(frame):
+            legend = curve.handle.lines[0].axes.get_legend()
+            if frame == 0:
+                saved.append(legend)
+            else:
+                curve.label = "Fail on reveal"
+
+        before = MatplotlibText.set_text
+
+        def fail_after_reveal(text, value):
+            before(text, value)
+            if value == "Fail on reveal":
+                self.assertTrue(saved[0].get_visible())
+                raise ValueError("could not update the reserved legend label")
+
+        with (
+            patch.object(MatplotlibText, "set_text", fail_after_reveal),
+            self.assertRaisesRegex(GraphingException, "animation frame 1"),
+        ):
+            figure.save_animation(self.output, update, 2, reserve_legend_entries=True)
+        (legend,) = saved
+        self.assertFalse(legend.get_visible())
+        self.assertEqual(legend.get_texts()[0].get_text(), "")
+        self.assertIsNone(curve.label)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_raster_extent_and_origin_update_without_panning_view(self):
         heat = Heatmap([[0, 1], [0, 0]], origin_position="upper", show_color_bar=False)
         root = SmartFigure(

@@ -1980,7 +1980,7 @@ Live update support
        or hide configured bands and ``error_curves_fill_between`` to toggle
        their shading.
      - Error-bar directions, the initial band and area-fill configuration, and
-       legend entry creation. Set up a nonempty Cartesian plot for live caps.
+       legend entry availability. Set up a nonempty Cartesian plot for live caps.
        Both curves must continue to cover the configured fill interval.
    * - :class:`~graphinglib.Scatter`
      - Coordinates, configured errors, marker shape, size, edge width,
@@ -1991,7 +1991,7 @@ Live update support
        scales. Configured error bars can change color,
        line width, cap width and cap thickness. Use ``show_errorbars`` to
        hide or show them on Cartesian plots.
-     - Legend entry creation, colorbar placement and error-bar directions.
+     - Legend entry availability, colorbar placement and error-bar directions.
        Set up a nonempty Cartesian plot for live caps. Colorbars need an
        intensity array at setup. An intensity channel introduced during
        playback without an explicit range starts with a 0–1 scale.
@@ -2171,8 +2171,13 @@ entry becomes visible again.
 
 Assign ``label`` to rename existing entries for curves, fits,
 scatter plots, histograms, and reference lines. Assigning ``None`` clears the
-text when there is no generated label, and keeps the entry's swatch. Choose a
-starting label for every plottable that needs a legend entry during playback.
+text when there is no generated label, and keeps the entry's swatch.
+Pass ``reserve_legend_entries=True`` to ``show_animation`` or
+``save_animation`` to reserve entries for supported plots that start with
+``label=None``, including plots in nested figures and on twin axes. A
+reserved entry appears when assigned a nonempty label. Assign ``None`` or
+an empty string to hide it again. For an outside legend, leave enough
+space for the longest label you plan to display.
 Existing swatches for plain fitted lines, curves (including configured error
 bars), scatter plots, and reference lines follow supported visual styles.
 Custom entries and other swatches retain their initial styling. Use explicit

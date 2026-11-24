@@ -2130,6 +2130,8 @@ class SmartFigure:
         update_function: Callable[[int], Any],
         number_of_frames: int,
         interval: int = 100,
+        *,
+        reserve_legend_entries: bool = False,
     ) -> Self:
         """
         Animates and displays the :class:`~graphinglib.SmartFigure`.
@@ -2144,6 +2146,10 @@ class SmartFigure:
             The time between each frame in milliseconds.
             Defaults to ``100``.
 
+        reserve_legend_entries : bool, optional
+            Reserve legend entries for supported plots that start without labels.
+            Assign a label in a callback to reveal the entry. Defaults to ``False``.
+
         Returns
         -------
         Self
@@ -2152,7 +2158,11 @@ class SmartFigure:
         self._validate_animation_parameters(update_function, number_of_frames, interval)
         with plt.rc_context():
             figure, animation, session = self._create_animation(
-                update_function, number_of_frames, interval, interactive=True
+                update_function,
+                number_of_frames,
+                interval,
+                interactive=True,
+                reserve_legend_entries=reserve_legend_entries,
             )
 
             def on_close(event: Any) -> None:
@@ -2182,6 +2192,8 @@ class SmartFigure:
         fps: float | None = None,
         writer: str | None = None,
         transparent: bool = False,
+        *,
+        reserve_legend_entries: bool = False,
     ) -> Self:
         """
         Animates the :class:`~graphinglib.SmartFigure` and saves it to a file.
@@ -2207,6 +2219,10 @@ class SmartFigure:
         transparent : bool, optional
             Whether to save with transparent background.
             Defaults to ``False``.
+
+        reserve_legend_entries : bool, optional
+            Reserve legend entries for supported plots that start without labels.
+            Assign a label in a callback to reveal the entry. Defaults to ``False``.
 
         Returns
         -------
@@ -2247,7 +2263,10 @@ class SmartFigure:
 
         with plt.rc_context():
             figure, animation, session = self._create_animation(
-                update_function, number_of_frames, interval
+                update_function,
+                number_of_frames,
+                interval,
+                reserve_legend_entries=reserve_legend_entries,
             )
             temporary_path = None
             try:
@@ -2287,7 +2306,10 @@ class SmartFigure:
         interval: int,
         *,
         interactive: bool = False,
+        reserve_legend_entries: bool = False,
     ) -> tuple[Figure, FuncAnimation, _AnimationSession]:
+        if not isinstance(reserve_legend_entries, bool):
+            raise InvalidParameterTypeError("reserve_legend_entries must be a bool.")
         if self._animation is not None:
             raise InvalidOperationError(
                 "Close the current animation before starting another one."
@@ -2296,7 +2318,7 @@ class SmartFigure:
         _reject_live_update(
             self, "Finish the active animation before rendering this figure again."
         )
-        session = _AnimationSession()
+        session = _AnimationSession(reserve_legend_entries=reserve_legend_entries)
         session.mark_present(self)
         token = _DRAW_SESSION.set(session)
         try:
@@ -2721,9 +2743,15 @@ class SmartFigure:
                                 current_element, params_to_reset
                             )
                         try:
-                            if current_element.label is not None:
+                            label = current_element.label
+                            if label is not None:
                                 default_handles.append(current_element.handle)
-                                default_labels.append(current_element.label)
+                                default_labels.append(label)
+                            elif session is not None and session.can_reserve_legend_entry(
+                                getattr(current_element, "handle", None)
+                            ):
+                                default_handles.append(current_element.handle)
+                                default_labels.append("")
                         except AttributeError:
                             continue
                         z_order += 5
@@ -5888,9 +5916,15 @@ class SmartTwinAxis:
                 if not is_matplotlib_style:
                     self._reset_params_to_default(element, params_to_reset)
                 try:
-                    if element.label is not None:
+                    label = element.label
+                    if label is not None:
                         handles.append(element.handle)
-                        labels.append(element.label)
+                        labels.append(label)
+                    elif session is not None and session.can_reserve_legend_entry(
+                        getattr(element, "handle", None)
+                    ):
+                        handles.append(element.handle)
+                        labels.append("")
                 except AttributeError:
                     continue
                 z_order += 5

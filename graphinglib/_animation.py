@@ -458,7 +458,8 @@ class _LegendRows:
 
 
 class _AnimationSession:
-    def __init__(self) -> None:
+    def __init__(self, *, reserve_legend_entries: bool = False) -> None:
+        self._reserve_legend_entries = reserve_legend_entries
         self._artists: dict[int, list[_Binding]] = {}
         self._properties: dict[tuple[int, str], list[Callable[[Any], _ArtistEdit]]] = {}
         self._axes_method_artists: dict[int, list[tuple[Artist, ...]]] = {}
@@ -937,6 +938,21 @@ class _AnimationSession:
             # One artist can have independent data, color, and label updates.
             self._dependents.setdefault((id(element), name), {})[id(prepare)] = prepare
 
+    def can_reserve_legend_entry(self, handle: object) -> bool:
+        return self._reserve_legend_entries and id(handle) in self._legend_sources
+
+    def _reserved_legend_filters(self, handle: object) -> tuple[_LegendFilter, ...]:
+        if not self.can_reserve_legend_entry(handle):
+            return ()
+        element, read_label, properties = self._legend_sources[id(handle)]
+        if read_label() is not None:
+            return ()
+
+        def is_hidden() -> bool:
+            return not read_label()
+
+        return tuple(_LegendFilter(element, name, is_hidden) for name in properties)
+
     def bind_legend_source(
         self,
         element: object,
@@ -1089,6 +1105,10 @@ class _AnimationSession:
         *,
         initially_visible: bool = True,
     ) -> None:
+        filters = [
+            (*rules, *self._reserved_legend_filters(handle))
+            for rules, handle in zip(filters, handles, strict=True)
+        ]
         rows = _LegendRows(legend, initially_visible, filters)
         self._legend_rows[legend] = rows
         prepare = rows.prepare
