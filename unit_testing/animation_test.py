@@ -455,6 +455,27 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(max(axes.collections[0].get_paths()[0].vertices[:, 1]), 4.5)
         assert_allclose(max(axes.collections[1].get_paths()[0].vertices[:, 1]), 4.0)
 
+    def test_polar_angular_error_updates_keep_curved_segments(self):
+        curve = Curve([0.4, 1.2], [1, 2])
+        curve.add_errorbars(x_error=0.25, cap_width=0)
+        root = SmartFigure(
+            elements=[curve], projection="polar", y_lim=(0, 3), figure_style="plain"
+        )
+        segments = []
+
+        def update(frame):
+            (bars,) = curve.handle[2]
+            segments.append(bars)
+            if frame == 0:
+                curve.set_data([0.6, 1.35], [1.5, 2.5], x_error=0.3)
+            else:
+                transformed = bars.get_transform().transform_path(bars.get_paths()[0])
+                self.assertGreater(len(transformed.vertices), 2)
+
+        root.save_animation(self.output, update, 2)
+        self.assertIs(segments[0], segments[1])
+        assert_allclose(segments[1].get_segments()[0], [[0.3, 1.5], [0.9, 1.5]])
+
     def test_errorbar_styles_reuse_caps_and_legend_in_nested_plots(self):
         from matplotlib.colors import to_rgba
         from matplotlib.lines import Line2D
@@ -554,6 +575,109 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         )
         with Image.open(self.output) as gif:
             self.assertEqual(gif.n_frames, 3)
+
+    def test_legend_samples_follow_late_error_directions_and_labels(self):
+        from matplotlib.colors import to_rgba
+        from matplotlib.lines import Line2D
+        from matplotlib.offsetbox import DrawingArea
+
+        late = Curve([0, 1], [0, 1], color="green")
+        configured = Curve([0, 1], [1, 0], label="Configured")
+        configured.add_errorbars(y_error=0.1, cap_width=2, errorbars_color="navy")
+        root = SmartFigure(
+            1,
+            2,
+            figure_style="plain",
+            general_legend=True,
+            elements=[SmartFigure(elements=[late]), configured],
+        )
+        scenes = []
+
+        def update(frame):
+            (legend,) = plt.gcf().legends
+            areas = legend.findobj(DrawingArea)
+            keys = tuple(legend.legend_handles)
+            groups = tuple(tuple(area.get_children()) for area in areas)
+            scenes.append((keys, groups))
+            self.assertIsInstance(keys[0], Line2D)
+            seen = []
+            for key in keys:
+                group = next(group for group in groups if key in group)
+                active = []
+                for artist in group:
+                    if isinstance(artist, LineCollection) and artist.get_visible():
+                        start, end = artist.get_segments()[0]
+                        direction = "x" if start[1] == end[1] else "y"
+                        active.append((direction, to_rgba(artist.get_color()[0])))
+                caps = [
+                    swatch
+                    for swatch in group
+                    if isinstance(swatch, Line2D)
+                    and swatch.get_marker() in ("|", "_")
+                    and swatch.get_visible()
+                ]
+                self.assertEqual(len(caps), 2 * len(active))
+                seen.append(active)
+            if frame == 0:
+                self.assertEqual(seen, [[], [("y", to_rgba("navy"))]])
+                late.label = "Late"
+                late.add_errorbars(x_error=0.2, cap_width=3, errorbars_color="orange")
+                configured.set_data([0, 1], [1, 0], x_error=0.2, y_error=None)
+            elif frame == 1:
+                self.assertEqual(
+                    seen, [[("x", to_rgba("orange"))], [("x", to_rgba("navy"))]]
+                )
+                self.assertEqual(
+                    [text.get_text() for text in legend.get_texts()],
+                    ["Late", "Configured"],
+                )
+                configured.set_data([0, 1], [1, 0], x_error=None, y_error=0.3)
+                late.show_errorbars = False
+            else:
+                self.assertEqual(seen, [[], [("y", to_rgba("navy"))]])
+
+        root.save_animation(self.output, update, 3, reserve_legend_entries=True)
+        self.assertTrue(all(scene == scenes[0] for scene in scenes))
+
+    def test_failed_late_errorbar_swatch_rolls_back_plot_and_export(self):
+        from matplotlib.offsetbox import DrawingArea
+
+        curve = Curve([0, 1], [0, 1], label="Curve")
+        figure = SmartFigure(elements=[curve], figure_style="plain")
+        self.output.write_bytes(b"existing")
+        seen = []
+
+        def update(frame):
+            axes = curve.handle[0].axes
+            (box,) = axes.get_legend().findobj(DrawingArea)
+            (sample,) = [
+                item
+                for item in box.get_children()
+                if isinstance(item, LineCollection)
+                and np.ptp(np.array(item.get_segments())[0, :, 0]) > 0
+            ]
+            seen.append((axes, sample))
+            original = sample.set_visible
+
+            def fail_after_reveal(visible):
+                original(visible)
+                if visible:
+                    self.assertTrue(
+                        any(item.get_visible() for item in axes.collections)
+                    )
+                    raise ValueError("late legend swatch failed")
+
+            self.enterContext(patch.object(sample, "set_visible", fail_after_reveal))
+            curve.add_errorbars(x_error=0.3, cap_width=2)
+
+        with self.assertRaisesRegex(GraphingException, "late legend swatch failed"):
+            figure.save_animation(self.output, update, 1)
+        ((axes, sample),) = seen
+        self.assertFalse(axes.collections)
+        self.assertFalse(sample.get_visible())
+        self.assertFalse(curve.show_errorbars)
+        self.assertIsNone(curve.x_error)
+        self.assertEqual(self.output.read_bytes(), b"existing")
 
     def test_hidden_errorbars_reuse_artists_geometry_and_legend(self):
         curve = Curve([0, 1], [0, 1], label="Curve", color="navy")
@@ -5222,6 +5346,43 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertEqual(tuple(swatches[0].get_ydata()), initial_y)
         self.assertEqual(swatches[0].get_linewidth(), 2)
         self.assertEqual(self.output.read_bytes(), b"existing")
+
+    def test_structural_changes_reject_and_keep_last_successful_frame(self):
+        def check_rejection(attr, value):
+            curve = Curve([0, 1], [1, 2])
+            figure = SmartFigure(1, 2, elements=[curve], figure_style="plain")
+            initial = getattr(figure, attr)
+            saved = []
+            self.output.write_bytes(b"previous")
+
+            def update(frame):
+                axes = curve.handle[0].axes
+                saved.append(axes)
+                curve.y_data = [3 + frame, 4 + frame]
+                if frame:
+                    setattr(figure, attr, value)
+
+            with (
+                patch.object(
+                    figure, "_prepare_figure", wraps=figure._prepare_figure
+                ) as prepare,
+                self.assertRaisesRegex(GraphingException, "Configure figure layout"),
+            ):
+                figure.save_animation(self.output, update, 2)
+            prepare.assert_called_once()
+            self.assertIs(saved[0], saved[1])
+            self.assertEqual(getattr(figure, attr), initial)
+            assert_allclose(curve.y_data, [3, 4])
+            assert_allclose(curve.handle[0].get_ydata(), [3, 4])
+            self.assertEqual(self.output.read_bytes(), b"previous")
+
+        for attr, value in (
+            ("num_cols", 3),
+            ("share_x", True),
+            ("projection", "polar"),
+        ):
+            with self.subTest(setting=attr):
+                check_rejection(attr, value)
 
     def test_axes_method_updates_bars_in_each_appearance(self):
         from matplotlib.axes import Axes

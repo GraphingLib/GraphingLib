@@ -1984,8 +1984,7 @@ Live update support
        Pass an error of ``None`` to ``set_data(...)`` to remove that direction.
        Assign ``show_errorbars`` to toggle both directions. Omitted live
        styles keep their current values. Set ``cap_width=0`` to hide caps.
-     - The legend uses the error-bar directions present at setup. Polar
-       error-bar directions are fixed. Set up a nonempty Cartesian plot
+     - Polar error-bar directions are fixed. Set up a nonempty Cartesian plot
        to animate existing caps. Both curves must continue to cover the
        configured fill interval.
    * - :class:`~graphinglib.Scatter`
@@ -2178,8 +2177,10 @@ Subplot padding follows subplot order. A nested figure can override the
 parent slot padding with its own settings. Use ``reset=True`` to clear
 that figure's overrides and fall back to inherited or figure style padding.
 
-Grid layout, legend entries, and colorbar placement are established from the
-initial figure. For a scalar Heatmap, Contour, or Scatter with an intensity
+Configure subplot membership, axis sharing, and projections before playback.
+A callback that tries to change one of these settings fails the frame and
+restores its pending edits. Legend candidates and colorbar placement are
+established from the initial figure. For a scalar Heatmap, Contour, or Scatter with an intensity
 array, call ``set_color_bar_params(reserve=True)`` before playback to reserve
 space for a colorbar while starting with ``show_color_bar=False``. Assign
 ``show_color_bar=True`` in a callback to reveal it. Use
@@ -2216,8 +2217,9 @@ Pass ``reserve_legend_entries=True`` to ``show_animation`` or
 reserved entry appears when assigned a nonempty label. Assign ``None`` or
 an empty string to hide it again. For an outside legend, leave enough
 space for the longest label you plan to display.
-Existing swatches for plain fitted lines, curves (including configured error
-bars), scatter plots, and reference lines follow supported visual styles.
+Existing swatches for plain fitted lines, curves, scatter plots, and
+reference lines follow supported visual styles. A Curve swatch also follows
+error-bar directions and caps introduced during Cartesian playback.
 Custom entries and other swatches retain their initial styling. Use explicit
 style values in callbacks.
 

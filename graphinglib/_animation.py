@@ -1,6 +1,6 @@
 """Artist bindings for one SmartFigure animation."""
 
-from collections.abc import Callable, Collection, Mapping
+from collections.abc import Callable, Collection, Mapping, Sequence
 from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import dataclass
@@ -24,6 +24,7 @@ from matplotlib.container import ErrorbarContainer
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.layout_engine import ConstrainedLayoutEngine
 from matplotlib.legend import Legend
+from matplotlib.legend_handler import HandlerErrorbar
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import DrawingArea, VPacker
 from matplotlib.patches import Polygon
@@ -617,8 +618,15 @@ def _error_update(
     old_segments = [path.vertices for path in artists.segments.get_paths()]
     old_caps = tuple(cap.get_data() for cap in artists.caps)
 
+    axes = artists.segments.axes
+    angular = is_x and axes is not None and axes.name == "polar"
+
     def update(new_segments: Any, cap_data: Any) -> None:
         artists.segments.set_segments(new_segments)
+        if angular:
+            # Native polar x-error bars use arcs. Replacing segments creates new paths.
+            for path in artists.segments.get_paths():
+                cast(Any, path)._interpolation_steps = 2
         for cap, data in zip(artists.caps, cap_data):
             cap.set_data(data)
 
@@ -879,6 +887,7 @@ class _AnimationSession:
         self._legend_sources: dict[
             int, tuple[object, Callable[[], str | None], tuple[str, ...]]
         ] = {}
+        self._reserved_error_legend_sources: dict[int, ErrorbarContainer] = {}
         self._reference_legend_sources: dict[
             int, tuple[tuple[str, ...], Callable[[], list[dict[str, Any]]]]
         ] = {}
@@ -1681,8 +1690,8 @@ class _AnimationSession:
             for rule in rules:
                 self.bind_derived(rule.owner, (rule.property_name,), prepare)
         texts = iter(legend.get_texts())
-        groups = {
-            id(children[0]): children
+        areas = {
+            id(children[0]): area
             for area in legend.findobj(match=DrawingArea)
             if (children := area.get_children())
         }
@@ -1700,7 +1709,8 @@ class _AnimationSession:
                 return _edit(text.set_text, text.get_text(), read_label() or "")
 
             self.bind_derived(element, properties, prepare)
-            swatch_group = groups.get(id(swatch), [])
+            area = areas.get(id(swatch))
+            swatch_group = area.get_children() if area is not None else []
             if reference := self._reference_legend_sources.get(id(handle)):
                 self._bind_reference_swatches(element, swatch_group, *reference)
             elif isinstance(handle, ErrorbarContainer) and (
@@ -1709,6 +1719,43 @@ class _AnimationSession:
                 self._bind_errorbar_swatch(element, handle, swatch_group)
             else:
                 self._bind_legend_swatch(element, handle, swatch, legend.markerscale)
+
+            reserved = self._reserved_error_legend_sources.get(id(handle))
+            if reserved is not None and area is not None:
+                self._bind_reserved_errorbar_swatches(element, legend, area, reserved)
+
+    def _bind_reserved_errorbar_swatches(
+        self,
+        element: object,
+        legend: Legend,
+        area: DrawingArea,
+        source: ErrorbarContainer,
+    ) -> None:
+        # Reuse Matplotlib's marker geometry without replacing the primary
+        # legend handle or the existing native swatch artists.
+        handler = HandlerErrorbar()
+        fontsize = cast(Any, legend)._fontsize
+        # The handler API accepts containers, although its stub types the handle as Artist.
+        native_source = cast(Any, source)
+        dimensions = handler.adjust_drawing_area(
+            legend,
+            native_source,
+            area.xdescent,
+            area.ydescent,
+            area.width,
+            area.height,
+            fontsize,
+        )
+        artists = handler.create_artists(
+            legend, native_source, *dimensions, fontsize, area.get_transform()
+        )
+        swatches = artists[:-2]  # This container has no line or center marker.
+        for swatch in swatches:
+            area.add_artist(swatch)
+        # Keep the curve's line above the extra error-bar samples.
+        children = area.get_children()
+        children[:] = [*swatches, *children[: -len(swatches)]]
+        self._bind_errorbar_swatch(element, source, swatches)
 
     def _bind_reference_swatches(
         self,
@@ -1747,13 +1794,15 @@ class _AnimationSession:
         self.bind_derived(element, properties, prepare)
 
     def _bind_errorbar_swatch(
-        self, element: object, source: ErrorbarContainer, swatches: list[Artist]
+        self, element: object, source: ErrorbarContainer, swatches: Sequence[Artist]
     ) -> None:
         line, caps, segments = source.lines
-        originals = [*segments, *caps, line, line]
+        originals: list[Artist] = [*segments, *caps]
+        if line is not None:
+            originals.extend((line, line))
         # HandlerErrorbar returns segments, caps, the line, and its marker.
         if len(originals) != len(swatches) or any(
-            target is None or not isinstance(swatch, type(target))
+            not isinstance(swatch, type(target))
             for target, swatch in zip(originals, swatches)
         ):
             return
@@ -1781,8 +1830,7 @@ class _AnimationSession:
                 fields = ("alpha", "color", "linewidth", "linestyle")
             else:
                 fields = ("alpha", "color")
-            if target is not None:
-                self._bind_swatch_fields(element, target, swatch, properties, fields)
+            self._bind_swatch_fields(element, target, swatch, properties, fields)
 
     def _bind_legend_swatch(
         self, element: object, source: object, swatch: Artist, marker_scale: float
@@ -1882,6 +1930,8 @@ class _AnimationSession:
         if not isinstance(data_line, Line2D):
             self.block_curve_updates(curve, "This curve has no line artist to update.")
             return
+        if reserved_errors is not None:
+            self._reserved_error_legend_sources[id(handle)] = reserved_errors
         self._bind_points(
             curve,
             data_line,
@@ -2111,6 +2161,7 @@ class _AnimationSession:
         self._legend_layout = None
         self._initial_colorbar_ticks.clear()
         self._reference_legend_sources.clear()
+        self._reserved_error_legend_sources.clear()
         self._post_artist_prepares.clear()
         self._dirty_dependents.clear()
         for callback in reversed(self._cleanup):
