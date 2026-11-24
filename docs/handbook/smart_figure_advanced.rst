@@ -2095,9 +2095,12 @@ Assigning ``None`` to the property restores the initial limits. Within a
 tuple, ``None`` keeps that endpoint. Set ``invert_x_axis`` or
 ``invert_y_axis`` to change direction, using a bool for all direct plots or
 a list with ``None`` for untouched slots. Limits and inversion assigned in
-the same callback use the final direction. All explicit limits and
-inversion settings for a shared axis must agree, and logarithmic limits
-must be positive. Twin axes accept ``axis_lim`` and ``invert_axis``.
+the same callback use the final direction. Use ``log_scale_x`` and
+``log_scale_y`` to switch between linear and logarithmic scales, using the
+same list rules. The final limits must be positive on a logarithmic axis,
+and explicitly configured tick positions and labels are preserved. Shared
+axes use one set of limits, direction and scale. Twin axes accept
+``axis_lim``, ``invert_axis`` and ``log_scale``.
 Assign ``title``,
 ``x_label``, or ``y_label`` to change a SmartFigure's text, or assign
 ``label`` on a twin axis. Use ``None`` to clear the text. Keep the initial

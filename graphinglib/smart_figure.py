@@ -138,7 +138,7 @@ class SmartFigure:
         :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
         each subfigure needs its own subtitle. This list cannot be longer than the number of subfigures drawn by the
         SmartFigure and None values can be used to skip specific subfigures.
-    log_scale_x, log_scale_y : bool | list[bool], optional
+    log_scale_x, log_scale_y : bool | list[bool | None], optional
         Whether to use a logarithmic scale for the x and y axes, respectively. This can be given as a single value or
         a list of values to apply to each subplot.
         Defaults to ``False``.
@@ -303,8 +303,8 @@ class SmartFigure:
         sub_x_labels: Iterable[str] | None = None,
         sub_y_labels: Iterable[str] | None = None,
         subtitles: Iterable[str] | None = None,
-        log_scale_x: ListOrItem[bool] = False,
-        log_scale_y: ListOrItem[bool] = False,
+        log_scale_x: bool | list[bool | None] = False,
+        log_scale_y: bool | list[bool | None] = False,
         remove_axes: ListOrItem[bool] = False,
         aspect_ratio: ListOrItem[float | Literal["auto", "equal"]] = "auto",
         box_aspect_ratio: ListOrItem[float | None] = None,
@@ -608,29 +608,35 @@ class SmartFigure:
                 )
         self._subtitles = value
 
+    def _stage_view_flag(
+        self, name: str, value: bool | list[bool | None]
+    ) -> bool | list[bool | None]:
+        valid = (
+            all(flag is None or isinstance(flag, bool) for flag in value)
+            if isinstance(value, list)
+            else isinstance(value, bool)
+        )
+        if not valid:
+            raise InvalidParameterTypeError(
+                f"{name} must be a bool or a list of bool or None."
+            )
+        return _stage_live_value(self, f"_{name}", value)
+
     @property
-    def log_scale_x(self) -> ListOrItem[bool]:
+    def log_scale_x(self) -> bool | list[bool | None]:
         return self._log_scale_x
 
     @log_scale_x.setter
-    def log_scale_x(self, value: ListOrItem[bool]) -> None:
-        _reject_animated_layout(self)
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("log_scale_x must be a bool.")
-        self._log_scale_x = value
+    def log_scale_x(self, value: bool | list[bool | None]) -> None:
+        self._log_scale_x = self._stage_view_flag("log_scale_x", value)
 
     @property
-    def log_scale_y(self) -> ListOrItem[bool]:
+    def log_scale_y(self) -> bool | list[bool | None]:
         return self._log_scale_y
 
     @log_scale_y.setter
-    def log_scale_y(self, value: ListOrItem[bool]) -> None:
-        _reject_animated_layout(self)
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("log_scale_y must be a bool.")
-        self._log_scale_y = value
+    def log_scale_y(self, value: bool | list[bool | None]) -> None:
+        self._log_scale_y = self._stage_view_flag("log_scale_y", value)
 
     @property
     def remove_axes(self) -> ListOrItem[bool]:
@@ -709,16 +715,7 @@ class SmartFigure:
 
     @invert_x_axis.setter
     def invert_x_axis(self, value: bool | list[bool | None]) -> None:
-        valid = (
-            all(v is None or isinstance(v, bool) for v in value)
-            if isinstance(value, list)
-            else isinstance(value, bool)
-        )
-        if not valid:
-            raise InvalidParameterTypeError(
-                "invert_x_axis must be a bool or a list of bool or None."
-            )
-        self._invert_x_axis = _stage_live_value(self, "_invert_x_axis", value)
+        self._invert_x_axis = self._stage_view_flag("invert_x_axis", value)
 
     @property
     def invert_y_axis(self) -> bool | list[bool | None]:
@@ -726,16 +723,7 @@ class SmartFigure:
 
     @invert_y_axis.setter
     def invert_y_axis(self, value: bool | list[bool | None]) -> None:
-        valid = (
-            all(v is None or isinstance(v, bool) for v in value)
-            if isinstance(value, list)
-            else isinstance(value, bool)
-        )
-        if not valid:
-            raise InvalidParameterTypeError(
-                "invert_y_axis must be a bool or a list of bool or None."
-            )
-        self._invert_y_axis = _stage_live_value(self, "_invert_y_axis", value)
+        self._invert_y_axis = self._stage_view_flag("invert_y_axis", value)
 
     @property
     def reference_labels(self) -> ListOrItem[bool]:
@@ -2811,10 +2799,11 @@ class SmartFigure:
         if session is not None:
             subplot_count = len(self._ordered_elements)
             for dimension in ("x", "y"):
-                session.bind_axis_limits(
+                session.bind_axis_view(
                     self,
                     f"_{dimension}_lim",
                     f"_invert_{dimension}_axis",
+                    f"_log_scale_{dimension}",
                     dimension,
                     [
                         (
@@ -4285,7 +4274,7 @@ class SmartFigureWCS(SmartFigure):
         :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
         each subfigure needs its own subtitle. This list cannot be longer than the number of subfigures drawn by the
         SmartFigure and None values can be used to skip specific subfigures.
-    log_scale_x, log_scale_y : bool | list[bool], optional
+    log_scale_x, log_scale_y : bool | list[bool | None], optional
         Whether to use a logarithmic scale for the x and y axes, respectively. This can be given as a single value or
         a list of values to apply to each subplot.
         Defaults to ``False``.
@@ -4444,8 +4433,8 @@ class SmartFigureWCS(SmartFigure):
         sub_x_labels: Iterable[str] | None = None,
         sub_y_labels: Iterable[str] | None = None,
         subtitles: Iterable[str] | None = None,
-        log_scale_x: ListOrItem[bool] = False,
-        log_scale_y: ListOrItem[bool] = False,
+        log_scale_x: bool | list[bool | None] = False,
+        log_scale_y: bool | list[bool | None] = False,
         remove_axes: ListOrItem[bool] = False,
         aspect_ratio: ListOrItem[float | Literal["auto", "equal"]] = "auto",
         box_aspect_ratio: ListOrItem[float | None] = None,
@@ -5067,10 +5056,9 @@ class SmartTwinAxis:
 
     @log_scale.setter
     def log_scale(self, value: bool) -> None:
-        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("log_scale must be a boolean.")
-        self._log_scale = value
+        self._log_scale = _stage_live_value(self, "_log_scale", value)
 
     @property
     def remove_axes(self) -> bool:
@@ -5306,10 +5294,11 @@ class SmartTwinAxis:
                 ax.invert_xaxis()
 
         if session is not None:
-            session.bind_axis_limits(
+            session.bind_axis_view(
                 self,
                 "_axis_lim",
                 "_invert_axis",
+                "_log_scale",
                 "y" if is_y else "x",
                 [(0, ax, self.invert_axis)],
                 1,

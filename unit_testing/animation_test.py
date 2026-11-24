@@ -2538,6 +2538,131 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             assert_allclose(curve.handle.lines[0].axes.get_xlim(), (1, 5))
             assert_allclose(curve.handle.lines[0].axes.get_ylim(), (0, 5))
 
+    def test_live_log_scale_combines_final_limits_and_preserves_manual_ticks(self):
+        from warnings import catch_warnings, simplefilter
+
+        from graphinglib import SmartTwinAxis
+
+        first = Curve([1, 10, 100], [1, 2, 3])
+        second = Curve([1, 10, 100], [3, 2, 1])
+        inner = Curve([1, 10, 100], [0, 1, 2])
+        data = Curve([1, 10, 100], [10, 50, 90])
+        twin = SmartTwinAxis(elements=[data], axis_lim=(-1, 100))
+        nested = SmartFigure(elements=[inner], twin_y_axis=twin, x_lim=(-1, 120))
+        root = SmartFigure(2, 3, share_x=True, x_lim=(-1, 120), figure_style="plain")
+        root[:, 0] = nested
+        root[0, 1:3] = [first]
+        root[1, 1:3] = [second]
+        root.set_ticks(x_ticks=[1, 10, 100], x_tick_labels=["one", "ten", "hundred"])
+        states = {}
+
+        def update(i):
+            a, b, c, d = (
+                curve.handle.lines[0].axes for curve in (first, second, inner, data)
+            )
+            states[i] = (
+                (a, b, c, d),
+                (a.get_xscale(), b.get_xscale(), c.get_xscale(), d.get_yscale()),
+                (a.get_xlim(), b.get_xlim(), c.get_xlim(), d.get_ylim()),
+                (a.xaxis.get_major_locator(), a.xaxis.get_major_formatter()),
+            )
+            if i == 0:
+                root.log_scale_x = [None, None, True]
+                root.x_lim = [None, (1, 100), None]
+                root.invert_x_axis = True
+                twin.axis_lim = (1, 100)
+                twin.log_scale = True
+            elif i == 1:
+                root.x_lim = (-2, 120)
+                root.log_scale_x = False
+                root.invert_x_axis = False
+                twin.log_scale = False
+                twin.axis_lim = (-5, 100)
+
+        with catch_warnings():
+            simplefilter("error", UserWarning)
+            root.save_animation(self.output, update, 3)
+        self.assertEqual(states[0][1], ("linear", "linear", "linear", "linear"))
+        self.assertEqual(states[1][1], ("log", "log", "linear", "log"))
+        self.assertEqual(states[1][2], ((100, 1), (100, 1), (-1, 120), (1, 100)))
+        self.assertEqual(states[2][1], ("linear",) * 4)
+        self.assertEqual(states[2][2], ((-2, 120), (-2, 120), (-1, 120), (-5, 100)))
+        self.assertTrue(
+            all(
+                state[0] == states[0][0] and state[3] == states[0][3]
+                for state in states.values()
+            )
+        )
+
+    def test_live_log_scale_validates_shared_requests_and_final_limits(self):
+        a = Curve([1, 10], [1, 10])
+        b = Curve([1, 10], [10, 1])
+        for conflict, message in (
+            (False, "logarithmic axis limits must be positive"),
+            (True, "matching scale settings"),
+        ):
+            with self.subTest(conflict=conflict):
+                root = SmartFigure(
+                    1,
+                    2,
+                    elements=[a, b],
+                    share_x=True,
+                    x_lim=(-1, 10),
+                    figure_style="plain",
+                )
+                self.output.write_bytes(b"existing")
+
+                def update(i, root=root, conflict=conflict):
+                    root.log_scale_x = (
+                        False if i == 0 else ([True, False] if conflict else True)
+                    )
+
+                with self.assertRaisesRegex(ValueError, message):
+                    root.save_animation(self.output, update, 2)
+                self.assertFalse(root.log_scale_x)
+                for curve in (a, b):
+                    axes = curve.handle.lines[0].axes
+                    self.assertEqual(axes.get_xscale(), "linear")
+                    self.assertEqual(axes.get_xlim(), (-1, 10))
+                self.assertEqual(self.output.read_bytes(), b"existing")
+
+    def test_failed_frame_restores_log_scale_and_tick_objects(self):
+        scatter = Scatter([1, 10], [1, 10], face_color="navy")
+        root = SmartFigure(elements=[scatter], x_lim=(-2, 10), figure_style="plain")
+        captures = []
+
+        def update(i):
+            axes = scatter.handle.axes
+            axis = axes.xaxis
+            captures[:] = [axes, axis.get_major_locator(), axis.get_major_formatter()]
+            if i:
+                root.log_scale_x = True
+                root.x_lim = (1, 10)
+                scatter.face_color = "red"
+                original = scatter.handle.set_facecolor
+
+                def fail_after_change(colors):
+                    original(colors)
+                    if np.allclose(colors, [[1, 0, 0, 1]]):
+                        self.assertEqual(axes.get_xscale(), "log")
+                        self.assertEqual(axes.get_xlim(), (1, 10))
+                        raise ValueError("failed after changing scale")
+
+                self.enterContext(
+                    patch.object(scatter.handle, "set_facecolor", fail_after_change)
+                )
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        axes, locator, formatter = captures
+        self.assertFalse(root.log_scale_x)
+        self.assertEqual(root.x_lim, (-2, 10))
+        self.assertEqual(axes.get_xscale(), "linear")
+        self.assertEqual(axes.get_xlim(), (-2, 10))
+        self.assertIs(axes.xaxis.get_major_locator(), locator)
+        self.assertIs(axes.xaxis.get_major_formatter(), formatter)
+        self.assertFalse(self.output.exists())
+
     def test_updates_twin_log_limits_and_leaves_shared_primary_dimension_intact(self):
         from graphinglib import SmartTwinAxis
 

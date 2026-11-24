@@ -6,12 +6,13 @@ from dataclasses import dataclass
 from itertools import chain
 from math import isfinite
 from numbers import Real
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from matplotlib import rcParams
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
+from matplotlib.axis import Axis
 from matplotlib.collections import (
     LineCollection,
     PathCollection,
@@ -372,16 +373,17 @@ class _AnimationSession:
 
         self.bind_update(element, name, prepare)
 
-    def bind_axis_limits(
+    def bind_axis_view(
         self,
         element: object,
         name: str,
         inversion_name: str,
+        scale_name: str,
         dimension: str,
         targets: list[tuple[int, Axes, bool]],
         subplot_count: int,
     ) -> None:
-        """Bind limits and direction to the same shared viewport."""
+        """Bind limits, direction, and scale to the same shared viewport."""
         if not targets:
             return
         initial: dict[frozenset[Axes], tuple[float, float]] = {}
@@ -395,6 +397,50 @@ class _AnimationSession:
                 axes.set_xlim(*limits, emit=emit, auto=False)
             else:
                 axes.set_ylim(*limits, emit=emit, auto=False)
+
+        def mpl_axis(axes: Axes) -> Axis:
+            return axes.xaxis if dimension == "x" else axes.yaxis
+
+        def write_scale(axes: Axes, scale: Any) -> None:
+            if dimension == "x":
+                axes.set_xscale(scale)
+            else:
+                axes.set_yscale(scale)
+
+        tick_fields = (
+            ("major_locator", "isDefault_majloc"),
+            ("minor_locator", "isDefault_minloc"),
+            ("major_formatter", "isDefault_majfmt"),
+            ("minor_formatter", "isDefault_minfmt"),
+        )
+
+        def save_ticks(axis: Axis):
+            return [
+                (field, flag, getattr(axis, f"get_{field}")(), getattr(axis, flag))
+                for field, flag in tick_fields
+            ]
+
+        def restore_ticks(axis: Axis, ticks, *, custom_only: bool) -> None:
+            for field, flag, value, is_default in ticks:
+                if not custom_only or not is_default:
+                    getattr(axis, f"set_{field}")(value)
+                    setattr(axis, flag, is_default)
+
+        def prepare_scale_edit(
+            axes: Axes, siblings: frozenset[Axes], scale: str
+        ) -> _ArtistEdit:
+            before_scale = cast(Any, mpl_axis(axes))._scale
+            ticks = [(axis, save_ticks(axis)) for axis in map(mpl_axis, siblings)]
+
+            def set_state(new_scale, *, custom_only: bool) -> None:
+                write_scale(axes, new_scale)
+                for axis, state in ticks:
+                    restore_ticks(axis, state, custom_only=custom_only)
+
+            return _ArtistEdit(
+                lambda: set_state(scale, custom_only=True),
+                lambda: set_state(before_scale, custom_only=False),
+            )
 
         def read_entries(property_name: str, reset_all: bool) -> dict[int, Any]:
             if not self.has_frame_update(element, property_name):
@@ -439,11 +485,13 @@ class _AnimationSession:
                 )
             limits = read_entries(name, reset_all=True)
             inversions = read_entries(inversion_name, reset_all=False)
+            scales = read_entries(scale_name, reset_all=False)
             changes: list[
                 tuple[frozenset[Axes], Axes, tuple[float, float], bool | None]
             ] = []
             old_limits: dict[Axes, tuple[float, float]] = {}
             old_directions: dict[frozenset[Axes], bool | None] = {}
+            scale_edits: dict[Axes, _ArtistEdit] = {}
 
             for siblings, members in grouped.items():
                 axes = members[0][1]
@@ -462,9 +510,22 @@ class _AnimationSession:
                     raise InvalidParameterError(
                         "Shared axes must receive matching inversion settings within a frame."
                     )
-                if not requested and not flags:
+                scale_flags = {
+                    scales[index] for index, _, _ in members if index in scales
+                }
+                if len(scale_flags) > 1:
+                    raise InvalidParameterError(
+                        "Shared axes must receive matching scale settings within a frame."
+                    )
+                if not requested and not flags and not scale_flags:
                     continue
                 direction = next(iter(flags), before)
+                current_scale = mpl_axis(axes).get_scale()
+                scale = (
+                    ("log" if next(iter(scale_flags)) else "linear")
+                    if scale_flags
+                    else current_scale
+                )
 
                 # Partial limits use logical endpoint order for an explicitly
                 # oriented axis, independent of callback assignment order.
@@ -489,11 +550,6 @@ class _AnimationSession:
                         raise InvalidParameterError(
                             "Animated axis limits must be distinct finite numbers."
                         )
-                    scale = axes.get_xscale() if dimension == "x" else axes.get_yscale()
-                    if scale == "log" and min(low, high) <= 0:
-                        raise InvalidParameterError(
-                            "Animated logarithmic axis limits must be positive."
-                        )
                     bounds = float(low), float(high)
                     options.append(orient(bounds, direction) if force_order else bounds)
                 bounds = options[0] if options else orient(previous, direction)
@@ -501,23 +557,41 @@ class _AnimationSession:
                     raise InvalidParameterError(
                         "Shared axes must receive matching limits within a frame."
                     )
+                if scale == "log" and min(bounds) <= 0:
+                    raise InvalidParameterError(
+                        "Animated logarithmic axis limits must be positive."
+                    )
+                if scale != current_scale:
+                    if current_scale not in ("linear", "log"):
+                        raise UnsupportedFeatureError(
+                            "Only linear and logarithmic axes can switch scales during animation."
+                        )
+                    scale_edits[axes] = prepare_scale_edit(axes, siblings, scale)
                 changes.append((siblings, axes, bounds, direction))
                 old_limits.update((sibling, read(sibling)) for sibling in siblings)
                 old_directions[siblings] = before
 
+            applied_scales = []
+
             def apply() -> None:
                 for siblings, axes, bounds, direction in changes:
+                    if axes in scale_edits:
+                        edit = scale_edits[axes]
+                        applied_scales.append(edit)
+                        edit.apply()
                     write(axes, bounds, emit=True)
                     directions[siblings] = direction
 
             def undo() -> None:
+                for edit in reversed(applied_scales):
+                    edit.undo()
                 for axes, bounds in old_limits.items():
                     write(axes, bounds, emit=False)
                 directions.update(old_directions)
 
             return _ArtistEdit(apply, undo)
 
-        self.bind_derived(element, (name, inversion_name), prepare)
+        self.bind_derived(element, (name, inversion_name, scale_name), prepare)
 
     def bind_derived(
         self,
