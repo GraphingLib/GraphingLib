@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from itertools import chain
 from math import isfinite
 from numbers import Integral, Real
-from typing import Any, Literal, cast
+from typing import Any, Literal, Protocol, cast
 
 import numpy as np
 from matplotlib import rcParams
@@ -19,12 +19,14 @@ from matplotlib.collections import (
     PathCollection,
     PolyCollection,
 )
+from matplotlib.colorbar import Colorbar
 from matplotlib.container import ErrorbarContainer
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import DrawingArea
 from matplotlib.patches import Polygon
 from matplotlib.text import Text as TextArtist
+from matplotlib.ticker import FixedLocator, Locator
 from numpy.typing import ArrayLike
 
 from .exceptions import (
@@ -357,6 +359,14 @@ def _error_array(value: ArrayLike | None, size: int, name: str) -> np.ndarray | 
     return error.copy()
 
 
+class _ColorbarOwner(Protocol):
+    _color_bar_params: dict[str, Any]
+
+
+class _AnimatedColorbarLocator(FixedLocator):
+    """Mark tick positions explicitly assigned by an animation callback."""
+
+
 class _AnimationSession:
     def __init__(self) -> None:
         self._artists: dict[int, list[_Binding]] = {}
@@ -369,6 +379,7 @@ class _AnimationSession:
         self._dirty_dependents: dict[int, Callable[[], _ArtistEdit]] = {}
         self._legend_swatch_prepares: set[int] = set()
         self._initially_hidden_artists: list[Artist] = []
+        self._initial_colorbar_ticks: dict[int, Any] = {}
         self._legend_sources: dict[
             int, tuple[object, Callable[[], str | None], tuple[str, ...]]
         ] = {}
@@ -808,12 +819,97 @@ class _AnimationSession:
             artist.set_visible(False)
         self._initially_hidden_artists.clear()
 
-    def bind_colorbar_visibility(
-        self, element: object, axes: Axes, *, initially_visible: bool
+    def bind_colorbar(
+        self,
+        element: _ColorbarOwner,
+        bar: Colorbar,
+        *,
+        initially_visible: bool,
+        default_locator: Callable[[], Locator] | None = None,
     ) -> None:
-        self.bind_property(element, "_show_color_bar", axes, "visible")
+        self.bind_property(element, "_show_color_bar", bar.ax, "visible")
         if not initially_visible:
-            self._initially_hidden_artists.append(axes)
+            self._initially_hidden_artists.append(bar.ax)
+        label = (
+            bar.ax.yaxis.label if bar.orientation == "vertical" else bar.ax.xaxis.label
+        )
+        self.bind_property(element, "_color_bar_label", label, "text")
+        initial_locator = bar.locator
+        self._initial_colorbar_ticks.setdefault(
+            id(element), element._color_bar_params.get("ticks")
+        )
+
+        def prepare_ticks(ticks: list[float] | None) -> _ArtistEdit:
+            previous = bar.locator
+
+            def apply() -> None:
+                if ticks is not None:
+                    bar.locator = _AnimatedColorbarLocator(ticks)
+                else:
+                    bar.locator = (
+                        default_locator() if default_locator else initial_locator
+                    )
+
+            def undo() -> None:
+                bar.locator = previous
+
+            return _ArtistEdit(apply, undo)
+
+        self.bind_update(element, "_color_bar_ticks", prepare_ticks)
+
+    def queue_colorbar_params(
+        self,
+        element: _ColorbarOwner,
+        label: str | None,
+        position: str | None,
+        reserve: bool,
+        params: dict[str, Any],
+    ) -> None:
+        if position is not None or reserve or params.keys() - {"ticks"}:
+            raise UnsupportedFeatureError(
+                "During animation set_color_bar_params supports label and ticks."
+            )
+        if label is not None and not isinstance(label, str):
+            raise InvalidParameterError("The colorbar label must be a string.")
+        if label is None and "ticks" not in params:
+            return
+        values = params.get("ticks")
+        ticks = None
+        if values is not None:
+            try:
+                if np.iscomplexobj(values):
+                    raise ValueError("Complex ticks")
+                array = np.asarray(values, dtype=float)
+            except (TypeError, ValueError) as exc:
+                raise InvalidParameterError(
+                    "Colorbar ticks must be finite numbers."
+                ) from exc
+            if array.ndim != 1 or not np.isfinite(array).all():
+                raise InvalidParameterError(
+                    "Colorbar ticks must be a one-dimensional sequence of finite numbers."
+                )
+            ticks = array.tolist()
+        previous = element._color_bar_params
+        updated = previous.copy()
+        if label is not None:
+            self.queue_property(element, "_color_bar_label", label, lambda: None)
+            updated["label"] = label
+        if "ticks" in params:
+            self.queue_property(element, "_color_bar_ticks", ticks, lambda: None)
+            if ticks is None:
+                initial = self._initial_colorbar_ticks[id(element)]
+                if initial is None:
+                    updated.pop("ticks", None)
+                else:
+                    updated["ticks"] = initial
+            else:
+                updated["ticks"] = ticks
+
+        def restore() -> None:
+            element._color_bar_params = previous
+
+        self.remember(element, "_color_bar_params", restore)
+        element._color_bar_params = updated
 
     def bind_legend(
         self, legend: Legend, handles: list[Any], *, initially_visible: bool = True
@@ -1225,6 +1321,7 @@ class _AnimationSession:
         self._dependents.clear()
         self._legend_sources.clear()
         self._initially_hidden_artists.clear()
+        self._initial_colorbar_ticks.clear()
         self._reference_legend_sources.clear()
         self._legend_swatch_prepares.clear()
         self._dirty_dependents.clear()

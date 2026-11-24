@@ -4715,6 +4715,109 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertEqual(figure._hidden_spines, ("left",))
         self.assertEqual(self.output.read_bytes(), b"existing")
 
+    def test_live_colorbar_labels_and_ticks_survive_mappable_changes(self):
+        from graphinglib import Contour
+
+        heat = Heatmap([[0, 1], [1, 2]], show_color_bar=False)
+        heat.set_color_bar_params(reserve=True, position="bottom", label="Setup")
+        contour = Contour([[0, 1], [1, 2]], levels=[0, 1, 2], show_color_bar=True)
+        scatter = Scatter([0, 1], [1, 0], face_color=[0.0, 2.0], show_color_bar=True)
+        scatter.set_color_bar_params(ticks=[0, 2])
+        inner = SmartFigure(elements=[heat])
+        root = SmartFigure(2, 3, figure_style="plain")
+        root[:, 0] = inner
+        root[0, 1:3] = [contour]
+        root[1, 1:3] = [scatter]
+        states = []
+
+        def update(frame):
+            bars = [
+                ax._colorbar for ax in plt.gcf().axes if ax.get_label() == "<colorbar>"
+            ]
+            states.append(
+                [
+                    (
+                        bar,
+                        tuple(bar.get_ticks()),
+                        bar.ax.get_xlabel()
+                        if bar.orientation == "horizontal"
+                        else bar.ax.get_ylabel(),
+                        bar.ax.get_visible(),
+                        tuple(
+                            bar.ax.get_xlim()
+                            if bar.orientation == "horizontal"
+                            else bar.ax.get_ylim()
+                        ),
+                    )
+                    for bar in bars
+                ]
+            )
+            if frame == 0:
+                heat.set_color_bar_params(label="Live heat", ticks=[0, 1, 5])
+                contour.set_color_bar_params(label="Live contours", ticks=[0.5, 1.5])
+                scatter.set_color_bar_params(ticks=[])
+            elif frame == 1:
+                heat.show_color_bar = True
+                contour.levels = [0, 0.75, 2]
+                contour.color_map = "plasma"
+                scatter.color_map_range = (0, 3)
+            elif frame == 2:
+                heat.set_color_bar_params(label="", ticks=None)
+                contour.set_color_bar_params(ticks=None)
+                contour.levels = [0, 1.25, 2]
+                scatter.set_color_bar_params(ticks=None)
+
+        root.save_animation(self.output, update, 4)
+        for before, first, later, reset in zip(*states, strict=True):
+            self.assertTrue(before[0] is first[0] is later[0] is reset[0])
+        self.assertEqual(states[1][0][1:4], ((0, 1, 5), "Live heat", False))
+        self.assertEqual(states[0][0][4], states[1][0][4])
+        self.assertTrue(states[2][0][3])
+        self.assertEqual(states[3][0][1:3], (states[0][0][1], ""))
+        self.assertEqual(states[2][1][1:3], ((0.5, 1.5), "Live contours"))
+        self.assertEqual(states[3][1][1], (0, 1.25, 2))
+        self.assertEqual(states[2][2][1], ())
+        self.assertEqual(states[3][2][1], (0, 2))
+        self.assertNotIn("ticks", contour.color_bar_params)
+        self.assertEqual(scatter.color_bar_params["ticks"], [0, 2])
+
+    def test_failed_colorbar_edit_restores_label_locator_and_configuration(self):
+        from matplotlib.colorbar import Colorbar
+
+        heat = Heatmap([[0, 1], [1, 2]], show_color_bar=False)
+        heat.set_color_bar_params(reserve=True, label="Setup", ticks=[0, 2])
+        figure = SmartFigure(elements=[heat], figure_style="plain")
+        self.output.write_bytes(b"existing")
+        seen = []
+        original = Colorbar.locator
+
+        def fail_on_locator(bar, value):
+            original.fset(bar, value)
+            if seen and bar is seen[0] and list(bar.get_ticks()) == [0, 1]:
+                self.assertEqual(bar.ax.get_ylabel(), "Failed")
+                raise ValueError("failed updating colorbar ticks")
+
+        def update(frame):
+            if frame == 0:
+                seen.extend(
+                    ax._colorbar
+                    for ax in plt.gcf().axes
+                    if ax.get_label() == "<colorbar>"
+                )
+            else:
+                heat.set_color_bar_params(label="Failed", ticks=[0, 1])
+
+        with (
+            patch.object(Colorbar, "locator", original.setter(fail_on_locator)),
+            self.assertRaisesRegex(GraphingException, "animation frame 1"),
+        ):
+            figure.save_animation(self.output, update, 2)
+        (bar,) = seen
+        self.assertEqual(bar.ax.get_ylabel(), "Setup")
+        assert_allclose(bar.get_ticks(), [0, 2])
+        self.assertEqual(heat.color_bar_params, {"label": "Setup", "ticks": [0, 2]})
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_raster_extent_and_origin_update_without_panning_view(self):
         heat = Heatmap([[0, 1], [0, 0]], origin_position="upper", show_color_bar=False)
         root = SmartFigure(

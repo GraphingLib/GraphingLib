@@ -2141,7 +2141,11 @@ Grid layout, legend entries, and colorbar placement are established from the
 initial figure. For a scalar Heatmap, Contour, or Scatter with an intensity
 array, call ``set_color_bar_params(reserve=True)`` before playback to reserve
 space for a colorbar while starting with ``show_color_bar=False``. Assign
-``show_color_bar=True`` in a callback to reveal it.
+``show_color_bar=True`` in a callback to reveal it. Use
+``set_color_bar_params(label=..., ticks=...)`` to change the label or
+major tick positions on an existing colorbar. Use an empty string to clear
+the label, an empty list to hide the ticks, or ``ticks=None`` to restore the
+tick rule established at setup.
 
 Assign ``show_legend`` to show or hide a legend, even if it
 starts hidden. Pass a boolean for all direct subplots or use a list with

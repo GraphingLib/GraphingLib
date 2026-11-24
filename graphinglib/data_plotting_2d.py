@@ -27,12 +27,12 @@ from scipy.interpolate import griddata
 
 from ._animation import (
     _DRAW_SESSION,
+    _AnimatedColorbarLocator,
     _AnimationSession,
     _ArtistEdit,
     _bound_session,
     _combine_edits,
     _edit,
-    _reject_live_update,
     _stage_live_value,
 )
 from .exceptions import InvalidParameterError, PlottingError
@@ -732,11 +732,17 @@ class Heatmap(Plottable2D):
             ``show_color_bar=False``. Set ``show_color_bar=True`` in a callback
             to reveal it. Applies to data with a color scale. Defaults to ``False``.
         **color_bar_params:
-            Additional keyword arguments are passed to ``plt.colorbar`` call.
+            Additional keyword arguments are passed to ``plt.colorbar``.
+
+        Notes
+        -----
+        During animation, update the label or major tick positions on an
+        existing colorbar. Use ``label=""`` to clear its label and
+        ``ticks=None`` to restore its tick rule from setup.
         """
-        _reject_live_update(
-            self, "Configure the Heatmap colorbar layout before animating."
-        )
+        if (session := _bound_session(self)) is not None:
+            session.queue_colorbar_params(self, label, position, reserve, color_bar_params)
+            return
         self._color_bar_params = color_bar_params
         self._reserve_color_bar = reserve
         if label is not None:
@@ -869,8 +875,8 @@ class Heatmap(Plottable2D):
             bar = fig.colorbar(image, ax=axes, **self._color_bar_params)
         if session is not None:
             if bar is not None:
-                session.bind_colorbar_visibility(
-                    self, bar.ax, initially_visible=show_colorbar
+                session.bind_colorbar(
+                    self, bar, initially_visible=show_colorbar
                 )
             session.bind_property(self, "_alpha", image, "alpha")
             if self._image.ndim == 2:
@@ -1946,9 +1952,17 @@ class Contour(Plottable2D):
             ``show_color_bar=False``. Set ``show_color_bar=True`` in a callback
             to reveal it. Applies to data with a color scale. Defaults to ``False``.
         **color_bar_params:
-            Additional keyword arguments are passed to ``plt.colorbar`` call.
+            Additional keyword arguments are passed to ``plt.colorbar``.
+
+        Notes
+        -----
+        During animation, update the label or major tick positions on an
+        existing colorbar. Use ``label=""`` to clear its label and
+        ``ticks=None`` to restore its tick rule from setup.
         """
-        _reject_live_update(self, "Configure the Contour colorbar before animating.")
+        if (session := _bound_session(self)) is not None:
+            session.queue_colorbar_params(self, label, position, reserve, color_bar_params)
+            return
         self._color_bar_params = color_bar_params
         self._reserve_color_bar = reserve
         if label is not None:
@@ -2082,7 +2096,9 @@ class Contour(Plottable2D):
                 _set_contour_bar_mode(bar, state.filled)
                 bar.boundaries = _contour_bar_boundaries(geometry.levels).tolist()
                 bar.values = geometry.values.tolist()
-                if levels_follow_ticks:
+                if levels_follow_ticks and not isinstance(
+                    bar.locator, _AnimatedColorbarLocator
+                ):
                     bar.locator = FixedLocator(geometry.levels.tolist(), nbins=10)
                 cont.changed()
             else:
@@ -2242,8 +2258,17 @@ class Contour(Plottable2D):
             # Matplotlib 3.8 moved all levels into one collection.
             if live_paths:
                 if bar is not None:
-                    session.bind_colorbar_visibility(
-                        self, bar.ax, initially_visible=show_colorbar
+                    session.bind_colorbar(
+                        self,
+                        bar,
+                        initially_visible=show_colorbar,
+                        default_locator=(
+                            lambda: FixedLocator(
+                                np.asarray(cont.levels).tolist(), nbins=10
+                            )
+                        )
+                        if self._color_bar_params.get("ticks") is None
+                        else None,
                     )
                 self._bind_live_contour(session, cont, bar, filled)
 

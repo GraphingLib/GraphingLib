@@ -3099,9 +3099,17 @@ class Scatter(Plottable1D, MathematicalObject):
             ``show_color_bar=False``. Set ``show_color_bar=True`` in a callback
             to reveal it. Applies to data with a color scale. Defaults to ``False``.
         **color_bar_params:
-            Additional keyword arguments are passed to ``plt.colorbar`` call.
+            Additional keyword arguments are passed to ``plt.colorbar``.
+
+        Notes
+        -----
+        During animation, update the label or major tick positions on an
+        existing colorbar. Use ``label=""`` to clear its label and
+        ``ticks=None`` to restore its tick rule from setup.
         """
-        _reject_live_update(self, "Configure the Scatter colorbar layout before animating.")
+        if (session := _bound_session(self)) is not None:
+            session.queue_colorbar_params(self, label, position, reserve, color_bar_params)
+            return
         self._color_bar_params = color_bar_params
         self._reserve_color_bar = reserve
         if label is not None:
@@ -3772,8 +3780,8 @@ class Scatter(Plottable1D, MathematicalObject):
         for mappable in colorbars.values():
             bar = plt.colorbar(mappable, ax=axes, **self._color_bar_params)
             if session is not None:
-                session.bind_colorbar_visibility(
-                    self, bar.ax, initially_visible=show_colorbars
+                session.bind_colorbar(
+                    self, bar, initially_visible=show_colorbars
                 )
 
         if session is not None:
