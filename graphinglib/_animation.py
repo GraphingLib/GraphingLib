@@ -353,15 +353,20 @@ class _AnimationSession:
     def bind_curve(
         self,
         curve: object,
-        handle: ErrorbarContainer,
+        handle: ErrorbarContainer | Line2D,
         *,
         bands: _CurveBands,
     ) -> None:
-        data_line = handle.lines[0]
+        data_line = handle if isinstance(handle, Line2D) else handle.lines[0]
         if not isinstance(data_line, Line2D):
             self.block_curve_updates(curve, "This curve has no line artist to update.")
             return
-        self._bind_points(curve, data_line, handle, bands=bands)
+        self._bind_points(
+            curve,
+            data_line,
+            handle if isinstance(handle, ErrorbarContainer) else None,
+            bands=bands,
+        )
 
     def bind_scatter(
         self, scatter: object, points: PathCollection, errors: ErrorbarContainer | None

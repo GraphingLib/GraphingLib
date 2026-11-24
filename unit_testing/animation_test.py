@@ -1034,3 +1034,140 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertNotIn("failed", [artist.get_text() for artist in titles])
         for curve in (moving, fixed):
             assert_allclose(curve.handle.lines[0].axes.get_xlim(), (1, 5))
+
+    def test_refits_every_builtin_model_on_existing_artists(self):
+        from graphinglib import (
+            FitFromExponential,
+            FitFromFOTF,
+            FitFromFunction,
+            FitFromGaussian,
+            FitFromLog,
+            FitFromPolynomial,
+            FitFromSine,
+            FitFromSquareRoot,
+        )
+
+        def affine(x, slope, intercept):
+            return slope * x + intercept
+
+        cases = [
+            (lambda samples: FitFromPolynomial(samples, 2), lambda x: 1 + 2 * x + x**2),
+            (
+                lambda samples: FitFromSine(samples, guesses=[2, 1, 0.3, 0.1]),
+                lambda x: 2 * np.sin(x + 0.3) + 0.1,
+            ),
+            (
+                lambda samples: FitFromExponential(samples, guesses=[2, 0.4, 0.2]),
+                lambda x: 2 * np.exp(0.4 * x + 0.2),
+            ),
+            (
+                lambda samples: FitFromGaussian(samples, guesses=[2, 2, 0.6]),
+                lambda x: 2 * np.exp(-0.5 * ((x - 2) / 0.6) ** 2),
+            ),
+            (
+                lambda samples: FitFromSquareRoot(samples, guesses=[2, 1, 0.2]),
+                lambda x: 2 * np.sqrt(x + 1) + 0.2,
+            ),
+            (
+                lambda samples: FitFromLog(samples, log_base=10, guesses=[2, 1, 0.2]),
+                lambda x: 2 * np.log10(x + 1) + 0.2,
+            ),
+            (
+                lambda samples: FitFromFunction(affine, samples, guesses=[2, 1]),
+                lambda x: 2 * x + 1,
+            ),
+            (
+                lambda samples: FitFromFOTF(samples, guesses=[2, 1]),
+                lambda x: 2 * (1 - np.exp(-x)),
+            ),
+        ]
+        x = np.linspace(0.5, 5, 40)
+        for create, model in cases:
+            source = Scatter(x, model(x))
+            fit = create(source)
+            with self.subTest(fit=type(fit).__name__):
+                previous_func = fit.function
+                previous_values = previous_func(x)
+                initial_results = fit.parameters.copy()
+                expected = create(Scatter(x, 1.2 * model(x)))
+                panel = SmartFigure(
+                    elements=[fit],
+                    figure_style="plain",
+                    show_legend=False,
+                    y_lim=(0, max(1.3 * model(x))),
+                )
+                handles = []
+
+                def update(i, fit=fit, source=source, model=model, handles=handles):
+                    handles.append(fit.handle)
+                    source.set_data(x, (1 + 0.2 * i) * model(x))
+                    self.assertIs(fit.refit(), fit)
+
+                panel.save_animation(self.output, update, 2)
+                self.assertIs(handles[0], handles[1])
+                self.assertFalse(np.allclose(initial_results, fit.parameters))
+                assert_allclose(fit.parameters, expected.parameters)
+                assert_allclose(fit.cov_matrix, expected.cov_matrix)
+                assert_allclose(fit.handle.get_ydata(), expected.y_data)
+                assert_allclose(fit.function(x), expected.function(x))
+                assert_allclose(previous_func(x), previous_values)
+                with Image.open(self.output) as gif:
+                    self.assertEqual(gif.n_frames, 2)
+
+    def test_refit_updates_residuals_fills_and_rolls_back_after_artist_failure(self):
+        from graphinglib import FitFromPolynomial
+
+        x = np.linspace(0, 4, 8)
+        disturbance = np.sin(3 * x)
+        source = Scatter(x, 1 + x + disturbance)
+        fit = FitFromPolynomial(source, degree=1, label="Trend")
+        fit.show_residual_curves(sigma_multiplier=2)
+        other = FitFromPolynomial(Curve(x, 8 + 0.5 * x), degree=1)
+        fit.get_area_between(1, 3, fill_between=True, other_curve=other)
+        trigger = Curve(x, x, color="navy")
+        root = SmartFigure(
+            1, 2, elements=[[fit, source, trigger], [fit]], figure_style="plain"
+        )
+        seen = []
+        last_valid = []
+        self.output.write_bytes(b"existing")
+
+        def update(i):
+            fit_axes = [
+                axis
+                for axis in plt.gcf().axes
+                if any(line.get_label().startswith("Trend") for line in axis.lines)
+            ]
+            seen.append(
+                tuple((tuple(ax.lines[:3]), ax.collections[0]) for ax in fit_axes)
+            )
+            source.set_data(x, (i + 2) + (i + 1) * x + (i + 2) * disturbance)
+            fit.refit()
+            other.refit(Curve(x, 10 + i + 0.5 * x))
+            if not i:
+                last_valid.append(
+                    (
+                        fit.parameters.copy(),
+                        fit.label,
+                        fit.y_data.copy(),
+                        np.std(fit.get_residuals()) * 2,
+                    )
+                )
+            trigger.color = "navy" if not i else "invalid-color"
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+        self.assertEqual(seen[0], seen[-1])
+        self.assertEqual(len(seen[0]), 2)
+        coeffs, label, fitted, spread = last_valid[0]
+        self.assertEqual(fit.label, label)
+        assert_allclose(fit.parameters, coeffs)
+        assert_allclose(source.y_data, 2 + x + 2 * disturbance)
+        assert_allclose(other.parameters, [10, 0.5])
+        for (line, lower, upper), fill in seen[0]:
+            self.assertEqual(line.get_label(), label)
+            assert_allclose(line.get_ydata(), fitted)
+            assert_allclose(lower.get_ydata(), fitted - spread)
+            assert_allclose(upper.get_ydata(), fitted + spread)
+            self.assertAlmostEqual(fill.get_paths()[0].vertices[:, 1].max(), 11.5)

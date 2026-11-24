@@ -2033,9 +2033,13 @@ Live update support
      - Grid, levels, filled/line mode and color scale. The initial frame
        determines levels when an integer count is supplied.
    * - Fit classes
-     - Plain fitted lines support the same visual styles as plain curves.
-     - Fitted samples, fitted parameters and residuals. For a changing model,
-       sample the new fit into a separate Curve.
+     - Call ``fit.refit()`` after updating the source, or ``fit.refit(source)``
+       to use new data. All built-in models update their fitted line and any
+       configured residual curves or fills. Plain fitted lines may also change
+       visual styles.
+     - Model type, solver options, residual and fill configuration. The
+       fit's generated equation label refreshes in the model and on the
+       plot line. A visible legend keeps its initial text.
    * - :class:`~graphinglib.Stream`
      - Uniform color and line width, including arrowheads.
      - Vector field, density, and styles mapped over the field. Changing

@@ -11,11 +11,17 @@ from numpy.typing import ArrayLike
 from scipy.optimize import curve_fit
 from typing_extensions import TypeVar
 
-from ._animation import _DRAW_SESSION, _reject_live_update
-from .data_plotting_1d import Curve, Scatter
-from .exceptions import InvalidParameterError, PlottingError
+from ._animation import (
+    _DRAW_SESSION,
+    _bound_session,
+    _CurveBands,
+    _edit,
+    _reject_live_update,
+)
+from .data_plotting_1d import _KEEP_ERROR, Curve, Scatter, _KeepError
+from .exceptions import InvalidParameterError, InvalidParameterTypeError, PlottingError
 from .graph_elements import Point
-from .inherit import INHERIT, Inherit, Styled, strip_inherit
+from .inherit import INHERIT, Inherit, Styled, is_inherit, strip_inherit
 
 try:
     from typing import Self
@@ -135,10 +141,7 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
         self._curve_to_be_fit = curve_to_be_fit
         self._color = color
         self._line_width = line_width
-        if label:
-            self._label = label + " : " + "$f(x) = $" + str(self)
-        else:
-            self._label = "$f(x) = $" + str(self)
+        self._set_generated_label(label, prefix="$f(x) = $")
         self._line_style = line_style
         self._alpha = alpha
 
@@ -172,13 +175,123 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
         self._fill_between_other_curve = None
         self._fill_between_color: Optional[str] = None
 
+    def _set_generated_label(self, label: str | None, prefix: str = "") -> None:
+        self._fit_label_base = label
+        self._fit_label_prefix = prefix
+        self._label = self._generated_label()
+
+    def _generated_label(self) -> str:
+        lead = f"{self._fit_label_base} : " if self._fit_label_base else ""
+        return lead + self._fit_label_prefix + str(self)
+
+    def _calculate_parameters(self) -> None:
+        raise NotImplementedError
+
+    def _make_fitted_function(
+        self,
+    ) -> Callable[[float | np.ndarray], float | np.ndarray]:
+        raise NotImplementedError
+
+    def _solve(self) -> None:
+        self._calculate_parameters()
+        self._function = self._make_fitted_function()
+        x = self._curve_to_be_fit.x_data
+        self._x_data = np.linspace(np.min(x), np.max(x), max(len(x), 500))
+        self._y_data = np.broadcast_to(
+            self._function(self._x_data), self._x_data.shape
+        ).copy()
+
+    def refit(self, source: Curve | Scatter | None = None) -> Self:
+        """Fit a new source or refresh the fit from its current source.
+
+        The original model and solver options are reused. In an animation callback,
+        assign the new samples to the source first, then call ``fit.refit()``.
+        A refit updates the sampled line, residual curves, and fills on existing
+        artists. A failed solve preserves the previous fit. The fit's equation
+        label is refreshed unless it has been overridden.
+        """
+        source = self._curve_to_be_fit if source is None else source
+        if not isinstance(source, (Curve, Scatter)):
+            raise InvalidParameterTypeError("A fit source must be a Curve or Scatter.")
+        if source is self:
+            raise InvalidParameterError("A fit cannot use itself as the source.")
+        x, y = np.asarray(source.x_data), np.asarray(source.y_data)
+        if (
+            x.ndim != 1
+            or y.ndim != 1
+            or not x.size
+            or x.size != y.size
+            or x.dtype.kind not in "iuf"
+            or y.dtype.kind not in "iuf"
+            or not np.isfinite(x).all()
+            or not np.isfinite(y).all()
+        ):
+            raise InvalidParameterError(
+                "Refit samples must be finite real arrays of the same nonzero length."
+            )
+
+        previous = vars(self).copy()
+
+        def restore() -> None:
+            vars(self).clear()
+            vars(self).update(previous)
+
+        update_label = self._label == self._generated_label()
+        try:
+            self._curve_to_be_fit = source
+            try:
+                self._solve()
+            except (ValueError, TypeError, np.linalg.LinAlgError) as exc:
+                raise PlottingError(
+                    f"The curve refit did not succeed ({exc})."
+                ) from exc
+            if (
+                self._y_data.dtype.kind not in "iuf"
+                or not np.isfinite(self._y_data).all()
+            ):
+                raise PlottingError("The refit must produce finite real values.")
+            if update_label:
+                self._label = self._generated_label()
+
+            session = _bound_session(self)
+            if session is not None:
+                session.queue_points(
+                    self,
+                    self._x_data,
+                    self._y_data,
+                    None,
+                    self._residual_error(),
+                    show_errorbars=False,
+                    restore=restore,
+                )
+        except BaseException:
+            restore()
+            raise
+        return self
+
+    def set_data(
+        self,
+        x_data: ArrayLike,
+        y_data: ArrayLike,
+        *,
+        x_error: ArrayLike | None | _KeepError = _KEEP_ERROR,
+        y_error: ArrayLike | None | _KeepError = _KEEP_ERROR,
+    ) -> Self:
+        """Replace the sampled coordinates outside animation."""
+        _reject_live_update(
+            self, "Call refit() to update a fitted curve during animation."
+        )
+        return super().set_data(x_data, y_data, x_error=x_error, y_error=y_error)
+
     @property
     def curve_to_be_fit(self) -> Curve | Scatter:
         return self._curve_to_be_fit
 
     @curve_to_be_fit.setter
     def curve_to_be_fit(self, curve: Curve | Scatter) -> None:
-        _reject_live_update(self, "Configure the fitted data before animating.")
+        _reject_live_update(
+            self, "Call refit(source) to change an animated fit's source."
+        )
         self._curve_to_be_fit = curve
 
     @property
@@ -385,12 +498,9 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
             zorder=z_order,
             **params,
         )
-        if self._res_curves_to_be_plotted:
-            y_fit = self._y_data
-            residuals = self.get_residuals()
-            std = np.std(residuals)
-            y_fit_plus_std = y_fit + (self._res_sigma_multiplier * std)
-            y_fit_minus_std = y_fit - (self._res_sigma_multiplier * std)
+        lower = upper = area_fill = None
+        error = self._residual_error()
+        if error is not None:
             params = {
                 "color": self._res_color,
                 "linewidth": self._res_line_width,
@@ -398,42 +508,65 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
                 "alpha": self._alpha,
             }
             params = strip_inherit(params)
-            axes.plot(
+            (lower,) = axes.plot(
                 self._x_data,
-                y_fit_minus_std,
+                self._y_data - error,
                 zorder=z_order,
                 **params,
             )
-            axes.plot(
+            (upper,) = axes.plot(
                 self._x_data,
-                y_fit_plus_std,
+                self._y_data + error,
                 zorder=z_order,
                 **params,
             )
-        if self._fill_between_bounds:
-            kwargs = {"alpha": 0.2}
-            if self._fill_between_color:
-                kwargs["color"] = self._fill_between_color
+        bounds, other = self._fill_between_bounds, self._fill_between_other_curve
+        if bounds is not None:
+            params = strip_inherit(
+                {
+                    "alpha": 0.2,
+                    "color": (
+                        self.handle.get_color()
+                        if self._fill_between_color in (None, "same as curve")
+                        else self._fill_between_color
+                    ),
+                }
+            )
+            if other is None:
+                x, y1, y2 = self._x_data, self._y_data, 0
             else:
-                kwargs["color"] = self.handle.get_color()
-            params = strip_inherit(kwargs)
-            axes.fill_between(
-                self._x_data,
-                self._y_data,
-                where=np.logical_and(
-                    self._x_data >= self._fill_between_bounds[0],
-                    self._x_data <= self._fill_between_bounds[1],
-                ).tolist(),
+                x, y1, y2 = self._shared_fill_data(other, bounds)
+            area_fill = axes.fill_between(
+                x,
+                y1,
+                y2,
+                where=(x >= bounds[0]) & (x <= bounds[1]),
                 zorder=z_order - 2,
                 **params,
             )
 
         session = _DRAW_SESSION.get()
         if session is not None:
-            session.block_curve_updates(
+            line = self.handle
+            session.bind_curve(
                 self,
-                "Animating fitted values requires a refit; animate a Curve of sampled values instead.",
+                line,
+                bands=_CurveBands(
+                    lower, upper, None, area_fill if other is None else None, bounds
+                ),
             )
+            session.bind_derived(
+                self,
+                ("point_data",),
+                line,
+                lambda: _edit(line.set_label, line.get_label(), self._label),
+            )
+            if other is not None and bounds is not None and area_fill is not None:
+                session.bind_point_dependent(
+                    (self, other),
+                    area_fill,
+                    lambda: self._shared_fill_data(other, bounds),
+                )
             if not self._res_curves_to_be_plotted and not self._fill_between_bounds:
                 for name, mpl_name in (
                     ("_color", "color"),
@@ -442,6 +575,26 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
                     ("_alpha", "alpha"),
                 ):
                     session.bind_property(self, name, self.handle, mpl_name)
+
+    def get_area_between(
+        self,
+        x1: float,
+        x2: float,
+        fill_between: bool = False,
+        fill_color: str | Inherit = INHERIT,
+        other_curve: Curve | None = None,
+    ) -> float:
+        """Integrate or shade a fitted curve, using its line color by default."""
+        return super().get_area_between(
+            x1, x2, fill_between,
+            "same as curve" if is_inherit(fill_color) else fill_color,
+            other_curve=other_curve,
+        )
+
+    def _residual_error(self) -> np.ndarray | None:
+        if not self._res_curves_to_be_plotted:
+            return None
+        return np.asarray(self._res_sigma_multiplier * np.std(self.get_residuals()))
 
     def show_residual_curves(
         self,
@@ -631,38 +784,25 @@ class FitFromPolynomial(GeneralFit):
             Polynomial function with the parameters of the fit.
         """
         self._curve_to_be_fit = curve_to_be_fit
+        self._degree = degree
+        self._solve()
+        self._color = color
+        self._line_width = line_width
+        self._set_generated_label(label, prefix="$f(x) = $")
+        self._line_style = line_style
+        self._alpha = alpha
+        self._setup_attributes()
+
+    def _calculate_parameters(self) -> None:
         inversed_coeffs, inversed_cov_matrix = np.polyfit(
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
-            degree,
+            self._degree,
             cov=True,
         )
         self._coeffs = inversed_coeffs[::-1]
         self._cov_matrix = np.flip(inversed_cov_matrix)
         self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
-        self._function = self._polynomial_func_with_params()
-        self._color = color
-        self._line_width = line_width
-        if label:
-            self._label = label + " : " + "$f(x) = $" + str(self)
-        else:
-            self._label = "$f(x) = $" + str(self)
-        self._line_style = line_style
-        self._alpha = alpha
-        self._res_curves_to_be_plotted = False
-        number_of_points = (
-            len(self._curve_to_be_fit._x_data)
-            if len(self._curve_to_be_fit._x_data) > 500
-            else 500
-        )
-        self._x_data = np.linspace(
-            np.min(self._curve_to_be_fit._x_data),
-            np.max(self._curve_to_be_fit._x_data),
-            number_of_points,
-        )
-        self._y_data = self._function(self._x_data)
-
-        self._setup_attributes()
 
     @property
     def coeffs(self) -> np.ndarray:
@@ -711,7 +851,7 @@ class FitFromPolynomial(GeneralFit):
         """
         return "x^{0}".format(power) if power != 0 else ""
 
-    def _polynomial_func_with_params(
+    def _make_fitted_function(
         self,
     ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         """
@@ -722,8 +862,9 @@ class FitFromPolynomial(GeneralFit):
         function : Callable
             Polynomial function with the parameters of the fit.
         """
+        coefficients = tuple(self._coeffs)
         return lambda x: sum(
-            coeff * x**exponent for exponent, coeff in enumerate(self._coeffs)
+            coeff * x**exponent for exponent, coeff in enumerate(coefficients)
         )
 
 
@@ -867,29 +1008,12 @@ class FitFromSine(GeneralFit):
         self._curve_to_be_fit = curve_to_be_fit
         self._guesses = guesses
         self._max_iterations = max_iterations
-        self._calculate_parameters()
-        self._function = self._sine_func_with_params()
+        self._solve()
         self._color = color
-        if label:
-            self._label = label + " : " + "$f(x) = $" + str(self)
-        else:
-            self._label = "$f(x) = $" + str(self)
+        self._set_generated_label(label, prefix="$f(x) = $")
         self._line_width = line_width
         self._line_style = line_style
         self._alpha = alpha
-        self._res_curves_to_be_plotted = False
-        number_of_points = (
-            len(self._curve_to_be_fit._x_data)
-            if len(self._curve_to_be_fit._x_data) > 500
-            else 500
-        )
-        self._x_data = np.linspace(
-            np.min(self._curve_to_be_fit._x_data),
-            np.max(self._curve_to_be_fit._x_data),
-            number_of_points,
-        )
-        self._y_data = self._function(self._x_data)
-
         self._setup_attributes()
 
     @property
@@ -959,14 +1083,14 @@ class FitFromSine(GeneralFit):
 
     @staticmethod
     def _sine_func_template(
-        x: np.ndarray, a: float, b: float, c: float, d: float
-    ) -> np.ndarray:
+        x: float | np.ndarray, a: float, b: float, c: float, d: float
+    ) -> float | np.ndarray:
         """
         Function to be passed to the ``curve_fit`` function.
         """
         return a * np.sin(b * x + c) + d
 
-    def _sine_func_with_params(
+    def _make_fitted_function(
         self,
     ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         """
@@ -977,10 +1101,10 @@ class FitFromSine(GeneralFit):
         Callable
             Sine function with the parameters of the fit.
         """
-        return lambda x: (
-            self._amplitude * np.sin(self._frequency_rad * x + self._phase_rad)
-            + self._vertical_shift
-        )
+        template = self._sine_func_template
+        parameters = tuple(self._parameters)
+        return lambda x: template(x, *parameters)
+
 
 
 class FitFromExponential(GeneralFit):
@@ -1100,29 +1224,12 @@ class FitFromExponential(GeneralFit):
         self._curve_to_be_fit = curve_to_be_fit
         self._guesses = guesses
         self._max_iterations = max_iterations
-        self._calculate_parameters()
-        self._function = self._exp_func_with_params()
+        self._solve()
         self._color = color
-        if label:
-            self._label = label + " : " + "$f(x) = $" + str(self)
-        else:
-            self._label = "$f(x) = $" + str(self)
+        self._set_generated_label(label, prefix="$f(x) = $")
         self._line_width = line_width
         self._line_style = line_style
         self._alpha = alpha
-        self._res_curves_to_be_plotted = False
-        number_of_points = (
-            len(self._curve_to_be_fit._x_data)
-            if len(self._curve_to_be_fit._x_data) > 500
-            else 500
-        )
-        self._x_data = np.linspace(
-            np.min(self._curve_to_be_fit._x_data),
-            np.max(self._curve_to_be_fit._x_data),
-            number_of_points,
-        )
-        self._y_data = self._function(self._x_data)
-
         self._setup_attributes()
 
     @property
@@ -1155,13 +1262,13 @@ class FitFromExponential(GeneralFit):
         self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
 
     @staticmethod
-    def _exp_func_template(x: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
+    def _exp_func_template(x: float | np.ndarray, a: float, b: float, c: float) -> float | np.ndarray:
         """
         Function to be passed to the ``curve_fit`` function.
         """
         return a * np.exp(b * x + c)
 
-    def _exp_func_with_params(
+    def _make_fitted_function(
         self,
     ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         """
@@ -1172,9 +1279,10 @@ class FitFromExponential(GeneralFit):
         function : Callable
             Exponential function with the parameters of the fit.
         """
-        return lambda x: (
-            self._parameters[0] * np.exp(self._parameters[1] * x + self._parameters[2])
-        )
+        template = self._exp_func_template
+        parameters = tuple(self._parameters)
+        return lambda x: template(x, *parameters)
+
 
 
 class FitFromGaussian(GeneralFit[float | np.floating]):
@@ -1316,29 +1424,12 @@ class FitFromGaussian(GeneralFit[float | np.floating]):
         self._curve_to_be_fit = curve_to_be_fit
         self._guesses = guesses
         self._max_iterations = max_iterations
-        self._calculate_parameters()
-        self._function = self._gaussian_func_with_params()
+        self._solve()
         self._color = color
-        if label:
-            self._label = label + " : " + str(self)
-        else:
-            self._label = str(self)
+        self._set_generated_label(label)
         self._line_width = line_width
         self._line_style = line_style
         self._alpha = alpha
-        self._res_curves_to_be_plotted = False
-        number_of_points = (
-            len(self._curve_to_be_fit._x_data)
-            if len(self._curve_to_be_fit._x_data) > 500
-            else 500
-        )
-        self._x_data = np.linspace(
-            np.min(self._curve_to_be_fit._x_data),
-            np.max(self._curve_to_be_fit._x_data),
-            number_of_points,
-        )
-        self._y_data = self._function(self._x_data)
-
         self._setup_attributes()
 
     @property
@@ -1393,14 +1484,14 @@ class FitFromGaussian(GeneralFit[float | np.floating]):
 
     @staticmethod
     def _gaussian_func_template(
-        x: np.ndarray, amplitude: float, mean: float, standard_deviation: float
-    ) -> np.ndarray:
+        x: float | np.ndarray, amplitude: float, mean: float, standard_deviation: float
+    ) -> float | np.ndarray:
         """
         Function to be passed to the ``curve_fit`` function.
         """
         return amplitude * np.exp(-(((x - mean) / standard_deviation) ** 2) / 2)
 
-    def _gaussian_func_with_params(
+    def _make_fitted_function(
         self,
     ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         """
@@ -1411,10 +1502,10 @@ class FitFromGaussian(GeneralFit[float | np.floating]):
         function : Callable
             Gaussian function with the parameters of the fit.
         """
-        return lambda x: (
-            self._amplitude
-            * np.exp(-(((x - self._mean) / self._standard_deviation) ** 2) / 2)
-        )
+        template = self._gaussian_func_template
+        parameters = tuple(self._parameters)
+        return lambda x: template(x, *parameters)
+
 
 
 class FitFromSquareRoot(GeneralFit):
@@ -1539,29 +1630,12 @@ class FitFromSquareRoot(GeneralFit):
         self._curve_to_be_fit = curve_to_be_fit
         self._guesses = guesses
         self._max_iterations = max_iterations
-        self._calculate_parameters()
-        self._function = self._square_root_func_with_params()
+        self._solve()
         self._color = color
-        if label:
-            self._label = label + " : " + str(self)
-        else:
-            self._label = str(self)
+        self._set_generated_label(label)
         self._line_width = line_width
         self._line_style = line_style
         self._alpha = alpha
-        self._res_curves_to_be_plotted = False
-        number_of_points = (
-            len(self._curve_to_be_fit._x_data)
-            if len(self._curve_to_be_fit._x_data) > 500
-            else 500
-        )
-        self._x_data = np.linspace(
-            np.min(self._curve_to_be_fit._x_data),
-            np.max(self._curve_to_be_fit._x_data),
-            number_of_points,
-        )
-        self._y_data = self._function(self._x_data)
-
         self._setup_attributes()
 
     @property
@@ -1589,14 +1663,14 @@ class FitFromSquareRoot(GeneralFit):
 
     @staticmethod
     def _square_root_func_template(
-        x: np.ndarray, a: float, b: float, c: float
-    ) -> np.ndarray:
+        x: float | np.ndarray, a: float, b: float, c: float
+    ) -> float | np.ndarray:
         """
         Function to be passed to the ``curve_fit`` function.
         """
         return a * np.sqrt(x + b) + c
 
-    def _square_root_func_with_params(
+    def _make_fitted_function(
         self,
     ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         """
@@ -1607,9 +1681,10 @@ class FitFromSquareRoot(GeneralFit):
         function : Callable
             Square root function with the parameters of the fit.
         """
-        return lambda x: (
-            self._parameters[0] * np.sqrt(x + self._parameters[1]) + self._parameters[2]
-        )
+        template = self._square_root_func_template
+        parameters = tuple(self._parameters)
+        return lambda x: template(x, *parameters)
+
 
 
 class FitFromLog(GeneralFit):
@@ -1742,29 +1817,12 @@ class FitFromLog(GeneralFit):
         self._log_base = log_base
         self._guesses = guesses
         self._max_iterations = max_iterations
-        self._calculate_parameters()
-        self._function = self._log_func_with_params()
+        self._solve()
         self._color = color
-        if label:
-            self._label = label + " : " + str(self)
-        else:
-            self._label = str(self)
+        self._set_generated_label(label)
         self._line_width = line_width
         self._line_style = line_style
         self._alpha = alpha
-        self._res_curves_to_be_plotted = False
-        number_of_points = (
-            len(self._curve_to_be_fit._x_data)
-            if len(self._curve_to_be_fit._x_data) > 500
-            else 500
-        )
-        self._x_data = np.linspace(
-            np.min(self._curve_to_be_fit._x_data),
-            np.max(self._curve_to_be_fit._x_data),
-            number_of_points,
-        )
-        self._y_data = self._function(self._x_data)
-
         self._setup_attributes()
 
     @property
@@ -1796,9 +1854,10 @@ class FitFromLog(GeneralFit):
         """
         Function to be passed to the ``curve_fit`` function.
         """
-        return lambda x, a, b, c: a * (np.log(x + b) / np.log(self._log_base)) + c
+        log_base = self._log_base
+        return lambda x, a, b, c: a * (np.log(x + b) / np.log(log_base)) + c
 
-    def _log_func_with_params(
+    def _make_fitted_function(
         self,
     ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         """
@@ -1809,11 +1868,10 @@ class FitFromLog(GeneralFit):
         function : Callable
             Logarithmic function with the parameters of the fit.
         """
-        return lambda x: (
-            self._parameters[0]
-            * (np.log(x + self._parameters[1]) / np.log(self._log_base))
-            + self._parameters[2]
-        )
+        template = self._log_func_template()
+        parameters = tuple(self._parameters)
+        return lambda x: template(x, *parameters)
+
 
 
 class FitFromFunction(GeneralFit):
@@ -1953,25 +2011,8 @@ class FitFromFunction(GeneralFit):
         self._alpha = alpha
         self._max_iterations = max_iterations
 
-        self._calculate_parameters()
-        self._function = self._get_function_with_params()
-        if label:
-            self._label = label + " : " + str(self)
-        else:
-            self._label = str(self)
-        self._res_curves_to_be_plotted = False
-        number_of_points = (
-            len(self._curve_to_be_fit._x_data)
-            if len(self._curve_to_be_fit._x_data) > 500
-            else 500
-        )
-        self._x_data = np.linspace(
-            np.min(self._curve_to_be_fit._x_data),
-            np.max(self._curve_to_be_fit._x_data),
-            number_of_points,
-        )
-        self._y_data = self._function(self._x_data)
-
+        self._solve()
+        self._set_generated_label(label)
         self._setup_attributes()
 
     @property
@@ -1998,10 +2039,11 @@ class FitFromFunction(GeneralFit):
             self._curve_to_be_fit._x_data,
             self._curve_to_be_fit._y_data,
             p0=self._guesses,
+            maxfev=self._max_iterations,
         )
         self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
 
-    def _get_function_with_params(
+    def _make_fitted_function(
         self,
     ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         """
@@ -2144,29 +2186,12 @@ class FitFromFOTF(GeneralFit):
         self._curve_to_be_fit = curve_to_be_fit
         self._guesses = guesses
         self._max_iterations = max_iterations
-        self._calculate_parameters()
-        self._function = self._fotf_func_with_params()
+        self._solve()
         self._color = color
-        if label:
-            self._label = label + " : " + str(self)
-        else:
-            self._label = str(self)
+        self._set_generated_label(label)
         self._line_width = line_width
         self._line_style = line_style
         self._alpha = alpha
-        self._res_curves_to_be_plotted = False
-        number_of_points = (
-            len(self._curve_to_be_fit._x_data)
-            if len(self._curve_to_be_fit._x_data) > 500
-            else 500
-        )
-        self._x_data = np.linspace(
-            np.min(self._curve_to_be_fit._x_data),
-            np.max(self._curve_to_be_fit._x_data),
-            number_of_points,
-        )
-        self._y_data = self._function(self._x_data)
-
         self._setup_attributes()
 
     @property
@@ -2210,14 +2235,14 @@ class FitFromFOTF(GeneralFit):
 
     @staticmethod
     def _fotf_func_template(
-        x: np.ndarray, gain: float, time_constant: float
-    ) -> np.ndarray:
+        x: float | np.ndarray, gain: float, time_constant: float
+    ) -> float | np.ndarray:
         """
         Function to be passed to the ``curve_fit`` function.
         """
         return gain * (1 - np.exp(-x / time_constant))
 
-    def _fotf_func_with_params(
+    def _make_fitted_function(
         self,
     ) -> Callable[[float | np.ndarray], float | np.ndarray]:
         """
@@ -2228,4 +2253,6 @@ class FitFromFOTF(GeneralFit):
         function : Callable
             First order transfer function with the parameters of the fit.
         """
-        return lambda x: self._gain * (1 - np.exp(-x / self._time_constant))
+        template = self._fotf_func_template
+        parameters = tuple(self._parameters)
+        return lambda x: template(x, *parameters)
