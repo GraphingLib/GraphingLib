@@ -2123,11 +2123,18 @@ quantities. You can also change the approximate tick count, coordinate
 formatter, and minor tick frequency. Reset restores the projection's
 initial tick defaults.
 
+Use ``set_tick_params(...)`` in a callback to change tick and label
+appearance on direct subplots, twin axes, or WCS coordinates. Select major
+and minor ticks independently on standard plots and twins. WCS supports a
+separate minor tick length. Tick styling composes with visibility changes
+in the same frame. ``reset=True`` restores the figure style defaults for
+the selected ticks before applying any new arguments.
+
 Use ``remove_axes``, ``remove_x_ticks`` or ``remove_y_ticks`` to hide and reveal
 decorations on direct subplots. These flags follow the same list rules and
 apply to each subplot individually, including when the viewport is shared.
-Tick flags hide both marks and labels, and switching them off restores the
-initial side and label settings. Use ``remove_axes`` and ``remove_ticks`` on
+Tick flags hide both marks and labels. Switching them off reveals the
+current side and label settings. Use ``remove_axes`` and ``remove_ticks`` on
 a twin axis to control its decorations separately.
 
 Assign ``show_grid`` to toggle grid lines in the same way. Call

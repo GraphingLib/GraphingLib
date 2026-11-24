@@ -64,11 +64,14 @@ from ._animation import (
     _combine_edits,
     _edit,
     _LegendFilter,
+    _NativeTickStyle,
     _reject_live_update,
     _stage_live_value,
     _subplot_visibility_entries,
     _tick_removal,
+    _TickStyle,
     _updated_tick_config,
+    _WCSTickStyle,
 )
 from .exceptions import (
     IncompatibleArgumentsError,
@@ -2602,9 +2605,8 @@ class SmartFigure:
 
         limit_axes: list[tuple[int, Axes]] = []
         legend_targets: dict[int, Legend | None] = {}
-        visibility: dict[str, dict[int, Callable[[bool], _ArtistEdit]]] = {
-            name: {} for name in ("remove_axes", "remove_x_ticks", "remove_y_ticks")
-        }
+        axis_visibility: dict[int, Callable[[bool], _ArtistEdit]] = {}
+        tick_styles: dict[str, dict[int, _TickStyle]] = {"x": {}, "y": {}}
         grid_defaults = self._grid_defaults()
         grid_options = self._grid_options(grid_defaults)
         # Plottable and subfigure plotting
@@ -2778,7 +2780,7 @@ class SmartFigure:
                 if self._subplot_p["remove_axes"][subplot_i]:
                     ax.set_axis_off()
                 if session is not None:
-                    visibility["remove_axes"][subplot_i] = partial(_axis_removal, ax)
+                    axis_visibility[subplot_i] = partial(_axis_removal, ax)
 
                 ax.set_aspect(self._subplot_p["aspect_ratio"][subplot_i])
                 ax.set_box_aspect(self._subplot_p["box_aspect_ratio"][subplot_i])
@@ -2799,6 +2801,12 @@ class SmartFigure:
                 ):
                     ax.invert_yaxis()
 
+                if session is not None:
+                    for dimension in ("x", "y"):
+                        tick_styles[dimension][subplot_i] = self._animation_tick_style(
+                            ax, dimension
+                        )
+
                 self._customize_ticks(ax, subplot_i)
 
                 # If axes are shared, manually remove ticklabels from unnecessary plots as it is not done automatically
@@ -2817,12 +2825,29 @@ class SmartFigure:
                 for dimension in ("x", "y"):
                     name = f"remove_{dimension}_ticks"
                     hidden = self._subplot_p[name][subplot_i]
-                    if session is not None or hidden:
-                        prepare = self._prepare_tick_removal(ax, dimension)
-                        if hidden:
-                            prepare(True).apply()
-                        if session is not None:
-                            visibility[name][subplot_i] = prepare
+                    if hidden:
+                        self._prepare_tick_removal(ax, dimension)(True).apply()
+                    style = tick_styles[dimension].get(subplot_i)
+                    if style is not None:
+                        style.hidden = bool(hidden)
+                        if dimension == "x" and self._share_x:
+                            style.suppressed_labels = tuple(
+                                label
+                                for label, suppress in (
+                                    ("labeltop", rows.start != 0),
+                                    ("labelbottom", rows.stop != self._num_rows),
+                                )
+                                if suppress
+                            )
+                        elif dimension == "y" and self._share_y:
+                            style.suppressed_labels = tuple(
+                                label
+                                for label, suppress in (
+                                    ("labelleft", cols.start != 0),
+                                    ("labelright", cols.stop != self._num_cols),
+                                )
+                                if suppress
+                            )
 
                 show_grid = self._subplot_p["show_grid"][subplot_i]
                 if show_grid is not None:
@@ -2966,8 +2991,18 @@ class SmartFigure:
             subplot_count = len(self._ordered_elements)
             if legend_targets:
                 session.bind_legend_visibility(self, legend_targets, subplot_count)
-            for name, targets in visibility.items():
-                session.bind_axis_visibility(self, f"_{name}", targets, subplot_count)
+            session.bind_axis_visibility(
+                self, "_remove_axes", axis_visibility, subplot_count
+            )
+            for dimension, styles in tick_styles.items():
+                session.bind_tick_style(
+                    self,
+                    dimension,
+                    styles,
+                    subplot_count,
+                    lambda: self._tick_params,
+                    lambda dim=dimension: getattr(self, f"_remove_{dim}_ticks"),
+                )
             if not isinstance(self, SmartFigureWCS):
                 session.bind_axis_ticks(
                     self,
@@ -3463,6 +3498,9 @@ class SmartFigure:
             axis.set_tick_params(which=which, **params)
 
         return _edit(write, old, new)
+
+    def _animation_tick_style(self, ax: Axes, dimension: str) -> _TickStyle:
+        return _NativeTickStyle(ax.xaxis if dimension == "x" else ax.yaxis, dimension)
 
     def _prepare_tick_removal(
         self, ax: Axes, dimension: str
@@ -4239,7 +4277,6 @@ class SmartFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        _reject_animated_layout(self)
         new_tick_params = {
             "direction": direction,
             "length": length,
@@ -4258,13 +4295,15 @@ class SmartFigure:
             "labelleft": draw_left_labels,
             "labelright": draw_right_labels,
         }
+        config = deepcopy(self._tick_params)
+        changes = {
+            key: value for key, value in new_tick_params.items() if value is not None
+        }
         for axis_i in [axis] if axis != "both" else ["x", "y"]:
             for which_i in [which] if which != "both" else ["major", "minor"]:
-                if reset:
-                    self._tick_params[f"{axis_i} {which_i}"].clear()
-                for param, value in new_tick_params.items():
-                    if value is not None:
-                        self._tick_params[f"{axis_i} {which_i}"][param] = value
+                key = f"{axis_i} {which_i}"
+                config[key] = ({} if reset else config[key]) | changes
+        self._tick_params = _stage_live_value(self, "_tick_params", config)
         return self
 
     def set_grid(
@@ -5172,6 +5211,10 @@ class SmartFigureWCS(SmartFigure):
             edits.append(_edit(write, old, new))
         return _combine_edits(edits)
 
+    def _animation_tick_style(self, ax: Axes, dimension: str) -> _TickStyle:
+        coordinate = cast(Any, ax).coords[0 if dimension == "x" else 1]
+        return _WCSTickStyle(coordinate, dimension)
+
     def _prepare_tick_removal(
         self, ax: Axes, dimension: str
     ) -> Callable[[bool], _ArtistEdit]:
@@ -5442,7 +5485,6 @@ class SmartFigureWCS(SmartFigure):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        _reject_animated_layout(self)
         new_tick_params = {
             "direction": direction,
             "length": length,
@@ -5461,19 +5503,19 @@ class SmartFigureWCS(SmartFigure):
             "labelleft": draw_left_labels,
             "labelright": draw_right_labels,
         }
+        config = deepcopy(self._tick_params)
+        changes = {
+            key: value for key, value in new_tick_params.items() if value is not None
+        }
         for axis_i in [axis] if axis != "both" else ["x", "y"]:
+            major, minor = f"{axis_i} major", f"{axis_i} minor"
             if reset:
-                self._tick_params[f"{axis_i} major"] = deepcopy(
-                    self._default_tick_params[f"{axis_i} major"]
-                )
-                self._tick_params[f"{axis_i} minor"] = deepcopy(
-                    self._default_tick_params[f"{axis_i} minor"]
-                )
-            for param, value in new_tick_params.items():
-                if value is not None:
-                    self._tick_params[f"{axis_i} major"][param] = value
+                config[major] = self._default_tick_params[major].copy()
+                config[minor] = self._default_tick_params[minor].copy()
+            config[major].update(changes)
             if minor_length is not None:
-                self._tick_params[f"{axis_i} minor"]["length"] = minor_length
+                config[minor]["length"] = minor_length
+        self._tick_params = _stage_live_value(self, "_tick_params", config)
         return self
 
     # WCSAxes grids only support major grid lines, so SmartFigure's which_x /
@@ -5858,6 +5900,12 @@ class SmartTwinAxis:
 
             session.bind_update(self, "_hide_spine", prepare_hide)
 
+        native_axis = ax.yaxis if is_y else ax.xaxis
+        tick_style = (
+            _NativeTickStyle(native_axis, "y" if is_y else "x")
+            if session is not None
+            else None
+        )
         self._customize_ticks(is_y)
 
         # Logarithmic scale
@@ -5866,14 +5914,13 @@ class SmartTwinAxis:
 
         if self._remove_axes:
             ax.set_axis_off()
-        if self._remove_ticks or session is not None:
+        if self._remove_ticks:
             prepare_ticks = _tick_removal(
                 ax.yaxis if is_y else ax.xaxis, "y" if is_y else "x"
             )
-            if self._remove_ticks:
-                prepare_ticks(True).apply()
-            if session is not None:
-                session.bind_update(self, "_remove_ticks", prepare_ticks)
+            prepare_ticks(True).apply()
+            if tick_style is not None:
+                tick_style.hidden = True
 
         # Invert axis
         if self.invert_axis:
@@ -5883,6 +5930,15 @@ class SmartTwinAxis:
                 ax.invert_xaxis()
 
         if session is not None:
+            if tick_style is not None:
+                session.bind_tick_style(
+                    self,
+                    "",
+                    {0: tick_style},
+                    1,
+                    lambda: self._tick_params,
+                    lambda: self._remove_ticks,
+                )
             session.bind_axis_ticks(
                 self, [(ax.yaxis if is_y else ax.xaxis, "")], lambda: self._ticks
             )
@@ -6330,7 +6386,6 @@ class SmartTwinAxis:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        _reject_animated_layout(self)
         new_tick_params = {
             "direction": direction,
             "length": length,
@@ -6349,10 +6404,11 @@ class SmartTwinAxis:
             "labelleft": draw_labels,
             "labelright": draw_labels,
         }
+        config = deepcopy(self._tick_params)
+        changes = {
+            key: value for key, value in new_tick_params.items() if value is not None
+        }
         for which_i in [which] if which != "both" else ["major", "minor"]:
-            if reset:
-                self._tick_params[which_i].clear()
-            for param, value in new_tick_params.items():
-                if value is not None:
-                    self._tick_params[which_i][param] = value
+            config[which_i] = ({} if reset else config[which_i]) | changes
+        self._tick_params = _stage_live_value(self, "_tick_params", config)
         return self

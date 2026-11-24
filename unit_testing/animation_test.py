@@ -2864,6 +2864,158 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             self.assertEqual(snapshot[0], snapshots[0][0])
             self.assertIs(snapshot[6], snapshots[0][6])
 
+    def test_live_tick_styles_follow_shared_nested_and_twin_axes(self):
+        from graphinglib import SmartTwinAxis
+
+        first, second, inner, auxiliary = (Curve([1, 10], [1, 10]) for _ in range(4))
+        twin = SmartTwinAxis(elements=[auxiliary], remove_ticks=True)
+        nested = SmartFigure(elements=[inner], twin_y_axis=twin)
+        root = SmartFigure(2, 2, share_x=True, figure_style="plain")
+        root[0, 0] = [first]
+        root[1, 0] = [second]
+        root[:, 1] = nested
+        root.set_rc_params({"xtick.major.size": 4, "xtick.labelcolor": "blue"})
+        root.set_tick_params(axis="x", length=7)
+        root.set_grid(visible_x=True, visible_y=False)
+        states = []
+
+        def read(axis, minor=False):
+            tick = (axis.get_minor_ticks if minor else axis.get_major_ticks)(1)[0]
+            return (
+                tick.tick1line.get_markersize(),
+                tick.tick1line.get_markeredgecolor(),
+                tick.label1.get_color(),
+                tick.label1.get_visible(),
+                tick.tick2line.get_visible(),
+                tick.label2.get_visible(),
+                tick.gridline.get_visible(),
+            )
+
+        def update(frame):
+            a, b, c, d = (
+                curve.handle.lines[0].axes
+                for curve in (first, second, inner, auxiliary)
+            )
+            states.append(
+                (
+                    read(a.xaxis),
+                    read(b.xaxis),
+                    read(b.xaxis, minor=True),
+                    read(c.xaxis),
+                    read(d.yaxis),
+                )
+            )
+            if frame == 0:
+                root.set_tick_params(
+                    axis="x", length=9, color="red", label_color="purple"
+                )
+                root.set_tick_params(
+                    axis="x", which="minor", length=6, draw_top_ticks=True
+                )
+                root.remove_x_ticks = True
+                nested.set_tick_params(axis="x", length=12)
+                twin.set_tick_params(length=13, label_color="green")
+            elif frame == 1:
+                root.remove_x_ticks = False
+                root.set_tick_params(
+                    axis="x", label_rotation=30, draw_bottom_labels=True
+                )
+                twin.remove_ticks = False
+            elif frame == 2:
+                root.set_tick_params(axis="x", reset=True)
+
+        root.save_animation(self.output, update, 4)
+        start, hidden, shown, reset = states
+        self.assertEqual(start[1][0], 7)
+        self.assertEqual(hidden[1][:6], (9, "red", "purple", False, False, False))
+        self.assertFalse(hidden[4][5])
+        self.assertFalse(shown[0][3])
+        self.assertTrue(shown[1][3])
+        self.assertTrue(shown[1][6])
+        self.assertEqual(shown[2][0], 6)
+        self.assertTrue(shown[2][4])
+        self.assertEqual(shown[3][0], 12)
+        self.assertEqual(shown[4][0:3:2], (13, "green"))
+        self.assertTrue(shown[4][5])
+        self.assertEqual(reset[1][0:3:2], (4, "blue"))
+        self.assertEqual(reset[2], shown[2])
+        axis = second.handle.lines[0].axes.xaxis
+        self.assertEqual(axis.get_major_ticks(1)[0].label1.get_rotation(), 0)
+
+    def test_invalid_tick_style_restores_all_axes_and_previous_export(self):
+        curve = Curve([0, 1], [0, 1])
+        figure = SmartFigure(elements=[curve], figure_style="plain")
+        figure.set_tick_params(axis="x", color="navy", length=7)
+        figure.set_tick_params(axis="y", color="orange")
+        self.output.write_bytes(b"existing")
+
+        def update(_):
+            figure.set_tick_params(axis="x", length=10, label_color="red")
+            figure.remove_x_ticks = True
+            figure.set_tick_params(axis="y", color="invalid-color")
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 0"):
+            figure.save_animation(self.output, update, 1)
+        ax = curve.handle.lines[0].axes
+        tick = ax.xaxis.get_major_ticks(1)[0]
+        self.assertTrue(tick.label1.get_visible())
+        self.assertEqual(tick.tick1line.get_markersize(), 7)
+        self.assertEqual(tick.tick1line.get_markeredgecolor(), "navy")
+        self.assertEqual(
+            ax.yaxis.get_major_ticks(1)[0].tick1line.get_markeredgecolor(), "orange"
+        )
+        self.assertEqual(figure._tick_params["x major"], {"length": 7, "color": "navy"})
+        self.assertFalse(figure.remove_x_ticks)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
+    def test_live_wcs_tick_style_and_visibility_restore_defaults(self):
+        from graphinglib.smart_figure import HAS_ASTROPY, SmartFigureWCS
+
+        if not HAS_ASTROPY:
+            self.skipTest("Astropy is required for WCSAxes")
+        from astropy.wcs import WCS
+
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+        curve = Curve([1, 10], [1, 10])
+        sky = SmartFigureWCS(wcs, elements=[curve], figure_style="plain")
+        seen = []
+
+        def update(frame):
+            x, y = curve.handle.lines[0].axes.coords
+            seen.append(
+                (
+                    x._ticks.get_ticksize(),
+                    x._ticks.get_minor_ticksize(),
+                    x._ticks.get_color(),
+                    x._ticklabels.get_color(),
+                    x.get_ticklabel_visible(),
+                    x.get_ticklabel_position(),
+                    y._ticks.get_ticksize(),
+                )
+            )
+            if frame == 0:
+                sky.set_tick_params(
+                    axis="x",
+                    length=12,
+                    minor_length=7,
+                    color="red",
+                    label_color="purple",
+                    draw_bottom_labels=False,
+                    draw_top_labels=True,
+                )
+                sky.remove_x_ticks = True
+            elif frame == 1:
+                sky.remove_x_ticks = False
+            elif frame == 2:
+                sky.set_tick_params(axis="x", reset=True)
+
+        sky.save_animation(self.output, update, 4)
+        self.assertEqual(seen[1][:6], (12, 7, "red", "purple", False, ["t"]))
+        self.assertEqual(seen[2][:6], (12, 7, "red", "purple", True, ["t"]))
+        self.assertEqual(seen[0], seen[3])
+        self.assertTrue(all(entry[-1] == seen[0][-1] for entry in seen))
+
     def test_failed_frame_restores_axis_and_tick_visibility(self):
         scatter = Scatter([1, 10], [1, 10], face_color="navy")
         root = SmartFigure(

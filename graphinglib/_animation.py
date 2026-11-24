@@ -1,6 +1,6 @@
 """Artist bindings for one SmartFigure animation."""
 
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Mapping
 from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import dataclass
@@ -191,6 +191,210 @@ def _tick_removal(axis: Axis, dimension: str) -> Callable[[bool], _ArtistEdit]:
         return _edit(write, read(), hidden if remove else initial)
 
     return prepare
+
+
+class _TickStyle(Protocol):
+    hidden: bool
+    suppressed_labels: tuple[str, ...]
+
+    def prepare(self, style: list[dict[str, Any]], hide: bool) -> _ArtistEdit: ...
+
+
+class _NativeTickStyle:
+    """Keep axis tick styles and visibility in sync without resetting ticks."""
+
+    groups: tuple[Literal["major"], Literal["minor"]] = ("major", "minor")
+
+    def __init__(self, axis: Axis, dimension: str) -> None:
+        self.axis = axis
+        sides = ("bottom", "top") if dimension == "x" else ("left", "right")
+        self.side_keys = (*sides, *(f"label{side}" for side in sides))
+        self.defaults = self.read()
+        self.hidden = False
+        self.suppressed_labels: tuple[str, ...] = ()
+
+    def read(self) -> list[dict[str, Any]]:
+        snapshots = []
+        for ticks in (self.axis.get_major_ticks, self.axis.get_minor_ticks):
+            tick = ticks(1)[0]
+            snapshots.append(
+                {
+                    "length": tick.tick1line.get_markersize(),
+                    "width": tick.tick1line.get_markeredgewidth(),
+                    "color": tick.tick1line.get_markeredgecolor(),
+                    "direction": tick.get_tickdir(),
+                    "pad": tick.get_pad(),
+                    "labelsize": tick.label1.get_fontsize(),
+                    "labelcolor": tick.label1.get_color(),
+                    "labelrotation": cast(Any, tick)._labelrotation,
+                    **dict(
+                        zip(
+                            self.side_keys,
+                            (
+                                tick.tick1line.get_visible(),
+                                tick.tick2line.get_visible(),
+                                tick.label1.get_visible(),
+                                tick.label2.get_visible(),
+                            ),
+                            strict=True,
+                        )
+                    ),
+                }
+            )
+        return snapshots
+
+    def prepare(self, style: list[dict[str, Any]], hide: bool) -> _ArtistEdit:
+        previous = self.read()
+        hidden = self.hidden
+        offset = self.axis.get_offset_text()
+        old_offset = offset.get_color(), offset.get_visible()
+        excluded = {
+            "bottom",
+            "top",
+            "left",
+            "right",
+            "labelbottom",
+            "labeltop",
+            "labelleft",
+            "labelright",
+        } - set(self.side_keys)
+        requested = []
+        for index, (default, overrides) in enumerate(
+            zip(self.defaults, style, strict=True)
+        ):
+            suppressed = (
+                self.side_keys if hide else self.suppressed_labels if index == 0 else ()
+            )
+            requested.append(
+                default
+                | {
+                    key: value
+                    for key, value in overrides.items()
+                    if key not in excluded
+                }
+                | dict.fromkeys(suppressed, False)
+            )
+
+        def write(params: list[dict[str, Any]]) -> None:
+            for which, config in zip(self.groups, params, strict=True):
+                self.axis.set_tick_params(which=which, **config)
+
+        def apply() -> None:
+            write(requested)
+            offset.set_color(style[1].get("labelcolor", requested[0]["labelcolor"]))
+            offset.set_visible(any(requested[0][key] for key in self.side_keys[2:]))
+            self.hidden = hide
+
+        def undo() -> None:
+            write(previous)
+            offset.set_color(old_offset[0])
+            offset.set_visible(old_offset[1])
+            self.hidden = hidden
+
+        return _ArtistEdit(apply, undo)
+
+
+class _WCSTickStyle:
+    def __init__(self, coordinate: Any, dimension: str) -> None:
+        self.coordinate = coordinate
+        self.sides = ("bottom", "top") if dimension == "x" else ("left", "right")
+        self.defaults = self.read_style()
+        self.hidden = False
+        self.suppressed_labels: tuple[str, ...] = ()
+
+    def read_style(self) -> tuple[dict[str, Any], dict[str, Any], float]:
+        # CoordinateHelper has setters but no public getters for these styles.
+        ticks, labels = self.coordinate._ticks, self.coordinate._ticklabels
+        return (
+            {
+                "size": ticks.get_ticksize(),
+                "width": ticks.get_linewidth(),
+                "color": ticks.get_color(),
+                "direction": "out" if ticks.get_tick_out() else "in",
+            },
+            {
+                "size": labels.get_fontsize(),
+                "color": labels.get_color(),
+                "pad": labels.get_pad(),
+                "rotation": labels.get_rotation(),
+            },
+            ticks.get_minor_ticksize(),
+        )
+
+    def prepare(self, style: list[dict[str, Any]], hide: bool) -> _ArtistEdit:
+        coordinate = self.coordinate
+        previous = self.read_style()
+        old_positions = (
+            coordinate.get_ticks_position(),
+            coordinate.get_ticklabel_position(),
+        )
+        old_visible = coordinate.get_ticks_visible(), coordinate.get_ticklabel_visible()
+        hidden = self.hidden
+        major, minor = style
+        default_ticks, default_labels, default_minor = self.defaults
+        ticks = default_ticks | {
+            target: major[key]
+            for key, target in (
+                ("length", "size"),
+                ("width", "width"),
+                ("color", "color"),
+                ("direction", "direction"),
+            )
+            if key in major
+        }
+        labels = default_labels | {
+            target: major[key]
+            for key, target in (
+                ("labelsize", "size"),
+                ("labelcolor", "color"),
+                ("pad", "pad"),
+                ("labelrotation", "rotation"),
+            )
+            if key in major
+        }
+        positions = (
+            [side[0] for side in self.sides if major.get(side)],
+            [
+                side[0]
+                for side in self.sides
+                if major.get(f"label{side}")
+                and f"label{side}" not in self.suppressed_labels
+            ],
+        )
+
+        def write(
+            tick_style: dict[str, Any], label_style: dict[str, Any], minor_size: float
+        ) -> None:
+            coordinate.set_ticks(**tick_style)
+            coordinate.set_ticklabel(**label_style)
+            coordinate.tick_params(which="minor", length=minor_size)
+
+        def write_positions(
+            ticks: list[str],
+            labels: list[str],
+            ticks_visible: bool,
+            labels_visible: bool,
+        ) -> None:
+            coordinate.set_ticks_position(ticks)
+            coordinate.set_ticklabel_position(labels)
+            coordinate.set_ticks_visible(ticks_visible)
+            coordinate.set_ticklabel_visible(labels_visible)
+
+        def apply() -> None:
+            write(ticks, labels, minor.get("length", default_minor))
+            write_positions(
+                *positions,
+                bool(positions[0]) and not hide,
+                bool(positions[1]) and not hide,
+            )
+            self.hidden = hide
+
+        def undo() -> None:
+            write(*previous)
+            write_positions(*old_positions, *old_visible)
+            self.hidden = hidden
+
+        return _ArtistEdit(apply, undo)
 
 
 def _draw_live_errorbars(
@@ -725,6 +929,37 @@ class _AnimationSession:
             )
 
         self.bind_update(element, name, prepare)
+
+    def bind_tick_style(
+        self,
+        element: object,
+        dimension: str,
+        targets: Mapping[int, _TickStyle],
+        subplot_count: int,
+        read_config: Callable[[], dict[str, dict[str, Any]]],
+        read_visibility: Callable[[], bool | list[bool | None]],
+    ) -> None:
+        if not targets:
+            return
+        prefix = f"{dimension} " if dimension else ""
+        visibility = f"_remove_{dimension}_ticks" if dimension else "_remove_ticks"
+
+        def prepare() -> _ArtistEdit:
+            entries = {}
+            if self.has_frame_update(element, visibility):
+                entries = _subplot_visibility_entries(
+                    read_visibility(), targets, subplot_count
+                )
+            config = read_config()
+            groups = [config[prefix + group] for group in _NativeTickStyle.groups]
+            return _combine_edits(
+                [
+                    target.prepare(groups, entries.get(index, target.hidden))
+                    for index, target in targets.items()
+                ]
+            )
+
+        self.bind_derived(element, ("_tick_params", visibility), prepare)
 
     def bind_axis_ticks(
         self,
