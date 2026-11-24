@@ -2121,6 +2121,11 @@ Use ``reset=True`` to restore the grid style the figure inherited at setup
 before applying new settings. Without an explicit grid setup, showing the grid
 uses the figure style's grid axes and tick groups. WCS grids use major ticks.
 
+Use ``set_visual_params(...)`` to change figure and axes face colors, axes
+edge color and line width, or ``hidden_spines`` for the direct subplots.
+Pass ``hidden_spines=[]`` to restore the spine visibility from the figure
+style. On a twin axis, use ``edge_color``, ``line_width``, and ``hide_spine``.
+
 Assign ``title``,
 ``x_label``, or ``y_label`` to change a SmartFigure's text, or assign
 ``label`` on a twin axis. Use ``None`` to clear the text. Keep the initial

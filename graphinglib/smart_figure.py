@@ -91,6 +91,13 @@ from .tools import _copy_with_overrides, _require_optional_dependency
 T = TypeVar("T")
 ListOrItem = Union[T, list[T]]
 _GRID_RC = ("grid.color", "grid.alpha", "grid.linestyle", "grid.linewidth")
+_LIVE_VISUAL_RC = (
+    "figure.facecolor",
+    "axes.facecolor",
+    "axes.edgecolor",
+    "axes.linewidth",
+)
+_SPINE_NAMES = ("right", "left", "top", "bottom")
 _SUBPLOT_TEXT = {
     "_x_label": "_sub_x_labels",
     "_y_label": "_sub_y_labels",
@@ -2526,6 +2533,10 @@ class SmartFigure:
 
         session = _DRAW_SESSION.get()
         if session is not None:
+            session.bind_property(self, "figure.facecolor", figure.patch, "facecolor")
+            for name in (*_LIVE_VISUAL_RC[1:], "_hidden_spines"):
+                # Layout-only figures may have no direct axes for these settings.
+                session.bind_update(self, name, lambda _: _combine_edits([]))
             for child in self._children.values():
                 session.mark_present(child)
 
@@ -2751,9 +2762,12 @@ class SmartFigure:
                     self._bind_subplot_animation_text(session, ax, subplot_i)
 
                 # Hidden spines
+                if session is not None:
+                    self._bind_animation_spines(session, ax)
                 if self._hidden_spines is not None:
-                    for spine in set(self._hidden_spines):
-                        ax.spines[spine].set_visible(False)
+                    for name in self._hidden_spines:
+                        if name in ax.spines:
+                            ax.spines[name].set_visible(False)
 
                 # Twin axes
                 for i, twin_axis in enumerate(
@@ -3198,6 +3212,31 @@ class SmartFigure:
         minor_y_tick_spacing = self._ticks.get("minor_y_tick_spacing")
         if minor_y_tick_spacing is not None:
             ax.yaxis.set_minor_locator(ticker.MultipleLocator(minor_y_tick_spacing))
+
+    def _bind_animation_spines(self, session: _AnimationSession, axes: Axes) -> None:
+        session.bind_property(self, "axes.facecolor", axes.patch, "facecolor")
+        for spine in axes.spines.values():
+            session.bind_property(self, "axes.edgecolor", spine, "edgecolor")
+            session.bind_property(self, "axes.linewidth", spine, "linewidth")
+        named_spines = [
+            (spine, name, spine.get_visible())
+            for name, spine in axes.spines.items()
+            if name in _SPINE_NAMES
+        ]
+
+        def prepare(hidden: tuple[str, ...]) -> _ArtistEdit:
+            return _combine_edits(
+                [
+                    _edit(
+                        spine.set_visible,
+                        spine.get_visible(),
+                        initial and name not in hidden,
+                    )
+                    for spine, name, initial in named_spines
+                ]
+            )
+
+        session.bind_update(self, "_hidden_spines", prepare)
 
     @staticmethod
     def _grid_defaults() -> dict[str, tuple[str, bool]]:
@@ -3783,7 +3822,19 @@ class SmartFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        _reject_animated_layout(self)
+        spines = None
+        if hidden_spines is not None:
+            if not isinstance(hidden_spines, Iterable):
+                raise InvalidParameterTypeError(
+                    "hidden_spines must be an iterable of spine names."
+                )
+            spines = tuple(hidden_spines)
+            for spine in spines:
+                if spine not in _SPINE_NAMES:
+                    raise InvalidParameterError(
+                        f"Invalid spine name: {spine}. Must be one of 'right', 'left', 'top' or 'bottom'."
+                    )
+
         prop_cycle = plt.cycler(color=color_cycle) if color_cycle is not None else None
 
         rc_params_dict = {
@@ -3808,6 +3859,38 @@ class SmartFigure:
             "text.color": text_color,
             "text.usetex": use_latex,
         }
+        session = _bound_session(self)
+        if session is not None:
+            params = {
+                key: value for key, value in rc_params_dict.items() if value is not None
+            }
+            if (
+                reset
+                or x_axis_label_color is not None
+                or y_axis_label_color is not None
+                or params.keys() - set(_LIVE_VISUAL_RC)
+            ):
+                raise UnsupportedFeatureError(
+                    "During animation set_visual_params supports figure and axes face colors, "
+                    "axes edge color and line width, and hidden_spines."
+                )
+            validated = {
+                key: plt.rcParams.validate[key](value) for key, value in params.items()
+            }
+            original = self._user_rc_dict
+            for key, value in validated.items():
+                session.queue_property(self, key, value, lambda: None)
+            if validated:
+                session.remember(
+                    self,
+                    "_user_rc_dict",
+                    lambda: setattr(self, "_user_rc_dict", original),
+                )
+                self._user_rc_dict = {**original, **validated}
+            if spines is not None:
+                self._hidden_spines = _stage_live_value(self, "_hidden_spines", spines)
+            return self
+
         if reset:
             for key in rc_params_dict.keys():
                 self._user_rc_dict.pop(key, None)
@@ -3817,17 +3900,8 @@ class SmartFigure:
         }
         self.set_rc_params(rc_params_dict)
 
-        if hidden_spines is not None:
-            if not isinstance(hidden_spines, Iterable):
-                raise InvalidParameterTypeError(
-                    "hidden_spines must be an iterable of spine names."
-                )
-            for spine in hidden_spines:
-                if spine not in ["right", "left", "top", "bottom"]:
-                    raise InvalidParameterError(
-                        f"Invalid spine name: {spine}. Must be one of 'right', 'left', 'top' or 'bottom'."
-                    )
-            self._hidden_spines = hidden_spines
+        if spines is not None:
+            self._hidden_spines = spines
 
         if x_axis_label_color is not None:
             self._x_axis_label_color = x_axis_label_color
@@ -5556,7 +5630,16 @@ class SmartTwinAxis:
             ax.spines[spine_str].set_linewidth(self._line_width)
         for spine in ax.spines:
             ax.spines[spine].set_visible(False)
-        ax.spines[spine_str].set_visible(not self._hide_spine)
+        spine = ax.spines[spine_str]
+        spine.set_visible(not self._hide_spine)
+        if session is not None:
+            session.bind_property(self, "_edge_color", spine, "edgecolor")
+            session.bind_property(self, "_line_width", spine, "linewidth")
+
+            def prepare_hide(hidden: bool) -> _ArtistEdit:
+                return _edit(spine.set_visible, spine.get_visible(), not hidden)
+
+            session.bind_update(self, "_hide_spine", prepare_hide)
 
         self._customize_ticks(is_y)
 
@@ -5815,7 +5898,8 @@ class SmartTwinAxis:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        _reject_animated_layout(self)
+        if hide_spine is not None and not isinstance(hide_spine, bool):
+            raise InvalidParameterTypeError("hide_spine must be a boolean.")
         rc_params_dict = {
             "axes.labelcolor": label_color,
             "axes.labelpad": label_pad,
@@ -5824,6 +5908,23 @@ class SmartTwinAxis:
             "font.weight": font_weight,
             "text.usetex": use_latex,
         }
+
+        if _bound_session(self) is not None:
+            if reset or any(value is not None for value in rc_params_dict.values()):
+                raise UnsupportedFeatureError(
+                    "During animation twin set_visual_params supports edge_color, line_width, and hide_spine."
+                )
+            if edge_color is not None:
+                edge_color = plt.rcParams.validate["axes.edgecolor"](edge_color)
+            if line_width is not None:
+                line_width = plt.rcParams.validate["axes.linewidth"](line_width)
+            if edge_color is not None:
+                self._edge_color = _stage_live_value(self, "_edge_color", edge_color)
+            if line_width is not None:
+                self._line_width = _stage_live_value(self, "_line_width", line_width)
+            if hide_spine is not None:
+                self._hide_spine = _stage_live_value(self, "_hide_spine", hide_spine)
+            return self
 
         if reset:
             self._edge_color = edge_color
@@ -5842,10 +5943,6 @@ class SmartTwinAxis:
         self.set_rc_params(rc_params_dict)
 
         if hide_spine is not None:
-            if not isinstance(hide_spine, bool):
-                raise InvalidParameterTypeError(
-                    "hide_spine must be a boolean or an iterable of spine names."
-                )
             self._hide_spine = hide_spine
 
         return self

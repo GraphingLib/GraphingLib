@@ -4604,6 +4604,117 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         root.save_animation(self.output, update, 1)
         self.assertEqual(did_draw, [0])
 
+    def test_visual_params_update_spines_backgrounds_and_twins_in_place(self):
+        from matplotlib.colors import to_rgba
+
+        from graphinglib import SmartTwinAxis, UnsupportedFeatureError
+
+        left, right, secondary = (Curve([0, 1], [0, 1]) for _ in range(3))
+        twin = SmartTwinAxis(elements=[secondary])
+        nested = SmartFigure(elements=[left], twin_y_axis=twin)
+        root = SmartFigure(2, 2, figure_style="plain")
+        root[:, 0] = nested
+        root[:, 1] = [right]
+        root.set_rc_params({"axes.spines.top": False})
+        root.set_visual_params(hidden_spines=["left"])
+        nested.set_visual_params(hidden_spines=["bottom"])
+        captures = []
+
+        def update(frame):
+            a, b, c = (curve.handle.lines[0].axes for curve in (left, right, secondary))
+            captures.append(
+                (
+                    (a.spines["bottom"], b.spines["left"], c.spines["right"]),
+                    (
+                        a.spines["bottom"].get_visible(),
+                        b.spines["left"].get_visible(),
+                        b.spines["top"].get_visible(),
+                        c.spines["right"].get_visible(),
+                    ),
+                    (
+                        plt.gcf().patch.get_facecolor(),
+                        a.get_facecolor(),
+                        b.get_facecolor(),
+                    ),
+                    (
+                        b.spines["left"].get_edgecolor(),
+                        b.spines["left"].get_linewidth(),
+                        c.spines["right"].get_edgecolor(),
+                        c.spines["right"].get_linewidth(),
+                    ),
+                    b.get_xlim(),
+                )
+            )
+            if frame == 0:
+                with self.assertRaisesRegex(UnsupportedFeatureError, "supports"):
+                    root.set_visual_params(font_size=25, figure_face_color="green")
+                root.set_visual_params(
+                    figure_face_color="lavender",
+                    axes_face_color="ivory",
+                    axes_edge_color="orange",
+                    axes_line_width=4,
+                    hidden_spines=[],
+                )
+                nested.set_visual_params(axes_face_color="pink", hidden_spines=[])
+                twin.set_visual_params(
+                    edge_color="purple", line_width=3, hide_spine=True
+                )
+            elif frame == 1:
+                root.set_visual_params(hidden_spines=["bottom"])
+                twin.set_visual_params(hide_spine=False)
+
+        root.save_animation(self.output, update, 3)
+        self.assertTrue(all(row[0] == captures[0][0] for row in captures))
+        self.assertEqual(captures[0][1], (False, False, False, True))
+        self.assertEqual(captures[1][1], (True, True, False, False))
+        self.assertEqual(captures[2][1], (True, True, False, True))
+        self.assertEqual(
+            captures[1][2], tuple(map(to_rgba, ("lavender", "pink", "ivory")))
+        )
+        self.assertEqual(captures[1][3], (to_rgba("orange"), 4, to_rgba("purple"), 3))
+        self.assertEqual(captures[0][4], captures[2][4])
+
+    def test_visual_params_roll_back_style_and_model_on_artist_failure(self):
+        from matplotlib.colors import to_rgba
+        from matplotlib.spines import Spine
+
+        curve = Curve([0, 1], [0, 1])
+        figure = SmartFigure(elements=[curve], figure_style="plain")
+        figure.set_visual_params(axes_face_color="ivory", hidden_spines=["left"])
+        captured = []
+        self.output.write_bytes(b"existing")
+
+        def update(frame):
+            if not frame:
+                return
+            ax = curve.handle.lines[0].axes
+            captured.append(ax)
+            figure.set_visual_params(
+                axes_face_color="pink", axes_line_width=4, hidden_spines=[]
+            )
+
+        original = Spine.set_linewidth
+
+        def fail_after_apply(spine, value):
+            original(spine, value)
+            if value == 4 and captured and spine is captured[0].spines["right"]:
+                self.assertEqual(captured[0].get_facecolor(), to_rgba("pink"))
+                raise ValueError("failed updating spine width")
+
+        with (
+            patch.object(Spine, "set_linewidth", fail_after_apply),
+            self.assertRaisesRegex(GraphingException, "animation frame 1"),
+        ):
+            figure.save_animation(self.output, update, 2)
+        (ax,) = captured
+        self.assertEqual(ax.get_facecolor(), to_rgba("ivory"))
+        self.assertFalse(ax.spines["left"].get_visible())
+        self.assertNotEqual(ax.spines["right"].get_linewidth(), 4)
+        self.assertEqual(figure._user_rc_dict["axes.facecolor"], "ivory")
+        self.assertNotIn("axes.linewidth", figure._user_rc_dict)
+        self.assertEqual(figure._hidden_spines, ("left",))
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_raster_extent_and_origin_update_without_panning_view(self):
         heat = Heatmap([[0, 1], [0, 0]], origin_position="upper", show_color_bar=False)
         root = SmartFigure(
