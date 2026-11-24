@@ -3807,11 +3807,11 @@ class Histogram(Plottable1D):
 
         self._show_pdf = False
         self._pdf_type = None
-        self._pdf_show_mean = None
-        self._pdf_show_std = None
-        self._pdf_curve_color = None
-        self._pdf_mean_color = None
-        self._pdf_std_color = None
+        self._pdf_show_mean = INHERIT
+        self._pdf_show_std = INHERIT
+        self._pdf_curve_color = INHERIT
+        self._pdf_mean_color = INHERIT
+        self._pdf_std_color = INHERIT
 
     @classmethod
     def from_fit_residuals(
@@ -3975,10 +3975,7 @@ class Histogram(Plottable1D):
 
     @hist_type.setter
     def hist_type(self, hist_type: str) -> None:
-        _reject_live_update(
-            self, "Configure histogram bins, decorations and styles before animating."
-        )
-        self._hist_type = hist_type
+        self._hist_type = _stage_live_value(self, "_hist_type", hist_type)
 
     @property
     def alpha(self) -> Styled[float]:
@@ -4171,11 +4168,11 @@ class Histogram(Plottable1D):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        _reject_live_update(self, "Configure the histogram PDF before animating.")
         if type != "normal":
             raise InvalidParameterError(
                 "Currently, only 'normal' distribution is supported."
             )
+        self._stage_pdf_configuration()
         self._show_pdf = True
         self._pdf_type = type
         self._pdf_show_mean = show_mean
@@ -4183,6 +4180,31 @@ class Histogram(Plottable1D):
         self._pdf_curve_color = curve_color
         self._pdf_mean_color = mean_color
         self._pdf_std_color = std_color
+
+    def remove_pdf(self) -> None:
+        """Hide the density curve and its guides."""
+        self._stage_pdf_configuration()
+        self._show_pdf = False
+
+    def _stage_pdf_configuration(self) -> None:
+        session = _bound_session(self)
+        if session is not None:
+            fields = (
+                "_show_pdf",
+                "_pdf_type",
+                "_pdf_show_mean",
+                "_pdf_show_std",
+                "_pdf_curve_color",
+                "_pdf_mean_color",
+                "_pdf_std_color",
+            )
+            previous = tuple(getattr(self, field) for field in fields)
+
+            def restore() -> None:
+                for field, value in zip(fields, previous, strict=True):
+                    setattr(self, field, value)
+
+            session.queue_property(self, "_pdf_configuration", None, restore)
 
     def to_desmos(self, decimal_precision: int = 2, to_clipboard: bool = False) -> str:
         """
@@ -4256,8 +4278,14 @@ class Histogram(Plottable1D):
         handle = self.handle
         assert isinstance(handle, Polygon)
         bars = list(artists.patches) if isinstance(artists, BarContainer) else []
-        step = artists[0] if isinstance(artists, list) else None
-        filled = step is not None and step.get_fill()
+        initial_type = resolve_or(self._hist_type, "bar")
+        if isinstance(artists, list) and artists:
+            step = artists[0]
+        else:
+            step = Polygon(
+                np.empty((0, 2)), closed=False, visible=False, zorder=z_order - 1
+            )
+            axes.add_artist(step)
         initial_face = self._face_color
         initial_edge = self._edge_color
         initial_width = resolve_or(self._line_width, handle.get_linewidth())
@@ -4278,64 +4306,83 @@ class Histogram(Plottable1D):
                 else to_rgba(configured_edge, 1)
             )
             width = resolve_or(self._line_width, initial_width)
-            edits = []
-            targets = [handle]
-            if step is not None:
-                x = np.repeat(edges, 2)
-                y = np.r_[0, np.repeat(heights, 2), 0]
-                xy = np.column_stack((y, x) if horizontal else (x, y))
-                edits.append(_edit(step.set_xy, step.get_xy(), xy))
-                targets.append(step)
-            else:
-                size = len(bars)
-                widths = np.diff(edges)
+            mode = resolve_or(self._hist_type, initial_type)
+            if mode not in ("bar", "barstacked", "step", "stepfilled"):
+                raise InvalidParameterError(
+                    "Histogram hist_type must be 'bar', 'barstacked', 'step', or 'stepfilled'."
+                )
+            use_step = mode in ("step", "stepfilled")
+            filled = mode == "stepfilled"
+            x = np.repeat(edges, 2)
+            y = np.r_[0, np.repeat(heights, 2), 0]
+            xy = np.column_stack((y, x) if horizontal else (x, y))
+
+            def set_step(state) -> None:
+                closed, fill, vertices, visible = state
+                step.set_closed(closed)
+                step.set_fill(fill)
+                step.set_xy(vertices)
+                step.set_visible(visible)
+
+            edits = [
+                _edit(
+                    set_step,
+                    (
+                        step.get_closed(),
+                        step.get_fill(),
+                        step.get_xy(),
+                        step.get_visible(),
+                    ),
+                    (filled, filled, xy, use_step),
+                )
+            ]
+            size = len(bars)
+            widths = np.diff(edges)
+            bounds = []
+            if not use_step:
                 bounds = (
                     list(zip(np.zeros_like(heights), edges[:-1], heights, widths))
                     if horizontal
                     else list(zip(edges[:-1], np.zeros_like(heights), widths, heights))
                 )
-                for index, bar in enumerate(bars):
-                    visible = index < len(bounds)
-                    if visible:
-                        edits.append(
-                            _edit(
-                                lambda value, bar=bar: bar.set_bounds(*value),
-                                bar.get_bbox().bounds,
-                                bounds[index],
-                            )
-                        )
-                    edits.append(_edit(bar.set_visible, bar.get_visible(), visible))
-                targets.extend(bars)
-
-                def grow() -> None:
-                    for x, y, w, h in bounds[size:]:
-                        bar = Rectangle(
-                            (x, y),
-                            w,
-                            h,
-                            facecolor=face,
-                            edgecolor=edge,
-                            linewidth=width,
-                            zorder=z_order - 1,
-                        )
-                        bars.append(bar)
-                        axes.add_artist(bar)
-
-                def shrink() -> None:
-                    for bar in reversed(bars[size:]):
-                        if bar.axes is not None:
-                            bar.remove()
-                    del bars[size:]
-
-                edits.append(_ArtistEdit(grow, shrink))
-
-            for target in targets:
-                if target is not step or filled:
+            for index, bar in enumerate(bars):
+                visible = index < len(bounds)
+                if visible:
                     edits.append(
-                        _edit(target.set_facecolor, target.get_facecolor(), face)
+                        _edit(
+                            lambda value, bar=bar: bar.set_bounds(*value),
+                            bar.get_bbox().bounds,
+                            bounds[index],
+                        )
                     )
+                edits.append(_edit(bar.set_visible, bar.get_visible(), visible))
+
+            def grow() -> None:
+                for x, y, w, h in bounds[size:]:
+                    bar = Rectangle(
+                        (x, y),
+                        w,
+                        h,
+                        facecolor=face,
+                        edgecolor=edge,
+                        linewidth=width,
+                        zorder=z_order - 1,
+                    )
+                    bars.append(bar)
+                    axes.add_artist(bar)
+
+            def shrink() -> None:
+                for bar in reversed(bars[size:]):
+                    if bar.axes is not None:
+                        bar.remove()
+                del bars[size:]
+
+            edits.append(_ArtistEdit(grow, shrink))
+
+            for target in (handle, step, *bars):
                 edits.extend(
                     (
+                        _edit(target.set_facecolor, target.get_facecolor(), face),
                         _edit(target.set_edgecolor, target.get_edgecolor(), edge),
                         _edit(target.set_linewidth, target.get_linewidth(), width),
                     )
@@ -4349,6 +4396,7 @@ class Histogram(Plottable1D):
                 "_bins",
                 "_normalize",
                 "_orientation",
+                "_hist_type",
                 "_face_color",
                 "_edge_color",
                 "_alpha",
@@ -4444,7 +4492,7 @@ class Histogram(Plottable1D):
                 lambda: self._get_label(show_params),
                 ("_label", "_data", "_show_params"),
             )
-        if self._show_pdf:
+        if self._show_pdf or session is not None:
             self._plot_pdf(
                 axes,
                 z_order,
@@ -4496,24 +4544,31 @@ class Histogram(Plottable1D):
                 ),
             )
 
-        line_data, mean_data, std_data = coordinates(
-            heights, edges, horizontal, normalize
+        show_pdf = self._show_pdf
+        empty = np.empty(0)
+        empty_geometry = ((empty, empty),) * 3
+        initial_geometry = (
+            coordinates(heights, edges, horizontal, normalize)
+            if show_pdf
+            else empty_geometry
         )
-        (pdf,) = axes.plot(
-            *line_data,
-            zorder=z_order,
-            **strip_inherit({"color": self._pdf_curve_color}),
-        )
+        params = strip_inherit({"color": self._pdf_curve_color})
+        if show_pdf:
+            (pdf,) = axes.plot(*initial_geometry[0], zorder=z_order, **params)
+        else:
+            pdf = Line2D([], [], visible=False, zorder=z_order, **params)
+            axes.add_artist(pdf)
+
         draw_guides = axes.hlines if horizontal else axes.vlines
-        guide_artists: list[tuple[LineCollection, int]] = []
-        for index, enabled, color, (positions, densities) in (
-            (2, self._pdf_show_std, self._pdf_std_color, std_data),
-            (1, self._pdf_show_mean, self._pdf_mean_color, mean_data),
+        guide_artists = []
+        for index, enabled, color in (
+            (2, self._pdf_show_std, self._pdf_std_color),
+            (1, self._pdf_show_mean, self._pdf_mean_color),
         ):
-            if enabled:
-                params: dict[str, Any] = (
-                    {"colors": color} if isinstance(color, str) else {}
-                )
+            enabled = resolve_or(enabled, True)
+            params = strip_inherit({"colors": color})
+            if show_pdf and enabled:
+                positions, densities = initial_geometry[index]
                 artist = draw_guides(
                     positions,
                     0,
@@ -4522,42 +4577,71 @@ class Histogram(Plottable1D):
                     zorder=z_order - 1,
                     **params,
                 )
-                guide_artists.append((artist, index))
+            elif session is not None:
+                artist = LineCollection(
+                    [],
+                    linestyles="dashed",
+                    zorder=z_order - 1,
+                    visible=False,
+                    **params,
+                )
+                axes.add_collection(artist, autolim=False)
+            else:
+                continue
+            guide_artists.append(
+                (artist, index, enabled, np.array(artist.get_colors(), copy=True))
+            )
 
         if session is not None:
+            initial_curve_color = pdf.get_color()
 
             def prepare() -> _ArtistEdit:
                 counts, boundaries, horizontal, normalize = get_geometry()
-                geometry = coordinates(counts, boundaries, horizontal, normalize)
-                line_before = pdf.get_data()
-                guides = []
-                for artist, index in guide_artists:
+                visible = self._show_pdf
+                geometry = (
+                    coordinates(counts, boundaries, horizontal, normalize)
+                    if visible
+                    else empty_geometry
+                )
+                edits = [
+                    _edit(pdf.set_data, pdf.get_data(), geometry[0]),
+                    _edit(pdf.set_visible, pdf.get_visible(), visible),
+                    _edit(
+                        pdf.set_color,
+                        pdf.get_color(),
+                        resolve_or(self._pdf_curve_color, initial_curve_color),
+                    ),
+                ]
+                for artist, index, initial_enabled, initial_color in guide_artists:
+                    if index == 1:
+                        enabled, color = self._pdf_show_mean, self._pdf_mean_color
+                    else:
+                        enabled, color = self._pdf_show_std, self._pdf_std_color
                     positions, densities = geometry[index]
                     starts = np.column_stack((positions, np.zeros_like(positions)))
                     ends = np.column_stack((positions, densities))
                     segments = np.stack((starts, ends), axis=1)
                     if horizontal:
                         segments = segments[..., ::-1]
-                    guides.append(
+                    edits.extend(
                         (
-                            artist,
-                            [path.vertices for path in artist.get_paths()],
-                            list(segments),
+                            _edit(artist.set_segments, artist.get_segments(), segments),
+                            _edit(
+                                artist.set_color,
+                                artist.get_colors(),
+                                resolve_or(color, initial_color),
+                            ),
+                            _edit(
+                                artist.set_visible,
+                                artist.get_visible(),
+                                visible and resolve_or(enabled, initial_enabled),
+                            ),
                         )
                     )
-
-                def apply() -> None:
-                    pdf.set_data(*geometry[0])
-                    for artist, _, new in guides:
-                        artist.set_segments(new)
-
-                def undo() -> None:
-                    pdf.set_data(*line_before)
-                    for artist, old, _ in guides:
-                        artist.set_segments(old)
-
-                return _ArtistEdit(apply, undo)
+                return _combine_edits(edits)
 
             session.bind_derived(
-                self, ("_data", "_bins", "_orientation", "_normalize"), prepare
+                self,
+                ("_data", "_bins", "_orientation", "_normalize", "_pdf_configuration"),
+                prepare,
             )

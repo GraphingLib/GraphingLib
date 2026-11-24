@@ -2043,11 +2043,12 @@ Live update support
    * - :class:`~graphinglib.Histogram`
      - Sample data, bin count or explicit edges, orientation, normalization,
        face and edge colors, opacity, line width and summary statistics.
-       Existing density overlays and guides follow the data, orientation and
-       normalization. A zero standard deviation hides the overlay.
-     - Bar, step or filled-step mode, and which density overlays and guides
-       are present. Integer bins recalculate their edges from each frame's
-       data. Explicit edges stay fixed until reassigned.
+       Call ``add_pdf(...)`` to show or restyle the normal density overlay
+       and its guides, and ``remove_pdf()`` to hide them. Bar, step and
+       filled-step modes can change during playback. A zero standard
+       deviation hides the overlay.
+     - Integer bins recalculate edges from each frame's data. Explicit edges
+       stay fixed until reassigned.
    * - :class:`~graphinglib.Contour`
      - Scalar data and mesh via ``set_data(z, x_mesh=x, y_mesh=y)``, levels,
        filled or line mode, opacity, colormap, color limits, and line widths.

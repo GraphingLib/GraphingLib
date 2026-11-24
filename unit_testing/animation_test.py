@@ -1602,7 +1602,7 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
                 item
                 for axis in plt.gcf().axes
                 for item in axis.patches
-                if isinstance(item, Polygon)
+                if isinstance(item, Polygon) and item.get_visible()
             ]
             captures.append((bars, steps))
             bar.data = step.data = [0, i + 1, i + 2, i + 2]
@@ -1692,6 +1692,8 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
                 )
 
     def test_histogram_failed_growth_rolls_back_new_bars_and_normalized_state(self):
+        from matplotlib.patches import Rectangle
+
         from graphinglib import Histogram
 
         hist = Histogram([0, 1, 2, 3], bins=2, normalize=False, hist_type="bar")
@@ -1721,7 +1723,112 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertFalse(hist.normalize)
         assert_allclose(hist.data, [0, 1, 2, 3])
         assert_allclose(hist.bin_heights, [2, 2])
-        assert_allclose([patch.get_height() for patch in bars], [2, 2])
+        assert_allclose(
+            [item.get_height() for item in bars if isinstance(item, Rectangle)], [2, 2]
+        )
+        self.assertFalse(self.output.exists())
+
+    def test_histogram_modes_and_pdf_visibility_reuse_artists(self):
+        from matplotlib.colors import to_rgba
+        from matplotlib.patches import Polygon, Rectangle
+
+        from graphinglib import Histogram
+
+        hist = Histogram([0, 1, 2, 3], bins=2, normalize=False, hist_type="stepfilled")
+        root = SmartFigure(
+            elements=[hist], figure_style="plain", x_lim=(0, 5), y_lim=(0, 5)
+        )
+        captures = []
+        states = {}
+
+        def update(i):
+            ax = plt.gcf().axes[0]
+            (step,) = [artist for artist in ax.patches if isinstance(artist, Polygon)]
+            (pdf,) = ax.lines
+            std, mean = ax.collections
+            captures.append((step, pdf, std, mean))
+            bars = tuple(item for item in ax.patches if isinstance(item, Rectangle))
+            states[i] = (
+                step.get_visible(),
+                step.get_fill(),
+                step.get_closed(),
+                tuple(bar for bar in bars if bar.get_visible()),
+                pdf.get_visible(),
+                std.get_visible(),
+                mean.get_visible(),
+            )
+            hist.hist_type = ("bar", "step", "stepfilled", "barstacked")[i]
+            if i == 0:
+                hist.add_pdf(
+                    show_std=False,
+                    show_mean=True,
+                    curve_color="purple",
+                    mean_color="green",
+                )
+            elif i == 1:
+                hist.remove_pdf()
+            else:
+                hist.add_pdf(
+                    show_std=True,
+                    show_mean=False,
+                    std_color="orange",
+                    curve_color="navy",
+                )
+
+        root.save_animation(self.output, update, 4)
+        self.assertTrue(all(items == captures[0] for items in captures))
+        self.assertEqual(states[0][:3], (True, True, True))
+        self.assertEqual(states[0][4:], (False, False, False))
+        self.assertFalse(states[1][0])
+        self.assertEqual(len(states[1][3]), 2)
+        self.assertEqual(states[1][4:], (True, False, True))
+        self.assertEqual(states[2], (True, False, False, (), False, False, False))
+        self.assertEqual(states[3], (True, True, True, (), True, True, False))
+        step, pdf, std, mean = captures[0]
+        self.assertFalse(step.get_visible())
+        self.assertTrue(pdf.get_visible())
+        self.assertEqual(pdf.get_color(), "navy")
+        self.assertTrue(std.get_visible())
+        self.assertFalse(mean.get_visible())
+        assert_allclose(std.get_colors(), [to_rgba("orange")])
+        self.assertEqual(
+            tuple(
+                artist
+                for artist in pdf.axes.patches
+                if isinstance(artist, Rectangle) and artist.get_visible()
+            ),
+            states[1][3],
+        )
+
+    def test_failed_histogram_mode_and_pdf_change_restore_visible_artists(self):
+        from matplotlib.patches import Polygon
+
+        from graphinglib import Histogram
+
+        hist = Histogram([0, 1, 2], bins=2, hist_type="bar")
+        root = SmartFigure(elements=[hist], figure_style="plain")
+        seen = []
+
+        def update(i):
+            ax = plt.gcf().axes[0]
+            (step,) = [artist for artist in ax.patches if isinstance(artist, Polygon)]
+            seen[:] = [step, *ax.lines, *ax.collections]
+            hist.hist_type = "step" if i else "stepfilled"
+            hist.add_pdf(curve_color="bad color" if i else "green", show_mean=False)
+            hist.bins = 4 if i else 3
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        step, pdf, std, mean = seen
+        self.assertEqual(hist.hist_type, "stepfilled")
+        self.assertEqual(hist.bins, 3)
+        self.assertEqual(hist._pdf_curve_color, "green")
+        self.assertTrue(step.get_visible())
+        self.assertTrue(step.get_fill())
+        self.assertTrue(step.get_closed())
+        self.assertEqual(pdf.get_color(), "green")
+        self.assertTrue(std.get_visible())
+        self.assertFalse(mean.get_visible())
         self.assertFalse(self.output.exists())
 
     def test_rejects_layout_mutation_and_preserves_spanning_plot(self):
