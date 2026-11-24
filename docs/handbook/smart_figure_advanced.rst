@@ -1972,18 +1972,22 @@ Live update support
    * - :class:`~graphinglib.Curve`
      - Coordinates and errors, configured error curves and bands, and area
        fills to zero or between two curves. Each shared fill uses both curves'
-       final coordinates for the frame. Plain lines can change color, width,
-       style and opacity.
-     - Errorbar directions and caps, legend entry creation, and style for decorated curves.
+       final coordinates for the frame. Lines can change color, width,
+       style and opacity. Configured error bars, error curves and fills can
+       change their styles. Use a cap width of zero to hide caps.
+     - Error-bar directions, whether to draw error curves or fills, and legend
+       entry creation. Set up a nonempty Cartesian plot for live caps.
        Both curves must continue to cover the configured fill interval.
    * - :class:`~graphinglib.Scatter`
      - Coordinates, configured errors, marker shape, size, edge width,
        opacity, face and edge colors, colormap, and color range. Set per-point
        colors for the new point count in the same callback. An existing colorbar
        follows its intensity channel and retains its initial scale until
-       ``color_map_range`` changes.
-     - Legend entry creation, colorbar placement, and errorbar directions and caps. Colorbars
-       need an intensity array at setup. An intensity channel introduced during
+       ``color_map_range`` changes. Configured error bars can change color,
+       line width, cap width and cap thickness.
+     - Legend entry creation, colorbar placement and error-bar directions.
+       Set up a nonempty Cartesian plot for live caps. Colorbars need an
+       intensity array at setup. An intensity channel introduced during
        playback without an explicit range starts with a 0–1 scale.
    * - :class:`~graphinglib.Heatmap`
      - Image values on a fixed raster or mesh, opacity, and interpolation for
@@ -2077,9 +2081,9 @@ initial figure. Assign ``label`` to rename existing entries for curves, fits,
 scatter plots, histograms, and reference lines. Assigning ``None`` clears the
 text when there is no generated label, and keeps the entry's swatch. Choose a
 starting label for every plottable that needs a legend entry during playback.
-Existing swatches for plain fitted lines, plain curves, and scatter plots
-follow supported visual styles. Custom entries and other swatches retain
-their initial styling. Use explicit style values in callbacks.
+Existing swatches for plain fitted lines, curves (including configured error
+bars), and scatter plots follow supported visual styles. Custom entries and
+other swatches retain their initial styling. Use explicit style values in callbacks.
 
 Successful frames leave their assignments in the plottables. If the callback
 or application of its artist edits fails, pending changes roll back to the

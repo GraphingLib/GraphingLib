@@ -2,15 +2,17 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+from functools import partial
 from types import NoneType
 from typing import Any, Callable, Optional, Protocol, cast, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.cm import ScalarMappable
-from matplotlib.collections import LineCollection, PathCollection
+from matplotlib.collections import LineCollection, PathCollection, PolyCollection
 from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba, to_rgba_array
 from matplotlib.container import BarContainer, ErrorbarContainer
+from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
@@ -20,13 +22,17 @@ from scipy.interpolate import interp1d
 
 from ._animation import (
     _DRAW_SESSION,
+    _ERROR_STYLE_PROPERTIES,
     _AnimationSession,
     _ArtistEdit,
     _bound_session,
+    _combine_edits,
     _CurveBands,
+    _draw_live_errorbars,
     _edit,
     _error_array,
     _error_bounds,
+    _error_style_edits,
     _reject_live_update,
     _stage_live_value,
 )
@@ -463,8 +469,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @errorbars_color.setter
     def errorbars_color(self, errorbars_color: str) -> None:
-        _reject_live_update(self, "Configure curve error decorations before animating.")
-        self._errorbars_color = errorbars_color
+        self._errorbars_color = _stage_live_value(self, "_errorbars_color", errorbars_color)
 
     @property
     def errorbars_line_width(self) -> Styled[float | None]:
@@ -472,8 +477,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @errorbars_line_width.setter
     def errorbars_line_width(self, errorbars_line_width: float | Inherit) -> None:
-        _reject_live_update(self, "Configure curve error decorations before animating.")
-        self._errorbars_line_width = errorbars_line_width
+        self._errorbars_line_width = _stage_live_value(self, "_errorbars_line_width", errorbars_line_width)
 
     @property
     def cap_thickness(self) -> Styled[float | None]:
@@ -481,8 +485,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @cap_thickness.setter
     def cap_thickness(self, cap_thickness: float | Inherit) -> None:
-        self._check_animated_uncertainty()
-        self._cap_thickness = cap_thickness
+        self._cap_thickness = _stage_live_value(self, "_cap_thickness", cap_thickness)
 
     @property
     def cap_width(self) -> Styled[float | None]:
@@ -490,8 +493,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @cap_width.setter
     def cap_width(self, cap_width: float | Inherit) -> None:
-        self._check_animated_uncertainty()
-        self._cap_width = cap_width
+        self._cap_width = _stage_live_value(self, "_cap_width", cap_width)
 
     @property
     def show_error_curves(self) -> bool:
@@ -524,8 +526,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @error_curves_color.setter
     def error_curves_color(self, error_curves_color: str) -> None:
-        _reject_live_update(self, "Configure curve error decorations before animating.")
-        self._error_curves_color = error_curves_color
+        self._error_curves_color = _stage_live_value(self, "_error_curves_color", error_curves_color)
 
     @property
     def error_curves_line_style(self) -> Styled[str | None]:
@@ -533,8 +534,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @error_curves_line_style.setter
     def error_curves_line_style(self, error_curves_line_style: str) -> None:
-        _reject_live_update(self, "Configure curve error decorations before animating.")
-        self._error_curves_line_style = error_curves_line_style
+        self._error_curves_line_style = _stage_live_value(self, "_error_curves_line_style", error_curves_line_style)
 
     @property
     def error_curves_line_width(self) -> Styled[float | None]:
@@ -542,8 +542,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @error_curves_line_width.setter
     def error_curves_line_width(self, error_curves_line_width: float | Inherit) -> None:
-        _reject_live_update(self, "Configure curve error decorations before animating.")
-        self._error_curves_line_width = error_curves_line_width
+        self._error_curves_line_width = _stage_live_value(self, "_error_curves_line_width", error_curves_line_width)
 
     @property
     def fill_between_bounds(self) -> tuple[float, float] | None:
@@ -571,8 +570,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @fill_between_color.setter
     def fill_between_color(self, fill_between_color: Styled[str | None]) -> None:
-        _reject_live_update(self, "Configure curve labels and fills before animating.")
-        self._fill_between_color = fill_between_color
+        self._fill_between_color = _stage_live_value(self, "_fill_between_color", fill_between_color)
 
     def __eq__(self, other: object) -> bool:
         """
@@ -1846,10 +1844,131 @@ class Curve(Plottable1D, MathematicalObject):
             interp1d(other._x_data, other._y_data)(x),
         )
 
+    def _bind_live_styles(
+        self,
+        session: _AnimationSession,
+        handle: ErrorbarContainer,
+        lower: Line2D | None,
+        upper: Line2D | None,
+        error_fill: PolyCollection | None,
+        area_fill: PolyCollection | None,
+    ) -> None:
+        line, caps, segments = handle.lines
+        if line is None:
+            return
+        for name, mpl_name in (
+            ("_color", "color"),
+            ("_line_style", "linestyle"),
+            ("_line_width", "linewidth"),
+            ("_alpha", "alpha"),
+        ):
+            session.bind_property(self, name, line, mpl_name)
+
+        initial_color = line.get_color()
+        if segments:
+            initial_error_color = self._errorbars_color
+            initial_error_width = self._errorbars_line_width
+            initial_cap_thickness = self._cap_thickness
+            cap_width_live = bool(caps) and all(cap.axes is not None for cap in caps)
+            initial_cap_width = caps[0].get_markersize() / 2 if cap_width_live else None
+
+            def prepare_errorbars() -> _ArtistEdit:
+                color = resolve_or(self._errorbars_color, initial_error_color)
+                if color is None or color == "same as curve":
+                    color = resolve_or(self._color, initial_color)
+                width = resolve_or(self._errorbars_line_width, initial_error_width)
+                thickness = resolve_or(self._cap_thickness, initial_cap_thickness)
+                curve_width = resolve_or(self._line_width, None)
+                return _combine_edits(
+                    _error_style_edits(
+                        handle,
+                        color=None if is_inherit(color) else color,
+                        line_width=curve_width
+                        if width == "same as curve"
+                        else resolve_or(width, None),
+                        cap_width=resolve_or(self._cap_width, initial_cap_width)
+                        if cap_width_live
+                        else None,
+                        cap_thickness=curve_width
+                        if thickness == "same as curve"
+                        else resolve_or(thickness, None),
+                        alpha=resolve_or(self._alpha, initial_alpha),
+                    )
+                )
+
+            initial_alpha = line.get_alpha()
+            error_properties = (
+                "_errorbars_color",
+                "_errorbars_line_width",
+                "_color",
+                "_line_width",
+                "_alpha",
+            )
+            if cap_width_live:
+                error_properties += ("_cap_width", "_cap_thickness")
+            session.bind_derived(self, error_properties, prepare_errorbars)
+
+        if lower is not None and upper is not None:
+            for name, field, source in (
+                ("_error_curves_color", "color", "_color"),
+                ("_error_curves_line_style", "linestyle", "_line_style"),
+                ("_error_curves_line_width", "linewidth", "_line_width"),
+            ):
+                self._bind_curve_decoration_style(
+                    session, line, (lower, upper), name, field, source
+                )
+        if error_fill is not None:
+            session.bind_property(self, "_color", error_fill, "facecolor")
+        if area_fill is not None:
+            self._bind_curve_decoration_style(
+                session,
+                line,
+                (area_fill,),
+                "_fill_between_color",
+                "facecolor",
+                "_color",
+            )
+
+    def _bind_curve_decoration_style(
+        self,
+        session: _AnimationSession,
+        line: Line2D,
+        artists: tuple[Line2D | PolyCollection, ...],
+        name: str,
+        field: str,
+        source: str,
+    ) -> None:
+        initial = getattr(self, name)
+        getter, setter = f"get_{field}", f"set_{field}"
+        initial_source = getattr(
+            line, "get_color" if field == "facecolor" else getter
+        )()
+        baselines = [getattr(artist, getter)() for artist in artists]
+
+        def prepare() -> _ArtistEdit:
+            requested = resolve_or(getattr(self, name), initial)
+            if requested == "same as curve":
+                requested = resolve_or(getattr(self, source), initial_source)
+            return _combine_edits(
+                [
+                    _edit(
+                        getattr(artist, setter),
+                        getattr(artist, getter)(),
+                        baseline
+                        if requested is None or is_inherit(requested)
+                        else requested,
+                    )
+                    for artist, baseline in zip(artists, baselines, strict=True)
+                ]
+            )
+
+        session.bind_derived(self, (name, source), prepare)
+
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified axes.
         """
+        session = _DRAW_SESSION.get()
         params = {
             "color": self._color,
             "linewidth": self._line_width,
@@ -1878,7 +1997,12 @@ class Curve(Plottable1D, MathematicalObject):
                 }
             )
             params = strip_inherit(params)
-            self.handle = axes.errorbar(
+            draw_errorbars = (
+                axes.errorbar
+                if session is None
+                else partial(_draw_live_errorbars, axes)
+            )
+            self.handle = draw_errorbars(
                 self._x_data,
                 self._y_data,
                 xerr=self._x_error,
@@ -1966,7 +2090,6 @@ class Curve(Plottable1D, MathematicalObject):
                 **params,
             )
 
-        session = _DRAW_SESSION.get()
         if session is not None:
             other = self._fill_between_other_curve
             bounds = self._fill_between_bounds
@@ -1988,19 +2111,9 @@ class Curve(Plottable1D, MathematicalObject):
                     area_fill,
                     lambda: self._shared_fill_data(other, bounds),
                 )
-            line = self.handle.lines[0]
-            if line is not None and not (
-                self._show_error_curves
-                or self._fill_between_bounds
-                or self._show_errorbars
-            ):
-                for name, mpl_name in (
-                    ("_color", "color"),
-                    ("_line_style", "linestyle"),
-                    ("_line_width", "linewidth"),
-                    ("_alpha", "alpha"),
-                ):
-                    session.bind_property(self, name, line, mpl_name)
+            self._bind_live_styles(
+                session, self.handle, lower, upper, error_fill, area_fill
+            )
 
 
 @dataclass
@@ -2416,11 +2529,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @errorbars_line_width.setter
     def errorbars_line_width(self, errorbars_line_width: Styled[float]) -> None:
-        _reject_live_update(
-            self,
-            "Configure Scatter markers, colors, colorbars and labels before animating.",
-        )
-        self._errorbars_line_width = errorbars_line_width
+        self._errorbars_line_width = _stage_live_value(self, "_errorbars_line_width", errorbars_line_width)
 
     @property
     def cap_width(self) -> Styled[float]:
@@ -2428,8 +2537,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @cap_width.setter
     def cap_width(self, cap_width: Styled[float]) -> None:
-        self._check_animated_uncertainty()
-        self._cap_width = cap_width
+        self._cap_width = _stage_live_value(self, "_cap_width", cap_width)
 
     @property
     def cap_thickness(self) -> Styled[float]:
@@ -2437,8 +2545,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @cap_thickness.setter
     def cap_thickness(self, cap_thickness: Styled[float]) -> None:
-        self._check_animated_uncertainty()
-        self._cap_thickness = cap_thickness
+        self._cap_thickness = _stage_live_value(self, "_cap_thickness", cap_thickness)
 
     @property
     def errorbars_color(self) -> Styled[str | None]:
@@ -2446,11 +2553,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @errorbars_color.setter
     def errorbars_color(self, errorbars_color: Styled[str | None]) -> None:
-        _reject_live_update(
-            self,
-            "Configure Scatter markers, colors, colorbars and labels before animating.",
-        )
-        self._errorbars_color = errorbars_color
+        self._errorbars_color = _stage_live_value(self, "_errorbars_color", errorbars_color)
 
     @property
     def color_bar_params(self) -> dict:
@@ -3252,9 +3355,17 @@ class Scatter(Plottable1D, MathematicalObject):
         initial_color_range = (
             tuple(self._color_map_range) if self._color_map_range is not None else None
         )
-        error_follows_marker = (
-            errorbars is not None and self._errorbars_color == "same as scatter"
-        )
+        initial_error_color = self._errorbars_color
+        initial_error_width = self._errorbars_line_width
+        initial_cap_thickness = self._cap_thickness
+        cap_width_live = False
+        initial_cap_width = None
+        drawn_error_color = None
+        if errorbars is not None and errorbars.lines[2]:
+            _, caps, segments = errorbars.lines
+            cap_width_live = bool(caps) and all(cap.axes is not None for cap in caps)
+            initial_cap_width = caps[0].get_markersize() / 2 if cap_width_live else None
+            drawn_error_color = segments[0].get_color()
         contrast_color = get_contrasting_shade(plt.rcParams["axes.facecolor"])
         initial_cmap = plt.get_cmap(
             resolve_or(self._color_map, plt.rcParams["image.cmap"])
@@ -3355,13 +3466,33 @@ class Scatter(Plottable1D, MathematicalObject):
                         (marker_style, [path]),
                     )
                 )
-            if error_follows_marker and errorbars is not None:
-                color = self._error_color(edge_rgba, face_rgba, contrast_color)
-                _, caps, segments = errorbars.lines
-                for cap in caps:
-                    edits.append(_edit(cap.set_color, cap.get_color(), color))
-                for segment in segments:
-                    edits.append(_edit(segment.set_color, segment.get_color(), color))
+            if errorbars is not None and drawn_error_color is not None:
+                color = resolve_or(self._errorbars_color, initial_error_color)
+                if is_inherit(color):
+                    color = drawn_error_color[0]
+                elif color == "same as scatter":
+                    color = self._error_color(edge_rgba, face_rgba, contrast_color)
+                elif not isinstance(color, str):
+                    raise InvalidParameterError(
+                        "Scatter errorbars_color must be a string."
+                    )
+                edits.extend(
+                    _error_style_edits(
+                        errorbars,
+                        color=color,
+                        line_width=resolve_or(
+                            self._errorbars_line_width,
+                            resolve_or(initial_error_width, None),
+                        ),
+                        cap_width=resolve_or(self._cap_width, initial_cap_width)
+                        if cap_width_live
+                        else None,
+                        cap_thickness=resolve_or(
+                            self._cap_thickness, resolve_or(initial_cap_thickness, None)
+                        ),
+                        alpha=None,
+                    )
+                )
 
             for name, mappable in colorbars.items():
                 limits_for_bar = face_range if name == "face" else edge_range
@@ -3394,18 +3525,21 @@ class Scatter(Plottable1D, MathematicalObject):
 
             return _ArtistEdit(apply, undo)
 
-        session.bind_derived(
-            self,
-            (
-                "point_data",
-                "_face_color",
-                "_edge_color",
-                "_color_map",
-                "_color_map_range",
-                "_marker_style",
-            ),
-            prepare,
+        properties = (
+            "point_data",
+            "_face_color",
+            "_edge_color",
+            "_color_map",
+            "_color_map_range",
+            "_marker_style",
         )
+        if drawn_error_color is not None:
+            properties += (
+                _ERROR_STYLE_PROPERTIES
+                if cap_width_live
+                else _ERROR_STYLE_PROPERTIES[:2]
+            )
+        session.bind_derived(self, properties, prepare)
 
     @staticmethod
     def _error_color(edge: Any, face: Any, fallback: str) -> Any:
@@ -3425,6 +3559,7 @@ class Scatter(Plottable1D, MathematicalObject):
                 "Both face color and edge color cannot be None. Please set at least one of them to a valid color."
             )
 
+        session = _DRAW_SESSION.get()
         colorbars: dict[str, ScalarMappable] = {}
 
         def marker_color(name: str, value: Any, cycle: str | None) -> Any:
@@ -3503,7 +3638,12 @@ class Scatter(Plottable1D, MathematicalObject):
             }
             errorbar_params = strip_inherit(errorbar_params)
             errorbar_params["ecolor"] = mpl_errorbars_color
-            errorbars = self.errorbars_handle = axes.errorbar(
+            draw_errorbars = (
+                axes.errorbar
+                if session is None
+                else partial(_draw_live_errorbars, axes)
+            )
+            errorbars = self.errorbars_handle = draw_errorbars(
                 self._x_data,
                 self._y_data,
                 xerr=self._x_error,
@@ -3515,7 +3655,6 @@ class Scatter(Plottable1D, MathematicalObject):
         for colorbar in colorbars.values():
             plt.colorbar(colorbar, ax=axes, **self._color_bar_params)
 
-        session = _DRAW_SESSION.get()
         if session is not None:
             session.bind_legend_source(self, self.handle, lambda: self.label)
             session.bind_scatter(self, self.handle, errorbars)

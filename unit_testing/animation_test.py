@@ -360,6 +360,141 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(max(axes.collections[0].get_paths()[0].vertices[:, 1]), 4.5)
         assert_allclose(max(axes.collections[1].get_paths()[0].vertices[:, 1]), 4.0)
 
+    def test_errorbar_styles_reuse_caps_and_legend_in_nested_plots(self):
+        from matplotlib.colors import to_rgba
+        from matplotlib.lines import Line2D
+
+        curve = Curve([0, 1], [0, 1], label="Curve", color="navy")
+        curve.add_errorbars(
+            x_error=0.1,
+            y_error=0.2,
+            cap_width=0,
+            errorbars_color="same as curve",
+            errorbars_line_width="same as curve",
+            cap_thickness="same as curve",
+        )
+        scatter = Scatter([0, 1], [1, 0], face_color="blue", label="Points")
+        scatter.add_errorbars(
+            y_error=0.1, cap_width=0, errorbars_color="same as scatter"
+        )
+        panel = SmartFigure(elements=[curve, scatter], show_legend=True)
+        root = SmartFigure(1, 2, elements=[panel, curve], figure_style="plain")
+        captures = []
+        handle_groups = []
+
+        def update(i):
+            root_figure = plt.gcf()
+            handles = tuple(
+                tuple(
+                    item
+                    for item in axes.containers
+                    if isinstance(item, ErrorbarContainer)
+                )
+                for axes in root_figure.axes
+            )
+            handle_groups.append(handles)
+            self.assertEqual(handles, handle_groups[0])
+            if i == 2:
+                segment = scatter.errorbars_handle.lines[2][0]
+                assert_allclose(segment.get_color(), [to_rgba("green")])
+            if i == 0:
+                self.assertTrue(
+                    all(
+                        not cap.get_visible()
+                        for group in handles
+                        for handle in group
+                        for cap in handle.lines[1]
+                    )
+                )
+            curve.errorbars_color = ("black", "same as curve", "same as curve")[i]
+            curve.color = ("navy", "green", "purple")[i]
+            curve.line_width = 3 + i
+            curve.cap_width = (0, 3, 1)[i]
+            scatter.errorbars_color = ("orange", "same as scatter", "red")[i]
+            scatter.face_color = "green" if i else "blue"
+            scatter.errorbars_line_width = 5
+            scatter.cap_thickness = 2
+            scatter.cap_width = (0, 4, 0)[i]
+            scatter.set_data([0, 1], [1 + i, 0], y_error=0.2 + i / 10)
+            if i:
+                captures.append(
+                    tuple(
+                        (cap.get_visible(), cap.get_markersize())
+                        for cap in scatter.errorbars_handle.lines[1]
+                    )
+                )
+
+        root.save_animation(self.output, update, 3)
+        self.assertIn(((True, 8), (True, 8)), captures)
+        for group in handle_groups[-1]:
+            for handle in group:
+                _, caps, segments = handle.lines
+                is_curve = handle.has_xerr
+                expected = "purple" if is_curve else "red"
+                self.assertEqual(len(caps), 4 if is_curve else 2)
+                for segment in segments:
+                    assert_allclose(segment.get_color(), [to_rgba(expected)])
+                    assert_allclose(segment.get_linewidth(), [5])
+                for cap in caps:
+                    assert_allclose(
+                        to_rgba(cap.get_markeredgecolor()), to_rgba(expected)
+                    )
+                    self.assertEqual(cap.get_visible(), is_curve)
+                    self.assertEqual(cap.get_markersize(), 2 if is_curve else 0)
+                    self.assertEqual(cap.get_markeredgewidth(), 5 if is_curve else 2)
+
+        legend = scatter.handle.axes.get_legend()
+        assert_allclose(legend.legend_handles[0].get_color(), [to_rgba("purple")])
+        cap_keys = [
+            line for line in legend.findobj(Line2D) if line.get_marker() in ("|", "_")
+        ]
+        self.assertEqual(len(cap_keys), 4)
+        for line in cap_keys:
+            self.assertTrue(line.get_visible())
+            self.assertEqual(line.get_markersize(), 2)
+            self.assertEqual(line.get_markeredgewidth(), 5)
+            self.assertEqual(line.get_markeredgecolor(), "purple")
+        assert_allclose(
+            scatter.errorbars_handle.lines[2][0].get_segments()[0], [[0, 2.6], [0, 3.4]]
+        )
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 3)
+
+    def test_curve_decorations_restore_last_frame_after_invalid_style(self):
+        from matplotlib.colors import to_rgba
+
+        curve = Curve([0, 1, 2], [1, 2, 1], color="blue")
+        curve.add_errorbars(y_error=0.3, cap_width=0)
+        curve.add_error_curves(y_error=0.3, error_curves_fill_between=True)
+        curve.get_area_between(0, 2, fill_between=True, fill_color="same as curve")
+        figure = SmartFigure(elements=[curve], figure_style="plain")
+
+        def update(i):
+            curve.color = "orange" if i else "purple"
+            curve.line_style = "--" if i else ":"
+            curve.error_curves_color = "invalid color" if i else "same as curve"
+            curve.error_curves_line_style = "same as curve"
+            curve.error_curves_line_width = 4
+            curve.fill_between_color = "green" if i else "same as curve"
+            curve.cap_width = 3 if i else 2
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            figure.save_animation(self.output, update, 2)
+        self.assertFalse(self.output.exists())
+        self.assertEqual(curve.color, "purple")
+        self.assertEqual(curve.line_style, ":")
+        self.assertEqual(curve.error_curves_color, "same as curve")
+        self.assertEqual(curve.cap_width, 2)
+        main, caps, _ = curve.handle.lines
+        self.assertEqual(main.get_color(), "purple")
+        self.assertTrue(all(cap.get_markersize() == 4 for cap in caps))
+        for artist in main.axes.lines[-2:]:
+            self.assertEqual(artist.get_color(), "purple")
+            self.assertEqual(artist.get_linestyle(), ":")
+            self.assertEqual(artist.get_linewidth(), 4)
+        for fill in main.axes.collections[-2:]:
+            assert_allclose(fill.get_facecolor(), [to_rgba("purple", 0.2)])
+
     def test_reference_lines_point_shapes_and_table(self):
         from matplotlib.text import Annotation
 

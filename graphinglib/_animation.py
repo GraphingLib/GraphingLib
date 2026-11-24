@@ -9,6 +9,7 @@ from numbers import Real
 from typing import Any
 
 import numpy as np
+from matplotlib import rcParams
 from matplotlib.artist import Artist
 from matplotlib.axes import Axes
 from matplotlib.collections import (
@@ -21,6 +22,7 @@ from matplotlib.container import ErrorbarContainer
 from matplotlib.image import AxesImage
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
+from matplotlib.offsetbox import DrawingArea
 from matplotlib.text import Text as TextArtist
 from numpy.typing import ArrayLike
 
@@ -53,6 +55,92 @@ def _combine_edits(edits: list[_ArtistEdit]) -> _ArtistEdit:
             edit.undo()
 
     return _ArtistEdit(apply, undo)
+
+
+_ERROR_STYLE_PROPERTIES = (
+    "_errorbars_color",
+    "_errorbars_line_width",
+    "_cap_width",
+    "_cap_thickness",
+)
+
+
+def _draw_live_errorbars(
+    axes: Axes, x: Any, y: Any, **params: Any
+) -> ErrorbarContainer:
+    cap_width = params.get("capsize")
+    if cap_width is None:
+        cap_width = rcParams["errorbar.capsize"]
+    hide_caps = (
+        axes.name != "polar"
+        and cap_width <= 0
+        and (params.get("xerr") is not None or params.get("yerr") is not None)
+    )
+    if hide_caps:
+        # Keep the native cap artists and legend entries available for later frames.
+        params["capsize"] = 1
+    handle = axes.errorbar(x, y, **params)
+    if hide_caps:
+        for cap in handle.lines[1]:
+            cap.set_markersize(0)
+            cap.set_visible(False)
+    return handle
+
+
+def _error_style_edits(
+    handle: ErrorbarContainer,
+    *,
+    color: Any,
+    line_width: float | None,
+    cap_width: float | None,
+    cap_thickness: float | None,
+    alpha: float | None,
+) -> list[_ArtistEdit]:
+    _, caps, segments = handle.lines
+    for name, value in (
+        ("line width", line_width),
+        ("cap width", cap_width),
+        ("cap thickness", cap_thickness),
+    ):
+        if value is not None and (
+            not isinstance(value, Real) or not isfinite(value) or value < 0
+        ):
+            raise InvalidParameterError(
+                f"Animated errorbar {name} must be a finite, nonnegative number."
+            )
+    if cap_width and (not caps or any(cap.axes is None for cap in caps)):
+        raise UnsupportedFeatureError(
+            "This plot has no live errorbar cap artists. Use a nonempty initial "
+            "dataset on a Cartesian plot to animate cap width."
+        )
+
+    edits = []
+    for segment in segments:
+        if color is not None:
+            edits.append(_edit(segment.set_color, segment.get_color(), color))
+        if line_width is not None:
+            edits.append(
+                _edit(segment.set_linewidth, segment.get_linewidth(), line_width)
+            )
+        edits.append(_edit(segment.set_alpha, segment.get_alpha(), alpha))
+    for cap in caps:
+        if color is not None:
+            edits.append(
+                _edit(cap.set_markeredgecolor, cap.get_markeredgecolor(), color)
+            )
+        if cap_thickness is not None:
+            edits.append(
+                _edit(cap.set_markeredgewidth, cap.get_markeredgewidth(), cap_thickness)
+            )
+        if cap_width is not None:
+            edits.extend(
+                (
+                    _edit(cap.set_markersize, cap.get_markersize(), 2 * cap_width),
+                    _edit(cap.set_visible, cap.get_visible(), cap_width > 0),
+                )
+            )
+        edits.append(_edit(cap.set_alpha, cap.get_alpha(), alpha))
+    return edits
 
 
 @dataclass
@@ -362,6 +450,11 @@ class _AnimationSession:
 
     def bind_legend(self, legend: Legend, handles: list[Any]) -> None:
         texts = iter(legend.get_texts())
+        groups = {
+            id(children[0]): children
+            for area in legend.findobj(match=DrawingArea)
+            if (children := area.get_children())
+        }
         for handle, swatch in zip(handles, legend.legend_handles, strict=True):
             if swatch is None:
                 # Matplotlib keeps a null handle for unsupported entries and skips their text.
@@ -376,7 +469,48 @@ class _AnimationSession:
                 return _edit(text.set_text, text.get_text(), read_label() or "")
 
             self.bind_derived(element, properties, prepare)
-            self._bind_legend_swatch(element, handle, swatch, legend.markerscale)
+            if isinstance(handle, ErrorbarContainer) and (
+                handle.has_xerr or handle.has_yerr
+            ):
+                self._bind_errorbar_swatch(element, handle, groups.get(id(swatch), []))
+            else:
+                self._bind_legend_swatch(element, handle, swatch, legend.markerscale)
+
+    def _bind_errorbar_swatch(
+        self, element: object, source: ErrorbarContainer, swatches: list[Artist]
+    ) -> None:
+        line, caps, segments = source.lines
+        originals = [*segments, *caps, line, line]
+        # HandlerErrorbar returns segments, caps, the line, and its marker.
+        if len(originals) != len(swatches) or any(
+            target is None or not isinstance(swatch, type(target))
+            for target, swatch in zip(originals, swatches)
+        ):
+            return
+        properties = (
+            *_ERROR_STYLE_PROPERTIES,
+            "_color",
+            "_line_width",
+            "_line_style",
+            "_alpha",
+        )
+        for index, (target, swatch) in enumerate(zip(originals, swatches, strict=True)):
+            if index < len(segments):
+                fields = ("alpha", "color", "linewidth")
+            elif index < len(segments) + len(caps):
+                fields = (
+                    "alpha",
+                    "markeredgecolor",
+                    "markeredgewidth",
+                    "markersize",
+                    "visible",
+                )
+            elif index == len(originals) - 2:
+                fields = ("alpha", "color", "linewidth", "linestyle")
+            else:
+                fields = ("alpha", "color")
+            if target is not None:
+                self._bind_swatch_fields(element, target, swatch, properties, fields)
 
     def _bind_legend_swatch(
         self, element: object, source: object, swatch: Artist, marker_scale: float
@@ -405,6 +539,19 @@ class _AnimationSession:
         else:
             return
 
+        self._bind_swatch_fields(
+            element, source, swatch, properties, fields, marker_scale
+        )
+
+    def _bind_swatch_fields(
+        self,
+        element: object,
+        source: Artist,
+        swatch: Artist,
+        properties: tuple[str, ...],
+        fields: tuple[str, ...],
+        marker_scale: float = 1,
+    ) -> None:
         supported = tuple(
             prop
             for prop in properties
