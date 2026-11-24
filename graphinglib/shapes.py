@@ -591,7 +591,9 @@ class Line(Plottable):
         def read_style():
             cap = resolve_or(self._cap_width, initial_cap_width)
             if not isinstance(cap, Real) or not isfinite(cap) or cap < 0:
-                raise InvalidParameterError("Animated Line cap_width must be finite and nonnegative.")
+                raise InvalidParameterError(
+                    "Animated Line cap_width must be finite and nonnegative."
+                )
             if not isinstance(self._capped_line, (bool, np.bool_)):
                 raise InvalidParameterTypeError("Line.capped_line must be a boolean.")
             return self._arrow_style(self._capped_line and cap > 0, cap)

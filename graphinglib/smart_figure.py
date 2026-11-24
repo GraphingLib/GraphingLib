@@ -2778,8 +2778,11 @@ class SmartFigure:
                             if label is not None:
                                 default_handles.append(current_element.handle)
                                 default_labels.append(label)
-                            elif session is not None and session.can_reserve_legend_entry(
-                                getattr(current_element, "handle", None)
+                            elif (
+                                session is not None
+                                and session.can_reserve_legend_entry(
+                                    getattr(current_element, "handle", None)
+                                )
                             ):
                                 default_handles.append(current_element.handle)
                                 default_labels.append("")
@@ -3133,9 +3136,9 @@ class SmartFigure:
             custom_handles += self._custom_legend_handles
             if session is not None:
                 custom_rule = self._custom_legend_filter()
-                custom_filters = [
-                    (*rules, custom_rule) for rules in custom_filters
-                ] + [(custom_rule,)] * len(self._custom_legend_labels)
+                custom_filters = [(*rules, custom_rule) for rules in custom_filters] + [
+                    (custom_rule,)
+                ] * len(self._custom_legend_labels)
         if (
             self._general_legend
         ):  # making a general legend is priorized over make_legend=False
@@ -3508,12 +3511,12 @@ class SmartFigure:
         edits = []
         for dimension, (selected, enabled) in options.items():
             axis = ax.xaxis if dimension == "x" else ax.yaxis
-            for which in ("major", "minor"):
+            for tick_group in ("major", "minor"):
                 edits.append(
                     self._prepare_native_grid_group(
                         axis,
-                        which,
-                        show and enabled and selected in (which, "both"),
+                        tick_group,
+                        show and enabled and selected in (tick_group, "both"),
                         style,
                         initial_linestyle,
                     )
@@ -4393,8 +4396,12 @@ class SmartFigure:
             "minor_y_tick_spacing",
         ]
         values = locals()
-        changes = {param: values[param] for param in params if values[param] is not None}
-        config = _updated_tick_config(self._ticks, changes, reset=reset, dimensions=("x", "y"))
+        changes = {
+            param: values[param] for param in params if values[param] is not None
+        }
+        config = _updated_tick_config(
+            self._ticks, changes, reset=reset, dimensions=("x", "y")
+        )
         self._ticks = _stage_live_value(self, "_ticks", config)
 
         return self
@@ -6528,8 +6535,12 @@ class SmartTwinAxis:
             "minor_tick_spacing",
         ]
         values = locals()
-        changes = {param: values[param] for param in params if values[param] is not None}
-        config = _updated_tick_config(self._ticks, changes, reset=reset, dimensions=("",))
+        changes = {
+            param: values[param] for param in params if values[param] is not None
+        }
+        config = _updated_tick_config(
+            self._ticks, changes, reset=reset, dimensions=("",)
+        )
         self._ticks = _stage_live_value(self, "_ticks", config)
 
         return self

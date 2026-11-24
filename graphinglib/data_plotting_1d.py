@@ -483,7 +483,9 @@ class Curve(Plottable1D, MathematicalObject):
 
     @show_errorbars.setter
     def show_errorbars(self, show_errorbars: bool) -> None:
-        self._show_errorbars = _stage_live_value(self, "_show_errorbars", show_errorbars)
+        self._show_errorbars = _stage_live_value(
+            self, "_show_errorbars", show_errorbars
+        )
 
     @property
     def errorbars_color(self) -> Styled[str | None]:
@@ -491,7 +493,9 @@ class Curve(Plottable1D, MathematicalObject):
 
     @errorbars_color.setter
     def errorbars_color(self, errorbars_color: str) -> None:
-        self._errorbars_color = _stage_live_value(self, "_errorbars_color", errorbars_color)
+        self._errorbars_color = _stage_live_value(
+            self, "_errorbars_color", errorbars_color
+        )
 
     @property
     def errorbars_line_width(self) -> Styled[float | None]:
@@ -499,7 +503,9 @@ class Curve(Plottable1D, MathematicalObject):
 
     @errorbars_line_width.setter
     def errorbars_line_width(self, errorbars_line_width: float | Inherit) -> None:
-        self._errorbars_line_width = _stage_live_value(self, "_errorbars_line_width", errorbars_line_width)
+        self._errorbars_line_width = _stage_live_value(
+            self, "_errorbars_line_width", errorbars_line_width
+        )
 
     @property
     def cap_thickness(self) -> Styled[float | None]:
@@ -523,7 +529,9 @@ class Curve(Plottable1D, MathematicalObject):
 
     @show_error_curves.setter
     def show_error_curves(self, show_error_curves: bool) -> None:
-        self._show_error_curves = _stage_live_value(self, "_show_error_curves", show_error_curves)
+        self._show_error_curves = _stage_live_value(
+            self, "_show_error_curves", show_error_curves
+        )
 
     @property
     def error_curves_fill_between(self) -> Styled[bool]:
@@ -541,7 +549,9 @@ class Curve(Plottable1D, MathematicalObject):
 
     @error_curves_color.setter
     def error_curves_color(self, error_curves_color: str) -> None:
-        self._error_curves_color = _stage_live_value(self, "_error_curves_color", error_curves_color)
+        self._error_curves_color = _stage_live_value(
+            self, "_error_curves_color", error_curves_color
+        )
 
     @property
     def error_curves_line_style(self) -> Styled[str | None]:
@@ -549,7 +559,9 @@ class Curve(Plottable1D, MathematicalObject):
 
     @error_curves_line_style.setter
     def error_curves_line_style(self, error_curves_line_style: str) -> None:
-        self._error_curves_line_style = _stage_live_value(self, "_error_curves_line_style", error_curves_line_style)
+        self._error_curves_line_style = _stage_live_value(
+            self, "_error_curves_line_style", error_curves_line_style
+        )
 
     @property
     def error_curves_line_width(self) -> Styled[float | None]:
@@ -557,7 +569,9 @@ class Curve(Plottable1D, MathematicalObject):
 
     @error_curves_line_width.setter
     def error_curves_line_width(self, error_curves_line_width: float | Inherit) -> None:
-        self._error_curves_line_width = _stage_live_value(self, "_error_curves_line_width", error_curves_line_width)
+        self._error_curves_line_width = _stage_live_value(
+            self, "_error_curves_line_width", error_curves_line_width
+        )
 
     @property
     def fill_between_bounds(self) -> tuple[float, float] | None:
@@ -614,7 +628,9 @@ class Curve(Plottable1D, MathematicalObject):
 
     @fill_between_color.setter
     def fill_between_color(self, fill_between_color: Styled[str | None]) -> None:
-        self._fill_between_color = _stage_live_value(self, "_fill_between_color", fill_between_color)
+        self._fill_between_color = _stage_live_value(
+            self, "_fill_between_color", fill_between_color
+        )
 
     def __eq__(self, other: object) -> bool:
         """
@@ -2715,7 +2731,9 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @color_map_range.setter
     def color_map_range(self, color_map_range: tuple[float, float] | None) -> None:
-        self._color_map_range = _stage_live_value(self, "_color_map_range", color_map_range)
+        self._color_map_range = _stage_live_value(
+            self, "_color_map_range", color_map_range
+        )
 
     @property
     def show_color_bar(self) -> Styled[bool]:
@@ -2723,7 +2741,9 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @show_color_bar.setter
     def show_color_bar(self, show_color_bar: bool) -> None:
-        self._show_color_bar = _stage_live_value(self, "_show_color_bar", show_color_bar)
+        self._show_color_bar = _stage_live_value(
+            self, "_show_color_bar", show_color_bar
+        )
 
     @property
     def marker_size(self) -> float | Inherit:
@@ -2763,7 +2783,9 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @show_errorbars.setter
     def show_errorbars(self, show_errorbars: bool) -> None:
-        self._show_errorbars = _stage_live_value(self, "_show_errorbars", show_errorbars)
+        self._show_errorbars = _stage_live_value(
+            self, "_show_errorbars", show_errorbars
+        )
 
     @property
     def errorbars_line_width(self) -> Styled[float]:
@@ -2771,7 +2793,9 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @errorbars_line_width.setter
     def errorbars_line_width(self, errorbars_line_width: Styled[float]) -> None:
-        self._errorbars_line_width = _stage_live_value(self, "_errorbars_line_width", errorbars_line_width)
+        self._errorbars_line_width = _stage_live_value(
+            self, "_errorbars_line_width", errorbars_line_width
+        )
 
     @property
     def cap_width(self) -> Styled[float]:
@@ -2795,7 +2819,9 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @errorbars_color.setter
     def errorbars_color(self, errorbars_color: Styled[str | None]) -> None:
-        self._errorbars_color = _stage_live_value(self, "_errorbars_color", errorbars_color)
+        self._errorbars_color = _stage_live_value(
+            self, "_errorbars_color", errorbars_color
+        )
 
     @property
     def color_bar_params(self) -> dict:
@@ -3957,9 +3983,7 @@ class Scatter(Plottable1D, MathematicalObject):
         for mappable in colorbars.values():
             bar = plt.colorbar(mappable, ax=axes, **self._color_bar_params)
             if session is not None:
-                session.bind_colorbar(
-                    self, bar, initially_visible=show_colorbars
-                )
+                session.bind_colorbar(self, bar, initially_visible=show_colorbars)
 
         if session is not None:
             session.bind_legend_source(self, self.handle, lambda: self.label)

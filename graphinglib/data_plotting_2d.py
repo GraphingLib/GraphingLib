@@ -2332,7 +2332,9 @@ class Contour(Plottable2D):
                     if legacy is not None:
                         legacy.truncate(pool_size)
 
-            return _ArtistEdit(lambda: set_frame(state, geometry_changed, bar_changed), undo)
+            return _ArtistEdit(
+                lambda: set_frame(state, geometry_changed, bar_changed), undo
+            )
 
         properties = (
             "_z_data",
@@ -2431,9 +2433,7 @@ class Contour(Plottable2D):
                     bar,
                     initially_visible=show_colorbar,
                     default_locator=(
-                        lambda: FixedLocator(
-                            np.asarray(cont.levels).tolist(), nbins=10
-                        )
+                        lambda: FixedLocator(np.asarray(cont.levels).tolist(), nbins=10)
                     )
                     if self._color_bar_params.get("ticks") is None
                     else None,

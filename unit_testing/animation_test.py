@@ -3206,9 +3206,7 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         root[:, 0] = nested
         root[0, 1:3] = [upper]
         root[1, 1:3] = [lower]
-        root.set_ticks(
-            x_ticks=[1, 10], x_tick_labels=["one", "ten"], minor_x_ticks=[5]
-        )
+        root.set_ticks(x_ticks=[1, 10], x_tick_labels=["one", "ten"], minor_x_ticks=[5])
         root.set_tick_params("x", "minor", draw_bottom_ticks=False, draw_top_ticks=True)
         snapshots = []
 
@@ -3498,14 +3496,19 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         def update(i):
             x, y = curve.handle.lines[0].axes.coords
             snapshots.append(
-                tuple((axis.get_ticks_visible(), axis.get_ticklabel_visible()) for axis in (x, y))
+                tuple(
+                    (axis.get_ticks_visible(), axis.get_ticklabel_visible())
+                    for axis in (x, y)
+                )
             )
             if i == 0:
                 figure.remove_x_ticks = False
                 figure.remove_y_ticks = True
 
         figure.save_animation(self.output, update, 2)
-        self.assertEqual(snapshots, [((False, False), (True, True)), ((True, True), (False, False))])
+        self.assertEqual(
+            snapshots, [((False, False), (True, True)), ((True, True), (False, False))]
+        )
 
     def test_live_grid_visibility_is_local_and_keeps_configured_axes_and_style(self):
         upper, lower, inner = (Curve([1, 10], [1, 10]) for _ in range(3))
@@ -3750,7 +3753,9 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         ax = curve.handle.lines[0].axes
         self.assertTrue(ax.xaxis.get_gridlines()[0].get_visible())
         self.assertEqual(ax.xaxis.get_gridlines()[0].get_color(), "orange")
-        self.assertEqual(ax.xaxis.get_gridlines()[0]._unscaled_dash_pattern, dash_pattern)
+        self.assertEqual(
+            ax.xaxis.get_gridlines()[0]._unscaled_dash_pattern, dash_pattern
+        )
         self.assertFalse(ax.yaxis.get_gridlines()[0].get_visible())
         self.assertEqual(ax.yaxis.get_gridlines()[0].get_color(), "orange")
         self.assertEqual(self.output.read_bytes(), b"existing")
@@ -5926,7 +5931,11 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             [[0, 1], [1, 2]], levels=[0, 1, 2], filled=True, show_color_bar=False
         )
         scatter = Scatter([0, 1], [1, 0], face_color=[1.0, 2.0], show_color_bar=False)
-        for element, label in ((heat, "Heat"), (contour, "Contour"), (scatter, "Scatter")):
+        for element, label in (
+            (heat, "Heat"),
+            (contour, "Contour"),
+            (scatter, "Scatter"),
+        ):
             element.set_color_bar_params(reserve=True, label=label)
         inner = SmartFigure(elements=[heat])
         figure = SmartFigure(2, 3, figure_style="plain", size=(9, 5))
@@ -5937,13 +5946,21 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
 
         def update(frame):
             bars = {
-                ax.get_ylabel(): ax for ax in plt.gcf().axes if ax.get_label() == "<colorbar>"
+                ax.get_ylabel(): ax
+                for ax in plt.gcf().axes
+                if ax.get_label() == "<colorbar>"
             }
-            states.append({
-                name: (ax, ax.get_visible(), ax._colorbar.mappable.get_clim(),
-                       ax._colorbar.mappable.get_cmap().name)
-                for name, ax in bars.items()
-            })
+            states.append(
+                {
+                    name: (
+                        ax,
+                        ax.get_visible(),
+                        ax._colorbar.mappable.get_clim(),
+                        ax._colorbar.mappable.get_cmap().name,
+                    )
+                    for name, ax in bars.items()
+                }
+            )
             if frame == 0:
                 heat.color_map_range = (0, 4)
                 contour.color_map_range = (0, 6)
@@ -5969,7 +5986,9 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         heat.set_color_bar_params(reserve=True)
         figure = SmartFigure(elements=[heat], figure_style="plain")
         figure._initialize_parent_smart_figure()
-        self.assertFalse(any(ax.get_label() == "<colorbar>" for ax in figure._figure.axes))
+        self.assertFalse(
+            any(ax.get_label() == "<colorbar>" for ax in figure._figure.axes)
+        )
         plt.close(figure._figure)
 
         rgb = Heatmap(np.zeros((2, 2, 3)))
@@ -5977,11 +5996,15 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         scatter = Scatter([0, 1], [1, 0], face_color="navy", show_color_bar=False)
         scatter.set_color_bar_params(reserve=True)
         plain_heat = Heatmap([[0, 1], [1, 2]], show_color_bar=False)
-        root = SmartFigure(1, 3, elements=[rgb, scatter, plain_heat], figure_style="plain")
+        root = SmartFigure(
+            1, 3, elements=[rgb, scatter, plain_heat], figure_style="plain"
+        )
         did_draw = []
 
         def update(frame):
-            self.assertFalse(any(ax.get_label() == "<colorbar>" for ax in plt.gcf().axes))
+            self.assertFalse(
+                any(ax.get_label() == "<colorbar>" for ax in plt.gcf().axes)
+            )
             did_draw.append(frame)
 
         root.save_animation(self.output, update, 1)

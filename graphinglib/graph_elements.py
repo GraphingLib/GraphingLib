@@ -300,7 +300,7 @@ def _bind_reference_geometry(
                     segments,
                 )
             )
-        for name, field, write, previous in (
+        for name, style_key, write, previous in (
             ("_colors", "color", collection.set_edgecolor, mpl._original_edgecolor),
             (
                 "_line_widths",
@@ -312,7 +312,7 @@ def _bind_reference_geometry(
             ("_alpha", "alpha", collection.set_alpha, collection.get_alpha()),
         ):
             if activating or session.has_frame_update(element, name):
-                edits.append(_edit(write, previous, style[field]))
+                edits.append(_edit(write, previous, style[style_key]))
         if activating:
             edits.append(_edit(collection.set_visible, False, True))
         edits.extend(
@@ -2326,7 +2326,7 @@ class Table(Plottable):
                     cell.set_fontsize(initial_font_size)
                     added[key] = cell
                 label = cell.get_text()
-                for artist, field, value in (
+                for artist, property_name, value in (
                     (cell, "width", width),
                     (cell, "height", height),
                     (cell, "facecolor", face),
@@ -2338,8 +2338,8 @@ class Table(Plottable):
                 ):
                     edits.append(
                         _edit(
-                            getattr(artist, f"set_{field}"),
-                            getattr(artist, f"get_{field}")(),
+                            getattr(artist, f"set_{property_name}"),
+                            getattr(artist, f"get_{property_name}")(),
                             value,
                         )
                     )

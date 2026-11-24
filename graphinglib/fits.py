@@ -650,7 +650,9 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
     ) -> float:
         """Integrate or shade a fitted curve, using its line color by default."""
         return super().get_area_between(
-            x1, x2, fill_between,
+            x1,
+            x2,
+            fill_between,
             "same as curve" if is_inherit(fill_color) else fill_color,
             other_curve=other_curve,
         )
@@ -1201,7 +1203,6 @@ class FitFromSine(GeneralFit):
         return lambda x: template(x, *parameters)
 
 
-
 class FitFromExponential(GeneralFit):
     """
     Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
@@ -1357,7 +1358,9 @@ class FitFromExponential(GeneralFit):
         self._standard_deviation = np.sqrt(np.diag(self._cov_matrix))
 
     @staticmethod
-    def _exp_func_template(x: float | np.ndarray, a: float, b: float, c: float) -> float | np.ndarray:
+    def _exp_func_template(
+        x: float | np.ndarray, a: float, b: float, c: float
+    ) -> float | np.ndarray:
         """
         Function to be passed to the ``curve_fit`` function.
         """
@@ -1377,7 +1380,6 @@ class FitFromExponential(GeneralFit):
         template = self._exp_func_template
         parameters = tuple(self._parameters)
         return lambda x: template(x, *parameters)
-
 
 
 class FitFromGaussian(GeneralFit[float | np.floating]):
@@ -1602,7 +1604,6 @@ class FitFromGaussian(GeneralFit[float | np.floating]):
         return lambda x: template(x, *parameters)
 
 
-
 class FitFromSquareRoot(GeneralFit):
     """
     Create a curve fit (continuous :class:`~graphinglib.data_plotting_1d.Curve`) from an existing
@@ -1779,7 +1780,6 @@ class FitFromSquareRoot(GeneralFit):
         template = self._square_root_func_template
         parameters = tuple(self._parameters)
         return lambda x: template(x, *parameters)
-
 
 
 class FitFromLog(GeneralFit):
@@ -1966,7 +1966,6 @@ class FitFromLog(GeneralFit):
         template = self._log_func_template()
         parameters = tuple(self._parameters)
         return lambda x: template(x, *parameters)
-
 
 
 class FitFromFunction(GeneralFit):
