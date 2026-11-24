@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator, Mapping
 from copy import deepcopy
 from dataclasses import dataclass, field
 from math import isfinite
@@ -8,8 +9,10 @@ from typing import Any, Literal, Optional, Protocol, Sequence, cast, runtime_che
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.artist import Artist
 from matplotlib.axis import GRIDLINE_INTERPOLATION_STEPS
 from matplotlib.collections import LineCollection, PathCollection
+from matplotlib.container import Container
 from matplotlib.figure import Figure as MPLFigure
 from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
@@ -32,6 +35,7 @@ from .exceptions import (
     InvalidParameterError,
     InvalidParameterTypeError,
     PlottingError,
+    UnsupportedFeatureError,
 )
 from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
 from .legend_artists import (
@@ -2372,6 +2376,19 @@ class Table(Plottable):
         session.bind_update(self, "_location", prepare_location)
 
 
+def _artists_from_axes_result(result: Any) -> Iterator[Artist]:
+    if isinstance(result, Artist):
+        yield result
+    elif isinstance(result, Container):
+        yield from result.get_children()
+    elif isinstance(result, Mapping):
+        for value in result.values():
+            yield from _artists_from_axes_result(value)
+    elif isinstance(result, (list, tuple)):
+        for item in result:
+            yield from _artists_from_axes_result(item)
+
+
 class PlottableAxMethod(Plottable):
     """
     This experimental class allows to call any matplotlib Axes method as a plottable element in a
@@ -2405,30 +2422,51 @@ class PlottableAxMethod(Plottable):
         self.label = label
         self.handle = None
 
+    def set_artist_properties(
+        self, *, index: int | None = None, **properties: Any
+    ) -> Self:
+        """Set properties of existing Matplotlib artists during an animation frame.
+
+        Use the Matplotlib property name, such as ``height``, ``ydata`` or
+        ``facecolor``. Each property needs matching ``get_*`` and ``set_*``
+        methods, and the getter's value must be accepted by the setter for rollback.
+        Use ``index`` to address one artist in each appearance of this plottable.
+        By default the update applies to every artist. Nested lists, tuples,
+        containers, and dictionaries are flattened in their returned order.
+        """
+        session = _bound_session(self)
+        if session is None:
+            raise UnsupportedFeatureError(
+                "Use set_artist_properties in an animation callback for a plotted PlottableAxMethod."
+            )
+        session.queue_axes_method_properties(self, index, properties)
+        return self
+
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         try:
-            attrs = getattr(axes, self.meth)(*self.args, zorder=z_order, **self.kwargs)
-            if isinstance(attrs, list) and len(attrs) > 0:
-                self.handle = attrs[0]
-        except TypeError as e:
-            if "zorder" in str(e):
-                try:
-                    attrs = getattr(axes, self.meth)(*self.args, **self.kwargs)
-                    if isinstance(attrs, list) and len(attrs) > 0:
-                        self.handle = attrs[0]
-                except Exception as e2:
-                    raise PlottingError(
-                        f"Failed to call Axes method '{self.meth}' with the provided "
-                        "arguments. Please check that all provided arguments are valid "
-                        "for the given method."
-                    ) from e2
-            else:
+            result = getattr(axes, self.meth)(*self.args, zorder=z_order, **self.kwargs)
+        except TypeError as exc:
+            if "zorder" not in str(exc):
                 raise PlottingError(
                     f"Failed to call Axes method '{self.meth}' with the provided "
-                    "arguments. Please check that all provided arguments are valid for "
-                    "the given method."
-                ) from e
+                    "arguments. Please check that all provided arguments are valid "
+                    "for the given method."
+                ) from exc
+            try:
+                result = getattr(axes, self.meth)(*self.args, **self.kwargs)
+            except Exception as fallback:
+                raise PlottingError(
+                    f"Failed to call Axes method '{self.meth}' with the provided "
+                    "arguments. Please check that all provided arguments are valid "
+                    "for the given method."
+                ) from fallback
+        if isinstance(result, list) and result:
+            self.handle = result[0]
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            artists = tuple(dict.fromkeys(_artists_from_axes_result(result)))
+            session.bind_axes_method(self, artists)

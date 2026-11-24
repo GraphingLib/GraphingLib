@@ -2083,9 +2083,12 @@ Live update support
      - Axis scale and limits follow the same viewport rules as other plots.
        Intensity colors use the initial range, or 0–1 if added during playback.
    * - :class:`~graphinglib.PlottableAxMethod`
-     - Static context.
-     - Arbitrary Axes methods can return many kinds of objects and have no
-       common update contract.
+     - Call ``set_artist_properties(...)`` with reversible Matplotlib
+       properties. For a bar plot, ``set_artist_properties(index=0, height=2)``
+       sets the first rectangle's height in each appearance.
+     - The initial Axes call establishes the artist count and order.
+       Use a matching getter and setter for each property. Changes apply to the
+       current artists. Initial method arguments and axis limits are set separately.
 
 Axes keep their initial viewport until you assign ``x_lim`` or ``y_lim`` on
 the SmartFigure that draws the axes. For a layout, a tuple applies to its

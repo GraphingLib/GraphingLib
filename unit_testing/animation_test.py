@@ -4310,6 +4310,123 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertEqual(swatches[0].get_linewidth(), 2)
         self.assertEqual(self.output.read_bytes(), b"existing")
 
+    def test_axes_method_updates_bars_in_each_appearance(self):
+        from matplotlib.axes import Axes
+        from matplotlib.colors import to_rgba
+
+        from graphinglib import PlottableAxMethod
+
+        bars = PlottableAxMethod("bar", [0, 1], [1, 3], color="navy")
+        nested = SmartFigure(elements=[bars], y_lim=(0, 5))
+        root = SmartFigure(2, 2, figure_style="plain", y_lim=(0, 5))
+        root[:, 0] = nested
+        root[:, 1] = [bars]
+        states = []
+
+        def update(frame):
+            axes = [ax for ax in plt.gcf().axes if ax.containers]
+            states.append(
+                [
+                    (
+                        tuple(ax.patches),
+                        tuple(p.get_height() for p in ax.patches),
+                        tuple(p.get_facecolor() for p in ax.patches),
+                        ax.get_ylim(),
+                    )
+                    for ax in axes
+                ]
+            )
+            if frame == 0:
+                bars.set_artist_properties(height=2)
+                bars.set_artist_properties(index=-1, height=4, facecolor="orange")
+            elif frame == 1:
+                bars.set_artist_properties(index=0, height=1, facecolor="green")
+                bars.set_artist_properties(index=1, height=2)
+
+        bar = Axes.bar
+        calls = []
+
+        def record(axis, *args, **kwargs):
+            calls.append(axis)
+            return bar(axis, *args, **kwargs)
+
+        with patch.object(Axes, "bar", record):
+            root.save_animation(self.output, update, 3)
+        self.assertEqual(len(calls), 2)
+        for before, after, final in zip(*states, strict=True):
+            self.assertEqual(before[0], after[0])
+            self.assertEqual(before[0], final[0])
+            self.assertEqual(
+                after[1:], ((2, 4), (to_rgba("navy"), to_rgba("orange")), (0, 5))
+            )
+            self.assertEqual(
+                final[1:], ((1, 2), (to_rgba("green"), to_rgba("orange")), (0, 5))
+            )
+
+    def test_axes_method_artist_edits_roll_back_on_a_later_artist_failure(self):
+        from matplotlib.colors import to_rgba
+
+        from graphinglib import PlottableAxMethod
+
+        initial_color = (1, 0, 0, 0.35)
+        bars = PlottableAxMethod("bar", [0, 1], [1, 2], color=initial_color, alpha=0.7)
+        root = SmartFigure(elements=[bars], figure_style="plain", y_lim=(0, 5))
+        saved = []
+        self.output.write_bytes(b"existing")
+
+        def update(frame):
+            axis = next(ax for ax in plt.gcf().axes if ax.containers)
+            saved[:] = axis.patches
+            if not frame:
+                return
+            original = saved[1].set_height
+
+            def fail_after_apply(height):
+                original(height)
+                if height == 4:
+                    self.assertEqual(saved[0].get_height(), 4)
+                    self.assertEqual(saved[0].get_facecolor(), to_rgba("blue", 0.5))
+                    raise ValueError("failed updating second rectangle")
+
+            self.enterContext(patch.object(saved[1], "set_height", fail_after_apply))
+            bars.set_artist_properties(alpha=0.5, facecolor="blue", height=4)
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        self.assertEqual([p.get_height() for p in saved], [1, 2])
+        for patch_artist in saved:
+            self.assertEqual(patch_artist.get_facecolor(), to_rgba(initial_color, 0.7))
+            patch_artist.set_alpha(None)
+            self.assertEqual(patch_artist.get_facecolor(), initial_color)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
+    def test_axes_method_updates_mapping_results_and_validates_atomically(self):
+        from graphinglib import PlottableAxMethod, UnsupportedFeatureError
+
+        boxes = PlottableAxMethod("boxplot", [[0, 1, 2], [2, 3, 5]])
+        root = SmartFigure(elements=[boxes], figure_style="plain")
+        widths = []
+
+        def update(frame):
+            axes = next(ax for ax in plt.gcf().axes if ax.lines)
+            widths.append(tuple(line.get_linewidth() for line in axes.lines))
+            if not frame:
+                with self.assertRaisesRegex(
+                    UnsupportedFeatureError, "missing_property"
+                ):
+                    boxes.set_artist_properties(linewidth=11, missing_property=1)
+                with self.assertRaisesRegex(ValueError, "out of range"):
+                    boxes.set_artist_properties(index=999, linewidth=11)
+                boxes.set_artist_properties(index=0, linewidth=4)
+
+        with self.assertRaisesRegex(UnsupportedFeatureError, "animation callback"):
+            boxes.set_artist_properties(linewidth=4)
+        root.save_animation(self.output, update, 2)
+        self.assertEqual(
+            [after for before, after in zip(*widths, strict=True) if before != after],
+            [4],
+        )
+
     def test_raster_extent_and_origin_update_without_panning_view(self):
         heat = Heatmap([[0, 1], [0, 0]], origin_position="upper", show_color_bar=False)
         root = SmartFigure(

@@ -2,10 +2,11 @@
 
 from collections.abc import Callable, Collection
 from contextvars import ContextVar
+from copy import deepcopy
 from dataclasses import dataclass
 from itertools import chain
 from math import isfinite
-from numbers import Real
+from numbers import Integral, Real
 from typing import Any, Literal, cast
 
 import numpy as np
@@ -360,6 +361,7 @@ class _AnimationSession:
     def __init__(self) -> None:
         self._artists: dict[int, list[_Binding]] = {}
         self._properties: dict[tuple[int, str], list[Callable[[Any], _ArtistEdit]]] = {}
+        self._axes_method_artists: dict[int, list[tuple[Artist, ...]]] = {}
         self._updates: dict[tuple[int, str], list[_ArtistEdit]] = {}
         self._dependents: dict[
             tuple[int, str], dict[int, Callable[[], _ArtistEdit]]
@@ -387,6 +389,54 @@ class _AnimationSession:
 
     def mark_present(self, element: object) -> None:
         self._artists.setdefault(id(element), [])
+
+    def bind_axes_method(self, element: object, artists: tuple[Artist, ...]) -> None:
+        self.mark_present(element)
+        self._axes_method_artists.setdefault(id(element), []).append(artists)
+
+    def queue_axes_method_properties(
+        self, element: object, index: int | None, properties: dict[str, Any]
+    ) -> None:
+        appearances = self._axes_method_artists.get(id(element), ())
+        if not appearances or any(not artists for artists in appearances):
+            raise UnsupportedFeatureError(
+                "The Axes method must return at least one Matplotlib artist per appearance."
+            )
+        if index is not None and (
+            not isinstance(index, Integral) or isinstance(index, bool)
+        ):
+            raise InvalidParameterError("The artist index must be an integer or None.")
+
+        updates = {}
+        for artists in appearances:
+            if index is None:
+                selected = artists
+            else:
+                try:
+                    selected = (artists[index],)
+                except IndexError as exc:
+                    raise InvalidParameterError(
+                        f"Artist index {index} is out of range for this Axes method."
+                    ) from exc
+            for artist in selected:
+                for name, value in properties.items():
+                    getter = getattr(artist, f"get_{name}", None)
+                    setter = getattr(artist, f"set_{name}", None)
+                    if not callable(getter) or not callable(setter):
+                        raise UnsupportedFeatureError(
+                            f"{type(artist).__name__}.{name} needs a Matplotlib getter and setter."
+                        )
+                    before = getter()
+                    if name in ("facecolor", "edgecolor"):
+                        # Patches and collections keep the paint separately from applied alpha.
+                        before = getattr(artist, f"_original_{name}", before)
+                    if isinstance(before, (np.ndarray, list, tuple, dict)):
+                        before = deepcopy(before)
+                    updates[(id(element), f"artist/{id(artist)}/{name}")] = [
+                        _edit(setter, before, value)
+                    ]
+
+        self._updates.update(updates)
 
     def bind_update(
         self, element: object, name: str, prepare: Callable[[Any], _ArtistEdit]
@@ -1134,6 +1184,7 @@ class _AnimationSession:
 
     def clear(self) -> None:
         self._artists.clear()
+        self._axes_method_artists.clear()
         self._properties.clear()
         self._dependents.clear()
         self._legend_sources.clear()
