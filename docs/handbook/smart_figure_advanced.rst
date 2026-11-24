@@ -1985,9 +1985,10 @@ Live update support
    * - :class:`~graphinglib.Scatter`
      - Coordinates, configured errors, marker shape, size, edge width,
        opacity, face and edge colors, colormap, and color range. Set per-point
-       colors for the new point count in the same callback. An existing colorbar
-       follows its intensity channel and retains its initial scale until
-       ``color_map_range`` changes. Configured error bars can change color,
+       colors for the new point count in the same callback. Existing colorbars
+       can be shown or hidden and continue to track their intensity channels.
+       Assign ``color_map_range = None`` to restore their individual initial
+       scales. Configured error bars can change color,
        line width, cap width and cap thickness. Use ``show_errorbars`` to
        hide or show them on Cartesian plots.
      - Legend entry creation, colorbar placement and error-bar directions.

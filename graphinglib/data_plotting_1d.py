@@ -16,6 +16,7 @@ from matplotlib.container import BarContainer, ErrorbarContainer
 from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Polygon, Rectangle
+from matplotlib.transforms import nonsingular
 from numpy.typing import ArrayLike
 from pyperclip import copy as copy_to_clipboard
 from scipy.integrate import cumulative_trapezoid
@@ -2568,11 +2569,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @show_color_bar.setter
     def show_color_bar(self, show_color_bar: bool) -> None:
-        _reject_live_update(
-            self,
-            "Configure Scatter markers, colors, colorbars and labels before animating.",
-        )
-        self._show_color_bar = show_color_bar
+        self._show_color_bar = _stage_live_value(self, "_show_color_bar", show_color_bar)
 
     @property
     def marker_size(self) -> float | Inherit:
@@ -3591,6 +3588,9 @@ class Scatter(Plottable1D, MathematicalObject):
 
             for name, mappable in colorbars.items():
                 limits_for_bar = face_range if name == "face" else edge_range
+                previous = mappable.get_cmap(), mappable.get_clim()
+                if previous == (cmap, limits_for_bar):
+                    continue
 
                 def set_scale(state, bar=mappable) -> None:
                     palette, color_limits = state
@@ -3605,7 +3605,7 @@ class Scatter(Plottable1D, MathematicalObject):
                 edits.append(
                     _edit(
                         set_scale,
-                        (mappable.get_cmap(), mappable.get_clim()),
+                        previous,
                         (cmap, limits_for_bar),
                     )
                 )
@@ -3658,6 +3658,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
         session = _DRAW_SESSION.get()
         colorbars: dict[str, ScalarMappable] = {}
+        show_colorbars = resolve_or(self._show_color_bar, False)
 
         def marker_color(name: str, value: Any, cycle: str | None) -> Any:
             values = self._color_intensities(value)
@@ -3670,8 +3671,12 @@ class Scatter(Plottable1D, MathematicalObject):
                 else:
                     finite = values[np.isfinite(values)]
                     low, high = (finite.min(), finite.max()) if finite.size else (0, 1)
+                # Colorbar expands a constant range. Map the starting markers
+                # with that same range so unrelated frame edits cannot shift colors.
+                if show_colorbars:
+                    low, high = nonsingular(low, high, expander=0.1)
                 norm = Normalize(low, high)
-                if resolve_or(self._show_color_bar, False):
+                if show_colorbars:
                     colorbars[name] = ScalarMappable(cmap=cmap, norm=norm)
                 return cmap(norm(values))
             if value is None:
@@ -3753,8 +3758,10 @@ class Scatter(Plottable1D, MathematicalObject):
                 **errorbar_params,
             )
 
-        for colorbar in colorbars.values():
-            plt.colorbar(colorbar, ax=axes, **self._color_bar_params)
+        for mappable in colorbars.values():
+            bar = plt.colorbar(mappable, ax=axes, **self._color_bar_params)
+            if session is not None:
+                session.bind_property(self, "_show_color_bar", bar.ax, "visible")
 
         if session is not None:
             session.bind_legend_source(self, self.handle, lambda: self.label)

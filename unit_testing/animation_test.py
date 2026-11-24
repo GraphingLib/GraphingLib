@@ -2286,6 +2286,80 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         with Image.open(self.output) as gif:
             self.assertEqual(gif.n_frames, 2)
 
+    def test_scatter_colorbars_hide_and_restore_independent_scales(self):
+        from matplotlib.colors import Normalize
+
+        expected_intensity = Normalize(1.8, 2.2)([2.0, 2.0])
+        scatter = Scatter(
+            [0, 1],
+            [1, 0],
+            face_color=[2.0, 2.0],
+            edge_color=[10.0, 20.0],
+            color_map="viridis",
+            show_color_bar=True,
+        )
+        nested = SmartFigure(elements=[scatter], x_lim=(0, 1), y_lim=(0, 1))
+        root = SmartFigure(1, 2, elements=[nested, scatter], figure_style="plain")
+        states = {}
+        identities = []
+
+        def update(i):
+            bars = [
+                axis._colorbar
+                for axis in plt.gcf().axes
+                if axis.get_label() == "<colorbar>"
+            ]
+            self.assertEqual(len(bars), 4)
+            identities.append([(bar, bar.ax) for bar in bars])
+            states[i] = (
+                [
+                    (
+                        bar.ax.get_visible(),
+                        bar.mappable.get_clim(),
+                        bar.cmap.name,
+                        bar.solids,
+                    )
+                    for bar in bars
+                ],
+                scatter.handle.get_facecolor().copy(),
+            )
+            if i == 0:
+                scatter.show_color_bar = False
+                scatter.marker_style = "s"
+            elif i == 1:
+                scatter.color_map = "plasma"
+                scatter.color_map_range = (0, 25)
+            elif i == 2:
+                scatter.show_color_bar = True
+            else:
+                scatter.color_map_range = None
+
+        root.save_animation(self.output, update, 4)
+        self.assertTrue(all(group == identities[0] for group in identities))
+        assert_allclose(states[0][1], states[1][1])
+        assert_allclose(states[0][1], plt.get_cmap("viridis")(expected_intensity))
+        self.assertTrue(all(not state[0] for state in states[1][0]))
+        self.assertTrue(
+            all(
+                state[3] is old[3]
+                for state, old in zip(states[1][0], states[0][0], strict=True)
+            )
+        )
+        self.assertEqual(
+            [state[:3] for state in states[2][0]], [(False, (0, 25), "plasma")] * 4
+        )
+        self.assertEqual(
+            [state[:3] for state in states[3][0]], [(True, (0, 25), "plasma")] * 4
+        )
+        for bar, axis in identities[-1]:
+            self.assertTrue(axis.get_visible())
+            self.assertEqual(bar.cmap.name, "plasma")
+        limits = [bar.mappable.get_clim() for bar, _ in identities[-1]]
+        assert_allclose(limits, [(1.8, 2.2), (10, 20)] * 2)
+        assert_allclose(
+            scatter.handle.get_facecolor(), plt.get_cmap("plasma")(expected_intensity)
+        )
+
     def test_scatter_color_and_marker_updates_roll_back_with_point_data(self):
         scatter = Scatter([0, 1], [1, 2], face_color=["red", "blue"])
         scatter.add_errorbars(y_error=0.2)
