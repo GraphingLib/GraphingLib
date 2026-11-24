@@ -2,7 +2,7 @@ from __future__ import annotations as _annotations_
 
 from collections import OrderedDict
 from collections.abc import Sequence
-from copy import deepcopy
+from copy import copy, deepcopy
 from fractions import Fraction
 from functools import partial
 from inspect import iscoroutinefunction, signature
@@ -39,6 +39,7 @@ except ImportError:
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import numpy as np
 from matplotlib.animation import FuncAnimation, writers
 from matplotlib.axes import Axes
 from matplotlib.axis import Axis
@@ -4860,6 +4861,89 @@ class SmartFigureWCS(SmartFigure):
             animation_grid_defaults=animation_grid_defaults,
         )
 
+    @staticmethod
+    def _apply_coordinate_ticks(
+        coordinate: Any, dimension: str, config: dict[str, Any]
+    ) -> None:
+        formatter = config.get(f"{dimension}_tick_formatter")
+        if formatter is not None:
+            coordinate.set_major_formatter(formatter)
+        spacing = config.get(f"{dimension}_tick_spacing")
+        if spacing is not None and not spacing.unit.is_equivalent(
+            coordinate.coord_unit
+        ):
+            raise InvalidParameterError(
+                "WCS tick spacing must have compatible coordinate units."
+            )
+        coordinate.set_ticks(
+            values=config.get(f"{dimension}_ticks"),
+            spacing=spacing,
+            number=config.get(f"number_of_{dimension}_ticks"),
+        )
+        frequency = config.get(f"minor_{dimension}_tick_frequency")
+        if frequency is not None:
+            coordinate.display_minor_ticks(True)
+            coordinate.set_minor_frequency(frequency)
+
+    def _bind_coordinate_ticks(
+        self, session: _AnimationSession, coordinates: tuple[Any, Any]
+    ) -> None:
+        def read(coordinate: Any) -> tuple[Any, Any, bool, int]:
+            return (
+                coordinate._formatter_locator,
+                coordinate._custom_formatter,
+                coordinate._ticks.get_display_minor_ticks(),
+                coordinate.get_minor_frequency(),
+            )
+
+        def write(coordinate: Any, state: tuple[Any, Any, bool, int]) -> None:
+            locator, formatter, show_minor, frequency = state
+            coordinate._formatter_locator = locator
+            coordinate._custom_formatter = formatter
+            coordinate.display_minor_ticks(show_minor)
+            coordinate.set_minor_frequency(frequency)
+
+        defaults = []
+        for coordinate in coordinates:
+            locator, formatter, show_minor, frequency = read(coordinate)
+            defaults.append((copy(locator), formatter, show_minor, frequency))
+
+        current = self._ticks
+
+        def prepare() -> _ArtistEdit:
+            previous, requested = current, self._ticks
+            targets = []
+            for dimension, coordinate, default in zip(
+                ("x", "y"), coordinates, defaults, strict=True
+            ):
+                keys = (
+                    f"{dimension}_ticks",
+                    f"{dimension}_tick_spacing",
+                    f"number_of_{dimension}_ticks",
+                    f"{dimension}_tick_formatter",
+                    f"minor_{dimension}_tick_frequency",
+                )
+                if any(previous.get(key) is not requested.get(key) for key in keys):
+                    targets.append((dimension, coordinate, default, read(coordinate)))
+
+            def apply() -> None:
+                nonlocal current
+                for dimension, coordinate, default, _ in targets:
+                    locator, formatter, show_minor, frequency = default
+                    write(coordinate, (copy(locator), formatter, show_minor, frequency))
+                    self._apply_coordinate_ticks(coordinate, dimension, requested)
+                current = requested
+
+            def undo() -> None:
+                nonlocal current
+                for _, coordinate, _, old in reversed(targets):
+                    write(coordinate, old)
+                current = previous
+
+            return _ArtistEdit(apply, undo)
+
+        session.bind_derived(self, ("_ticks",), prepare)
+
     def _customize_ticks(
         self,
         ax: Axes,
@@ -4874,28 +4958,10 @@ class SmartFigureWCS(SmartFigure):
         x_axis.set_auto_axislabel(False)
         y_axis.set_auto_axislabel(False)
 
-        if self._ticks.get("x_tick_formatter") is not None:
-            x_axis.set_major_formatter(self._ticks.get("x_tick_formatter"))
-        if self._ticks.get("y_tick_formatter") is not None:
-            y_axis.set_major_formatter(self._ticks.get("y_tick_formatter"))
-
-        x_axis.set_ticks(
-            values=self._ticks.get("x_ticks"),
-            spacing=self._ticks.get("x_tick_spacing"),
-            number=self._ticks.get("number_of_x_ticks"),
-        )
-        y_axis.set_ticks(
-            values=self._ticks.get("y_ticks"),
-            spacing=self._ticks.get("y_tick_spacing"),
-            number=self._ticks.get("number_of_y_ticks"),
-        )
-
-        if self._ticks.get("minor_x_tick_frequency") is not None:
-            x_axis.display_minor_ticks(True)
-            x_axis.set_minor_frequency(self._ticks.get("minor_x_tick_frequency"))
-        if self._ticks.get("minor_y_tick_frequency") is not None:
-            y_axis.display_minor_ticks(True)
-            y_axis.set_minor_frequency(self._ticks.get("minor_y_tick_frequency"))
+        if (session := _DRAW_SESSION.get()) is not None:
+            self._bind_coordinate_ticks(session, (x_axis, y_axis))
+        self._apply_coordinate_ticks(x_axis, "x", self._ticks)
+        self._apply_coordinate_ticks(y_axis, "y", self._ticks)
 
         # Manually set the tick_params using the recommended API
         for i, axis, ax_params in zip(
@@ -5026,8 +5092,8 @@ class SmartFigureWCS(SmartFigure):
     def set_ticks(  # ty: ignore[invalid-method-override]
         self,
         reset: bool = False,
-        x_ticks: list[Quantity] | None = None,
-        y_ticks: list[Quantity] | None = None,
+        x_ticks: Quantity | list[Quantity] | None = None,
+        y_ticks: Quantity | list[Quantity] | None = None,
         x_tick_spacing: Quantity | None = None,
         y_tick_spacing: Quantity | None = None,
         number_of_x_ticks: int | None = None,
@@ -5045,7 +5111,7 @@ class SmartFigureWCS(SmartFigure):
         reset : bool, optional
             If ``True``, resets all previously set ticks to their default values before applying the new parameters.
             Defaults to ``False``.
-        x_ticks, y_ticks : list[Quantity], optional
+        x_ticks, y_ticks : Quantity | list[Quantity], optional
             Tick positions for the x or y axis. If a value is specified, the corresponding ``x_tick_spacing`` and
             ``number_of_x_ticks`` or ``y_tick_spacing`` and ``number_of_y_ticks`` parameters must be ``None``.
         x_tick_spacing, y_tick_spacing : Quantity, optional
@@ -5060,9 +5126,8 @@ class SmartFigureWCS(SmartFigure):
                 displayed may vary depending on the data and limits of the axes.
 
         x_tick_formatter, y_tick_formatter : str | Callable, optional
-            A function or a string format to apply to the x or y tick labels. If a function is provided, it should take
-            a single argument (the tick value) and return a formatted string. If a string is provided, it should be a
-            format string that will be applied to each tick value. See the `astropy documentation
+            A string format or Astropy formatter callable. A callable receives the tick coordinates as a Quantity
+            and can accept a ``spacing`` keyword. It returns an iterable of tick labels. See the `astropy documentation
             <https://docs.astropy.org/en/latest/visualization/wcsaxes/ticks_labels_grid.html>`_ for more details.
 
             .. warning::
@@ -5074,11 +5139,11 @@ class SmartFigureWCS(SmartFigure):
 
                 ``1h01m34.1s``
 
-                >>> x_tick_formatter = lambda x: f"{x:.2f} s"  # only for non-angular coordinate axes
+                >>> x_tick_formatter = lambda values, spacing=None: [f"{value:.2f}" for value in values]
 
                 ``1.23 s``
 
-        minor_x_tick_frequency, minor_y_tick_frequency : float, optional
+        minor_x_tick_frequency, minor_y_tick_frequency : int, optional
             Frequency of minor ticks on the x or y axis. This gives the number of minor ticks between each major tick.
 
             .. note::
@@ -5090,7 +5155,6 @@ class SmartFigureWCS(SmartFigure):
         Self
             For convenience, the same SmartFigure with the updated ticks.
         """
-        _reject_animated_layout(self)
         if any(
             [
                 (x_ticks is not None) and (x_tick_spacing is not None),
@@ -5121,9 +5185,6 @@ class SmartFigureWCS(SmartFigure):
                 "Number of ticks and tick spacing cannot be set simultaneously."
             )
 
-        if reset:
-            self._ticks.clear()
-
         params = [
             "x_ticks",
             "y_ticks",
@@ -5136,10 +5197,55 @@ class SmartFigureWCS(SmartFigure):
             "minor_x_tick_frequency",
             "minor_y_tick_frequency",
         ]
-        for param in params:
-            value = locals()[param]
-            if value is not None:
-                self._ticks[param] = value
+        source = locals()
+        changes = {
+            param: source[param] for param in params if source[param] is not None
+        }
+        config = {} if reset else self._ticks.copy()
+        for dimension in ("x", "y"):
+            positions = f"{dimension}_ticks"
+            spacing = f"{dimension}_tick_spacing"
+            number = f"number_of_{dimension}_ticks"
+            frequency = f"minor_{dimension}_tick_frequency"
+            if any(key in changes for key in (positions, spacing, number)):
+                for key in (positions, spacing, number):
+                    config.pop(key, None)
+            if positions in changes:
+                ticks = Quantity(changes[positions], copy=True)
+                if (
+                    ticks.ndim != 1
+                    or not np.isrealobj(ticks.value)
+                    or not np.isfinite(ticks.value).all()
+                ):
+                    raise InvalidParameterError(
+                        "WCS ticks must be a one-dimensional quantity of finite numbers."
+                    )
+                changes[positions] = ticks
+            if spacing in changes:
+                step = changes[spacing]
+                if (
+                    not isinstance(step, Quantity)
+                    or not step.isscalar
+                    or not np.isrealobj(step.value)
+                    or not np.isfinite(step.value)
+                    or step.value <= 0
+                ):
+                    raise InvalidParameterError(
+                        "WCS tick spacing must be a finite positive quantity."
+                    )
+            for name in (number, frequency):
+                if name in changes:
+                    value = changes[name]
+                    if (
+                        isinstance(value, bool)
+                        or not isinstance(value, Integral)
+                        or value <= 0
+                    ):
+                        raise InvalidParameterError(
+                            "WCS tick counts and frequencies must be positive integers."
+                        )
+
+        self._ticks = _stage_live_value(self, "_ticks", {**config, **changes})
 
         return self
 

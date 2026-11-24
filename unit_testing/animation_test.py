@@ -4926,6 +4926,99 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertNotIn("y_tick_spacing", root._ticks)
         self.assertEqual(self.output.read_bytes(), b"existing")
 
+    def test_live_wcs_ticks_update_units_rules_format_and_minor_frequency(self):
+        from graphinglib.smart_figure import HAS_ASTROPY, SmartFigureWCS
+
+        if not HAS_ASTROPY:
+            self.skipTest("Astropy is required for WCSAxes")
+        from astropy import units as u
+        from astropy.wcs import WCS
+
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+        curve = Curve([1, 10], [1, 10])
+        sky = SmartFigureWCS(wcs, elements=[curve], x_lim=(1, 10), y_lim=(1, 10))
+        root = SmartFigure(2, 2, figure_style="plain")
+        root[:, 0] = sky
+        root[:, 1] = [Curve([0, 1], [0, 1])]
+        states = []
+
+        def update(frame):
+            axes = curve.handle.lines[0].axes
+            x, y = axes.coords
+            states.append(
+                (
+                    axes,
+                    x,
+                    y,
+                    x._formatter_locator,
+                    y._formatter_locator,
+                    y._ticks.get_display_minor_ticks(),
+                    y.get_minor_frequency(),
+                    axes.get_xlim(),
+                    axes.get_ylim(),
+                )
+            )
+            if frame == 0:
+                sky.set_ticks(
+                    x_ticks=[1 * u.deg, 180 * u.arcmin, 5 * u.deg],
+                    x_tick_formatter="d.dd",
+                    number_of_y_ticks=3,
+                    minor_y_tick_frequency=4,
+                )
+            elif frame == 1:
+                sky.set_ticks(x_tick_spacing=120 * u.arcmin)
+            elif frame == 2:
+                sky.set_ticks(reset=True)
+
+        root.save_animation(self.output, update, 4)
+        self.assertTrue(all(state[:3] == states[0][:3] for state in states))
+        self.assertTrue(all(state[7:] == states[0][7:] for state in states))
+        assert_allclose(states[1][3].values.to_value(u.deg), [1, 3, 5])
+        self.assertEqual(states[1][3].format, "d.dd")
+        self.assertEqual(states[1][4].number, 3)
+        self.assertEqual(states[1][5:7], (True, 4))
+        self.assertEqual(states[2][3].spacing.to_value(u.deg), 2)
+        self.assertIsNone(states[2][3].values)
+        self.assertIs(states[1][4], states[2][4])
+        self.assertEqual(states[3][3].number, states[0][3].number)
+        self.assertEqual(states[3][3].format, states[0][3].format)
+        self.assertEqual(states[3][5:7], states[0][5:7])
+
+    def test_failed_wcs_tick_edit_restores_both_coordinate_helpers(self):
+        from graphinglib.smart_figure import HAS_ASTROPY, SmartFigureWCS
+
+        if not HAS_ASTROPY:
+            self.skipTest("Astropy is required for WCSAxes")
+        from astropy import units as u
+        from astropy.wcs import WCS
+
+        wcs = WCS(naxis=2)
+        wcs.wcs.ctype = ["RA---TAN", "DEC--TAN"]
+        curve = Curve([1, 10], [1, 10])
+        sky = SmartFigureWCS(wcs, elements=[curve], figure_style="plain")
+        sky.set_ticks(number_of_x_ticks=4, x_tick_formatter="d.d")
+        captures = []
+        self.output.write_bytes(b"existing")
+
+        def update(frame):
+            x, y = curve.handle.lines[0].axes.coords
+            if frame:
+                sky.set_ticks(x_tick_spacing=2 * u.deg, y_tick_formatter="invalid")
+            else:
+                captures.extend((x, y, x._formatter_locator, y._formatter_locator))
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            sky.save_animation(self.output, update, 2)
+        x, y, old_x, old_y = captures
+        self.assertIs(x._formatter_locator, old_x)
+        self.assertIs(y._formatter_locator, old_y)
+        self.assertEqual(x._formatter_locator.number, 4)
+        self.assertEqual(
+            sky._ticks, {"number_of_x_ticks": 4, "x_tick_formatter": "d.d"}
+        )
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_raster_extent_and_origin_update_without_panning_view(self):
         heat = Heatmap([[0, 1], [0, 0]], origin_position="upper", show_color_bar=False)
         root = SmartFigure(

@@ -2110,6 +2110,10 @@ Use ``set_ticks(...)`` in a callback to change tick positions, spacing, and
 major tick labels on standard plots and twin axes. Tick updates use the
 frame's final scale and keep the view limits fixed. ``reset=True`` restores
 the defaults from the active scale before applying new specifications.
+On WCS plots, update world-coordinate tick positions or spacing with Astropy
+quantities. You can also change the approximate tick count, coordinate
+formatter, and minor tick frequency. Reset restores the projection's
+initial tick defaults.
 
 Use ``remove_axes``, ``remove_x_ticks`` or ``remove_y_ticks`` to hide and reveal
 decorations on direct subplots. These flags follow the same list rules and
