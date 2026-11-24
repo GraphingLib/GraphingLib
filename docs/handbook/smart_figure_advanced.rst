@@ -1987,10 +1987,11 @@ Live update support
        playback without an explicit range starts with a 0–1 scale.
    * - :class:`~graphinglib.Heatmap`
      - Image values on a fixed raster or mesh, opacity, and interpolation for
-       rasters. Rasters can change pixel dimensions within their initial
+       rasters. Rasters can change pixel dimensions, origin, and x and y
+       extents. Assigning ``None`` to a range restores that axis's initial
        extent. Scalar data can change colormap and explicit linear color limits,
        including the displayed colorbar.
-     - Mesh data shape, grid, extent, origin, aspect, scalar or RGB(A) mode,
+     - Mesh data shape and coordinates, aspect, scalar or RGB(A) mode,
        normalization type, and colorbar layout. Implicit color limits use the
        initial frame.
    * - :class:`~graphinglib.Text`
@@ -1999,9 +2000,11 @@ Live update support
        already-configured arrow on an Axes can change its target.
      - Coordinate system, highlight box styling, and whether to draw an arrow.
    * - :class:`~graphinglib.Hlines`, :class:`~graphinglib.Vlines`
-     - Line positions. Lines in data coordinates can change both sets of
-       endpoints.
-     - Count, styles, and the choice of axes-spanning or bounded lines.
+     - Line positions, colors, widths, and line styles. Vertical line
+       opacity can change. Bounded lines can change their count and
+       endpoints with compatible bounds and styles.
+     - Axes-spanning line count and whether lines span the axes or use
+       explicit bounds.
    * - :class:`~graphinglib.Point`
      - Position, including its label and displayed coordinates, marker size,
        edge width, and opacity.
@@ -2017,8 +2020,9 @@ Live update support
      - Whether fill and edge artists exist, edge color, and shape sampling
        resolution.
    * - :class:`~graphinglib.Table`
-     - Body cell text, text color, and cell border width and color.
-     - Row and column count, headers, cell background and layout.
+     - Body and header text, colors and alignment, cell borders, column
+       widths, absolute scaling, and placement.
+     - Row and column count and which header rows and columns exist.
    * - :class:`~graphinglib.VectorField`
      - Vector components and arrow color.
      - Grid, component shapes, scaling and arrow geometry.

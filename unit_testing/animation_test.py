@@ -1438,3 +1438,129 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertEqual(stream.density, 0.5)
         self.assertEqual(stream.color, "green")
         self.assertEqual(self.output.read_bytes(), b"existing")
+
+    def test_table_edits_headers_cell_colors_dimensions_and_placement(self):
+        from matplotlib.colors import to_rgba
+
+        from graphinglib import Table
+
+        table = Table(
+            [["1", "2"], ["3", "4"]],
+            row_labels=["a", "b"],
+            col_labels=["X", "Y"],
+            col_widths=[0.2, 0.3],
+            location="upper left",
+        )
+        root = SmartFigure(elements=[table], figure_style="plain")
+        seen = []
+
+        def update(i):
+            cells = table.handle.get_celld()
+            seen.append((table.handle, tuple(cells.values()), cells[1, 0].get_height()))
+            table.cell_text = [[f"Body {i}", "right"], ["bottom", "corner"]]
+            table.cell_colors = [["pink", "orange"], ["cyan", "yellow"]]
+            table.col_labels = [f"X {i}", "Y"]
+            table.col_colors = "red"
+            table.row_labels = ["Row A", f"Row {i}"]
+            table.row_colors = ["green", "blue"]
+            table.cell_align = "left"
+            table.row_align = "center"
+            table.col_align = "left"
+            table.scaling = (2.0, 3.0)
+            table.col_widths = [0.1, 0.25]
+            table.location = "lower right"
+
+        root.save_animation(self.output, update, 3)
+        self.assertTrue(all(observed[:2] == seen[0][:2] for observed in seen))
+        self.assertAlmostEqual(seen[1][2], 2 * seen[0][2])
+        self.assertEqual(seen[1][2], seen[2][2])
+        cells = table.handle.get_celld()
+        self.assertAlmostEqual(cells[1, 0].get_width(), 0.2)
+        self.assertAlmostEqual(cells[1, 1].get_width(), 0.5)
+        self.assertEqual(cells[1, 0].get_text().get_text(), "Body 2")
+        self.assertEqual(cells[2, -1].get_text().get_text(), "Row 2")
+        self.assertEqual(cells[0, 0].get_text().get_text(), "X 2")
+        assert_allclose(cells[1, 1].get_facecolor(), to_rgba("orange"))
+        assert_allclose(cells[0, 0].get_facecolor(), to_rgba("red"))
+        assert_allclose(cells[2, -1].get_facecolor(), to_rgba("blue"))
+        self.assertEqual(cells[1, 0].get_text().get_ha(), "left")
+        self.assertEqual(cells[0, 0].get_text().get_ha(), "left")
+        self.assertEqual(cells[1, -1].get_text().get_ha(), "center")
+        self.assertEqual(table.handle._loc, table.handle.codes["lower right"])
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 3)
+
+    def test_reference_line_styles_and_bounded_counts_animate(self):
+        from matplotlib.colors import to_rgba
+
+        from graphinglib import Hlines, Vlines
+
+        horizontal = Hlines([1, 2], x_min=0, x_max=2, colors="black")
+        vertical = Vlines([1, 2], colors="black", line_widths=2.0)
+        root = SmartFigure(
+            elements=[horizontal, vertical],
+            figure_style="plain",
+            x_lim=(0, 4),
+            y_lim=(0, 4),
+        )
+        seen = []
+
+        def update(i):
+            axes = next(axes for axes in plt.gcf().axes if axes.collections)
+            seen.append((axes.collections[0], tuple(axes.lines)))
+            horizontal.y = [1, 2, 3]
+            horizontal.x_max = 3
+            horizontal.colors = ["red", "green", "blue"]
+            horizontal.line_widths = [1.0, 2.0, 3.0]
+            horizontal.line_styles = ["--", "-", ":"]
+            vertical.x = [1 + 0.2 * i, 2 + 0.3 * i]
+            vertical.colors = ["navy", "orange"]
+            vertical.line_widths = [1.0, 2.0]
+            vertical.line_styles = ["-.", ":"]
+            vertical.alpha = 0.6
+
+        root.save_animation(self.output, update, 2)
+        self.assertEqual(seen[0], seen[1])
+        collection, lines = seen[-1]
+        self.assertEqual(len(collection.get_segments()), 3)
+        assert_allclose(
+            collection.get_colors(), [to_rgba(c) for c in ("red", "green", "blue")]
+        )
+        assert_allclose(collection.get_linewidths(), [1, 2, 3])
+        self.assertEqual([line.get_color() for line in lines], ["navy", "orange"])
+        self.assertEqual([line.get_linestyle() for line in lines], ["-.", ":"])
+        self.assertEqual([line.get_alpha() for line in lines], [0.6, 0.6])
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 2)
+
+    def test_raster_extent_and_origin_update_without_panning_view(self):
+        heat = Heatmap([[0, 1], [0, 0]], origin_position="upper", show_color_bar=False)
+        root = SmartFigure(
+            elements=[heat], figure_style="plain", x_lim=(-2, 6), y_lim=(-3, 6)
+        )
+        captures = []
+
+        def update(i):
+            (artist,) = [image for axes in plt.gcf().axes for image in axes.images]
+            captures.append(
+                (
+                    artist,
+                    tuple(artist.get_extent()),
+                    artist.origin,
+                    artist.axes.get_xlim(),
+                )
+            )
+            heat.x_axis_range = (1, 4) if i == 0 else None
+            heat.y_axis_range = (2, 5)
+            heat.origin_position = "lower" if i == 0 else "upper"
+            heat.image = np.eye(3 + i)
+
+        root.save_animation(self.output, update, 2)
+        self.assertIs(captures[0][0], captures[1][0])
+        self.assertEqual(captures[1][1:], ((1, 4, 2, 5), "lower", (-2, 6)))
+        artist = captures[-1][0]
+        self.assertEqual(tuple(artist.get_extent()), (*captures[0][1][:2], 2, 5))
+        self.assertEqual(artist.origin, "upper")
+        self.assertEqual(artist.axes.get_xlim(), (-2, 6))
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 2)

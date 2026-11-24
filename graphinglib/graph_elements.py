@@ -16,8 +16,10 @@ from numpy.typing import ArrayLike
 
 from ._animation import (
     _DRAW_SESSION,
+    _AnimationSession,
     _ArtistEdit,
     _bound_session,
+    _combine_edits,
     _edit,
     _reject_live_update,
     _stage_live_value,
@@ -98,6 +100,53 @@ class Plottable(Protocol):
         pass
 
 
+def _bind_reference_styles(
+    element: Plottable, artists: list[Line2D | LineCollection]
+) -> None:
+    session = _DRAW_SESSION.get()
+    assert session is not None
+    fields = (
+        ("_colors", "color"),
+        ("_line_widths", "linewidth"),
+        ("_line_styles", "linestyle"),
+        ("_alpha", "alpha"),
+    )
+    if isinstance(artists[0], LineCollection):
+        collection = artists[0]
+        for prop, field in fields:
+            if prop != "_line_styles":
+                session.bind_property(element, prop, collection, field)
+
+        def prepare_dashes(value: Any) -> _ArtistEdit:
+            # The public getter returns width-scaled dashes. Restore the unscaled pattern.
+            original = cast(Any, collection)._us_linestyles
+            return _edit(collection.set_linestyle, original, value)
+
+        session.bind_update(element, "_line_styles", prepare_dashes)
+        return
+
+    for prop, field in fields:
+
+        def prepare(value: Any, field=field) -> _ArtistEdit:
+            values = value if isinstance(value, list) else [value] * len(artists)
+            if len(values) != len(artists):
+                raise InvalidParameterError(
+                    "Animated reference-line styles must match the line count."
+                )
+            return _combine_edits(
+                [
+                    _edit(
+                        getattr(artist, f"set_{field}"),
+                        getattr(artist, f"get_{field}")(),
+                        item,
+                    )
+                    for artist, item in zip(artists, values)
+                ]
+            )
+
+        session.bind_update(element, prop, prepare)
+
+
 def _bind_reference_lines(
     element: Plottable,
     artists: list[Line2D | LineCollection],
@@ -108,11 +157,10 @@ def _bind_reference_lines(
     session = _DRAW_SESSION.get()
     if session is None:
         return
+    _bind_reference_styles(element, artists)
     position, start, end = names
     first = artists[0]
     if isinstance(first, LineCollection):
-        old_paths = first.get_paths()
-        count = len(old_paths)
 
         def prepare(value: Any) -> _ArtistEdit:
             before = [path.vertices for path in first.get_paths()]
@@ -120,9 +168,9 @@ def _bind_reference_lines(
             def apply() -> None:
                 positions = np.atleast_1d(getattr(element, position))
                 low, high = getattr(element, start), getattr(element, end)
-                if low is None or high is None or len(positions) != count:
+                if low is None or high is None:
                     raise InvalidParameterError(
-                        "An animated reference line collection must retain its count and both bounds."
+                        "An animated bounded reference line must retain both bounds."
                     )
                 low, high = (
                     np.broadcast_to(low, positions.shape),
@@ -339,10 +387,7 @@ class Hlines(Plottable):
 
     @colors.setter
     def colors(self, colors: Styled[list[str] | str]) -> None:
-        _reject_live_update(
-            self, "Configure reference-line labels and styles before animating."
-        )
-        self._colors = colors
+        self._colors = _stage_live_value(self, "_colors", colors)
         if not self._in_init:
             self._validate_state()
 
@@ -352,10 +397,7 @@ class Hlines(Plottable):
 
     @line_widths.setter
     def line_widths(self, line_widths: Styled[list[float] | float]) -> None:
-        _reject_live_update(
-            self, "Configure reference-line labels and styles before animating."
-        )
-        self._line_widths = line_widths
+        self._line_widths = _stage_live_value(self, "_line_widths", line_widths)
         if not self._in_init:
             self._validate_state()
 
@@ -365,10 +407,7 @@ class Hlines(Plottable):
 
     @line_styles.setter
     def line_styles(self, line_styles: Styled[list[str] | str]) -> None:
-        _reject_live_update(
-            self, "Configure reference-line labels and styles before animating."
-        )
-        self._line_styles = line_styles
+        self._line_styles = _stage_live_value(self, "_line_styles", line_styles)
         if not self._in_init:
             self._validate_state()
 
@@ -646,10 +685,7 @@ class Vlines(Plottable):
 
     @colors.setter
     def colors(self, colors: Styled[list[str] | str]) -> None:
-        _reject_live_update(
-            self, "Configure reference-line labels and styles before animating."
-        )
-        self._colors = colors
+        self._colors = _stage_live_value(self, "_colors", colors)
         if not self._in_init:
             self._validate_state()
 
@@ -659,10 +695,7 @@ class Vlines(Plottable):
 
     @line_widths.setter
     def line_widths(self, line_widths: Styled[list[float] | float]) -> None:
-        _reject_live_update(
-            self, "Configure reference-line labels and styles before animating."
-        )
-        self._line_widths = line_widths
+        self._line_widths = _stage_live_value(self, "_line_widths", line_widths)
         if not self._in_init:
             self._validate_state()
 
@@ -672,10 +705,7 @@ class Vlines(Plottable):
 
     @line_styles.setter
     def line_styles(self, line_styles: Styled[list[str] | str]) -> None:
-        _reject_live_update(
-            self, "Configure reference-line labels and styles before animating."
-        )
-        self._line_styles = line_styles
+        self._line_styles = _stage_live_value(self, "_line_styles", line_styles)
         if not self._in_init:
             self._validate_state()
 
@@ -685,8 +715,7 @@ class Vlines(Plottable):
 
     @alpha.setter
     def alpha(self, alpha: float | Inherit) -> None:
-        _reject_live_update(self, "Configure reference-line styles before animating.")
-        self._alpha = alpha
+        self._alpha = _stage_live_value(self, "_alpha", alpha)
 
     def copy(self) -> Self:
         """
@@ -1869,10 +1898,7 @@ class Table(Plottable):
 
     @cell_colors.setter
     def cell_colors(self, cell_colors: Styled[ArrayLike | str]) -> None:
-        _reject_live_update(
-            self, "Configure table dimensions, headers and layout before animating."
-        )
-        self._cell_colors = cell_colors
+        self._cell_colors = _stage_live_value(self, "_cell_colors", cell_colors)
 
     @property
     def cell_align(self) -> Styled[str]:
@@ -1880,10 +1906,7 @@ class Table(Plottable):
 
     @cell_align.setter
     def cell_align(self, cell_align: Styled[str]) -> None:
-        _reject_live_update(
-            self, "Configure table dimensions, headers and layout before animating."
-        )
-        self._cell_align = cell_align
+        self._cell_align = _stage_live_value(self, "_cell_align", cell_align)
 
     @property
     def col_labels(self) -> list[str] | None:
@@ -1891,10 +1914,7 @@ class Table(Plottable):
 
     @col_labels.setter
     def col_labels(self, col_labels: list[str] | None) -> None:
-        _reject_live_update(
-            self, "Configure table dimensions, headers and layout before animating."
-        )
-        self._col_labels = col_labels
+        self._col_labels = _stage_live_value(self, "_col_labels", col_labels)
 
     @property
     def col_widths(self) -> list[float] | None:
@@ -1902,10 +1922,7 @@ class Table(Plottable):
 
     @col_widths.setter
     def col_widths(self, col_widths: list[float] | None) -> None:
-        _reject_live_update(
-            self, "Configure table dimensions, headers and layout before animating."
-        )
-        self._col_widths = col_widths
+        self._col_widths = _stage_live_value(self, "_col_widths", col_widths)
 
     @property
     def col_align(self) -> Styled[str]:
@@ -1913,10 +1930,7 @@ class Table(Plottable):
 
     @col_align.setter
     def col_align(self, col_align: Styled[str]) -> None:
-        _reject_live_update(
-            self, "Configure table dimensions, headers and layout before animating."
-        )
-        self._col_align = col_align
+        self._col_align = _stage_live_value(self, "_col_align", col_align)
 
     @property
     def col_colors(self) -> Styled[ArrayLike | str]:
@@ -1924,10 +1938,7 @@ class Table(Plottable):
 
     @col_colors.setter
     def col_colors(self, col_colors: Styled[ArrayLike | str]) -> None:
-        _reject_live_update(
-            self, "Configure table dimensions, headers and layout before animating."
-        )
-        self._col_colors = col_colors
+        self._col_colors = _stage_live_value(self, "_col_colors", col_colors)
 
     @property
     def row_labels(self) -> list[str] | None:
@@ -1935,10 +1946,7 @@ class Table(Plottable):
 
     @row_labels.setter
     def row_labels(self, row_labels: list[str] | None) -> None:
-        _reject_live_update(
-            self, "Configure table dimensions, headers and layout before animating."
-        )
-        self._row_labels = row_labels
+        self._row_labels = _stage_live_value(self, "_row_labels", row_labels)
 
     @property
     def row_align(self) -> Styled[str]:
@@ -1946,10 +1954,7 @@ class Table(Plottable):
 
     @row_align.setter
     def row_align(self, row_align: Styled[str]) -> None:
-        _reject_live_update(
-            self, "Configure table dimensions, headers and layout before animating."
-        )
-        self._row_align = row_align
+        self._row_align = _stage_live_value(self, "_row_align", row_align)
 
     @property
     def row_colors(self) -> Styled[ArrayLike | str]:
@@ -1957,10 +1962,7 @@ class Table(Plottable):
 
     @row_colors.setter
     def row_colors(self, row_colors: Styled[ArrayLike | str]) -> None:
-        _reject_live_update(
-            self, "Configure table dimensions, headers and layout before animating."
-        )
-        self._row_colors = row_colors
+        self._row_colors = _stage_live_value(self, "_row_colors", row_colors)
 
     @property
     def edge_width(self) -> Styled[float]:
@@ -2001,10 +2003,7 @@ class Table(Plottable):
 
     @scaling.setter
     def scaling(self, scaling: tuple[float, float]) -> None:
-        _reject_live_update(
-            self, "Configure table dimensions, headers and layout before animating."
-        )
-        self._scaling = scaling
+        self._scaling = _stage_live_value(self, "_scaling", scaling)
 
     @property
     def location(self) -> str:
@@ -2012,10 +2011,7 @@ class Table(Plottable):
 
     @location.setter
     def location(self, location: str) -> None:
-        _reject_live_update(
-            self, "Configure table dimensions, headers and layout before animating."
-        )
-        self._location = location
+        self._location = _stage_live_value(self, "_location", location)
 
     def copy(self) -> Self:
         """
@@ -2061,6 +2057,13 @@ class Table(Plottable):
             zorder=z_order,
             **params,
         )
+        # Capture the unscaled height for absolute frame-to-frame size assignments.
+        session = _DRAW_SESSION.get()
+        heights = (
+            {key: cell.get_height() for key, cell in self.handle.get_celld().items()}
+            if session is not None
+            else {}
+        )
         self.handle.auto_set_font_size(False)
         self.handle.scale(self._scaling[0], self._scaling[1])
         for (i, j), cell in self.handle.get_celld().items():
@@ -2068,43 +2071,151 @@ class Table(Plottable):
             cell.set_edgecolor(resolve_or(self._edge_color, "black"))
             cell.set_linewidth(resolve_or(self._edge_width, 1))
 
-        session = _DRAW_SESSION.get()
         if session is not None:
-            cells = self.handle.get_celld()
-            shape = len(self._cell_text), len(self._cell_text[0])
+            self._bind_table(session, heights)
 
-            def prepare(text: Sequence[Sequence[str]]) -> _ArtistEdit:
-                rows = tuple(tuple(row) for row in text)
-                if len(rows) != shape[0] or any(len(row) != shape[1] for row in rows):
+    def _bind_table(
+        self, session: _AnimationSession, base_heights: dict[tuple[int, int], float]
+    ) -> None:
+        table = self.handle
+        cells = table.get_celld()
+        rows, columns = len(self._cell_text), len(self._cell_text[0])
+        row_offset = int(self._col_labels is not None)
+        body = [cells[i + row_offset, j] for i in range(rows) for j in range(columns)]
+        row_headers = (
+            [cells[i + row_offset, -1] for i in range(rows)]
+            if self._row_labels is not None
+            else []
+        )
+        col_headers = (
+            [cells[0, j] for j in range(columns)]
+            if self._col_labels is not None
+            else []
+        )
+
+        def bind_values(prop, targets, field, flatten):
+            def prepare(value) -> _ArtistEdit:
+                values = flatten(value)
+                if len(values) != len(targets):
                     raise InvalidParameterError(
-                        "An animated Table must retain its original row and column count."
+                        f"Animated Table {prop.removeprefix('_')} must match the initial cells."
                     )
-                edits = [
-                    _edit(
-                        cells[row_index + row_offset, col_index].get_text().set_text,
-                        cells[row_index + row_offset, col_index].get_text().get_text(),
-                        value,
+                return _combine_edits(
+                    [
+                        _edit(
+                            getattr(target, f"set_{field}"),
+                            getattr(target, f"get_{field}")(),
+                            item,
+                        )
+                        for target, item in zip(targets, values)
+                    ]
+                )
+
+            session.bind_update(self, prop, prepare)
+
+        def body_values(value):
+            grid = tuple(tuple(line) for line in value)
+            if len(grid) != rows or any(len(line) != columns for line in grid):
+                raise InvalidParameterError(
+                    "An animated Table must retain its original row and column count."
+                )
+            return [entry for row in grid for entry in row]
+
+        bind_values(
+            "_cell_text", [cell.get_text() for cell in body], "text", body_values
+        )
+        bind_values(
+            "_cell_colors",
+            body,
+            "facecolor",
+            lambda value: (
+                [value] * len(body) if isinstance(value, str) else body_values(value)
+            ),
+        )
+        for prefix, headers in (("row", row_headers), ("col", col_headers)):
+            if not headers:
+                continue
+
+            def labels(value):
+                if value is None:
+                    raise InvalidParameterError(
+                        "Animated Tables must retain their configured headers."
                     )
-                    for row_index, row in enumerate(rows)
-                    for col_index, value in enumerate(row)
-                ]
+                return list(value)
 
-                def apply() -> None:
-                    for edit in edits:
-                        edit.apply()
+            header_count = len(headers)
 
-                def undo() -> None:
-                    for edit in reversed(edits):
-                        edit.undo()
+            def colors(value, count=header_count):
+                return [value] * count if isinstance(value, str) else list(value)
 
-                return _ArtistEdit(apply, undo)
+            bind_values(
+                f"_{prefix}_labels",
+                [cell.get_text() for cell in headers],
+                "text",
+                labels,
+            )
+            bind_values(f"_{prefix}_colors", headers, "facecolor", colors)
+            for cell in headers:
+                session.bind_property(
+                    self, f"_{prefix}_align", cell.get_text(), "horizontalalignment"
+                )
 
-            row_offset = int(self._col_labels is not None)
-            session.bind_update(self, "_cell_text", prepare)
-            for cell in cells.values():
-                session.bind_property(self, "_edge_color", cell, "edgecolor")
-                session.bind_property(self, "_edge_width", cell, "linewidth")
-                session.bind_property(self, "_text_color", cell.get_text(), "color")
+        for cell in body:
+            session.bind_property(
+                self, "_cell_align", cell.get_text(), "horizontalalignment"
+            )
+        for cell in cells.values():
+            session.bind_property(self, "_edge_color", cell, "edgecolor")
+            session.bind_property(self, "_edge_width", cell, "linewidth")
+            session.bind_property(self, "_text_color", cell.get_text(), "color")
+
+        def prepare_dimensions() -> _ArtistEdit:
+            scale = np.asarray(self._scaling, dtype=float)
+            raw_widths = self._col_widths
+            widths = np.asarray(
+                raw_widths if raw_widths is not None else [1 / columns] * columns,
+                dtype=float,
+            )
+            if (
+                scale.shape != (2,)
+                or widths.shape != (columns,)
+                or not (
+                    np.isfinite(scale).all()
+                    and np.isfinite(widths).all()
+                    and (scale > 0).all()
+                    and (widths > 0).all()
+                )
+            ):
+                raise InvalidParameterError(
+                    "Animated Table widths and scales must be finite, positive, and match the table."
+                )
+            x_scale, y_scale = scale
+            edits = [
+                _edit(cell.set_height, cell.get_height(), base_heights[key] * y_scale)
+                for key, cell in cells.items()
+            ]
+            edits.extend(
+                _edit(cell.set_width, cell.get_width(), widths[col] * x_scale)
+                for (_, col), cell in cells.items()
+                if col >= 0
+            )
+            return _combine_edits(edits)
+
+        session.bind_derived(self, ("_scaling", "_col_widths"), prepare_dimensions)
+
+        def prepare_location(value: str) -> _ArtistEdit:
+            if value not in table.codes:
+                raise InvalidParameterError(f"Unknown Table location {value!r}.")
+            # Matplotlib uses this placement code at draw time and offers no setter.
+            backend_table = cast(Any, table)
+
+            def set_location(code: int) -> None:
+                backend_table._loc = code
+                table.stale = True
+
+            return _edit(set_location, backend_table._loc, table.codes[value])
+
+        session.bind_update(self, "_location", prepare_location)
 
 
 class PlottableAxMethod(Plottable):

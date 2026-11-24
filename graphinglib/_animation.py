@@ -43,6 +43,18 @@ def _edit(setter: Callable[[Any], None], old: Any, new: Any) -> _ArtistEdit:
     return _ArtistEdit(lambda: setter(new), lambda: setter(old))
 
 
+def _combine_edits(edits: list[_ArtistEdit]) -> _ArtistEdit:
+    def apply() -> None:
+        for edit in edits:
+            edit.apply()
+
+    def undo() -> None:
+        for edit in reversed(edits):
+            edit.undo()
+
+    return _ArtistEdit(apply, undo)
+
+
 @dataclass
 class _ErrorArtists:
     segments: LineCollection

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Protocol, cast, runtime_checkable
+from typing import Any, Callable, Literal, Optional, Protocol, cast, runtime_checkable
 
 import contourpy
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ import numpy as np
 from matplotlib.collections import LineCollection
 from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba
 from matplotlib.figure import Figure
-from matplotlib.image import imread
+from matplotlib.image import AxesImage, imread
 from matplotlib.patches import FancyArrowPatch
 from matplotlib.path import Path as MplPath
 from matplotlib.streamplot import StreamplotSet
@@ -544,8 +544,7 @@ class Heatmap(Plottable2D):
 
     @x_axis_range.setter
     def x_axis_range(self, x_axis_range: Optional[tuple[float, float]]) -> None:
-        self._check_animation_geometry()
-        self._x_axis_range = x_axis_range
+        self._x_axis_range = _stage_live_value(self, "_x_axis_range", x_axis_range)
 
     @property
     def y_axis_range(self) -> Optional[tuple[float, float]]:
@@ -553,8 +552,7 @@ class Heatmap(Plottable2D):
 
     @y_axis_range.setter
     def y_axis_range(self, y_axis_range: Optional[tuple[float, float]]) -> None:
-        self._check_animation_geometry()
-        self._y_axis_range = y_axis_range
+        self._y_axis_range = _stage_live_value(self, "_y_axis_range", y_axis_range)
 
     @property
     def x_mesh(self) -> Optional[ArrayLike]:
@@ -633,10 +631,7 @@ class Heatmap(Plottable2D):
 
     @origin_position.setter
     def origin_position(self, origin_position: Styled[str]) -> None:
-        _reject_live_update(
-            self, "Configure the Heatmap aspect and origin before animating."
-        )
-        self._origin_position = origin_position
+        self._origin_position = _stage_live_value(self, "_origin_position", origin_position)
 
     @property
     def interpolation(self) -> str:
@@ -783,8 +778,53 @@ class Heatmap(Plottable2D):
 
                 if self._norm is None or type(self._norm) is Normalize:
                     session.bind_update(self, "_color_map_range", prepare_range)
-            if not use_pcolormesh:
+            if isinstance(image, AxesImage):
                 session.bind_property(self, "_interpolation", image, "interpolation")
+                initial_extent = tuple(image.get_extent())
+
+                def prepare_extent() -> _ArtistEdit:
+                    xr, yr = self._x_axis_range, self._y_axis_range
+                    for limits in (xr, yr):
+                        if limits is not None and (
+                            len(limits) != 2
+                            or not np.isfinite(limits).all()
+                            or limits[0] == limits[1]
+                        ):
+                            raise InvalidParameterError(
+                                "Animated raster extents must have distinct finite endpoints."
+                            )
+                    next_extent = (
+                        *(initial_extent[:2] if xr is None else xr),
+                        *(initial_extent[2:] if yr is None else yr),
+                    )
+                    before = tuple(image.get_extent())
+                    data_limits = axes.dataLim.get_points().copy()
+
+                    def apply() -> None:
+                        image.set_extent(next_extent)
+
+                    def undo() -> None:
+                        image.set_extent(before)
+                        axes.dataLim.set_points(data_limits)
+
+                    return _ArtistEdit(apply, undo)
+
+                def prepare_origin(value: str) -> _ArtistEdit:
+                    if value not in ("lower", "upper"):
+                        raise InvalidParameterError(
+                            "Heatmap origin_position must be 'lower' or 'upper'."
+                        )
+
+                    def set_origin(origin: Literal["lower", "upper"]) -> None:
+                        image.origin = origin
+                        image.stale = True
+
+                    return _edit(set_origin, image.origin, value)
+
+                session.bind_derived(
+                    self, ("_x_axis_range", "_y_axis_range"), prepare_extent
+                )
+                session.bind_update(self, "_origin_position", prepare_origin)
 
 
 @dataclass
