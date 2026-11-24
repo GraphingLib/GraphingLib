@@ -50,7 +50,6 @@ class _PointArtists:
     points: Line2D | PathCollection
     x_error: _ErrorArtists | None
     y_error: _ErrorArtists | None
-    fixed_count: int | None
     bands: "_CurveBands | None" = None
 
 
@@ -139,7 +138,9 @@ class _AnimationSession:
         self._artists: dict[int, list[_Binding]] = {}
         self._properties: dict[tuple[int, str], list[Callable[[Any], _ArtistEdit]]] = {}
         self._updates: dict[tuple[int, str], list[_ArtistEdit]] = {}
-        self._point_dependents: dict[int, dict[int, Callable[[], _ArtistEdit]]] = {}
+        self._dependents: dict[
+            tuple[int, str], dict[int, Callable[[], _ArtistEdit]]
+        ] = {}
         self._dirty_dependents: dict[int, Callable[[], _ArtistEdit]] = {}
         self._rollback: dict[tuple[int, str], Callable[[], None]] = {}
         self._cleanup: list[Callable[[], None]] = []
@@ -179,8 +180,8 @@ class _AnimationSession:
     def queue_property(
         self, element: object, name: str, value: Any, restore: Callable[[], None]
     ) -> None:
-        prepares = self._properties.get((id(element), name))
-        if not prepares:
+        prepares = self._properties.get((id(element), name), ())
+        if not prepares and (id(element), name) not in self._dependents:
             raise UnsupportedFeatureError(
                 f"{type(element).__name__}.{name.removeprefix('_')} cannot change in this animation."
             )
@@ -189,6 +190,17 @@ class _AnimationSession:
                 "Use an explicit style value during animation."
             )
         self._stage(element, name, [prepare(value) for prepare in prepares], restore)
+
+    def bind_derived(
+        self,
+        element: object,
+        properties: tuple[str, ...],
+        artist: Artist,
+        prepare: Callable[[], _ArtistEdit],
+    ) -> None:
+        self.mark_present(element)
+        for name in properties:
+            self._dependents.setdefault((id(element), name), {})[id(artist)] = prepare
 
     def bind_point_dependent(
         self,
@@ -200,8 +212,7 @@ class _AnimationSession:
             return _fill_edit(artist, *coordinates())
 
         for element in elements:
-            self.mark_present(element)
-            self._point_dependents.setdefault(id(element), {})[id(artist)] = prepare
+            self.bind_derived(element, ("point_data",), artist, prepare)
 
     def block_curve_updates(
         self,
@@ -233,13 +244,7 @@ class _AnimationSession:
     def bind_scatter(
         self, scatter: object, points: PathCollection, errors: ErrorbarContainer | None
     ) -> None:
-        # A scalar or uniform marker appearance broadcasts to any number of offsets.
-        # Per-point color assignments need a matching update contract before resizing.
-        per_point_colors = (
-            len(points.get_facecolor()) > 1 or len(points.get_edgecolor()) > 1
-        )
-        count = len(np.asarray(points.get_offsets())) if per_point_colors else None
-        self._bind_points(scatter, points, errors, fixed_count=count)
+        self._bind_points(scatter, points, errors)
 
     def _bind_points(
         self,
@@ -247,12 +252,11 @@ class _AnimationSession:
         points: Line2D | PathCollection,
         handle: ErrorbarContainer | None,
         *,
-        fixed_count: int | None = None,
         bands: _CurveBands | None = None,
     ) -> None:
         if handle is None:
             self._artists.setdefault(id(element), []).append(
-                _PointArtists(points, None, None, fixed_count, bands)
+                _PointArtists(points, None, None, bands)
             )
             return
         _, caps, segments = handle.lines
@@ -268,7 +272,7 @@ class _AnimationSession:
         x_error = errors[0] if handle.has_xerr else None
         y_error = errors[-1] if handle.has_yerr else None
         self._artists.setdefault(id(element), []).append(
-            _PointArtists(points, x_error, y_error, fixed_count, bands)
+            _PointArtists(points, x_error, y_error, bands)
         )
 
     def bind_heatmap(
@@ -295,7 +299,6 @@ class _AnimationSession:
         restore: Callable[[], None],
     ) -> None:
         bindings = self._artists.get(id(element), ())
-        dependents = self._point_dependents.get(id(element))
         if x.dtype.kind not in "biuf" or y.dtype.kind not in "biuf":
             raise InvalidParameterError(
                 "Animated plot coordinates must be real numeric values."
@@ -309,10 +312,6 @@ class _AnimationSession:
                     binding
                     if isinstance(binding, str)
                     else "This plot has an unsupported errorbar layout."
-                )
-            if binding.fixed_count is not None and x.size != binding.fixed_count:
-                raise InvalidParameterError(
-                    "A Scatter with per-point colors must keep its original point count."
                 )
             if (binding.x_error is None) != (horizontal is None) or (
                 binding.y_error is None
@@ -343,9 +342,6 @@ class _AnimationSession:
                     self._error_update(binding.y_error, y, x, vertical, is_x=False)
                 )
         self._stage(element, "point_data", updates, restore)
-        if dependents:
-            self.remember(element, "point_data", restore)
-            self._dirty_dependents.update(dependents)
 
     @staticmethod
     def _error_update(
@@ -432,9 +428,13 @@ class _AnimationSession:
         updates: list[_ArtistEdit],
         restore: Callable[[], None],
     ) -> None:
+        key = id(element), name
         if updates:
-            key = id(element), name
             self._updates[key] = updates
+        dependents = self._dependents.get(key)
+        if dependents:
+            self._dirty_dependents.update(dependents)
+        if updates or dependents:
             self.remember(element, name, restore)
 
     def draw_frame(self, update: Callable[[int], object], index: int) -> None:
@@ -442,7 +442,7 @@ class _AnimationSession:
         applied = []
         try:
             update(index)
-            # Derive each fill once from both final frame inputs, before mutating artists.
+            # Derive dependent artist edits from the final frame inputs.
             dependent_edits = [prepare() for prepare in self._dirty_dependents.values()]
             for updates in chain(self._updates.values(), (dependent_edits,)):
                 for edit in updates:
@@ -476,7 +476,7 @@ class _AnimationSession:
     def clear(self) -> None:
         self._artists.clear()
         self._properties.clear()
-        self._point_dependents.clear()
+        self._dependents.clear()
         self._dirty_dependents.clear()
         for callback in reversed(self._cleanup):
             callback()

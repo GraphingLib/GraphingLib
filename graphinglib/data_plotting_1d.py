@@ -7,8 +7,11 @@ from typing import Any, Callable, Optional, Protocol, cast, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba
-from matplotlib.container import BarContainer
+from matplotlib.cm import ScalarMappable
+from matplotlib.collections import PathCollection
+from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba, to_rgba_array
+from matplotlib.container import BarContainer, ErrorbarContainer
+from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
 from pyperclip import copy as copy_to_clipboard
@@ -17,6 +20,7 @@ from scipy.interpolate import interp1d
 
 from ._animation import (
     _DRAW_SESSION,
+    _AnimationSession,
     _ArtistEdit,
     _bound_session,
     _CurveBands,
@@ -2300,7 +2304,8 @@ class Scatter(Plottable1D, MathematicalObject):
         Errors can be scalars, per-point arrays, or lower/upper arrays.
         Omitted errors keep their current values. Pass None to clear an error
         direction outside animation. While animating, errorbar directions
-        remain fixed. Point counts may vary with uniform marker colors.
+        remain fixed. When the count changes, assign any per-point colors
+        for the new count in the same callback.
         """
         _set_point_data(self, x_data, y_data, x_error, y_error)
         return self
@@ -2330,11 +2335,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @face_color.setter
     def face_color(self, face_color: Styled[str | ArrayLike | None]) -> None:
-        _reject_live_update(
-            self,
-            "Configure Scatter markers, colors, colorbars and labels before animating.",
-        )
-        self._face_color = face_color
+        self._face_color = _stage_live_value(self, "_face_color", face_color)
 
     @property
     def edge_color(self) -> Styled[str | ArrayLike | None]:
@@ -2342,11 +2343,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @edge_color.setter
     def edge_color(self, edge_color: Styled[str | ArrayLike | None]) -> None:
-        _reject_live_update(
-            self,
-            "Configure Scatter markers, colors, colorbars and labels before animating.",
-        )
-        self._edge_color = edge_color
+        self._edge_color = _stage_live_value(self, "_edge_color", edge_color)
 
     @property
     def color_map(self) -> Styled[str | Colormap]:
@@ -2354,11 +2351,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @color_map.setter
     def color_map(self, color_map: str | Colormap) -> None:
-        _reject_live_update(
-            self,
-            "Configure Scatter markers, colors, colorbars and labels before animating.",
-        )
-        self._color_map = color_map
+        self._color_map = _stage_live_value(self, "_color_map", color_map)
 
     @property
     def color_map_range(self) -> tuple[float, float] | None:
@@ -2366,11 +2359,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @color_map_range.setter
     def color_map_range(self, color_map_range: tuple[float, float] | None) -> None:
-        _reject_live_update(
-            self,
-            "Configure Scatter markers, colors, colorbars and labels before animating.",
-        )
-        self._color_map_range = color_map_range
+        self._color_map_range = _stage_live_value(self, "_color_map_range", color_map_range)
 
     @property
     def show_color_bar(self) -> Styled[bool]:
@@ -2406,11 +2395,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @marker_style.setter
     def marker_style(self, marker_style: str) -> None:
-        _reject_live_update(
-            self,
-            "Configure Scatter markers, colors, colorbars and labels before animating.",
-        )
-        self._marker_style = marker_style
+        self._marker_style = _stage_live_value(self, "_marker_style", marker_style)
 
     @property
     def alpha(self) -> float | Inherit:
@@ -2921,6 +2906,7 @@ class Scatter(Plottable1D, MathematicalObject):
         **color_bar_params:
             Additional keyword arguments are passed to ``plt.colorbar`` call.
         """
+        _reject_live_update(self, "Configure the Scatter colorbar layout before animating.")
         self._color_bar_params = color_bar_params
         if label is not None:
             self._color_bar_params["label"] = label
@@ -3205,6 +3191,235 @@ class Scatter(Plottable1D, MathematicalObject):
             copy_to_clipboard(formatted_points)
         return formatted_points
 
+    @staticmethod
+    def _color_intensities(value: Any) -> np.ndarray | None:
+        if not isinstance(value, (list, tuple, np.ndarray)):
+            return None
+        # Numerical tuples in Matplotlib's RGB(A) range are single colors.
+        if isinstance(value, tuple) and is_color_like(value):
+            return None
+        try:
+            data = np.asarray(value)
+        except ValueError:
+            # Named colors and RGB tuples may be mixed in a literal color sequence.
+            return None
+        if data.ndim == 1 and data.size and data.dtype.kind in "biuf":
+            return data
+        return None
+
+    @staticmethod
+    def _prepare_scatter_color(
+        value: Any,
+        count: int,
+        cmap: Colormap,
+        limits: tuple[float, float],
+    ) -> np.ndarray:
+        intensities = Scatter._color_intensities(value)
+        try:
+            if intensities is not None:
+                rgba = cmap(Normalize(*limits)(intensities))
+            else:
+                rgba = to_rgba_array("none" if value is None else value)
+        except (ValueError, TypeError) as exc:
+            raise InvalidParameterError(
+                f"Invalid Scatter color specification ({exc})."
+            ) from exc
+        if len(rgba) not in (0, 1, count):
+            raise InvalidParameterError(
+                f"Scatter per-point colors must match the final point count ({count}); got {len(rgba)}."
+            )
+        return rgba
+
+    def _bind_live_colors(
+        self,
+        session: _AnimationSession,
+        collection: PathCollection,
+        marker: MarkerStyle,
+        colorbars: dict[str, ScalarMappable],
+        cycle_color: str,
+        errorbars: ErrorbarContainer | None,
+    ) -> None:
+        initial_face, initial_edge = self._face_color, self._edge_color
+        face_cycle = cycle_color
+        if (
+            is_inherit(initial_face)
+            or isinstance(initial_face, str)
+            and initial_face == "color cycle"
+        ):
+            drawn_face = collection.get_facecolor()
+            if len(drawn_face) == 1:
+                face_cycle = drawn_face
+        initial_marker_style = resolve_or(
+            self._marker_style, plt.rcParams["scatter.marker"]
+        )
+        active_marker_style = initial_marker_style
+        initial_color_range = (
+            tuple(self._color_map_range) if self._color_map_range is not None else None
+        )
+        error_follows_marker = (
+            errorbars is not None and self._errorbars_color == "same as scatter"
+        )
+        contrast_color = get_contrasting_shade(plt.rcParams["axes.facecolor"])
+        initial_cmap = plt.get_cmap(
+            resolve_or(self._color_map, plt.rcParams["image.cmap"])
+        )
+
+        def initial_limits(name: str, value: Any) -> tuple[float, float]:
+            if name in colorbars:
+                lo, hi = colorbars[name].get_clim()
+                if lo is not None and hi is not None:
+                    return lo, hi
+            if initial_color_range is not None:
+                return min(initial_color_range), max(initial_color_range)
+            values = self._color_intensities(value)
+            if values is not None:
+                finite = values[np.isfinite(values)]
+                if finite.size:
+                    return float(finite.min()), float(finite.max())
+            return 0.0, 1.0
+
+        face_limits = initial_limits("face", initial_face)
+        edge_limits = initial_limits("edge", initial_edge)
+
+        def prepare() -> _ArtistEdit:
+            face = resolve_or(self._face_color, initial_face)
+            edge = resolve_or(self._edge_color, initial_edge)
+            if face is None and edge is None:
+                raise IncompatibleArgumentsError(
+                    "Set a face or edge color for the animated Scatter."
+                )
+            if is_inherit(face) or isinstance(face, str) and face == "color cycle":
+                face = face_cycle
+            if is_inherit(edge) or isinstance(edge, str) and edge == "color cycle":
+                edge = cycle_color
+
+            cmap = plt.get_cmap(resolve_or(self._color_map, initial_cmap))
+            explicit = self._color_map_range
+            if explicit is None or tuple(explicit) == initial_color_range:
+                face_range, edge_range = face_limits, edge_limits
+            else:
+                if (
+                    len(explicit) != 2
+                    or not np.isfinite(explicit).all()
+                    or explicit[0] == explicit[1]
+                ):
+                    raise InvalidParameterError(
+                        "Scatter color_map_range must contain two distinct finite numbers."
+                    )
+                face_range = edge_range = min(explicit), max(explicit)
+            count = self._x_data.size
+            face_rgba = self._prepare_scatter_color(face, count, cmap, face_range)
+            edge_rgba = (
+                face_rgba
+                if isinstance(edge, str) and edge == "face"
+                else self._prepare_scatter_color(edge, count, cmap, edge_range)
+            )
+            for name, value, rgba in (
+                ("face", face, face_rgba),
+                ("edge", edge, edge_rgba),
+            ):
+                if (
+                    name in colorbars
+                    and self._color_intensities(value) is None
+                    and (count or len(rgba))
+                ):
+                    raise InvalidParameterError(
+                        f"The existing Scatter {name} colorbar requires numeric color values for that channel."
+                    )
+            marker_style = resolve_or(self._marker_style, initial_marker_style)
+            current_marker = (
+                marker
+                if marker_style == initial_marker_style
+                else MarkerStyle(marker_style)
+            )
+            if not current_marker.is_filled():
+                edge_rgba = face_rgba
+                if current_marker.get_fillstyle() == "none":
+                    face_rgba = np.empty((0, 4))
+
+            edits = [
+                _edit(collection.set_facecolor, collection.get_facecolor(), face_rgba),
+                _edit(collection.set_edgecolor, collection.get_edgecolor(), edge_rgba),
+            ]
+            if marker_style != active_marker_style:
+
+                def set_marker(state) -> None:
+                    nonlocal active_marker_style
+                    style, paths = state
+                    collection.set_paths(paths)
+                    active_marker_style = style
+
+                path = current_marker.get_path().transformed(
+                    current_marker.get_transform()
+                )
+                edits.append(
+                    _edit(
+                        set_marker,
+                        (active_marker_style, collection.get_paths()),
+                        (marker_style, [path]),
+                    )
+                )
+            if error_follows_marker and errorbars is not None:
+                color = self._error_color(edge_rgba, face_rgba, contrast_color)
+                _, caps, segments = errorbars.lines
+                for cap in caps:
+                    edits.append(_edit(cap.set_color, cap.get_color(), color))
+                for segment in segments:
+                    edits.append(_edit(segment.set_color, segment.get_color(), color))
+
+            for name, mappable in colorbars.items():
+                limits_for_bar = face_range if name == "face" else edge_range
+
+                def set_scale(state, bar=mappable) -> None:
+                    palette, color_limits = state
+                    with (
+                        bar.callbacks.blocked(signal="changed"),
+                        bar.norm.callbacks.blocked(signal="changed"),
+                    ):
+                        bar.set_cmap(palette)
+                        bar.set_clim(color_limits)
+                    bar.changed()
+
+                edits.append(
+                    _edit(
+                        set_scale,
+                        (mappable.get_cmap(), mappable.get_clim()),
+                        (cmap, limits_for_bar),
+                    )
+                )
+
+            def apply() -> None:
+                for edit in edits:
+                    edit.apply()
+
+            def undo() -> None:
+                for edit in reversed(edits):
+                    edit.undo()
+
+            return _ArtistEdit(apply, undo)
+
+        session.bind_derived(
+            self,
+            (
+                "point_data",
+                "_face_color",
+                "_edge_color",
+                "_color_map",
+                "_color_map_range",
+                "_marker_style",
+            ),
+            collection,
+            prepare,
+        )
+
+    @staticmethod
+    def _error_color(edge: Any, face: Any, fallback: str) -> Any:
+        if is_color_like(edge):
+            return edge
+        if is_color_like(face):
+            return face
+        return fallback
+
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified axes.
@@ -3215,89 +3430,33 @@ class Scatter(Plottable1D, MathematicalObject):
                 "Both face color and edge color cannot be None. Please set at least one of them to a valid color."
             )
 
-        # Check that either face color or edge color is not a list/array/tuple of intensities
-        if isinstance(self._face_color, (list, tuple, np.ndarray)) and isinstance(
-            self._edge_color, (list, tuple, np.ndarray)
-        ):
-            # If they're 3 or 4 element arrays, assume they're RGB or RGBA values
-            if len(self._face_color) in [3, 4] or len(self._edge_color) in [3, 4]:
-                pass
-            else:
-                raise IncompatibleArgumentsError(
-                    "Both face color and edge color cannot be lists/arrays/tuples of intensities or colors. "
-                    "Please set at least one of them to a valid color or set one of them to None."
-                )
+        colorbars: dict[str, ScalarMappable] = {}
 
-        # Convert face color to matplotlib notation
-        if self._face_color is None:
-            # Set to transparent
-            mpl_face_color = "none"
-        elif is_inherit(self._face_color):
-            # Use color cycle (figure uses a matplotlib style)
-            mpl_face_color = None
-        elif isinstance(self._face_color, str) and self._face_color == "color cycle":
-            # Use color cycle
-            mpl_face_color = None
-        else:
-            # Use specified color
-            mpl_face_color = self._face_color
-
-        # Convert edge color to matplotlib notation
-        if self._edge_color is None:
-            # Set to transparent
-            mpl_edge_color = "none"
-        elif is_inherit(self._edge_color):
-            # Use color cycle (figure uses a matplotlib style)
-            mpl_edge_color = None
-        elif isinstance(self._edge_color, str) and self._edge_color == "color cycle":
-            # Use color cycle
-            mpl_edge_color = kwargs["cycle_color"]
-        else:
-            # Use specified color
-            mpl_edge_color = self._edge_color
-
-        # Check whether to use color map (one of the colors is an array of intensities)
-        if isinstance(self._face_color, (list, tuple, np.ndarray)):
-            face_color_values = cast(
-                list[float] | tuple[float, ...] | np.ndarray, self._face_color
-            )
-            if all(isinstance(i, (int, float)) for i in face_color_values):
-                color_map = plt.get_cmap(
+        def marker_color(name: str, value: Any, cycle: str | None) -> Any:
+            values = self._color_intensities(value)
+            if values is not None:
+                cmap = plt.get_cmap(
                     resolve_or(self._color_map, plt.rcParams["image.cmap"])
                 )
+                if self._color_map_range is not None:
+                    low, high = min(self._color_map_range), max(self._color_map_range)
+                else:
+                    finite = values[np.isfinite(values)]
+                    low, high = (finite.min(), finite.max()) if finite.size else (0, 1)
+                norm = Normalize(low, high)
+                if resolve_or(self._show_color_bar, False):
+                    colorbars[name] = ScalarMappable(cmap=cmap, norm=norm)
+                return cmap(norm(values))
+            if value is None:
+                return "none"
+            if is_inherit(value) or isinstance(value, str) and value == "color cycle":
+                return cycle
+            return value
 
-                # Sets the data range that the color map will cover.
-                if self._color_map_range:
-                    norm = Normalize(
-                        vmin=min(self._color_map_range), vmax=max(self._color_map_range)
-                    )
-                else:  # Calculate from the array of intensities
-                    norm = Normalize(
-                        vmin=min(face_color_values), vmax=max(face_color_values)
-                    )
-
-                mpl_face_color = [color_map(norm(float(i))) for i in face_color_values]
-        elif isinstance(self._edge_color, (list, tuple, np.ndarray)):
-            edge_color_values = cast(
-                list[float] | tuple[float, ...] | np.ndarray, self._edge_color
-            )
-            if all(isinstance(i, (int, float)) for i in edge_color_values):
-                color_map = plt.get_cmap(
-                    resolve_or(self._color_map, plt.rcParams["image.cmap"])
-                )
-
-                # Sets the data range that the color map will cover.
-                if self._color_map_range:
-                    norm = Normalize(
-                        vmin=min(self._color_map_range), vmax=max(self._color_map_range)
-                    )
-                else:  # Calculate from the array of intensities
-                    norm = Normalize(
-                        vmin=min(edge_color_values), vmax=max(edge_color_values)
-                    )
-
-                mpl_edge_color = [color_map(norm(float(i))) for i in edge_color_values]
-
+        mpl_face_color = marker_color("face", self._face_color, None)
+        mpl_edge_color = marker_color(
+            "edge", self._edge_color, kwargs.get("cycle_color")
+        )
         params = {
             "s": self._marker_size,
             "marker": self._marker_style,
@@ -3328,15 +3487,11 @@ class Scatter(Plottable1D, MathematicalObject):
                 isinstance(self._errorbars_color, str)
                 and self._errorbars_color == "same as scatter"
             ):
-                marker_edge_color = self.handle.get_edgecolor()
-                marker_face_color = self.handle.get_facecolor()
-                if is_color_like(marker_edge_color):
-                    mpl_errorbars_color = marker_edge_color
-                elif is_color_like(marker_face_color):
-                    mpl_errorbars_color = marker_face_color
-                else:
-                    ax_face_color = plt.rcParams["axes.facecolor"]
-                    mpl_errorbars_color = get_contrasting_shade(ax_face_color)
+                mpl_errorbars_color = self._error_color(
+                    self.handle.get_edgecolor(),
+                    self.handle.get_facecolor(),
+                    get_contrasting_shade(plt.rcParams["axes.facecolor"]),
+                )
             elif isinstance(self._errorbars_color, str):
                 # Use specified color
                 mpl_errorbars_color = self._errorbars_color
@@ -3362,67 +3517,23 @@ class Scatter(Plottable1D, MathematicalObject):
                 **errorbar_params,
             )
 
-        if (
-            resolve_or(self._show_color_bar, False)
-            and self._face_color is not None
-            and not is_inherit(self._face_color)
-            and not isinstance(self.face_color, str)
-        ):
-            # Create color bar from face color intensities
-            color_map_name = (
-                plt.rcParams["image.cmap"]
-                if is_inherit(self._color_map)
-                else self._color_map
-            )
-            color_map = plt.get_cmap(color_map_name)
-
-            # Sets the data range that the color map on the color bar will cover.
-            # Otherwise, it will be calculated from the array of intensities.
-            if self._color_map_range:
-                norm = Normalize(
-                    vmin=min(self._color_map_range), vmax=max(self._color_map_range)
-                )
-            else:
-                intensities = np.asarray(self._face_color)
-                norm = Normalize(vmin=intensities.min(), vmax=intensities.max())
-
-            sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
-            sm.set_array([])
-            plt.colorbar(sm, ax=axes, **self._color_bar_params)
-
-        if (
-            resolve_or(self._show_color_bar, False)
-            and self._edge_color is not None
-            and not is_inherit(self._edge_color)
-            and not isinstance(self.edge_color, str)
-        ):
-            # Create color bar from edge color intensities
-            color_map_name = (
-                plt.rcParams["image.cmap"]
-                if is_inherit(self._color_map)
-                else self._color_map
-            )
-            color_map = plt.get_cmap(color_map_name)
-
-            # Sets the data range that the color map on the color bar will cover.
-            # Otherwise, it will be calculated from the array of intensities.
-            if self._color_map_range:
-                norm = Normalize(
-                    vmin=min(self._color_map_range), vmax=max(self._color_map_range)
-                )
-            else:
-                edge_color_values = np.asarray(self._edge_color)
-                norm = Normalize(
-                    vmin=np.min(edge_color_values), vmax=np.max(edge_color_values)
-                )
-
-            sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
-            sm.set_array([])
-            plt.colorbar(sm, ax=axes, **self._color_bar_params)
+        for colorbar in colorbars.values():
+            plt.colorbar(colorbar, ax=axes, **self._color_bar_params)
 
         session = _DRAW_SESSION.get()
         if session is not None:
             session.bind_scatter(self, self.handle, errorbars)
+            marker = MarkerStyle(
+                resolve_or(self._marker_style, plt.rcParams["scatter.marker"])
+            )
+            self._bind_live_colors(
+                session,
+                self.handle,
+                marker,
+                colorbars,
+                kwargs.get("cycle_color", "C0"),
+                errorbars,
+            )
             session.bind_property(
                 self, "_marker_size", self.handle, "sizes", lambda value: [value]
             )

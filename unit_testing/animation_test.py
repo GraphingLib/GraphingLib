@@ -775,3 +775,87 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(scatter.handle.get_offsets(), [[0, 2], [1, 3]])
         assert_allclose(scatter.x_data, [0, 1])
         self.assertFalse(self.output.exists())
+
+    def test_scatter_point_colors_resize_with_collection_and_colorbar(self):
+        scatter = Scatter(
+            [0, 1],
+            [1, 2],
+            face_color=[0.0, 1.0],
+            show_color_bar=True,
+            color_map_range=(0, 1),
+        )
+        root = SmartFigure(
+            1,
+            2,
+            elements=[[scatter], [scatter]],
+            figure_style="plain",
+            x_lim=(-1, 4),
+            y_lim=(0, 4),
+        )
+        seen = []
+
+        def update(i):
+            existing = tuple(
+                artist
+                for axis in plt.gcf().axes
+                if axis.get_label() != "<colorbar>"
+                for artist in axis.collections
+            )
+            scales = tuple(
+                axis for axis in plt.gcf().axes if axis.get_label() == "<colorbar>"
+            )
+            seen.append((existing, scales))
+            if i == 0:
+                scatter.face_color = [10.0, 15.0, 20.0]
+                scatter.set_data([0, 1, 2], [1, 2, 3])
+            else:
+                scatter.set_data([0, 1, 2, 3], [1, 2, 3, 1])
+                scatter.face_color = [10.0, 12.0, 15.0, 20.0]
+            scatter.color_map = "plasma"
+            scatter.color_map_range = (10, 20)
+            scatter.marker_style = "s"
+
+        root.save_animation(self.output, update, 2)
+        self.assertEqual(seen[0], seen[-1])
+        artists, scales = seen[-1]
+        self.assertEqual(len(artists), 2)
+        self.assertEqual(len(scales), 2)
+        for artist in artists:
+            self.assertEqual(len(artist.get_paths()[0].vertices), 5)
+            self.assertEqual(len(artist.get_offsets()), 4)
+            assert_allclose(
+                artist.get_facecolor(), plt.get_cmap("plasma")([0.0, 0.2, 0.5, 1.0])
+            )
+        for axis in scales:
+            assert_allclose(axis.get_ylim(), [10, 20])
+            self.assertEqual(axis._colorbar.mappable.get_cmap().name, "plasma")
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 2)
+
+    def test_scatter_color_and_marker_updates_roll_back_with_point_data(self):
+        scatter = Scatter([0, 1], [1, 2], face_color=["red", "blue"])
+        scatter.add_errorbars(y_error=0.2)
+        root = SmartFigure(elements=[scatter], figure_style="plain")
+        self.output.write_bytes(b"existing")
+
+        def update(i):
+            if i == 0:
+                scatter.face_color = (0.0, 0.5, 0.0)
+                scatter.marker_style = "s"
+            else:
+                scatter.face_color = ["red", "blue"]
+                scatter.set_data([0, 1, 2], [1, 2, 3])
+                scatter.marker_style = "x"
+
+        with self.assertRaisesRegex(ValueError, "final point count"):
+            root.save_animation(self.output, update, 2)
+        self.assertEqual(scatter.marker_style, "s")
+        self.assertEqual(scatter.face_color, (0.0, 0.5, 0.0))
+        self.assertEqual(self.output.read_bytes(), b"existing")
+        self.assertEqual(len(scatter.handle.get_paths()[0].vertices), 5)
+        assert_allclose(scatter.x_data, [0, 1])
+        assert_allclose(scatter.handle.get_offsets(), [[0, 1], [1, 2]])
+        assert_allclose(scatter.handle.get_facecolor(), [[0.0, 0.5, 0.0, 1.0]])
+        assert_allclose(
+            scatter.errorbars_handle.lines[2][0].get_color(), [[0.0, 0.5, 0.0, 1.0]]
+        )

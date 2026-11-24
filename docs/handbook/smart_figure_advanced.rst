@@ -1977,10 +1977,14 @@ Live update support
      - Errorbar directions and caps, legend, and style for decorated curves.
        Both curves must continue to cover the configured fill interval.
    * - :class:`~graphinglib.Scatter`
-     - Coordinates, configured errors, marker size and edge width, and opacity.
-       Point counts can vary, including empty frames, with uniform marker colors.
-     - Point count when colors are assigned per point, marker shape, color
-       mapping, legend, and errorbar directions and caps.
+     - Coordinates, configured errors, marker shape, size, edge width,
+       opacity, face and edge colors, colormap, and color range. Set per-point
+       colors for the new point count in the same callback. An existing colorbar
+       follows its intensity channel and retains its initial scale until
+       ``color_map_range`` changes.
+     - Legend, colorbar placement, and errorbar directions and caps. Colorbars
+       need an intensity array at setup. An intensity channel introduced during
+       playback without an explicit range starts with a 0–1 scale.
    * - :class:`~graphinglib.Heatmap`
      - Image values on a fixed raster or mesh, opacity, and interpolation for
        rasters. Rasters can change pixel dimensions within their initial
