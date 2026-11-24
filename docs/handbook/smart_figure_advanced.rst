@@ -2163,6 +2163,12 @@ starts hidden. Pass a boolean for all direct subplots or use a list with
 SmartFigure that owns them. A general legend takes one boolean. Outside
 legends reserve space before playback so toggling them preserves the layout.
 
+Use ``hide_default_legend_elements`` and ``hide_custom_legend_elements``
+to toggle groups of entries during playback. A general legend respects the
+filters on its owner and on nested figures. Hidden rows collapse within the
+legend. When every entry is hidden, the legend disappears until at least one
+entry becomes visible again.
+
 Assign ``label`` to rename existing entries for curves, fits,
 scatter plots, histograms, and reference lines. Assigning ``None`` clears the
 text when there is no generated label, and keeps the entry's swatch. Choose a

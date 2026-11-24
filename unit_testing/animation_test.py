@@ -5071,6 +5071,106 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         )
         self.assertEqual(self.output.read_bytes(), b"existing")
 
+    def test_general_legend_filters_nested_entries_and_repacks_visible_rows(self):
+        from graphinglib import LegendLine
+
+        left = Curve([0, 1], [0, 1], label="Nested data")
+        right = Curve([0, 1], [1, 0], label="Root data")
+        nested = SmartFigure(elements=[left])
+        nested.set_custom_legend([LegendLine(label="Nested guide", color="red")])
+        nested.hide_default_legend_elements = True
+        root = SmartFigure(
+            2, 2, figure_style="plain", general_legend=True, legend_cols=2
+        )
+        root[:, 0] = nested
+        root[:, 1] = [right]
+        root.set_custom_legend([LegendLine(label="Root guide", color="black")])
+        root.hide_custom_legend_elements = True
+        states = []
+
+        def update(frame):
+            (legend,) = plt.gcf().legends
+            columns = tuple(legend._legend_handle_box.get_children())
+            rows = tuple(row for column in columns for row in column.get_children())
+            active = tuple(
+                text.get_text()
+                for text, row in zip(legend.get_texts(), rows, strict=True)
+                if row.get_visible()
+            )
+            states.append(
+                (
+                    legend,
+                    rows,
+                    legend.get_visible(),
+                    active,
+                    sum(col.get_visible() for col in columns),
+                )
+            )
+            if frame == 0:
+                nested.hide_default_legend_elements = False
+                root.hide_custom_legend_elements = False
+                left.label = "Updated data"
+            elif frame == 1:
+                root.hide_default_legend_elements = True
+                nested.hide_custom_legend_elements = True
+            elif frame == 2:
+                root.hide_custom_legend_elements = True
+            elif frame == 3:
+                root.show_legend = False
+                root.hide_default_legend_elements = False
+            elif frame == 4:
+                root.show_legend = True
+
+        root.save_animation(self.output, update, 6)
+        self.assertTrue(all(state[:2] == states[0][:2] for state in states))
+        expected = [
+            (True, ("Root data",), 1),
+            (True, ("Updated data", "Root data", "Nested guide", "Root guide"), 2),
+            (True, ("Root guide",), 1),
+            (False, (), 0),
+            (False, ("Updated data", "Root data"), 1),
+            (True, ("Updated data", "Root data"), 1),
+        ]
+        self.assertEqual([state[2:] for state in states], expected)
+
+    def test_failed_local_legend_filter_restores_packed_rows(self):
+        from graphinglib import LegendLine
+
+        curve = Curve([0, 1], [0, 1], label="Data")
+        root = SmartFigure(elements=[curve], figure_style="plain")
+        root.set_custom_legend([LegendLine(label="Guide", color="red")])
+        root.hide_default_legend_elements = True
+        self.output.write_bytes(b"existing")
+        captured = []
+
+        def update(frame):
+            axis = curve.handle.lines[0].axes
+            legend = axis.get_legend()
+            (column,) = legend._legend_handle_box.get_children()
+            rows = tuple(column.get_children())
+            if not frame:
+                captured.extend((legend, rows))
+                return
+            original = legend.set_visible
+
+            def fail_after_hiding(visible):
+                original(visible)
+                if not visible:
+                    self.assertFalse(any(row.get_visible() for row in rows))
+                    raise ValueError("failed applying legend filters")
+
+            self.enterContext(patch.object(legend, "set_visible", fail_after_hiding))
+            root.hide_custom_legend_elements = True
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        legend, rows = captured
+        self.assertTrue(legend.get_visible())
+        self.assertEqual([row.get_visible() for row in rows], [False, True])
+        self.assertFalse(root.hide_custom_legend_elements)
+        self.assertTrue(root.hide_default_legend_elements)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_raster_extent_and_origin_update_without_panning_view(self):
         heat = Heatmap([[0, 1], [0, 0]], origin_position="upper", show_color_bar=False)
         root = SmartFigure(

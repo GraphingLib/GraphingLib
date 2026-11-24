@@ -63,6 +63,7 @@ from ._animation import (
     _bound_session,
     _combine_edits,
     _edit,
+    _LegendFilter,
     _reject_live_update,
     _stage_live_value,
     _subplot_visibility_entries,
@@ -1150,12 +1151,13 @@ class SmartFigure:
 
     @hide_custom_legend_elements.setter
     def hide_custom_legend_elements(self, value: bool) -> None:
-        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError(
                 "hide_custom_legend_elements must be a bool."
             )
-        self._hide_custom_legend_elements = value
+        self._hide_custom_legend_elements = _stage_live_value(
+            self, "_hide_custom_legend_elements", value
+        )
 
     @property
     def hide_default_legend_elements(self) -> ListOrItem[bool]:
@@ -1176,13 +1178,39 @@ class SmartFigure:
 
     @hide_default_legend_elements.setter
     def hide_default_legend_elements(self, value: ListOrItem[bool]) -> None:
-        _reject_animated_layout(self)
+        if isinstance(value, list) and _bound_session(self) is not None:
+            if self._general_legend:
+                raise IncompatibleArgumentsError(
+                    "A general legend takes a single hide_default_legend_elements boolean."
+                )
+            if len(value) > len(self._ordered_elements):
+                raise InvalidParameterError(
+                    "Too many legend visibility entries for this SmartFigure."
+                )
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError(
                     "hide_default_legend_elements must be a bool."
                 )
-        self._hide_default_legend_elements = value
+        self._hide_default_legend_elements = _stage_live_value(
+            self, "_hide_default_legend_elements", value
+        )
+
+    def _default_legend_filter(self, index: int) -> _LegendFilter:
+        def is_hidden() -> bool:
+            value = self._hide_default_legend_elements
+            if isinstance(value, list):
+                return value[index] if index < len(value) else False
+            return value
+
+        return _LegendFilter(self, "_hide_default_legend_elements", is_hidden)
+
+    def _custom_legend_filter(self) -> _LegendFilter:
+        return _LegendFilter(
+            self,
+            "_hide_custom_legend_elements",
+            lambda: self._hide_custom_legend_elements,
+        )
 
     @property
     def is_single_subplot(self) -> bool:
@@ -2460,7 +2488,7 @@ class SmartFigure:
         *,
         animation_parent: tuple[SmartFigure, int] | None = None,
         animation_grid_defaults: dict[str, Any] | None = None,
-    ) -> dict[str, dict[str, list[str | Any]]]:
+    ) -> dict[str, dict[str, list[Any]]]:
         """
         Prepares the figure for plotting. This method sets up the figure, axes, and any other necessary elements
         before plotting the elements. It also handles the creation of legends and reference labels. If nested
@@ -2482,7 +2510,7 @@ class SmartFigure:
 
         Returns
         -------
-        dict[str, dict[str, list[str | Any]]]
+        dict[str, dict[str, list[Any]]]
             A dictionary containing the legend information for the figure. The keys are "default" and "custom", and
             the values are dictionaries with the "labels" and "handles" keys, which give the list of each type of
             element. The "default" elements are the ones created by the Plottable elements' labels, while the "custom"
@@ -2532,12 +2560,20 @@ class SmartFigure:
         ax = None  # keep track of the last plt.Axes object, needed for sharing axes
         default_labels, default_handles = [], []
         custom_labels, custom_handles = [], []
+        legend_info: dict[str, dict[str, list[Any]]]
+        default_filters: list[tuple[_LegendFilter, ...]] = []
+        custom_filters: list[tuple[_LegendFilter, ...]] = []
 
         session = _DRAW_SESSION.get()
         if session is not None:
             session.bind_property(self, "figure.facecolor", figure.patch, "facecolor")
-            for name in (*_LIVE_VISUAL_RC[1:], "_hidden_spines"):
-                # Layout-only figures may have no direct axes for these settings.
+            for name in (
+                *_LIVE_VISUAL_RC[1:],
+                "_hidden_spines",
+                "_hide_default_legend_elements",
+                "_hide_custom_legend_elements",
+            ):
+                # A figure can have no direct artists or legend entries for these settings.
                 session.bind_update(self, name, lambda _: _combine_edits([]))
             for child in self._children.values():
                 session.mark_present(child)
@@ -2615,10 +2651,22 @@ class SmartFigure:
                     )
 
                     self._reference_label_i = element._reference_label_i
-                    default_labels += legend_info["labels"]["default"]
-                    default_handles += legend_info["handles"]["default"]
+                    if session is not None or not (
+                        self._general_legend and self._hide_default_legend_elements
+                    ):
+                        default_labels += legend_info["labels"]["default"]
+                        default_handles += legend_info["handles"]["default"]
                     custom_labels += legend_info["labels"]["custom"]
                     custom_handles += legend_info["handles"]["custom"]
+                    if session is not None:
+                        inherited_default = legend_info["filters"]["default"]
+                        if self._general_legend:
+                            rule = self._default_legend_filter(subplot_i)
+                            inherited_default = [
+                                (*rules, rule) for rules in inherited_default
+                            ]
+                        default_filters += inherited_default
+                        custom_filters += legend_info["filters"]["custom"]
                 finally:
                     if is_matplotlib_style:
                         plt.rcParams.update(cast(Any, parent_rc_params))
@@ -2653,6 +2701,7 @@ class SmartFigure:
                     limit_axes.append((subplot_i, ax))
 
                 # Plotting loop
+                direct_start = len(default_labels)
                 z_order = 2
                 for index, current_element in enumerate(current_elements):
                     if current_element is not None:
@@ -2817,16 +2866,29 @@ class SmartFigure:
                         twin_axis._default_params = {}
 
                 # Axes legend
-                if self._subplot_p["hide_default_legend_elements"][subplot_i]:
+                if session is not None:
+                    rule = self._default_legend_filter(subplot_i)
+                    default_filters.extend(
+                        [(rule,)] * (len(default_labels) - direct_start)
+                    )
+                elif self._subplot_p["hide_default_legend_elements"][subplot_i]:
                     default_labels = []
                     default_handles = []
                 if not self._general_legend and make_legend:
                     if self.is_single_subplot:
                         custom_labels += self._custom_legend_labels
                         custom_handles += self._custom_legend_handles
-                    if self._hide_custom_legend_elements or not self.is_single_subplot:
+                        if session is not None:
+                            custom_filters.extend(
+                                [(self._custom_legend_filter(),)]
+                                * len(self._custom_legend_labels)
+                            )
+                    if (
+                        self._hide_custom_legend_elements and session is None
+                    ) or not self.is_single_subplot:
                         custom_labels = []
                         custom_handles = []
+                        custom_filters = []
                     labels = default_labels + custom_labels
                     handles = default_handles + custom_handles
 
@@ -2858,10 +2920,14 @@ class SmartFigure:
                         if session is not None:
                             legend_targets[subplot_i] = _legend
                             session.bind_legend(
-                                _legend, handles, initially_visible=show_legend
+                                _legend,
+                                handles,
+                                default_filters + custom_filters,
+                                initially_visible=show_legend,
                             )
                     default_labels, default_handles = [], []
                     custom_labels, custom_handles = [], []
+                    default_filters, custom_filters = [], []
 
             elif element is not None:
                 raise InvalidParameterTypeError(
@@ -2954,12 +3020,17 @@ class SmartFigure:
                 z_order += 5
 
         # Legend parameters
-        if self._hide_custom_legend_elements:
+        if self._hide_custom_legend_elements and session is None:
             custom_labels = []
             custom_handles = []
         else:
             custom_labels += self._custom_legend_labels
             custom_handles += self._custom_legend_handles
+            if session is not None:
+                custom_rule = self._custom_legend_filter()
+                custom_filters = [
+                    (*rules, custom_rule) for rules in custom_filters
+                ] + [(custom_rule,)] * len(self._custom_legend_labels)
         if (
             self._general_legend
         ):  # making a general legend is priorized over make_legend=False
@@ -2987,18 +3058,23 @@ class SmartFigure:
                 general_legend = _legend
                 if session is not None:
                     session.bind_legend(
-                        _legend, handles, initially_visible=bool(self._show_legend)
+                        _legend,
+                        handles,
+                        default_filters + custom_filters,
+                        initially_visible=bool(self._show_legend),
                     )
             if session is not None:
                 session.bind_legend_visibility(self, {0: general_legend}, 1)
             legend_info = {
                 "labels": {"default": [], "custom": []},
                 "handles": {"default": [], "custom": []},
+                "filters": {"default": [], "custom": []},
             }
         else:
             legend_info = {
                 "labels": {"default": default_labels, "custom": custom_labels},
                 "handles": {"default": default_handles, "custom": custom_handles},
+                "filters": {"default": default_filters, "custom": custom_filters},
             }
         self._subplot_p = {}  # clear the ListOrItem subplot parameters to free memory
         return legend_info
@@ -4844,7 +4920,7 @@ class SmartFigureWCS(SmartFigure):
         *,
         animation_parent: tuple[SmartFigure, int] | None = None,
         animation_grid_defaults: dict[str, Any] | None = None,
-    ) -> dict[str, dict[str, list[str | Any]]]:
+    ) -> dict[str, dict[str, list[Any]]]:
         """
         Wraps the parent method to check if the number of projections matches the number of subfigures drawn by the
         SmartFigure.

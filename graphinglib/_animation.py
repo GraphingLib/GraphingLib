@@ -415,6 +415,48 @@ class _AnimatedColorbarLocator(FixedLocator):
     """Mark tick positions explicitly assigned by an animation callback."""
 
 
+@dataclass(frozen=True)
+class _LegendFilter:
+    owner: object
+    property_name: str
+    is_hidden: Callable[[], bool]
+
+
+class _LegendRows:
+    def __init__(
+        self, legend: Legend, shown: bool, filters: list[tuple[_LegendFilter, ...]]
+    ) -> None:
+        self.legend = legend
+        self.shown = shown
+        self.columns = cast(Any, legend)._legend_handle_box.get_children()
+        self.rows = [row for column in self.columns for row in column.get_children()]
+        self.filters = [
+            rules
+            for rules, handle in zip(filters, legend.legend_handles, strict=True)
+            if handle is not None
+        ]
+
+    def show(self, shown: bool) -> None:
+        self.shown = shown
+        self.legend.set_visible(shown and any(row.get_visible() for row in self.rows))
+
+    def set_rows(self, visible: list[bool]) -> None:
+        for row, show in zip(self.rows, visible, strict=True):
+            row.set_visible(show)
+        for column in self.columns:
+            column.set_visible(any(row.get_visible() for row in column.get_children()))
+        self.show(self.shown)
+
+    def refresh(self) -> None:
+        self.set_rows(
+            [not any(rule.is_hidden() for rule in rules) for rules in self.filters]
+        )
+
+    def prepare(self) -> _ArtistEdit:
+        previous = [row.get_visible() for row in self.rows]
+        return _ArtistEdit(self.refresh, lambda: self.set_rows(previous))
+
+
 class _AnimationSession:
     def __init__(self) -> None:
         self._artists: dict[int, list[_Binding]] = {}
@@ -427,6 +469,7 @@ class _AnimationSession:
         self._dirty_dependents: dict[int, Callable[[], _ArtistEdit]] = {}
         self._post_artist_prepares: set[int] = set()
         self._initially_hidden_artists: list[Artist] = []
+        self._legend_rows: dict[Legend, _LegendRows] = {}
         self._initial_colorbar_ticks: dict[int, Any] = {}
         self._legend_sources: dict[
             int, tuple[object, Callable[[], str | None], tuple[str, ...]]
@@ -929,13 +972,13 @@ class _AnimationSession:
     ) -> None:
         def prepare(value: bool | list[bool | None]) -> _ArtistEdit:
             entries = _subplot_visibility_entries(value, targets, subplot_count)
-            return _combine_edits(
-                [
-                    _edit(legend.set_visible, legend.get_visible(), show)
-                    for index, show in entries.items()
-                    if (legend := targets[index]) is not None
-                ]
-            )
+            edits = []
+            for index, show in entries.items():
+                legend = targets[index]
+                if legend is not None:
+                    rows = self._legend_rows[legend]
+                    edits.append(_edit(rows.show, rows.shown, show))
+            return _combine_edits(edits)
 
         self.bind_update(element, "_show_legend", prepare)
 
@@ -943,6 +986,8 @@ class _AnimationSession:
         for artist in self._initially_hidden_artists:
             artist.set_visible(False)
         self._initially_hidden_artists.clear()
+        for rows in self._legend_rows.values():
+            rows.refresh()
 
     def bind_colorbar(
         self,
@@ -1037,11 +1082,19 @@ class _AnimationSession:
         element._color_bar_params = updated
 
     def bind_legend(
-        self, legend: Legend, handles: list[Any], *, initially_visible: bool = True
+        self,
+        legend: Legend,
+        handles: list[Any],
+        filters: list[tuple[_LegendFilter, ...]],
+        *,
+        initially_visible: bool = True,
     ) -> None:
-        if not initially_visible:
-            # Reserve layout space for legends that may be revealed during playback.
-            self._initially_hidden_artists.append(legend)
+        rows = _LegendRows(legend, initially_visible, filters)
+        self._legend_rows[legend] = rows
+        prepare = rows.prepare
+        for rules in filters:
+            for rule in rules:
+                self.bind_derived(rule.owner, (rule.property_name,), prepare)
         texts = iter(legend.get_texts())
         groups = {
             id(children[0]): children
@@ -1446,6 +1499,7 @@ class _AnimationSession:
         self._dependents.clear()
         self._legend_sources.clear()
         self._initially_hidden_artists.clear()
+        self._legend_rows.clear()
         self._initial_colorbar_ticks.clear()
         self._reference_legend_sources.clear()
         self._post_artist_prepares.clear()
