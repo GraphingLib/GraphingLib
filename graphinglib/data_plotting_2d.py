@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import dataclass
+from math import isfinite
+from numbers import Real
 from typing import Any, Callable, Literal, Optional, Protocol, cast, runtime_checkable
 
 import contourpy
@@ -14,6 +16,7 @@ from matplotlib.figure import Figure
 from matplotlib.image import AxesImage, imread
 from matplotlib.patches import FancyArrowPatch
 from matplotlib.path import Path as MplPath
+from matplotlib.quiver import Quiver
 from matplotlib.streamplot import StreamplotSet
 from numpy.typing import ArrayLike
 from scipy.interpolate import griddata
@@ -22,6 +25,7 @@ from ._animation import (
     _DRAW_SESSION,
     _ArtistEdit,
     _bound_session,
+    _combine_edits,
     _edit,
     _reject_live_update,
     _stage_live_value,
@@ -827,6 +831,103 @@ class Heatmap(Plottable2D):
                 session.bind_update(self, "_origin_position", prepare_origin)
 
 
+class _LiveQuiver(Quiver):
+    """Update locations as well as offsets used by Matplotlib's arrow renderer."""
+
+    def set_grid(
+        self, x: np.ndarray, y: np.ndarray, u: np.ndarray, v: np.ndarray
+    ) -> None:
+        # Quiver.set_offsets only changes placement. XY and N are also read
+        # when making the arrow paths and validating the component arrays.
+        self.X, self.Y = x, y
+        self.XY = np.column_stack((x, y))
+        self.N = len(x)
+        self.set_offsets(self.XY)
+        self.set_UVC(u, v)
+
+    def _angles_lengths(self, XY, U, V, eps=1):
+        # Matplotlib derives eps from the data limits in screen-angle mode.
+        # They can be zero at the origin or infinite after an empty setup.
+        if not isfinite(eps) or eps <= 0:
+            eps = 0.001
+        return super()._angles_lengths(XY, U, V, eps)  # ty: ignore[unresolved-attribute]
+
+    def _make_verts(self, XY, U, V, angles):
+        if self.scale is not None or np.any(
+            np.logical_not(self.Umask) & ((U != 0) | (V != 0))
+        ):
+            return super()._make_verts(XY, U, V, angles)  # ty: ignore[unresolved-attribute]
+        # An empty, masked, or zero field has no auto scale. Render that
+        # frame without freezing the scale used by the first nonzero field.
+        self.scale = 1
+        try:
+            return super()._make_verts(XY, U, V, angles)  # ty: ignore[unresolved-attribute]
+        finally:
+            self.scale = None
+
+
+def _quiver_data(
+    axes: plt.Axes,
+    x: np.ndarray,
+    y: np.ndarray,
+    u: np.ndarray,
+    v: np.ndarray,
+    *,
+    expand_grid: bool = True,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    # Match Quiver's handling of coordinate vectors and pre-expanded meshes.
+    try:
+        x = np.asarray(axes.convert_xunits(x), dtype=float).ravel()
+        y = np.asarray(axes.convert_yunits(y), dtype=float).ravel()
+    except (TypeError, ValueError) as exc:
+        raise InvalidParameterError(
+            "Animated VectorField positions must be real numbers after unit conversion."
+        ) from exc
+    u, v = np.atleast_1d(u, v)
+    if max(u.ndim, v.ndim) > 2:
+        raise InvalidParameterError(
+            "VectorField components must be scalar, one-dimensional or two-dimensional."
+        )
+    mesh_component = v if u.ndim == 1 and v.ndim == 2 else u
+    rows, columns = (
+        (1, mesh_component.size) if mesh_component.ndim == 1 else mesh_component.shape
+    )
+    if expand_grid and x.size == columns and y.size == rows:
+        x, y = (item.ravel() for item in np.meshgrid(x, y))
+    if x.size != y.size or u.size not in (1, x.size) or v.size not in (1, x.size):
+        raise InvalidParameterError(
+            "VectorField coordinates must be paired or span the component grid. "
+            "Each component must be a scalar or match the number of positions."
+        )
+    if not np.isfinite(x).all() or not np.isfinite(y).all():
+        raise InvalidParameterError("Animated VectorField positions must be finite.")
+
+    def component(values: np.ndarray) -> np.ndarray:
+        if np.asarray(values).dtype.kind not in "biuf":
+            raise InvalidParameterError("VectorField components must be real numbers.")
+        flattened = np.ma.asarray(values).ravel()
+        return np.ma.array(
+            np.broadcast_to(flattened.data, x.size),
+            mask=np.broadcast_to(np.ma.getmaskarray(flattened), x.size),
+            copy=True,
+        )
+
+    return x.copy(), y.copy(), component(u), component(v)
+
+
+def _quiver_number(value: float, name: str, *, allow_zero: bool = False) -> float:
+    if (
+        isinstance(value, Real)
+        and isfinite(value)
+        and (value > 0 or value == 0 and allow_zero)
+    ):
+        return float(value)
+    requirement = "nonnegative" if allow_zero else "positive"
+    raise InvalidParameterError(
+        f"Animated VectorField {name} must be a finite {requirement} number."
+    )
+
+
 @dataclass
 class VectorField(Plottable2D):
     """
@@ -913,8 +1014,8 @@ class VectorField(Plottable2D):
         """
         self._x_data = np.asarray(x_data)
         self._y_data = np.asarray(y_data)
-        self._u_data = np.asarray(u_data)
-        self._v_data = np.asarray(v_data)
+        self._u_data = np.asanyarray(u_data)
+        self._v_data = np.asanyarray(v_data)
         self._arrow_width = arrow_width
         self._arrow_head_size = arrow_head_size
         self._scale = scale
@@ -1001,10 +1102,12 @@ class VectorField(Plottable2D):
 
     @x_data.setter
     def x_data(self, x_data: ArrayLike) -> None:
-        _reject_live_update(
-            self, "Configure the VectorField grid and arrow geometry before animating."
+        coordinates = (
+            np.asarray(x_data)
+            if _bound_session(self) is None
+            else np.array(x_data, copy=True)
         )
-        self._x_data = np.asarray(x_data)
+        self._x_data = _stage_live_value(self, "_x_data", coordinates)
 
     @property
     def y_data(self) -> ArrayLike:
@@ -1012,10 +1115,12 @@ class VectorField(Plottable2D):
 
     @y_data.setter
     def y_data(self, y_data: ArrayLike) -> None:
-        _reject_live_update(
-            self, "Configure the VectorField grid and arrow geometry before animating."
+        coordinates = (
+            np.asarray(y_data)
+            if _bound_session(self) is None
+            else np.array(y_data, copy=True)
         )
-        self._y_data = np.asarray(y_data)
+        self._y_data = _stage_live_value(self, "_y_data", coordinates)
 
     @property
     def u_data(self) -> ArrayLike:
@@ -1023,7 +1128,7 @@ class VectorField(Plottable2D):
 
     @u_data.setter
     def u_data(self, u_data: ArrayLike) -> None:
-        self._u_data = _stage_live_value(self, "_u_data", np.asarray(u_data))
+        self._u_data = _stage_live_value(self, "_u_data", np.asanyarray(u_data))
 
     @property
     def v_data(self) -> ArrayLike:
@@ -1031,7 +1136,32 @@ class VectorField(Plottable2D):
 
     @v_data.setter
     def v_data(self, v_data: ArrayLike) -> None:
-        self._v_data = _stage_live_value(self, "_v_data", np.asarray(v_data))
+        self._v_data = _stage_live_value(self, "_v_data", np.asanyarray(v_data))
+
+    def set_data(
+        self,
+        u_data: ArrayLike,
+        v_data: ArrayLike,
+        *,
+        x_data: ArrayLike | None = None,
+        y_data: ArrayLike | None = None,
+    ) -> Self:
+        """Assign both vector components and optionally replace their positions.
+
+        Positions may be paired arrays or coordinate vectors for a rectangular
+        grid. Supply a two-dimensional component to specify a new rectangular
+        grid with one-dimensional coordinate vectors. When positions are omitted,
+        scalar components broadcast to all current positions during playback.
+        """
+        x = None if x_data is None else np.asarray(x_data)
+        y = None if y_data is None else np.asarray(y_data)
+        u, v = np.asanyarray(u_data), np.asanyarray(v_data)
+        self.u_data, self.v_data = u, v
+        if x is not None:
+            self.x_data = x
+        if y is not None:
+            self.y_data = y
+        return self
 
     @property
     def arrow_width(self) -> Styled[float]:
@@ -1039,10 +1169,7 @@ class VectorField(Plottable2D):
 
     @arrow_width.setter
     def arrow_width(self, arrow_width: float) -> None:
-        _reject_live_update(
-            self, "Configure the VectorField grid and arrow geometry before animating."
-        )
-        self._arrow_width = arrow_width
+        self._arrow_width = _stage_live_value(self, "_arrow_width", arrow_width)
 
     @property
     def arrow_head_size(self) -> Styled[float]:
@@ -1050,10 +1177,9 @@ class VectorField(Plottable2D):
 
     @arrow_head_size.setter
     def arrow_head_size(self, arrow_head_size: float) -> None:
-        _reject_live_update(
-            self, "Configure the VectorField grid and arrow geometry before animating."
+        self._arrow_head_size = _stage_live_value(
+            self, "_arrow_head_size", arrow_head_size
         )
-        self._arrow_head_size = arrow_head_size
 
     @property
     def scale(self) -> Optional[float]:
@@ -1061,10 +1187,7 @@ class VectorField(Plottable2D):
 
     @scale.setter
     def scale(self, scale: Optional[float]) -> None:
-        _reject_live_update(
-            self, "Configure the VectorField grid and arrow geometry before animating."
-        )
-        self._scale = scale
+        self._scale = _stage_live_value(self, "_scale", scale)
 
     @property
     def make_angles_axes_independent(self) -> bool:
@@ -1072,10 +1195,9 @@ class VectorField(Plottable2D):
 
     @make_angles_axes_independent.setter
     def make_angles_axes_independent(self, value: bool) -> None:
-        _reject_live_update(
-            self, "Configure the VectorField grid and arrow geometry before animating."
+        self._make_angles_axes_independent = _stage_live_value(
+            self, "_make_angles_axes_independent", value
         )
-        self._make_angles_axes_independent = value
 
     @property
     def color(self) -> Styled[str]:
@@ -1102,6 +1224,12 @@ class VectorField(Plottable2D):
             angle = "xy"
         arrow_width = resolve_or(self._arrow_width, 1)
         arrow_head_size = resolve_or(self._arrow_head_size, 1)
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            _quiver_number(arrow_width, "arrow_width")
+            _quiver_number(arrow_head_size, "arrow_head_size", allow_zero=True)
+            if self._scale is not None:
+                _quiver_number(self._scale, "scale")
         params = {
             "angles": angle,
             "width": 0.005 * arrow_width,
@@ -1113,43 +1241,92 @@ class VectorField(Plottable2D):
             "scale_units": "xy",
         }
         params = strip_inherit(params)
-        artist = axes.quiver(
-            self._x_data,
-            self._y_data,
-            self._u_data,
-            self._v_data,
-            zorder=z_order,
-            **params,
+        if session is None:
+            axes.quiver(
+                self._x_data,
+                self._y_data,
+                self._u_data,
+                self._v_data,
+                zorder=z_order,
+                **params,
+            )
+            return
+
+        axes.xaxis.update_units(self._x_data)
+        axes.yaxis.update_units(self._y_data)
+        raw_positions = self._x_data, self._y_data
+        current = _quiver_data(axes, *raw_positions, self._u_data, self._v_data)
+        artist = _LiveQuiver(axes, *current, zorder=z_order, **params)
+        axes.add_collection(artist)
+
+        def prepare_field() -> _ArtistEdit:
+            new_positions = self._x_data, self._y_data
+            keep_grid = all(
+                old is new
+                for old, new in zip(raw_positions, new_positions, strict=True)
+            )
+            # Scalars or flattened components can replace the velocities of a
+            # rectangular grid without changing the existing positions.
+            new = _quiver_data(
+                axes,
+                *(current[:2] if keep_grid else new_positions),
+                self._u_data,
+                self._v_data,
+                expand_grid=not keep_grid,
+            )
+
+            def set_field(state) -> None:
+                nonlocal current, raw_positions
+                data, positions = state
+                artist.set_grid(*data)
+                current, raw_positions = data, positions
+
+            return _edit(set_field, (current, raw_positions), (new, new_positions))
+
+        def attr_edit(name: str, value: Any) -> _ArtistEdit:
+            return _edit(
+                lambda new: setattr(artist, name, new), getattr(artist, name), value
+            )
+
+        def prepare_heads() -> _ArtistEdit:
+            width = _quiver_number(
+                resolve_or(self._arrow_width, arrow_width), "arrow_width"
+            )
+            size = _quiver_number(
+                resolve_or(self._arrow_head_size, arrow_head_size),
+                "arrow_head_size",
+                allow_zero=True,
+            )
+            head = 4 * size / width
+            return _combine_edits(
+                [
+                    attr_edit("width", 0.005 * width),
+                    attr_edit("headwidth", head),
+                    attr_edit("headlength", head),
+                    attr_edit("headaxislength", head),
+                ]
+            )
+
+        def prepare_angles(value: bool) -> _ArtistEdit:
+            if not isinstance(value, (bool, np.bool_)):
+                raise InvalidParameterError(
+                    "VectorField.make_angles_axes_independent must be a boolean."
+                )
+            return attr_edit("angles", "uv" if value else "xy")
+
+        session.bind_derived(
+            self, ("_x_data", "_y_data", "_u_data", "_v_data"), prepare_field
         )
-        session = _DRAW_SESSION.get()
-        if session is not None:
-            u, v = np.ma.asarray(self._u_data), np.ma.asarray(self._v_data)
-            expected = u.shape, v.shape
-
-            def prepare(_value: np.ndarray) -> _ArtistEdit:
-                old_u, old_v = u, v
-
-                def set_vectors(new_u: np.ndarray, new_v: np.ndarray) -> None:
-                    nonlocal u, v
-                    artist.set_UVC(new_u, new_v)
-                    u, v = new_u, new_v
-
-                def apply() -> None:
-                    new_u, new_v = (
-                        np.ma.asarray(self._u_data),
-                        np.ma.asarray(self._v_data),
-                    )
-                    if (new_u.shape, new_v.shape) != expected:
-                        raise InvalidParameterError(
-                            "An animated VectorField must retain its component shapes."
-                        )
-                    set_vectors(new_u, new_v)
-
-                return _ArtistEdit(apply, lambda: set_vectors(old_u, old_v))
-
-            session.bind_update(self, "_u_data", prepare)
-            session.bind_update(self, "_v_data", prepare)
-            session.bind_property(self, "_color", artist, "facecolor")
+        session.bind_derived(self, ("_arrow_width", "_arrow_head_size"), prepare_heads)
+        session.bind_update(self, "_make_angles_axes_independent", prepare_angles)
+        session.bind_update(
+            self,
+            "_scale",
+            lambda value: attr_edit(
+                "scale", None if value is None else 1 / _quiver_number(value, "scale")
+            ),
+        )
+        session.bind_property(self, "_color", artist, "facecolor")
 
 
 @dataclass

@@ -1949,8 +1949,7 @@ The same callback can update geometry, vectors and fixed-size table cells.
     def update(frame):
         point.coordinates = (frame / 10, 0.5)
         ellipse.angle = 6 * frame
-        field.u_data = np.cos(frame / 10) * np.ones_like(field.u_data)
-        field.v_data = np.sin(frame / 10) * np.ones_like(field.v_data)
+        field.set_data(np.cos(frame / 10), np.sin(frame / 10))
         table.cell_text = [[str(frame)]]
 
     figure.save_animation("adapters.gif", update, number_of_frames=16)
@@ -2028,8 +2027,13 @@ Live update support
        widths, absolute scaling, and placement.
      - Row and column count and which header rows and columns exist.
    * - :class:`~graphinglib.VectorField`
-     - Vector components and arrow color.
-     - Grid, component shapes, scaling and arrow geometry.
+     - Positions and components via
+       ``set_data(u, v, x_data=x, y_data=y)``. Frames can change arrow count.
+       Arrow color, shaft width, head size, length scale and angle convention
+       can also change.
+     - The axes retain their initial limits unless changed separately. Automatic
+       scaling uses the first frame with a nonzero, unmasked vector. Assign
+       ``scale = None`` to request a new automatic scale.
    * - :class:`~graphinglib.Histogram`
      - Sample data for bars, steps and filled steps, the normal density
        overlay and its guides, and labels showing summary statistics.

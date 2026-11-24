@@ -662,6 +662,174 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(field.V, (y + 2).ravel())
         self.assertEqual(contours.get_cmap().name, "magma")
 
+    def test_vector_field_geometry_updates_in_nested_spanning_plots(self):
+        from matplotlib.colors import to_rgba
+        from matplotlib.quiver import Quiver
+
+        from graphinglib import VectorField
+
+        field = VectorField([0], [0], [1], [0], scale=1)
+        nested = SmartFigure(elements=[field], x_lim=(-1, 5), y_lim=(-1, 3))
+        root = SmartFigure(
+            2, 2, figure_style="plain", x_lim=[None, (-1, 5)], y_lim=[None, (-1, 3)]
+        )
+        root[0, 0] = nested
+        root[1, :] = [field]
+        observations = []
+        artists = []
+
+        def update(i):
+            current = [
+                item
+                for ax in plt.gcf().axes
+                for item in ax.collections
+                if isinstance(item, Quiver)
+            ]
+            self.assertEqual(len(current), 2)
+            if artists:
+                self.assertTrue(
+                    all(old is new for old, new in zip(artists, current, strict=True))
+                )
+            else:
+                artists.extend(current)
+            if i:
+                observations.append((i, [len(item.get_paths()) for item in current]))
+            if i == 1:
+                self.assertTrue(all(item.headwidth == 0 for item in current))
+            if i == 0:
+                field.set_data([1, 0], [0, 1], x_data=[1, 2], y_data=[0, 1])
+            elif i == 1:
+                field.set_data([], [], x_data=[], y_data=[])
+            elif i == 2:
+                field.set_data(
+                    0.5,
+                    np.ma.array(
+                        [[1.0, 2.0, 3.0], [1.0, 2.0, 3.0]], mask=[[0, 1, 0], [0, 0, 0]]
+                    ),
+                    x_data=[0, 2, 4],
+                    y_data=[0, 2],
+                )
+            else:
+                field.set_data(
+                    np.ma.array([1, 0, 3, 1, 2, 3], mask=[0, 1, 0, 0, 0, 0]), 0.75
+                )
+            field.arrow_width = min(i + 1, 3)
+            field.arrow_head_size = 0 if i == 0 else 2
+            field.scale = 2
+            field.make_angles_axes_independent = i >= 2
+            field.color = "red" if i >= 2 else "blue"
+
+        root.save_animation(self.output, update, 4)
+        self.assertEqual(observations, [(1, [2, 2]), (2, [0, 0]), (3, [6, 6])])
+        coords = [[0, 0], [2, 0], [4, 0], [0, 2], [2, 2], [4, 2]]
+        for item in artists:
+            assert_allclose(item.get_offsets(), coords)
+            assert_allclose(item.XY, coords)
+            assert_allclose(item.V, np.full(6, 0.75))
+            np.testing.assert_array_equal(item.Umask, [0, 1, 0, 0, 0, 0])
+            self.assertEqual(item.N, 6)
+            self.assertEqual(len(item.get_paths()), 6)
+            self.assertTrue(np.isnan(item.get_paths()[1].vertices).all())
+            self.assertAlmostEqual(item.width, 0.015)
+            for head in (item.headwidth, item.headlength, item.headaxislength):
+                self.assertAlmostEqual(head, 8 / 3)
+            self.assertEqual(item.angles, "uv")
+            self.assertEqual(item.scale, 0.5)
+            assert_allclose(item.get_facecolor(), [to_rgba("red")])
+            assert_allclose(item.axes.get_xlim(), (-1, 5))
+            assert_allclose(item.axes.get_ylim(), (-1, 3))
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 4)
+
+    def test_vector_field_auto_scale_waits_for_motion_and_can_reset(self):
+        from warnings import catch_warnings, simplefilter
+
+        from matplotlib.quiver import Quiver
+
+        from graphinglib import VectorField
+
+        field = VectorField([], [], [], [], make_angles_axes_independent=True)
+        root = SmartFigure(
+            elements=[field], figure_style="plain", x_lim=(-2, 2), y_lim=(-2, 2)
+        )
+        states = {}
+        quiver = None
+
+        def update(i):
+            nonlocal quiver
+            (quiver,) = [
+                item
+                for item in plt.gcf().axes[0].collections
+                if isinstance(item, Quiver)
+            ]
+            states[i] = quiver.scale, len(quiver.get_paths())
+            if i == 0:
+                field.set_data(0, 0, x_data=[0], y_data=[0])
+            elif i == 1:
+                field.set_data(1, 0.5)
+            elif i == 2:
+                field.set_data(2, 1)
+            elif i == 3:
+                field.scale = None
+                field.set_data(4, 2)
+            else:
+                field.set_data(np.ma.masked, np.nan)
+
+        with catch_warnings(), np.errstate(divide="raise", invalid="raise"):
+            simplefilter("error", RuntimeWarning)
+            root.save_animation(self.output, update, 5)
+
+        self.assertEqual(states[0], (None, 0))
+        self.assertEqual(states[1], (None, 1))
+        first_nonzero = states[2][0]
+        self.assertGreater(first_nonzero, 0)
+        self.assertEqual(states[3][0], first_nonzero)
+        self.assertAlmostEqual(states[4][0], 4 * first_nonzero)
+        self.assertEqual(quiver.scale, states[4][0])
+        self.assertTrue(np.isnan(quiver.get_paths()[0].vertices).all())
+
+    def test_vector_field_failed_frame_restores_model_and_artist(self):
+        from matplotlib.quiver import Quiver
+
+        from graphinglib import VectorField
+
+        field = VectorField([0], [0], [1], [0], arrow_width=1, scale=1)
+        root = SmartFigure(elements=[field], figure_style="plain")
+        quiver = None
+
+        def update(i):
+            nonlocal quiver
+            (quiver,) = [
+                item
+                for item in plt.gcf().axes[0].collections
+                if isinstance(item, Quiver)
+            ]
+            count = i + 2
+            field.set_data(1, 0, x_data=np.arange(count), y_data=np.zeros(count))
+            field.arrow_width = count
+            field.scale = count
+            if i:
+                original = quiver.set_UVC
+
+                def fail_after_edit(u, v):
+                    original(u, v)
+                    if len(u) == 3:
+                        raise ValueError("could not update vectors")
+
+                self.enterContext(patch.object(quiver, "set_UVC", fail_after_edit))
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        self.assertFalse(self.output.exists())
+        assert_allclose(field.x_data, [0, 1])
+        assert_allclose(quiver.get_offsets(), [[0, 0], [1, 0]])
+        assert_allclose(quiver.XY, [[0, 0], [1, 0]])
+        assert_allclose(quiver.U, [1, 1])
+        self.assertEqual(field.arrow_width, 2)
+        self.assertEqual(field.scale, 2)
+        self.assertAlmostEqual(quiver.width, 0.01)
+        self.assertEqual(quiver.scale, 0.5)
+
     def test_histogram_bars_and_steps_follow_new_data(self):
         from matplotlib.container import BarContainer
         from matplotlib.patches import Polygon
