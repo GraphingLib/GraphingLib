@@ -16,10 +16,8 @@ from matplotlib.collections import (
     LineCollection,
     PathCollection,
     PolyCollection,
-    QuadMesh,
 )
 from matplotlib.container import ErrorbarContainer
-from matplotlib.image import AxesImage
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import DrawingArea
@@ -209,13 +207,7 @@ def _fill_edit(
     return _edit(artist.set_verts, before, polygons)
 
 
-@dataclass
-class _RasterArtist:
-    image: AxesImage | QuadMesh
-    shape: tuple[int, ...]
-
-
-_Binding = _PointArtists | _RasterArtist | TextArtist | str | None
+_Binding = _PointArtists | TextArtist | str | None
 
 
 def _error_array(value: ArrayLike | None, size: int, name: str) -> np.ndarray | None:
@@ -662,15 +654,6 @@ class _AnimationSession:
             _PointArtists(points, x_error, y_error, bands)
         )
 
-    def bind_heatmap(
-        self, heatmap: object, artist: object, shape: tuple[int, ...]
-    ) -> None:
-        self._artists.setdefault(id(heatmap), []).append(
-            _RasterArtist(artist, shape)
-            if isinstance(artist, (AxesImage, QuadMesh))
-            else None
-        )
-
     def bind_text(self, text: object, artist: TextArtist) -> None:
         self._artists.setdefault(id(text), []).append(artist)
 
@@ -758,36 +741,6 @@ class _AnimationSession:
             lambda: update(segments, (start, end)),
             lambda: update(old_segments, old_caps),
         )
-
-    def queue_heatmap(
-        self, heatmap: object, image: np.ndarray, restore: Callable[[], None]
-    ) -> None:
-        updates: list[_ArtistEdit] = []
-        for binding in self._artists.get(id(heatmap), ()):
-            if not isinstance(binding, _RasterArtist):
-                raise UnsupportedFeatureError(
-                    "This Heatmap has no supported image artist."
-                )
-            if isinstance(binding.image, QuadMesh) and image.shape != binding.shape:
-                raise InvalidParameterError(
-                    "An animated mesh Heatmap must keep its original shape."
-                )
-            if image.ndim != len(binding.shape):
-                raise InvalidParameterError(
-                    "An animated Heatmap must keep its initial scalar or RGB(A) data mode."
-                )
-            if not np.can_cast(image.dtype, float, casting="same_kind"):
-                raise InvalidParameterError(
-                    "An animated Heatmap image must contain real numeric values."
-                )
-            artist = binding.image
-            if isinstance(artist, AxesImage):
-                updates.append(_edit(artist.set_data, artist.get_array(), image))
-            else:
-                # The flattened scalar form works with all supported Matplotlib versions.
-                values = image.ravel() if image.ndim == 2 else image
-                updates.append(_edit(artist.set_array, artist.get_array(), values))
-        self._stage(heatmap, "image", updates, restore)
 
     def queue_text(
         self,

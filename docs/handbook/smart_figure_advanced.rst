@@ -1989,14 +1989,14 @@ Live update support
        intensity array at setup. An intensity channel introduced during
        playback without an explicit range starts with a 0–1 scale.
    * - :class:`~graphinglib.Heatmap`
-     - Image values on a fixed raster or mesh, opacity, and interpolation for
-       rasters. Rasters can change pixel dimensions, origin, and x and y
-       extents. Assigning ``None`` to a range restores that axis's initial
-       extent. Scalar data can change colormap and explicit linear color limits,
-       including the displayed colorbar.
-     - Mesh data shape and coordinates, aspect, scalar or RGB(A) mode,
-       normalization type, and colorbar layout. Implicit color limits use the
-       initial frame.
+     - Image values, pixel dimensions, opacity and aspect. Meshes can move
+       or resize via ``set_data(image, x_mesh=x, y_mesh=y)``. Rasters can
+       change interpolation, origin and extents. Scalar data can change
+       colormap and linear color limits. An existing colorbar can be hidden
+       and shown. Assign ``None`` to restore initial raster extents or color limits.
+     - Raster or mesh rendering, scalar or RGB(A) mode, normalization type,
+       and initial colorbar placement. Implicit color limits use the initial
+       frame.
    * - :class:`~graphinglib.Text`
      - Content, position, font size, color, opacity, alignment, rotation,
        and highlight color, opacity and padding, including figure annotations.

@@ -223,9 +223,11 @@ class TestAnimation(unittest.TestCase):
             show_color_bar=False,
         )
         fig = SmartFigure(elements=[heatmap], figure_style="plain")
-        with self.assertRaisesRegex(ValueError, "original shape"):
+        with self.assertRaisesRegex(ValueError, "mesh must match"):
             fig.save_animation(
-                str(self.output), lambda i: setattr(heatmap, "image", [[1]]), 2
+                str(self.output),
+                lambda i: setattr(heatmap, "image", [[1], [2], [3]]),
+                2,
             )
         assert_allclose(heatmap.image, [[0, 1], [1, 0]])
         self.assertFalse(self.output.exists())
@@ -1034,6 +1036,110 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(field.U, (x + 2).ravel())
         assert_allclose(field.V, (y + 2).ravel())
         self.assertEqual(contours.get_cmap().name, "magma")
+
+    def test_heatmap_mesh_updates_centers_corners_and_colorbars(self):
+        from matplotlib.collections import QuadMesh
+
+        mesh = Heatmap(
+            [[0, 1], [1, 0]], x_mesh=[0, 1], y_mesh=[0, 1], show_color_bar=True
+        )
+        nested = SmartFigure(elements=[mesh], x_lim=(-2, 8), y_lim=(-1, 6))
+        root = SmartFigure(2, 2, figure_style="plain", x_lim=(-2, 8), y_lim=(-1, 6))
+        root[0, 0] = nested
+        root[1, :] = [mesh]
+        captures = []
+        states = {}
+
+        def update(i):
+            items = [
+                (item, item.colorbar, item.colorbar.ax)
+                for axis in plt.gcf().axes
+                for item in axis.collections
+                if isinstance(item, QuadMesh) and item.colorbar is not None
+            ]
+            self.assertEqual(len(items), 2)
+            captures.append(items)
+            states[i] = [
+                (item.get_clim(), bar_axes.get_visible(), item.get_coordinates().copy())
+                for item, _, bar_axes in items
+            ]
+            if i == 0:
+                mesh.set_data(
+                    np.arange(6).reshape(2, 3), x_mesh=[0, 2, 4], y_mesh=[0, 2]
+                )
+                mesh.show_color_bar = False
+                mesh.color_map_range = (0, 8)
+            else:
+                data = np.ma.array(
+                    [[4, 5], [6, 7], [8, 9]], mask=[[0, 1], [0, 0], [0, 0]]
+                )
+                mesh.x_mesh = [1, 2, 5]
+                mesh.image = data
+                mesh.y_mesh = [0, 1, 2, 4]
+                mesh.color_map_range = None
+                mesh.show_color_bar = True
+                mesh.aspect_ratio = "equal"
+                mesh.color_map = "plasma"
+
+        root.save_animation(self.output, update, 2)
+        self.assertTrue(all(items == captures[0] for items in captures))
+        for clim, visible, coords in states[1]:
+            self.assertEqual(clim, (0, 8))
+            self.assertFalse(visible)
+            assert_allclose(coords[0, :, 0], [-1, 1, 3, 5])
+            assert_allclose(coords[:, 0, 1], [-1, 1, 3])
+        for artist, bar, bar_axes in captures[-1]:
+            assert_allclose(artist.get_coordinates()[0, :, 0], [1, 2, 5])
+            assert_allclose(artist.get_coordinates()[:, 0, 1], [0, 1, 2, 4])
+            self.assertEqual(len(artist.get_paths()), 6)
+            self.assertTrue(artist.get_array().mask[0, 1])
+            self.assertEqual(artist.get_clim(), (0, 1))
+            self.assertEqual(bar.cmap.name, "plasma")
+            self.assertTrue(bar_axes.get_visible())
+            self.assertEqual(artist.axes.get_aspect(), 1)
+            assert_allclose(artist.axes.get_xlim(), (-2, 8))
+            assert_allclose(artist.axes.get_ylim(), (-1, 6))
+
+    def test_failed_rgb_heatmap_resize_restores_mesh_coordinates_and_paths(self):
+        from matplotlib.collections import QuadMesh
+
+        mesh = Heatmap(
+            np.ones((2, 2, 3)), x_mesh=[0, 1], y_mesh=[0, 1], show_color_bar=False
+        )
+        root = SmartFigure(elements=[mesh], figure_style="plain")
+        artist = None
+        previous = None
+
+        def update(i):
+            nonlocal artist, previous
+            (artist,) = [
+                item
+                for item in plt.gcf().axes[0].collections
+                if isinstance(item, QuadMesh)
+            ]
+            count = i + 3
+            data = np.zeros((2, count, 4))
+            data[..., 3] = 1
+            mesh.set_data(data, x_mesh=np.arange(count), y_mesh=[0, 1])
+            if i:
+                previous = artist.get_paths()
+                setter = artist.set_array
+
+                def fail_after_set(value):
+                    setter(value)
+                    if value.shape[1] == 4:
+                        raise ValueError("could not update pixel colors")
+
+                self.enterContext(patch.object(artist, "set_array", fail_after_set))
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            root.save_animation(self.output, update, 2)
+        self.assertFalse(self.output.exists())
+        self.assertIs(artist.get_paths(), previous)
+        self.assertEqual(artist.get_array().shape, (2, 3, 4))
+        self.assertEqual(mesh.image.shape, (2, 3, 4))
+        assert_allclose(mesh.x_mesh, [0, 1, 2])
+        assert_allclose(artist.get_coordinates()[0, :, 0], [-0.5, 0.5, 1.5, 2.5])
 
     def test_filled_contour_updates_mesh_levels_and_existing_colorbars(self):
         from matplotlib.contour import QuadContourSet

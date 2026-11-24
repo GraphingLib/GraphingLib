@@ -10,7 +10,7 @@ from typing import Any, Callable, Literal, Optional, Protocol, cast, runtime_che
 import contourpy
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.collections import LineCollection
+from matplotlib.collections import LineCollection, QuadMesh
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba
 from matplotlib.contour import QuadContourSet
@@ -21,7 +21,7 @@ from matplotlib.path import Path as MplPath
 from matplotlib.quiver import Quiver
 from matplotlib.streamplot import StreamplotSet
 from matplotlib.ticker import FixedLocator, MaxNLocator
-from matplotlib.transforms import nonsingular
+from matplotlib.transforms import Bbox, nonsingular
 from numpy.typing import ArrayLike
 from scipy.interpolate import griddata
 
@@ -530,7 +530,7 @@ class Heatmap(Plottable2D):
                     f"Could not read {image!r} as an image ({exc})."
                 ) from exc
         else:
-            data = np.asarray(image)
+            data = np.asanyarray(image)
         is_rgb = data.ndim == 3 and data.shape[-1] in (3, 4)
         if data.ndim != 2 and not is_rgb:
             raise InvalidParameterError(
@@ -539,13 +539,32 @@ class Heatmap(Plottable2D):
             )
         session = _bound_session(self)
         if session is not None:
-            data = data.copy()
-            previous = self._image
-            session.queue_heatmap(self, data, lambda: setattr(self, "_image", previous))
+            data = _stage_live_value(self, "_image", data.copy())
         elif from_file or is_rgb:
             # RGB(A) pixels and file-backed images disable the colorbar for static plots.
             self._show_color_bar = False
         self._image = data
+
+    def set_data(
+        self,
+        image: ArrayLike | str,
+        *,
+        x_mesh: ArrayLike | None = None,
+        y_mesh: ArrayLike | None = None,
+    ) -> Self:
+        """Assign image values and optionally replace their mesh coordinates.
+
+        During animation, assign coordinates and values that match by the end
+        of the callback. With no new coordinates, the current grid is retained.
+        """
+        x = None if x_mesh is None else np.asanyarray(x_mesh)
+        y = None if y_mesh is None else np.asanyarray(y_mesh)
+        self.image = image
+        if x is not None:
+            self.x_mesh = x
+        if y is not None:
+            self.y_mesh = y
+        return self
 
     @property
     def x_axis_range(self) -> Optional[tuple[float, float]]:
@@ -569,8 +588,9 @@ class Heatmap(Plottable2D):
 
     @x_mesh.setter
     def x_mesh(self, x_mesh: Optional[ArrayLike]) -> None:
-        self._check_animation_geometry()
-        self._x_mesh = None if x_mesh is None else np.asarray(x_mesh)
+        self._x_mesh = _stage_live_value(
+            self, "_x_mesh", None if x_mesh is None else np.asanyarray(x_mesh)
+        )
 
     @property
     def y_mesh(self) -> Optional[ArrayLike]:
@@ -578,8 +598,9 @@ class Heatmap(Plottable2D):
 
     @y_mesh.setter
     def y_mesh(self, y_mesh: Optional[ArrayLike]) -> None:
-        self._check_animation_geometry()
-        self._y_mesh = None if y_mesh is None else np.asarray(y_mesh)
+        self._y_mesh = _stage_live_value(
+            self, "_y_mesh", None if y_mesh is None else np.asanyarray(y_mesh)
+        )
 
     def _check_animation_geometry(self) -> None:
         session = _bound_session(self)
@@ -612,8 +633,9 @@ class Heatmap(Plottable2D):
 
     @show_color_bar.setter
     def show_color_bar(self, show_color_bar: Styled[bool]) -> None:
-        self._check_animation_geometry()
-        self._show_color_bar = show_color_bar
+        self._show_color_bar = _stage_live_value(
+            self, "_show_color_bar", show_color_bar
+        )
 
     @property
     def alpha(self) -> float:
@@ -629,10 +651,7 @@ class Heatmap(Plottable2D):
 
     @aspect_ratio.setter
     def aspect_ratio(self, aspect_ratio: Styled[str | float]) -> None:
-        _reject_live_update(
-            self, "Configure the Heatmap aspect and origin before animating."
-        )
-        self._aspect_ratio = aspect_ratio
+        self._aspect_ratio = _stage_live_value(self, "_aspect_ratio", aspect_ratio)
 
     @property
     def origin_position(self) -> Styled[str]:
@@ -640,7 +659,9 @@ class Heatmap(Plottable2D):
 
     @origin_position.setter
     def origin_position(self, origin_position: Styled[str]) -> None:
-        self._origin_position = _stage_live_value(self, "_origin_position", origin_position)
+        self._origin_position = _stage_live_value(
+            self, "_origin_position", origin_position
+        )
 
     @property
     def interpolation(self) -> str:
@@ -715,6 +736,81 @@ class Heatmap(Plottable2D):
         if position is not None:
             self._color_bar_params["location"] = position
 
+    @staticmethod
+    def _check_live_pixels(data: np.ndarray, initial_ndim: int) -> None:
+        if data.ndim != initial_ndim:
+            raise InvalidParameterError(
+                "An animated Heatmap must keep its initial scalar or RGB(A) data mode."
+            )
+        if not min(data.shape[:2]) or data.dtype.kind not in "biuf":
+            raise InvalidParameterError(
+                "Animated Heatmap pixels must be a nonempty real numeric array."
+            )
+
+    def _bind_live_mesh(
+        self, session: _AnimationSession, axes: plt.Axes, image: QuadMesh
+    ) -> None:
+        shading = plt.rcParams["pcolor.shading"]
+        initial_ndim = self._image.ndim
+
+        def prepare() -> _ArtistEdit:
+            if self._x_mesh is None or self._y_mesh is None:
+                raise InvalidParameterError(
+                    "An animated Heatmap mesh requires both coordinate arrays."
+                )
+            self._check_live_pixels(self._image, initial_ndim)
+            previous = image.get_array()
+            if (
+                previous is not None
+                and previous.shape[:2] == self._image.shape[:2]
+                and not (
+                    session.has_frame_update(self, "_x_mesh")
+                    or session.has_frame_update(self, "_y_mesh")
+                )
+            ):
+                return _edit(
+                    image.set_array, previous, np.ma.masked_invalid(self._image)
+                )
+            try:
+                # Use the same conversion and center-to-corner rules as the
+                # initial pcolormesh call, without creating another collection.
+                x, y, values, render_mode = axes._pcolorargs(  # ty: ignore[unresolved-attribute]
+                    "pcolormesh",
+                    self._x_mesh,
+                    self._y_mesh,
+                    self._image,
+                    shading=shading,
+                )
+            except (TypeError, ValueError) as exc:
+                raise InvalidParameterError(
+                    f"The Heatmap mesh must match its image data ({exc})."
+                ) from exc
+            vertices = np.stack((x, y), axis=-1)
+            if not np.isfinite(vertices).all():
+                raise InvalidParameterError(
+                    "Animated Heatmap mesh corners must be finite."
+                )
+            bounds = Bbox.null()
+            bounds.update_from_data_xy(vertices.reshape(-1, 2))
+            mesh = cast(Any, image)  # No public QuadMesh geometry setter.
+
+            def set_mesh(state) -> None:
+                mesh._coordinates, mesh._shading, mesh._bbox, mesh._paths, data = state
+                mesh.set_array(data)
+
+            before = (
+                mesh.get_coordinates(),
+                mesh._shading,
+                mesh._bbox,
+                mesh._paths,
+                mesh.get_array(),
+            )
+            return _edit(
+                set_mesh, before, (vertices, render_mode, bounds, None, values)
+            )
+
+        session.bind_derived(self, ("_image", "_x_mesh", "_y_mesh"), prepare)
+
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
@@ -754,21 +850,23 @@ class Heatmap(Plottable2D):
                 zorder=z_order,
                 **params,
             )
+        bar = None
         if resolve_or(self._show_color_bar, True):
             fig = axes.get_figure()
             assert fig is not None
-            fig.colorbar(image, ax=axes, **self._color_bar_params)
+            bar = fig.colorbar(image, ax=axes, **self._color_bar_params)
         session = _DRAW_SESSION.get()
         if session is not None:
-            session.bind_heatmap(self, image, self._image.shape)
+            if bar is not None:
+                session.bind_property(self, "_show_color_bar", bar.ax, "visible")
             session.bind_property(self, "_alpha", image, "alpha")
             if self._image.ndim == 2:
+                initial_clim = image.get_clim()
                 session.bind_property(self, "_color_map", image, "cmap")
 
                 def prepare_range(value: tuple[float, float] | None) -> _ArtistEdit:
-                    if (
-                        value is None
-                        or len(value) != 2
+                    if value is not None and (
+                        len(value) != 2
                         or not np.isfinite(value).all()
                         or value[0] == value[1]
                     ):
@@ -783,11 +881,35 @@ class Heatmap(Plottable2D):
                             image.set_clim(limits)
                         norm.callbacks.process("changed")
 
-                    return _edit(set_limits, image.get_clim(), tuple(sorted(value)))
+                    limits = initial_clim if value is None else tuple(sorted(value))
+                    return _edit(set_limits, image.get_clim(), limits)
 
                 if self._norm is None or type(self._norm) is Normalize:
                     session.bind_update(self, "_color_map_range", prepare_range)
+
+            def prepare_aspect(value: str | float) -> _ArtistEdit:
+                valid = (
+                    value in ("equal", "auto")
+                    if isinstance(value, str)
+                    else isinstance(value, Real) and isfinite(value) and value > 0
+                )
+                if not valid:
+                    raise InvalidParameterError(
+                        "Animated Heatmap aspect_ratio must be 'equal', 'auto', or a positive number."
+                    )
+                return _edit(axes.set_aspect, axes.get_aspect(), value)
+
+            session.bind_update(self, "_aspect_ratio", prepare_aspect)
+            if isinstance(image, QuadMesh):
+                self._bind_live_mesh(session, axes, image)
             if isinstance(image, AxesImage):
+                initial_ndim = self._image.ndim
+
+                def prepare_pixels(data: np.ndarray) -> _ArtistEdit:
+                    self._check_live_pixels(data, initial_ndim)
+                    return _edit(image.set_data, image.get_array(), data)
+
+                session.bind_update(self, "_image", prepare_pixels)
                 session.bind_property(self, "_interpolation", image, "interpolation")
                 initial_extent = tuple(image.get_extent())
 
