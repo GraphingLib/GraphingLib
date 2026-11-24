@@ -33,6 +33,7 @@ from ._animation import (
     _attach_artists,
     _bound_session,
     _combine_edits,
+    _configure_colorbar,
     _edit,
     _stage_live_value,
 )
@@ -734,15 +735,7 @@ class Heatmap(Plottable2D):
         existing colorbar. Use ``label=""`` to clear its label and
         ``ticks=None`` to restore its tick rule from setup.
         """
-        if (session := _bound_session(self)) is not None:
-            session.queue_colorbar_params(self, label, position, reserve, color_bar_params)
-            return
-        self._color_bar_params = color_bar_params
-        self._reserve_color_bar = reserve
-        if label is not None:
-            self._color_bar_params["label"] = label
-        if position is not None:
-            self._color_bar_params["location"] = position
+        _configure_colorbar(self, label, position, reserve, color_bar_params)
 
     @staticmethod
     def _check_live_pixels(data: np.ndarray, initial_ndim: int) -> None:
@@ -2119,15 +2112,7 @@ class Contour(Plottable2D):
         existing colorbar. Use ``label=""`` to clear its label and
         ``ticks=None`` to restore its tick rule from setup.
         """
-        if (session := _bound_session(self)) is not None:
-            session.queue_colorbar_params(self, label, position, reserve, color_bar_params)
-            return
-        self._color_bar_params = color_bar_params
-        self._reserve_color_bar = reserve
-        if label is not None:
-            self._color_bar_params["label"] = label
-        if position is not None:
-            self._color_bar_params["location"] = position
+        _configure_colorbar(self, label, position, reserve, color_bar_params)
 
     def _bind_live_contour(
         self,

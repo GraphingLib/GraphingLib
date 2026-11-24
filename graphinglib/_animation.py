@@ -856,6 +856,25 @@ def _error_array(value: ArrayLike | None, size: int, name: str) -> np.ndarray | 
 
 class _ColorbarOwner(Protocol):
     _color_bar_params: dict[str, Any]
+    _reserve_color_bar: bool
+
+
+def _configure_colorbar(
+    element: _ColorbarOwner,
+    label: str | None,
+    position: str | None,
+    reserve: bool,
+    options: dict[str, Any],
+) -> None:
+    if (session := _bound_session(element)) is not None:
+        session.queue_colorbar_params(element, label, position, reserve, options)
+        return
+    element._color_bar_params = options
+    element._reserve_color_bar = reserve
+    if label is not None:
+        options["label"] = label
+    if position is not None:
+        options["location"] = position
 
 
 class _AnimatedColorbarLocator(FixedLocator):
