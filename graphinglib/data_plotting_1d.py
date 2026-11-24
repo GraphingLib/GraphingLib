@@ -551,8 +551,15 @@ class Curve(Plottable1D, MathematicalObject):
     def fill_between_bounds(
         self, fill_between_bounds: tuple[float, float] | None
     ) -> None:
-        _reject_live_update(self, "Configure curve labels and fills before animating.")
-        self._fill_between_bounds = fill_between_bounds
+        session = _bound_session(self)
+        if fill_between_bounds is not None:
+            if session is None:
+                self._area_fill_configured = True
+            else:
+                fill_between_bounds = tuple(fill_between_bounds)
+        self._fill_between_bounds = _stage_live_value(
+            self, "_fill_between_bounds", fill_between_bounds
+        )
 
     @property
     def fill_between_other_curve(self) -> Curve | None:
@@ -1582,7 +1589,7 @@ class Curve(Plottable1D, MathematicalObject):
         if other_curve is None:
             if fill_between:
                 _reject_live_update(self, "Configure curve fills before animating.")
-                self._fill_between_bounds = (x1, x2)
+                self.fill_between_bounds = (x1, x2)
                 self._fill_between_color = fill_color
             y_data = self._y_data
             x_data = self._x_data
@@ -1593,7 +1600,7 @@ class Curve(Plottable1D, MathematicalObject):
         else:
             if fill_between:
                 _reject_live_update(self, "Configure curve fills before animating.")
-                self._fill_between_bounds = (x1, x2)
+                self.fill_between_bounds = (x1, x2)
                 self._fill_between_color = fill_color
                 self._fill_between_other_curve = other_curve
             if np.array_equal(self._x_data, other_curve._x_data):
@@ -1844,6 +1851,49 @@ class Curve(Plottable1D, MathematicalObject):
             interp1d(self._x_data, self._y_data)(x),
             interp1d(other._x_data, other._y_data)(x),
         )
+
+    def _bind_live_area(
+        self, session: _AnimationSession, fill: PolyCollection, other: Curve | None
+    ) -> None:
+        def prepare() -> _ArtistEdit:
+            bounds = self._fill_between_bounds
+            if bounds is None:
+                return _edit(fill.set_visible, fill.get_visible(), False)
+            limits = np.asarray(bounds)
+            if (
+                limits.shape != (2,)
+                or limits.dtype.kind not in "iuf"
+                or not np.isfinite(limits).all()
+                or limits[0] > limits[1]
+            ):
+                raise InvalidParameterError(
+                    "Animated Curve fill_between_bounds must be two finite, ordered endpoints."
+                )
+            left, right = limits
+            if left == right:
+                return _edit(fill.set_visible, fill.get_visible(), False)
+            if other is None:
+                x, y = self._x_data, self._y_data
+                within = (x >= left) & (x <= right)
+                geometry = _fill_edit(fill, x, y, np.zeros_like(y), within)
+            else:
+                try:
+                    x, y, boundary = self._shared_fill_data(other, (left, right))
+                except ValueError as exc:
+                    raise InvalidParameterError(
+                        "Both curves must cover the animated fill interval."
+                    ) from exc
+                geometry = _fill_edit(fill, x, y, boundary)
+            return _combine_edits(
+                [
+                    geometry,
+                    _edit(fill.set_visible, fill.get_visible(), True),
+                ]
+            )
+
+        session.bind_derived(self, ("point_data", "_fill_between_bounds"), prepare)
+        if other is not None:
+            session.bind_derived(other, ("point_data",), prepare)
 
     def _bind_live_styles(
         self,
@@ -2109,55 +2159,50 @@ class Curve(Plottable1D, MathematicalObject):
                 )
                 _fill_edit(error_fill, self._x_data, max_y, min_y).apply()
                 axes.add_collection(error_fill, autolim=False)
-        if self._fill_between_bounds:
-            params = {"alpha": 0.2}
-            params["facecolor"] = (
-                self._fill_between_color
-                if self._fill_between_color != "same as curve"
-                else self.handle[0].get_color()
+        area_bounds = self._fill_between_bounds
+        if area_bounds or (
+            session is not None and getattr(self, "_area_fill_configured", False)
+        ):
+            params = strip_inherit(
+                {
+                    "alpha": 0.2,
+                    "facecolor": (
+                        self._fill_between_color
+                        if self._fill_between_color != "same as curve"
+                        else self.handle[0].get_color()
+                    ),
+                }
             )
-            params = strip_inherit(params)
-            if self._fill_between_other_curve is not None:
-                x, y1, y2 = self._shared_fill_data(
-                    self._fill_between_other_curve, self._fill_between_bounds
+            if area_bounds is None:
+                area_fill = PolyCollection(
+                    [], zorder=z_order - 2, visible=False, **params
                 )
-                params.update(x=x, y1=y1, y2=y2)
-                where_x_data = x
+                axes.add_collection(area_fill, autolim=False)
             else:
-                params["x"] = self._x_data
-                params["y1"] = self._y_data
-                where_x_data = self._x_data
-
-            area_fill = axes.fill_between(
-                where=np.logical_and(
-                    where_x_data >= self._fill_between_bounds[0],
-                    where_x_data <= self._fill_between_bounds[1],
-                ).tolist(),
-                zorder=z_order - 2,
-                **params,
-            )
+                if self._fill_between_other_curve is not None:
+                    x, y1, y2 = self._shared_fill_data(
+                        self._fill_between_other_curve, area_bounds
+                    )
+                else:
+                    x, y1, y2 = self._x_data, self._y_data, 0
+                area_fill = axes.fill_between(
+                    x,
+                    y1,
+                    y2,
+                    where=((x >= area_bounds[0]) & (x <= area_bounds[1])).tolist(),
+                    zorder=z_order - 2,
+                    **params,
+                )
 
         if session is not None:
-            other = self._fill_between_other_curve
-            bounds = self._fill_between_bounds
             session.bind_legend_source(self, self.handle, lambda: self.label)
             session.bind_curve(
                 self,
                 self.handle,
-                bands=_CurveBands(
-                    lower,
-                    upper,
-                    error_fill,
-                    area_fill if other is None else None,
-                    bounds,
-                ),
+                bands=_CurveBands(lower, upper, error_fill, None, None),
             )
-            if area_fill is not None and bounds is not None and other is not None:
-                session.bind_point_dependent(
-                    (self, other),
-                    area_fill,
-                    lambda: self._shared_fill_data(other, bounds),
-                )
+            if area_fill is not None:
+                self._bind_live_area(session, area_fill, self._fill_between_other_curve)
             self._bind_live_styles(
                 session, self.handle, lower, upper, error_fill, area_fill
             )

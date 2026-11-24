@@ -1970,8 +1970,9 @@ Live update support
      - Set up before animation
    * - :class:`~graphinglib.Curve`
      - Coordinates and errors, configured error curves and bands, and area
-       fills to zero or between two curves. Each shared fill uses both curves'
-       final coordinates for the frame. Lines can change color, width,
+       fills to zero or between two curves. Assign ``fill_between_bounds``
+       to change the interval of a configured fill, or ``None`` to hide it.
+       Each shared fill uses both curves' final coordinates for the frame. Lines can change color, width,
        style and opacity. Configured error bars, error curves and fills can
        change their styles. On Cartesian plots, ``show_errorbars`` can show or
        hide configured bars, including bars initially hidden. Use a cap width

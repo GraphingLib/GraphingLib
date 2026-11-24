@@ -2147,7 +2147,7 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
                 first.set_data([1, 2], [0, 1])
 
         self.output.write_bytes(b"previous")
-        with self.assertRaisesRegex(ValueError, "interpolation range"):
+        with self.assertRaisesRegex(ValueError, "cover the animated fill interval"):
             figure.save_animation(self.output, update, 3)
         self.assertEqual(self.output.read_bytes(), b"previous")
         self.assertTrue(all(items == seen[0] for items in seen))
@@ -2157,6 +2157,47 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             assert_allclose([vertices[:, 1].min(), vertices[:, 1].max()], [1, 5])
         assert_allclose(first.x_data, [0, 1, 2])
         assert_allclose(second.y_data, [5, 5])
+
+    def test_curve_fill_intervals_hide_and_follow_both_curves(self):
+        x = [0, 1, 2, 3]
+        zero = Curve(x, [2, 3, 4, 5])
+        shared = Curve(x, [1, 2, 3, 4])
+        boundary = Curve([0, 3], [2, 2])
+        zero.get_area_between(0, 3, fill_between=True)
+        shared.get_area_between(0, 3, fill_between=True, other_curve=boundary)
+        shared.fill_between_bounds = None
+        root = SmartFigure(1, 2, elements=[[zero], [shared]], figure_style="plain")
+        artists = []
+        before = {}
+
+        def update(i):
+            current = [axis.collections[0] for axis in plt.gcf().axes if axis.lines]
+            if artists:
+                self.assertEqual(artists, current)
+            else:
+                artists.extend(current)
+            before[i] = [artist.get_visible() for artist in current]
+            if i == 0:
+                zero.fill_between_bounds = (1, 3)
+                shared.fill_between_bounds = (0.5, 2.5)
+                boundary.y_data = [6, 6]
+            elif i == 1:
+                zero.fill_between_bounds = (2, 2)
+                shared.fill_between_bounds = None
+                boundary.set_data([1, 4], [7, 7])
+            else:
+                shared.fill_between_bounds = (1.25, 2.75)
+                shared.y_data = [3, 4, 5, 6]
+                boundary.y_data = [8, 8]
+                zero.fill_between_bounds = (1, 2.5)
+
+        root.save_animation(self.output, update, 3)
+        self.assertEqual(before, {0: [True, False], 1: [True, True], 2: [False, False]})
+        self.assertTrue(all(artist.get_visible() for artist in artists))
+        zero_xy, shared_xy = (artist.get_paths()[0].vertices for artist in artists)
+        assert_allclose([zero_xy[:, 0].min(), zero_xy[:, 0].max()], [1, 2])
+        assert_allclose([shared_xy[:, 0].min(), shared_xy[:, 0].max()], [1.25, 2.75])
+        assert_allclose([shared_xy[:, 1].min(), shared_xy[:, 1].max()], [4.25, 8])
 
     def test_resamples_raster_at_the_same_physical_extent(self):
         heat = Heatmap([[0, 1], [1, 0]], show_color_bar=False, color_map_range=(0, 1))
