@@ -4567,6 +4567,114 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertEqual(observed[0].get_text().get_text(), "retained")
         self.assertFalse(self.output.exists())
 
+    def test_reference_lines_switch_modes_and_reuse_native_artists(self):
+        from matplotlib.colors import to_rgba
+
+        from graphinglib import Hlines, Vlines
+
+        hlines = Hlines([1, 2], x_min=0, x_max=1, label="Horizontal", colors="navy")
+        vlines = Vlines(1.5, label="Vertical", colors="teal")
+        anchors = (Curve([0, 2], [0, 2]), Curve([0, 2], [0, 2]))
+        nested = SmartFigure(
+            elements=[anchors[0], hlines, vlines], x_lim=(0, 4), y_lim=(0, 4)
+        )
+        root = SmartFigure(2, 2, figure_style="plain", x_lim=(0, 4), y_lim=(0, 4))
+        root[:, 0] = nested
+        root[:, 1] = [anchors[1], hlines, vlines]
+        appearances = []
+
+        def update(frame):
+            visible = []
+            for anchor in anchors:
+                main = anchor.handle.lines[0]
+                axes = main.axes
+                collections = tuple(
+                    item for item in axes.collections if item.get_visible()
+                )
+                lines = tuple(
+                    line
+                    for line in axes.lines
+                    if line.get_visible() and line is not main
+                )
+                visible.append((collections, lines))
+                if frame % 2:
+                    (bounded,) = collections
+                    assert_allclose(bounded.get_segments(), [[[1.5, 0.5], [1.5, 3.5]]])
+                    self.assertIs(bounded.get_transform(), axes.transData)
+                    self.assertEqual(
+                        [line.get_color() for line in lines], ["orange", "purple"]
+                    )
+                    for line in lines:
+                        data = line.get_transform().transform(line.get_xydata())
+                        assert_allclose(data[:, 0], [axes.bbox.xmin, axes.bbox.xmax])
+                    self.assertEqual(axes.get_xlim(), (-2, 5))
+                    assert_allclose(
+                        to_rgba(axes.get_legend().legend_handles[0].get_color()),
+                        to_rgba("orange"),
+                    )
+                else:
+                    assert_allclose(
+                        collections[0].get_segments(),
+                        [[[0, 1], [1, 1]], [[0, 2], [1, 2]]],
+                    )
+                    assert_allclose(lines[0].get_ydata(), [0, 1])
+            appearances.append(tuple(visible))
+            if frame in (0, 2):
+                hlines.x_min = None
+                hlines.x_max = None
+                hlines.colors = ["orange", "purple"]
+                vlines.y_min, vlines.y_max = 0.5, 3.5
+                root.x_lim = nested.x_lim = (-2, 5)
+            elif frame == 1:
+                hlines.x_min, hlines.x_max = 0, 1
+                vlines.y_min = vlines.y_max = None
+
+        with patch.object(
+            root, "_prepare_figure", wraps=root._prepare_figure
+        ) as prepare:
+            root.save_animation(self.output, update, 4)
+        prepare.assert_called_once()
+        self.assertEqual(appearances[0], appearances[2])
+        self.assertEqual(appearances[1], appearances[3])
+
+    def test_failed_reference_mode_switch_removes_collection_and_restores_bounds(self):
+        from graphinglib import Hlines
+
+        lines = Hlines([1, 2], label="Horizontal")
+        anchor = Curve([0, 3], [0, 3])
+        root = SmartFigure(elements=[anchor, lines], figure_style="plain")
+        self.output.write_bytes(b"existing")
+        seen = []
+        set_segments = LineCollection.set_segments
+
+        def fail_after_attach(collection, segments):
+            set_segments(collection, segments)
+            if seen and len(segments) and collection.axes is seen[0][0]:
+                raise ValueError("failed after attaching bounded reference lines")
+
+        def update(frame):
+            axes = anchor.handle.lines[0].axes
+            seen.append((axes, tuple(axes.lines), tuple(axes.collections)))
+            lines.x_min = 0.5
+            lines.x_max = 2.5
+            lines.colors = "orange"
+
+        with (
+            patch.object(LineCollection, "set_segments", fail_after_attach),
+            self.assertRaisesRegex(
+                GraphingException, "failed after attaching bounded reference lines"
+            ),
+        ):
+            root.save_animation(self.output, update, 1)
+
+        ((axes, initial_lines, initial_collections),) = seen
+        self.assertEqual(tuple(axes.lines), initial_lines)
+        self.assertEqual(tuple(axes.collections), initial_collections)
+        self.assertTrue(all(line.get_visible() for line in initial_lines))
+        self.assertIsNone(lines.x_min)
+        self.assertIsNone(lines.x_max)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_reference_line_styles_and_bounded_counts_animate(self):
         from matplotlib.colors import to_rgba
 

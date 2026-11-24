@@ -25,6 +25,7 @@ from ._animation import (
     _DRAW_SESSION,
     _AnimationSession,
     _ArtistEdit,
+    _attach_artists,
     _bound_session,
     _combine_edits,
     _edit,
@@ -163,26 +164,13 @@ def _draw_reference_lines(
         {field: getattr(element, attr) for attr, field in _REFERENCE_LINE_STYLE.items()}
     )
     capacity = 3 if horizontal else 4
+    collection = None
+    lines: list[Line2D] = []
     if low is not None and high is not None:
         plot = axes.hlines if horizontal else axes.vlines
         collection = plot(
-            coords,
-            low,
-            high,
-            zorder=z_order,
-            **{
-                ("alpha" if field == "alpha" else f"{field}s"): value
-                for field, value in params.items()
-            },
+            coords, low, high, zorder=z_order, **_reference_collection_kwargs(params)
         )
-        _bind_bounded_reference_lines(element, collection, names, horizontal)
-        properties = (*names, *_REFERENCE_LINE_STYLE)
-
-        def read_styles() -> list[dict[str, Any]]:
-            return _reference_collection_styles(
-                collection, min(len(collection.get_paths()), capacity)
-            )
-
     else:
         plot = axes.axhline if horizontal else axes.axvline
         lines = [
@@ -193,17 +181,6 @@ def _draw_reference_lines(
         ]
         for line in lines:
             _interpolate_spanning_line(line)
-        _bind_spanning_reference_lines(
-            element, axes, lines, position, params, z_order, horizontal
-        )
-        properties = (position, *_REFERENCE_LINE_STYLE)
-
-        def read_styles() -> list[dict[str, Any]]:
-            return [
-                _reference_line_style(line)
-                for line in lines[:capacity]
-                if line.get_visible()
-            ]
 
     swatch_count = min(len(coords), capacity)
     legend_style = {
@@ -213,11 +190,43 @@ def _draw_reference_lines(
     }
     session = _DRAW_SESSION.get()
     if session is not None:
+        if collection is None:
+            collection = LineCollection(
+                [],
+                zorder=z_order,
+                visible=False,
+                **_reference_collection_kwargs(legend_style),
+            )
+        _bind_reference_geometry(
+            session,
+            element,
+            axes,
+            names,
+            collection,
+            lines,
+            params,
+            z_order,
+            horizontal,
+        )
+
+        def read_styles() -> list[dict[str, Any]]:
+            if collection.get_visible():
+                return _reference_collection_styles(
+                    collection, min(len(collection.get_paths()), capacity)
+                )
+            return [
+                _reference_line_style(line)
+                for line in lines[:capacity]
+                if line.get_visible()
+            ]
+
         handle = _ReferenceLegendCollection(
             swatch_count, horizontal=horizontal, **legend_style
         )
         session.bind_legend_source(element, handle, lambda: element.label)
-        session.bind_reference_legend(handle, properties, read_styles)
+        session.bind_reference_legend(
+            handle, (*names, *_REFERENCE_LINE_STYLE), read_styles
+        )
     else:
         # Keep a static legend sample for empty plots.
         proxy_type = LineCollection if horizontal else VerticalLineCollection
@@ -226,64 +235,25 @@ def _draw_reference_lines(
     return handle
 
 
-def _bind_bounded_reference_lines(
-    element: Hlines | Vlines,
-    collection: LineCollection,
-    names: tuple[str, str, str],
-    horizontal: bool,
-) -> None:
-    if (draw_session := _DRAW_SESSION.get()) is None:
-        return
-    session = draw_session
-
-    for attr, field in _REFERENCE_LINE_STYLE.items():
-        if attr != "_line_styles":
-            session.bind_property(element, attr, collection, field)
-
-    def prepare_dashes(value: Any) -> _ArtistEdit:
-        # The public getter returns width-scaled dashes.
-        original = cast(Any, collection)._us_linestyles
-        return _edit(collection.set_linestyle, original, value)
-
-    session.bind_update(element, "_line_styles", prepare_dashes)
-    position, start, end = names
-
-    def prepare_geometry() -> _ArtistEdit:
-        element._validate_state()
-        if not any(session.has_frame_update(element, name) for name in names):
-            return _combine_edits([])
-        positions = _reference_positions(getattr(element, position))
-        low, high = getattr(element, start), getattr(element, end)
-        if low is None or high is None:
-            raise InvalidParameterError(
-                "An animated bounded reference line must retain both bounds."
-            )
-        low, high = (
-            np.broadcast_to(low, positions.shape),
-            np.broadcast_to(high, positions.shape),
-        )
-        ends = np.stack((low, high), axis=-1)
-        across = np.repeat(positions[:, None], 2, axis=1)
-        x, y = (ends, across) if horizontal else (across, ends)
-        segments = list(np.stack((x, y), axis=-1))
-        before = [path.vertices for path in collection.get_paths()]
-        return _edit(collection.set_segments, before, segments)
-
-    session.bind_derived(element, (*names, *_REFERENCE_LINE_STYLE), prepare_geometry)
+def _reference_collection_kwargs(styles: dict[str, Any]) -> dict[str, Any]:
+    return {
+        ("alpha" if field == "alpha" else f"{field}s"): value
+        for field, value in styles.items()
+    }
 
 
-def _bind_spanning_reference_lines(
+def _bind_reference_geometry(
+    session: _AnimationSession,
     element: Hlines | Vlines,
     axes: plt.Axes,
+    names: tuple[str, str, str],
+    collection: LineCollection,
     lines: list[Line2D],
-    position: str,
     initial_style: dict[str, Any],
     z_order: int,
     horizontal: bool,
 ) -> None:
-    session = _DRAW_SESSION.get()
-    if session is None:
-        return
+    position, start, end = names
     defaults = {
         "color": plt.rcParams["lines.color"],
         "linewidth": plt.rcParams["lines.linewidth"],
@@ -299,16 +269,60 @@ def _bind_spanning_reference_lines(
     get_coordinates = Line2D.get_ydata if horizontal else Line2D.get_xdata
     set_coordinates = Line2D.set_ydata if horizontal else Line2D.set_xdata
 
-    def prepare() -> _ArtistEdit:
-        element._validate_state()
-        positions = _reference_positions(getattr(element, position))
-        styles = _reference_line_styles(
-            {
-                field: resolve_or(getattr(element, attr), defaults[field])
-                for attr, field in _REFERENCE_LINE_STYLE.items()
-            },
-            len(positions),
+    def prepare_bounded(
+        positions: np.ndarray, low: ArrayLike, high: ArrayLike, style: dict[str, Any]
+    ) -> _ArtistEdit:
+        activating = not collection.get_visible()
+        mpl = cast(Any, collection)
+        edits = []
+        if collection.axes is None:
+            edits.append(_attach_artists(axes, (collection,)))
+        if activating or any(session.has_frame_update(element, name) for name in names):
+            try:
+                ends = np.stack(
+                    (
+                        np.broadcast_to(low, positions.shape),
+                        np.broadcast_to(high, positions.shape),
+                    ),
+                    axis=-1,
+                )
+            except ValueError as exc:
+                raise InvalidParameterError(
+                    "Reference-line bounds must match the line count."
+                ) from exc
+            across = np.repeat(positions[:, None], 2, axis=1)
+            x, y = (ends, across) if horizontal else (across, ends)
+            segments = list(np.stack((x, y), axis=-1))
+            edits.append(
+                _edit(
+                    collection.set_segments,
+                    [path.vertices for path in collection.get_paths()],
+                    segments,
+                )
+            )
+        for name, field, write, previous in (
+            ("_colors", "color", collection.set_edgecolor, mpl._original_edgecolor),
+            (
+                "_line_widths",
+                "linewidth",
+                collection.set_linewidth,
+                collection.get_linewidth(),
+            ),
+            ("_line_styles", "linestyle", collection.set_linestyle, mpl._us_linestyles),
+            ("_alpha", "alpha", collection.set_alpha, collection.get_alpha()),
+        ):
+            if activating or session.has_frame_update(element, name):
+                edits.append(_edit(write, previous, style[field]))
+        if activating:
+            edits.append(_edit(collection.set_visible, False, True))
+        edits.extend(
+            _edit(line.set_visible, True, False) for line in lines if line.get_visible()
         )
+        return _combine_edits(edits)
+
+    def prepare_spanning(
+        positions: np.ndarray, styles: list[dict[str, Any]]
+    ) -> _ArtistEdit:
         original_count = len(lines)
         before = [
             (
@@ -358,7 +372,33 @@ def _bind_spanning_reference_lines(
 
         return _ArtistEdit(apply, undo)
 
-    session.bind_derived(element, (position, *_REFERENCE_LINE_STYLE), prepare)
+    def prepare() -> _ArtistEdit:
+        element._validate_state()
+        positions = _reference_positions(getattr(element, position))
+        style = {
+            field: resolve_or(getattr(element, attr), defaults[field])
+            for attr, field in _REFERENCE_LINE_STYLE.items()
+        }
+        low, high = getattr(element, start), getattr(element, end)
+        if low is not None and high is not None:
+            return prepare_bounded(positions, low, high, style)
+        if (low is not None or high is not None) and (
+            session.has_frame_update(element, start)
+            or session.has_frame_update(element, end)
+        ):
+            raise IncompatibleArgumentsError(
+                f"{start.removeprefix('_')} and {end.removeprefix('_')} must both be provided, or neither."
+            )
+        return _combine_edits(
+            [
+                _edit(collection.set_visible, collection.get_visible(), False),
+                prepare_spanning(
+                    positions, _reference_line_styles(style, len(positions))
+                ),
+            ]
+        )
+
+    session.bind_derived(element, (*names, *_REFERENCE_LINE_STYLE), prepare)
 
 
 class Hlines(Plottable):

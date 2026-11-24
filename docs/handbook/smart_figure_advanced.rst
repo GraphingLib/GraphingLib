@@ -2022,8 +2022,10 @@ Live update support
        grow, shrink, or reach zero. Existing legend samples follow these
        changes and show up to three horizontal or four vertical lines.
        Supply matching positions, per-line styles, and any per-line bounds
-       in the same callback. Axes-spanning lines keep following the viewport.
-     - Choose axes-spanning lines or explicit bounds during setup.
+       in the same callback. Set both bounds to draw bounded lines or clear
+       both with ``None`` to span the axes. Spanning lines follow the viewport
+       even as its limits change.
+     - Line orientation.
    * - :class:`~graphinglib.Point`
      - Position, marker shape, size, face and edge colors, edge width and
        opacity. The caption can change its label, coordinate display, font size,
