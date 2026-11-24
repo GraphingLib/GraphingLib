@@ -29,6 +29,8 @@ def build_animation():
         )
         orbit_x = (1 + 0.25 * np.sin(3 * angles + phase)) * np.cos(angles + phase)
         orbit_y = (1 + 0.25 * np.sin(3 * angles + phase)) * np.sin(angles + phase)
+        orbit_x += 0.12 * np.sin(phase)
+        orbit_y += 0.10 * np.cos(phase)
         image = np.exp(
             -((xx - 1.05 * np.cos(phase)) ** 2 + (yy - 1.05 * np.sin(phase)) ** 2)
             / 0.39
