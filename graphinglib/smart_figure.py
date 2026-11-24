@@ -1,13 +1,17 @@
 from __future__ import annotations as _annotations_
 
-from .inherit import INHERIT, Inherit, is_inherit, resolved, strip_inherit
-
 from collections import OrderedDict
+from collections.abc import Sequence
 from copy import deepcopy
+from fractions import Fraction
+from inspect import iscoroutinefunction, signature
 from logging import warning
+from math import isfinite
+from numbers import Integral, Real
+from pathlib import Path
 from shutil import which
 from string import ascii_lowercase
-from collections.abc import Sequence
+from tempfile import NamedTemporaryFile
 from typing import (
     Any,
     Callable,
@@ -19,6 +23,8 @@ from typing import (
     Union,
     cast,
 )
+
+from .inherit import INHERIT, Inherit, is_inherit, resolved, strip_inherit
 
 try:  # Optional dependency: astropy
     from astropy.units import Quantity
@@ -32,6 +38,7 @@ except ImportError:
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from matplotlib.animation import FuncAnimation, writers
 from matplotlib.axes import Axes
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.collections import LineCollection
@@ -44,7 +51,7 @@ from matplotlib.projections import get_projection_names
 from matplotlib.transforms import ScaledTranslation
 from numpy.typing import ArrayLike
 
-from .file_manager import FileLoader, FileUpdater, get_default_style, get_styles
+from ._animation import _DRAW_SESSION, _AnimationSession, _reject_live_update
 from .exceptions import (
     IncompatibleArgumentsError,
     InvalidOperationError,
@@ -55,6 +62,7 @@ from .exceptions import (
     StyleNotFoundError,
     UnsupportedFeatureError,
 )
+from .file_manager import FileLoader, FileUpdater, get_default_style, get_styles
 from .graph_elements import Plottable, Text
 from .legend_artists import (
     HandlerMultipleLines,
@@ -75,6 +83,12 @@ def _require_astropy(feature: str = "this feature") -> None:
 
 
 HAS_ASTROPY = _ASTROPY_AVAILABLE
+
+
+def _reject_animated_layout(element: object) -> None:
+    _reject_live_update(
+        element, "Configure figure layout and axis properties before animating."
+    )
 
 
 class SmartFigure:
@@ -366,6 +380,7 @@ class SmartFigure:
         self._figure: Figure | SubFigure | None = None
         self._gridspec: GridSpec | None = None
         self._reference_label_i: int | None = None
+        self._animation: FuncAnimation | None = None
 
         self._ticks: dict[str, Any] = {}
         self._tick_params: dict[str, dict[str, Any]] = {
@@ -401,6 +416,7 @@ class SmartFigure:
 
     @num_rows.setter
     def num_rows(self, value: int) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, int):
             raise InvalidParameterTypeError("num_rows must be an integer.")
         if value < 1:
@@ -434,6 +450,7 @@ class SmartFigure:
 
     @num_cols.setter
     def num_cols(self, value: int) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, int):
             raise InvalidParameterTypeError("num_cols must be an integer.")
         if value < 1:
@@ -467,6 +484,7 @@ class SmartFigure:
 
     @shape.setter
     def shape(self, value: tuple[int, int]) -> None:
+        _reject_animated_layout(self)
         self.num_rows, self.num_cols = value
 
     @property
@@ -475,6 +493,7 @@ class SmartFigure:
 
     @x_label.setter
     def x_label(self, value: str | None) -> None:
+        _reject_animated_layout(self)
         self._x_label = value
 
     @property
@@ -483,6 +502,7 @@ class SmartFigure:
 
     @y_label.setter
     def y_label(self, value: str | None) -> None:
+        _reject_animated_layout(self)
         self._y_label = value
 
     @property
@@ -491,6 +511,7 @@ class SmartFigure:
 
     @size.setter
     def size(self, value: tuple[float, float] | Inherit):
+        _reject_animated_layout(self)
         if is_inherit(value):
             self._size = value
             return
@@ -508,6 +529,7 @@ class SmartFigure:
 
     @title.setter
     def title(self, value: str | None) -> None:
+        _reject_animated_layout(self)
         self._title = value
 
     @property
@@ -518,6 +540,7 @@ class SmartFigure:
     def x_lim(
         self, value: ListOrItem[tuple[float | None, float | None] | None]
     ) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if v is not None:
                 if not isinstance(v, tuple):
@@ -534,6 +557,7 @@ class SmartFigure:
     def y_lim(
         self, value: ListOrItem[tuple[float | None, float | None] | None]
     ) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if v is not None:
                 if not isinstance(v, tuple):
@@ -548,6 +572,7 @@ class SmartFigure:
 
     @sub_x_labels.setter
     def sub_x_labels(self, value: Iterable[str] | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not isinstance(value, Iterable):
                 raise InvalidParameterTypeError(
@@ -561,6 +586,7 @@ class SmartFigure:
 
     @sub_y_labels.setter
     def sub_y_labels(self, value: Iterable[str] | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not isinstance(value, Iterable):
                 raise InvalidParameterTypeError(
@@ -574,6 +600,7 @@ class SmartFigure:
 
     @subtitles.setter
     def subtitles(self, value: Iterable[str] | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not isinstance(value, Iterable):
                 raise InvalidParameterTypeError(
@@ -587,6 +614,7 @@ class SmartFigure:
 
     @log_scale_x.setter
     def log_scale_x(self, value: ListOrItem[bool]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError("log_scale_x must be a bool.")
@@ -598,6 +626,7 @@ class SmartFigure:
 
     @log_scale_y.setter
     def log_scale_y(self, value: ListOrItem[bool]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError("log_scale_y must be a bool.")
@@ -609,6 +638,7 @@ class SmartFigure:
 
     @remove_axes.setter
     def remove_axes(self, value: ListOrItem[bool]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError("remove_axes must be a bool.")
@@ -620,6 +650,7 @@ class SmartFigure:
 
     @aspect_ratio.setter
     def aspect_ratio(self, value: ListOrItem[float | Literal["auto", "equal"]]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, (float, int)) and v != "auto" and v != "equal":
                 raise InvalidParameterTypeError(
@@ -635,6 +666,7 @@ class SmartFigure:
 
     @box_aspect_ratio.setter
     def box_aspect_ratio(self, value: ListOrItem[float | None]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if v is not None:
                 if not isinstance(v, (float, int)):
@@ -653,6 +685,7 @@ class SmartFigure:
 
     @remove_x_ticks.setter
     def remove_x_ticks(self, value: ListOrItem[bool]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError("remove_x_ticks must be a bool.")
@@ -664,6 +697,7 @@ class SmartFigure:
 
     @remove_y_ticks.setter
     def remove_y_ticks(self, value: ListOrItem[bool]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError("remove_y_ticks must be a bool.")
@@ -675,6 +709,7 @@ class SmartFigure:
 
     @invert_x_axis.setter
     def invert_x_axis(self, value: ListOrItem[bool]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError("invert_x_axis must be a bool.")
@@ -686,6 +721,7 @@ class SmartFigure:
 
     @invert_y_axis.setter
     def invert_y_axis(self, value: ListOrItem[bool]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError("invert_y_axis must be a bool.")
@@ -697,6 +733,7 @@ class SmartFigure:
 
     @reference_labels.setter
     def reference_labels(self, value: ListOrItem[bool]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError("reference_labels must be a bool.")
@@ -708,6 +745,7 @@ class SmartFigure:
 
     @global_reference_label.setter
     def global_reference_label(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("global_reference_label must be a bool.")
         self._global_reference_label = value
@@ -722,6 +760,7 @@ class SmartFigure:
     def reference_labels_loc(
         self, value: ListOrItem[Literal["inside", "outside"] | tuple[float, float]]
     ) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if isinstance(v, tuple):
                 if len(v) != 2:
@@ -740,6 +779,7 @@ class SmartFigure:
 
     @width_padding.setter
     def width_padding(self, value: float | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not isinstance(value, (float, int)):
                 raise InvalidParameterTypeError("width_padding must be a number.")
@@ -755,6 +795,7 @@ class SmartFigure:
 
     @height_padding.setter
     def height_padding(self, value: float | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not isinstance(value, (float, int)):
                 raise InvalidParameterTypeError("height_padding must be a number.")
@@ -770,6 +811,7 @@ class SmartFigure:
 
     @width_ratios.setter
     def width_ratios(self, value: ArrayLike | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not hasattr(value, "__len__"):
                 raise InvalidParameterTypeError("width_ratios must be an ArrayLike.")
@@ -790,6 +832,7 @@ class SmartFigure:
 
     @height_ratios.setter
     def height_ratios(self, value: ArrayLike | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not hasattr(value, "__len__"):
                 raise InvalidParameterTypeError("height_ratios must be an ArrayLike.")
@@ -810,6 +853,7 @@ class SmartFigure:
 
     @share_x.setter
     def share_x(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("share_x must be a bool.")
         self._share_x = value
@@ -820,6 +864,7 @@ class SmartFigure:
 
     @share_y.setter
     def share_y(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("share_y must be a bool.")
         self._share_y = value
@@ -830,6 +875,7 @@ class SmartFigure:
 
     @projection.setter
     def projection(self, value: ListOrItem[Any | None]) -> None:
+        _reject_animated_layout(self)
         valid_projections = get_projection_names()
         if "3d" in valid_projections:
             valid_projections.remove("3d")
@@ -856,6 +902,7 @@ class SmartFigure:
 
     @general_legend.setter
     def general_legend(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("general_legend must be a bool.")
         self._general_legend = value
@@ -866,6 +913,7 @@ class SmartFigure:
 
     @legend_loc.setter
     def legend_loc(self, value: ListOrItem[str | tuple | None]) -> None:
+        _reject_animated_layout(self)
         choices = [
             "best",
             "upper right",
@@ -911,6 +959,7 @@ class SmartFigure:
 
     @legend_cols.setter
     def legend_cols(self, value: ListOrItem[int]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, int):
                 raise InvalidParameterTypeError("legend_cols must be an integer.")
@@ -924,6 +973,7 @@ class SmartFigure:
 
     @show_legend.setter
     def show_legend(self, value: ListOrItem[bool]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError("show_legend must be a bool.")
@@ -935,6 +985,7 @@ class SmartFigure:
 
     @twin_x_axis.setter
     def twin_x_axis(self, value: SmartTwinAxis | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not self.is_single_subplot:
                 raise InvalidOperationError(
@@ -952,6 +1003,7 @@ class SmartFigure:
 
     @twin_y_axis.setter
     def twin_y_axis(self, value: SmartTwinAxis | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not self.is_single_subplot:
                 raise InvalidOperationError(
@@ -969,6 +1021,7 @@ class SmartFigure:
 
     @figure_style.setter
     def figure_style(self, value: str | Inherit) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, str) and not is_inherit(value):
             raise InvalidParameterTypeError("figure_style must be a string or INHERIT.")
         available_styles = [INHERIT, "matplotlib"] + get_styles(matplotlib=True)
@@ -1008,6 +1061,7 @@ class SmartFigure:
         For adding elements instead of replacing them, use the :meth:`~graphinglib.SmartFigure.add_elements` or the
         :meth:`~graphinglib.SmartFigure.__setitem__` methods.
         """
+        _reject_animated_layout(self)
         if isinstance(value, SmartFigure):
             raise InvalidParameterTypeError(
                 "Leaf elements cannot be assigned a SmartFigure directly."
@@ -1036,6 +1090,7 @@ class SmartFigure:
 
     @annotations.setter
     def annotations(self, value: Iterable[Text] | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not isinstance(value, Iterable) or not all(
                 isinstance(t, Text) for t in value
@@ -1056,6 +1111,7 @@ class SmartFigure:
 
     @show_grid.setter
     def show_grid(self, value: ListOrItem[bool]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError("show_grid must be a bool.")
@@ -1080,6 +1136,7 @@ class SmartFigure:
 
     @hide_custom_legend_elements.setter
     def hide_custom_legend_elements(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError(
                 "hide_custom_legend_elements must be a bool."
@@ -1105,6 +1162,7 @@ class SmartFigure:
 
     @hide_default_legend_elements.setter
     def hide_default_legend_elements(self, value: ListOrItem[bool]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError(
@@ -1226,6 +1284,7 @@ class SmartFigure:
             |            |            |
             +------------+------------+
         """
+        _reject_animated_layout(self)
         if self._mode == "leaf":
             raise LayoutError(
                 "SmartFigures used as a single plot do not support subplot assignment. "
@@ -1342,7 +1401,7 @@ class SmartFigure:
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result
-        excluded_attrs = ["_figure", "_gridspec"]
+        excluded_attrs = ["_figure", "_gridspec", "_animation"]
         for property_, value in self.__dict__.items():
             if property_ not in excluded_attrs:
                 result.__dict__[property_] = deepcopy(value, memo)
@@ -1594,6 +1653,7 @@ class SmartFigure:
             For more information on how to use the ``__setitem__`` method to add elements that span multiple columns or
             rows to the :class:`~graphinglib.SmartFigure`.
         """
+        _reject_animated_layout(self)
         if self._mode == "leaf":
             for element in elements:
                 if element is None:
@@ -1645,6 +1705,7 @@ class SmartFigure:
         return result
 
     def __iadd__(self, other):
+        _reject_animated_layout(self)
         if self._mode == "leaf":
             self._leaf_elements.extend(self._normalize_leaf_rhs(other))
             return self
@@ -2022,6 +2083,278 @@ class SmartFigure:
         self._gridspec = None
         return self
 
+    def show_animation(
+        self,
+        update_function: Callable[[int], Any],
+        number_of_frames: int,
+        interval: int = 100,
+    ) -> Self:
+        """
+        Animates and displays the :class:`~graphinglib.SmartFigure`.
+
+        Parameters
+        ----------
+        update_function : callable
+            Function that sets plot data for a zero-based frame index. Playback can request an index again.
+        number_of_frames : int
+            The number of frames in the animation.
+        interval : int
+            The time between each frame in milliseconds.
+            Defaults to ``100``.
+
+        Returns
+        -------
+        Self
+            The same SmartFigure instance, allowing for method chaining.
+        """
+        self._validate_animation_parameters(update_function, number_of_frames, interval)
+        with plt.rc_context():
+            figure, animation, session = self._create_animation(
+                update_function, number_of_frames, interval, interactive=True
+            )
+
+            def on_close(event: Any) -> None:
+                figure.canvas.mpl_disconnect(close_id)
+                self._finish_animation(figure, animation, session, close=False)
+
+            close_id = figure.canvas.mpl_connect("close_event", on_close)
+            try:
+                figure.canvas.draw()
+                plt.show()
+            except BaseException:
+                self._finish_animation(figure, animation, session)
+                raise
+            finally:
+                if not plt.fignum_exists(figure.number):
+                    figure.canvas.mpl_disconnect(close_id)
+                    self._finish_animation(figure, animation, session, close=False)
+        return self
+
+    def save_animation(
+        self,
+        file_name: str | Path,
+        update_function: Callable[[int], Any],
+        number_of_frames: int,
+        interval: int = 100,
+        dpi: int | None = None,
+        fps: float | None = None,
+        writer: str | None = None,
+        transparent: bool = False,
+    ) -> Self:
+        """
+        Animates the :class:`~graphinglib.SmartFigure` and saves it to a file.
+
+        Parameters
+        ----------
+        file_name : str | pathlib.Path
+            The output file path ending in ``.gif`` or ``.mp4``.
+        update_function : callable
+            Function that sets plot data for a zero-based frame index.
+        number_of_frames : int
+            The number of frames in the animation.
+        interval : int
+            The time between each frame in milliseconds.
+            Defaults to ``100``.
+        dpi : int, optional
+            Resolution used when rendering frames. If None, the figure DPI is used.
+        fps : float, optional
+            Frames per second for the saved animation. If None, this is inferred from ``interval``.
+        writer : str, optional
+            The writer matching the output format, ``"pillow"`` for GIF or ``"ffmpeg"`` for MP4.
+            The writer is inferred from the extension when omitted.
+        transparent : bool, optional
+            Whether to save with transparent background.
+            Defaults to ``False``.
+
+        Returns
+        -------
+        Self
+            The same SmartFigure instance, allowing for method chaining.
+        """
+        self._validate_animation_parameters(update_function, number_of_frames, interval)
+        save_fps: float | Fraction = fps if fps is not None else 1000 / interval
+        self._validate_animation_number("fps", save_fps)
+        if dpi is not None:
+            self._validate_animation_number("dpi", dpi)
+        destination = Path(file_name)
+        default_writer = {".gif": "pillow", ".mp4": "ffmpeg"}.get(
+            destination.suffix.lower()
+        )
+        if default_writer is None:
+            raise InvalidParameterError(
+                "Animation output must have a .gif or .mp4 extension."
+            )
+        if writer is None:
+            writer = default_writer
+        if not isinstance(writer, str):
+            raise InvalidParameterTypeError(
+                "writer must be the name of a Matplotlib animation writer."
+            )
+        if not writers.is_available(writer):
+            raise InvalidOperationError(
+                f"The Matplotlib animation writer {writer!r} is unavailable."
+            )
+        if writer != default_writer:
+            raise InvalidParameterError(
+                "Use the Pillow writer for GIF output or the FFmpeg writer for MP4 output."
+            )
+        if writer == "pillow" and fps is None:
+            # PillowWriter truncates 1000 / fps to milliseconds. Preserve exact GIF delays
+            # such as 120 ms when the inferred frame rate is a repeating decimal.
+            save_fps = Fraction(1000) / Fraction(float(interval))
+
+        with plt.rc_context():
+            figure, animation, session = self._create_animation(
+                update_function, number_of_frames, interval
+            )
+            temporary_path = None
+            try:
+                with NamedTemporaryFile(
+                    dir=destination.parent, suffix=destination.suffix, delete=False
+                ) as output:
+                    temporary_path = Path(output.name)
+                try:
+                    animation.save(
+                        temporary_path,
+                        writer=writer,
+                        fps=save_fps,  # ty: ignore[invalid-argument-type]  # Writers accept fractional rates.
+                        dpi=dpi,
+                        savefig_kwargs={"transparent": transparent},
+                    )
+                except BaseException as writer_error:
+                    # Pillow can fail while finishing an empty file and mask frame zero's error.
+                    if (
+                        session.failure is not None
+                        and session.failure is not writer_error
+                    ):
+                        raise session.failure from None
+                    raise
+                temporary_path.replace(destination)
+            finally:
+                try:
+                    if temporary_path is not None:
+                        temporary_path.unlink(missing_ok=True)
+                finally:
+                    self._finish_animation(figure, animation, session)
+        return self
+
+    def _create_animation(
+        self,
+        update_function: Callable[[int], Any],
+        number_of_frames: int,
+        interval: int,
+        *,
+        interactive: bool = False,
+    ) -> tuple[Figure, FuncAnimation, _AnimationSession]:
+        if self._animation is not None:
+            raise InvalidOperationError(
+                "Close the current animation before starting another one."
+            )
+
+        _reject_live_update(
+            self, "Finish the active animation before rendering this figure again."
+        )
+        session = _AnimationSession()
+        session.mark_present(self)
+        token = _DRAW_SESSION.set(session)
+        try:
+            self._initialize_parent_smart_figure()
+        except BaseException:
+            session.clear()
+            raise
+        finally:
+            _DRAW_SESSION.reset(token)
+        figure = self._figure
+        assert isinstance(figure, Figure)
+
+        def draw_frame(index: int) -> None:
+            try:
+                with plt.rc_context(rc=frame_style):
+                    session.draw_frame(update_function, index)
+            except BaseException:
+                if interactive:
+                    self._finish_animation(figure, animation, session)
+                raise
+
+        try:
+            figure.set_layout_engine("none")
+            for axes in figure.axes:
+                axes.set_autoscale_on(False)
+            frame_style = plt.rcParams.copy()
+            animation = FuncAnimation(
+                figure,
+                draw_frame,
+                frames=number_of_frames,
+                interval=interval,
+                init_func=lambda: None,
+                blit=False,
+                cache_frame_data=False,
+            )
+        except BaseException:
+            session.clear()
+            plt.close(figure)
+            self._figure = None
+            self._gridspec = None
+            raise
+        self._animation = animation
+        return figure, animation, session
+
+    def _finish_animation(
+        self,
+        figure: Figure,
+        animation: FuncAnimation,
+        session: _AnimationSession,
+        *,
+        close: bool = True,
+    ) -> None:
+        if self._animation is not animation:
+            return
+        if animation.event_source is not None:
+            animation.event_source.stop()
+        session.clear()
+        self._animation = None
+        if self._figure is figure:
+            self._figure = None
+            self._gridspec = None
+        if close:
+            plt.close(figure)
+
+    @classmethod
+    def _validate_animation_parameters(
+        cls, update_function: Callable[[int], Any], number_of_frames: int, interval: int
+    ) -> None:
+        cls._validate_animation_update_function(update_function)
+        if isinstance(number_of_frames, bool) or not isinstance(
+            number_of_frames, Integral
+        ):
+            raise InvalidParameterTypeError("number_of_frames must be an integer.")
+        if number_of_frames <= 0:
+            raise InvalidParameterError("number_of_frames must be positive.")
+        cls._validate_animation_number("interval", interval)
+
+    @staticmethod
+    def _validate_animation_number(name: str, value: float) -> None:
+        if isinstance(value, bool) or not isinstance(value, Real):
+            raise InvalidParameterTypeError(f"{name} must be a real number.")
+        if value <= 0 or not isfinite(value):
+            raise InvalidParameterError(f"{name} must be finite and positive.")
+
+    @staticmethod
+    def _validate_animation_update_function(
+        update_function: Callable[[int], Any],
+    ) -> None:
+        if not callable(update_function) or iscoroutinefunction(update_function):
+            raise InvalidParameterTypeError(
+                "The update function must be a synchronous callable."
+            )
+
+        try:
+            signature(update_function).bind(0)
+        except (TypeError, ValueError) as exc:
+            raise InvalidOperationError(
+                "The update function must take an integer argument representing the frame number."
+            ) from exc
+
     def _initialize_parent_smart_figure(
         self,
     ) -> None:
@@ -2030,6 +2363,13 @@ class SmartFigure:
         figure style, parameters and matplotlib figure and calls the :meth:`~graphinglib.SmartFigure._prepare_figure`
         method.
         """
+        _reject_live_update(
+            self, "Finish the animation before rendering this figure again."
+        )
+        if self._animation is not None:
+            raise InvalidOperationError(
+                "Close the current animation before rendering this figure again."
+            )
         if is_inherit(self._figure_style):
             self._figure_style = get_default_style()
         try:
@@ -2058,26 +2398,29 @@ class SmartFigure:
         )  # Custom rc parameters supersede the defaults
         self._fill_in_rc_params(is_matplotlib_style)
 
-        # The following try/except removes lingering figures when errors occur during the plotting process
+        figure = None
         try:
-            self._figure = plt.figure(
-                constrained_layout=True, figsize=resolved(self._size)
-            )
-            layout_engine = self._figure.get_layout_engine()
+            figure = plt.figure(constrained_layout=True, figsize=resolved(self._size))
+            self._figure = figure
+            layout_engine = figure.get_layout_engine()
             assert isinstance(layout_engine, ConstrainedLayoutEngine)
-            layout_engine.set(w_pad=0, h_pad=0)
+            if _DRAW_SESSION.get() is None:
+                layout_engine.set(w_pad=0, h_pad=0)
             self._reference_label_i = self._reference_labels_params.get(
                 "start_index", 0
             )
             self._prepare_figure(is_matplotlib_style)
-            self._figure.canvas.draw()
+            figure.canvas.draw()
             self._align_shared_x_spines()
-        except Exception as e:
-            plt.close()
-            raise e
-
-        self._reset_params_to_default(self, parent_figure_params_to_reset)
-        self._default_params = {}
+        except BaseException:
+            if figure is not None:
+                plt.close(figure)
+                self._figure = None
+                self._gridspec = None
+            raise
+        finally:
+            self._reset_params_to_default(self, parent_figure_params_to_reset)
+            self._default_params = {}
 
     def _prepare_figure(
         self,
@@ -2156,6 +2499,11 @@ class SmartFigure:
         default_labels, default_handles = [], []
         custom_labels, custom_handles = [], []
 
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            for child in self._children.values():
+                session.mark_present(child)
+
         # Plottable and subfigure plotting
         for subplot_i, ((rows, cols), element) in enumerate(
             self._ordered_elements.items()
@@ -2191,33 +2539,44 @@ class SmartFigure:
                     if param_is_none and sub_param is not None:
                         setattr(element, attr, sub_param)
 
-                subfig = figure.add_subfigure(gridspec[rows, cols])
-                element._figure = subfig  # associates the current subfigure with the nested SmartFigure
-                element._reference_label_i = self._reference_label_i
-                legend_info = element._prepare_figure(
-                    is_matplotlib_style=is_matplotlib_style,
-                    make_legend=(not self._general_legend and make_legend),
-                )
+                try:
+                    subfig = figure.add_subfigure(gridspec[rows, cols])
+                    if session is not None:
 
-                self._reference_label_i = element._reference_label_i
-                default_labels += legend_info["labels"]["default"]
-                default_handles += legend_info["handles"]["default"]
-                custom_labels += legend_info["labels"]["custom"]
-                custom_handles += legend_info["handles"]["custom"]
+                        def release_child(child=element, owned=subfig) -> None:
+                            if child._figure is owned:
+                                child._figure = None
+                                child._gridspec = None
 
-                if is_matplotlib_style:
-                    plt.rcParams.update(cast(Any, parent_rc_params))
-                else:
-                    plt.rcParams.update(
-                        self._default_params["rc_params"]
-                    )  # Return to the parent SmartFigure's rc params
-                    element._reset_params_to_default(element, subfig_params_to_reset)
-                element._default_params = {}
-                for param, param_was_none in zip(
-                    ["x_label", "y_label", "title"], subfig_none_params
-                ):
-                    if param_was_none:
-                        setattr(element, param, None)
+                        session.on_finish(release_child)
+                    element._figure = subfig  # associates the current subfigure with the nested SmartFigure
+                    element._reference_label_i = self._reference_label_i
+                    legend_info = element._prepare_figure(
+                        is_matplotlib_style=is_matplotlib_style,
+                        make_legend=(not self._general_legend and make_legend),
+                    )
+
+                    self._reference_label_i = element._reference_label_i
+                    default_labels += legend_info["labels"]["default"]
+                    default_handles += legend_info["handles"]["default"]
+                    custom_labels += legend_info["labels"]["custom"]
+                    custom_handles += legend_info["handles"]["custom"]
+                finally:
+                    if is_matplotlib_style:
+                        plt.rcParams.update(cast(Any, parent_rc_params))
+                    else:
+                        plt.rcParams.update(
+                            self._default_params["rc_params"]
+                        )  # Return to the parent SmartFigure's rc params
+                        element._reset_params_to_default(
+                            element, subfig_params_to_reset
+                        )
+                    element._default_params = {}
+                    for param, param_was_none in zip(
+                        ["x_label", "y_label", "title"], subfig_none_params
+                    ):
+                        if param_was_none:
+                            setattr(element, param, None)
 
             elif isinstance(element, (Plottable, list)):
                 current_elements = element if isinstance(element, list) else [element]
@@ -2241,12 +2600,13 @@ class SmartFigure:
                             params_to_reset = self._fill_in_missing_params(
                                 current_element
                             )
-                        current_element._plot_element(
-                            ax,
-                            z_order,
-                            cycle_color=cycle_colors[index % num_cycle_colors],
-                        )
-                        if not is_matplotlib_style:
+                        try:
+                            current_element._plot_element(
+                                ax,
+                                z_order,
+                                cycle_color=cycle_colors[index % num_cycle_colors],
+                            )
+                        finally:
                             self._reset_params_to_default(
                                 current_element, params_to_reset
                             )
@@ -3024,6 +3384,7 @@ class SmartFigure:
         Self
             For convenience, the same SmartFigure with the updated rc parameters.
         """
+        _reject_animated_layout(self)
         if reset:
             self._user_rc_dict.clear()
         for property_, value in rc_params_dict.items():
@@ -3134,6 +3495,7 @@ class SmartFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        _reject_animated_layout(self)
         prop_cycle = plt.cycler(color=color_cycle) if color_cycle is not None else None
 
         rc_params_dict = {
@@ -3237,6 +3599,7 @@ class SmartFigure:
         """
         # Normalize iterable tick/label inputs to lists so their lengths can be compared
         # and the values reused (a bare iterator would be exhausted after the first pass).
+        _reject_animated_layout(self)
         if x_ticks is not None:
             x_ticks = list(x_ticks)
         if y_ticks is not None:
@@ -3402,6 +3765,7 @@ class SmartFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        _reject_animated_layout(self)
         new_tick_params = {
             "direction": direction,
             "length": length,
@@ -3485,6 +3849,7 @@ class SmartFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        _reject_animated_layout(self)
         if reset:
             self._grid.clear()
             self._user_rc_dict.update(
@@ -3542,6 +3907,7 @@ class SmartFigure:
         Self
             For convenience, the same SmartFigure with the updated custom legend.
         """
+        _reject_animated_layout(self)
         if reset:
             self._custom_legend_handles = []
             self._custom_legend_labels = []
@@ -3592,6 +3958,7 @@ class SmartFigure:
         Self
             For convenience, the same SmartFigure with the updated text padding parameters.
         """
+        _reject_animated_layout(self)
         for pad_param in [x_label_pad, y_label_pad, title_pad]:
             if pad_param is not None and not isinstance(pad_param, (int, float)):
                 raise InvalidParameterTypeError(
@@ -3675,6 +4042,7 @@ class SmartFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        _reject_animated_layout(self)
         if start_index is not None:
             if not isinstance(start_index, int):
                 raise InvalidParameterTypeError("start_index must be an integer.")
@@ -4072,6 +4440,7 @@ class SmartFigureWCS(SmartFigure):
 
     @projection.setter
     def projection(self, value: ListOrItem[WCS]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, WCS):
                 raise InvalidParameterTypeError(
@@ -4273,6 +4642,7 @@ class SmartFigureWCS(SmartFigure):
         Self
             For convenience, the same SmartFigure with the updated ticks.
         """
+        _reject_animated_layout(self)
         if any(
             [
                 (x_ticks is not None) and (x_tick_spacing is not None),
@@ -4414,6 +4784,7 @@ class SmartFigureWCS(SmartFigure):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        _reject_animated_layout(self)
         new_tick_params = {
             "direction": direction,
             "length": length,
@@ -4500,6 +4871,7 @@ class SmartFigureWCS(SmartFigure):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        _reject_animated_layout(self)
         return super().set_grid(
             visible_x=visible_x,
             visible_y=visible_y,
@@ -4581,6 +4953,7 @@ class SmartTwinAxis:
 
     @label.setter
     def label(self, value: str | None) -> None:
+        _reject_animated_layout(self)
         self._label = value
 
     @property
@@ -4589,6 +4962,7 @@ class SmartTwinAxis:
 
     @axis_lim.setter
     def axis_lim(self, value: tuple[float, float] | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not isinstance(value, tuple):
                 raise InvalidParameterTypeError("axis_lim must be a tuple.")
@@ -4602,6 +4976,7 @@ class SmartTwinAxis:
 
     @log_scale.setter
     def log_scale(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("log_scale must be a boolean.")
         self._log_scale = value
@@ -4612,6 +4987,7 @@ class SmartTwinAxis:
 
     @remove_axes.setter
     def remove_axes(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("remove_axes must be a bool.")
         self._remove_axes = value
@@ -4622,6 +4998,7 @@ class SmartTwinAxis:
 
     @remove_ticks.setter
     def remove_ticks(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("remove_ticks must be a bool.")
         self._remove_ticks = value
@@ -4632,6 +5009,7 @@ class SmartTwinAxis:
 
     @invert_axis.setter
     def invert_axis(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("invert_axis must be a bool.")
         self._invert_axis = value
@@ -4642,6 +5020,7 @@ class SmartTwinAxis:
 
     @elements.setter
     def elements(self, value: Plottable | Iterable[Plottable | None]) -> None:
+        _reject_animated_layout(self)
         self._elements = []  # systematically reset the elements when setting them with the property
         if isinstance(value, Plottable):
             self.add_elements(value)
@@ -4730,6 +5109,7 @@ class SmartTwinAxis:
         Self
             For convenience, the same :class:`~graphinglib.SmartTwinAxis` with the added elements.
         """
+        _reject_animated_layout(self)
         if not SmartFigure._is_iterable_of_plottables(elements):
             raise InvalidParameterTypeError(
                 "Elements must be an iterable of Plottable objects."
@@ -4790,6 +5170,15 @@ class SmartTwinAxis:
             )
 
         self._axes = ax
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            session.mark_present(self)
+
+            def release_twin() -> None:
+                if self._axes is ax:
+                    self._axes = None
+
+            session.on_finish(release_twin)
 
         if self._label:
             ax_set_label(self._label)
@@ -4992,6 +5381,7 @@ class SmartTwinAxis:
         Self
             For convenience, the same SmartTwinAxis with the updated rc parameters.
         """
+        _reject_animated_layout(self)
         if reset:
             self._user_rc_dict.clear()
             self._edge_color = None
@@ -5057,6 +5447,7 @@ class SmartTwinAxis:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        _reject_animated_layout(self)
         rc_params_dict = {
             "axes.labelcolor": label_color,
             "axes.labelpad": label_pad,
@@ -5133,6 +5524,7 @@ class SmartTwinAxis:
         """
         # Normalize iterable tick/label inputs to lists so their lengths can be compared
         # and the values reused (a bare iterator would be exhausted after the first pass).
+        _reject_animated_layout(self)
         if ticks is not None:
             ticks = list(ticks)
         if minor_ticks is not None:
@@ -5251,6 +5643,7 @@ class SmartTwinAxis:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        _reject_animated_layout(self)
         new_tick_params = {
             "direction": direction,
             "length": length,

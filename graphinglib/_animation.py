@@ -1,0 +1,484 @@
+"""Artist bindings for one SmartFigure animation."""
+
+from collections.abc import Callable
+from contextvars import ContextVar
+from dataclasses import dataclass
+from typing import Any
+
+import numpy as np
+from matplotlib.artist import Artist
+from matplotlib.collections import (
+    LineCollection,
+    PathCollection,
+    PolyCollection,
+    QuadMesh,
+)
+from matplotlib.container import ErrorbarContainer
+from matplotlib.image import AxesImage
+from matplotlib.lines import Line2D
+from matplotlib.text import Text as TextArtist
+from numpy.typing import ArrayLike
+
+from .exceptions import (
+    GraphingLibError,
+    InvalidParameterError,
+    PlottingError,
+    UnsupportedFeatureError,
+)
+from .inherit import is_inherit
+
+
+@dataclass
+class _ArtistEdit:
+    apply: Callable[[], None]
+    undo: Callable[[], None]
+
+
+def _edit(setter: Callable[[Any], None], old: Any, new: Any) -> _ArtistEdit:
+    return _ArtistEdit(lambda: setter(new), lambda: setter(old))
+
+
+@dataclass
+class _ErrorArtists:
+    segments: LineCollection
+    caps: tuple[Line2D, ...]
+
+
+@dataclass
+class _PointArtists:
+    points: Line2D | PathCollection
+    x_error: _ErrorArtists | None
+    y_error: _ErrorArtists | None
+    fixed_count: int | None
+    bands: "_CurveBands | None" = None
+
+
+@dataclass
+class _CurveBands:
+    lower: Line2D | None
+    upper: Line2D | None
+    error_fill: PolyCollection | None
+    area_fill: PolyCollection | None
+    area_bounds: tuple[float, float] | None
+
+    def edits(
+        self, x: np.ndarray, y: np.ndarray, error: np.ndarray | None
+    ) -> list[_ArtistEdit]:
+        edits = []
+        if self.lower is not None and self.upper is not None:
+            low, high = _error_bounds(y, error)
+            edits.append(_edit(self.lower.set_data, self.lower.get_data(), (x, low)))
+            edits.append(_edit(self.upper.set_data, self.upper.get_data(), (x, high)))
+            if self.error_fill is not None:
+                edits.append(_fill_edit(self.error_fill, x, high, low))
+        if self.area_fill is not None and self.area_bounds is not None:
+            within = (x >= self.area_bounds[0]) & (x <= self.area_bounds[1])
+            edits.append(_fill_edit(self.area_fill, x, y, np.zeros_like(y), within))
+        return edits
+
+
+def _error_bounds(
+    y: np.ndarray, error: np.ndarray | None
+) -> tuple[np.ndarray, np.ndarray]:
+    if error is None:
+        return y, y
+    lower, upper = np.broadcast_to(error, (2, y.size))
+    return y - lower, y + upper
+
+
+def _fill_edit(
+    artist: PolyCollection,
+    x: np.ndarray,
+    y1: np.ndarray,
+    y2: np.ndarray,
+    where: np.ndarray | None = None,
+) -> _ArtistEdit:
+    mask = np.isfinite(x) & np.isfinite(y1) & np.isfinite(y2)
+    if where is not None:
+        mask &= where
+    changes = np.flatnonzero(np.diff(np.r_[False, mask, False]))
+    polygons = []
+    for start, stop in changes.reshape(-1, 2):
+        a, b, c = x[start:stop], y1[start:stop], y2[start:stop]
+        polygons.append(np.column_stack((np.r_[a, a[::-1]], np.r_[b, c[::-1]])))
+    before = [path.vertices for path in artist.get_paths()]
+    return _edit(artist.set_verts, before, polygons)
+
+
+@dataclass
+class _RasterArtist:
+    image: AxesImage | QuadMesh
+    shape: tuple[int, ...]
+
+
+_Binding = _PointArtists | _RasterArtist | TextArtist | str | None
+
+
+def _error_array(value: ArrayLike | None, size: int, name: str) -> np.ndarray | None:
+    if value is None:
+        return None
+    error = np.asarray(value)
+    if error.shape not in ((), (size,), (2, size)):
+        raise InvalidParameterError(
+            f"{name} must be a scalar, a length-{size} array, or shape (2, {size})."
+        )
+    if (
+        error.dtype.kind not in "iuf"
+        or not np.isfinite(error).all()
+        or (error < 0).any()
+    ):
+        raise InvalidParameterError(
+            f"{name} must contain finite, nonnegative real values."
+        )
+    return error.copy()
+
+
+class _AnimationSession:
+    def __init__(self) -> None:
+        self._artists: dict[int, list[_Binding]] = {}
+        self._properties: dict[tuple[int, str], list[Callable[[Any], _ArtistEdit]]] = {}
+        self._updates: dict[tuple[int, str], list[_ArtistEdit]] = {}
+        self._rollback: dict[tuple[int, str], Callable[[], None]] = {}
+        self._cleanup: list[Callable[[], None]] = []
+        self.failure: BaseException | None = None
+
+    def remember(self, element: object, name: str, restore: Callable[[], None]) -> None:
+        self._rollback.setdefault((id(element), name), restore)
+
+    def on_finish(self, callback: Callable[[], None]) -> None:
+        self._cleanup.append(callback)
+
+    def mark_present(self, element: object) -> None:
+        self._artists.setdefault(id(element), [])
+
+    def bind_update(
+        self, element: object, name: str, prepare: Callable[[Any], _ArtistEdit]
+    ) -> None:
+        self.mark_present(element)
+        self._properties.setdefault((id(element), name), []).append(prepare)
+
+    def bind_property(
+        self,
+        element: object,
+        name: str,
+        artist: Artist,
+        mpl_name: str,
+        convert: Callable[[Any], Any] | None = None,
+    ) -> None:
+        getter = getattr(artist, f"get_{mpl_name}")
+        setter = getattr(artist, f"set_{mpl_name}")
+
+        def prepare(value: Any) -> _ArtistEdit:
+            return _edit(setter, getter(), convert(value) if convert else value)
+
+        self.bind_update(element, name, prepare)
+
+    def queue_property(
+        self, element: object, name: str, value: Any, restore: Callable[[], None]
+    ) -> None:
+        prepares = self._properties.get((id(element), name))
+        if not prepares:
+            raise UnsupportedFeatureError(
+                f"{type(element).__name__}.{name.removeprefix('_')} cannot change in this animation."
+            )
+        if is_inherit(value):
+            raise UnsupportedFeatureError(
+                "Use an explicit style value during animation."
+            )
+        self._stage(element, name, [prepare(value) for prepare in prepares], restore)
+
+    def block_curve_updates(
+        self,
+        curve: object,
+        reason: str = "Animating a fill shared by two curves is unsupported.",
+    ) -> None:
+        self._artists.setdefault(id(curve), []).append(reason)
+
+    def has_binding(self, element: object) -> bool:
+        return id(element) in self._artists
+
+    def reject_structural_update(self, element: object, message: str) -> None:
+        if self.has_binding(element):
+            raise UnsupportedFeatureError(message)
+
+    def bind_curve(
+        self,
+        curve: object,
+        handle: ErrorbarContainer,
+        *,
+        has_unsupported_artists: bool,
+        bands: _CurveBands,
+    ) -> None:
+        data_line = handle.lines[0]
+        if has_unsupported_artists or not isinstance(data_line, Line2D):
+            self.block_curve_updates(curve)
+            return
+        self._bind_points(curve, data_line, handle, bands=bands)
+
+    def bind_scatter(
+        self, scatter: object, points: PathCollection, errors: ErrorbarContainer | None
+    ) -> None:
+        self._bind_points(
+            scatter, points, errors, fixed_count=len(np.asarray(points.get_offsets()))
+        )
+
+    def _bind_points(
+        self,
+        element: object,
+        points: Line2D | PathCollection,
+        handle: ErrorbarContainer | None,
+        *,
+        fixed_count: int | None = None,
+        bands: _CurveBands | None = None,
+    ) -> None:
+        if handle is None:
+            self._artists.setdefault(id(element), []).append(
+                _PointArtists(points, None, None, fixed_count, bands)
+            )
+            return
+        _, caps, segments = handle.lines
+        directions = int(handle.has_xerr) + int(handle.has_yerr)
+        if len(segments) != directions or len(caps) not in (0, 2 * directions):
+            self._artists.setdefault(id(element), []).append(None)
+            return
+        # Matplotlib builds the horizontal error artists before the vertical ones.
+        errors = [
+            _ErrorArtists(collection, tuple(caps[2 * i : 2 * i + 2]))
+            for i, collection in enumerate(segments)
+        ]
+        x_error = errors[0] if handle.has_xerr else None
+        y_error = errors[-1] if handle.has_yerr else None
+        self._artists.setdefault(id(element), []).append(
+            _PointArtists(points, x_error, y_error, fixed_count, bands)
+        )
+
+    def bind_heatmap(
+        self, heatmap: object, artist: object, shape: tuple[int, ...]
+    ) -> None:
+        self._artists.setdefault(id(heatmap), []).append(
+            _RasterArtist(artist, shape)
+            if isinstance(artist, (AxesImage, QuadMesh))
+            else None
+        )
+
+    def bind_text(self, text: object, artist: TextArtist) -> None:
+        self._artists.setdefault(id(text), []).append(artist)
+
+    def queue_points(
+        self,
+        element: object,
+        x: np.ndarray,
+        y: np.ndarray,
+        dx: np.ndarray | None,
+        dy: np.ndarray | None,
+        *,
+        show_errorbars: bool,
+        restore: Callable[[], None],
+    ) -> None:
+        bindings = self._artists.get(id(element))
+        if not bindings:
+            return
+        if x.dtype.kind not in "biuf" or y.dtype.kind not in "biuf":
+            raise InvalidParameterError(
+                "Animated plot coordinates must be real numeric values."
+            )
+        horizontal = dx if show_errorbars else None
+        vertical = dy if show_errorbars else None
+        updates: list[_ArtistEdit] = []
+        for binding in bindings:
+            if not isinstance(binding, _PointArtists):
+                raise UnsupportedFeatureError(
+                    binding
+                    if isinstance(binding, str)
+                    else "This plot has an unsupported errorbar layout."
+                )
+            if binding.fixed_count is not None and x.size != binding.fixed_count:
+                raise InvalidParameterError(
+                    "An animated Scatter must keep its original point count."
+                )
+            if (binding.x_error is None) != (horizontal is None) or (
+                binding.y_error is None
+            ) != (vertical is None):
+                raise UnsupportedFeatureError(
+                    "An animation cannot add or remove errorbar directions."
+                )
+            if isinstance(binding.points, Line2D):
+                line = binding.points
+                updates.append(_edit(line.set_data, line.get_data(), (x, y)))
+            else:
+                offsets = np.column_stack((x, y))
+                updates.append(
+                    _edit(
+                        binding.points.set_offsets,
+                        binding.points.get_offsets(),
+                        offsets,
+                    )
+                )
+            if binding.bands is not None:
+                updates.extend(binding.bands.edits(x, y, dy))
+            if binding.x_error is not None and horizontal is not None:
+                updates.append(
+                    self._error_update(binding.x_error, x, y, horizontal, is_x=True)
+                )
+            if binding.y_error is not None and vertical is not None:
+                updates.append(
+                    self._error_update(binding.y_error, y, x, vertical, is_x=False)
+                )
+        self._stage(element, "point_data", updates, restore)
+
+    @staticmethod
+    def _error_update(
+        artists: _ErrorArtists,
+        changing: np.ndarray,
+        fixed: np.ndarray,
+        error: np.ndarray,
+        *,
+        is_x: bool,
+    ) -> _ArtistEdit:
+        lower, upper = np.broadcast_to(error, (2, changing.size)).astype(float)
+        low, high = changing - lower, changing + upper
+        start, end = (
+            ((low, fixed), (high, fixed)) if is_x else ((fixed, low), (fixed, high))
+        )
+        segments = np.stack((np.column_stack(start), np.column_stack(end)), axis=1)
+
+        old_segments = [path.vertices for path in artists.segments.get_paths()]
+        old_caps = tuple(cap.get_data() for cap in artists.caps)
+
+        def update(new_segments: Any, cap_data: Any) -> None:
+            artists.segments.set_segments(new_segments)
+            for cap, data in zip(artists.caps, cap_data):
+                cap.set_data(data)
+
+        return _ArtistEdit(
+            lambda: update(segments, (start, end)),
+            lambda: update(old_segments, old_caps),
+        )
+
+    def queue_heatmap(
+        self, heatmap: object, image: np.ndarray, restore: Callable[[], None]
+    ) -> None:
+        updates: list[_ArtistEdit] = []
+        for binding in self._artists.get(id(heatmap), ()):
+            if not isinstance(binding, _RasterArtist):
+                raise UnsupportedFeatureError(
+                    "This Heatmap has no supported image artist."
+                )
+            if image.shape != binding.shape:
+                raise InvalidParameterError(
+                    "An animated Heatmap image must keep its original shape."
+                )
+            if not np.can_cast(image.dtype, float, casting="same_kind"):
+                raise InvalidParameterError(
+                    "An animated Heatmap image must contain real numeric values."
+                )
+            artist = binding.image
+            if isinstance(artist, AxesImage):
+                updates.append(_edit(artist.set_data, artist.get_array(), image))
+            else:
+                # The flattened scalar form works with all supported Matplotlib versions.
+                values = image.ravel() if image.ndim == 2 else image
+                updates.append(_edit(artist.set_array, artist.get_array(), values))
+        self._stage(heatmap, "image", updates, restore)
+
+    def queue_text(
+        self,
+        text: object,
+        x: float,
+        y: float,
+        content: str,
+        restore: Callable[[], None],
+    ) -> None:
+        updates: list[_ArtistEdit] = []
+        for artist in self._artists.get(id(text), ()):
+            if isinstance(artist, TextArtist):
+                updates.extend(
+                    (
+                        _edit(artist.set_position, artist.get_position(), (x, y)),
+                        _edit(artist.set_text, artist.get_text(), content),
+                    )
+                )
+        self._stage(text, "text_data", updates, restore)
+
+    def _stage(
+        self,
+        element: object,
+        name: str,
+        updates: list[_ArtistEdit],
+        restore: Callable[[], None],
+    ) -> None:
+        if updates:
+            key = id(element), name
+            self._updates[key] = updates
+            self.remember(element, name, restore)
+
+    def draw_frame(self, update: Callable[[int], object], index: int) -> None:
+        token = _FRAME_SESSION.set(self)
+        applied = []
+        try:
+            update(index)
+            for updates in self._updates.values():
+                for edit in updates:
+                    applied.append(edit)
+                    try:
+                        edit.apply()
+                    except GraphingLibError:
+                        raise
+                    except (TypeError, ValueError) as exc:
+                        raise PlottingError(
+                            f"Could not apply animation frame {index} ({exc})."
+                        ) from exc
+        except BaseException as exc:
+            self.failure = exc
+            for edit in reversed(applied):
+                try:
+                    edit.undo()
+                except Exception as rollback_error:  # noqa: BLE001 - Continue restoring other artists.
+                    exc.add_note(
+                        f"Could not restore an animation artist: {rollback_error}"
+                    )
+            for restore in reversed(self._rollback.values()):
+                restore()
+            raise
+        finally:
+            self._updates.clear()
+            self._rollback.clear()
+            _FRAME_SESSION.reset(token)
+
+    def clear(self) -> None:
+        self._artists.clear()
+        self._properties.clear()
+        for callback in reversed(self._cleanup):
+            callback()
+        self._cleanup.clear()
+        self._updates.clear()
+        self._rollback.clear()
+        self.failure = None
+
+
+_DRAW_SESSION: ContextVar[_AnimationSession | None] = ContextVar(
+    "animation_draw", default=None
+)
+_FRAME_SESSION: ContextVar[_AnimationSession | None] = ContextVar(
+    "animation_frame", default=None
+)
+
+
+def _bound_session(element: object) -> _AnimationSession | None:
+    session = _FRAME_SESSION.get()
+    return session if session is not None and session.has_binding(element) else None
+
+
+def _stage_live_value[T](element: object, name: str, value: T) -> T:
+    session = _bound_session(element)
+    if session is not None:
+        previous = getattr(element, name, None)
+        session.queue_property(
+            element, name, value, lambda: setattr(element, name, previous)
+        )
+    return value
+
+
+def _reject_live_update(element: object, message: str) -> None:
+    if _bound_session(element) is not None:
+        raise UnsupportedFeatureError(message)

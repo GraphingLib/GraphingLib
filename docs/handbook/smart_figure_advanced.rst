@@ -1898,6 +1898,159 @@ The :py:meth:`~graphinglib.SmartFigure.show` method displays a :class:`~graphing
 .. warning::
    For figures with general legends in "outside" positions, use inline Jupyter display or save to a file for correct rendering.
 
+Animating Figures
+-----------------
+
+Create a figure normally, then pass a callback to
+:meth:`~graphinglib.SmartFigure.show_animation` or
+:meth:`~graphinglib.SmartFigure.save_animation`. The callback receives a
+zero-based frame number. Set the complete data for that frame because playback
+can request the same index again. The callback can return ``None``.
+
+.. code-block:: python
+
+    import graphinglib as gl
+    import numpy as np
+
+    x = np.linspace(0, 2 * np.pi, 12)
+    trace = gl.Curve(x, np.sin(x))
+    trace.add_errorbars(y_error=0.15, cap_width=3)
+    figure = gl.SmartFigure(elements=[trace], x_lim=(0, 7), y_lim=(-1.5, 1.5))
+
+    def update(frame):
+        phase = frame * 0.12
+        trace.set_data(x, np.sin(x + phase), y_error=0.15 + 0.1 * np.sin(x + phase)**2)
+
+    figure.show_animation(update, number_of_frames=30, interval=100)
+    figure.save_animation("signal.gif", update, number_of_frames=30, interval=100)
+
+Use :meth:`~graphinglib.Curve.set_data` and
+:meth:`~graphinglib.Scatter.set_data` to assign coordinates and uncertainties
+together. Errors can be scalars, per-point arrays or two-row arrays of lower
+and upper errors. Omitted errors retain their current values and must match
+the new data. Individual setters such as ``curve.y_data`` are also available.
+Use assignments through the public API so the animation can update each
+appearance of the same object, including appearances in nested or spanning
+plots. Editing an array in place does not schedule an artist update.
+
+The same callback can update geometry, vectors and fixed-size table cells.
+
+.. code-block:: python
+
+    point = gl.Point(0, 0.5, label="sample")
+    ellipse = gl.Ellipse(1, 0.5, 0.3, 0.2)
+    panel = gl.SmartFigure(elements=[point, ellipse], x_lim=(-0.5, 2), y_lim=(0, 1))
+    grid = np.linspace(0, 1, 5)
+    x_grid, y_grid = np.meshgrid(grid, grid)
+    field = gl.VectorField(x_grid, y_grid, np.ones_like(x_grid), np.zeros_like(y_grid))
+    table = gl.Table([["0"]], col_labels=["Frame"])
+    figure = gl.SmartFigure(1, 3, elements=[panel, field, table])
+
+    def update(frame):
+        point.coordinates = (frame / 10, 0.5)
+        ellipse.angle = 6 * frame
+        field.u_data = np.cos(frame / 10) * np.ones_like(field.u_data)
+        field.v_data = np.sin(frame / 10) * np.ones_like(field.v_data)
+        table.cell_text = [[str(frame)]]
+
+    figure.save_animation("adapters.gif", update, number_of_frames=16)
+
+The :download:`nested animation example
+<../../examples/animations/nested_live.py>` exports a GIF with a Curve,
+Scatter, Heatmap, and Text. Run it with ``--play`` to open a playback window.
+
+Live update support
+^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 21 40 39
+
+   * - Element
+     - Live assignments
+     - Set up before animation
+   * - :class:`~graphinglib.Curve`
+     - Coordinates and errors, configured error curves and bands, and area
+       fills to zero. Plain lines can change color, width, style and opacity.
+     - Errorbar directions and caps, legend, and style for decorated curves.
+       A fill that depends on two curves needs a coordinated update contract.
+   * - :class:`~graphinglib.Scatter`
+     - Coordinates, configured errors, marker size and edge width, and opacity.
+     - Point count, marker shape, color mapping, legend, and errorbar directions
+       and caps.
+   * - :class:`~graphinglib.Heatmap`
+     - Image values on a fixed raster or mesh, opacity, and interpolation for
+       rasters. Scalar data can change colormap and explicit linear color
+       limits, including the displayed colorbar.
+     - Data shape, grid, extent, origin, aspect, normalization type, and
+       colorbar layout. Implicit color limits use the initial frame.
+   * - :class:`~graphinglib.Text`
+     - Content and position, including figure annotations. Plain text can
+       change its font size, color, opacity, alignment and rotation. An
+       already-configured arrow on an Axes can change its target.
+     - Coordinate system, highlight box styling, and whether to draw an arrow.
+   * - :class:`~graphinglib.Hlines`, :class:`~graphinglib.Vlines`
+     - Line positions. Lines in data coordinates can change both sets of
+       endpoints.
+     - Count, styles, and the choice of axes-spanning or bounded lines.
+   * - :class:`~graphinglib.Point`
+     - Position, including its label and displayed coordinates, marker size,
+       edge width, and opacity.
+     - Label, annotation choices and colors, and marker shape.
+   * - :class:`~graphinglib.Arrow`, :class:`~graphinglib.Line`
+     - Endpoints, width, color, opacity, and the arrow shrink fraction.
+     - Arrow head and cap geometry.
+   * - :class:`~graphinglib.Polygon`, :class:`~graphinglib.Circle`,
+       :class:`~graphinglib.Ellipse`, :class:`~graphinglib.Rectangle`
+     - Vertices, translations and transforms, and shape-specific position and
+       dimensions. Existing fills and edges support fill color and opacity,
+       and edge width and style, respectively.
+     - Whether fill and edge artists exist, edge color, and shape sampling
+       resolution.
+   * - :class:`~graphinglib.Table`
+     - Body cell text, text color, and cell border width and color.
+     - Row and column count, headers, cell background and layout.
+   * - :class:`~graphinglib.VectorField`
+     - Vector components and arrow color.
+     - Grid, component shapes, scaling and arrow geometry.
+   * - :class:`~graphinglib.Histogram`
+     - Sample data for bars, steps and filled steps. Integer bins recalculate
+       their edges from each frame's data. Explicit edges keep their positions.
+     - Bin count, orientation, normalization, styling, and density overlays.
+       Legends showing mean and standard deviation require a legend update policy.
+   * - :class:`~graphinglib.Contour`
+     - Scalar data at fixed levels, opacity, colormap and unfilled line
+       widths on Matplotlib 3.8 and later.
+     - Grid, levels, filled/line mode and color scale. The initial frame
+       determines levels when an integer count is supplied.
+   * - Fit classes
+     - Plain fitted lines support the same visual styles as plain curves.
+     - Fitted samples, fitted parameters and residuals. For a changing model,
+       sample the new fit into a separate Curve.
+   * - :class:`~graphinglib.Stream`
+     - Uniform color and line width, including arrowheads.
+     - Vector field, density, and styles mapped over the field. Changing
+       streamline geometry needs a policy for varying arrow counts.
+   * - :class:`~graphinglib.PlottableAxMethod`
+     - Static context.
+     - Arbitrary Axes methods can return many kinds of objects and have no
+       common update contract.
+
+Axes limits, grid layout, legends, and colorbar placement are established
+from the initial figure. Provide bounds for the whole animation when later
+frames run outside the initial view. Use explicit style values in callbacks.
+Some styles copy example artists into a legend. The legend keeps its initial
+appearance while the plotted artist changes.
+
+Successful frames leave their assignments in the plottables. If the callback
+or application of its artist edits fails, pending changes roll back to the
+last successful frame. A failed export preserves any existing destination.
+GIF uses Pillow, and MP4 uses FFmpeg when available. By default, export
+requests ``1000 / interval`` frames per second. Pass ``fps`` to override it.
+GIF delays are quantized to hundredths of a second, and Pillow may combine
+visually identical frames.
+
+
 Saving Figures
 --------------
 

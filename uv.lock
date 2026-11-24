@@ -519,6 +519,7 @@ name = "graphinglib"
 version = "1.7.0"
 source = { editable = "." }
 dependencies = [
+    { name = "contourpy" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "platformdirs" },
@@ -558,6 +559,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "astropy", marker = "extra == 'astro'", specifier = ">=7.0.0,<8.0.0" },
+    { name = "contourpy", specifier = ">=1.0.1,<2" },
     { name = "matplotlib", specifier = ">=3.7.1,<4.0.0" },
     { name = "numpy", specifier = ">=1.24.2,<3.0.0" },
     { name = "platformdirs", specifier = ">=3.11.0,<4.0.0" },

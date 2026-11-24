@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
-
 from copy import deepcopy
 from dataclasses import dataclass
 from types import NoneType
@@ -10,18 +8,31 @@ from typing import Any, Callable, Optional, Protocol, cast, runtime_checkable
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba
+from matplotlib.container import BarContainer
 from matplotlib.patches import Polygon
 from numpy.typing import ArrayLike
 from pyperclip import copy as copy_to_clipboard
 from scipy.integrate import cumulative_trapezoid
 from scipy.interpolate import interp1d
 
+from ._animation import (
+    _DRAW_SESSION,
+    _ArtistEdit,
+    _bound_session,
+    _CurveBands,
+    _edit,
+    _error_array,
+    _error_bounds,
+    _reject_live_update,
+    _stage_live_value,
+)
 from .exceptions import (
     IncompatibleArgumentsError,
     InvalidParameterError,
     InvalidParameterTypeError,
 )
 from .graph_elements import Plottable, Point
+from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
 from .tools import MathematicalObject, get_contrasting_shade
 
 try:
@@ -30,6 +41,56 @@ except ImportError:
     from typing_extensions import Self
 
 _SNAPPING_INTERPOLATION_METHODS = frozenset({"nearest", "previous", "next"})
+
+
+class _KeepError:
+    pass
+
+
+_KEEP_ERROR = _KeepError()
+
+
+def _set_point_data(
+    element: Curve | Scatter,
+    x_data: ArrayLike,
+    y_data: ArrayLike,
+    x_error: ArrayLike | None | _KeepError,
+    y_error: ArrayLike | None | _KeepError,
+) -> None:
+    x, y = np.array(x_data, copy=True), np.array(y_data, copy=True)
+    if x.ndim != 1 or y.ndim != 1 or x.size != y.size:
+        raise ValueError(
+            "x_data and y_data must be one-dimensional and have the same length."
+        )
+    old_dx, old_dy = (
+        getattr(element, "_x_error", None),
+        getattr(element, "_y_error", None),
+    )
+    dx = _error_array(
+        old_dx if isinstance(x_error, _KeepError) else x_error, x.size, "x_error"
+    )
+    dy = _error_array(
+        old_dy if isinstance(y_error, _KeepError) else y_error, x.size, "y_error"
+    )
+    session = _bound_session(element)
+    if session is not None:
+        previous = element._x_data, element._y_data, old_dx, old_dy
+
+        def restore() -> None:
+            element._x_data, element._y_data, element._x_error, element._y_error = (
+                previous
+            )
+
+        session.queue_points(
+            element,
+            x,
+            y,
+            dx,
+            dy,
+            show_errorbars=element._show_errorbars,
+            restore=restore,
+        )
+    element._x_data, element._y_data, element._x_error, element._y_error = x, y, dx, dy
 
 
 @runtime_checkable
@@ -277,7 +338,10 @@ class Curve(Plottable1D, MathematicalObject):
 
     @x_data.setter
     def x_data(self, x_data: ArrayLike) -> None:
-        self._x_data = np.asarray(x_data)
+        if _bound_session(self) is None:
+            self._x_data = np.asarray(x_data)
+        else:
+            self.set_data(x_data, self._y_data)
 
     @property
     def y_data(self) -> np.ndarray:
@@ -285,7 +349,10 @@ class Curve(Plottable1D, MathematicalObject):
 
     @y_data.setter
     def y_data(self, y_data: ArrayLike) -> None:
-        self._y_data = np.asarray(y_data)
+        if _bound_session(self) is None:
+            self._y_data = np.asarray(y_data)
+        else:
+            self.set_data(self._x_data, y_data)
 
     @property
     def x_error(self) -> np.ndarray | None:
@@ -293,7 +360,10 @@ class Curve(Plottable1D, MathematicalObject):
 
     @x_error.setter
     def x_error(self, x_error: ArrayLike) -> None:
-        self._x_error = np.asarray(x_error)
+        if _bound_session(self) is None:
+            self._x_error = np.asarray(x_error)
+        else:
+            self.set_data(self._x_data, self._y_data, x_error=x_error)
 
     @property
     def y_error(self) -> np.ndarray | None:
@@ -301,7 +371,38 @@ class Curve(Plottable1D, MathematicalObject):
 
     @y_error.setter
     def y_error(self, y_error: ArrayLike) -> None:
-        self._y_error = np.asarray(y_error)
+        if _bound_session(self) is None:
+            self._y_error = np.asarray(y_error)
+        else:
+            self.set_data(self._x_data, self._y_data, y_error=y_error)
+
+    def set_data(
+        self,
+        x_data: ArrayLike,
+        y_data: ArrayLike,
+        *,
+        x_error: ArrayLike | None | _KeepError = _KEEP_ERROR,
+        y_error: ArrayLike | None | _KeepError = _KEEP_ERROR,
+    ) -> Self:
+        """Replace coordinates and uncertainties as one validated update.
+
+        Parameters
+        ----------
+        x_data, y_data : ArrayLike
+            One-dimensional coordinate arrays of the same length.
+        x_error, y_error : ArrayLike or None, optional
+            Scalar, per-point, or lower/upper (2 by N) nonnegative errors.
+            Omit an error to retain it or pass None to clear it. During an
+            animation, the directions of drawn error bars stay fixed.
+
+        Returns
+        -------
+        Curve
+            The updated curve. During an animation the line, bars, and caps
+            are refreshed together before drawing the frame.
+        """
+        _set_point_data(self, x_data, y_data, x_error, y_error)
+        return self
 
     @property
     def label(self) -> Optional[str]:
@@ -309,6 +410,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @label.setter
     def label(self, label: Optional[str]) -> None:
+        _reject_live_update(self, "Configure curve labels and fills before animating.")
         self._label = label
 
     @property
@@ -317,7 +419,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @color.setter
     def color(self, color: str) -> None:
-        self._color = color
+        self._color = _stage_live_value(self, "_color", color)
 
     @property
     def line_width(self) -> float | Inherit:
@@ -325,7 +427,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @line_width.setter
     def line_width(self, line_width: float | Inherit) -> None:
-        self._line_width = line_width
+        self._line_width = _stage_live_value(self, "_line_width", line_width)
 
     @property
     def line_style(self) -> Styled[str]:
@@ -333,7 +435,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @line_style.setter
     def line_style(self, line_style: str) -> None:
-        self._line_style = line_style
+        self._line_style = _stage_live_value(self, "_line_style", line_style)
 
     @property
     def alpha(self) -> float | Inherit:
@@ -341,7 +443,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @alpha.setter
     def alpha(self, alpha: float | Inherit) -> None:
-        self._alpha = alpha
+        self._alpha = _stage_live_value(self, "_alpha", alpha)
 
     @property
     def show_errorbars(self) -> bool:
@@ -349,6 +451,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @show_errorbars.setter
     def show_errorbars(self, show_errorbars: bool) -> None:
+        self._check_animated_uncertainty()
         self._show_errorbars = show_errorbars
 
     @property
@@ -357,6 +460,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @errorbars_color.setter
     def errorbars_color(self, errorbars_color: str) -> None:
+        _reject_live_update(self, "Configure curve error decorations before animating.")
         self._errorbars_color = errorbars_color
 
     @property
@@ -365,6 +469,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @errorbars_line_width.setter
     def errorbars_line_width(self, errorbars_line_width: float | Inherit) -> None:
+        _reject_live_update(self, "Configure curve error decorations before animating.")
         self._errorbars_line_width = errorbars_line_width
 
     @property
@@ -373,6 +478,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @cap_thickness.setter
     def cap_thickness(self, cap_thickness: float | Inherit) -> None:
+        self._check_animated_uncertainty()
         self._cap_thickness = cap_thickness
 
     @property
@@ -381,6 +487,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @cap_width.setter
     def cap_width(self, cap_width: float | Inherit) -> None:
+        self._check_animated_uncertainty()
         self._cap_width = cap_width
 
     @property
@@ -389,6 +496,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @show_error_curves.setter
     def show_error_curves(self, show_error_curves: bool) -> None:
+        self._check_animated_uncertainty()
         self._show_error_curves = show_error_curves
 
     @property
@@ -397,7 +505,15 @@ class Curve(Plottable1D, MathematicalObject):
 
     @error_curves_fill_between.setter
     def error_curves_fill_between(self, error_curves_fill_between: bool) -> None:
+        self._check_animated_uncertainty()
         self._error_curves_fill_between = error_curves_fill_between
+
+    def _check_animated_uncertainty(self) -> None:
+        session = _bound_session(self)
+        if session is not None:
+            session.reject_structural_update(
+                self, "Configure curve error decorations before animating."
+            )
 
     @property
     def error_curves_color(self) -> Styled[str | None]:
@@ -405,6 +521,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @error_curves_color.setter
     def error_curves_color(self, error_curves_color: str) -> None:
+        _reject_live_update(self, "Configure curve error decorations before animating.")
         self._error_curves_color = error_curves_color
 
     @property
@@ -413,6 +530,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @error_curves_line_style.setter
     def error_curves_line_style(self, error_curves_line_style: str) -> None:
+        _reject_live_update(self, "Configure curve error decorations before animating.")
         self._error_curves_line_style = error_curves_line_style
 
     @property
@@ -421,6 +539,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @error_curves_line_width.setter
     def error_curves_line_width(self, error_curves_line_width: float | Inherit) -> None:
+        _reject_live_update(self, "Configure curve error decorations before animating.")
         self._error_curves_line_width = error_curves_line_width
 
     @property
@@ -431,6 +550,7 @@ class Curve(Plottable1D, MathematicalObject):
     def fill_between_bounds(
         self, fill_between_bounds: tuple[float, float] | None
     ) -> None:
+        _reject_live_update(self, "Configure curve labels and fills before animating.")
         self._fill_between_bounds = fill_between_bounds
 
     @property
@@ -439,6 +559,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @fill_between_other_curve.setter
     def fill_between_other_curve(self, fill_between_other_curve: Curve | None) -> None:
+        _reject_live_update(self, "Configure curve labels and fills before animating.")
         self._fill_between_other_curve = fill_between_other_curve
 
     @property
@@ -447,6 +568,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @fill_between_color.setter
     def fill_between_color(self, fill_between_color: Styled[str | None]) -> None:
+        _reject_live_update(self, "Configure curve labels and fills before animating.")
         self._fill_between_color = fill_between_color
 
     def __eq__(self, other: object) -> bool:
@@ -776,6 +898,7 @@ class Curve(Plottable1D, MathematicalObject):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        self._check_animated_uncertainty()
         self._show_errorbars = True
 
         if x_error is not None:
@@ -829,6 +952,7 @@ class Curve(Plottable1D, MathematicalObject):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        self._check_animated_uncertainty()
         self._show_error_curves = True
 
         if y_error is not None:
@@ -1455,6 +1579,7 @@ class Curve(Plottable1D, MathematicalObject):
         """
         if other_curve is None:
             if fill_between:
+                _reject_live_update(self, "Configure curve fills before animating.")
                 self._fill_between_bounds = (x1, x2)
                 self._fill_between_color = fill_color
             y_data = self._y_data
@@ -1465,6 +1590,7 @@ class Curve(Plottable1D, MathematicalObject):
             return np.trapezoid(y, x)
         else:
             if fill_between:
+                _reject_live_update(self, "Configure curve fills before animating.")
                 self._fill_between_bounds = (x1, x2)
                 self._fill_between_color = fill_color
                 self._fill_between_other_curve = other_curve
@@ -1757,17 +1883,9 @@ class Curve(Plottable1D, MathematicalObject):
                 zorder=z_order,
                 **params,
             )
+        lower = upper = error_fill = area_fill = None
         if self._show_error_curves:
-            max_y = (
-                self._y_data + self._y_error
-                if self._y_error is not None
-                else self._y_data
-            )
-            min_y = (
-                self._y_data - self._y_error
-                if self._y_error is not None
-                else self._y_data
-            )
+            min_y, max_y = _error_bounds(self._y_data, self._y_error)
 
             params = {
                 "color": (
@@ -1789,18 +1907,18 @@ class Curve(Plottable1D, MathematicalObject):
 
             params = strip_inherit(params)
 
-            axes.plot(
+            (lower,) = axes.plot(
                 self._x_data,
                 min_y,
                 **params,
             )
-            axes.plot(
+            (upper,) = axes.plot(
                 self._x_data,
                 max_y,
                 **params,
             )
             if resolve_or(self._error_curves_fill_between, True):
-                axes.fill_between(
+                error_fill = axes.fill_between(
                     self._x_data,
                     max_y,
                     min_y,
@@ -1836,7 +1954,7 @@ class Curve(Plottable1D, MathematicalObject):
                 params["y1"] = self._y_data
                 where_x_data = self._x_data
 
-            axes.fill_between(
+            area_fill = axes.fill_between(
                 where=np.logical_and(
                     where_x_data >= self._fill_between_bounds[0],
                     where_x_data <= self._fill_between_bounds[1],
@@ -1844,6 +1962,35 @@ class Curve(Plottable1D, MathematicalObject):
                 zorder=z_order - 2,
                 **params,
             )
+
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            session.bind_curve(
+                self,
+                self.handle,
+                has_unsupported_artists=bool(
+                    self._fill_between_bounds
+                    and self._fill_between_other_curve is not None
+                ),
+                bands=_CurveBands(
+                    lower, upper, error_fill, area_fill, self._fill_between_bounds
+                ),
+            )
+            line = self.handle.lines[0]
+            if line is not None and not (
+                self._show_error_curves
+                or self._fill_between_bounds
+                or self._show_errorbars
+            ):
+                for name, mpl_name in (
+                    ("_color", "color"),
+                    ("_line_style", "linestyle"),
+                    ("_line_width", "linewidth"),
+                    ("_alpha", "alpha"),
+                ):
+                    session.bind_property(self, name, line, mpl_name)
+            if self._fill_between_bounds and self._fill_between_other_curve is not None:
+                session.block_curve_updates(self._fill_between_other_curve)
 
 
 @dataclass
@@ -2095,7 +2242,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @x_data.setter
     def x_data(self, x_data: ArrayLike) -> None:
-        self._x_data = np.asarray(x_data)
+        if _bound_session(self) is None:
+            self._x_data = np.asarray(x_data)
+        else:
+            self.set_data(x_data, self._y_data)
 
     @property
     def y_data(self) -> np.ndarray:
@@ -2103,7 +2253,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @y_data.setter
     def y_data(self, y_data: ArrayLike) -> None:
-        self._y_data = np.asarray(y_data)
+        if _bound_session(self) is None:
+            self._y_data = np.asarray(y_data)
+        else:
+            self.set_data(self._x_data, y_data)
 
     @property
     def x_error(self) -> np.ndarray | None:
@@ -2111,7 +2264,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @x_error.setter
     def x_error(self, x_error: ArrayLike) -> None:
-        self._x_error = np.asarray(x_error)
+        if _bound_session(self) is None:
+            self._x_error = np.asarray(x_error)
+        else:
+            self.set_data(self._x_data, self._y_data, x_error=x_error)
 
     @property
     def y_error(self) -> np.ndarray | None:
@@ -2119,7 +2275,36 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @y_error.setter
     def y_error(self, y_error: ArrayLike) -> None:
-        self._y_error = np.asarray(y_error)
+        if _bound_session(self) is None:
+            self._y_error = np.asarray(y_error)
+        else:
+            self.set_data(self._x_data, self._y_data, y_error=y_error)
+
+    def set_data(
+        self,
+        x_data: ArrayLike,
+        y_data: ArrayLike,
+        *,
+        x_error: ArrayLike | None | _KeepError = _KEEP_ERROR,
+        y_error: ArrayLike | None | _KeepError = _KEEP_ERROR,
+    ) -> Self:
+        """Replace point coordinates and optional errors in one update.
+
+        The coordinate arrays must be one-dimensional and match in length.
+        Errors can be scalars, per-point arrays, or lower/upper arrays.
+        Omitted errors keep their current values. Pass None to clear an error
+        direction outside animation. While animating, the point count and
+        configured errorbar directions remain fixed.
+        """
+        _set_point_data(self, x_data, y_data, x_error, y_error)
+        return self
+
+    def _check_animated_uncertainty(self) -> None:
+        session = _bound_session(self)
+        if session is not None:
+            session.reject_structural_update(
+                self, "Configure scatter error bars before animating."
+            )
 
     @property
     def label(self) -> str | None:
@@ -2127,6 +2312,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @label.setter
     def label(self, label: str | None) -> None:
+        _reject_live_update(
+            self,
+            "Configure Scatter markers, colors, colorbars and labels before animating.",
+        )
         self._label = label
 
     @property
@@ -2135,6 +2324,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @face_color.setter
     def face_color(self, face_color: Styled[str | ArrayLike | None]) -> None:
+        _reject_live_update(
+            self,
+            "Configure Scatter markers, colors, colorbars and labels before animating.",
+        )
         self._face_color = face_color
 
     @property
@@ -2143,6 +2336,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @edge_color.setter
     def edge_color(self, edge_color: Styled[str | ArrayLike | None]) -> None:
+        _reject_live_update(
+            self,
+            "Configure Scatter markers, colors, colorbars and labels before animating.",
+        )
         self._edge_color = edge_color
 
     @property
@@ -2151,6 +2348,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @color_map.setter
     def color_map(self, color_map: str | Colormap) -> None:
+        _reject_live_update(
+            self,
+            "Configure Scatter markers, colors, colorbars and labels before animating.",
+        )
         self._color_map = color_map
 
     @property
@@ -2159,6 +2360,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @color_map_range.setter
     def color_map_range(self, color_map_range: tuple[float, float] | None) -> None:
+        _reject_live_update(
+            self,
+            "Configure Scatter markers, colors, colorbars and labels before animating.",
+        )
         self._color_map_range = color_map_range
 
     @property
@@ -2167,6 +2372,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @show_color_bar.setter
     def show_color_bar(self, show_color_bar: bool) -> None:
+        _reject_live_update(
+            self,
+            "Configure Scatter markers, colors, colorbars and labels before animating.",
+        )
         self._show_color_bar = show_color_bar
 
     @property
@@ -2175,7 +2384,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @marker_size.setter
     def marker_size(self, marker_size: float | Inherit) -> None:
-        self._marker_size = marker_size
+        self._marker_size = _stage_live_value(self, "_marker_size", marker_size)
 
     @property
     def marker_edge_width(self) -> Styled[float]:
@@ -2183,7 +2392,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @marker_edge_width.setter
     def marker_edge_width(self, value: float):
-        self._marker_edge_width = value
+        self._marker_edge_width = _stage_live_value(self, "_marker_edge_width", value)
 
     @property
     def marker_style(self) -> Styled[str]:
@@ -2191,6 +2400,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @marker_style.setter
     def marker_style(self, marker_style: str) -> None:
+        _reject_live_update(
+            self,
+            "Configure Scatter markers, colors, colorbars and labels before animating.",
+        )
         self._marker_style = marker_style
 
     @property
@@ -2199,7 +2412,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @alpha.setter
     def alpha(self, alpha: float | Inherit) -> None:
-        self._alpha = alpha
+        self._alpha = _stage_live_value(self, "_alpha", alpha)
 
     @property
     def show_errorbars(self) -> bool:
@@ -2207,6 +2420,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @show_errorbars.setter
     def show_errorbars(self, show_errorbars: bool) -> None:
+        self._check_animated_uncertainty()
         self._show_errorbars = show_errorbars
 
     @property
@@ -2215,6 +2429,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @errorbars_line_width.setter
     def errorbars_line_width(self, errorbars_line_width: Styled[float]) -> None:
+        _reject_live_update(
+            self,
+            "Configure Scatter markers, colors, colorbars and labels before animating.",
+        )
         self._errorbars_line_width = errorbars_line_width
 
     @property
@@ -2223,6 +2441,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @cap_width.setter
     def cap_width(self, cap_width: Styled[float]) -> None:
+        self._check_animated_uncertainty()
         self._cap_width = cap_width
 
     @property
@@ -2231,6 +2450,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @cap_thickness.setter
     def cap_thickness(self, cap_thickness: Styled[float]) -> None:
+        self._check_animated_uncertainty()
         self._cap_thickness = cap_thickness
 
     @property
@@ -2239,6 +2459,10 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @errorbars_color.setter
     def errorbars_color(self, errorbars_color: Styled[str | None]) -> None:
+        _reject_live_update(
+            self,
+            "Configure Scatter markers, colors, colorbars and labels before animating.",
+        )
         self._errorbars_color = errorbars_color
 
     @property
@@ -2652,6 +2876,7 @@ class Scatter(Plottable1D, MathematicalObject):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        self._check_animated_uncertainty()
         self._show_errorbars = True
 
         if x_error is not None:
@@ -3083,6 +3308,7 @@ class Scatter(Plottable1D, MathematicalObject):
             zorder=z_order,
             **params,
         )
+        errorbars = None
         if self._show_errorbars:
             # Convert errorbars color to matplotlib notation
             if self._errorbars_color is None:
@@ -3121,7 +3347,7 @@ class Scatter(Plottable1D, MathematicalObject):
             }
             errorbar_params = strip_inherit(errorbar_params)
             errorbar_params["ecolor"] = mpl_errorbars_color
-            self.errorbars_handle = axes.errorbar(
+            errorbars = self.errorbars_handle = axes.errorbar(
                 self._x_data,
                 self._y_data,
                 xerr=self._x_error,
@@ -3187,6 +3413,15 @@ class Scatter(Plottable1D, MathematicalObject):
             sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
             sm.set_array([])
             plt.colorbar(sm, ax=axes, **self._color_bar_params)
+
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            session.bind_scatter(self, self.handle, errorbars)
+            session.bind_property(
+                self, "_marker_size", self.handle, "sizes", lambda value: [value]
+            )
+            session.bind_property(self, "_marker_edge_width", self.handle, "linewidth")
+            session.bind_property(self, "_alpha", self.handle, "alpha")
 
 
 @dataclass
@@ -3413,9 +3648,28 @@ class Histogram(Plottable1D):
 
     @data.setter
     def data(self, data: ArrayLike) -> None:
-        self._data = np.array(data)
-        self._mean = np.mean(self._data)
-        self._standard_deviation = np.std(self._data)
+        values = np.array(data)
+        session = _bound_session(self)
+        if session is not None:
+            previous = (
+                self._data,
+                self._mean,
+                self._standard_deviation,
+                self._histogram_cache,
+            )
+
+            def restore() -> None:
+                (
+                    self._data,
+                    self._mean,
+                    self._standard_deviation,
+                    self._histogram_cache,
+                ) = previous
+
+            session.queue_property(self, "_data", values, restore)
+        self._data = values
+        self._mean = np.mean(values)
+        self._standard_deviation = np.std(values)
         self._histogram_cache = None
 
     @property
@@ -3424,6 +3678,9 @@ class Histogram(Plottable1D):
 
     @bins.setter
     def bins(self, bins: int) -> None:
+        _reject_live_update(
+            self, "Configure histogram bins, decorations and styles before animating."
+        )
         self._bins = bins
         self._histogram_cache = None
 
@@ -3433,6 +3690,9 @@ class Histogram(Plottable1D):
 
     @label.setter
     def label(self, label: str | None) -> None:
+        _reject_live_update(
+            self, "Configure histogram bins, decorations and styles before animating."
+        )
         self._label = label
 
     @property
@@ -3441,6 +3701,9 @@ class Histogram(Plottable1D):
 
     @face_color.setter
     def face_color(self, face_color: str) -> None:
+        _reject_live_update(
+            self, "Configure histogram bins, decorations and styles before animating."
+        )
         self._face_color = face_color
 
     @property
@@ -3449,6 +3712,9 @@ class Histogram(Plottable1D):
 
     @edge_color.setter
     def edge_color(self, edge_color: str) -> None:
+        _reject_live_update(
+            self, "Configure histogram bins, decorations and styles before animating."
+        )
         self._edge_color = edge_color
 
     @property
@@ -3457,6 +3723,9 @@ class Histogram(Plottable1D):
 
     @hist_type.setter
     def hist_type(self, hist_type: str) -> None:
+        _reject_live_update(
+            self, "Configure histogram bins, decorations and styles before animating."
+        )
         self._hist_type = hist_type
 
     @property
@@ -3465,6 +3734,9 @@ class Histogram(Plottable1D):
 
     @alpha.setter
     def alpha(self, alpha: float) -> None:
+        _reject_live_update(
+            self, "Configure histogram bins, decorations and styles before animating."
+        )
         self._alpha = alpha
 
     @property
@@ -3473,6 +3745,9 @@ class Histogram(Plottable1D):
 
     @line_width.setter
     def line_width(self, line_width: float) -> None:
+        _reject_live_update(
+            self, "Configure histogram bins, decorations and styles before animating."
+        )
         self._line_width = line_width
 
     @property
@@ -3481,6 +3756,9 @@ class Histogram(Plottable1D):
 
     @normalize.setter
     def normalize(self, normalize: bool) -> None:
+        _reject_live_update(
+            self, "Configure histogram bins, decorations and styles before animating."
+        )
         self._normalize = normalize
         self._histogram_cache = None
 
@@ -3490,6 +3768,9 @@ class Histogram(Plottable1D):
 
     @orientation.setter
     def orientation(self, orientation: str) -> None:
+        _reject_live_update(
+            self, "Configure histogram bins, decorations and styles before animating."
+        )
         self._orientation = orientation
 
     @property
@@ -3498,6 +3779,9 @@ class Histogram(Plottable1D):
 
     @show_params.setter
     def show_params(self, show_params: bool) -> None:
+        _reject_live_update(
+            self, "Configure histogram bins, decorations and styles before animating."
+        )
         self._show_params = show_params
 
     @property
@@ -3650,6 +3934,7 @@ class Histogram(Plottable1D):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        _reject_live_update(self, "Configure the histogram PDF before animating.")
         if type != "normal":
             raise InvalidParameterError(
                 "Currently, only 'normal' distribution is supported."
@@ -3729,13 +4014,67 @@ class Histogram(Plottable1D):
             "orientation": self._orientation,
         }
         params = strip_inherit(params)
-        axes.hist(
+        _, _, artists = axes.hist(
             self._data,
             bins=self._bins,
             label=self.label,  # uses the get_label() method
             zorder=z_order - 1,
             **params,
         )
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            session.mark_present(self)
+            if not self._show_pdf and not (
+                self._label and resolve_or(self._show_params, True)
+            ):
+                horizontal = resolve_or(self._orientation, "vertical") == "horizontal"
+                bins = self._bins
+                if isinstance(artists, BarContainer):
+
+                    def prepare_bars(data: np.ndarray) -> _ArtistEdit:
+                        heights, edges = np.histogram(
+                            data, bins=bins, density=normalize_resolved
+                        )
+                        if len(heights) != len(artists.patches):
+                            raise InvalidParameterError(
+                                "An animated Histogram must retain its original number of bins."
+                            )
+                        before = [patch.get_bbox().bounds for patch in artists.patches]
+                        widths = np.diff(edges)
+                        bounds = (
+                            list(
+                                zip(np.zeros_like(heights), edges[:-1], heights, widths)
+                            )
+                            if horizontal
+                            else list(
+                                zip(edges[:-1], np.zeros_like(heights), widths, heights)
+                            )
+                        )
+
+                        def apply(items) -> None:
+                            for patch, item in zip(artists.patches, items):
+                                patch.set_bounds(*item)
+
+                        return _ArtistEdit(lambda: apply(bounds), lambda: apply(before))
+
+                    session.bind_update(self, "_data", prepare_bars)
+                elif (
+                    isinstance(artists, list)
+                    and len(artists) == 1
+                    and isinstance(artists[0], Polygon)
+                ):
+                    patch = artists[0]
+
+                    def prepare_steps(data: np.ndarray) -> _ArtistEdit:
+                        heights, edges = np.histogram(
+                            data, bins=bins, density=normalize_resolved
+                        )
+                        x = np.repeat(edges, 2)
+                        y = np.r_[0, np.repeat(heights, 2), 0]
+                        xy = np.column_stack((y, x) if horizontal else (x, y))
+                        return _edit(patch.set_xy, patch.get_xy(), xy)
+
+                    session.bind_update(self, "_data", prepare_steps)
         if self._show_pdf:
             normal = (
                 self._normal_normalized

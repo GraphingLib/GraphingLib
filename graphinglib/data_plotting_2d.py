@@ -1,16 +1,27 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Callable, Optional, Protocol, runtime_checkable
+from typing import Callable, Optional, Protocol, cast, runtime_checkable
 
+import contourpy
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import Colormap, Normalize
+from matplotlib.colors import Colormap, Normalize, is_color_like
 from matplotlib.image import imread
+from matplotlib.path import Path as MplPath
 from numpy.typing import ArrayLike
 from scipy.interpolate import griddata
 
+from ._animation import (
+    _DRAW_SESSION,
+    _ArtistEdit,
+    _bound_session,
+    _edit,
+    _reject_live_update,
+    _stage_live_value,
+)
 from .exceptions import InvalidParameterError, PlottingError
 from .graph_elements import Plottable
 from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
@@ -495,31 +506,33 @@ class Heatmap(Plottable2D):
 
     @image.setter
     def image(self, image: ArrayLike | str) -> None:
+        from_file = isinstance(image, str)
         if isinstance(image, str):
             try:
-                self._image = imread(image)
+                data = imread(image)
             except FileNotFoundError:
-                raise  # a missing file is already a clear error
+                raise
             except Exception as exc:
                 raise PlottingError(
                     f"Could not read {image!r} as an image ({exc})."
                 ) from exc
-            self._show_color_bar = False
         else:
-            self._image = np.asarray(image)
-            # Validate at the boundary so a bad shape is reported here rather than as a
-            # cryptic matplotlib error at plotting time.
-            is_2d = self._image.ndim == 2
-            is_rgb = self._image.ndim == 3 and self._image.shape[-1] in (3, 4)
-            if not (is_2d or is_rgb):
-                raise InvalidParameterError(
-                    "image must be a 2D array of values or a 3D array of RGB(A) pixels "
-                    f"(last axis of size 3 or 4), but got an array of shape "
-                    f"{self._image.shape}."
-                )
-            if is_rgb:
-                # RGB(A) pixel data has no colormap-driven scalar meaning, same as a file-loaded image.
-                self._show_color_bar = False
+            data = np.asarray(image)
+        is_rgb = data.ndim == 3 and data.shape[-1] in (3, 4)
+        if data.ndim != 2 and not is_rgb:
+            raise InvalidParameterError(
+                "image must be a 2D array of values or a 3D array of RGB(A) pixels "
+                f"(last axis of size 3 or 4), but got an array of shape {data.shape}."
+            )
+        session = _bound_session(self)
+        if session is not None:
+            data = data.copy()
+            previous = self._image
+            session.queue_heatmap(self, data, lambda: setattr(self, "_image", previous))
+        elif from_file or is_rgb:
+            # RGB(A) pixels and file-backed images disable the colorbar for static plots.
+            self._show_color_bar = False
+        self._image = data
 
     @property
     def x_axis_range(self) -> Optional[tuple[float, float]]:
@@ -527,6 +540,7 @@ class Heatmap(Plottable2D):
 
     @x_axis_range.setter
     def x_axis_range(self, x_axis_range: Optional[tuple[float, float]]) -> None:
+        self._check_animation_geometry()
         self._x_axis_range = x_axis_range
 
     @property
@@ -535,6 +549,7 @@ class Heatmap(Plottable2D):
 
     @y_axis_range.setter
     def y_axis_range(self, y_axis_range: Optional[tuple[float, float]]) -> None:
+        self._check_animation_geometry()
         self._y_axis_range = y_axis_range
 
     @property
@@ -543,6 +558,7 @@ class Heatmap(Plottable2D):
 
     @x_mesh.setter
     def x_mesh(self, x_mesh: Optional[ArrayLike]) -> None:
+        self._check_animation_geometry()
         self._x_mesh = None if x_mesh is None else np.asarray(x_mesh)
 
     @property
@@ -551,7 +567,15 @@ class Heatmap(Plottable2D):
 
     @y_mesh.setter
     def y_mesh(self, y_mesh: Optional[ArrayLike]) -> None:
+        self._check_animation_geometry()
         self._y_mesh = None if y_mesh is None else np.asarray(y_mesh)
+
+    def _check_animation_geometry(self) -> None:
+        session = _bound_session(self)
+        if session is not None:
+            session.reject_structural_update(
+                self, "Configure the Heatmap grid and color scale before animating."
+            )
 
     @property
     def color_map(self) -> Styled[str | Colormap]:
@@ -559,7 +583,7 @@ class Heatmap(Plottable2D):
 
     @color_map.setter
     def color_map(self, color_map: Styled[str | Colormap]) -> None:
-        self._color_map = color_map
+        self._color_map = _stage_live_value(self, "_color_map", color_map)
 
     @property
     def color_map_range(self) -> tuple[float, float] | None:
@@ -567,7 +591,9 @@ class Heatmap(Plottable2D):
 
     @color_map_range.setter
     def color_map_range(self, color_map_range: tuple[float, float] | None) -> None:
-        self._color_map_range = color_map_range
+        self._color_map_range = _stage_live_value(
+            self, "_color_map_range", color_map_range
+        )
 
     @property
     def show_color_bar(self) -> Styled[bool]:
@@ -575,6 +601,7 @@ class Heatmap(Plottable2D):
 
     @show_color_bar.setter
     def show_color_bar(self, show_color_bar: Styled[bool]) -> None:
+        self._check_animation_geometry()
         self._show_color_bar = show_color_bar
 
     @property
@@ -583,7 +610,7 @@ class Heatmap(Plottable2D):
 
     @alpha.setter
     def alpha(self, alpha: float) -> None:
-        self._alpha = alpha
+        self._alpha = _stage_live_value(self, "_alpha", alpha)
 
     @property
     def aspect_ratio(self) -> Styled[str | float]:
@@ -591,6 +618,9 @@ class Heatmap(Plottable2D):
 
     @aspect_ratio.setter
     def aspect_ratio(self, aspect_ratio: Styled[str | float]) -> None:
+        _reject_live_update(
+            self, "Configure the Heatmap aspect and origin before animating."
+        )
         self._aspect_ratio = aspect_ratio
 
     @property
@@ -599,6 +629,9 @@ class Heatmap(Plottable2D):
 
     @origin_position.setter
     def origin_position(self, origin_position: Styled[str]) -> None:
+        _reject_live_update(
+            self, "Configure the Heatmap aspect and origin before animating."
+        )
         self._origin_position = origin_position
 
     @property
@@ -607,7 +640,7 @@ class Heatmap(Plottable2D):
 
     @interpolation.setter
     def interpolation(self, interpolation: str) -> None:
-        self._interpolation = interpolation
+        self._interpolation = _stage_live_value(self, "_interpolation", interpolation)
 
     @property
     def color_bar_params(self) -> dict:
@@ -665,6 +698,9 @@ class Heatmap(Plottable2D):
         **color_bar_params:
             Additional keyword arguments are passed to ``plt.colorbar`` call.
         """
+        _reject_live_update(
+            self, "Configure the Heatmap colorbar layout before animating."
+        )
         self._color_bar_params = color_bar_params
         if label is not None:
             self._color_bar_params["label"] = label
@@ -714,6 +750,37 @@ class Heatmap(Plottable2D):
             fig = axes.get_figure()
             assert fig is not None
             fig.colorbar(image, ax=axes, **self._color_bar_params)
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            session.bind_heatmap(self, image, self._image.shape)
+            session.bind_property(self, "_alpha", image, "alpha")
+            if self._image.ndim == 2:
+                session.bind_property(self, "_color_map", image, "cmap")
+
+                def prepare_range(value: tuple[float, float] | None) -> _ArtistEdit:
+                    if (
+                        value is None
+                        or len(value) != 2
+                        or not np.isfinite(value).all()
+                        or value[0] == value[1]
+                    ):
+                        raise InvalidParameterError(
+                            "An animated Heatmap color_map_range must contain two distinct finite numbers."
+                        )
+
+                    def set_limits(limits: tuple[float, float]) -> None:
+                        # Notify colorbars after both endpoints are available, even on older Matplotlib.
+                        norm = image.norm
+                        with norm.callbacks.blocked(signal="changed"):
+                            image.set_clim(limits)
+                        norm.callbacks.process("changed")
+
+                    return _edit(set_limits, image.get_clim(), tuple(sorted(value)))
+
+                if self._norm is None or type(self._norm) is Normalize:
+                    session.bind_update(self, "_color_map_range", prepare_range)
+            if not use_pcolormesh:
+                session.bind_property(self, "_interpolation", image, "interpolation")
 
 
 @dataclass
@@ -890,6 +957,9 @@ class VectorField(Plottable2D):
 
     @x_data.setter
     def x_data(self, x_data: ArrayLike) -> None:
+        _reject_live_update(
+            self, "Configure the VectorField grid and arrow geometry before animating."
+        )
         self._x_data = np.asarray(x_data)
 
     @property
@@ -898,6 +968,9 @@ class VectorField(Plottable2D):
 
     @y_data.setter
     def y_data(self, y_data: ArrayLike) -> None:
+        _reject_live_update(
+            self, "Configure the VectorField grid and arrow geometry before animating."
+        )
         self._y_data = np.asarray(y_data)
 
     @property
@@ -906,7 +979,7 @@ class VectorField(Plottable2D):
 
     @u_data.setter
     def u_data(self, u_data: ArrayLike) -> None:
-        self._u_data = np.asarray(u_data)
+        self._u_data = _stage_live_value(self, "_u_data", np.asarray(u_data))
 
     @property
     def v_data(self) -> ArrayLike:
@@ -914,7 +987,7 @@ class VectorField(Plottable2D):
 
     @v_data.setter
     def v_data(self, v_data: ArrayLike) -> None:
-        self._v_data = np.asarray(v_data)
+        self._v_data = _stage_live_value(self, "_v_data", np.asarray(v_data))
 
     @property
     def arrow_width(self) -> Styled[float]:
@@ -922,6 +995,9 @@ class VectorField(Plottable2D):
 
     @arrow_width.setter
     def arrow_width(self, arrow_width: float) -> None:
+        _reject_live_update(
+            self, "Configure the VectorField grid and arrow geometry before animating."
+        )
         self._arrow_width = arrow_width
 
     @property
@@ -930,6 +1006,9 @@ class VectorField(Plottable2D):
 
     @arrow_head_size.setter
     def arrow_head_size(self, arrow_head_size: float) -> None:
+        _reject_live_update(
+            self, "Configure the VectorField grid and arrow geometry before animating."
+        )
         self._arrow_head_size = arrow_head_size
 
     @property
@@ -938,6 +1017,9 @@ class VectorField(Plottable2D):
 
     @scale.setter
     def scale(self, scale: Optional[float]) -> None:
+        _reject_live_update(
+            self, "Configure the VectorField grid and arrow geometry before animating."
+        )
         self._scale = scale
 
     @property
@@ -946,6 +1028,9 @@ class VectorField(Plottable2D):
 
     @make_angles_axes_independent.setter
     def make_angles_axes_independent(self, value: bool) -> None:
+        _reject_live_update(
+            self, "Configure the VectorField grid and arrow geometry before animating."
+        )
         self._make_angles_axes_independent = value
 
     @property
@@ -954,7 +1039,7 @@ class VectorField(Plottable2D):
 
     @color.setter
     def color(self, color: str) -> None:
-        self._color = color
+        self._color = _stage_live_value(self, "_color", color)
 
     def copy(self) -> Self:
         """
@@ -984,7 +1069,7 @@ class VectorField(Plottable2D):
             "scale_units": "xy",
         }
         params = strip_inherit(params)
-        axes.quiver(
+        artist = axes.quiver(
             self._x_data,
             self._y_data,
             self._u_data,
@@ -992,6 +1077,35 @@ class VectorField(Plottable2D):
             zorder=z_order,
             **params,
         )
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            u, v = np.ma.asarray(self._u_data), np.ma.asarray(self._v_data)
+            expected = u.shape, v.shape
+
+            def prepare(_value: np.ndarray) -> _ArtistEdit:
+                old_u, old_v = u, v
+
+                def set_vectors(new_u: np.ndarray, new_v: np.ndarray) -> None:
+                    nonlocal u, v
+                    artist.set_UVC(new_u, new_v)
+                    u, v = new_u, new_v
+
+                def apply() -> None:
+                    new_u, new_v = (
+                        np.ma.asarray(self._u_data),
+                        np.ma.asarray(self._v_data),
+                    )
+                    if (new_u.shape, new_v.shape) != expected:
+                        raise InvalidParameterError(
+                            "An animated VectorField must retain its component shapes."
+                        )
+                    set_vectors(new_u, new_v)
+
+                return _ArtistEdit(apply, lambda: set_vectors(old_u, old_v))
+
+            session.bind_update(self, "_u_data", prepare)
+            session.bind_update(self, "_v_data", prepare)
+            session.bind_property(self, "_color", artist, "facecolor")
 
 
 @dataclass
@@ -1191,6 +1305,9 @@ class Contour(Plottable2D):
 
     @x_mesh.setter
     def x_mesh(self, x_mesh: ArrayLike | None) -> None:
+        _reject_live_update(
+            self, "Configure Contour grid, levels and colorbar before animating."
+        )
         self._x_mesh = None if x_mesh is None else np.asarray(x_mesh)
 
     @property
@@ -1199,6 +1316,9 @@ class Contour(Plottable2D):
 
     @y_mesh.setter
     def y_mesh(self, y_mesh: ArrayLike | None) -> None:
+        _reject_live_update(
+            self, "Configure Contour grid, levels and colorbar before animating."
+        )
         self._y_mesh = None if y_mesh is None else np.asarray(y_mesh)
 
     @property
@@ -1207,7 +1327,7 @@ class Contour(Plottable2D):
 
     @z_data.setter
     def z_data(self, z_data: ArrayLike) -> None:
-        self._z_data = np.asarray(z_data)
+        self._z_data = _stage_live_value(self, "_z_data", np.asarray(z_data))
 
     @property
     def levels(self) -> Styled[int | ArrayLike]:
@@ -1215,6 +1335,9 @@ class Contour(Plottable2D):
 
     @levels.setter
     def levels(self, levels: Styled[int | ArrayLike]) -> None:
+        _reject_live_update(
+            self, "Configure Contour grid, levels and colorbar before animating."
+        )
         self._levels = levels
 
     @property
@@ -1223,7 +1346,7 @@ class Contour(Plottable2D):
 
     @color_map.setter
     def color_map(self, color_map: Styled[str | Colormap]) -> None:
-        self._color_map = color_map
+        self._color_map = _stage_live_value(self, "_color_map", color_map)
 
     @property
     def color_map_range(self) -> tuple[float, float] | None:
@@ -1231,6 +1354,9 @@ class Contour(Plottable2D):
 
     @color_map_range.setter
     def color_map_range(self, color_map_range: tuple[float, float] | None) -> None:
+        _reject_live_update(
+            self, "Configure Contour grid, levels and colorbar before animating."
+        )
         self._color_map_range = color_map_range
 
     @property
@@ -1239,6 +1365,9 @@ class Contour(Plottable2D):
 
     @show_color_bar.setter
     def show_color_bar(self, show_color_bar: Styled[bool]) -> None:
+        _reject_live_update(
+            self, "Configure Contour grid, levels and colorbar before animating."
+        )
         self._show_color_bar = show_color_bar
 
     @property
@@ -1247,6 +1376,9 @@ class Contour(Plottable2D):
 
     @filled.setter
     def filled(self, filled: Styled[bool]) -> None:
+        _reject_live_update(
+            self, "Configure Contour grid, levels and colorbar before animating."
+        )
         self._filled = filled
 
     @property
@@ -1255,7 +1387,7 @@ class Contour(Plottable2D):
 
     @alpha.setter
     def alpha(self, alpha: Styled[float]) -> None:
-        self._alpha = alpha
+        self._alpha = _stage_live_value(self, "_alpha", alpha)
 
     @property
     def line_widths(self) -> Styled[float | ArrayLike]:
@@ -1263,7 +1395,7 @@ class Contour(Plottable2D):
 
     @line_widths.setter
     def line_widths(self, line_widths: Styled[float | ArrayLike]) -> None:
-        self._line_widths = line_widths
+        self._line_widths = _stage_live_value(self, "_line_widths", line_widths)
 
     @property
     def color_bar_params(self) -> dict:
@@ -1298,6 +1430,7 @@ class Contour(Plottable2D):
         **color_bar_params:
             Additional keyword arguments are passed to ``plt.colorbar`` call.
         """
+        _reject_live_update(self, "Configure the Contour colorbar before animating.")
         self._color_bar_params = color_bar_params
         if label is not None:
             self._color_bar_params["label"] = label
@@ -1349,6 +1482,59 @@ class Contour(Plottable2D):
             fig = axes.get_figure()
             assert fig is not None
             fig.colorbar(cont, ax=axes, **self._color_bar_params)
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            session.mark_present(self)
+            # Matplotlib 3.8 moved all levels into a single collection with a public path API.
+            if hasattr(cont, "set_paths"):
+                shape = self._z_data.shape
+                levels = np.asarray(cont.levels).copy()
+                algorithm = plt.rcParams["contour.algorithm"]
+                corner_mask = (
+                    algorithm != "mpl2005" and plt.rcParams["contour.corner_mask"]
+                )
+
+                def prepare(values: np.ndarray) -> _ArtistEdit:
+                    if values.shape != shape or values.dtype.kind not in "biuf":
+                        raise InvalidParameterError(
+                            "An animated Contour must retain its grid shape and real numeric values."
+                        )
+                    grid = np.ma.masked_invalid(values)
+                    generator = contourpy.contour_generator(
+                        x_mesh,
+                        y_mesh,
+                        grid,
+                        name=algorithm,
+                        corner_mask=corner_mask,
+                        line_type=contourpy.LineType.SeparateCode,
+                        fill_type=contourpy.FillType.OuterCode,
+                    )
+                    if filled:
+                        lower = levels[:-1].copy()
+                        if grid.count() and grid.min() == lower[0]:
+                            lower[0] -= 1
+                        groups = (
+                            generator.filled(lo, hi)
+                            for lo, hi in zip(lower, levels[1:])
+                        )
+                    else:
+                        groups = (generator.lines(level) for level in levels)
+                    paths = [
+                        MplPath(np.concatenate(vertices), np.concatenate(codes))
+                        if vertices
+                        else MplPath(np.empty((0, 2)))
+                        for vertices, codes in cast(
+                            "Iterable[tuple[list[np.ndarray], list[np.ndarray]]]",
+                            groups,
+                        )
+                    ]
+                    return _edit(cont.set_paths, cont.get_paths(), paths)
+
+                session.bind_update(self, "_z_data", prepare)
+                session.bind_property(self, "_alpha", cont, "alpha")
+                session.bind_property(self, "_color_map", cont, "cmap")
+                if not filled:
+                    session.bind_property(self, "_line_widths", cont, "linewidth")
 
 
 @dataclass
@@ -1503,6 +1689,24 @@ class Stream(Plottable2D):
         u, v = func(x_grid, y_grid)
         return cls(x, y, u, v, density, line_width, color, color_map, arrow_size)
 
+    @property
+    def color(self) -> Styled[str | ArrayLike]:
+        """Color of the streamlines and their arrowheads."""
+        return self._color
+
+    @color.setter
+    def color(self, color: Styled[str | ArrayLike]) -> None:
+        self._color = _stage_live_value(self, "_color", color)
+
+    @property
+    def line_width(self) -> Styled[float | ArrayLike]:
+        """Width of the streamlines and their arrowheads."""
+        return self._line_width
+
+    @line_width.setter
+    def line_width(self, line_width: Styled[float | ArrayLike]) -> None:
+        self._line_width = _stage_live_value(self, "_line_width", line_width)
+
     def copy(self) -> Self:
         """
         Returns a deep copy of the :class:`~graphinglib.data_plotting_2d.Stream`.
@@ -1525,8 +1729,10 @@ class Stream(Plottable2D):
         else:
             params["color"] = self._color
 
+        session = _DRAW_SESSION.get()
+        patch_start = len(axes.patches) if session is not None else 0
         try:
-            axes.streamplot(
+            result = axes.streamplot(
                 x=self._x_data,
                 y=self._y_data,
                 u=self._u_data,
@@ -1539,3 +1745,65 @@ class Stream(Plottable2D):
                 f"Could not draw the Stream ({exc}). Check that x and y are evenly "
                 "spaced 1D arrays and that u and v have shape (len(y), len(x))."
             ) from exc
+
+        if session is not None:
+            session.mark_present(self)
+            arrows = axes.patches[patch_start:]
+            if (
+                self._color is None
+                or is_inherit(self._color)
+                or is_color_like(self._color)
+            ):
+
+                def prepare_color(value: str) -> _ArtistEdit:
+                    if not is_color_like(value):
+                        raise InvalidParameterError(
+                            "An animated Stream color must be a single Matplotlib color."
+                        )
+                    before = result.lines.get_color()
+                    arrow_colors = [
+                        (arrow.get_edgecolor(), arrow.get_facecolor())
+                        for arrow in arrows
+                    ]
+
+                    def apply() -> None:
+                        result.lines.set_color(value)
+                        for arrow in arrows:
+                            arrow.set_color(value)
+
+                    def undo() -> None:
+                        result.lines.set_color(before)
+                        for arrow, (edge, face) in zip(arrows, arrow_colors):
+                            arrow.set_edgecolor(edge)
+                            arrow.set_facecolor(face)
+
+                    return _ArtistEdit(apply, undo)
+
+                session.bind_update(self, "_color", prepare_color)
+            if (
+                self._line_width is None
+                or is_inherit(self._line_width)
+                or np.ndim(self._line_width) == 0
+            ):
+
+                def prepare_width(value: float) -> _ArtistEdit:
+                    if np.ndim(value) != 0 or not np.isfinite(value) or value < 0:
+                        raise InvalidParameterError(
+                            "An animated Stream line_width must be finite and nonnegative."
+                        )
+                    old_line = result.lines.get_linewidth()
+                    old_arrows = [arrow.get_linewidth() for arrow in arrows]
+
+                    def apply() -> None:
+                        result.lines.set_linewidth(value)
+                        for arrow in arrows:
+                            arrow.set_linewidth(value)
+
+                    def undo() -> None:
+                        result.lines.set_linewidth(old_line)
+                        for arrow, width in zip(arrows, old_arrows):
+                            arrow.set_linewidth(width)
+
+                    return _ArtistEdit(apply, undo)
+
+                session.bind_update(self, "_line_width", prepare_width)

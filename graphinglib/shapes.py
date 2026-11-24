@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from .inherit import INHERIT, Inherit, resolve_or, strip_inherit
-
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Literal, Optional, Sequence
@@ -15,6 +13,14 @@ from matplotlib.patches import Polygon as MPLPolygon
 from shapely import LineString
 from shapely import Polygon as ShPolygon
 
+from ._animation import (
+    _DRAW_SESSION,
+    _ArtistEdit,
+    _bound_session,
+    _edit,
+    _reject_live_update,
+    _stage_live_value,
+)
 from .data_plotting_1d import Curve
 from .exceptions import (
     IncompatibleArgumentsError,
@@ -22,11 +28,46 @@ from .exceptions import (
     InvalidParameterTypeError,
 )
 from .graph_elements import Plottable, Point
+from .inherit import INHERIT, Inherit, resolve_or, strip_inherit
 
 try:
     from typing import Self
 except ImportError:
     from typing_extensions import Self
+
+
+def _bind_arrow_endpoints(element, artist, locate, *properties):
+    session = _DRAW_SESSION.get()
+    if session is None:
+        return
+
+    def prepare(_value):
+        previous = artist.xy, artist.get_position()
+
+        def move(points):
+            target, origin = points
+            artist.xy = target
+            artist.set_position(origin)
+
+        return _ArtistEdit(lambda: move(locate()), lambda: move(previous))
+
+    for name in properties:
+        session.bind_update(element, name, prepare)
+    patch = artist.arrow_patch
+    assert patch is not None
+
+    def prepare_color(value):
+        edge, face = patch.get_edgecolor(), patch.get_facecolor()
+
+        def restore():
+            patch.set_edgecolor(edge)
+            patch.set_facecolor(face)
+
+        return _ArtistEdit(lambda: patch.set_color(value), restore)
+
+    session.bind_update(element, "_color", prepare_color)
+    session.bind_property(element, "_alpha", patch, "alpha")
+    session.bind_property(element, "_width", patch, "linewidth")
 
 
 @dataclass
@@ -150,7 +191,7 @@ class Arrow(Plottable):
 
     @pointA.setter
     def pointA(self, value):
-        self._pointA = value
+        self._pointA = _stage_live_value(self, "_pointA", value)
 
     @property
     def pointB(self):
@@ -158,7 +199,7 @@ class Arrow(Plottable):
 
     @pointB.setter
     def pointB(self, value):
-        self._pointB = value
+        self._pointB = _stage_live_value(self, "_pointB", value)
 
     @property
     def color(self):
@@ -166,7 +207,7 @@ class Arrow(Plottable):
 
     @color.setter
     def color(self, value):
-        self._color = value
+        self._color = _stage_live_value(self, "_color", value)
 
     @property
     def width(self):
@@ -174,7 +215,7 @@ class Arrow(Plottable):
 
     @width.setter
     def width(self, value):
-        self._width = value
+        self._width = _stage_live_value(self, "_width", value)
 
     @property
     def head_size(self):
@@ -182,6 +223,7 @@ class Arrow(Plottable):
 
     @head_size.setter
     def head_size(self, value):
+        _reject_live_update(self, "Configure head_size before animating.")
         self._head_size = value
 
     @property
@@ -190,7 +232,7 @@ class Arrow(Plottable):
 
     @shrink.setter
     def shrink(self, value):
-        self._shrink = value
+        self._shrink = _stage_live_value(self, "_shrink", value)
 
     @property
     def style(self):
@@ -212,6 +254,7 @@ class Arrow(Plottable):
                 "style must be one of '->', '-|>', '-[', ']->', 'simple', 'fancy', "
                 f"'wedge', or INHERIT; got {value!r}."
             )
+        _reject_live_update(self, "Configure style before animating.")
         self._style = value
 
     @property
@@ -220,7 +263,7 @@ class Arrow(Plottable):
 
     @alpha.setter
     def alpha(self, value):
-        self._alpha = value
+        self._alpha = _stage_live_value(self, "_alpha", value)
 
     @property
     def two_sided(self):
@@ -228,6 +271,7 @@ class Arrow(Plottable):
 
     @two_sided.setter
     def two_sided(self, value):
+        _reject_live_update(self, "Configure two_sided before animating.")
         self._two_sided = value
 
     def _shrink_points(self):
@@ -298,23 +342,18 @@ class Arrow(Plottable):
             "alpha": self._alpha,
         }
         props = strip_inherit(props)
-        if self._shrink != 0:
-            shrinkPointA, shrinkPointB = self._shrink_points()
-            axes.annotate(
-                "",
-                shrinkPointB,
-                shrinkPointA,
-                zorder=z_order,
-                arrowprops=props,
+
+        def locate():
+            origin, target = (
+                self._shrink_points()
+                if self._shrink != 0
+                else (self._pointA, self._pointB)
             )
-        else:
-            axes.annotate(
-                "",
-                self._pointB,
-                self._pointA,
-                zorder=z_order,
-                arrowprops=props,
-            )
+            return target, origin
+
+        target, origin = locate()
+        artist = axes.annotate("", target, origin, zorder=z_order, arrowprops=props)
+        _bind_arrow_endpoints(self, artist, locate, "_pointA", "_pointB", "_shrink")
 
 
 @dataclass
@@ -385,7 +424,7 @@ class Line(Plottable):
 
     @pointA.setter
     def pointA(self, value: tuple[float, float]):
-        self._pointA = value
+        self._pointA = _stage_live_value(self, "_pointA", value)
 
     @property
     def pointB(self) -> tuple[float, float]:
@@ -393,7 +432,7 @@ class Line(Plottable):
 
     @pointB.setter
     def pointB(self, value: tuple[float, float]):
-        self._pointB = value
+        self._pointB = _stage_live_value(self, "_pointB", value)
 
     @property
     def color(self) -> str | Inherit:
@@ -401,7 +440,7 @@ class Line(Plottable):
 
     @color.setter
     def color(self, value: str | Inherit):
-        self._color = value
+        self._color = _stage_live_value(self, "_color", value)
 
     @property
     def width(self) -> float | Inherit:
@@ -409,7 +448,7 @@ class Line(Plottable):
 
     @width.setter
     def width(self, value: float | Inherit):
-        self._width = value
+        self._width = _stage_live_value(self, "_width", value)
 
     @property
     def capped_line(self) -> bool:
@@ -417,6 +456,7 @@ class Line(Plottable):
 
     @capped_line.setter
     def capped_line(self, value: bool):
+        _reject_live_update(self, "Configure capped_line before animating.")
         self._capped_line = value
 
     @property
@@ -425,6 +465,7 @@ class Line(Plottable):
 
     @cap_width.setter
     def cap_width(self, value: float | Inherit):
+        _reject_live_update(self, "Configure cap_width before animating.")
         self._cap_width = value
 
     @property
@@ -433,7 +474,7 @@ class Line(Plottable):
 
     @alpha.setter
     def alpha(self, value: float | Inherit):
-        self._alpha = value
+        self._alpha = _stage_live_value(self, "_alpha", value)
 
     def copy(self) -> Self:
         """
@@ -454,12 +495,15 @@ class Line(Plottable):
             "alpha": self._alpha,
         }
         props = strip_inherit(props)
-        axes.annotate(
+        artist = axes.annotate(
             "",
             self._pointA,
             self._pointB,
             zorder=z_order,
             arrowprops=props,
+        )
+        _bind_arrow_endpoints(
+            self, artist, lambda: (self._pointA, self._pointB), "_pointA", "_pointB"
         )
 
 
@@ -524,6 +568,7 @@ class Polygon(Plottable):
 
     @fill.setter
     def fill(self, value):
+        _reject_live_update(self, "Configure fill before animating.")
         self._fill = value
 
     @property
@@ -532,7 +577,7 @@ class Polygon(Plottable):
 
     @fill_color.setter
     def fill_color(self, value):
-        self._fill_color = value
+        self._fill_color = _stage_live_value(self, "_fill_color", value)
 
     @property
     def edge_color(self):
@@ -540,6 +585,7 @@ class Polygon(Plottable):
 
     @edge_color.setter
     def edge_color(self, value):
+        _reject_live_update(self, "Configure edge_color before animating.")
         self._edge_color = value
 
     @property
@@ -548,7 +594,7 @@ class Polygon(Plottable):
 
     @line_width.setter
     def line_width(self, value):
-        self._line_width = value
+        self._line_width = _stage_live_value(self, "_line_width", value)
 
     @property
     def line_style(self):
@@ -556,7 +602,7 @@ class Polygon(Plottable):
 
     @line_style.setter
     def line_style(self, value):
-        self._line_style = value
+        self._line_style = _stage_live_value(self, "_line_style", value)
 
     @property
     def fill_alpha(self):
@@ -564,7 +610,7 @@ class Polygon(Plottable):
 
     @fill_alpha.setter
     def fill_alpha(self, value):
-        self._fill_alpha = value
+        self._fill_alpha = _stage_live_value(self, "_fill_alpha", value)
 
     @property
     def vertices(self):
@@ -572,7 +618,7 @@ class Polygon(Plottable):
 
     @vertices.setter
     def vertices(self, value):
-        self._sh_polygon = ShPolygon(value)
+        self._sh_polygon = _stage_live_value(self, "_sh_polygon", ShPolygon(value))
 
     @property
     def area(self):
@@ -734,7 +780,11 @@ class Polygon(Plottable):
         dy : float
             The amount to move the polygon in the y direction.
         """
-        self._sh_polygon = sh.affinity.translate(self._sh_polygon, xoff=dx, yoff=dy)
+        self._sh_polygon = _stage_live_value(
+            self,
+            "_sh_polygon",
+            sh.affinity.translate(self._sh_polygon, xoff=dx, yoff=dy),
+        )
 
     def rotate(
         self,
@@ -758,8 +808,12 @@ class Polygon(Plottable):
             center = self.get_centroid_coordinates()
 
         # Use shapely.affinity.rotate to rotate the polygon
-        self._sh_polygon = sh.affinity.rotate(
-            self._sh_polygon, angle, origin=center, use_radians=use_rad
+        self._sh_polygon = _stage_live_value(
+            self,
+            "_sh_polygon",
+            sh.affinity.rotate(
+                self._sh_polygon, angle, origin=center, use_radians=use_rad
+            ),
         )
 
     def scale(
@@ -784,8 +838,12 @@ class Polygon(Plottable):
             center = self.get_centroid_coordinates()
 
         # Use shapely.affinity.scale to scale the polygon
-        self._sh_polygon = sh.affinity.scale(
-            self._sh_polygon, xfact=x_scale, yfact=y_scale, origin=center
+        self._sh_polygon = _stage_live_value(
+            self,
+            "_sh_polygon",
+            sh.affinity.scale(
+                self._sh_polygon, xfact=x_scale, yfact=y_scale, origin=center
+            ),
         )
 
     def skew(
@@ -813,8 +871,16 @@ class Polygon(Plottable):
             center = self.get_centroid_coordinates()
 
         # Use shapely.affinity.skew to skew the polygon
-        self._sh_polygon = sh.affinity.skew(
-            self._sh_polygon, xs=x_skew, ys=y_skew, origin=center, use_radians=use_rad
+        self._sh_polygon = _stage_live_value(
+            self,
+            "_sh_polygon",
+            sh.affinity.skew(
+                self._sh_polygon,
+                xs=x_skew,
+                ys=y_skew,
+                origin=center,
+                use_radians=use_rad,
+            ),
         )
 
     def split(self, curve: Curve, copy_style: bool = False) -> list[Polygon]:
@@ -863,7 +929,7 @@ class Polygon(Plottable):
             The transformation matrix to apply. The matrix should be a 2x2 matrix for 2D transformations.
         """
         new_points = np.dot(self.vertices, matrix)
-        self._sh_polygon = ShPolygon(new_points)
+        self._sh_polygon = _stage_live_value(self, "_sh_polygon", ShPolygon(new_points))
 
     def get_intersection_coordinates(self, other: Self) -> list[tuple[float, float]]:
         """
@@ -939,6 +1005,33 @@ class Polygon(Plottable):
             params = strip_inherit(params)
             polygon_edge = MPLPolygon(self.vertices, **params)
             axes.add_patch(polygon_edge)
+
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            if resolve_or(self._fill, True):
+                session.bind_update(
+                    self,
+                    "_sh_polygon",
+                    lambda shape: _edit(
+                        polygon_fill.set_xy,
+                        polygon_fill.get_xy(),
+                        np.asarray(shape.exterior.coords),
+                    ),
+                )
+                session.bind_property(self, "_fill_color", polygon_fill, "facecolor")
+                session.bind_property(self, "_fill_alpha", polygon_fill, "alpha")
+            if self._edge_color is not None:
+                session.bind_update(
+                    self,
+                    "_sh_polygon",
+                    lambda shape: _edit(
+                        polygon_edge.set_xy,
+                        polygon_edge.get_xy(),
+                        np.asarray(shape.exterior.coords),
+                    ),
+                )
+                session.bind_property(self, "_line_width", polygon_edge, "linewidth")
+                session.bind_property(self, "_line_style", polygon_edge, "linestyle")
 
 
 @dataclass
@@ -1017,8 +1110,12 @@ class Circle(Polygon):
 
     @x_center.setter
     def x_center(self, value):
-        self._sh_polygon = sh.geometry.Point(value, self.y_center).buffer(
-            self.radius, self._num_points // 4
+        self._sh_polygon = _stage_live_value(
+            self,
+            "_sh_polygon",
+            sh.geometry.Point(value, self.y_center).buffer(
+                self.radius, self._num_points // 4
+            ),
         )
 
     @property
@@ -1027,8 +1124,12 @@ class Circle(Polygon):
 
     @y_center.setter
     def y_center(self, value):
-        self._sh_polygon = sh.geometry.Point(self.x_center, value).buffer(
-            self.radius, self._num_points // 4
+        self._sh_polygon = _stage_live_value(
+            self,
+            "_sh_polygon",
+            sh.geometry.Point(self.x_center, value).buffer(
+                self.radius, self._num_points // 4
+            ),
         )
 
     @property
@@ -1039,8 +1140,12 @@ class Circle(Polygon):
     def radius(self, value):
         if value <= 0:
             raise InvalidParameterError(f"radius must be positive; got {value}.")
-        self._sh_polygon = sh.geometry.Point(self.x_center, self.y_center).buffer(
-            value, self._num_points // 4
+        self._sh_polygon = _stage_live_value(
+            self,
+            "_sh_polygon",
+            sh.geometry.Point(self.x_center, self.y_center).buffer(
+                value, self._num_points // 4
+            ),
         )
 
     @property
@@ -1061,6 +1166,9 @@ class Circle(Polygon):
             raise InvalidParameterError(
                 f"number_of_points must be at least 4; got {value}."
             )
+        _reject_live_update(
+            self, "Configure the shape sampling resolution before animating."
+        )
         self._num_points = value
 
     @property
@@ -1158,22 +1266,22 @@ class Ellipse(Polygon):
         y_radius: float,
         angle: float,
     ):
-        self._x_radius = x_radius
-        self._y_radius = y_radius
-        self._angle = angle
-        self._sh_polygon = sh.geometry.Point(x_center, y_center).buffer(
-            1, self._num_points // 4
-        )
-        self._sh_polygon = sh.affinity.scale(
-            self._sh_polygon,
-            xfact=x_radius,
-            yfact=y_radius,
-            origin=(x_center, y_center),
+        polygon = sh.geometry.Point(x_center, y_center).buffer(1, self._num_points // 4)
+        polygon = sh.affinity.scale(
+            polygon, xfact=x_radius, yfact=y_radius, origin=(x_center, y_center)
         )
         if angle != 0:
-            self._sh_polygon = sh.affinity.rotate(
-                self._sh_polygon, angle, origin=(x_center, y_center)
-            )
+            polygon = sh.affinity.rotate(polygon, angle, origin=(x_center, y_center))
+        session = _bound_session(self)
+        if session is not None:
+            previous = self._x_radius, self._y_radius, self._angle
+
+            def restore():
+                self._x_radius, self._y_radius, self._angle = previous
+
+            session.remember(self, "ellipse_dimensions", restore)
+        self._sh_polygon = _stage_live_value(self, "_sh_polygon", polygon)
+        self._x_radius, self._y_radius, self._angle = x_radius, y_radius, angle
 
     @property
     def x_center(self):
@@ -1231,6 +1339,9 @@ class Ellipse(Polygon):
             raise InvalidParameterError(
                 f"number_of_points must be at least 4; got {value}."
             )
+        _reject_live_update(
+            self, "Configure the shape sampling resolution before animating."
+        )
         self._num_points = value
 
     @property
@@ -1342,13 +1453,17 @@ class Rectangle(Polygon):
 
     @x_bottom_left.setter
     def x_bottom_left(self, value):
-        self._sh_polygon = ShPolygon(
-            [
-                (value, self.y_bottom_left),
-                (value + self.width, self.y_bottom_left),
-                (value + self.width, self.y_bottom_left + self.height),
-                (value, self.y_bottom_left + self.height),
-            ]
+        self._sh_polygon = _stage_live_value(
+            self,
+            "_sh_polygon",
+            ShPolygon(
+                [
+                    (value, self.y_bottom_left),
+                    (value + self.width, self.y_bottom_left),
+                    (value + self.width, self.y_bottom_left + self.height),
+                    (value, self.y_bottom_left + self.height),
+                ]
+            ),
         )
 
     @property
@@ -1357,13 +1472,17 @@ class Rectangle(Polygon):
 
     @y_bottom_left.setter
     def y_bottom_left(self, value):
-        self._sh_polygon = ShPolygon(
-            [
-                (self.x_bottom_left, value),
-                (self.x_bottom_left + self.width, value),
-                (self.x_bottom_left + self.width, value + self.height),
-                (self.x_bottom_left, value + self.height),
-            ]
+        self._sh_polygon = _stage_live_value(
+            self,
+            "_sh_polygon",
+            ShPolygon(
+                [
+                    (self.x_bottom_left, value),
+                    (self.x_bottom_left + self.width, value),
+                    (self.x_bottom_left + self.width, value + self.height),
+                    (self.x_bottom_left, value + self.height),
+                ]
+            ),
         )
 
     @property
@@ -1374,13 +1493,17 @@ class Rectangle(Polygon):
     def width(self, value):
         if value <= 0:
             raise InvalidParameterError(f"width must be positive; got {value}.")
-        self._sh_polygon = ShPolygon(
-            [
-                (self.x_bottom_left, self.y_bottom_left),
-                (self.x_bottom_left + value, self.y_bottom_left),
-                (self.x_bottom_left + value, self.y_bottom_left + self.height),
-                (self.x_bottom_left, self.y_bottom_left + self.height),
-            ]
+        self._sh_polygon = _stage_live_value(
+            self,
+            "_sh_polygon",
+            ShPolygon(
+                [
+                    (self.x_bottom_left, self.y_bottom_left),
+                    (self.x_bottom_left + value, self.y_bottom_left),
+                    (self.x_bottom_left + value, self.y_bottom_left + self.height),
+                    (self.x_bottom_left, self.y_bottom_left + self.height),
+                ]
+            ),
         )
 
     @property
@@ -1391,13 +1514,17 @@ class Rectangle(Polygon):
     def height(self, value):
         if value <= 0:
             raise InvalidParameterError(f"height must be positive; got {value}.")
-        self._sh_polygon = ShPolygon(
-            [
-                (self.x_bottom_left, self.y_bottom_left),
-                (self.x_bottom_left + self.width, self.y_bottom_left),
-                (self.x_bottom_left + self.width, self.y_bottom_left + value),
-                (self.x_bottom_left, self.y_bottom_left + value),
-            ]
+        self._sh_polygon = _stage_live_value(
+            self,
+            "_sh_polygon",
+            ShPolygon(
+                [
+                    (self.x_bottom_left, self.y_bottom_left),
+                    (self.x_bottom_left + self.width, self.y_bottom_left),
+                    (self.x_bottom_left + self.width, self.y_bottom_left + value),
+                    (self.x_bottom_left, self.y_bottom_left + value),
+                ]
+            ),
         )
 
     @property
@@ -1407,13 +1534,17 @@ class Rectangle(Polygon):
     @center.setter
     def center(self, value):
         x, y = value
-        self._sh_polygon = ShPolygon(
-            [
-                (x - self.width / 2, y - self.height / 2),
-                (x + self.width / 2, y - self.height / 2),
-                (x + self.width / 2, y + self.height / 2),
-                (x - self.width / 2, y + self.height / 2),
-            ]
+        self._sh_polygon = _stage_live_value(
+            self,
+            "_sh_polygon",
+            ShPolygon(
+                [
+                    (x - self.width / 2, y - self.height / 2),
+                    (x + self.width / 2, y - self.height / 2),
+                    (x + self.width / 2, y + self.height / 2),
+                    (x - self.width / 2, y + self.height / 2),
+                ]
+            ),
         )
 
     @classmethod

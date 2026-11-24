@@ -11,6 +11,7 @@ from numpy.typing import ArrayLike
 from scipy.optimize import curve_fit
 from typing_extensions import TypeVar
 
+from ._animation import _DRAW_SESSION, _reject_live_update
 from .data_plotting_1d import Curve, Scatter
 from .exceptions import InvalidParameterError, PlottingError
 from .graph_elements import Point
@@ -177,6 +178,7 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
 
     @curve_to_be_fit.setter
     def curve_to_be_fit(self, curve: Curve | Scatter) -> None:
+        _reject_live_update(self, "Configure the fitted data before animating.")
         self._curve_to_be_fit = curve
 
     @property
@@ -426,6 +428,21 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
                 **params,
             )
 
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            session.block_curve_updates(
+                self,
+                "Animating fitted values requires a refit; animate a Curve of sampled values instead.",
+            )
+            if not self._res_curves_to_be_plotted and not self._fill_between_bounds:
+                for name, mpl_name in (
+                    ("_color", "color"),
+                    ("_line_style", "linestyle"),
+                    ("_line_width", "linewidth"),
+                    ("_alpha", "alpha"),
+                ):
+                    session.bind_property(self, name, self.handle, mpl_name)
+
     def show_residual_curves(
         self,
         sigma_multiplier: float = 1,
@@ -460,6 +477,7 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        _reject_live_update(self, "Configure fit residual curves before animating.")
         self._res_curves_to_be_plotted = True
         self._res_sigma_multiplier = sigma_multiplier
         self._res_color = color
