@@ -2106,6 +2106,11 @@ and explicitly configured tick positions and labels are preserved. Shared
 axes use one set of limits, direction and scale. Twin axes accept
 ``axis_lim``, ``invert_axis`` and ``log_scale``.
 
+Use ``set_ticks(...)`` in a callback to change tick positions, spacing, and
+major tick labels on standard plots and twin axes. Tick updates use the
+frame's final scale and keep the view limits fixed. ``reset=True`` restores
+the defaults from the active scale before applying new specifications.
+
 Use ``remove_axes``, ``remove_x_ticks`` or ``remove_y_ticks`` to hide and reveal
 decorations on direct subplots. These flags follow the same list rules and
 apply to each subplot individually, including when the viewport is shared.

@@ -4818,6 +4818,114 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertEqual(heat.color_bar_params, {"label": "Setup", "ticks": [0, 2]})
         self.assertEqual(self.output.read_bytes(), b"existing")
 
+    def test_live_ticks_switch_rules_on_shared_nested_and_twin_axes(self):
+        from matplotlib.ticker import AutoLocator, LogLocator, MultipleLocator
+
+        from graphinglib import SmartTwinAxis
+
+        inner, upper, lower, secondary = (Curve([1, 10], [1, 10]) for _ in range(4))
+        twin = SmartTwinAxis(elements=[secondary], axis_lim=(1, 15))
+        nested = SmartFigure(elements=[inner], twin_y_axis=twin, x_lim=(1, 10))
+        root = SmartFigure(2, 3, share_x=True, x_lim=(1, 10), figure_style="plain")
+        root[:, 0] = nested
+        root[0, 1:3] = [upper]
+        root[1, 1:3] = [lower]
+        root.set_ticks(x_ticks=[1, 3], x_tick_labels=["One", "Three"])
+        states = []
+
+        def update(frame):
+            a, b, c, d = (
+                curve.handle.lines[0].axes for curve in (inner, upper, lower, secondary)
+            )
+            states.append(
+                (
+                    (a, b, c, d),
+                    (b.get_xlim(), b.get_xscale()),
+                    (b.xaxis.get_major_locator(), c.xaxis.get_major_locator()),
+                    (
+                        tuple(b.get_xticks()),
+                        tuple(label.get_text() for label in c.get_xticklabels()),
+                    ),
+                    tuple(b.xaxis.get_minorticklocs()),
+                    (
+                        tuple(d.get_yticks()),
+                        d.get_ylim(),
+                        tuple(label.get_text() for label in d.get_yticklabels()),
+                    ),
+                )
+            )
+            if frame == 0:
+                root.set_ticks(
+                    x_ticks=[1, 3, 100], x_tick_labels=lambda value: f"Value {value}"
+                )
+                root.set_ticks(minor_x_ticks=[2, 5])
+                root.log_scale_x = True
+                root.x_lim = (1, 10)
+                twin.set_ticks(
+                    ticks=[1, 15, 1000], tick_labels=["Low", "High", "Off screen"]
+                )
+            elif frame == 1:
+                root.log_scale_x = False
+                root.set_ticks(x_tick_spacing=2)
+            elif frame == 2:
+                root.log_scale_x = True
+                root.set_ticks(reset=True)
+                twin.set_ticks(reset=True)
+            elif frame == 3:
+                root.log_scale_x = False
+
+        root.save_animation(self.output, update, 5)
+        self.assertTrue(all(state[0] == states[0][0] for state in states))
+        self.assertTrue(all(state[2][0] is state[2][1] for state in states))
+        self.assertEqual(states[1][1], ((1, 10), "log"))
+        self.assertEqual(
+            states[1][3], ((1, 3, 100), ("Value 1", "Value 3", "Value 100"))
+        )
+        self.assertEqual(states[1][4], (2, 5))
+        self.assertEqual(
+            states[1][5], ((1, 15, 1000), (1, 15), ("Low", "High", "Off screen"))
+        )
+        self.assertEqual(states[2][1], ((1, 10), "linear"))
+        self.assertIsInstance(states[2][2][0], MultipleLocator)
+        self.assertEqual(states[2][4], (5,))
+        self.assertEqual(states[3][1], ((1, 10), "log"))
+        self.assertIsInstance(states[3][2][0], LogLocator)
+        self.assertNotEqual(states[3][5], states[2][5])
+        self.assertEqual(states[4][1], ((1, 10), "linear"))
+        self.assertIsInstance(states[4][2][0], AutoLocator)
+
+    def test_failed_tick_edit_restores_previous_tick_objects_and_scale(self):
+        curve = Curve([1, 10], [1, 10])
+        root = SmartFigure(elements=[curve], figure_style="plain", x_lim=(1, 10))
+        root.set_ticks(x_ticks=[1, 10], x_tick_labels=["One", "Ten"])
+        self.output.write_bytes(b"existing")
+        saved = []
+
+        def update(frame):
+            axis = curve.handle.lines[0].axes
+            if not frame:
+                saved[:] = [
+                    axis,
+                    axis.xaxis.get_major_locator(),
+                    axis.xaxis.get_major_formatter(),
+                ]
+                return
+            root.log_scale_x = True
+            root.set_ticks(x_ticks=[2, 8, 20], y_tick_spacing=-1)
+
+        with self.assertRaisesRegex(
+            GraphingException, "tick spacing must be finite and positive"
+        ):
+            root.save_animation(self.output, update, 2)
+        axis, locator, formatter = saved
+        self.assertEqual(axis.get_xscale(), "linear")
+        self.assertEqual(axis.get_xlim(), (1, 10))
+        self.assertIs(axis.xaxis.get_major_locator(), locator)
+        self.assertIs(axis.xaxis.get_major_formatter(), formatter)
+        self.assertEqual(root._ticks["x_ticks"], [1, 10])
+        self.assertNotIn("y_tick_spacing", root._ticks)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_raster_extent_and_origin_update_without_panning_view(self):
         heat = Heatmap([[0, 1], [0, 0]], origin_position="upper", show_color_bar=False)
         root = SmartFigure(

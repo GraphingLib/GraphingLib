@@ -26,7 +26,7 @@ from matplotlib.lines import Line2D
 from matplotlib.offsetbox import DrawingArea
 from matplotlib.patches import Polygon
 from matplotlib.text import Text as TextArtist
-from matplotlib.ticker import FixedLocator, Locator
+from matplotlib.ticker import FixedLocator, FuncFormatter, Locator, MultipleLocator
 from numpy.typing import ArrayLike
 
 from .exceptions import (
@@ -82,6 +82,54 @@ def _subplot_visibility_entries(
             "Set axis properties on a nested SmartFigure directly."
         )
     return entries
+
+
+_AXIS_TICK_FIELDS = (
+    ("major_locator", "isDefault_majloc"),
+    ("minor_locator", "isDefault_minloc"),
+    ("major_formatter", "isDefault_majfmt"),
+    ("minor_formatter", "isDefault_minfmt"),
+)
+
+
+def _axis_tick_keys(dimension: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    prefix = f"{dimension}_" if dimension else ""
+    return (
+        (prefix + "ticks", prefix + "tick_spacing", prefix + "tick_labels"),
+        ("minor_" + prefix + "ticks", "minor_" + prefix + "tick_spacing"),
+    )
+
+
+def _updated_tick_config(
+    previous: dict[str, Any],
+    changes: dict[str, Any],
+    *,
+    reset: bool,
+    dimensions: tuple[str, ...],
+) -> dict[str, Any]:
+    config = {} if reset else previous.copy()
+    for dimension in dimensions:
+        for keys in _axis_tick_keys(dimension):
+            if any(key in changes for key in keys):
+                for key in keys:
+                    config.pop(key, None)
+    return {**config, **changes}
+
+
+def _save_axis_ticks(axis: Axis) -> list[tuple[str, str, Any, bool]]:
+    return [
+        (field, flag, getattr(axis, f"get_{field}")(), getattr(axis, flag))
+        for field, flag in _AXIS_TICK_FIELDS
+    ]
+
+
+def _restore_axis_ticks(
+    axis: Axis, ticks: list[tuple[str, str, Any, bool]], *, custom_only: bool = False
+) -> None:
+    for field, flag, value, is_default in ticks:
+        if not custom_only or not is_default:
+            getattr(axis, f"set_{field}")(value)
+            setattr(axis, flag, is_default)
 
 
 def _axis_removal(axes: Axes, remove: bool) -> _ArtistEdit:
@@ -377,7 +425,7 @@ class _AnimationSession:
             tuple[int, str], dict[int, Callable[[], _ArtistEdit]]
         ] = {}
         self._dirty_dependents: dict[int, Callable[[], _ArtistEdit]] = {}
-        self._legend_swatch_prepares: set[int] = set()
+        self._post_artist_prepares: set[int] = set()
         self._initially_hidden_artists: list[Artist] = []
         self._initial_colorbar_ticks: dict[int, Any] = {}
         self._legend_sources: dict[
@@ -538,6 +586,102 @@ class _AnimationSession:
 
         self.bind_update(element, name, prepare)
 
+    def bind_axis_ticks(
+        self,
+        element: object,
+        targets: list[tuple[Axis, str]],
+        read_config: Callable[[], dict[str, Any]],
+    ) -> None:
+        if not targets:
+            return
+        # Shared axes use the same Ticker objects. Update each group once.
+        unique = {id(axis.major): (axis, dimension) for axis, dimension in targets}
+        current = read_config()
+
+        def prepare() -> _ArtistEdit:
+            previous = current
+            config = read_config()
+            snapshots: list[tuple[Axis, list[tuple[str, str, Any, bool]]]] = []
+
+            def apply() -> None:
+                nonlocal current
+                for axis, dimension in unique.values():
+                    major, minor = _axis_tick_keys(dimension)
+                    update_major = any(
+                        config.get(key) is not previous.get(key) for key in major
+                    )
+                    update_minor = any(
+                        config.get(key) is not previous.get(key) for key in minor
+                    )
+                    if not (update_major or update_minor):
+                        continue
+                    saved = _save_axis_ticks(axis)
+                    snapshots.append((axis, saved))
+                    # Obtain defaults from the scale in effect after the viewport edit.
+                    cast(Any, axis)._scale.set_default_locators_and_formatters(axis)
+                    for _, flag in _AXIS_TICK_FIELDS:
+                        setattr(axis, flag, True)
+                    if update_major:
+                        configure(axis, major, minor=False)
+                    if update_minor:
+                        configure(axis, minor, minor=True)
+                    if not update_major or not update_minor:
+                        untouched = "minor_" if update_major else "major_"
+                        _restore_axis_ticks(
+                            axis,
+                            [
+                                entry
+                                for entry in saved
+                                if entry[0].startswith(untouched)
+                            ],
+                        )
+                current = config
+
+            def configure(axis: Axis, keys: tuple[str, ...], *, minor: bool) -> None:
+                positions, spacing = (config.get(key) for key in keys[:2])
+                set_locator = (
+                    axis.set_minor_locator if minor else axis.set_major_locator
+                )
+                if positions is not None:
+                    pos = np.asarray(positions, dtype=float)
+                    if pos.ndim != 1 or not np.isfinite(pos).all():
+                        raise InvalidParameterError(
+                            "Animated ticks must be one-dimensional finite numbers."
+                        )
+                    set_locator(FixedLocator(pos.tolist()))
+                elif spacing is not None:
+                    if (
+                        not isinstance(spacing, Real)
+                        or not isfinite(spacing)
+                        or spacing <= 0
+                    ):
+                        raise InvalidParameterError(
+                            "Animated tick spacing must be finite and positive."
+                        )
+                    set_locator(MultipleLocator(spacing))
+                if not minor:
+                    labels = config.get(keys[2])
+                    if callable(labels):
+                        if positions is not None:
+                            axis.set_ticklabels([labels(value) for value in positions])
+                        else:
+                            axis.set_major_formatter(
+                                FuncFormatter(lambda value, _: labels(value))
+                            )
+                    elif labels is not None:
+                        axis.set_ticklabels(labels)
+
+            def undo() -> None:
+                nonlocal current
+                for axis, saved in reversed(snapshots):
+                    _restore_axis_ticks(axis, saved)
+                current = previous
+
+            return _ArtistEdit(apply, undo)
+
+        self._post_artist_prepares.add(id(prepare))
+        self.bind_derived(element, ("_ticks",), prepare)
+
     def bind_axis_view(
         self,
         element: object,
@@ -572,35 +716,16 @@ class _AnimationSession:
             else:
                 axes.set_yscale(scale)
 
-        tick_fields = (
-            ("major_locator", "isDefault_majloc"),
-            ("minor_locator", "isDefault_minloc"),
-            ("major_formatter", "isDefault_majfmt"),
-            ("minor_formatter", "isDefault_minfmt"),
-        )
-
-        def save_ticks(axis: Axis):
-            return [
-                (field, flag, getattr(axis, f"get_{field}")(), getattr(axis, flag))
-                for field, flag in tick_fields
-            ]
-
-        def restore_ticks(axis: Axis, ticks, *, custom_only: bool) -> None:
-            for field, flag, value, is_default in ticks:
-                if not custom_only or not is_default:
-                    getattr(axis, f"set_{field}")(value)
-                    setattr(axis, flag, is_default)
-
         def prepare_scale_edit(
             axes: Axes, siblings: frozenset[Axes], scale: str
         ) -> _ArtistEdit:
             before_scale = cast(Any, mpl_axis(axes))._scale
-            ticks = [(axis, save_ticks(axis)) for axis in map(mpl_axis, siblings)]
+            ticks = [(axis, _save_axis_ticks(axis)) for axis in map(mpl_axis, siblings)]
 
             def set_state(new_scale, *, custom_only: bool) -> None:
                 write_scale(axes, new_scale)
                 for axis, state in ticks:
-                    restore_ticks(axis, state, custom_only=custom_only)
+                    _restore_axis_ticks(axis, state, custom_only=custom_only)
 
             return _ArtistEdit(
                 lambda: set_state(scale, custom_only=True),
@@ -980,7 +1105,7 @@ class _AnimationSession:
 
             return _ArtistEdit(apply, undo)
 
-        self._legend_swatch_prepares.add(id(prepare))
+        self._post_artist_prepares.add(id(prepare))
         self.bind_derived(element, properties, prepare)
 
     def _bind_errorbar_swatch(
@@ -1089,7 +1214,7 @@ class _AnimationSession:
 
             return _ArtistEdit(apply, undo)
 
-        self._legend_swatch_prepares.add(id(prepare))
+        self._post_artist_prepares.add(id(prepare))
         self.bind_derived(element, supported, prepare)
 
     def bind_point_dependent(
@@ -1275,16 +1400,16 @@ class _AnimationSession:
         try:
             update(index)
             # Derive dependent artist edits from the final frame inputs.
-            dependent_edits, swatch_edits = [], []
+            dependent_edits, post_artist_edits = [], []
             for key, prepare in self._dirty_dependents.items():
                 edits = (
-                    swatch_edits
-                    if key in self._legend_swatch_prepares
+                    post_artist_edits
+                    if key in self._post_artist_prepares
                     else dependent_edits
                 )
                 edits.append(prepare())
             for updates in chain(
-                self._updates.values(), (dependent_edits, swatch_edits)
+                self._updates.values(), (dependent_edits, post_artist_edits)
             ):
                 for edit in updates:
                     applied.append(edit)
@@ -1323,7 +1448,7 @@ class _AnimationSession:
         self._initially_hidden_artists.clear()
         self._initial_colorbar_ticks.clear()
         self._reference_legend_sources.clear()
-        self._legend_swatch_prepares.clear()
+        self._post_artist_prepares.clear()
         self._dirty_dependents.clear()
         for callback in reversed(self._cleanup):
             callback()

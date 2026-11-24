@@ -66,6 +66,7 @@ from ._animation import (
     _stage_live_value,
     _subplot_visibility_entries,
     _tick_removal,
+    _updated_tick_config,
 )
 from .exceptions import (
     IncompatibleArgumentsError,
@@ -2872,6 +2873,16 @@ class SmartFigure:
                 session.bind_legend_visibility(self, legend_targets, subplot_count)
             for name, targets in visibility.items():
                 session.bind_axis_visibility(self, f"_{name}", targets, subplot_count)
+            if not isinstance(self, SmartFigureWCS):
+                session.bind_axis_ticks(
+                    self,
+                    [
+                        (axis, dim)
+                        for _, ax in limit_axes
+                        for axis, dim in ((ax.xaxis, "x"), (ax.yaxis, "y"))
+                    ],
+                    lambda: self._ticks,
+                )
             if limit_axes:
                 self._bind_animation_grid(
                     session,
@@ -3961,7 +3972,6 @@ class SmartFigure:
         """
         # Normalize iterable tick/label inputs to lists so their lengths can be compared
         # and the values reused (a bare iterator would be exhausted after the first pass).
-        _reject_animated_layout(self)
         if x_ticks is not None:
             x_ticks = list(x_ticks)
         if y_ticks is not None:
@@ -4029,9 +4039,6 @@ class SmartFigure:
                     f"({len(y_tick_labels)}) must be the same."
                 )
 
-        if reset:
-            self._ticks.clear()
-
         params = [
             "x_ticks",
             "y_ticks",
@@ -4044,10 +4051,10 @@ class SmartFigure:
             "minor_x_tick_spacing",
             "minor_y_tick_spacing",
         ]
-        for param in params:
-            value = locals()[param]
-            if value is not None:
-                self._ticks[param] = value
+        values = locals()
+        changes = {param: values[param] for param in params if values[param] is not None}
+        config = _updated_tick_config(self._ticks, changes, reset=reset, dimensions=("x", "y"))
+        self._ticks = _stage_live_value(self, "_ticks", config)
 
         return self
 
@@ -5666,6 +5673,9 @@ class SmartTwinAxis:
                 ax.invert_xaxis()
 
         if session is not None:
+            session.bind_axis_ticks(
+                self, [(ax.yaxis if is_y else ax.xaxis, "")], lambda: self._ticks
+            )
             session.bind_update(self, "_remove_axes", partial(_axis_removal, ax))
             session.bind_axis_view(
                 self,
@@ -5989,7 +5999,6 @@ class SmartTwinAxis:
         """
         # Normalize iterable tick/label inputs to lists so their lengths can be compared
         # and the values reused (a bare iterator would be exhausted after the first pass).
-        _reject_animated_layout(self)
         if ticks is not None:
             ticks = list(ticks)
         if minor_ticks is not None:
@@ -6027,9 +6036,6 @@ class SmartTwinAxis:
                     f"Number of ticks ({len(ticks)}) and number of tick labels ({len(tick_labels)}) must be the same."
                 )
 
-        if reset:
-            self._ticks.clear()
-
         params = [
             "ticks",
             "tick_labels",
@@ -6037,10 +6043,10 @@ class SmartTwinAxis:
             "minor_ticks",
             "minor_tick_spacing",
         ]
-        for param in params:
-            value = locals()[param]
-            if value is not None:
-                self._ticks[param] = value
+        values = locals()
+        changes = {param: values[param] for param in params if values[param] is not None}
+        config = _updated_tick_config(self._ticks, changes, reset=reset, dimensions=("",))
+        self._ticks = _stage_live_value(self, "_ticks", config)
 
         return self
 
