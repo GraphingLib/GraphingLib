@@ -2788,6 +2788,8 @@ class SmartFigure:
                                 **legend_params,
                             )
                         _legend.set_zorder(10000)
+                        if session is not None:
+                            session.bind_legend(_legend, handles)
                     default_labels, default_handles = [], []
                     custom_labels, custom_handles = [], []
 
@@ -2936,6 +2938,8 @@ class SmartFigure:
                         **legend_params,
                     )
                 _legend.set_zorder(10000)
+                if session is not None:
+                    session.bind_legend(_legend, handles)
             legend_info = {
                 "labels": {"default": [], "custom": []},
                 "handles": {"default": [], "custom": []},

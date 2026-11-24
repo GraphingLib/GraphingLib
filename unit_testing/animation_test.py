@@ -1171,3 +1171,119 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             assert_allclose(lower.get_ydata(), fitted - spread)
             assert_allclose(upper.get_ydata(), fitted + spread)
             self.assertAlmostEqual(fill.get_paths()[0].vertices[:, 1].max(), 11.5)
+
+    def test_shared_fit_equations_and_twin_labels_update_figure_legend(self):
+        from graphinglib import FitFromPolynomial, LegendLine, SmartTwinAxis
+
+        x = np.arange(4)
+        fit = FitFromPolynomial(Curve(x, x + 1), 1, label="Model")
+        auxiliary = Scatter(x, x + 1, label="Auxiliary")
+        twin = SmartTwinAxis(elements=[auxiliary])
+        leaf = SmartFigure(elements=[fit], twin_y_axis=twin)
+        root = SmartFigure(
+            1,
+            2,
+            elements=[leaf, [fit]],
+            general_legend=True,
+            show_legend=True,
+            figure_style="plain",
+            y_lim=(0, 10),
+        )
+        root.set_custom_legend([LegendLine(label="Guide", color="black")])
+        seen = []
+
+        def update(i):
+            (legend,) = plt.gcf().legends
+            seen.append((legend, tuple(legend.get_texts())))
+            fit.refit(Curve(x, (i + 1) * x + 3))
+            fit.color = "red"
+            auxiliary.label = f"Auxiliary {i}"
+
+        root.save_animation(self.output, update, 2)
+        self.assertEqual(seen[0], seen[1])
+        legend, texts = seen[-1]
+        self.assertEqual(
+            [text.get_text() for text in texts],
+            [fit.label, "Auxiliary 1", fit.label, "Guide"],
+        )
+        for i in (0, 2):
+            self.assertEqual(legend.legend_handles[i].get_color(), "red")
+        self.assertEqual(fit.handle.get_label(), fit.label)
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 2)
+
+    def test_subplot_legend_follows_scatter_styles_and_can_clear_text(self):
+        from matplotlib.colors import to_rgba
+
+        scatter = Scatter([0, 1], [0, 1], face_color="blue", label="Samples")
+        curve = Curve([0, 1], [1, 0], label="Reference", color="navy")
+        root = SmartFigure(
+            elements=[scatter, curve], show_legend=True, figure_style="plain"
+        )
+        captures = []
+
+        def update(i):
+            legend = scatter.handle.axes.get_legend()
+            captures.append(
+                (legend, tuple(legend.get_texts()), tuple(legend.legend_handles))
+            )
+            # Alpha schedules a legend update before the colors schedule a plot update.
+            scatter.alpha = 0.6
+            scatter.face_color = "green"
+            scatter.marker_style = "s"
+            scatter.marker_size = 45
+            scatter.label = f"Samples {i}"
+            curve.label = "Reference" if i == 0 else None
+            curve.color = "orange"
+
+        root.save_animation(self.output, update, 2)
+        self.assertEqual(captures[0], captures[1])
+        _, texts, (scatter_key, line_key) = captures[-1]
+        self.assertEqual([item.get_text() for item in texts], ["Samples 1", ""])
+        self.assertEqual(len(scatter_key.get_paths()[0].vertices), 5)
+        assert_allclose(scatter_key.get_facecolor(), [to_rgba("green", 0.6)])
+        assert_allclose(scatter_key.get_sizes(), [45])
+        self.assertEqual(line_key.get_color(), "orange")
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 2)
+
+    def test_histogram_density_and_legend_follow_statistics_after_zero_spread(self):
+        from graphinglib import Histogram
+
+        hist = Histogram(
+            [1, 2, 3], bins=3, normalize=False, show_params=True, label="Samples"
+        )
+        hist.add_pdf(show_mean=True, show_std=True)
+        root = SmartFigure(
+            elements=[hist],
+            show_legend=True,
+            x_lim=(0, 12),
+            y_lim=(0, 5),
+            figure_style="plain",
+        )
+        state = []
+
+        def update(i):
+            axes = next(
+                axis for axis in plt.gcf().axes if axis.get_legend() is not None
+            )
+            items = (axes.lines[0], axes.get_legend().get_texts()[0], *axes.collections)
+            state.append((items, len(items[0].get_xdata()), items[1].get_text()))
+            hist.data = [[4, 4, 4], [5, 7, 9], [6, 8, 10]][i]
+            hist.label = f"Bin samples {i}"
+
+        root.save_animation(self.output, update, 3)
+        self.assertTrue(all(items == state[0][0] for items, _, _ in state))
+        self.assertEqual([n for _, n, _ in state], [500, 0, 500])
+        self.assertIn(r"\mu$ = 4.000", state[1][2])
+        pdf, label, std, mean = state[-1][0]
+        self.assertIn(r"\mu$ = 8.000", label.get_text())
+        self.assertIn("Bin samples 2", label.get_text())
+        assert_allclose(pdf.get_xdata()[[0, -1]], [6, 10])
+        assert_allclose(mean.get_segments()[0][:, 0], [8, 8])
+        assert_allclose(
+            [line[0, 0] for line in std.get_segments()],
+            [8 - hist.standard_deviation, 8 + hist.standard_deviation],
+        )
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 3)

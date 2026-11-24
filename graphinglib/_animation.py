@@ -19,6 +19,7 @@ from matplotlib.collections import (
 )
 from matplotlib.container import ErrorbarContainer
 from matplotlib.image import AxesImage
+from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
 from matplotlib.text import Text as TextArtist
 from numpy.typing import ArrayLike
@@ -145,6 +146,10 @@ class _AnimationSession:
             tuple[int, str], dict[int, Callable[[], _ArtistEdit]]
         ] = {}
         self._dirty_dependents: dict[int, Callable[[], _ArtistEdit]] = {}
+        self._legend_swatch_prepares: set[int] = set()
+        self._legend_sources: dict[
+            int, tuple[object, Callable[[], str | None], tuple[str, ...]]
+        ] = {}
         self._rollback: dict[tuple[int, str], Callable[[], None]] = {}
         self._cleanup: list[Callable[[], None]] = []
         self.failure: BaseException | None = None
@@ -317,12 +322,105 @@ class _AnimationSession:
         self,
         element: object,
         properties: tuple[str, ...],
-        artist: Artist,
         prepare: Callable[[], _ArtistEdit],
     ) -> None:
         self.mark_present(element)
         for name in properties:
-            self._dependents.setdefault((id(element), name), {})[id(artist)] = prepare
+            # One artist can have independent data, color, and label updates.
+            self._dependents.setdefault((id(element), name), {})[id(prepare)] = prepare
+
+    def bind_legend_source(
+        self,
+        element: object,
+        handle: Artist | ErrorbarContainer,
+        read_label: Callable[[], str | None],
+        properties: tuple[str, ...] = ("_label",),
+    ) -> None:
+        self._legend_sources[id(handle)] = (element, read_label, properties)
+
+        def prepare() -> _ArtistEdit:
+            label = read_label()
+            if label is not None and not isinstance(label, str):
+                raise InvalidParameterError(
+                    "Animated legend labels must be strings or None."
+                )
+            return _edit(handle.set_label, handle.get_label(), label)
+
+        self.bind_derived(element, properties, prepare)
+
+    def bind_legend(self, legend: Legend, handles: list[Any]) -> None:
+        texts = iter(legend.get_texts())
+        for handle, swatch in zip(handles, legend.legend_handles, strict=True):
+            if swatch is None:
+                # Matplotlib keeps a null handle for unsupported entries and skips their text.
+                continue
+            text = next(texts)
+            source = self._legend_sources.get(id(handle))
+            if source is None:
+                continue
+            element, read_label, properties = source
+
+            def prepare(text=text, read_label=read_label) -> _ArtistEdit:
+                return _edit(text.set_text, text.get_text(), read_label() or "")
+
+            self.bind_derived(element, properties, prepare)
+            self._bind_legend_swatch(element, handle, swatch, legend.markerscale)
+
+    def _bind_legend_swatch(
+        self, element: object, source: object, swatch: Artist, marker_scale: float
+    ) -> None:
+        if isinstance(source, ErrorbarContainer) and not (
+            source.has_xerr or source.has_yerr
+        ):
+            source = source.lines[0]
+
+        if isinstance(source, Line2D) and isinstance(swatch, Line2D):
+            properties = ("_color", "_line_style", "_line_width", "_alpha")
+            fields = ("alpha", "color", "linestyle", "linewidth")
+        elif isinstance(source, PathCollection) and isinstance(swatch, PathCollection):
+            properties = (
+                "point_data",
+                "_alpha",
+                "_face_color",
+                "_edge_color",
+                "_color_map",
+                "_color_map_range",
+                "_marker_style",
+                "_marker_size",
+                "_marker_edge_width",
+            )
+            fields = ("alpha", "paths", "facecolor", "edgecolor", "linewidth", "sizes")
+        else:
+            return
+
+        supported = tuple(
+            prop
+            for prop in properties
+            if (id(element), prop) in self._properties
+            or (id(element), prop) in self._dependents
+        )
+        if not supported:
+            return
+
+        def prepare() -> _ArtistEdit:
+            setters = [getattr(swatch, f"set_{field}") for field in fields]
+            original = [getattr(swatch, f"get_{field}")() for field in fields]
+
+            def apply() -> None:
+                for field, set_value in zip(fields, setters):
+                    value = getattr(source, f"get_{field}")()
+                    if field == "sizes":
+                        value = np.asarray(value) * marker_scale**2
+                    set_value(value)
+
+            def undo() -> None:
+                for set_value, value in zip(setters, original):
+                    set_value(value)
+
+            return _ArtistEdit(apply, undo)
+
+        self._legend_swatch_prepares.add(id(prepare))
+        self.bind_derived(element, supported, prepare)
 
     def bind_point_dependent(
         self,
@@ -334,7 +432,7 @@ class _AnimationSession:
             return _fill_edit(artist, *coordinates())
 
         for element in elements:
-            self.bind_derived(element, ("point_data",), artist, prepare)
+            self.bind_derived(element, ("point_data",), prepare)
 
     def block_curve_updates(
         self,
@@ -570,8 +668,17 @@ class _AnimationSession:
         try:
             update(index)
             # Derive dependent artist edits from the final frame inputs.
-            dependent_edits = [prepare() for prepare in self._dirty_dependents.values()]
-            for updates in chain(self._updates.values(), (dependent_edits,)):
+            dependent_edits, swatch_edits = [], []
+            for key, prepare in self._dirty_dependents.items():
+                edits = (
+                    swatch_edits
+                    if key in self._legend_swatch_prepares
+                    else dependent_edits
+                )
+                edits.append(prepare())
+            for updates in chain(
+                self._updates.values(), (dependent_edits, swatch_edits)
+            ):
                 for edit in updates:
                     applied.append(edit)
                     try:
@@ -604,6 +711,8 @@ class _AnimationSession:
         self._artists.clear()
         self._properties.clear()
         self._dependents.clear()
+        self._legend_sources.clear()
+        self._legend_swatch_prepares.clear()
         self._dirty_dependents.clear()
         for callback in reversed(self._cleanup):
             callback()

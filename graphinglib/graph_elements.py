@@ -331,10 +331,7 @@ class Hlines(Plottable):
 
     @label.setter
     def label(self, label: Optional[str]) -> None:
-        _reject_live_update(
-            self, "Configure reference-line labels and styles before animating."
-        )
-        self._label = label
+        self._label = _stage_live_value(self, "_label", label)
 
     @property
     def colors(self) -> Styled[list[str] | str]:
@@ -477,6 +474,9 @@ class Hlines(Plottable):
                     [[(0, 0)]] * (len(y) if len(y) <= 3 else 3),
                     **params,
                 )
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            session.bind_legend_source(self, self.handle, lambda: self.label)
         _bind_reference_lines(
             self, artists, ("_y", "_x_min", "_x_max"), horizontal=True
         )
@@ -638,10 +638,7 @@ class Vlines(Plottable):
 
     @label.setter
     def label(self, label: Optional[str]) -> None:
-        _reject_live_update(
-            self, "Configure reference-line labels and styles before animating."
-        )
-        self._label = label
+        self._label = _stage_live_value(self, "_label", label)
 
     @property
     def colors(self) -> Styled[list[str] | str]:
@@ -789,6 +786,9 @@ class Vlines(Plottable):
                     [[(0, 0)]] * (len(x) if len(x) <= 4 else 4),
                     **params,
                 )
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            session.bind_legend_source(self, self.handle, lambda: self.label)
         _bind_reference_lines(
             self, artists, ("_x", "_y_min", "_y_max"), horizontal=False
         )

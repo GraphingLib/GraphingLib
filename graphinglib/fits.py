@@ -15,7 +15,6 @@ from ._animation import (
     _DRAW_SESSION,
     _bound_session,
     _CurveBands,
-    _edit,
     _reject_live_update,
 )
 from .data_plotting_1d import _KEEP_ERROR, Curve, Scatter, _KeepError
@@ -555,12 +554,7 @@ class GeneralFit(Curve, Generic[_StandardDeviation]):
                     lower, upper, None, area_fill if other is None else None, bounds
                 ),
             )
-            session.bind_derived(
-                self,
-                ("point_data",),
-                line,
-                lambda: _edit(line.set_label, line.get_label(), self._label),
-            )
+            session.bind_legend_source(self, line, lambda: self.label, ("_label", "point_data"))
             if other is not None and bounds is not None and area_fill is not None:
                 session.bind_point_dependent(
                     (self, other),

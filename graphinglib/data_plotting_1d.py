@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional, Protocol, cast, runtime_checkable
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.cm import ScalarMappable
-from matplotlib.collections import PathCollection
+from matplotlib.collections import LineCollection, PathCollection
 from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba, to_rgba_array
 from matplotlib.container import BarContainer, ErrorbarContainer
 from matplotlib.markers import MarkerStyle
@@ -414,8 +414,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @label.setter
     def label(self, label: Optional[str]) -> None:
-        _reject_live_update(self, "Configure curve labels and fills before animating.")
-        self._label = label
+        self._label = _stage_live_value(self, "_label", label)
 
     @property
     def color(self) -> Styled[str]:
@@ -1971,6 +1970,7 @@ class Curve(Plottable1D, MathematicalObject):
         if session is not None:
             other = self._fill_between_other_curve
             bounds = self._fill_between_bounds
+            session.bind_legend_source(self, self.handle, lambda: self.label)
             session.bind_curve(
                 self,
                 self.handle,
@@ -2323,11 +2323,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @label.setter
     def label(self, label: str | None) -> None:
-        _reject_live_update(
-            self,
-            "Configure Scatter markers, colors, colorbars and labels before animating.",
-        )
-        self._label = label
+        self._label = _stage_live_value(self, "_label", label)
 
     @property
     def face_color(self) -> Styled[str | ArrayLike | None]:
@@ -3408,7 +3404,6 @@ class Scatter(Plottable1D, MathematicalObject):
                 "_color_map_range",
                 "_marker_style",
             ),
-            collection,
             prepare,
         )
 
@@ -3522,6 +3517,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
         session = _DRAW_SESSION.get()
         if session is not None:
+            session.bind_legend_source(self, self.handle, lambda: self.label)
             session.bind_scatter(self, self.handle, errorbars)
             marker = MarkerStyle(
                 resolve_or(self._marker_style, plt.rcParams["scatter.marker"])
@@ -3807,10 +3803,7 @@ class Histogram(Plottable1D):
 
     @label.setter
     def label(self, label: str | None) -> None:
-        _reject_live_update(
-            self, "Configure histogram bins, decorations and styles before animating."
-        )
-        self._label = label
+        self._label = _stage_live_value(self, "_label", label)
 
     @property
     def face_color(self) -> Styled[str]:
@@ -4131,155 +4124,175 @@ class Histogram(Plottable1D):
             "orientation": self._orientation,
         }
         params = strip_inherit(params)
-        _, _, artists = axes.hist(
+        heights, edges, artists = axes.hist(
             self._data,
             bins=self._bins,
             label=self.label,  # uses the get_label() method
             zorder=z_order - 1,
             **params,
         )
+        horizontal = resolve_or(self._orientation, "vertical") == "horizontal"
         session = _DRAW_SESSION.get()
+        live_bins = False
         if session is not None:
-            session.mark_present(self)
-            if not self._show_pdf and not (
-                self._label and resolve_or(self._show_params, True)
+            bins = self._bins
+            if isinstance(artists, BarContainer):
+
+                def prepare_bars(data: np.ndarray) -> _ArtistEdit:
+                    heights, edges = np.histogram(
+                        data, bins=bins, density=normalize_resolved
+                    )
+                    if len(heights) != len(artists.patches):
+                        raise InvalidParameterError(
+                            "An animated Histogram must retain its original number of bins."
+                        )
+                    before = [patch.get_bbox().bounds for patch in artists.patches]
+                    widths = np.diff(edges)
+                    bounds = (
+                        list(zip(np.zeros_like(heights), edges[:-1], heights, widths))
+                        if horizontal
+                        else list(
+                            zip(edges[:-1], np.zeros_like(heights), widths, heights)
+                        )
+                    )
+
+                    def apply(items) -> None:
+                        for patch, item in zip(artists.patches, items):
+                            patch.set_bounds(*item)
+
+                    return _ArtistEdit(lambda: apply(bounds), lambda: apply(before))
+
+                session.bind_update(self, "_data", prepare_bars)
+                live_bins = True
+            elif (
+                isinstance(artists, list)
+                and len(artists) == 1
+                and isinstance(artists[0], Polygon)
             ):
-                horizontal = resolve_or(self._orientation, "vertical") == "horizontal"
-                bins = self._bins
-                if isinstance(artists, BarContainer):
+                patch = artists[0]
 
-                    def prepare_bars(data: np.ndarray) -> _ArtistEdit:
-                        heights, edges = np.histogram(
-                            data, bins=bins, density=normalize_resolved
-                        )
-                        if len(heights) != len(artists.patches):
-                            raise InvalidParameterError(
-                                "An animated Histogram must retain its original number of bins."
-                            )
-                        before = [patch.get_bbox().bounds for patch in artists.patches]
-                        widths = np.diff(edges)
-                        bounds = (
-                            list(
-                                zip(np.zeros_like(heights), edges[:-1], heights, widths)
-                            )
-                            if horizontal
-                            else list(
-                                zip(edges[:-1], np.zeros_like(heights), widths, heights)
-                            )
-                        )
+                def prepare_steps(data: np.ndarray) -> _ArtistEdit:
+                    heights, edges = np.histogram(
+                        data, bins=bins, density=normalize_resolved
+                    )
+                    x = np.repeat(edges, 2)
+                    y = np.r_[0, np.repeat(heights, 2), 0]
+                    xy = np.column_stack((y, x) if horizontal else (x, y))
+                    return _edit(patch.set_xy, patch.get_xy(), xy)
 
-                        def apply(items) -> None:
-                            for patch, item in zip(artists.patches, items):
-                                patch.set_bounds(*item)
-
-                        return _ArtistEdit(lambda: apply(bounds), lambda: apply(before))
-
-                    session.bind_update(self, "_data", prepare_bars)
-                elif (
-                    isinstance(artists, list)
-                    and len(artists) == 1
-                    and isinstance(artists[0], Polygon)
-                ):
-                    patch = artists[0]
-
-                    def prepare_steps(data: np.ndarray) -> _ArtistEdit:
-                        heights, edges = np.histogram(
-                            data, bins=bins, density=normalize_resolved
-                        )
-                        x = np.repeat(edges, 2)
-                        y = np.r_[0, np.repeat(heights, 2), 0]
-                        xy = np.column_stack((y, x) if horizontal else (x, y))
-                        return _edit(patch.set_xy, patch.get_xy(), xy)
-
-                    session.bind_update(self, "_data", prepare_steps)
-        if self._show_pdf:
-            normal = (
-                self._normal_normalized
-                if normalize_resolved
-                else self._normal_not_normalized
+                session.bind_update(self, "_data", prepare_steps)
+                live_bins = True
+            session.bind_legend_source(
+                self,
+                self.handle,
+                lambda: self.label,
+                ("_label", "_data") if live_bins else ("_label",),
             )
-            num_of_points = 500
-            bin_edges = self.bin_edges
-            x_data = np.linspace(bin_edges[0], bin_edges[-1], num_of_points)
-            y_data = normal(x_data)
-            params = {
-                "color": self._pdf_curve_color,
-            }
-            params = strip_inherit(params)
+        if self._show_pdf:
+            self._plot_pdf(
+                axes,
+                z_order,
+                np.asarray(heights),
+                edges,
+                horizontal,
+                normalize_resolved,
+                session if live_bins else None,
+            )
 
-            # Plots pdf on the y-axis if "orientation" is "horizontal".
-            if resolve_or(self._orientation, "vertical") != "vertical":
-                axes.plot(
-                    y_data,
-                    x_data,
-                    zorder=z_order,
+    def _plot_pdf(
+        self,
+        axes: plt.Axes,
+        z_order: int,
+        heights: np.ndarray,
+        edges: np.ndarray,
+        horizontal: bool,
+        normalize: bool,
+        session: _AnimationSession | None,
+    ) -> None:
+        def coordinates(counts: np.ndarray, boundaries: np.ndarray):
+            mean, std = self.parameters
+            if not np.isfinite(std) or std <= 0:
+                empty = np.empty(0)
+                return ((empty, empty), (empty, empty), (empty, empty))
+
+            area = 1 if normalize else np.sum(counts * np.diff(boundaries))
+            x_data = np.linspace(boundaries[0], boundaries[-1], 500)
+            y_data = area * np.asarray(self._normal_normalized(x_data))
+            mean_position = np.array([mean])
+            std_positions = np.array([mean - std, mean + std])
+            line = (y_data, x_data) if horizontal else (x_data, y_data)
+            return (
+                line,
+                (
+                    mean_position,
+                    area * np.asarray(self._normal_normalized(mean_position)),
+                ),
+                (
+                    std_positions,
+                    area * np.asarray(self._normal_normalized(std_positions)),
+                ),
+            )
+
+        line_data, mean_data, std_data = coordinates(heights, edges)
+        (pdf,) = axes.plot(
+            *line_data,
+            zorder=z_order,
+            **strip_inherit({"color": self._pdf_curve_color}),
+        )
+        draw_guides = axes.hlines if horizontal else axes.vlines
+        guide_artists: list[tuple[LineCollection, int]] = []
+        for index, enabled, color, (positions, densities) in (
+            (2, self._pdf_show_std, self._pdf_std_color, std_data),
+            (1, self._pdf_show_mean, self._pdf_mean_color, mean_data),
+        ):
+            if enabled:
+                params: dict[str, Any] = (
+                    {"colors": color} if isinstance(color, str) else {}
+                )
+                artist = draw_guides(
+                    positions,
+                    0,
+                    densities,
+                    linestyles="dashed",
+                    zorder=z_order - 1,
                     **params,
                 )
+                guide_artists.append((artist, index))
 
-            else:
-                axes.plot(
-                    x_data,
-                    y_data,
-                    zorder=z_order,
-                    **params,
+        if session is not None:
+
+            def prepare() -> _ArtistEdit:
+                counts, boundaries = np.histogram(
+                    self._data, bins=self._bins, density=normalize
                 )
-
-            curve_max_y = normal(self._mean)
-            curve_std_y = normal(self._mean + self._standard_deviation)
-            if self._pdf_show_std:
-                params: dict[str, Any] = {}
-                if isinstance(self._pdf_std_color, str):
-                    params["colors"] = [self._pdf_std_color, self._pdf_std_color]
-
-                # Plots std on the y-axis if "orientation" is "horizontal".
-                if resolve_or(self._orientation, "vertical") != "vertical":
-                    axes.hlines(
-                        [
-                            self._mean - self._standard_deviation,
-                            self._mean + self._standard_deviation,
-                        ],
-                        [0, 0],
-                        [curve_std_y, curve_std_y],
-                        linestyles="dashed",
-                        zorder=z_order - 1,
-                        **params,
+                geometry = coordinates(counts, boundaries)
+                line_before = pdf.get_data()
+                guides = []
+                for artist, index in guide_artists:
+                    positions, densities = geometry[index]
+                    starts = np.column_stack((positions, np.zeros_like(positions)))
+                    ends = np.column_stack((positions, densities))
+                    segments = np.stack((starts, ends), axis=1)
+                    if horizontal:
+                        segments = segments[..., ::-1]
+                    guides.append(
+                        (
+                            artist,
+                            [path.vertices for path in artist.get_paths()],
+                            list(segments),
+                        )
                     )
 
-                else:
-                    axes.vlines(
-                        [
-                            self._mean - self._standard_deviation,
-                            self._mean + self._standard_deviation,
-                        ],
-                        [0, 0],
-                        [curve_std_y, curve_std_y],
-                        linestyles="dashed",
-                        zorder=z_order - 1,
-                        **params,
-                    )
+                def apply() -> None:
+                    pdf.set_data(*geometry[0])
+                    for artist, _, new in guides:
+                        artist.set_segments(new)
 
-            if self._pdf_show_mean:
-                params: dict[str, Any] = {}
-                if isinstance(self._pdf_mean_color, str):
-                    params["colors"] = [self._pdf_mean_color]
+                def undo() -> None:
+                    pdf.set_data(*line_before)
+                    for artist, old, _ in guides:
+                        artist.set_segments(old)
 
-                # Plots std on the y-axis if "orientation" is "horizontal".
-                if resolve_or(self._orientation, "vertical") != "vertical":
-                    axes.hlines(
-                        self._mean,
-                        0,
-                        curve_max_y,
-                        linestyles="dashed",
-                        zorder=z_order - 1,
-                        **params,
-                    )
+                return _ArtistEdit(apply, undo)
 
-                else:
-                    axes.vlines(
-                        self._mean,
-                        0,
-                        curve_max_y,
-                        linestyles="dashed",
-                        zorder=z_order - 1,
-                        **params,
-                    )
+            session.bind_derived(self, ("_data",), prepare)

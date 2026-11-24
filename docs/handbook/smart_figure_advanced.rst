@@ -1974,7 +1974,7 @@ Live update support
        fills to zero or between two curves. Each shared fill uses both curves'
        final coordinates for the frame. Plain lines can change color, width,
        style and opacity.
-     - Errorbar directions and caps, legend, and style for decorated curves.
+     - Errorbar directions and caps, legend entry creation, and style for decorated curves.
        Both curves must continue to cover the configured fill interval.
    * - :class:`~graphinglib.Scatter`
      - Coordinates, configured errors, marker shape, size, edge width,
@@ -1982,7 +1982,7 @@ Live update support
        colors for the new point count in the same callback. An existing colorbar
        follows its intensity channel and retains its initial scale until
        ``color_map_range`` changes.
-     - Legend, colorbar placement, and errorbar directions and caps. Colorbars
+     - Legend entry creation, colorbar placement, and errorbar directions and caps. Colorbars
        need an intensity array at setup. An intensity channel introduced during
        playback without an explicit range starts with a 0–1 scale.
    * - :class:`~graphinglib.Heatmap`
@@ -2023,10 +2023,13 @@ Live update support
      - Vector components and arrow color.
      - Grid, component shapes, scaling and arrow geometry.
    * - :class:`~graphinglib.Histogram`
-     - Sample data for bars, steps and filled steps. Integer bins recalculate
-       their edges from each frame's data. Explicit edges keep their positions.
-     - Bin count, orientation, normalization, styling, and density overlays.
-       Legends showing mean and standard deviation require a legend update policy.
+     - Sample data for bars, steps and filled steps, the normal density
+       overlay and its guides, and labels showing summary statistics.
+       Integer bins recalculate their edges from each frame's data. Explicit
+       edges keep their positions. The density overlay is hidden when the
+       standard deviation is zero.
+     - Bin count, orientation, normalization, styling, and whether to show
+       the density and its guides.
    * - :class:`~graphinglib.Contour`
      - Scalar data at fixed levels, opacity, colormap and unfilled line
        widths on Matplotlib 3.8 and later.
@@ -2038,8 +2041,8 @@ Live update support
        configured residual curves or fills. Plain fitted lines may also change
        visual styles.
      - Model type, solver options, residual and fill configuration. The
-       fit's generated equation label refreshes in the model and on the
-       plot line. A visible legend keeps its initial text.
+       fit's generated equation label refreshes in the model, on the
+       plot line, and in an existing legend entry.
    * - :class:`~graphinglib.Stream`
      - Uniform color and line width, including arrowheads.
      - Vector field, density, and styles mapped over the field. Changing
@@ -2062,10 +2065,14 @@ viewport updates through its ``axis_lim`` property. Assign ``title``,
 ``label`` on a twin axis. Use ``None`` to clear the text. Keep the initial
 figure's margins wide enough for the longest labels in the animation.
 
-Grid layout, legends, and colorbar placement are established from the
-initial figure. Use explicit style values in callbacks.
-Some styles copy example artists into a legend. The legend keeps its initial
-appearance while the plotted artist changes.
+Grid layout, legend entries, and colorbar placement are established from the
+initial figure. Assign ``label`` to rename existing entries for curves, fits,
+scatter plots, histograms, and reference lines. Assigning ``None`` clears the
+text when there is no generated label, and keeps the entry's swatch. Choose a
+starting label for every plottable that needs a legend entry during playback.
+Existing swatches for plain fitted lines, plain curves, and scatter plots
+follow supported visual styles. Custom entries and other swatches retain
+their initial styling. Use explicit style values in callbacks.
 
 Successful frames leave their assignments in the plottables. If the callback
 or application of its artist edits fails, pending changes roll back to the
