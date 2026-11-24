@@ -565,6 +565,60 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertFalse(handle.lines[2][0].get_visible())
         self.assertFalse(self.output.exists())
 
+    def test_curve_uncertainty_bands_reuse_hidden_lines_and_fill(self):
+        from matplotlib.colors import to_rgba
+
+        curve = Curve([0, 1], [1, 2], color="navy")
+        curve.add_error_curves(y_error=20, error_curves_fill_between=False)
+        curve.show_error_curves = False
+        nested = SmartFigure(elements=[curve])
+        figure = SmartFigure(1, 2, elements=[nested, curve], figure_style="plain")
+        captures = []
+        states = {}
+
+        def update(i):
+            artists = [
+                (ax, *ax.lines, *ax.collections) for ax in plt.gcf().axes if ax.lines
+            ]
+            captures.append(artists)
+            states[i] = []
+            for axes, _, low, high, fill in artists:
+                states[i].append(
+                    (
+                        axes.get_ylim(),
+                        low.get_visible(),
+                        high.get_visible(),
+                        fill.get_visible(),
+                    )
+                )
+            curve.show_error_curves = i in (0, 1, 3)
+            curve.error_curves_fill_between = i != 0
+            curve.color = "green"
+            if i == 2:
+                curve.set_data(
+                    [0, 1, 2], [1, 2, 3], y_error=[[0.1, 0.2, 0.3], [0.3, 0.4, 0.5]]
+                )
+            elif i == 0:
+                curve.set_data([0, 1], [1, 2], y_error=0.1)
+
+        figure.save_animation(self.output, update, 4)
+        self.assertTrue(all(capture == captures[0] for capture in captures))
+        for i, expected in (
+            (0, (False, False, False)),
+            (1, (True, True, False)),
+            (2, (True, True, True)),
+            (3, (False, False, False)),
+        ):
+            for limits, *visible in states[i]:
+                assert_allclose(limits, [0.95, 2.05])
+                self.assertEqual(tuple(visible), expected)
+        for _, _, low, high, fill in captures[-1]:
+            self.assertTrue(all(artist.get_visible() for artist in (low, high, fill)))
+            assert_allclose(low.get_ydata(), [0.9, 1.8, 2.7])
+            assert_allclose(high.get_ydata(), [1.3, 2.4, 3.5])
+            assert_allclose(fill.get_paths()[0].vertices[:, 1].max(), 3.5)
+            assert_allclose(fill.get_facecolor(), [to_rgba("green", 0.2)])
+
     def test_curve_decorations_restore_last_frame_after_invalid_style(self):
         from matplotlib.colors import to_rgba
 

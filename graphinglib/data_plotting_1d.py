@@ -34,6 +34,7 @@ from ._animation import (
     _error_array,
     _error_bounds,
     _error_style_edits,
+    _fill_edit,
     _reject_live_update,
     _stage_live_value,
 )
@@ -501,8 +502,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @show_error_curves.setter
     def show_error_curves(self, show_error_curves: bool) -> None:
-        self._check_animated_uncertainty()
-        self._show_error_curves = show_error_curves
+        self._show_error_curves = _stage_live_value(self, "_show_error_curves", show_error_curves)
 
     @property
     def error_curves_fill_between(self) -> Styled[bool]:
@@ -510,8 +510,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @error_curves_fill_between.setter
     def error_curves_fill_between(self, error_curves_fill_between: bool) -> None:
-        self._check_animated_uncertainty()
-        self._error_curves_fill_between = error_curves_fill_between
+        self._error_curves_fill_between = _stage_live_value(self, "_error_curves_fill_between", error_curves_fill_between)
 
     def _check_animated_uncertainty(self) -> None:
         session = _bound_session(self)
@@ -956,6 +955,7 @@ class Curve(Plottable1D, MathematicalObject):
         """
         self._check_animated_uncertainty()
         self._show_error_curves = True
+        self._error_curves_configured = True
 
         if y_error is not None:
             self._y_error = np.array(y_error)
@@ -1913,6 +1913,36 @@ class Curve(Plottable1D, MathematicalObject):
             session.bind_derived(self, error_properties, prepare_errorbars)
 
         if lower is not None and upper is not None:
+            initial_fill = resolve_or(self._error_curves_fill_between, True)
+
+            def prepare_visibility() -> _ArtistEdit:
+                shown = self._show_error_curves
+                filled = resolve_or(self._error_curves_fill_between, initial_fill)
+                if not all(
+                    isinstance(value, (bool, np.bool_)) for value in (shown, filled)
+                ):
+                    raise InvalidParameterError(
+                        "show_error_curves and error_curves_fill_between must be booleans."
+                    )
+                edits = [
+                    _edit(artist.set_visible, artist.get_visible(), shown)
+                    for artist in (lower, upper)
+                ]
+                if error_fill is not None:
+                    edits.append(
+                        _edit(
+                            error_fill.set_visible,
+                            error_fill.get_visible(),
+                            shown and filled,
+                        )
+                    )
+                return _combine_edits(edits)
+
+            session.bind_derived(
+                self,
+                ("_show_error_curves", "_error_curves_fill_between"),
+                prepare_visibility,
+            )
             for name, field, source in (
                 ("_error_curves_color", "color", "_color"),
                 ("_error_curves_line_style", "linestyle", "_line_style"),
@@ -2029,7 +2059,9 @@ class Curve(Plottable1D, MathematicalObject):
                 **params,
             )
         lower = upper = error_fill = area_fill = None
-        if self._show_error_curves:
+        if self._show_error_curves or (
+            session is not None and getattr(self, "_error_curves_configured", False)
+        ):
             min_y, max_y = _error_bounds(self._y_data, self._y_error)
 
             params = {
@@ -2052,17 +2084,18 @@ class Curve(Plottable1D, MathematicalObject):
 
             params = strip_inherit(params)
 
-            (lower,) = axes.plot(
-                self._x_data,
-                min_y,
-                **params,
-            )
-            (upper,) = axes.plot(
-                self._x_data,
-                max_y,
-                **params,
-            )
-            if resolve_or(self._error_curves_fill_between, True):
+            if self._show_error_curves:
+                (lower,) = axes.plot(self._x_data, min_y, **params)
+                (upper,) = axes.plot(self._x_data, max_y, **params)
+            else:
+                # Dormant artists should affect neither limits nor the color cycle.
+                lower = Line2D(self._x_data, min_y, visible=False, **params)
+                upper = Line2D(self._x_data, max_y, visible=False, **params)
+                axes.add_artist(lower)
+                axes.add_artist(upper)
+            if self._show_error_curves and resolve_or(
+                self._error_curves_fill_between, True
+            ):
                 error_fill = axes.fill_between(
                     self._x_data,
                     max_y,
@@ -2070,6 +2103,12 @@ class Curve(Plottable1D, MathematicalObject):
                     facecolor=self.handle[0].get_color(),
                     alpha=0.2,
                 )
+            elif session is not None:
+                error_fill = PolyCollection(
+                    [], facecolor=self.handle[0].get_color(), alpha=0.2, visible=False
+                )
+                _fill_edit(error_fill, self._x_data, max_y, min_y).apply()
+                axes.add_collection(error_fill, autolim=False)
         if self._fill_between_bounds:
             params = {"alpha": 0.2}
             params["facecolor"] = (

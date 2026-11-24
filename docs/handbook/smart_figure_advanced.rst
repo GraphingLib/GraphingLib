@@ -1975,9 +1975,11 @@ Live update support
        style and opacity. Configured error bars, error curves and fills can
        change their styles. On Cartesian plots, ``show_errorbars`` can show or
        hide configured bars, including bars initially hidden. Use a cap width
-       of zero to hide caps independently.
-     - Error-bar directions, whether to draw error curves or fills, and legend
-       entry creation. Set up a nonempty Cartesian plot for live caps.
+       of zero to hide caps independently. Use ``show_error_curves`` to show
+       or hide configured bands and ``error_curves_fill_between`` to toggle
+       their shading.
+     - Error-bar directions, the initial band and area-fill configuration, and
+       legend entry creation. Set up a nonempty Cartesian plot for live caps.
        Both curves must continue to cover the configured fill interval.
    * - :class:`~graphinglib.Scatter`
      - Coordinates, configured errors, marker shape, size, edge width,
