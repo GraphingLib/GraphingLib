@@ -662,6 +662,268 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(field.V, (y + 2).ravel())
         self.assertEqual(contours.get_cmap().name, "magma")
 
+    def test_filled_contour_updates_mesh_levels_and_existing_colorbars(self):
+        from matplotlib.contour import QuadContourSet
+
+        from graphinglib import Contour
+
+        xx, yy = np.meshgrid(np.arange(3), np.arange(3))
+        contour = Contour(xx + yy, levels=[0, 2, 4], filled=True, show_color_bar=True)
+        contour.set_color_bar_params(label="Field", ticks=[1, 4], format="%.1f")
+        nested = SmartFigure(elements=[contour], x_lim=(0, 8), y_lim=(0, 6))
+        root = SmartFigure(2, 2, figure_style="plain", x_lim=(0, 8), y_lim=(0, 6))
+        root[0, 0] = nested
+        root[1, :] = [contour]
+        captures = []
+
+        def update(i):
+            artists = tuple(
+                item
+                for axis in plt.gcf().axes
+                for item in axis.collections
+                if isinstance(item, QuadContourSet)
+            )
+            self.assertEqual(len(artists), 2)
+            captures.append(
+                tuple((item, item.colorbar, item.colorbar.ax) for item in artists)
+            )
+            x, y = np.arange(3 + i) + i, np.arange(3) * (i + 1)
+            contour.set_data(x + y[:, None], x_mesh=x, y_mesh=y)
+            contour.levels = [1, 2, 5] if i == 0 else [3, 4, 6, 8]
+            contour.color_map_range = (0, 10) if i == 0 else None
+            contour.color_map = "magma"
+            contour.alpha = 0.45 if i else 0.75
+
+        root.save_animation(self.output, update, 2)
+        self.assertTrue(all(sample == captures[0] for sample in captures))
+        for artist, colorbar, axes in captures[-1]:
+            self.assertEqual(len(artist.get_paths()), 3)
+            assert_allclose(artist.levels, [3, 4, 6, 8])
+            assert_allclose(artist.get_array(), [3.5, 5, 7])
+            self.assertEqual(artist.get_clim(), (3, 8))
+            self.assertEqual(artist.get_alpha(), 0.45)
+            self.assertEqual(colorbar.cmap.name, "magma")
+            assert_allclose(colorbar.boundaries, [3, 4, 6, 8])
+            assert_allclose(colorbar.solids.get_array().ravel(), [3.5, 5, 7])
+            assert_allclose(colorbar.get_ticks(), [1, 4])
+            self.assertEqual(axes.get_ylabel(), "Field")
+            self.assertEqual(colorbar.formatter(4), "4.0")
+            assert_allclose(artist.axes.get_xlim(), (0, 8))
+            assert_allclose(artist.axes.get_ylim(), (0, 6))
+            x, y = np.arange(4) + 1, np.arange(3) * 2
+            reference_figure, reference_axes = plt.subplots()
+            reference = reference_axes.contourf(
+                x, y, x + y[:, None], levels=[3, 4, 6, 8]
+            )
+            for path, expected in zip(
+                artist.get_paths(), reference.get_paths(), strict=True
+            ):
+                assert_allclose(path.vertices, expected.vertices)
+                np.testing.assert_array_equal(path.codes, expected.codes)
+            plt.close(reference_figure)
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 2)
+
+    def test_line_contour_moves_from_single_level_through_masked_frames(self):
+        from warnings import catch_warnings, simplefilter
+
+        from matplotlib.contour import QuadContourSet
+
+        from graphinglib import Contour
+
+        x, y = np.meshgrid(np.arange(4), np.arange(3))
+        contour = Contour(x + y, levels=[1], filled=False, show_color_bar=True)
+        contour.set_color_bar_params(position="bottom")
+        figure = SmartFigure(elements=[contour], figure_style="plain")
+        samples = {}
+        artists = []
+
+        def update(i):
+            (artist,) = [
+                c
+                for ax in plt.gcf().axes
+                for c in ax.collections
+                if isinstance(c, QuadContourSet)
+            ]
+            artists.append(artist)
+            samples[i] = (
+                np.array(artist.levels),
+                tuple(len(path.vertices) for path in artist.get_paths()),
+                artist.get_clim(),
+                tuple(artist.colorbar.get_ticks()),
+            )
+            if i == 0:
+                return
+            if i == 1:
+                contour.set_data(2 * (x + y))
+                contour.levels = 4
+                contour.line_widths = [1, 2]
+            elif i == 2:
+                contour.z_data = np.ma.masked_all((5, 3))
+            elif i == 3:
+                contour.set_data(100 + x + y)
+                contour.levels = 4
+            else:
+                contour.set_data(2 * (x + y))
+                contour.levels = [3]
+                contour.color_map_range = (0, 5)
+                contour.alpha = 0.4
+
+        with catch_warnings():
+            simplefilter("error", RuntimeWarning)
+            figure.save_animation(self.output, update, 5)
+        self.assertTrue(all(item is artists[0] for item in artists))
+        self.assertEqual(samples[0][3], (1,))
+        assert_allclose(samples[3][0], samples[2][0])
+        self.assertTrue(all(not n for n in samples[3][1]))
+        assert_allclose(samples[3][2], samples[2][2])
+        self.assertGreater(samples[4][0][0], samples[3][0][-1])
+        item = artists[0]
+        assert_allclose(item.levels, [3])
+        self.assertEqual(len(item.get_paths()), 1)
+        self.assertEqual(item.get_clim(), (0, 5))
+        self.assertEqual(item.get_alpha(), 0.4)
+        bar = item.colorbar
+        self.assertEqual(bar.orientation, "horizontal")
+        assert_allclose(bar.get_ticks(), [3])
+        assert_allclose(bar.lines[0].get_segments(), [[[3, 0], [3, 1]]])
+        assert_allclose(bar.lines[0].get_linewidth(), [1])
+        assert_allclose(bar.lines[0].get_colors()[:, -1], [0.4])
+
+    def test_contour_with_empty_start_uses_first_finite_range(self):
+        from matplotlib.contour import QuadContourSet
+
+        from graphinglib import Contour
+
+        contour = Contour(np.ma.masked_all((3, 3)), levels=4, show_color_bar=True)
+        figure = SmartFigure(elements=[contour], figure_style="plain")
+        states = {}
+
+        def update(i):
+            (artist,) = [
+                c
+                for ax in plt.gcf().axes
+                for c in ax.collections
+                if isinstance(c, QuadContourSet)
+            ]
+            states[i] = artist.levels.copy(), artist.colorbar.solids
+            if i == 1:
+                contour.set_data(100 + np.arange(9).reshape((3, 3)))
+            elif i == 2:
+                contour.set_data(105 + np.arange(9).reshape((3, 3)))
+
+        figure.save_animation(self.output, update, 4)
+        self.assertLess(states[1][0][-1], 2)
+        self.assertGreaterEqual(states[2][0][0], 95)
+        assert_allclose(states[3][0], states[2][0])
+        self.assertIs(states[3][1], states[2][1])
+
+    def test_contour_can_switch_modes_and_hide_its_existing_colorbar(self):
+        from matplotlib.contour import QuadContourSet
+
+        from graphinglib import Contour
+
+        z = np.arange(9).reshape((3, 3))
+        contour = Contour(z, levels=[0, 4, 8], filled=True, show_color_bar=True)
+        figure = SmartFigure(elements=[contour], figure_style="plain")
+        captures = {}
+
+        def update(i):
+            (artist,) = [
+                c
+                for ax in plt.gcf().axes
+                for c in ax.collections
+                if isinstance(c, QuadContourSet)
+            ]
+            bar = artist.colorbar
+            captures[i] = (
+                artist,
+                bar,
+                bar.ax,
+                artist.filled,
+                len(artist.get_paths()),
+                bar.ax.get_visible(),
+                bar.solids,
+                tuple(bar.lines),
+                artist.get_facecolor().copy(),
+                artist.get_edgecolor().copy(),
+            )
+            contour.filled = bool(i % 2)
+            contour.show_color_bar = i > 0
+            contour.line_widths = [1, 2]
+
+        figure.save_animation(self.output, update, 3)
+        self.assertTrue(
+            all(sample[:3] == captures[0][:3] for sample in captures.values())
+        )
+        _, bar, axes, filled, count, visible, solids, lines, faces, edges = captures[1]
+        self.assertEqual((filled, count, visible, solids), (False, 3, False, None))
+        self.assertEqual(len(lines), 1)
+        assert_allclose(lines[0].get_linewidth(), [1, 2, 1])
+        self.assertEqual(len(faces), 0)
+        self.assertEqual(len(edges), 3)
+
+        _, _, _, filled, count, visible, solids, lines, faces, edges = captures[2]
+        self.assertEqual((filled, count, visible, lines), (True, 2, True, ()))
+        self.assertIsNotNone(solids)
+        self.assertEqual(len(faces), 2)
+        self.assertEqual(len(edges), 0)
+        self.assertTrue(axes.get_visible())
+        self.assertEqual(len(bar.lines), 1)
+        self.assertIsNone(bar.solids)
+        self.assertEqual(
+            len(axes.collections), 2
+        )  # dividers and current line collection
+
+    def test_failed_contour_update_restores_paths_levels_and_colorbar(self):
+        from matplotlib.contour import QuadContourSet
+
+        from graphinglib import Contour
+
+        z = np.arange(9).reshape((3, 3))
+        contour = Contour(z, levels=[0, 4, 8], filled=True, show_color_bar=True)
+        figure = SmartFigure(elements=[contour], figure_style="plain")
+        artist = None
+        previous_paths = None
+
+        def update(i):
+            nonlocal artist, previous_paths
+            (artist,) = [
+                c
+                for ax in plt.gcf().axes
+                for c in ax.collections
+                if isinstance(c, QuadContourSet)
+            ]
+            contour.set_data(z + i)
+            contour.levels = [2, 5, 7, 9] if i else [0, 2, 8]
+            contour.color_map = "magma" if i else "plasma"
+            contour.filled = i == 0
+            if i:
+                previous_paths = tuple(artist.get_paths())
+                original = artist.changed
+
+                def fail_after_refresh():
+                    original()
+                    if artist.get_cmap().name == "magma":
+                        raise ValueError("could not update contour colors")
+
+                self.enterContext(patch.object(artist, "changed", fail_after_refresh))
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            figure.save_animation(self.output, update, 2)
+        self.assertFalse(self.output.exists())
+        assert_allclose(contour.z_data, z)
+        assert_allclose(contour.levels, [0, 2, 8])
+        self.assertEqual(contour.color_map, "plasma")
+        self.assertTrue(contour.filled)
+        self.assertTrue(artist.filled)
+        self.assertEqual(tuple(artist.get_paths()), previous_paths)
+        assert_allclose(artist.levels, [0, 2, 8])
+        self.assertEqual(artist.get_cmap().name, "plasma")
+        assert_allclose(artist.colorbar.boundaries, [0, 2, 8])
+        assert_allclose(artist.colorbar.solids.get_array().ravel(), [1, 5])
+        assert_allclose(artist.colorbar.get_ticks(), [0, 2, 8])
+
     def test_vector_field_geometry_updates_in_nested_spanning_plots(self):
         from matplotlib.colors import to_rgba
         from matplotlib.quiver import Quiver

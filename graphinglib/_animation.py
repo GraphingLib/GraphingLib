@@ -257,6 +257,9 @@ class _AnimationSession:
     def remember(self, element: object, name: str, restore: Callable[[], None]) -> None:
         self._rollback.setdefault((id(element), name), restore)
 
+    def has_frame_update(self, element: object, name: str) -> bool:
+        return (id(element), name) in self._rollback
+
     def on_finish(self, callback: Callable[[], None]) -> None:
         self._cleanup.append(callback)
 

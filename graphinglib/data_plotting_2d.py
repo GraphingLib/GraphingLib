@@ -3,26 +3,31 @@ from __future__ import annotations
 from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import dataclass
-from math import isfinite
-from numbers import Real
+from math import isfinite, nextafter
+from numbers import Integral, Real
 from typing import Any, Callable, Literal, Optional, Protocol, cast, runtime_checkable
 
 import contourpy
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.collections import LineCollection
+from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba
+from matplotlib.contour import QuadContourSet
 from matplotlib.figure import Figure
 from matplotlib.image import AxesImage, imread
 from matplotlib.patches import FancyArrowPatch
 from matplotlib.path import Path as MplPath
 from matplotlib.quiver import Quiver
 from matplotlib.streamplot import StreamplotSet
+from matplotlib.ticker import FixedLocator, MaxNLocator
+from matplotlib.transforms import nonsingular
 from numpy.typing import ArrayLike
 from scipy.interpolate import griddata
 
 from ._animation import (
     _DRAW_SESSION,
+    _AnimationSession,
     _ArtistEdit,
     _bound_session,
     _combine_edits,
@@ -1330,6 +1335,144 @@ class VectorField(Plottable2D):
 
 
 @dataclass
+class _ContourGeometry:
+    levels: np.ndarray
+    values: np.ndarray
+    paths: list[MplPath]
+    data_range: tuple[float, float] | None
+
+
+@dataclass
+class _ContourFrame:
+    geometry: _ContourGeometry
+    filled: bool
+    clim: tuple[float, float]
+    cmap: Colormap
+    alpha: float | None
+    widths: np.ndarray | None
+
+
+def _contour_levels(
+    specification: int | ArrayLike,
+    data_range: tuple[float, float],
+    filled: bool,
+) -> np.ndarray:
+    if isinstance(specification, Integral):
+        if specification < 1:
+            raise InvalidParameterError(
+                "The requested Contour level count must be positive."
+            )
+        lo, hi = data_range
+        ticks = np.asarray(
+            MaxNLocator(int(specification) + 1, min_n_ticks=1).tick_values(lo, hi)
+        )
+        # Keep the nearest outside levels, matching Matplotlib's automatic levels.
+        first = max(np.searchsorted(ticks, lo, side="left") - 1, 0)
+        last = np.searchsorted(ticks, hi, side="right") + 1
+        return ticks[first:last] if len(ticks[first:last]) >= 3 else ticks
+
+    levels = np.asarray(specification)
+    if (
+        levels.ndim != 1
+        or levels.dtype.kind not in "biuf"
+        or levels.size < (2 if filled else 1)
+        or not np.isfinite(levels).all()
+        or not np.all(levels[1:] > levels[:-1])
+    ):
+        raise InvalidParameterError(
+            "Contour levels must be a strictly increasing sequence of finite numbers "
+            "with at least two entries for filled contours or one for contour lines."
+        )
+    return levels.astype(float)
+
+
+def _contour_bar_boundaries(levels: np.ndarray) -> np.ndarray:
+    if len(levels) == 1:
+        # Matplotlib's line colorbar needs a span even for a single contour.
+        return np.asarray(nonsingular(levels[0], levels[0], expander=0.05))
+    return levels
+
+
+def _set_contour_bar_mode(colorbar: Colorbar, filled: bool) -> None:
+    # Colorbar.update_normal() uses the mode captured at construction.
+    bar = cast(Any, colorbar)
+    if bar._filled == filled:
+        return
+    if filled:
+        for line in bar.lines:
+            line.remove()
+        bar.lines = []
+    else:
+        if bar.solids is not None:
+            bar.solids.remove()
+            bar.solids = None
+        for patch in bar.solids_patches:
+            patch.remove()
+        bar.solids_patches = []
+        bar.dividers.set_segments([])
+    bar._filled = filled
+
+
+def _contour_path_groups(
+    x: np.ndarray | None,
+    y: np.ndarray | None,
+    grid: np.ma.MaskedArray,
+    levels: np.ndarray,
+    *,
+    filled: bool,
+    algorithm: str,
+    corner_mask: bool,
+) -> list[MplPath]:
+    if x is None or y is None:
+        x, y = np.arange(grid.shape[1]), np.arange(grid.shape[0])
+    try:
+        if not np.isfinite(x).all() or not np.isfinite(y).all():
+            raise ValueError("Contour positions must be finite.")
+        generator = contourpy.contour_generator(
+            x,
+            y,
+            grid,
+            name=algorithm,
+            corner_mask=corner_mask,
+            line_type=contourpy.LineType.SeparateCode,
+            fill_type=contourpy.FillType.OuterCode,
+        )
+    except (TypeError, ValueError) as exc:
+        raise InvalidParameterError(f"Invalid animated Contour grid ({exc}).") from exc
+
+    if filled:
+        lower = levels[:-1].copy()
+        if grid.count() and grid.min() == lower[0]:
+            lower[0] = nextafter(lower[0], -np.inf)
+        groups = (generator.filled(lo, hi) for lo, hi in zip(lower, levels[1:]))
+    else:
+        groups = (generator.lines(level) for level in levels)
+    return [
+        MplPath(np.concatenate(vertices), np.concatenate(codes))
+        if vertices
+        else MplPath(np.empty((0, 2)))
+        for vertices, codes in cast(
+            "Iterable[tuple[list[np.ndarray], list[np.ndarray]]]", groups
+        )
+    ]
+
+
+def _contour_line_widths(value: ArrayLike, count: int) -> np.ndarray:
+    widths = np.atleast_1d(value)
+    if (
+        widths.ndim != 1
+        or not widths.size
+        or widths.dtype.kind not in "biuf"
+        or not np.isfinite(widths).all()
+        or np.any(widths < 0)
+    ):
+        raise InvalidParameterError(
+            "Contour line widths must be finite and nonnegative."
+        )
+    return np.resize(widths.astype(float), count)
+
+
+@dataclass
 class Contour(Plottable2D):
     """
     This class implements contour plots.
@@ -1526,10 +1669,9 @@ class Contour(Plottable2D):
 
     @x_mesh.setter
     def x_mesh(self, x_mesh: ArrayLike | None) -> None:
-        _reject_live_update(
-            self, "Configure Contour grid, levels and colorbar before animating."
+        self._x_mesh = _stage_live_value(
+            self, "_x_mesh", None if x_mesh is None else np.asarray(x_mesh)
         )
-        self._x_mesh = None if x_mesh is None else np.asarray(x_mesh)
 
     @property
     def y_mesh(self) -> np.ndarray | None:
@@ -1537,10 +1679,9 @@ class Contour(Plottable2D):
 
     @y_mesh.setter
     def y_mesh(self, y_mesh: ArrayLike | None) -> None:
-        _reject_live_update(
-            self, "Configure Contour grid, levels and colorbar before animating."
+        self._y_mesh = _stage_live_value(
+            self, "_y_mesh", None if y_mesh is None else np.asarray(y_mesh)
         )
-        self._y_mesh = None if y_mesh is None else np.asarray(y_mesh)
 
     @property
     def z_data(self) -> np.ndarray:
@@ -1548,7 +1689,29 @@ class Contour(Plottable2D):
 
     @z_data.setter
     def z_data(self, z_data: ArrayLike) -> None:
-        self._z_data = _stage_live_value(self, "_z_data", np.asarray(z_data))
+        self._z_data = _stage_live_value(self, "_z_data", np.asanyarray(z_data))
+
+    def set_data(
+        self,
+        z_data: ArrayLike,
+        *,
+        x_mesh: ArrayLike | None = None,
+        y_mesh: ArrayLike | None = None,
+    ) -> Self:
+        """Assign scalar values and optionally replace their coordinates.
+
+        Omit the coordinates to retain the current mesh. Set both mesh
+        properties to None to use the row and column indices.
+        """
+        grid = np.asanyarray(z_data)
+        x = None if x_mesh is None else np.asarray(x_mesh)
+        y = None if y_mesh is None else np.asarray(y_mesh)
+        self.z_data = grid
+        if x is not None:
+            self.x_mesh = x
+        if y is not None:
+            self.y_mesh = y
+        return self
 
     @property
     def levels(self) -> Styled[int | ArrayLike]:
@@ -1556,10 +1719,7 @@ class Contour(Plottable2D):
 
     @levels.setter
     def levels(self, levels: Styled[int | ArrayLike]) -> None:
-        _reject_live_update(
-            self, "Configure Contour grid, levels and colorbar before animating."
-        )
-        self._levels = levels
+        self._levels = _stage_live_value(self, "_levels", levels)
 
     @property
     def color_map(self) -> Styled[str | Colormap]:
@@ -1575,10 +1735,9 @@ class Contour(Plottable2D):
 
     @color_map_range.setter
     def color_map_range(self, color_map_range: tuple[float, float] | None) -> None:
-        _reject_live_update(
-            self, "Configure Contour grid, levels and colorbar before animating."
+        self._color_map_range = _stage_live_value(
+            self, "_color_map_range", color_map_range
         )
-        self._color_map_range = color_map_range
 
     @property
     def show_color_bar(self) -> Styled[bool]:
@@ -1586,10 +1745,9 @@ class Contour(Plottable2D):
 
     @show_color_bar.setter
     def show_color_bar(self, show_color_bar: Styled[bool]) -> None:
-        _reject_live_update(
-            self, "Configure Contour grid, levels and colorbar before animating."
+        self._show_color_bar = _stage_live_value(
+            self, "_show_color_bar", show_color_bar
         )
-        self._show_color_bar = show_color_bar
 
     @property
     def filled(self) -> Styled[bool]:
@@ -1597,10 +1755,7 @@ class Contour(Plottable2D):
 
     @filled.setter
     def filled(self, filled: Styled[bool]) -> None:
-        _reject_live_update(
-            self, "Configure Contour grid, levels and colorbar before animating."
-        )
-        self._filled = filled
+        self._filled = _stage_live_value(self, "_filled", filled)
 
     @property
     def alpha(self) -> Styled[float]:
@@ -1658,11 +1813,227 @@ class Contour(Plottable2D):
         if position is not None:
             self._color_bar_params["location"] = position
 
+    def _bind_live_contour(
+        self,
+        session: _AnimationSession,
+        contour: QuadContourSet,
+        bar: Colorbar | None,
+        filled: bool,
+    ) -> None:
+        # Stubs include the pre-3.8 contour interface and omit its collection state.
+        cont = cast(Any, contour)
+        algorithm = plt.rcParams["contour.algorithm"]
+        corner_mask = algorithm != "mpl2005" and plt.rcParams["contour.corner_mask"]
+        initial_levels = np.asarray(cont.levels).copy()
+        initial_level_request = resolve_or(self._levels, 7)
+        default_width = plt.rcParams["contour.linewidth"]
+        if default_width is None:
+            default_width = plt.rcParams["lines.linewidth"]
+        initial_widths = resolve_or(self._line_widths, default_width)
+        levels_follow_ticks = self._color_bar_params.get("ticks") is None
+        initial_cmap, initial_alpha = cont.get_cmap(), cont.get_alpha()
+        limits = cont.get_clim()
+        if not all(value is not None for value in limits):
+            limits = initial_levels[0], initial_levels[-1]
+        initial_grid = np.ma.masked_invalid(self._z_data)
+        data_range = (
+            (float(initial_grid.min()), float(initial_grid.max()))
+            if initial_grid.count()
+            else None
+        )
+        geometry = _ContourGeometry(
+            initial_levels, np.asarray(cont.layers), list(cont.get_paths()), data_range
+        )
+        current = _ContourFrame(
+            geometry,
+            filled,
+            cast("tuple[float, float]", limits),
+            initial_cmap,
+            initial_alpha,
+            None if filled else np.asarray(cont.get_linewidths()),
+        )
+
+        def changed(name: str) -> bool:
+            return session.has_frame_update(self, name)
+
+        def prepare_geometry(fill: bool) -> _ContourGeometry:
+            values = self._z_data
+            if (
+                values.ndim != 2
+                or min(values.shape) < 2
+                or values.dtype.kind not in "biuf"
+            ):
+                raise InvalidParameterError(
+                    "Animated Contour data must be a real, two-dimensional grid with at least two rows and columns."
+                )
+            grid = np.ma.masked_invalid(values)
+            x = y = None
+            if self._x_mesh is not None and self._y_mesh is not None:
+                x = np.asarray(cont.axes.convert_xunits(self._x_mesh))
+                y = np.asarray(cont.axes.convert_yunits(self._y_mesh))
+            data_range = (
+                (float(grid.min()), float(grid.max()))
+                if grid.count()
+                else current.geometry.data_range
+            )
+            specification = resolve_or(self._levels, initial_level_request)
+            first_finite_grid = (
+                current.geometry.data_range is None and data_range is not None
+            )
+            levels = current.geometry.levels
+            if changed("_levels") or (
+                first_finite_grid and isinstance(specification, Integral)
+            ):
+                levels = _contour_levels(specification, data_range or (0.0, 1.0), fill)
+            if fill and levels.size < 2:
+                raise InvalidParameterError(
+                    "Filled contours require at least two levels."
+                )
+            values = 0.5 * levels[:-1] + 0.5 * levels[1:] if fill else levels
+            paths = _contour_path_groups(
+                x,
+                y,
+                grid,
+                levels,
+                filled=fill,
+                algorithm=algorithm,
+                corner_mask=corner_mask,
+            )
+            return _ContourGeometry(levels, values, paths, data_range)
+
+        def set_frame(
+            state: _ContourFrame, geometry_changed: bool, bar_changed: bool
+        ) -> None:
+            nonlocal current
+            geometry = state.geometry
+            with (
+                cont.callbacks.blocked(signal="changed"),
+                cont.norm.callbacks.blocked(signal="changed"),
+            ):
+                if geometry_changed:
+                    cont.set_paths(geometry.paths)
+                    cont.levels = geometry.levels
+                    cont._levels = geometry.levels
+                    cont.layers = cont.cvalues = geometry.values
+                if cont.filled != state.filled:
+                    cont.filled = state.filled
+                    cont.set_facecolor(None if state.filled else "none")
+                    cont.set_edgecolor("none" if state.filled else None)
+                cont.set_cmap(state.cmap)
+                cont.set_clim(*state.clim)
+                cont.set_alpha(state.alpha)
+                if state.widths is not None:
+                    cont.set_linewidth(state.widths)
+                    lo, hi = geometry.data_range or (0.0, 1.0)
+                    tolerance = 1e-15 * (lo - hi)
+                    cont.set_linestyle(
+                        [
+                            cont.negative_linestyles
+                            if getattr(state.cmap, "monochrome", False)
+                            and level < tolerance
+                            else "solid"
+                            for level in geometry.levels
+                        ]
+                    )
+            if bar is not None and bar_changed:
+                _set_contour_bar_mode(bar, state.filled)
+                bar.boundaries = _contour_bar_boundaries(geometry.levels).tolist()
+                bar.values = geometry.values.tolist()
+                if levels_follow_ticks:
+                    bar.locator = FixedLocator(geometry.levels.tolist(), nbins=10)
+                cont.changed()
+            else:
+                with cont.callbacks.blocked(signal="changed"):
+                    cont.changed()
+            current = state
+
+        def prepare() -> _ArtistEdit:
+            fill = resolve_or(self._filled, filled)
+            if not isinstance(fill, (bool, np.bool_)):
+                raise InvalidParameterError("Contour.filled must be a boolean.")
+            geometry_changed = fill != current.filled or any(
+                changed(name) for name in ("_z_data", "_x_mesh", "_y_mesh", "_levels")
+            )
+            geometry = prepare_geometry(fill) if geometry_changed else current.geometry
+            levels = geometry.levels
+            clim = current.clim
+            levels_changed = levels is not current.geometry.levels
+            if levels_changed or changed("_color_map_range"):
+                explicit = self._color_map_range
+                if explicit is None:
+                    clim = float(levels[0]), float(levels[-1])
+                else:
+                    bounds = np.asarray(explicit)
+                    if (
+                        bounds.shape != (2,)
+                        or bounds.dtype.kind not in "iuf"
+                        or not np.isfinite(bounds).all()
+                        or bounds[0] == bounds[1]
+                    ):
+                        raise InvalidParameterError(
+                            "Contour color_map_range must contain two distinct finite numbers."
+                        )
+                    clim = float(bounds.min()), float(bounds.max())
+            state = _ContourFrame(
+                geometry,
+                fill,
+                clim,
+                plt.get_cmap(resolve_or(self._color_map, initial_cmap)),
+                resolve_or(self._alpha, initial_alpha),
+                None
+                if fill
+                else _contour_line_widths(
+                    resolve_or(self._line_widths, initial_widths), len(levels)
+                ),
+            )
+            previous = current
+            bar_changed = (
+                levels_changed
+                or fill != previous.filled
+                or any(
+                    changed(name)
+                    for name in (
+                        "_color_map_range",
+                        "_color_map",
+                        "_alpha",
+                        "_line_widths",
+                    )
+                )
+            )
+            return _ArtistEdit(
+                lambda: set_frame(state, geometry_changed, bar_changed),
+                lambda: set_frame(previous, geometry_changed, bar_changed),
+            )
+
+        properties = (
+            "_z_data",
+            "_x_mesh",
+            "_y_mesh",
+            "_levels",
+            "_alpha",
+            "_color_map",
+            "_color_map_range",
+            "_filled",
+            "_line_widths",
+        )
+        session.bind_derived(self, properties, prepare)
+        if bar is not None:
+            session.bind_property(self, "_show_color_bar", bar.ax, "visible")
+
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
+        session = _DRAW_SESSION.get()
+        if session is not None and (
+            self._z_data.ndim != 2
+            or min(self._z_data.shape) < 2
+            or self._z_data.dtype.kind not in "biuf"
+        ):
+            raise InvalidParameterError(
+                "Animated Contour data must be a real, two-dimensional grid with at least two rows and columns."
+            )
         if self._x_mesh is None or self._y_mesh is None:
             x_mesh, y_mesh = np.meshgrid(
                 np.arange(self._z_data.shape[1]),
@@ -1683,6 +2054,14 @@ class Contour(Plottable2D):
             params["vmax"] = max(self._color_map_range)
 
         params = strip_inherit(params)
+        if session is not None:
+            levels = params.get("levels")
+            if (
+                levels is None or isinstance(levels, Integral)
+            ) and not np.ma.masked_invalid(self._z_data).count():
+                params["levels"] = _contour_levels(
+                    7 if levels is None else levels, (0.0, 1.0), filled
+                )
         if filled:
             cont = axes.contourf(
                 x_mesh,
@@ -1699,63 +2078,28 @@ class Contour(Plottable2D):
                 zorder=z_order,
                 **params,
             )
+        bar = None
+        live_paths = session is not None and hasattr(cont, "set_paths")
         if resolve_or(self._show_color_bar, True):
             fig = axes.get_figure()
             assert fig is not None
-            fig.colorbar(cont, ax=axes, **self._color_bar_params)
-        session = _DRAW_SESSION.get()
+            levels = np.asarray(cont.levels)
+            if live_paths and not filled and levels.size == 1:
+                # Only the colorbar needs a nonzero span for a single line.
+                live_contour = cast(Any, cont)
+                original = live_contour._levels
+                live_contour._levels = _contour_bar_boundaries(levels)
+                try:
+                    bar = fig.colorbar(cont, ax=axes, **self._color_bar_params)
+                finally:
+                    live_contour._levels = original
+            else:
+                bar = fig.colorbar(cont, ax=axes, **self._color_bar_params)
         if session is not None:
             session.mark_present(self)
-            # Matplotlib 3.8 moved all levels into a single collection with a public path API.
-            if hasattr(cont, "set_paths"):
-                shape = self._z_data.shape
-                levels = np.asarray(cont.levels).copy()
-                algorithm = plt.rcParams["contour.algorithm"]
-                corner_mask = (
-                    algorithm != "mpl2005" and plt.rcParams["contour.corner_mask"]
-                )
-
-                def prepare(values: np.ndarray) -> _ArtistEdit:
-                    if values.shape != shape or values.dtype.kind not in "biuf":
-                        raise InvalidParameterError(
-                            "An animated Contour must retain its grid shape and real numeric values."
-                        )
-                    grid = np.ma.masked_invalid(values)
-                    generator = contourpy.contour_generator(
-                        x_mesh,
-                        y_mesh,
-                        grid,
-                        name=algorithm,
-                        corner_mask=corner_mask,
-                        line_type=contourpy.LineType.SeparateCode,
-                        fill_type=contourpy.FillType.OuterCode,
-                    )
-                    if filled:
-                        lower = levels[:-1].copy()
-                        if grid.count() and grid.min() == lower[0]:
-                            lower[0] -= 1
-                        groups = (
-                            generator.filled(lo, hi)
-                            for lo, hi in zip(lower, levels[1:])
-                        )
-                    else:
-                        groups = (generator.lines(level) for level in levels)
-                    paths = [
-                        MplPath(np.concatenate(vertices), np.concatenate(codes))
-                        if vertices
-                        else MplPath(np.empty((0, 2)))
-                        for vertices, codes in cast(
-                            "Iterable[tuple[list[np.ndarray], list[np.ndarray]]]",
-                            groups,
-                        )
-                    ]
-                    return _edit(cont.set_paths, cont.get_paths(), paths)
-
-                session.bind_update(self, "_z_data", prepare)
-                session.bind_property(self, "_alpha", cont, "alpha")
-                session.bind_property(self, "_color_map", cont, "cmap")
-                if not filled:
-                    session.bind_property(self, "_line_widths", cont, "linewidth")
+            # Matplotlib 3.8 moved all levels into one collection.
+            if live_paths:
+                self._bind_live_contour(session, cont, bar, filled)
 
 
 @dataclass

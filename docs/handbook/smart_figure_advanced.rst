@@ -2043,10 +2043,13 @@ Live update support
      - Bin count, orientation, normalization, styling, and whether to show
        the density and its guides.
    * - :class:`~graphinglib.Contour`
-     - Scalar data at fixed levels, opacity, colormap and unfilled line
-       widths on Matplotlib 3.8 and later.
-     - Grid, levels, filled/line mode and color scale. The initial frame
-       determines levels when an integer count is supplied.
+     - Scalar data and mesh via ``set_data(z, x_mesh=x, y_mesh=y)``, levels,
+       filled or line mode, opacity, colormap, color limits, and line widths.
+       An existing colorbar follows these updates and can be hidden and shown.
+     - Colorbar placement and initial availability. Integer levels use the
+       first finite data range and stay fixed on data-only updates. Reassign
+       ``levels`` to calculate them again. Filled contours need at least two
+       levels. Live Contour updates require Matplotlib 3.8 or later.
    * - Fit classes
      - Call ``fit.refit()`` after updating the source, or ``fit.refit(source)``
        to use new data. All built-in models update their fitted line and any
