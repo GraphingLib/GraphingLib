@@ -17,6 +17,19 @@ from PIL import Image, ImageSequence
 from graphinglib import Curve, GraphingException, Heatmap, Scatter, SmartFigure, Text
 
 
+def _contour_paths(contour):
+    if hasattr(contour, "get_paths"):
+        return contour.get_paths()
+
+    from matplotlib.path import Path
+
+    groups = [collection.get_paths() for collection in contour.collections]
+    return [
+        paths[0] if len(paths) == 1 else Path.make_compound_path(*paths)
+        for paths in groups
+    ]
+
+
 class TestAnimation(unittest.TestCase):
     def setUp(self):
         self.addCleanup(plt.close, "all")
@@ -1127,13 +1140,10 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
 
     def test_mesh_quiver_and_contour_keep_their_artists(self):
         from matplotlib.collections import QuadMesh
-        from matplotlib.contour import QuadContourSet
         from matplotlib.quiver import Quiver
 
         from graphinglib import Contour, VectorField
 
-        if not hasattr(QuadContourSet, "set_paths"):
-            self.skipTest("Contour paths require Matplotlib 3.8.")
         grid = np.arange(4)
         x, y = np.meshgrid(grid, grid)
         heatmap = Heatmap(x + y, x_mesh=x, y_mesh=y, show_color_bar=True)
@@ -1157,7 +1167,7 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
                 artist
                 for axis in plt.gcf().axes
                 for artist in axis.collections
-                if isinstance(artist, (QuadMesh, Quiver, QuadContourSet))
+                if isinstance(artist, (QuadMesh, Quiver))
             ]
             (mesh,) = [
                 artist
@@ -1165,11 +1175,9 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
                 if isinstance(artist, QuadMesh) and artist.get_array().size == 16
             ]
             (field,) = [artist for artist in artists if isinstance(artist, Quiver)]
-            (contours,) = [
-                artist for artist in artists if isinstance(artist, QuadContourSet)
-            ]
+            contours = contour.handle
             captures.append((mesh, field, contours))
-            geometry.append(contours.get_paths()[1].vertices.copy())
+            geometry.append(_contour_paths(contours)[1].vertices.copy())
             heatmap.image = x * i + y
             heatmap.color_map_range = (10 * i, 6 + 10 * i)
             heatmap.color_map = "plasma"
@@ -1299,8 +1307,6 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(artist.get_coordinates()[0, :, 0], [-0.5, 0.5, 1.5, 2.5])
 
     def test_filled_contour_updates_mesh_levels_and_existing_colorbars(self):
-        from matplotlib.contour import QuadContourSet
-
         from graphinglib import Contour
 
         xx, yy = np.meshgrid(np.arange(3), np.arange(3))
@@ -1314,10 +1320,9 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
 
         def update(i):
             artists = tuple(
-                item
+                axis._colorbar.mappable
                 for axis in plt.gcf().axes
-                for item in axis.collections
-                if isinstance(item, QuadContourSet)
+                if axis.get_label() == "<colorbar>"
             )
             self.assertEqual(len(artists), 2)
             captures.append(
@@ -1333,7 +1338,7 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         root.save_animation(self.output, update, 2)
         self.assertTrue(all(sample == captures[0] for sample in captures))
         for artist, colorbar, axes in captures[-1]:
-            self.assertEqual(len(artist.get_paths()), 3)
+            self.assertEqual(len(_contour_paths(artist)), 3)
             assert_allclose(artist.levels, [3, 4, 6, 8])
             assert_allclose(artist.get_array(), [3.5, 5, 7])
             self.assertEqual(artist.get_clim(), (3, 8))
@@ -1352,7 +1357,7 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
                 x, y, x + y[:, None], levels=[3, 4, 6, 8]
             )
             for path, expected in zip(
-                artist.get_paths(), reference.get_paths(), strict=True
+                _contour_paths(artist), _contour_paths(reference), strict=True
             ):
                 assert_allclose(path.vertices, expected.vertices)
                 np.testing.assert_array_equal(path.codes, expected.codes)
@@ -1362,8 +1367,6 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
 
     def test_line_contour_moves_from_single_level_through_masked_frames(self):
         from warnings import catch_warnings, simplefilter
-
-        from matplotlib.contour import QuadContourSet
 
         from graphinglib import Contour
 
@@ -1375,16 +1378,11 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         artists = []
 
         def update(i):
-            (artist,) = [
-                c
-                for ax in plt.gcf().axes
-                for c in ax.collections
-                if isinstance(c, QuadContourSet)
-            ]
+            artist = contour.handle
             artists.append(artist)
             samples[i] = (
                 np.array(artist.levels),
-                tuple(len(path.vertices) for path in artist.get_paths()),
+                tuple(len(path.vertices) for path in _contour_paths(artist)),
                 artist.get_clim(),
                 tuple(artist.colorbar.get_ticks()),
             )
@@ -1416,7 +1414,7 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertGreater(samples[4][0][0], samples[3][0][-1])
         item = artists[0]
         assert_allclose(item.levels, [3])
-        self.assertEqual(len(item.get_paths()), 1)
+        self.assertEqual(len(_contour_paths(item)), 1)
         self.assertEqual(item.get_clim(), (0, 5))
         self.assertEqual(item.get_alpha(), 0.4)
         bar = item.colorbar
@@ -1427,8 +1425,6 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         assert_allclose(bar.lines[0].get_colors()[:, -1], [0.4])
 
     def test_contour_with_empty_start_uses_first_finite_range(self):
-        from matplotlib.contour import QuadContourSet
-
         from graphinglib import Contour
 
         contour = Contour(np.ma.masked_all((3, 3)), levels=4, show_color_bar=True)
@@ -1436,12 +1432,7 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         states = {}
 
         def update(i):
-            (artist,) = [
-                c
-                for ax in plt.gcf().axes
-                for c in ax.collections
-                if isinstance(c, QuadContourSet)
-            ]
+            artist = contour.handle
             states[i] = artist.levels.copy(), artist.colorbar.solids
             if i == 1:
                 contour.set_data(100 + np.arange(9).reshape((3, 3)))
@@ -1455,8 +1446,6 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertIs(states[3][1], states[2][1])
 
     def test_contour_can_switch_modes_and_hide_its_existing_colorbar(self):
-        from matplotlib.contour import QuadContourSet
-
         from graphinglib import Contour
 
         z = np.arange(9).reshape((3, 3))
@@ -1465,24 +1454,20 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         captures = {}
 
         def update(i):
-            (artist,) = [
-                c
-                for ax in plt.gcf().axes
-                for c in ax.collections
-                if isinstance(c, QuadContourSet)
-            ]
+            artist = contour.handle
             bar = artist.colorbar
+            pieces = [artist] if hasattr(artist, "get_paths") else artist.collections
             captures[i] = (
                 artist,
                 bar,
                 bar.ax,
                 artist.filled,
-                len(artist.get_paths()),
+                len(_contour_paths(artist)),
                 bar.ax.get_visible(),
                 bar.solids,
                 tuple(bar.lines),
-                artist.get_facecolor().copy(),
-                artist.get_edgecolor().copy(),
+                np.concatenate([part.get_facecolor() for part in pieces]),
+                np.concatenate([part.get_edgecolor() for part in pieces]),
             )
             contour.filled = bool(i % 2)
             contour.show_color_bar = i > 0
@@ -1511,9 +1496,51 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             len(axes.collections), 2
         )  # dividers and current line collection
 
-    def test_failed_contour_update_restores_paths_levels_and_colorbar(self):
+    def test_legacy_contour_reuses_level_collections_after_shrinking(self):
         from matplotlib.contour import QuadContourSet
 
+        from graphinglib import Contour
+
+        if hasattr(QuadContourSet, "set_paths"):
+            self.skipTest("Legacy contours use separate collections per level.")
+
+        contour = Contour(
+            [[0, 1], [1, 2]], levels=[0, 2], filled=True, show_color_bar=False
+        )
+        figure = SmartFigure(elements=[contour], figure_style="plain")
+        states = []
+
+        def update(frame):
+            native = contour.handle
+            states.append(
+                (
+                    tuple(native.collections),
+                    tuple(native.axes.collections),
+                    tuple(
+                        collection.get_visible()
+                        for collection in native.axes.collections
+                    ),
+                    tuple(native.axes.dataLim.extents),
+                )
+            )
+            if frame == 0:
+                contour.levels = [0, 0.5, 1.5, 2]
+            elif frame == 1:
+                contour.filled = False
+                contour.levels = [1]
+            elif frame == 2:
+                contour.filled = True
+                contour.levels = [0, 0.5, 1.5, 2]
+
+        figure.save_animation(self.output, update, 4)
+        self.assertEqual(states[0][0], states[1][0][:1])
+        self.assertEqual(states[0][0], states[2][0])
+        self.assertEqual(states[1][0], states[3][0])
+        self.assertEqual(states[1][1], states[2][1])
+        self.assertEqual(states[2][2], (True, False, False))
+        self.assertTrue(all(state[3] == states[0][3] for state in states))
+
+    def test_failed_contour_update_restores_paths_levels_and_colorbar(self):
         from graphinglib import Contour
 
         z = np.arange(9).reshape((3, 3))
@@ -1521,21 +1548,18 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         figure = SmartFigure(elements=[contour], figure_style="plain")
         artist = None
         previous_paths = None
+        previous_collections = None
 
         def update(i):
-            nonlocal artist, previous_paths
-            (artist,) = [
-                c
-                for ax in plt.gcf().axes
-                for c in ax.collections
-                if isinstance(c, QuadContourSet)
-            ]
+            nonlocal artist, previous_paths, previous_collections
+            artist = contour.handle
             contour.set_data(z + i)
             contour.levels = [2, 5, 7, 9] if i else [0, 2, 8]
             contour.color_map = "magma" if i else "plasma"
             contour.filled = i == 0
             if i:
-                previous_paths = tuple(artist.get_paths())
+                previous_paths = tuple(_contour_paths(artist))
+                previous_collections = tuple(artist.axes.collections)
                 original = artist.changed
 
                 def fail_after_refresh():
@@ -1553,7 +1577,8 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         self.assertEqual(contour.color_map, "plasma")
         self.assertTrue(contour.filled)
         self.assertTrue(artist.filled)
-        self.assertEqual(tuple(artist.get_paths()), previous_paths)
+        self.assertEqual(tuple(_contour_paths(artist)), previous_paths)
+        self.assertEqual(tuple(artist.axes.collections), previous_collections)
         assert_allclose(artist.levels, [0, 2, 8])
         self.assertEqual(artist.get_cmap().name, "plasma")
         assert_allclose(artist.colorbar.boundaries, [0, 2, 8])

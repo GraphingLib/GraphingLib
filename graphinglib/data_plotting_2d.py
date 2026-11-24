@@ -10,7 +10,7 @@ from typing import Any, Callable, Literal, Optional, Protocol, cast, runtime_che
 import contourpy
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.collections import LineCollection, QuadMesh
+from matplotlib.collections import LineCollection, PathCollection, QuadMesh
 from matplotlib.colorbar import Colorbar
 from matplotlib.colors import Colormap, Normalize, is_color_like, to_rgba
 from matplotlib.contour import QuadContourSet
@@ -1495,6 +1495,63 @@ class _ContourFrame:
     widths: np.ndarray | None
 
 
+class _LegacyContourCollections:
+    """Reuse one native PathCollection per contour level on Matplotlib 3.7."""
+
+    def __init__(self, contour: Any) -> None:
+        self.contour = contour
+        self.pool: list[PathCollection] = list(contour.collections)
+        self.zorder = contour._contour_zorder
+
+    def paths(self) -> list[MplPath]:
+        return [
+            MplPath.make_compound_path(*collection.get_paths())
+            for collection in self.contour.collections
+        ]
+
+    def set_paths(self, paths: list[MplPath]) -> None:
+        contour = self.contour
+        while len(self.pool) < len(paths):
+            artist = PathCollection(
+                [],
+                transform=contour.get_transform(),
+                zorder=self.zorder,
+                label="_nolegend_",
+            )
+            self.pool.append(artist)
+            contour.axes.add_collection(artist, autolim=False)
+        contour.collections[:] = self.pool[: len(paths)]
+        for collection, path in zip(contour.collections, paths, strict=True):
+            collection.set_paths([path])
+            collection.set_visible(True)
+        for collection in self.pool[len(paths) :]:
+            collection.set_visible(False)
+        contour.allsegs = [
+            [path.vertices] if np.asarray(path.vertices).size else [] for path in paths
+        ]
+        contour.allkinds = [
+            [path.codes] if np.asarray(path.vertices).size else [] for path in paths
+        ]
+
+    def style(self, state: _ContourFrame, dashes: list[str]) -> None:
+        if state.widths is not None:
+            self.contour.tlinewidths = [(width,) for width in state.widths]
+        for index, collection in enumerate(self.contour.collections):
+            collection.set_alpha(state.alpha)
+            if state.filled:
+                collection.set_edgecolor("none")
+            elif state.widths is not None:
+                collection.set_facecolor("none")
+                collection.set_linewidth(state.widths[index])
+                collection.set_linestyle(dashes[index])
+
+    def truncate(self, count: int) -> None:
+        for collection in reversed(self.pool[count:]):
+            if collection.axes is not None:
+                collection.remove()
+        del self.pool[count:]
+
+
 def _contour_levels(
     specification: int | ArrayLike,
     data_range: tuple[float, float],
@@ -1981,6 +2038,7 @@ class Contour(Plottable2D):
     ) -> None:
         # Stubs include the pre-3.8 contour interface and omit its collection state.
         cont = cast(Any, contour)
+        legacy = None if hasattr(cont, "set_paths") else _LegacyContourCollections(cont)
         algorithm = plt.rcParams["contour.algorithm"]
         corner_mask = algorithm != "mpl2005" and plt.rcParams["contour.corner_mask"]
         initial_levels = np.asarray(cont.levels).copy()
@@ -2001,7 +2059,10 @@ class Contour(Plottable2D):
             else None
         )
         geometry = _ContourGeometry(
-            initial_levels, np.asarray(cont.layers), list(cont.get_paths()), data_range
+            initial_levels,
+            np.asarray(cont.layers),
+            legacy.paths() if legacy is not None else list(cont.get_paths()),
+            data_range,
         )
         current = _ContourFrame(
             geometry,
@@ -2009,7 +2070,13 @@ class Contour(Plottable2D):
             cast("tuple[float, float]", limits),
             initial_cmap,
             initial_alpha,
-            None if filled else np.asarray(cont.get_linewidths()),
+            None
+            if filled
+            else np.asarray(
+                [width[0] for width in cont.tlinewidths]
+                if legacy is not None
+                else cont.get_linewidths()
+            ),
         )
 
         def changed(name: str) -> bool:
@@ -2070,30 +2137,40 @@ class Contour(Plottable2D):
                 cont.norm.callbacks.blocked(signal="changed"),
             ):
                 if geometry_changed:
-                    cont.set_paths(geometry.paths)
+                    if legacy is None:
+                        cont.set_paths(geometry.paths)
+                    else:
+                        legacy.set_paths(geometry.paths)
+                        cont.set_array(geometry.values)
                     cont.levels = geometry.levels
                     cont._levels = geometry.levels
                     cont.layers = cont.cvalues = geometry.values
                 if cont.filled != state.filled:
                     cont.filled = state.filled
-                    cont.set_facecolor(None if state.filled else "none")
-                    cont.set_edgecolor("none" if state.filled else None)
+                    if legacy is None:
+                        cont.set_facecolor(None if state.filled else "none")
+                        cont.set_edgecolor("none" if state.filled else None)
+                lo, hi = geometry.data_range or (0.0, 1.0)
+                tolerance = 1e-15 * (lo - hi)
+                dashes = (
+                    [
+                        cont.negative_linestyles
+                        if getattr(state.cmap, "monochrome", False)
+                        and level < tolerance
+                        else "solid"
+                        for level in geometry.levels
+                    ]
+                    if not state.filled
+                    else []
+                )
+                if legacy is not None:
+                    legacy.style(state, dashes)
                 cont.set_cmap(state.cmap)
                 cont.set_clim(*state.clim)
                 cont.set_alpha(state.alpha)
-                if state.widths is not None:
+                if legacy is None and state.widths is not None:
                     cont.set_linewidth(state.widths)
-                    lo, hi = geometry.data_range or (0.0, 1.0)
-                    tolerance = 1e-15 * (lo - hi)
-                    cont.set_linestyle(
-                        [
-                            cont.negative_linestyles
-                            if getattr(state.cmap, "monochrome", False)
-                            and level < tolerance
-                            else "solid"
-                            for level in geometry.levels
-                        ]
-                    )
+                    cont.set_linestyle(dashes)
             if bar is not None and bar_changed:
                 _set_contour_bar_mode(bar, state.filled)
                 bar.boundaries = _contour_bar_boundaries(geometry.levels).tolist()
@@ -2161,10 +2238,16 @@ class Contour(Plottable2D):
                     )
                 )
             )
-            return _ArtistEdit(
-                lambda: set_frame(state, geometry_changed, bar_changed),
-                lambda: set_frame(previous, geometry_changed, bar_changed),
-            )
+            pool_size = 0 if legacy is None else len(legacy.pool)
+
+            def undo() -> None:
+                try:
+                    set_frame(previous, geometry_changed, bar_changed)
+                finally:
+                    if legacy is not None:
+                        legacy.truncate(pool_size)
+
+            return _ArtistEdit(lambda: set_frame(state, geometry_changed, bar_changed), undo)
 
         properties = (
             "_z_data",
@@ -2237,14 +2320,14 @@ class Contour(Plottable2D):
                 zorder=z_order,
                 **params,
             )
+        self.handle = cont
         bar = None
-        live_paths = session is not None and hasattr(cont, "set_paths")
         show_colorbar = resolve_or(self._show_color_bar, True)
         if show_colorbar or (session is not None and self._reserve_color_bar):
             fig = axes.get_figure()
             assert fig is not None
             levels = np.asarray(cont.levels)
-            if live_paths and not filled and levels.size == 1:
+            if session is not None and not filled and levels.size == 1:
                 # Only the colorbar needs a nonzero span for a single line.
                 live_contour = cast(Any, cont)
                 original = live_contour._levels
@@ -2270,9 +2353,7 @@ class Contour(Plottable2D):
                     if self._color_bar_params.get("ticks") is None
                     else None,
                 )
-            # Matplotlib 3.8 moved all levels into one collection.
-            if live_paths:
-                self._bind_live_contour(session, cont, bar, filled)
+            self._bind_live_contour(session, cont, bar, filled)
 
 
 @dataclass

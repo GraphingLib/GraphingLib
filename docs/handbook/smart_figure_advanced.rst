@@ -2066,8 +2066,8 @@ Live update support
      - Colorbar placement and initial availability. Integer levels use the
        first finite data range and stay fixed on data-only updates. Reassign
        ``levels`` to calculate them again. Filled contours need at least two
-       levels. Live contour geometry and colormap updates require Matplotlib
-       3.8 or later. Colorbar visibility, labels, and ticks also work on 3.7.
+       levels. On Matplotlib 3.7, updating the level count reuses separate
+       collections for each level.
    * - Fit classes
      - Call ``fit.refit()`` after updating the source, or ``fit.refit(source)``
        to use new data. All built-in models update their fitted line and any
