@@ -462,6 +462,109 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         with Image.open(self.output) as gif:
             self.assertEqual(gif.n_frames, 3)
 
+    def test_hidden_errorbars_reuse_artists_geometry_and_legend(self):
+        curve = Curve([0, 1], [0, 1], label="Curve", color="navy")
+        curve.add_errorbars(x_error=10, y_error=12, cap_width=3)
+        curve.show_errorbars = False
+        scatter = Scatter([0, 1], [1, 0], label="Points")
+        scatter.add_errorbars(y_error=12, cap_width=2)
+        scatter.show_errorbars = False
+        figure = SmartFigure(
+            elements=[curve, scatter], show_legend=True, figure_style="plain"
+        )
+        captured = []
+        states = {}
+
+        def update(i):
+            ax = plt.gcf().axes[0]
+            legend = ax.get_legend()
+            handles = (curve.handle, scatter.errorbars_handle, legend.legend_handles[0])
+            captured.append(handles)
+            states[i] = (
+                (ax.get_xlim(), ax.get_ylim()),
+                tuple(
+                    segment.get_visible()
+                    for handle in handles[:2]
+                    for segment in handle.lines[2]
+                ),
+                tuple(
+                    cap.get_visible()
+                    for handle in handles[:2]
+                    for cap in handle.lines[1]
+                ),
+                handles[-1].get_visible(),
+            )
+            curve.show_errorbars = scatter.show_errorbars = i % 2 == 1
+            curve.cap_width = (2, 3, 0, 4)[i]
+            scatter.cap_width = (1, 0, 2, 3)[i]
+            if i == 0:
+                curve.set_data([0, 0.5, 1], [0, 0.5, 1], x_error=0.1, y_error=0.15)
+                scatter.set_data([0, 0.5, 1], [1, 0.5, 0], y_error=0.1)
+            if i == 2:
+                curve.set_data([0, 1], [0, 1], x_error=0.1, y_error=0.1)
+                scatter.set_data([0, 1], [1, 0], y_error=0.1)
+
+        figure.save_animation(self.output, update, 4)
+        self.assertTrue(all(items == captured[0] for items in captured))
+        for index in (0, 1, 3):
+            self.assertFalse(any(states[index][1]))
+            self.assertFalse(any(states[index][2]))
+            self.assertFalse(states[index][3])
+        self.assertTrue(all(states[2][1]))
+        self.assertEqual(states[2][2], (True, True, True, True, False, False))
+        self.assertTrue(states[2][3])
+        # The large configured errors were hidden at setup and did not autoscale.
+        for limits, *_ in states.values():
+            assert_allclose(limits, ((-0.05, 1.05), (-0.05, 1.05)))
+        for handle in captured[-1][:2]:
+            self.assertTrue(all(segment.get_visible() for segment in handle.lines[2]))
+            self.assertTrue(all(cap.get_visible() for cap in handle.lines[1]))
+            self.assertTrue(
+                all(len(segment.get_segments()) == 2 for segment in handle.lines[2])
+            )
+        self.assertTrue(captured[-1][-1].get_visible())
+
+    def test_errorbar_visibility_rolls_back_after_later_artist_failure(self):
+        curve = Curve([0, 1], [0, 1], label="Curve")
+        curve.add_errorbars(y_error=0.2, cap_width=3)
+        scatter = Scatter([0, 1], [1, 0])
+        figure = SmartFigure(
+            elements=[curve, scatter], show_legend=True, figure_style="plain"
+        )
+        captured = []
+
+        def update(i):
+            captured[:] = [
+                curve.handle,
+                plt.gcf().axes[0].get_legend().legend_handles[0],
+            ]
+            curve.show_errorbars = bool(i)
+            curve.cap_width = 5 if i else 2
+            scatter.face_color = "red" if i else "blue"
+            if i:
+                original = scatter.handle.set_facecolor
+
+                def fail_after_color(values):
+                    original(values)
+                    if np.allclose(values, [[1, 0, 0, 1]]):
+                        self.assertTrue(captured[0].lines[2][0].get_visible())
+                        raise ValueError("failed to apply colors")
+
+                self.enterContext(
+                    patch.object(scatter.handle, "set_facecolor", fail_after_color)
+                )
+
+        with self.assertRaisesRegex(GraphingException, "animation frame 1"):
+            figure.save_animation(self.output, update, 2)
+        handle, swatch = captured
+        self.assertFalse(curve.show_errorbars)
+        self.assertEqual(curve.cap_width, 2)
+        self.assertFalse(swatch.get_visible())
+        self.assertTrue(all(not cap.get_visible() for cap in handle.lines[1]))
+        self.assertTrue(all(cap.get_markersize() == 4 for cap in handle.lines[1]))
+        self.assertFalse(handle.lines[2][0].get_visible())
+        self.assertFalse(self.output.exists())
+
     def test_curve_decorations_restore_last_frame_after_invalid_style(self):
         from matplotlib.colors import to_rgba
 

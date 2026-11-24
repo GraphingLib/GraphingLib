@@ -65,7 +65,7 @@ _ERROR_STYLE_PROPERTIES = (
 
 
 def _draw_live_errorbars(
-    axes: Axes, x: Any, y: Any, **params: Any
+    axes: Axes, x: Any, y: Any, *, show: bool = True, **params: Any
 ) -> ErrorbarContainer:
     cap_width = params.get("capsize")
     if cap_width is None:
@@ -78,10 +78,34 @@ def _draw_live_errorbars(
     if hide_caps:
         # Keep the native cap artists and legend entries available for later frames.
         params["capsize"] = 1
+    errors = (params.get("xerr"), params.get("yerr"))
+    if not show:
+        # Reserve the configured artists without including hidden error
+        # extents in the initial axes limits.
+        params["xerr"] = None if errors[0] is None else 0
+        params["yerr"] = None if errors[1] is None else 0
     handle = axes.errorbar(x, y, **params)
     if hide_caps:
         for cap in handle.lines[1]:
             cap.set_markersize(0)
+            cap.set_visible(False)
+    if not show:
+        _, caps, segments = handle.lines
+        directions = [
+            (is_x, err) for is_x, err in zip((True, False), errors) if err is not None
+        ]
+        x, y = np.asarray(x), np.asarray(y)
+        for index, ((is_x, err), segment) in enumerate(
+            zip(directions, segments, strict=True)
+        ):
+            error = _error_array(err, x.size, "x_error" if is_x else "y_error")
+            assert error is not None
+            binding = _ErrorArtists(segment, tuple(caps[2 * index : 2 * index + 2]))
+            _error_update(
+                binding, x if is_x else y, y if is_x else x, error, is_x=is_x
+            ).apply()
+            segment.set_visible(False)
+        for cap in caps:
             cap.set_visible(False)
     return handle
 
@@ -94,7 +118,10 @@ def _error_style_edits(
     cap_width: float | None,
     cap_thickness: float | None,
     alpha: float | None,
+    show: bool,
 ) -> list[_ArtistEdit]:
+    if not isinstance(show, (bool, np.bool_)):
+        raise InvalidParameterError("show_errorbars must be a boolean.")
     _, caps, segments = handle.lines
     for name, value in (
         ("line width", line_width),
@@ -122,6 +149,7 @@ def _error_style_edits(
                 _edit(segment.set_linewidth, segment.get_linewidth(), line_width)
             )
         edits.append(_edit(segment.set_alpha, segment.get_alpha(), alpha))
+        edits.append(_edit(segment.set_visible, segment.get_visible(), show))
     for cap in caps:
         if color is not None:
             edits.append(
@@ -131,11 +159,15 @@ def _error_style_edits(
             edits.append(
                 _edit(cap.set_markeredgewidth, cap.get_markeredgewidth(), cap_thickness)
             )
+        size = cap.get_markersize()
         if cap_width is not None:
-            edits.extend(
-                (
-                    _edit(cap.set_markersize, cap.get_markersize(), 2 * cap_width),
-                    _edit(cap.set_visible, cap.get_visible(), cap_width > 0),
+            edits.append(_edit(cap.set_markersize, size, 2 * cap_width))
+        if cap.axes is not None:
+            edits.append(
+                _edit(
+                    cap.set_visible,
+                    cap.get_visible(),
+                    show and (size > 0 if cap_width is None else cap_width > 0),
                 )
             )
         edits.append(_edit(cap.set_alpha, cap.get_alpha(), alpha))
@@ -146,6 +178,35 @@ def _error_style_edits(
 class _ErrorArtists:
     segments: LineCollection
     caps: tuple[Line2D, ...]
+
+
+def _error_update(
+    artists: _ErrorArtists,
+    changing: np.ndarray,
+    fixed: np.ndarray,
+    error: np.ndarray,
+    *,
+    is_x: bool,
+) -> _ArtistEdit:
+    lower, upper = np.broadcast_to(error, (2, changing.size)).astype(float)
+    low, high = changing - lower, changing + upper
+    start, end = (
+        ((low, fixed), (high, fixed)) if is_x else ((fixed, low), (fixed, high))
+    )
+    segments = np.stack((np.column_stack(start), np.column_stack(end)), axis=1)
+
+    old_segments = [path.vertices for path in artists.segments.get_paths()]
+    old_caps = tuple(cap.get_data() for cap in artists.caps)
+
+    def update(new_segments: Any, cap_data: Any) -> None:
+        artists.segments.set_segments(new_segments)
+        for cap, data in zip(artists.caps, cap_data):
+            cap.set_data(data)
+
+    return _ArtistEdit(
+        lambda: update(segments, (start, end)),
+        lambda: update(old_segments, old_caps),
+    )
 
 
 @dataclass
@@ -485,6 +546,7 @@ class _AnimationSession:
             return
         properties = (
             *_ERROR_STYLE_PROPERTIES,
+            "_show_errorbars",
             "_color",
             "_line_width",
             "_line_style",
@@ -492,7 +554,7 @@ class _AnimationSession:
         )
         for index, (target, swatch) in enumerate(zip(originals, swatches, strict=True)):
             if index < len(segments):
-                fields = ("alpha", "color", "linewidth")
+                fields = ("alpha", "color", "linewidth", "visible")
             elif index < len(segments) + len(caps):
                 fields = (
                     "alpha",
@@ -677,8 +739,6 @@ class _AnimationSession:
             raise InvalidParameterError(
                 "Animated plot coordinates must be real numeric values."
             )
-        horizontal = dx if show_errorbars else None
-        vertical = dy if show_errorbars else None
         updates: list[_ArtistEdit] = []
         for binding in bindings:
             if not isinstance(binding, _PointArtists):
@@ -687,6 +747,13 @@ class _AnimationSession:
                     if isinstance(binding, str)
                     else "This plot has an unsupported errorbar layout."
                 )
+            configured = (
+                show_errorbars
+                or binding.x_error is not None
+                or binding.y_error is not None
+            )
+            horizontal = dx if configured else None
+            vertical = dy if configured else None
             if (binding.x_error is None) != (horizontal is None) or (
                 binding.y_error is None
             ) != (vertical is None):
@@ -709,42 +776,13 @@ class _AnimationSession:
                 updates.extend(binding.bands.edits(x, y, dy))
             if binding.x_error is not None and horizontal is not None:
                 updates.append(
-                    self._error_update(binding.x_error, x, y, horizontal, is_x=True)
+                    _error_update(binding.x_error, x, y, horizontal, is_x=True)
                 )
             if binding.y_error is not None and vertical is not None:
                 updates.append(
-                    self._error_update(binding.y_error, y, x, vertical, is_x=False)
+                    _error_update(binding.y_error, y, x, vertical, is_x=False)
                 )
         self._stage(element, "point_data", updates, restore)
-
-    @staticmethod
-    def _error_update(
-        artists: _ErrorArtists,
-        changing: np.ndarray,
-        fixed: np.ndarray,
-        error: np.ndarray,
-        *,
-        is_x: bool,
-    ) -> _ArtistEdit:
-        lower, upper = np.broadcast_to(error, (2, changing.size)).astype(float)
-        low, high = changing - lower, changing + upper
-        start, end = (
-            ((low, fixed), (high, fixed)) if is_x else ((fixed, low), (fixed, high))
-        )
-        segments = np.stack((np.column_stack(start), np.column_stack(end)), axis=1)
-
-        old_segments = [path.vertices for path in artists.segments.get_paths()]
-        old_caps = tuple(cap.get_data() for cap in artists.caps)
-
-        def update(new_segments: Any, cap_data: Any) -> None:
-            artists.segments.set_segments(new_segments)
-            for cap, data in zip(artists.caps, cap_data):
-                cap.set_data(data)
-
-        return _ArtistEdit(
-            lambda: update(segments, (start, end)),
-            lambda: update(old_segments, old_caps),
-        )
 
     def queue_text(
         self,

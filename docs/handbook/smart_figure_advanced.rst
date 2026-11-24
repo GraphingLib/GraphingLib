@@ -1973,7 +1973,9 @@ Live update support
        fills to zero or between two curves. Each shared fill uses both curves'
        final coordinates for the frame. Lines can change color, width,
        style and opacity. Configured error bars, error curves and fills can
-       change their styles. Use a cap width of zero to hide caps.
+       change their styles. On Cartesian plots, ``show_errorbars`` can show or
+       hide configured bars, including bars initially hidden. Use a cap width
+       of zero to hide caps independently.
      - Error-bar directions, whether to draw error curves or fills, and legend
        entry creation. Set up a nonempty Cartesian plot for live caps.
        Both curves must continue to cover the configured fill interval.
@@ -1983,7 +1985,8 @@ Live update support
        colors for the new point count in the same callback. An existing colorbar
        follows its intensity channel and retains its initial scale until
        ``color_map_range`` changes. Configured error bars can change color,
-       line width, cap width and cap thickness.
+       line width, cap width and cap thickness. Use ``show_errorbars`` to
+       hide or show them on Cartesian plots.
      - Legend entry creation, colorbar placement and error-bar directions.
        Set up a nonempty Cartesian plot for live caps. Colorbars need an
        intensity array at setup. An intensity channel introduced during

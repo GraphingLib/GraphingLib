@@ -461,8 +461,7 @@ class Curve(Plottable1D, MathematicalObject):
 
     @show_errorbars.setter
     def show_errorbars(self, show_errorbars: bool) -> None:
-        self._check_animated_uncertainty()
-        self._show_errorbars = show_errorbars
+        self._show_errorbars = _stage_live_value(self, "_show_errorbars", show_errorbars)
 
     @property
     def errorbars_color(self) -> Styled[str | None]:
@@ -902,6 +901,7 @@ class Curve(Plottable1D, MathematicalObject):
         """
         self._check_animated_uncertainty()
         self._show_errorbars = True
+        self._errorbars_configured = True
 
         if x_error is not None:
             self._x_error = np.array(x_error)
@@ -1894,6 +1894,7 @@ class Curve(Plottable1D, MathematicalObject):
                         if thickness == "same as curve"
                         else resolve_or(thickness, None),
                         alpha=resolve_or(self._alpha, initial_alpha),
+                        show=self._show_errorbars,
                     )
                 )
 
@@ -1905,6 +1906,8 @@ class Curve(Plottable1D, MathematicalObject):
                 "_line_width",
                 "_alpha",
             )
+            if not caps or cap_width_live:
+                error_properties += ("_show_errorbars",)
             if cap_width_live:
                 error_properties += ("_cap_width", "_cap_thickness")
             session.bind_derived(self, error_properties, prepare_errorbars)
@@ -1976,7 +1979,11 @@ class Curve(Plottable1D, MathematicalObject):
             "linestyle": self._line_style,
             "alpha": self._alpha,
         }
-        if self._show_errorbars:
+        if self._show_errorbars or (
+            session is not None
+            and axes.name != "polar"
+            and getattr(self, "_errorbars_configured", False)
+        ):
             params.update(
                 {
                     "elinewidth": (
@@ -2001,7 +2008,7 @@ class Curve(Plottable1D, MathematicalObject):
             draw_errorbars = (
                 axes.errorbar
                 if session is None
-                else partial(_draw_live_errorbars, axes)
+                else partial(_draw_live_errorbars, axes, show=self._show_errorbars)
             )
             self.handle = draw_errorbars(
                 self._x_data,
@@ -2521,8 +2528,7 @@ class Scatter(Plottable1D, MathematicalObject):
 
     @show_errorbars.setter
     def show_errorbars(self, show_errorbars: bool) -> None:
-        self._check_animated_uncertainty()
-        self._show_errorbars = show_errorbars
+        self._show_errorbars = _stage_live_value(self, "_show_errorbars", show_errorbars)
 
     @property
     def errorbars_line_width(self) -> Styled[float]:
@@ -2969,6 +2975,7 @@ class Scatter(Plottable1D, MathematicalObject):
         """
         self._check_animated_uncertainty()
         self._show_errorbars = True
+        self._errorbars_configured = True
 
         if x_error is not None:
             self._x_error = np.array(x_error)
@@ -3360,11 +3367,13 @@ class Scatter(Plottable1D, MathematicalObject):
         initial_error_width = self._errorbars_line_width
         initial_cap_thickness = self._cap_thickness
         cap_width_live = False
+        visibility_live = False
         initial_cap_width = None
         drawn_error_color = None
         if errorbars is not None and errorbars.lines[2]:
             _, caps, segments = errorbars.lines
             cap_width_live = bool(caps) and all(cap.axes is not None for cap in caps)
+            visibility_live = not caps or cap_width_live
             initial_cap_width = caps[0].get_markersize() / 2 if cap_width_live else None
             drawn_error_color = segments[0].get_color()
         contrast_color = get_contrasting_shade(plt.rcParams["axes.facecolor"])
@@ -3492,6 +3501,7 @@ class Scatter(Plottable1D, MathematicalObject):
                             self._cap_thickness, resolve_or(initial_cap_thickness, None)
                         ),
                         alpha=None,
+                        show=self._show_errorbars,
                     )
                 )
 
@@ -3540,6 +3550,8 @@ class Scatter(Plottable1D, MathematicalObject):
                 if cap_width_live
                 else _ERROR_STYLE_PROPERTIES[:2]
             )
+        if visibility_live:
+            properties += ("_show_errorbars",)
         session.bind_derived(self, properties, prepare)
 
     @staticmethod
@@ -3605,7 +3617,11 @@ class Scatter(Plottable1D, MathematicalObject):
             **params,
         )
         errorbars = None
-        if self._show_errorbars:
+        if self._show_errorbars or (
+            session is not None
+            and axes.name != "polar"
+            and getattr(self, "_errorbars_configured", False)
+        ):
             # Convert errorbars color to matplotlib notation
             if self._errorbars_color is None:
                 raise InvalidParameterError(
@@ -3642,7 +3658,7 @@ class Scatter(Plottable1D, MathematicalObject):
             draw_errorbars = (
                 axes.errorbar
                 if session is None
-                else partial(_draw_live_errorbars, axes)
+                else partial(_draw_live_errorbars, axes, show=self._show_errorbars)
             )
             errorbars = self.errorbars_handle = draw_errorbars(
                 self._x_data,
