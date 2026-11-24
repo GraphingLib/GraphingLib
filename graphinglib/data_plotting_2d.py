@@ -30,6 +30,7 @@ from ._animation import (
     _AnimatedColorbarLocator,
     _AnimationSession,
     _ArtistEdit,
+    _attach_artists,
     _bound_session,
     _combine_edits,
     _edit,
@@ -603,13 +604,6 @@ class Heatmap(Plottable2D):
             self, "_y_mesh", None if y_mesh is None else np.asanyarray(y_mesh)
         )
 
-    def _check_animation_geometry(self) -> None:
-        session = _bound_session(self)
-        if session is not None:
-            session.reject_structural_update(
-                self, "Configure the Heatmap grid and color scale before animating."
-            )
-
     @property
     def color_map(self) -> Styled[str | Colormap]:
         return self._color_map
@@ -761,69 +755,190 @@ class Heatmap(Plottable2D):
                 "Animated Heatmap pixels must be a nonempty real numeric array."
             )
 
-    def _bind_live_mesh(
-        self, session: _AnimationSession, axes: plt.Axes, image: QuadMesh
+    def _prepare_live_mesh(
+        self, axes: plt.Axes, mesh: QuadMesh, shading: str, *, update_geometry: bool
+    ) -> _ArtistEdit:
+        previous = mesh.get_array()
+        if (
+            not update_geometry
+            and previous is not None
+            and previous.shape[:2] == self._image.shape[:2]
+        ):
+            return _edit(mesh.set_array, previous, np.ma.masked_invalid(self._image))
+        try:
+            # Follow the same conversion and center-to-corner rules as pcolormesh.
+            x, y, values, render_mode = axes._pcolorargs(  # ty: ignore[unresolved-attribute]
+                "pcolormesh", self._x_mesh, self._y_mesh, self._image, shading=shading
+            )
+        except (TypeError, ValueError) as exc:
+            raise InvalidParameterError(
+                f"The Heatmap mesh must match its image data ({exc})."
+            ) from exc
+        vertices = np.stack((x, y), axis=-1)
+        if not np.isfinite(vertices).all():
+            raise InvalidParameterError("Animated Heatmap mesh corners must be finite.")
+        bounds = Bbox.null()
+        bounds.update_from_data_xy(vertices.reshape(-1, 2))
+        artist = cast(Any, mesh)  # No public QuadMesh geometry setter.
+
+        def set_mesh(state) -> None:
+            artist._coordinates, artist._shading, artist._bbox, artist._paths, data = (
+                state
+            )
+            artist.set_array(data)
+
+        before = (
+            mesh.get_coordinates(),
+            artist._shading,
+            artist._bbox,
+            artist._paths,
+            previous,
+        )
+        return _edit(set_mesh, before, (vertices, render_mode, bounds, None, values))
+
+    def _bind_live_geometry(
+        self,
+        session: _AnimationSession,
+        axes: plt.Axes,
+        raster: AxesImage,
+        mesh: QuadMesh,
+        *,
+        raster_at_setup: bool,
     ) -> None:
         shading = plt.rcParams["pcolor.shading"]
         initial_ndim = self._image.ndim
+        initial_origin = raster.origin
+        initial_extent = tuple(raster.get_extent()) if raster_at_setup else None
+
+        def prepare_extent() -> _ArtistEdit:
+            xr, yr = self._x_axis_range, self._y_axis_range
+            for limits in (xr, yr):
+                if limits is not None and (
+                    len(limits) != 2
+                    or not np.isfinite(limits).all()
+                    or limits[0] == limits[1]
+                ):
+                    raise InvalidParameterError(
+                        "Animated raster extents must have distinct finite endpoints."
+                    )
+            baseline = initial_extent
+            if baseline is None:
+                rows, columns = self._image.shape[:2]
+                origin = resolve_or(self._origin_position, initial_origin)
+                y = (-0.5, rows - 0.5) if origin == "lower" else (rows - 0.5, -0.5)
+                baseline = (-0.5, columns - 0.5, *y)
+            extent = (
+                *(baseline[:2] if xr is None else xr),
+                *(baseline[2:] if yr is None else yr),
+            )
+            previous_extent = tuple(raster.get_extent())
+            sticky_x, sticky_y = (
+                list(raster.sticky_edges.x),
+                list(raster.sticky_edges.y),
+            )
+            previous_baseline = initial_extent
+
+            def set_extent(value) -> None:
+                # Native extent updates report data bounds even with autoscaling disabled.
+                limits = axes.dataLim
+                points = limits.get_points().copy()
+                minpos = cast(Any, limits).minpos.copy()
+                ignore = axes.ignore_existing_data_limits
+                try:
+                    raster.set_extent(value)
+                finally:
+                    limits.set_points(points)
+                    cast(Any, limits).minpos[:] = minpos
+                    axes.ignore_existing_data_limits = ignore
+
+            def apply() -> None:
+                nonlocal initial_extent
+                set_extent(extent)
+                initial_extent = baseline
+
+            def undo() -> None:
+                nonlocal initial_extent
+                set_extent(previous_extent)
+                raster.sticky_edges.x[:] = sticky_x
+                raster.sticky_edges.y[:] = sticky_y
+                initial_extent = previous_baseline
+
+            return _ArtistEdit(apply, undo)
+
+        def prepare_origin(value: str) -> _ArtistEdit:
+            if value not in ("lower", "upper"):
+                raise InvalidParameterError(
+                    "Heatmap origin_position must be 'lower' or 'upper'."
+                )
+
+            def set_origin(origin: Literal["lower", "upper"]) -> None:
+                raster.origin = origin
+                raster.stale = True
+
+            return _edit(set_origin, raster.origin, value)
 
         def prepare() -> _ArtistEdit:
-            if self._x_mesh is None or self._y_mesh is None:
+            x_set, y_set = self._x_mesh is not None, self._y_mesh is not None
+            grid_changed = any(
+                session.has_frame_update(self, field)
+                for field in ("_x_mesh", "_y_mesh")
+            )
+            if x_set != y_set and grid_changed:
                 raise InvalidParameterError(
-                    "An animated Heatmap mesh requires both coordinate arrays."
+                    "An animated Heatmap requires both mesh coordinates or neither."
                 )
             self._check_live_pixels(self._image, initial_ndim)
-            previous = image.get_array()
-            if (
-                previous is not None
-                and previous.shape[:2] == self._image.shape[:2]
-                and not (
-                    session.has_frame_update(self, "_x_mesh")
-                    or session.has_frame_update(self, "_y_mesh")
-                )
-            ):
-                return _edit(
-                    image.set_array, previous, np.ma.masked_invalid(self._image)
-                )
-            try:
-                # Use the same conversion and center-to-corner rules as the
-                # initial pcolormesh call, without creating another collection.
-                x, y, values, render_mode = axes._pcolorargs(  # ty: ignore[unresolved-attribute]
-                    "pcolormesh",
-                    self._x_mesh,
-                    self._y_mesh,
-                    self._image,
-                    shading=shading,
-                )
-            except (TypeError, ValueError) as exc:
-                raise InvalidParameterError(
-                    f"The Heatmap mesh must match its image data ({exc})."
-                ) from exc
-            vertices = np.stack((x, y), axis=-1)
-            if not np.isfinite(vertices).all():
-                raise InvalidParameterError(
-                    "Animated Heatmap mesh corners must be finite."
-                )
-            bounds = Bbox.null()
-            bounds.update_from_data_xy(vertices.reshape(-1, 2))
-            mesh = cast(Any, image)  # No public QuadMesh geometry setter.
+            pixels_changed = session.has_frame_update(self, "_image")
+            edits = []
+            if x_set and y_set:
+                activating = not mesh.get_visible()
+                if mesh.axes is None:
+                    edits.append(_attach_artists(axes, (mesh,)))
+                if activating or pixels_changed or grid_changed:
+                    edits.append(
+                        self._prepare_live_mesh(
+                            axes,
+                            mesh,
+                            shading,
+                            update_geometry=activating or grid_changed,
+                        )
+                    )
+                if activating:
+                    edits.extend(
+                        (
+                            _edit(mesh.set_visible, False, True),
+                            _edit(raster.set_visible, True, False),
+                        )
+                    )
+            else:
+                activating = not raster.get_visible()
+                if raster not in axes.images:
+                    edits.append(_attach_artists(axes, (raster,)))
+                if activating or pixels_changed:
+                    edits.append(
+                        _edit(raster.set_data, raster.get_array(), self._image)
+                    )
+                if activating or any(
+                    session.has_frame_update(self, field)
+                    for field in ("_x_axis_range", "_y_axis_range")
+                ):
+                    edits.append(prepare_extent())
+                if activating:
+                    edits.extend(
+                        (
+                            _edit(raster.set_visible, False, True),
+                            _edit(mesh.set_visible, True, False),
+                        )
+                    )
+            return _combine_edits(edits)
 
-            def set_mesh(state) -> None:
-                mesh._coordinates, mesh._shading, mesh._bbox, mesh._paths, data = state
-                mesh.set_array(data)
-
-            before = (
-                mesh.get_coordinates(),
-                mesh._shading,
-                mesh._bbox,
-                mesh._paths,
-                mesh.get_array(),
-            )
-            return _edit(
-                set_mesh, before, (vertices, render_mode, bounds, None, values)
-            )
-
-        session.bind_derived(self, ("_image", "_x_mesh", "_y_mesh"), prepare)
+        session.bind_derived(
+            self,
+            ("_image", "_x_mesh", "_y_mesh", "_x_axis_range", "_y_axis_range"),
+            prepare,
+        )
+        session.bind_property(self, "_interpolation", raster, "interpolation")
+        session.bind_update(self, "_origin_position", prepare_origin)
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -875,13 +990,47 @@ class Heatmap(Plottable2D):
             bar = fig.colorbar(image, ax=axes, **self._color_bar_params)
         if session is not None:
             if bar is not None:
-                session.bind_colorbar(
-                    self, bar, initially_visible=show_colorbar
+                session.bind_colorbar(self, bar, initially_visible=show_colorbar)
+            # The colorbar keeps its original mappable; both rendering artists
+            # share that artist's normalization and receive the same colormap.
+            common: dict[str, Any] = {
+                "alpha": image.get_alpha(),
+                "cmap": image.get_cmap(),
+                "norm": image.norm,
+                "visible": False,
+                "zorder": z_order,
+            }
+            if isinstance(image, AxesImage):
+                raster = image
+                mesh = QuadMesh(
+                    np.array([[[0, 0], [1, 0]], [[0, 1], [1, 1]]]),
+                    edgecolors="none",
+                    antialiased=False,
+                    snap=plt.rcParams["pcolormesh.snap"],
+                    **common,
                 )
-            session.bind_property(self, "_alpha", image, "alpha")
+            else:
+                mesh = image
+                raster = AxesImage(
+                    axes,
+                    extent=(0, 1, 0, 1),
+                    origin=cast(
+                        Any,
+                        resolve_or(self._origin_position, plt.rcParams["image.origin"]),
+                    ),
+                    interpolation=resolve_or(
+                        self._interpolation, plt.rcParams["image.interpolation"]
+                    ),
+                    **common,
+                )
+                raster.set_data([[0]])
+            for artist in (raster, mesh):
+                session.bind_property(self, "_alpha", artist, "alpha")
+
             if self._image.ndim == 2:
                 initial_clim = image.get_clim()
-                session.bind_property(self, "_color_map", image, "cmap")
+                for artist in (raster, mesh):
+                    session.bind_property(self, "_color_map", artist, "cmap")
 
                 def prepare_range(value: tuple[float, float] | None) -> _ArtistEdit:
                     if value is not None and (
@@ -919,62 +1068,13 @@ class Heatmap(Plottable2D):
                 return _edit(axes.set_aspect, axes.get_aspect(), value)
 
             session.bind_update(self, "_aspect_ratio", prepare_aspect)
-            if isinstance(image, QuadMesh):
-                self._bind_live_mesh(session, axes, image)
-            if isinstance(image, AxesImage):
-                initial_ndim = self._image.ndim
-
-                def prepare_pixels(data: np.ndarray) -> _ArtistEdit:
-                    self._check_live_pixels(data, initial_ndim)
-                    return _edit(image.set_data, image.get_array(), data)
-
-                session.bind_update(self, "_image", prepare_pixels)
-                session.bind_property(self, "_interpolation", image, "interpolation")
-                initial_extent = tuple(image.get_extent())
-
-                def prepare_extent() -> _ArtistEdit:
-                    xr, yr = self._x_axis_range, self._y_axis_range
-                    for limits in (xr, yr):
-                        if limits is not None and (
-                            len(limits) != 2
-                            or not np.isfinite(limits).all()
-                            or limits[0] == limits[1]
-                        ):
-                            raise InvalidParameterError(
-                                "Animated raster extents must have distinct finite endpoints."
-                            )
-                    next_extent = (
-                        *(initial_extent[:2] if xr is None else xr),
-                        *(initial_extent[2:] if yr is None else yr),
-                    )
-                    before = tuple(image.get_extent())
-                    data_limits = axes.dataLim.get_points().copy()
-
-                    def apply() -> None:
-                        image.set_extent(next_extent)
-
-                    def undo() -> None:
-                        image.set_extent(before)
-                        axes.dataLim.set_points(data_limits)
-
-                    return _ArtistEdit(apply, undo)
-
-                def prepare_origin(value: str) -> _ArtistEdit:
-                    if value not in ("lower", "upper"):
-                        raise InvalidParameterError(
-                            "Heatmap origin_position must be 'lower' or 'upper'."
-                        )
-
-                    def set_origin(origin: Literal["lower", "upper"]) -> None:
-                        image.origin = origin
-                        image.stale = True
-
-                    return _edit(set_origin, image.origin, value)
-
-                session.bind_derived(
-                    self, ("_x_axis_range", "_y_axis_range"), prepare_extent
-                )
-                session.bind_update(self, "_origin_position", prepare_origin)
+            self._bind_live_geometry(
+                session,
+                axes,
+                raster,
+                mesh,
+                raster_at_setup=isinstance(image, AxesImage),
+            )
 
 
 class _LiveQuiver(Quiver):

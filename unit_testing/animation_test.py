@@ -1345,6 +1345,163 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
             assert_allclose(artist.axes.get_xlim(), (-2, 8))
             assert_allclose(artist.axes.get_ylim(), (-1, 6))
 
+    def test_live_scalar_heatmap_switches_renderers_and_keeps_colorbars(self):
+        from matplotlib.collections import QuadMesh
+
+        heat = Heatmap([[0, 1], [1, 0]], show_color_bar=True, color_map="viridis")
+        leaf = SmartFigure(elements=[heat], x_lim=(-2, 8), y_lim=(-1, 6))
+        root = SmartFigure(2, 2, figure_style="plain", x_lim=(-2, 8), y_lim=(-1, 6))
+        root[:, 0] = leaf
+        root[:, 1] = [heat]
+        snapshots = []
+
+        def update(frame):
+            rasters = tuple(image for ax in plt.gcf().axes for image in ax.images)
+            state = []
+            for raster in rasters:
+                meshes = tuple(
+                    artist
+                    for artist in raster.axes.collections
+                    if isinstance(artist, QuadMesh)
+                )
+                state.append((raster, raster.colorbar, meshes))
+                self.assertEqual(raster.axes.get_xlim(), (-2, 8))
+                self.assertEqual(raster.axes.get_ylim(), (-1, 6))
+                self.assertIs(raster.colorbar.mappable, raster)
+                if frame == 0:
+                    self.assertEqual(meshes, ())
+                    self.assertTrue(raster.get_visible())
+                else:
+                    (mesh,) = meshes
+                    self.assertIs(mesh.norm, raster.norm)
+                    self.assertEqual(mesh.get_visible(), bool(frame % 2))
+                    self.assertEqual(raster.get_visible(), not frame % 2)
+                    self.assertEqual(mesh.get_cmap().name, "plasma")
+                    self.assertEqual(raster.colorbar.cmap.name, "plasma")
+                    self.assertEqual(mesh.get_clim(), (0, 8))
+                    if frame % 2:
+                        assert_allclose(mesh.get_coordinates()[0, :, 0], [-1, 1, 3, 5])
+                        assert_allclose(mesh.get_array(), np.arange(6).reshape(2, 3))
+                    else:
+                        self.assertEqual(tuple(raster.get_extent()), (1, 4, 1.5, -0.5))
+                        assert_allclose(raster.get_array(), np.eye(3))
+            snapshots.append(tuple(state))
+            if frame in (0, 2):
+                heat.set_data(
+                    np.arange(6).reshape(2, 3), x_mesh=[0, 2, 4], y_mesh=[0, 2]
+                )
+                heat.color_map = "plasma"
+                heat.color_map_range = (0, 8)
+            elif frame == 1:
+                heat.x_mesh = heat.y_mesh = None
+                heat.image = np.eye(3)
+                heat.x_axis_range = (1, 4)
+
+        with patch.object(
+            root, "_prepare_figure", wraps=root._prepare_figure
+        ) as prepare:
+            root.save_animation(self.output, update, 4)
+        prepare.assert_called_once()
+        self.assertEqual(len(snapshots[0]), 2)
+        self.assertEqual(snapshots[0][0][:2], snapshots[-1][0][:2])
+        self.assertEqual(snapshots[1], snapshots[2])
+        self.assertEqual(snapshots[1], snapshots[3])
+
+    def test_live_rgb_heatmap_switches_from_mesh_to_raster_and_back(self):
+        from matplotlib.collections import QuadMesh
+
+        heat = Heatmap(
+            np.ones((2, 2, 3)),
+            x_mesh=[0, 1],
+            y_mesh=[0, 1],
+            origin_position="lower",
+            show_color_bar=False,
+        )
+        root = SmartFigure(
+            elements=[heat], figure_style="plain", x_lim=(-2, 5), y_lim=(-1, 4)
+        )
+        states = []
+        rgba = np.zeros((3, 4, 4), dtype=np.uint8)
+        rgba[..., 0] = 220
+        rgba[..., 3] = 255
+
+        def update(frame):
+            ax = plt.gcf().axes[0]
+            (mesh,) = [
+                artist for artist in ax.collections if isinstance(artist, QuadMesh)
+            ]
+            rasters = tuple(ax.images)
+            states.append(
+                (
+                    mesh,
+                    rasters,
+                    ax.dataLim.get_points().copy(),
+                    ax.dataLim.minpos.copy(),
+                )
+            )
+            self.assertEqual((ax.get_xlim(), ax.get_ylim()), ((-2, 5), (-1, 4)))
+            if frame == 0:
+                self.assertFalse(rasters)
+                heat.x_mesh = None
+                heat.y_mesh = None
+                heat.image = rgba
+                heat.interpolation = "nearest"
+            elif frame == 1:
+                (raster,) = rasters
+                self.assertTrue(raster.get_visible())
+                self.assertFalse(mesh.get_visible())
+                self.assertEqual(tuple(raster.get_extent()), (-0.5, 3.5, -0.5, 2.5))
+                assert_allclose(raster.get_array(), rgba)
+                heat.set_data(rgba, x_mesh=[0, 1, 2, 3], y_mesh=[0, 1, 2])
+            else:
+                self.assertTrue(mesh.get_visible())
+                self.assertFalse(rasters[0].get_visible())
+                assert_allclose(mesh.get_array(), rgba)
+
+        root.save_animation(self.output, update, 3)
+        self.assertIs(states[0][0], states[-1][0])
+        self.assertEqual(states[1][1], states[2][1])
+        for _, _, limits, minima in states:
+            assert_allclose(limits, states[0][2])
+            assert_allclose(minima, states[0][3])
+
+    def test_failed_heatmap_renderer_switch_restores_raster_and_colorbar(self):
+        from matplotlib.collections import QuadMesh
+
+        heat = Heatmap([[0, 1], [1, 0]], show_color_bar=True, color_map="viridis")
+        root = SmartFigure(elements=[heat], figure_style="plain")
+        self.output.write_bytes(b"existing")
+        seen = []
+        set_array = QuadMesh.set_array
+
+        def fail_after_attach(mesh, values):
+            set_array(mesh, values)
+            if seen and values is not None and mesh.axes is seen[0].axes:
+                raise ValueError("mesh renderer failed after attachment")
+
+        def update(frame):
+            (raster,) = [image for ax in plt.gcf().axes for image in ax.images]
+            seen.append(raster)
+            self.enterContext(patch.object(QuadMesh, "set_array", fail_after_attach))
+            heat.set_data(np.ones((3, 3)), x_mesh=[0, 1, 2], y_mesh=[0, 1, 2])
+            heat.color_map = "magma"
+            heat.color_map_range = (-1, 2)
+
+        with self.assertRaisesRegex(
+            GraphingException, "mesh renderer failed after attachment"
+        ):
+            root.save_animation(self.output, update, 1)
+        (raster,) = seen
+        self.assertTrue(raster.get_visible())
+        self.assertFalse(raster.axes.collections)
+        self.assertEqual(raster.get_cmap().name, "viridis")
+        self.assertEqual(raster.colorbar.cmap.name, "viridis")
+        self.assertEqual(raster.colorbar.mappable.get_clim(), (0, 1))
+        self.assertIsNone(heat.x_mesh)
+        self.assertIsNone(heat.y_mesh)
+        assert_allclose(heat.image, [[0, 1], [1, 0]])
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_failed_rgb_heatmap_resize_restores_mesh_coordinates_and_paths(self):
         from matplotlib.collections import QuadMesh
 
