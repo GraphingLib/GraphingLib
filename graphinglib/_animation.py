@@ -21,9 +21,11 @@ from matplotlib.collections import (
 )
 from matplotlib.colorbar import Colorbar
 from matplotlib.container import ErrorbarContainer
+from matplotlib.figure import Figure, SubFigure
+from matplotlib.layout_engine import ConstrainedLayoutEngine
 from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
-from matplotlib.offsetbox import DrawingArea
+from matplotlib.offsetbox import DrawingArea, VPacker
 from matplotlib.patches import Polygon
 from matplotlib.text import Text as TextArtist
 from matplotlib.ticker import FixedLocator, FuncFormatter, Locator, MultipleLocator
@@ -719,12 +721,37 @@ class _LegendFilter:
     is_hidden: Callable[[], bool]
 
 
+def _legend_placement(
+    location: str | tuple | None,
+    *,
+    general: bool,
+    native_outside: bool = False,
+    below: float = -0.1,
+) -> tuple[str | tuple, tuple[float, float] | None, str | None]:
+    if location is None:
+        return ("lower center" if general else "best"), None, None
+    if not isinstance(location, str) or not location.startswith("outside "):
+        return location, None, None
+    outside = location.removeprefix("outside ")
+    if general and native_outside:
+        return outside, None, outside.removeprefix("center ").split()[0]
+    loc, anchor = {
+        "upper center": ("lower center", (0.5, 1)),
+        "center right": ("center left", (1, 0.5)),
+        "lower center": ("upper center", (0.5, below)),
+        "center left": ("center right", (0, 0.5)),
+    }[outside]
+    return loc, anchor, None
+
+
 class _LegendRows:
     def __init__(
         self, legend: Legend, shown: bool, filters: list[tuple[_LegendFilter, ...]]
     ) -> None:
         self.legend = legend
         self.shown = shown
+        bbox = cast(Any, legend)._bbox_to_anchor
+        self.anchor_position = tuple(bbox._bbox.p0) if bbox is not None else None
         self.columns = cast(Any, legend)._legend_handle_box.get_children()
         self.rows = [row for column in self.columns for row in column.get_children()]
         self.filters = [
@@ -732,6 +759,81 @@ class _LegendRows:
             for rules, handle in zip(filters, legend.legend_handles, strict=True)
             if handle is not None
         ]
+
+    @property
+    def outside(self) -> bool:
+        mpl = cast(Any, self.legend)
+        return mpl._outside_loc is not None or mpl._bbox_to_anchor is not None
+
+    def prepare_layout(
+        self,
+        location: str | tuple,
+        anchor: tuple[float, float] | None,
+        edge: str | None,
+        count: int,
+        request_layout: Callable[[], None],
+    ) -> _ArtistEdit:
+        legend = self.legend
+        mpl = cast(Any, legend)
+        parent = legend.get_figure()
+        assert parent is not None
+        old_columns = self.columns[:]
+        old_count = mpl._ncols
+        old_loc, old_offset = mpl._loc, mpl._legend_box._offset
+        old_default = mpl._loc_used_default
+        old_anchor, old_edge = mpl._bbox_to_anchor, mpl._outside_loc
+        loc = mpl.codes[location] if isinstance(location, str) else location
+        old_anchor_position = self.anchor_position
+
+        def apply() -> None:
+            moved = loc != old_loc or anchor != old_anchor_position or edge != old_edge
+            if moved:
+                legend.set_bbox_to_anchor(anchor)
+                self.anchor_position = anchor
+                mpl._outside_loc = edge
+                mpl._set_loc(loc)
+            if count != old_count:
+                template = old_columns[0] if old_columns else None
+                column_count = min(count, len(self.rows))
+                columns = []
+                for group in np.array_split(
+                    np.arange(len(self.rows)), max(1, column_count)
+                ):
+                    if not group.size or template is None:
+                        continue
+                    rows = [self.rows[i] for i in group]
+                    column = VPacker(
+                        pad=template.pad,
+                        sep=template.sep,
+                        align=template.align,
+                        children=rows,
+                    )
+                    column.set_figure(parent)
+                    column.axes = legend.axes
+                    column.set_visible(any(row.get_visible() for row in rows))
+                    columns.append(column)
+                self.columns[:] = columns
+                legend.set_ncols(count)
+                legend.stale = True
+            if (moved or count != old_count) and (
+                old_anchor is not None or old_edge is not None or self.outside
+            ):
+                request_layout()
+
+        def undo() -> None:
+            self.columns[:] = old_columns
+            for column in old_columns:
+                column.set_visible(
+                    any(row.get_visible() for row in column.get_children())
+                )
+            legend.set_ncols(old_count)
+            self.anchor_position = old_anchor_position
+            mpl._bbox_to_anchor, mpl._outside_loc = old_anchor, old_edge
+            mpl._set_loc(old_loc)
+            mpl._legend_box.set_offset(old_offset)
+            mpl._loc_used_default = old_default
+
+        return _ArtistEdit(apply, undo)
 
     def show(self, shown: bool) -> None:
         self.shown = shown
@@ -770,6 +872,8 @@ class _AnimationSession:
         self._dirty_dependents: dict[int, Callable[[], _ArtistEdit]] = {}
         self._post_artist_prepares: set[int] = set()
         self._initially_hidden_artists: list[Artist] = []
+        self._legend_layout: Callable[[], _ArtistEdit] | None = None
+        self._legend_layout_needed = False
         self._legend_rows: dict[Legend, _LegendRows] = {}
         self._initial_colorbar_ticks: dict[int, Any] = {}
         self._legend_sources: dict[
@@ -1349,6 +1453,116 @@ class _AnimationSession:
 
         self.bind_update(element, "_show_legend", prepare)
 
+    def bind_legend_layout(
+        self,
+        element: object,
+        targets: dict[int, Legend | None],
+        subplot_count: int,
+        read_location: Callable[[], Any],
+        read_columns: Callable[[], Any],
+        *,
+        general: bool = False,
+    ) -> None:
+        def entries(value: Any, default: Any) -> list[Any]:
+            if not isinstance(value, list):
+                return [value] * subplot_count
+            if general or len(value) > subplot_count:
+                raise InvalidParameterError(
+                    "Invalid number of legend settings for this SmartFigure."
+                )
+            return value + [default] * (subplot_count - len(value))
+
+        def request_layout() -> None:
+            self._legend_layout_needed = True
+
+        def prepare() -> _ArtistEdit:
+            locations, columns = (
+                entries(read_location(), None),
+                entries(read_columns(), 1),
+            )
+            edits = []
+            for index, legend in targets.items():
+                if legend is None:
+                    continue
+                location, anchor, edge = _legend_placement(
+                    locations[index],
+                    general=general,
+                    native_outside=True,
+                )
+                edits.append(
+                    self._legend_rows[legend].prepare_layout(
+                        location, anchor, edge, columns[index], request_layout
+                    )
+                )
+            return _combine_edits(edits)
+
+        self.bind_derived(
+            element, ("_legend_loc", "_legend_cols"), prepare, after_artists=True
+        )
+
+    def configure_legend_layout(
+        self, figure: Figure, engine: ConstrainedLayoutEngine, align: Callable[[], None]
+    ) -> None:
+        layout_axes = [axis for axis in figure.axes if axis.get_in_layout()]
+
+        def subfigures(parent: Figure | SubFigure):
+            for child in parent.subfigs:
+                yield child
+                yield from subfigures(child)
+
+        def prepare() -> _ArtistEdit:
+            boxes = [
+                (subfig, subfig.bbox_relative.frozen()) for subfig in subfigures(figure)
+            ]
+            axes = [
+                (
+                    axis,
+                    axis.get_position(original=True).frozen(),
+                    cast(Any, axis)._position.frozen(),
+                    axis.get_in_layout(),
+                    axis.get_anchor(),
+                    axis.get_xlim(),
+                    axis.get_ylim(),
+                )
+                for axis in figure.axes
+            ]
+
+            def apply() -> None:
+                outside_rows = [
+                    (rows, [row.get_visible() for row in rows.rows])
+                    for rows in self._legend_rows.values()
+                    if rows.outside and rows.rows
+                ]
+                try:
+                    for rows, visible in outside_rows:
+                        rows.set_rows([True] * len(visible))
+                        rows.legend.set_visible(True)
+                    for axis in layout_axes:
+                        axis.set_in_layout(True)
+                    engine.execute(figure)
+                    align()
+                finally:
+                    for rows, visible in outside_rows:
+                        rows.set_rows(visible)
+
+            def undo() -> None:
+                for subfig, bbox in boxes:
+                    cast(Any, subfig)._redo_transform_rel_fig(bbox)
+                for axis, original, active, in_layout, anchor, xlim, ylim in axes:
+                    mpl = cast(Any, axis)
+                    mpl._originalPosition.set(original)
+                    mpl._position.set(active)
+                    axis.set_in_layout(in_layout)
+                    axis.set_anchor(anchor)
+                    if axis.get_xlim() != xlim:
+                        axis.set_xlim(xlim, emit=False, auto=None)
+                    if axis.get_ylim() != ylim:
+                        axis.set_ylim(ylim, emit=False, auto=None)
+
+            return _ArtistEdit(apply, undo)
+
+        self._legend_layout = prepare
+
     def apply_initial_visibility(self) -> None:
         for artist in self._initially_hidden_artists:
             artist.set_visible(False)
@@ -1847,19 +2061,25 @@ class _AnimationSession:
                     else dependent_edits
                 )
                 edits.append(prepare())
+
+            def apply(edit: _ArtistEdit) -> None:
+                applied.append(edit)
+                try:
+                    edit.apply()
+                except GraphingLibError:
+                    raise
+                except (TypeError, ValueError) as exc:
+                    raise PlottingError(
+                        f"Could not apply animation frame {index} ({exc})."
+                    ) from exc
+
             for updates in chain(
                 self._updates.values(), (dependent_edits, post_artist_edits)
             ):
                 for edit in updates:
-                    applied.append(edit)
-                    try:
-                        edit.apply()
-                    except GraphingLibError:
-                        raise
-                    except (TypeError, ValueError) as exc:
-                        raise PlottingError(
-                            f"Could not apply animation frame {index} ({exc})."
-                        ) from exc
+                    apply(edit)
+            if self._legend_layout_needed and self._legend_layout is not None:
+                apply(self._legend_layout())
         except BaseException as exc:
             self.failure = exc
             for edit in reversed(applied):
@@ -1876,6 +2096,7 @@ class _AnimationSession:
             self._updates.clear()
             self._dirty_dependents.clear()
             self._rollback.clear()
+            self._legend_layout_needed = False
             _FRAME_SESSION.reset(token)
 
     def clear(self) -> None:
@@ -1887,6 +2108,7 @@ class _AnimationSession:
         self._legend_sources.clear()
         self._initially_hidden_artists.clear()
         self._legend_rows.clear()
+        self._legend_layout = None
         self._initial_colorbar_ticks.clear()
         self._reference_legend_sources.clear()
         self._post_artist_prepares.clear()

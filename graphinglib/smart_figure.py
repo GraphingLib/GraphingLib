@@ -63,6 +63,7 @@ from ._animation import (
     _bound_session,
     _combine_edits,
     _edit,
+    _legend_placement,
     _LegendFilter,
     _NativeTickStyle,
     _reject_live_update,
@@ -934,7 +935,6 @@ class SmartFigure:
 
     @legend_loc.setter
     def legend_loc(self, value: ListOrItem[str | tuple | None]) -> None:
-        _reject_animated_layout(self)
         choices = [
             "best",
             "upper right",
@@ -964,7 +964,9 @@ class SmartFigure:
                             "legend_loc cannot be 'best' when general_legend is True."
                         )
                 elif isinstance(v, tuple):
-                    if len(v) != 2:
+                    if len(v) != 2 or any(
+                        not isinstance(n, Real) or not isfinite(n) for n in v
+                    ):
                         raise InvalidParameterError(
                             "legend_loc must be a string or a tuple of length 2."
                         )
@@ -972,7 +974,17 @@ class SmartFigure:
                     raise InvalidParameterTypeError(
                         "legend_loc must be a string or tuple."
                     )
-        self._legend_loc = value
+        if (
+            self._general_legend
+            and isinstance(value, list)
+            and _bound_session(self) is not None
+        ):
+            raise InvalidParameterError(
+                "A general legend requires a single legend_loc value."
+            )
+        self._legend_loc = _stage_live_value(
+            self, "_legend_loc", list(value) if isinstance(value, list) else value
+        )
 
     @property
     def legend_cols(self) -> ListOrItem[int]:
@@ -980,13 +992,22 @@ class SmartFigure:
 
     @legend_cols.setter
     def legend_cols(self, value: ListOrItem[int]) -> None:
-        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, int):
                 raise InvalidParameterTypeError("legend_cols must be an integer.")
             if v < 1:
                 raise InvalidParameterError("legend_cols must be greater than 0.")
-        self._legend_cols = value
+        if (
+            self._general_legend
+            and isinstance(value, list)
+            and _bound_session(self) is not None
+        ):
+            raise InvalidParameterError(
+                "A general legend requires a single legend_cols value."
+            )
+        self._legend_cols = _stage_live_value(
+            self, "_legend_cols", list(value) if isinstance(value, list) else value
+        )
 
     @property
     def show_legend(self) -> bool | list[bool | None]:
@@ -2497,6 +2518,11 @@ class SmartFigure:
                     is_matplotlib_style, animation_grid_defaults=animation_grid_defaults
                 )
             figure.canvas.draw()
+            session = _DRAW_SESSION.get()
+            if session is not None:
+                session.configure_legend_layout(
+                    figure, layout_engine, self._align_shared_x_spines
+                )
             self._align_shared_x_spines()
         except BaseException:
             if figure is not None:
@@ -2996,6 +3022,13 @@ class SmartFigure:
             subplot_count = len(self._ordered_elements)
             if legend_targets:
                 session.bind_legend_visibility(self, legend_targets, subplot_count)
+                session.bind_legend_layout(
+                    self,
+                    legend_targets,
+                    subplot_count,
+                    lambda: self._legend_loc,
+                    lambda: self._legend_cols,
+                )
             session.bind_axis_visibility(
                 self, "_remove_axes", axis_visibility, subplot_count
             )
@@ -3137,6 +3170,14 @@ class SmartFigure:
                     )
             if session is not None:
                 session.bind_legend_visibility(self, {0: general_legend}, 1)
+                session.bind_legend_layout(
+                    self,
+                    {0: general_legend},
+                    1,
+                    lambda: self._legend_loc,
+                    lambda: self._legend_cols,
+                    general=True,
+                )
             legend_info = {
                 "labels": {"default": [], "custom": []},
                 "handles": {"default": [], "custom": []},
@@ -3915,34 +3956,13 @@ class SmartFigure:
             },
             "ncols": self._subplot_p["legend_cols"][subplot_i],
         }
-        legend_loc = self._subplot_p["legend_loc"][subplot_i]
-        if legend_loc is None:
-            if self._general_legend:
-                legend_params.update({"loc": "lower center"})
-            else:
-                legend_params.update({"loc": "best"})
-        else:
-            if "outside" in legend_loc:
-                outside_coords = {
-                    "outside upper center": (0.5, 1),
-                    "outside center right": (1, 0.5),
-                    "outside lower center": (0.5, outside_lower_center_y_offset),
-                    "outside center left": (0, 0.5),
-                }
-                outside_keyword = {
-                    "outside upper center": "lower center",
-                    "outside center right": "center left",
-                    "outside lower center": "upper center",
-                    "outside center left": "center right",
-                }
-                legend_params.update(
-                    {
-                        "loc": outside_keyword[legend_loc],
-                        "bbox_to_anchor": outside_coords[legend_loc],
-                    }
-                )
-            else:
-                legend_params.update({"loc": legend_loc})
+        location = self._subplot_p["legend_loc"][subplot_i]
+        loc, anchor, _ = _legend_placement(
+            location, general=self._general_legend, below=outside_lower_center_y_offset
+        )
+        legend_params["loc"] = loc
+        if anchor is not None:
+            legend_params["bbox_to_anchor"] = anchor
         return legend_params
 
     def _fill_in_missing_params(self, element: SmartFigure | Plottable) -> list[str]:

@@ -5115,6 +5115,168 @@ class TestAdditionalAnimationAdapters(unittest.TestCase):
         with Image.open(self.output) as gif:
             self.assertEqual(gif.n_frames, 2)
 
+    def test_live_local_legend_layout_preserves_rows_and_swatches(self):
+        first = Curve([0, 1], [0, 1], label="First")
+        second = Scatter([0, 1], [1, 0], label="Second")
+        third = Curve([0, 1], [0.4, 0.2], label="Third")
+        nested = SmartFigure(elements=[first, second, third], legend_loc="upper left")
+        root = SmartFigure(2, 2, figure_style="plain", size=(9, 5))
+        root[:, 0] = nested
+        root[:, 1] = [first, second, third]
+        seen = []
+
+        def update(frame):
+            legends = tuple(ax.get_legend() for ax in plt.gcf().axes if ax.get_legend())
+            entries = []
+            for legend in legends:
+                columns = legend._legend_handle_box.get_children()
+                rows = tuple(row for column in columns for row in column.get_children())
+                entries.append(
+                    (
+                        legend,
+                        rows,
+                        tuple(legend.get_texts()),
+                        tuple(legend.legend_handles),
+                    )
+                )
+            seen.append(tuple(entries))
+            if frame == 0:
+                root.legend_cols = [1, 2]
+                root.legend_loc = [None, (0.1, 0.2)]
+                nested.legend_cols = 3
+                nested.legend_loc = "lower right"
+                second.label = "Moved"
+                first.color = "purple"
+            elif frame == 1:
+                left, right = legends
+                self.assertEqual(left._loc, left.codes["lower right"])
+                self.assertEqual(right._loc, (0.1, 0.2))
+                self.assertEqual(
+                    [
+                        [
+                            len(column.get_children())
+                            for column in legend._legend_handle_box.get_children()
+                        ]
+                        for legend in legends
+                    ],
+                    [[1, 1, 1], [2, 1]],
+                )
+                self.assertEqual(
+                    [text.get_text() for text in left.get_texts()],
+                    ["First", "Moved", "Third"],
+                )
+                self.assertEqual(right.legend_handles[0].get_color(), "purple")
+                nested.legend_loc = "outside upper center"
+                nested.legend_cols = 1
+            elif frame == 2:
+                left = legends[0]
+                legend_box = left.get_window_extent()
+                axes_box = left.axes.bbox
+                self.assertGreaterEqual(legend_box.ymin, axes_box.ymax)
+                self.assertLessEqual(legend_box.ymax, left.get_figure().bbox.ymax)
+                nested.legend_loc = None
+
+        with patch.object(
+            root, "_prepare_figure", wraps=root._prepare_figure
+        ) as prepare:
+            root.save_animation(self.output, update, 4)
+        prepare.assert_called_once()
+        self.assertTrue(all(entries == seen[0] for entries in seen))
+        self.assertEqual(seen[-1][0][0]._loc, 0)
+
+    def test_live_general_legend_moves_outside_and_reserves_the_new_margin(self):
+        from matplotlib.layout_engine import ConstrainedLayoutEngine
+
+        left = Curve([0, 1], [0, 1], label="Group one")
+        right = Curve([0, 1], [1, 0], label="Group two")
+        root = SmartFigure(2, 2, figure_style="plain", size=(9, 5), general_legend=True)
+        root[:, 0] = SmartFigure(elements=[left])
+        root[:, 1] = [right]
+        seen = []
+        executes = []
+        execute = ConstrainedLayoutEngine.execute
+
+        def track(engine, figure):
+            executes.append(figure)
+            return execute(engine, figure)
+
+        def update(frame):
+            fig = plt.gcf()
+            (legend,) = fig.legends
+            left_ax, right_ax = left.handle.lines[0].axes, right.handle.lines[0].axes
+            positions = (left_ax.bbox.frozen().bounds, right_ax.bbox.frozen().bounds)
+            seen.append((legend, positions))
+            if frame == 0:
+                self.enterContext(
+                    patch.object(ConstrainedLayoutEngine, "execute", track)
+                )
+                root.legend_loc = "outside center right"
+                root.legend_cols = 2
+            elif frame == 1:
+                bbox = legend.get_window_extent()
+                self.assertLessEqual(right_ax.bbox.xmax, bbox.xmin)
+                self.assertLessEqual(bbox.xmax, fig.bbox.xmax)
+                root.show_legend = False
+            elif frame == 2:
+                self.assertEqual(seen[1][1], positions)
+                self.assertFalse(legend.get_visible())
+                root.legend_loc = "outside lower center"
+                root.show_legend = True
+            elif frame == 3:
+                bbox = legend.get_window_extent()
+                self.assertLessEqual(
+                    bbox.ymax, min(left_ax.bbox.ymin, right_ax.bbox.ymin)
+                )
+                self.assertGreaterEqual(bbox.ymin, fig.bbox.ymin)
+                root.legend_loc = "upper center"
+
+        root.save_animation(self.output, update, 5)
+        self.assertTrue(all(entry[0] is seen[0][0] for entry in seen))
+        self.assertEqual(len(executes), 3)
+        self.assertNotEqual(seen[0][1], seen[1][1])
+        self.assertIsNone(seen[-1][0]._outside_loc)
+
+    def test_failed_legend_reflow_restores_positions_and_columns(self):
+        from matplotlib.layout_engine import ConstrainedLayoutEngine
+
+        curves = [Curve([0, 1], [0, 1], label=name) for name in ("First", "Second")]
+        root = SmartFigure(elements=curves, figure_style="plain", general_legend=True)
+        self.output.write_bytes(b"existing")
+        captured = []
+        execute = ConstrainedLayoutEngine.execute
+
+        def snapshot(fig):
+            return (
+                tuple(axis.get_position(original=True).bounds for axis in fig.axes),
+                tuple(child.bbox_relative.bounds for child in fig.subfigs),
+            )
+
+        def fail(engine, fig):
+            execute(engine, fig)
+            self.assertNotEqual(snapshot(fig), captured[0][1])
+            raise ValueError("legend layout failed")
+
+        def update(_):
+            fig = plt.gcf()
+            (legend,) = fig.legends
+            captured.append(
+                (fig, snapshot(fig), tuple(legend._legend_handle_box.get_children()))
+            )
+            self.enterContext(patch.object(ConstrainedLayoutEngine, "execute", fail))
+            root.legend_loc = "outside center right"
+            root.legend_cols = 2
+
+        with self.assertRaisesRegex(GraphingException, "legend layout failed"):
+            root.save_animation(self.output, update, 1)
+        fig, previous, columns = captured[0]
+        (legend,) = fig.legends
+        self.assertEqual(snapshot(fig), previous)
+        self.assertEqual(tuple(legend._legend_handle_box.get_children()), columns)
+        self.assertIsNone(root.legend_loc)
+        self.assertEqual(root.legend_cols, 1)
+        self.assertIsNone(legend._outside_loc)
+        self.assertEqual(self.output.read_bytes(), b"existing")
+
     def test_initially_hidden_outside_general_legend_reserves_fixed_space(self):
         curve = Curve([0, 1], [0, 1], label="A legend that needs some width")
         root = SmartFigure(

@@ -2190,6 +2190,13 @@ starts hidden. Pass a boolean for all direct subplots or use a list with
 SmartFigure that owns them. A general legend takes one boolean. Outside
 legends reserve space before playback so toggling them preserves the layout.
 
+Assign ``legend_loc`` or ``legend_cols`` in a callback to move or repack a
+legend. Use a scalar for a general legend. For local legends, lists follow
+subplot order. Assign settings on the nested figure that owns the legend.
+Moving a legend to or from an outside position, or changing its column
+count while it is outside, recalculates the layout margin once for that
+frame. Showing or hiding a legend keeps its current margin.
+
 Use ``hide_default_legend_elements`` and ``hide_custom_legend_elements``
 to toggle groups of entries during playback. A general legend respects the
 filters on its owner and on nested figures. Hidden rows collapse within the
