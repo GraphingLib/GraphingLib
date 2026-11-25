@@ -96,3 +96,45 @@ jobs:
 
       - name: Run unit tests
         run: uv run python -m unittest discover -s unit_testing -p "*_test.py" -v
+
+  minimum-matplotlib:
+    name: Unit tests - Minimum Matplotlib
+    needs: lint
+    runs-on: ubuntu-latest
+
+    env:
+      MPLBACKEND: Agg
+      MPLCONFIGDIR: ${{ github.workspace }}/.mplconfig
+      # 3.7.3 is the oldest supported release with a Python 3.12 Linux wheel.
+      MATPLOTLIB_VERSION: "3.7.3"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.29"
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install runtime dependencies with minimum Matplotlib
+        run: |
+          uv venv --python 3.12
+          # Matplotlib 3.7 wheels require the NumPy 1.x ABI.
+          uv pip install --only-binary matplotlib -e '.[astro,pdf]' "matplotlib==${MATPLOTLIB_VERSION}" 'numpy<2'
+
+      - name: Run unit tests
+        run: |
+          mkdir -p "$MPLCONFIGDIR"
+          .venv/bin/python - <<'PY'
+          import os
+          import matplotlib
+
+          version = matplotlib.__version__
+          print(f"Matplotlib {version}")
+          if version != os.environ["MATPLOTLIB_VERSION"]:
+              raise SystemExit("Unexpected Matplotlib version")
+          PY
+          .venv/bin/python -m unittest discover -s unit_testing -p "*_test.py" -v
