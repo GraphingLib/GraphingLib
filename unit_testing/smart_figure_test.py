@@ -262,6 +262,68 @@ class TestSmartFigureLeaf(SmartFigurePropertyMixin):
     def test_tick_grid_and_text_methods(self):
         self.assert_tick_grid_and_text_methods()
 
+    def test_cartesian_tick_rules_match_across_setters(self):
+        twin = self.fig.create_twin_axis()
+
+        def formatter(value):
+            return str(value)
+
+        for target, dimension in ((self.fig, "x"), (self.fig, "y"), (twin, "")):
+            prefix = f"{dimension}_" if dimension else ""
+            major = prefix + "ticks"
+            labels = prefix + "tick_labels"
+            spacing = prefix + "tick_spacing"
+            minor = "minor_" + major
+            minor_spacing = "minor_" + spacing
+            with self.subTest(dimension=dimension):
+                target.set_ticks(
+                    reset=True,
+                    **{
+                        major: iter([0, 1]),
+                        labels: iter(["a", "b"]),
+                        minor: iter([0.5]),
+                    },
+                )
+                self.assertEqual(
+                    target._ticks, {major: [0, 1], labels: ["a", "b"], minor: [0.5]}
+                )
+                target.set_ticks(**{spacing: 1, labels: formatter})
+                previous = {spacing: 1, labels: formatter, minor: [0.5]}
+                self.assertEqual(target._ticks, previous)
+
+                for options, message in (
+                    ({spacing: 1, labels: ["a"]}, "Ticks position must be specified"),
+                    ({major: [0], spacing: 1}, "Tick spacing and tick positions"),
+                    ({minor: [0], minor_spacing: 1}, "Tick spacing and tick positions"),
+                    (
+                        {major: [0], labels: ["a", "b"]},
+                        f"Number of {dimension + ' ' if dimension else ''}ticks",
+                    ),
+                ):
+                    with (
+                        self.subTest(options=options),
+                        self.assertRaisesRegex(IncompatibleArgumentsError, message),
+                    ):
+                        target.set_ticks(reset=True, **options)
+                    self.assertEqual(target._ticks, previous)
+                self.assertIs(target.set_ticks(reset=True), target)
+                self.assertEqual(target._ticks, {})
+
+    def test_cartesian_tick_errors_keep_validation_order_across_axes(self):
+        with self.assertRaisesRegex(
+            IncompatibleArgumentsError, "Ticks position must be specified"
+        ):
+            self.fig.set_ticks(x_ticks=[0], x_tick_spacing=1, y_tick_labels=["a"])
+        with self.assertRaisesRegex(
+            IncompatibleArgumentsError, "Tick spacing and tick positions"
+        ):
+            self.fig.set_ticks(
+                x_ticks=[0],
+                x_tick_labels=["a", "b"],
+                minor_y_ticks=[0],
+                minor_y_tick_spacing=1,
+            )
+
     def test_misc_methods_return_self(self):
         self.assert_misc_methods_return_self()
 
