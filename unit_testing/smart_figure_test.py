@@ -1,9 +1,11 @@
+import gc
 import os
 import unittest
 import warnings
 from io import BytesIO
 from types import SimpleNamespace
 from unittest.mock import patch
+from weakref import ref
 
 from graphinglib import INHERIT
 
@@ -487,6 +489,23 @@ class TestSmartFigureContainer(SmartFigurePropertyMixin):
         self.assertEqual(create.call_count, 2)
         for call in create.call_args_list:
             self.assertEqual(call.kwargs["figsize"], (6.4, 4.8))
+
+    def test_split_pdf_releases_preview_canvas_after_close(self):
+        figure = SmartFigure(elements=Curve([0, 1], [0, 1]), figure_style="plain")
+        with patch.object(plt, "show"):
+            figure.show()
+        preview_number = plt.gcf().number
+        preview = ref(plt.gcf())
+        self.addCleanup(plt.close, preview_number)
+
+        with PdfPages(BytesIO()) as pdf:
+            figure.save(pdf, split_pdf=True)
+            self.assertEqual(pdf.get_pagecount(), 1)
+
+        self.assertTrue(plt.fignum_exists(preview_number))
+        plt.close(preview_number)
+        gc.collect()
+        self.assertIsNone(preview())
 
     def test_basic_scalar_property_validation(self):
         self.assert_basic_scalar_property_validation()

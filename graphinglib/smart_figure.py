@@ -2017,6 +2017,9 @@ class SmartFigure:
                 )
 
         if split_pdf:
+            # Pages render independently of any previously displayed canvas.
+            self._figure = None
+            self._gridspec = None
             if isinstance(file_name, PdfPages):
                 recursive_save(file_name)
             else:
