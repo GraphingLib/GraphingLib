@@ -1,0 +1,6 @@
+Recover from malformed default-style configuration
+--------------------------------------------------
+
+GraphingLib uses the ``plain`` style when the default-style configuration
+is unreadable or malformed. The warning gives the path to ``config.yml``,
+and the original file is preserved for recovery.

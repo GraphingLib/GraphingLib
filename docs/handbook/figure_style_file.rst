@@ -33,6 +33,9 @@ If no style is specified, the user's default style is used. This default style c
 
 When you install GraphingLib for the first time, the default style is the "plain" style. You can also create your own styles or modify existing ones. To do this, you can use GraphingLib's Style Editor as described below.
 
+If the default-style configuration is malformed, GraphingLib uses ``plain``,
+warns with the path to ``config.yml``, and preserves the file for recovery.
+
 GraphingLib's Style Editor
 ---------------------------
 

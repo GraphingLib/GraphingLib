@@ -280,55 +280,48 @@ def get_default_style() -> str:
         The default style.
     """
 
-    # Check if the user has a default style
     config_dir = user_config_dir(
         appname="GraphingLib", roaming=True, ensure_exists=True
     )
     config_file = f"{config_dir}/config.yml"
 
-    # Ensure the config file exists to avoid FileNotFoundError when reading.
-    if not path.exists(config_file):
-        with open(config_file, "w"):
-            pass
-
-    # If file exists, load the default style
     try:
         with open(config_file, "r") as file:
-            config = yaml.safe_load(file)
-        config = config if config is not None else {}
-        default_style = config["default_style"]
-
-        # Ensure the style exists
-        available_styles = get_styles(matplotlib=True)
-        if default_style not in available_styles + ["matplotlib"]:
-            warn(
-                f"Default style '{default_style}' does not exist. Resetting to 'plain'."
-            )
-            default_style = "plain"
-
-            # Reset the default style
-            config["default_style"] = default_style
-            with open(config_file, "w") as file:
-                yaml.dump(config, file)
-
-    except KeyError:
-        # If file doesn't have the default style key, create it
-        with open(config_file, "r") as file:
-            config = yaml.safe_load(file)
-        config = config if config is not None else {}
-        default_style = "plain"
-        config["default_style"] = default_style
-        with open(config_file, "w") as file:
-            yaml.dump(config, file)
-
+            contents = file.read()
+        config = yaml.safe_load(contents)
+        if config is None:
+            # PyYAML loads both an empty document and an explicit null as None.
+            node = yaml.compose(contents, Loader=yaml.SafeLoader)
+            if node is None or node.start_mark.index == node.end_mark.index:
+                config = {}
     except FileNotFoundError:
-        # If file doesn't exist, create it with the default style
-        with open(config_file, "w") as file:
-            config = {"default_style": "plain"}
-            yaml.dump(config, file)
-        default_style = "plain"
+        config = {}
+    except (OSError, UnicodeDecodeError, yaml.YAMLError):
+        config = None
 
-    return default_style
+    if not isinstance(config, dict) or not isinstance(
+        config.get("default_style", "plain"), str
+    ):
+        warn(
+            f"Could not read a valid default-style configuration from '{config_file}'. "
+            "Using 'plain'.",
+            stacklevel=2,
+        )
+        return "plain"
+
+    if "default_style" in config:
+        default_style = config["default_style"]
+        if default_style in get_styles(matplotlib=True) + ["matplotlib"]:
+            return default_style
+        warn(
+            f"Default style '{default_style}' does not exist. Resetting to 'plain'.",
+            stacklevel=2,
+        )
+
+    config["default_style"] = "plain"
+    with open(config_file, "w") as file:
+        yaml.dump(config, file)
+    return "plain"
 
 
 def set_default_style(style: str) -> None:
