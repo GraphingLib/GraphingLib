@@ -1713,6 +1713,13 @@ class Curve(Plottable1D, MathematicalObject):
         """
         Calculates the coordinates of the intersection points between two curves.
 
+        The curves are interpolated linearly over their common x-domain. Each
+        curve's x coordinates must be finite and strictly increasing or
+        decreasing. Nonfinite y values break the curve into separate pieces.
+        Isolated intersections are returned in increasing x order. A shared
+        interval has infinitely many intersections, so the interval and both
+        endpoints are omitted.
+
         Parameters
         ----------
         other : :class:`~graphinglib.data_plotting_1d.Curve`
@@ -1723,18 +1730,71 @@ class Curve(Plottable1D, MathematicalObject):
         list[tuple[float, float]]
             A list of tuples of coordinates which are the intersection points between the two curves.
         """
-        y = self._y_data - other._y_data
-        s = np.abs(np.diff(np.sign(y))).astype(bool)
-        intersections_x = self._x_data[:-1][s] + np.diff(self._x_data)[s] / (
-            np.abs(y[1:][s] / y[:-1][s]) + 1
+        x, y = self._intersection_samples()
+        other_x, other_y = other._intersection_samples()
+        if not x.size or not other_x.size:
+            return []
+        start, end = max(x[0], other_x[0]), min(x[-1], other_x[-1])
+        if start > end:
+            return []
+
+        # Between consecutive knots from either curve, their difference is linear.
+        knots = np.union1d(
+            x[(start <= x) & (x <= end)], other_x[(start <= other_x) & (other_x <= end)]
         )
-        intersections_y = np.interp(intersections_x, self._x_data, self._y_data)
-        points = []
-        for i in range(len(intersections_x)):
-            x_val = intersections_x[i]
-            y_val = intersections_y[i]
-            points.append((x_val, y_val))
-        return points
+        first = np.interp(knots, x, y)
+        second = np.interp(knots, other_x, other_y)
+        valid = np.isfinite(first) & np.isfinite(second)
+        exact = valid & (first == second)
+        coincident = exact[:-1] & exact[1:]
+        isolated = exact.copy()
+        isolated[:-1] &= ~coincident
+        isolated[1:] &= ~coincident
+        points = [
+            (float(xi), float(yi)) for xi, yi in zip(knots[isolated], first[isolated])
+        ]
+
+        below = first < second
+        between_knots = valid & ~exact
+        crossings = (below[:-1] != below[1:]) & between_knots[:-1] & between_knots[1:]
+        for i in np.flatnonzero(crossings):
+            y0, y1 = float(first[i]), float(first[i + 1])
+            other_y0, other_y1 = float(second[i]), float(second[i + 1])
+            left, right = abs(y0 - other_y0), abs(y1 - other_y1)
+            if not np.isfinite(max(left, right)):
+                # Halving both differences preserves the crossing fraction.
+                left = abs(y0 / 2 - other_y0 / 2)
+                right = abs(y1 / 2 - other_y1 / 2)
+            scale = max(left, right)
+            fraction = (left / scale) / (left / scale + right / scale)
+            points.append(
+                (
+                    (1 - fraction) * float(knots[i]) + fraction * float(knots[i + 1]),
+                    (1 - fraction) * y0 + fraction * y1,
+                )
+            )
+        return sorted(points)
+
+    def _intersection_samples(self) -> tuple[np.ndarray, np.ndarray]:
+        _check_same_length("x_data", self._x_data, "y_data", self._y_data)
+        if self._x_data.ndim != 1:
+            raise InvalidParameterError(
+                "Curve intersections require one-dimensional data."
+            )
+        if any(data.dtype.kind not in "biuf" for data in (self._x_data, self._y_data)):
+            raise InvalidParameterTypeError(
+                "Curve intersections require real numeric data."
+            )
+        x = self._x_data.astype(float, copy=False)
+        y = self._y_data.astype(float, copy=False)
+        y = np.where(np.isfinite(y), y, np.nan)
+        if x.size > 1 and x[0] > x[-1]:
+            x, y = x[::-1], y[::-1]
+        if not np.isfinite(x).all() or not (x[1:] > x[:-1]).all():
+            raise InvalidParameterError(
+                "Curve intersections require finite, strictly monotonic x coordinates."
+            )
+        return x, y
 
     def to_desmos(self, decimal_precision: int = 2, to_clipboard: bool = False) -> str:
         """
@@ -1781,10 +1841,6 @@ class Curve(Plottable1D, MathematicalObject):
         ----------
         other : :class:`~graphinglib.data_plotting_1d.Curve`
             The other curve to calculate the intersections with.
-        as_point_objects : bool
-            Whether to return a list of :class:`~graphinglib.graph_elements.Point` objects (True) or a list of tuples of
-            coordinates (False).
-            Defaults to False.
         labels : list[str] or str, optional
             Labels of the intersection points to be displayed in the legend.
             If a single string is passed, all intersection points will have the same label.
@@ -1821,24 +1877,19 @@ class Curve(Plottable1D, MathematicalObject):
 
         Notes
         -----
+        Uses the interpolation and ordering of :meth:`get_intersection_coordinates`.
         Color parameters accept Matplotlib color formats: named colors (``"blue"``), short color strings
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
 
         Returns
         -------
-        list[:class:`~graphinglib.graph_elements.Point`] or list[tuple[float, float]]
+        list[:class:`~graphinglib.graph_elements.Point`]
             A list of :class:`~graphinglib.graph_elements.Point` objects which are the intersection points between the
             two curves.
         """
-        y = self._y_data - other._y_data
-        s = np.abs(np.diff(np.sign(y))).astype(bool)
-        intersections_x = self._x_data[:-1][s] + np.diff(self._x_data)[s] / (
-            np.abs(y[1:][s] / y[:-1][s]) + 1
-        )
-        point_coords = self.get_intersection_coordinates(other)
         point_objects = []
-        for i in range(len(intersections_x)):
+        for i, (x, y) in enumerate(self.get_intersection_coordinates(other)):
             label: str | None
             if isinstance(labels, list):
                 try:
@@ -1907,11 +1958,10 @@ class Curve(Plottable1D, MathematicalObject):
                     alpha = INHERIT
             else:
                 alpha = alphas
-            point = point_coords[i]
             point_objects.append(
                 Point(
-                    point[0],
-                    point[1],
+                    x,
+                    y,
                     label=label,
                     face_color=face_color,
                     edge_color=edge_color,
