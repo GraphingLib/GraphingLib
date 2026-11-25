@@ -17,6 +17,7 @@ import warnings
 import matplotlib
 import matplotlib.image
 import numpy as np
+from PIL import Image
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -168,8 +169,11 @@ Example gallery
 
 
 def create_thumbnail(infile, thumbfile):
-    baseout, extout = op.splitext(thumbfile)
-    im = matplotlib.image.imread(infile)
+    if infile.endswith(".gif"):
+        with Image.open(infile) as animation:
+            im = np.asarray(animation.convert("RGB"), dtype=float) / 255
+    else:
+        im = matplotlib.image.imread(infile)
 
     percent_keep = 0.92
     height, width, _ = im.shape
@@ -228,12 +232,15 @@ class ExampleGenerator:
         with open(filename) as fid:
             self.filetext = fid.read()
 
-        outfilename = op.join(target_dir, self.rstfilename)
-
-        # Only actually run it if the output RST file doesn't
-        # exist or it was modified less recently than the example
         file_mtime = op.getmtime(filename)
-        if not op.exists(outfilename) or op.getmtime(outfilename) < file_mtime:
+        outputs = (
+            op.join(target_dir, self.rstfilename),
+            op.join(target_dir, self.imagefilename),
+            self.thumbpath,
+        )
+        if any(
+            not op.isfile(path) or op.getmtime(path) < file_mtime for path in outputs
+        ):
             self.exec_file()
         else:
             print(f"skipping {self.filename}")
@@ -263,14 +270,22 @@ class ExampleGenerator:
         return self.modulename + ".html"
 
     @property
-    def pngfilename(self):
-        pngfile = self.modulename + ".png"
-        return "_images/" + pngfile
+    def imagefilename(self):
+        stem = f"_images/{self.modulename}"
+        if op.isfile(op.join(self.target_dir, f"{stem}.gif")):
+            return f"{stem}.gif"
+        return f"{stem}.png"
 
     @property
     def thumbfilename(self):
         pngfile = self.modulename + "_thumb.png"
         return pngfile
+
+    @property
+    def thumbpath(self):
+        return op.join(
+            op.dirname(self.target_dir), "example_thumbs", self.thumbfilename
+        )
 
     @property
     def sphinxtag(self):
@@ -345,14 +360,20 @@ class ExampleGenerator:
         my_globals = {"pl": plt, "plt": plt}
         execfile(self.filename, my_globals)
 
-        fig = plt.gcf()
-        fig.canvas.draw()
-        pngfile = op.join(self.target_dir, self.pngfilename)
-        thumbfile = op.join("example_thumbs", self.thumbfilename)
-        self.html = f"<img src=../{self.pngfilename}>"
-        fig.savefig(pngfile, dpi=75, bbox_inches="tight")
-
-        create_thumbnail(pngfile, thumbfile)
+        stem = op.join(self.target_dir, "_images", self.modulename)
+        pngfile, giffile = f"{stem}.png", f"{stem}.gif"
+        save_animation = my_globals.get("save_animation")
+        if callable(save_animation):
+            imagefile, obsolete = giffile, pngfile
+            save_animation(imagefile)
+        else:
+            imagefile, obsolete = pngfile, giffile
+            fig = plt.gcf()
+            fig.canvas.draw()
+            fig.savefig(imagefile, dpi=75, bbox_inches="tight")
+        create_thumbnail(imagefile, self.thumbpath)
+        if op.isfile(obsolete):
+            os.remove(obsolete)
 
     def toctree_entry(self):
         return f"   ./{op.splitext(self.htmlfilename)[0]}\n\n"
@@ -417,7 +438,7 @@ def main(app):
             end_line=ex.end_line,
             components=ex.components,
             fname=ex.pyfilename,
-            img_file=ex.pngfilename,
+            img_file=ex.imagefilename,
         )
         with open(op.join(target_dir, ex.rstfilename), "w") as f:
             f.write(output)

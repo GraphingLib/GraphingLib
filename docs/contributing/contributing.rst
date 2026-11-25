@@ -268,6 +268,7 @@ Examples Gallery
 ^^^^^^^^^^^^^^^^
 
 The Gallery page is automatically generated from the examples located in the ``examples`` folder in the root directory of the project.
+
 Each example is a Python (.py) file with a header to specify the title ::
 
     """
@@ -277,8 +278,11 @@ Each example is a Python (.py) file with a header to specify the title ::
     _thumb: .4, .4
     """
 
-The code generating the example must be able to run as a standalone file for the example page to be generated. This means that you should
-be able to run the example file on your computer and the plot should be displayed.
+The example must run as a standalone script. Static examples display a plot.
+For an animated example, define ``save_animation(filename)`` to export to the
+supplied GIF path, and call it from the script's main guard to save a local GIF.
+The gallery embeds the GIF on the example page and uses its first frame for
+the PNG thumbnail.
 
 Repository Structure
 --------------------
