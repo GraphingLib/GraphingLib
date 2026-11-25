@@ -4,6 +4,14 @@ from collections.abc import Callable, Collection, Mapping, Sequence
 from contextvars import ContextVar
 from copy import deepcopy
 from dataclasses import dataclass
+from inspect import (
+    CORO_CREATED,
+    getcoroutinestate,
+    isasyncgen,
+    isawaitable,
+    iscoroutine,
+    isgenerator,
+)
 from itertools import chain
 from math import isfinite
 from numbers import Integral, Real
@@ -39,6 +47,7 @@ from numpy.typing import ArrayLike
 from .exceptions import (
     GraphingLibError,
     InvalidParameterError,
+    InvalidParameterTypeError,
     PlottingError,
     UnsupportedFeatureError,
 )
@@ -2257,7 +2266,13 @@ class _AnimationSession:
         token = _FRAME_SESSION.set(self)
         applied = []
         try:
-            update(index)
+            result = update(index)
+            if isawaitable(result) or isgenerator(result) or isasyncgen(result):
+                if iscoroutine(result) and getcoroutinestate(result) == CORO_CREATED:
+                    result.close()
+                raise InvalidParameterTypeError(
+                    "The update function must complete synchronously."
+                )
             # Derive dependent artist edits from the final frame inputs.
             dependent_edits, post_artist_edits = [], []
             for key, prepare in self._dirty_dependents.items():

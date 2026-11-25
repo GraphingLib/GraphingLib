@@ -5,7 +5,12 @@ from collections.abc import Sequence
 from copy import copy, deepcopy
 from fractions import Fraction
 from functools import partial
-from inspect import iscoroutinefunction, signature
+from inspect import (
+    isasyncgenfunction,
+    iscoroutinefunction,
+    isgeneratorfunction,
+    signature,
+)
 from logging import warning
 from math import isfinite
 from numbers import Integral, Real
@@ -2165,7 +2170,7 @@ class SmartFigure:
         Parameters
         ----------
         update_function : callable
-            Function that sets plot data for a zero-based frame index. Playback can request an index again.
+            Synchronous function that sets plot data for a zero-based frame index. Playback can request an index again.
         number_of_frames : int
             The number of frames in the animation.
         interval : int
@@ -2229,7 +2234,7 @@ class SmartFigure:
         file_name : str | pathlib.Path
             The output file path ending in ``.gif`` or ``.mp4``.
         update_function : callable
-            Function that sets plot data for a zero-based frame index.
+            Synchronous function that sets plot data for a zero-based frame index.
         number_of_frames : int
             The number of frames in the animation.
         interval : int
@@ -2434,7 +2439,15 @@ class SmartFigure:
     def _validate_animation_update_function(
         update_function: Callable[[int], Any],
     ) -> None:
-        if not callable(update_function) or iscoroutinefunction(update_function):
+        if not callable(update_function) or any(
+            iscoroutinefunction(candidate)
+            or isgeneratorfunction(candidate)
+            or isasyncgenfunction(candidate)
+            for candidate in (
+                update_function,
+                getattr(update_function, "__call__", None),
+            )
+        ):
             raise InvalidParameterTypeError(
                 "The update function must be a synchronous callable."
             )

@@ -382,6 +382,49 @@ class TestAnimation(unittest.TestCase):
         self.assertIsNone(fig._figure)
         self.assertFalse(self.output.exists())
 
+    def test_rejects_deferred_callbacks_before_drawing(self):
+        class AsyncCallback:
+            async def __call__(self, frame):
+                pass
+
+        def generator_callback(frame):
+            yield frame
+
+        async def async_generator_callback(frame):
+            yield frame
+
+        figure = SmartFigure(elements=Curve([0, 1], [1, 2]), figure_style="plain")
+        with patch.object(figure, "_initialize_parent_smart_figure") as draw:
+            for update in (
+                AsyncCallback(),
+                generator_callback,
+                async_generator_callback,
+            ):
+                with self.subTest(update=update):
+                    with self.assertRaisesRegex(TypeError, "synchronous"):
+                        figure.show_animation(update, 2)
+                    with self.assertRaisesRegex(TypeError, "synchronous"):
+                        figure.save_animation(self.output, update, 2)
+        draw.assert_not_called()
+
+    def test_rejects_wrapped_coroutine_and_rolls_back_the_frame(self):
+        curve = Curve([0, 1], [1, 2])
+        figure = SmartFigure(elements=curve, figure_style="plain")
+
+        async def deferred_update(frame):
+            curve.y_data = [frame, frame]
+
+        def update(frame):
+            curve.y_data = [3, 4]
+            return deferred_update(frame)
+
+        self.output.write_bytes(b"previous export")
+        with self.assertRaisesRegex(TypeError, "synchronous"):
+            figure.save_animation(self.output, update, 2)
+        assert_allclose(curve.y_data, [1, 2])
+        self.assertEqual(self.output.read_bytes(), b"previous export")
+        self.assertIsNone(figure._figure)
+
 
 class TestAdditionalAnimationAdapters(unittest.TestCase):
     def setUp(self):
