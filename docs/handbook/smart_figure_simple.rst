@@ -223,4 +223,5 @@ See Also
 --------
 
 - :doc:`/handbook/smart_figure_advanced` - More advanced SmartFigure features
+- :doc:`/handbook/animations` - Update and export animated figures
 - :doc:`/generated/graphinglib.SmartFigure` - SmartFigure API reference

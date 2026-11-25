@@ -198,6 +198,22 @@ Sections in this handbook
             Visit this section
 
     .. grid-item-card::
+        :img-top: ../_static/icons/Curve.svg
+
+        Animating Figures
+        ^^^^^^^^^^^^^^^^^
+
+        Update plots frame by frame and save animations as GIFs or MP4s.
+        ++++
+
+        .. button-ref:: ./animations
+            :expand:
+            :color: primary
+            :click-parent:
+
+            Visit this section
+
+    .. grid-item-card::
         :img-top: ../_static/icons/SmartFigureWCS.svg
 
         Specialized SmartFigures for different projections
@@ -228,4 +244,5 @@ Sections in this handbook
    figure_style_file
    smart_figure_simple
    smart_figure_advanced
+   animations
    smart_figure_projections
