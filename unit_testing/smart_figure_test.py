@@ -3,11 +3,13 @@ import os
 import unittest
 import warnings
 from io import BytesIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest.mock import patch
 from weakref import ref
 
-from graphinglib import INHERIT
+from graphinglib import INHERIT, SmartInset
 
 from matplotlib import use as matplotlib_use
 
@@ -16,6 +18,7 @@ matplotlib_use("Agg")  # Use non-GUI backend for tests
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from numpy import linspace, pi, sin
+from numpy.testing import assert_allclose
 
 try:
     import astropy.units as u
@@ -27,9 +30,17 @@ except ImportError:
     WCS = None
     u = None
 
-from graphinglib.data_plotting_1d import Curve
+from graphinglib.data_plotting_1d import Curve, Scatter
+from graphinglib.data_plotting_2d import Heatmap
 from graphinglib.file_manager import FileLoader
-from graphinglib.exceptions import GraphingException, UnsupportedFeatureError
+from graphinglib.exceptions import (
+    GraphingException,
+    IncompatibleArgumentsError,
+    InvalidOperationError,
+    InvalidParameterError,
+    LayoutError,
+    UnsupportedFeatureError,
+)
 from graphinglib.graph_elements import (
     Plottable,
     Text,
@@ -939,6 +950,319 @@ class TestSmartFigureContainerRendering(unittest.TestCase):
             any(label.get_visible() for label in axes[1].get_xticklabels())
         )
         plt.close(parent._figure)
+
+
+class TestSmartFigureInsets(unittest.TestCase):
+    bounds = (0.5, 0.5, 0.4, 0.4)
+
+    def setUp(self):
+        self.addCleanup(plt.close, "all")
+        self.addCleanup(plt.rcdefaults)
+
+    @staticmethod
+    def curve(label):
+        return Curve([1, 2, 3], [1, 3, 2], label=label)
+
+    def nested_layout(self):
+        root = SmartFigure(
+            2, 2, size="auto", log_scale_x=[True, False, False], figure_style="plain"
+        )
+        root.set_rc_params({"figure.dpi": 100})
+        root[0, :] = [self.curve("span"), self.curve("span companion")]
+        span = root[0, 1].create_inset(
+            self.bounds,
+            elements=self.curve("span detail"),
+            x_lim=(1, 2),
+            y_lim=(1, 2.5),
+            indicate_zoom=True,
+        )
+        nested = SmartFigure(2, 1, size="auto", figure_style="plain")
+        nested[0] = self.curve("nested sibling")
+        nested[0].create_inset(self.bounds, elements=self.curve("sibling detail"))
+        host = SmartFigure(elements=self.curve("nested host"))
+        host.set_rc_params({"axes.facecolor": "pink"})
+        nested[1] = host
+        root[1, 0] = nested
+        root[1, 1] = self.curve("root sibling")
+        root[1, 0][1].create_inset(self.bounds, elements=self.curve("nested detail"))
+        return root, span
+
+    @staticmethod
+    def plotted_axes(figure):
+        return {ax.containers[0].get_label(): ax for ax in figure.axes if ax.containers}
+
+    def test_root_show_attaches_insets_to_nested_and_spanning_hosts(self):
+        root, span = self.nested_layout()
+        self.assertIs(root[0, 0].insets[0], span)
+        with patch.object(plt, "show"):
+            root.show(fit_to_window=(640, 480))
+        figure = root._figure
+        assert_allclose(figure.get_size_inches(), (6.4, 4.8))
+        plots = self.plotted_axes(figure)
+        self.assertEqual(
+            set(plots), {"span", "nested sibling", "nested host", "root sibling"}
+        )
+        self.assertFalse(plots["root sibling"].child_axes)
+        for label, expected in (
+            ("span", "span detail"),
+            ("nested sibling", "sibling detail"),
+            ("nested host", "nested detail"),
+        ):
+            host = plots[label]
+            (inset,) = host.child_axes
+            self.assertEqual(inset.containers[0].get_label(), expected)
+            legend_labels = ["span", "span companion"] if label == "span" else [label]
+            self.assertEqual(
+                [item.get_text() for item in host.get_legend().get_texts()],
+                legend_labels,
+            )
+            for size in ((7, 5), (9, 6)):
+                figure.set_size_inches(size)
+                figure.canvas.draw()
+                assert_allclose(
+                    inset.get_window_extent().get_points(),
+                    host.transAxes.transform([[0.5, 0.5], [0.9, 0.9]]),
+                    atol=1,
+                )
+        self.assertEqual(plots["span"].child_axes[0].get_xscale(), "log")
+        self.assertEqual(plots["span"].child_axes[0].get_xlim(), (1, 2))
+        self.assertTrue(plots["span"].artists or plots["span"].patches)
+        nested_host = plots["nested host"]
+        self.assertEqual(
+            nested_host.child_axes[0].get_facecolor(), nested_host.get_facecolor()
+        )
+
+    def test_save_and_split_pdf_keep_insets_with_the_correct_host(self):
+        root, _ = self.nested_layout()
+        original_savefig = PdfPages.savefig
+        pages = []
+        sizes = []
+
+        def inspect_page(pdf, figure, **kwargs):
+            plots = self.plotted_axes(figure)
+            sizes.append(tuple(figure.get_size_inches()))
+            pages.append(
+                {
+                    label: [ax.containers[0].get_label() for ax in host.child_axes]
+                    for label, host in plots.items()
+                }
+            )
+            if "span" in plots:
+                self.assertEqual(len(plots["span"].containers), 2)
+                self.assertEqual(plots["span"].child_axes[0].get_xscale(), "log")
+            return original_savefig(pdf, figure, **kwargs)
+
+        for split, expected in (
+            (
+                False,
+                [
+                    {
+                        "span": ["span detail"],
+                        "nested sibling": ["sibling detail"],
+                        "nested host": ["nested detail"],
+                        "root sibling": [],
+                    }
+                ],
+            ),
+            (
+                True,
+                [
+                    {"span": ["span detail"]},
+                    {
+                        "nested sibling": ["sibling detail"],
+                        "nested host": ["nested detail"],
+                    },
+                    {"root sibling": []},
+                ],
+            ),
+        ):
+            with self.subTest(split=split):
+                pages.clear()
+                sizes.clear()
+                output = BytesIO()
+                with PdfPages(output) as pdf:
+                    with patch.object(PdfPages, "savefig", new=inspect_page):
+                        root.save(pdf, split_pdf=split)
+                    self.assertEqual(pdf.get_pagecount(), len(expected))
+                self.assertTrue(output.getvalue().startswith(b"%PDF-"))
+                self.assertEqual(pages, expected)
+                expected_sizes = (
+                    [(6.4, 4.8), (6.4, 9.6), (6.4, 4.8)] if split else [(12.8, 9.6)]
+                )
+                assert_allclose(sizes, expected_sizes)
+
+    def test_promotion_copy_removal_and_repeat_render(self):
+        figure = SmartFigure(figure_style="plain")
+        first = figure.create_inset(self.bounds).add_elements(
+            self.curve("detail"), None
+        )
+        self.assertIsInstance(first, SmartInset)
+        figure.num_cols = 2
+        host = figure[0]
+        self.assertIs(host.insets[0], first)
+        second = host.create_inset(self.bounds, elements=self.curve("upper detail"))
+
+        for draw in range(2):
+            with patch.object(plt, "show"):
+                figure.show()
+            (axes,) = [ax for ax in figure._figure.axes if ax.child_axes]
+            lower, upper = axes.child_axes
+            self.assertLess(lower.get_zorder(), upper.get_zorder())
+            if draw == 0:
+                self.assertFalse(axes.lines)
+                host.add_elements(
+                    self.curve("first series"), self.curve("second series")
+                )
+            else:
+                self.assertEqual(len(axes.lines), 2)
+                self.assertGreater(lower.get_zorder(), axes.lines[-1].get_zorder())
+            plt.close(figure._figure)
+
+        copied = figure.copy()
+        self.assertIsNot(copied[0].insets[0], first)
+        self.assertIsNone(copied[0].insets[0].elements[0].handle)
+        self.assertIs(host.remove_inset(second), host)
+        self.assertEqual(host.insets, (first,))
+        with self.assertRaises(InvalidOperationError):
+            host.remove_inset(second)
+
+    def test_promoted_implicit_panel_renders_from_root_and_exports(self):
+        root = SmartFigure(1, 2, size=(11, 6), figure_style="plain")
+        root[0] = self.curve("promoted host")
+        root[1] = self.curve("outer sibling")
+        panel = root[0]
+        detail = panel.create_inset(self.bounds, elements=self.curve("detail"))
+        panel.num_cols = 2
+        panel[1] = self.curve("new inner sibling")
+        self.assertIs(panel[0].insets[0], detail)
+
+        def check_plots(figure):
+            plots = self.plotted_axes(figure)
+            if "promoted host" in plots:
+                (inset,) = plots["promoted host"].child_axes
+                self.assertEqual(inset.containers[0].get_label(), "detail")
+            for label, axes in plots.items():
+                if label != "promoted host":
+                    self.assertFalse(axes.child_axes)
+            return set(plots)
+
+        all_plots = {"promoted host", "new inner sibling", "outer sibling"}
+        with patch.object(plt, "show"):
+            root.show()
+        self.assertEqual(check_plots(plt.gcf()), all_plots)
+        plt.close(plt.gcf())
+
+        original_savefig = plt.savefig
+        original_pdf_savefig = PdfPages.savefig
+        pages = []
+
+        def inspect_png(*args, **kwargs):
+            self.assertEqual(check_plots(plt.gcf()), all_plots)
+            return original_savefig(*args, **kwargs)
+
+        def inspect_page(pdf, figure, **kwargs):
+            pages.append(check_plots(figure))
+            return original_pdf_savefig(pdf, figure, **kwargs)
+
+        with TemporaryDirectory() as temp_dir:
+            png = Path(temp_dir) / "promoted.png"
+            pdf = Path(temp_dir) / "promoted.pdf"
+            with patch.object(plt, "savefig", side_effect=inspect_png) as savefig:
+                root.save(str(png))
+                savefig.assert_called_once()
+            with patch.object(PdfPages, "savefig", new=inspect_page):
+                root.save(str(pdf), split_pdf=True)
+            self.assertTrue(png.read_bytes().startswith(b"\x89PNG"))
+            self.assertTrue(pdf.read_bytes().startswith(b"%PDF-"))
+        self.assertEqual(
+            pages, [{"promoted host", "new inner sibling"}, {"outer sibling"}]
+        )
+
+    def test_split_pdf_releases_inset_preview_canvas_after_close(self):
+        figure = SmartFigure(elements=self.curve("host"), figure_style="plain")
+        figure.create_inset(self.bounds, elements=self.curve("detail"))
+        with patch.object(plt, "show"):
+            figure.show()
+        preview_number = plt.gcf().number
+        preview = ref(plt.gcf())
+        self.addCleanup(plt.close, preview_number)
+
+        with PdfPages(BytesIO()) as pdf:
+            figure.save(pdf, split_pdf=True)
+            self.assertEqual(pdf.get_pagecount(), 1)
+
+        self.assertTrue(plt.fignum_exists(preview_number))
+        plt.close(preview_number)
+        gc.collect()
+        self.assertIsNone(preview())
+
+    def test_default_scatter_inset_renders_with_matplotlib_style(self):
+        host = SmartFigure(figure_style="matplotlib", elements=self.curve("host"))
+        scatter = Scatter([1, 2], [2, 3])
+        self.assertIs(scatter.show_color_bar, INHERIT)
+        host.create_inset(self.bounds, elements=scatter)
+
+        with patch.object(plt, "show"):
+            host.show()
+        (inset,) = self.plotted_axes(plt.gcf())["host"].child_axes
+        (points,) = inset.collections
+        assert_allclose(points.get_offsets(), [[1, 2], [2, 3]])
+
+    def test_validates_host_bounds_and_zoom_configuration(self):
+        host = SmartFigure(figure_style="plain", log_scale_x=True)
+        with self.assertRaises(LayoutError):
+            SmartFigure(1, 2).create_inset(self.bounds)
+        for bounds in ((0, 0, 0, 0.5), (0.8, 0, 0.3, 0.5), (0, 0, float("nan"), 1)):
+            with self.subTest(bounds=bounds), self.assertRaises(InvalidParameterError):
+                host.create_inset(bounds)
+        with self.assertRaises(IncompatibleArgumentsError):
+            host.create_inset(self.bounds, x_lim=(1, 2), indicate_zoom=True)
+        inset = host.create_inset(
+            self.bounds, x_lim=(-1, 2), y_lim=(1, 2), indicate_zoom=True
+        )
+        with self.assertRaises(IncompatibleArgumentsError):
+            inset.x_lim = None
+        with self.assertRaises(InvalidParameterError):
+            host.show()
+        self.assertIsNone(host._figure)
+        inset.x_lim = (1, 2)
+        with patch.object(plt, "show"):
+            host.show()
+
+    def test_rejects_effective_projection_twins_and_colorbars(self):
+        root = SmartFigure(1, 2, figure_style="plain")
+        root[0] = self.curve("projected")
+        host = root[0]
+        inset = host.create_inset(self.bounds, elements=self.curve("detail"))
+        root.projection = "polar"
+        with self.assertRaisesRegex(UnsupportedFeatureError, "Cartesian"):
+            root.show()
+        root.projection = None
+        with self.assertRaises(UnsupportedFeatureError):
+            host.create_twin_axis()
+        host.remove_inset(inset)
+        host.create_twin_axis()
+        with self.assertRaises(UnsupportedFeatureError):
+            host.create_inset(self.bounds)
+
+        figure = SmartFigure(figure_style="plain")
+        heatmap = Heatmap([[0, 1], [1, 0]], show_color_bar=True)
+        figure.create_inset(self.bounds, elements=heatmap)
+        with self.assertRaisesRegex(UnsupportedFeatureError, "colorbars"):
+            figure.show()
+        heatmap.show_color_bar = False
+        with patch.object(plt, "show"):
+            figure.show()
+        (axes,) = [ax for ax in figure._figure.axes if ax.child_axes]
+        self.assertEqual(len(axes.child_axes[0].images), 1)
+
+    @unittest.skipUnless(HAS_ASTROPY, "WCS requires the optional Astropy dependency.")
+    def test_rejects_wcs_even_when_axes_report_rectilinear(self):
+        host = SmartFigureWCS(projection=WCS(naxis=2), figure_style="plain")
+        host.create_inset(self.bounds, elements=self.curve("detail"))
+        root = SmartFigure(1, 2, figure_style="plain", elements=[host])
+        with self.assertRaisesRegex(UnsupportedFeatureError, "Cartesian"):
+            root.show()
 
 
 @unittest.skipUnless(
