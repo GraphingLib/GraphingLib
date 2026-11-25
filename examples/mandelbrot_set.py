@@ -41,6 +41,6 @@ heatmap = gl.Heatmap(
     y_axis_range=(ymin, ymax),
 )
 
-fig = gl.Figure(x_lim=(xmin, xmax), y_lim=(ymin, ymax))
+fig = gl.SmartFigure(x_lim=(xmin, xmax), y_lim=(ymin, ymax))
 fig.add_elements(heatmap)
 fig.show()

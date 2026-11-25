@@ -25,7 +25,7 @@ clipping = curve.create_slice_y(
     y1=0, y2=0.5, color="orange", line_style="--", label="Clipped section"
 )
 
-fig = gl.Figure(size=(8, 6), x_label="x values", y_label="y values")
+fig = gl.SmartFigure(size=(8, 6), x_label="x values", y_label="y values")
 # Add the curves to the figure in the order they should be layered
 fig.add_elements(curve, sliced_curve, clipping)
 fig.show()

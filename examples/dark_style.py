@@ -22,7 +22,7 @@ y = B * np.sin(b * t)
 curve = gl.Curve(x_data=x, y_data=y)
 
 # Creating a figure with a dark style
-fig = gl.Figure(
+fig = gl.SmartFigure(
     x_label="x",
     y_label="y",
     figure_style="dark",

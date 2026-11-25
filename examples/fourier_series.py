@@ -30,7 +30,7 @@ square_wave = gl.Curve.from_function(
 )
 
 # Creating a figure with a dark style
-fig = gl.Figure(
+fig = gl.SmartFigure(
     x_label="x",
     y_label="y",
     figure_style="dim",

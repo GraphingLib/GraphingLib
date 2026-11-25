@@ -24,6 +24,6 @@ vector_field = gl.VectorField.from_function(
     color="C2",
 )
 
-fig = gl.Figure(size=(8, 6), x_label="x values", y_label="y values")
+fig = gl.SmartFigure(size=(8, 6), x_label="x values", y_label="y values")
 fig.add_elements(vector_field)
 fig.show()

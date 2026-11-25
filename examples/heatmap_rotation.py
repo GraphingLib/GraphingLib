@@ -28,6 +28,8 @@ y_rot = x_mesh * np.sin(angle) + y_mesh * np.cos(angle)
 heatmap.x_mesh = x_rot
 heatmap.y_mesh = y_rot
 
-fig = gl.Figure(aspect_ratio=1, size=(6, 6), x_label="x values", y_label="y values")
+fig = gl.SmartFigure(
+    aspect_ratio=1, size=(6, 6), x_label="x values", y_label="y values"
+)
 fig.add_elements(heatmap)
 fig.show()

@@ -24,15 +24,13 @@ fit = gl.FitFromPolynomial(scatter, degree=2, label="Fit", color="red")
 residuals = gl.Histogram.from_fit_residuals(fit, 15, label="Residual")
 residuals.add_pdf("normal")
 
-# Create figures and add the elements
-fig1 = gl.Figure()
-fig1.add_elements(scatter, fit)
-
-fig2 = gl.Figure(y_lim=(0, 0.055))
-fig2.add_elements(residuals)
-
-# Combine figures into a single multifigure
-multifigure = gl.MultiFigure.from_row(
-    [fig1, fig2], size=(10, 5), reference_labels=False
+# Show the fit and its residual distribution side by side
+figure = gl.SmartFigure(
+    1,
+    2,
+    elements=[[scatter, fit], residuals],
+    size=(10, 5),
+    y_lim=[None, (0, 0.055)],
+    reference_labels=False,
 )
-multifigure.show()
+figure.show()

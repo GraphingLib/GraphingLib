@@ -21,6 +21,6 @@ histogram = gl.Histogram(
     label="Distribution of values",
 )
 
-figure = gl.Figure(x_label="Values", y_label="Counts", size=(8, 6))
+figure = gl.SmartFigure(x_label="Values", y_label="Counts", size=(8, 6))
 figure.add_elements(histogram)
 figure.show()

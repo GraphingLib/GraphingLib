@@ -23,6 +23,6 @@ histogram.add_pdf("normal")
 mean = histogram.mean
 std = histogram.standard_deviation
 
-figure = gl.Figure(x_label="Values", y_label="Probability Density", size=(8, 6))
+figure = gl.SmartFigure(x_label="Values", y_label="Probability Density", size=(8, 6))
 figure.add_elements(histogram)
 figure.show()

@@ -28,6 +28,6 @@ curve_b = gl.Curve.from_function(
 intersection_points = curve_a.create_intersection_points(curve_b)
 
 # Create the figure and add the curves and intersection points
-fig = gl.Figure(size=(8, 6), x_label="x position", y_label="y position")
+fig = gl.SmartFigure(size=(8, 6), x_label="x position", y_label="y position")
 fig.add_elements(curve_a, curve_b, *intersection_points)
 fig.show()
