@@ -65,6 +65,7 @@ from ._animation import (
     _AnimationSession,
     _ArtistEdit,
     _axis_removal,
+    _axis_tick_keys,
     _bound_session,
     _combine_edits,
     _edit,
@@ -124,6 +125,51 @@ def _require_astropy(feature: str = "this feature") -> None:
 
 
 HAS_ASTROPY = _ASTROPY_AVAILABLE
+
+
+def _cartesian_tick_changes(
+    dimensions: tuple[str, ...], **options: Any
+) -> dict[str, Any]:
+    """Normalize and validate supplied tick settings before any axis is updated."""
+    changes = {}
+    for key, value in options.items():
+        if value is None:
+            continue
+        # Cache positions and explicit labels so one-shot iterators remain usable.
+        if key.endswith("ticks") or (
+            key.endswith("tick_labels") and not callable(value)
+        ):
+            value = list(value)
+        changes[key] = value
+
+    axis_keys = [_axis_tick_keys(dimension) for dimension in dimensions]
+    # Check each rule across all axes to preserve which error is raised first.
+    for (ticks, spacing, labels), _ in axis_keys:
+        if (
+            labels in changes
+            and ticks not in changes
+            and not (spacing in changes and callable(changes[labels]))
+        ):
+            raise IncompatibleArgumentsError(
+                "Ticks position must be specified when ticks labels are specified, "
+                "unless a callable is provided with tick spacing."
+            )
+    if any(
+        keys[0] in changes and keys[1] in changes for axis in axis_keys for keys in axis
+    ):
+        raise IncompatibleArgumentsError(
+            "Tick spacing and tick positions cannot be set simultaneously."
+        )
+    for dimension, ((ticks, _, labels), _) in zip(dimensions, axis_keys, strict=True):
+        positions, names = changes.get(ticks), changes.get(labels)
+        if positions is not None and names is not None and not callable(names):
+            if len(positions) != len(names):
+                axis = f"{dimension} " if dimension else ""
+                raise IncompatibleArgumentsError(
+                    f"Number of {axis}ticks ({len(positions)}) and number of "
+                    f"{axis}tick labels ({len(names)}) must be the same."
+                )
+    return changes
 
 
 def _reject_animated_layout(element: object) -> None:
@@ -4521,93 +4567,22 @@ class SmartFigure:
         Self
             For convenience, the same SmartFigure with the updated ticks.
         """
-        # Normalize iterable tick/label inputs to lists so their lengths can be compared
-        # and the values reused (a bare iterator would be exhausted after the first pass).
-        if x_ticks is not None:
-            x_ticks = list(x_ticks)
-        if y_ticks is not None:
-            y_ticks = list(y_ticks)
-        if minor_x_ticks is not None:
-            minor_x_ticks = list(minor_x_ticks)
-        if minor_y_ticks is not None:
-            minor_y_ticks = list(minor_y_ticks)
-        if x_tick_labels is not None and not callable(x_tick_labels):
-            x_tick_labels = list(x_tick_labels)
-        if y_tick_labels is not None and not callable(y_tick_labels):
-            y_tick_labels = list(y_tick_labels)
-
-        # Check if tick labels are provided without ticks or spacing
-        x_has_spacing = x_tick_spacing is not None
-        y_has_spacing = y_tick_spacing is not None
-        x_callable = callable(x_tick_labels)
-        y_callable = callable(y_tick_labels)
-
-        if any(
-            [
-                (x_tick_labels is not None)
-                and x_ticks is None
-                and not (x_has_spacing and x_callable),
-                (y_tick_labels is not None)
-                and y_ticks is None
-                and not (y_has_spacing and y_callable),
-            ]
-        ):
-            raise IncompatibleArgumentsError(
-                "Ticks position must be specified when ticks labels are specified, "
-                "unless a callable is provided with tick spacing."
-            )
-
-        if any(
-            [
-                (x_ticks is not None) and (x_tick_spacing is not None),
-                (y_ticks is not None) and (y_tick_spacing is not None),
-                (minor_x_ticks is not None) and (minor_x_tick_spacing is not None),
-                (minor_y_ticks is not None) and (minor_y_tick_spacing is not None),
-            ]
-        ):
-            raise IncompatibleArgumentsError(
-                "Tick spacing and tick positions cannot be set simultaneously."
-            )
-
-        if (
-            x_ticks is not None
-            and x_tick_labels is not None
-            and not callable(x_tick_labels)
-        ):
-            if len(x_ticks) != len(x_tick_labels):
-                raise IncompatibleArgumentsError(
-                    f"Number of x ticks ({len(x_ticks)}) and number of x tick labels "
-                    f"({len(x_tick_labels)}) must be the same."
-                )
-        if (
-            y_ticks is not None
-            and y_tick_labels is not None
-            and not callable(y_tick_labels)
-        ):
-            if len(y_ticks) != len(y_tick_labels):
-                raise IncompatibleArgumentsError(
-                    f"Number of y ticks ({len(y_ticks)}) and number of y tick labels "
-                    f"({len(y_tick_labels)}) must be the same."
-                )
-
-        params = [
-            "x_ticks",
-            "y_ticks",
-            "x_tick_labels",
-            "y_tick_labels",
-            "x_tick_spacing",
-            "y_tick_spacing",
-            "minor_x_ticks",
-            "minor_y_ticks",
-            "minor_x_tick_spacing",
-            "minor_y_tick_spacing",
-        ]
-        values = locals()
-        changes = {
-            param: values[param] for param in params if values[param] is not None
-        }
+        dimensions = ("x", "y")
+        changes = _cartesian_tick_changes(
+            dimensions,
+            x_ticks=x_ticks,
+            y_ticks=y_ticks,
+            minor_x_ticks=minor_x_ticks,
+            minor_y_ticks=minor_y_ticks,
+            x_tick_labels=x_tick_labels,
+            y_tick_labels=y_tick_labels,
+            x_tick_spacing=x_tick_spacing,
+            y_tick_spacing=y_tick_spacing,
+            minor_x_tick_spacing=minor_x_tick_spacing,
+            minor_y_tick_spacing=minor_y_tick_spacing,
+        )
         config = _updated_tick_config(
-            self._ticks, changes, reset=reset, dimensions=("x", "y")
+            self._ticks, changes, reset=reset, dimensions=dimensions
         )
         self._ticks = _stage_live_value(self, "_ticks", config)
 
@@ -6873,58 +6848,17 @@ class SmartTwinAxis:
         Self
             For convenience, the same SmartTwinAxis with the updated ticks.
         """
-        # Normalize iterable tick/label inputs to lists so their lengths can be compared
-        # and the values reused (a bare iterator would be exhausted after the first pass).
-        if ticks is not None:
-            ticks = list(ticks)
-        if minor_ticks is not None:
-            minor_ticks = list(minor_ticks)
-        if tick_labels is not None and not callable(tick_labels):
-            tick_labels = list(tick_labels)
-
-        # Check if tick labels are provided without ticks or spacing
-        has_spacing = tick_spacing is not None
-        is_callable = callable(tick_labels)
-
-        if (
-            (tick_labels is not None)
-            and ticks is None
-            and not (has_spacing and is_callable)
-        ):
-            raise IncompatibleArgumentsError(
-                "Ticks position must be specified when ticks labels are specified, "
-                "unless a callable is provided with tick spacing."
-            )
-
-        if any(
-            [
-                (ticks is not None) and (tick_spacing is not None),
-                (minor_ticks is not None) and (minor_tick_spacing is not None),
-            ]
-        ):
-            raise IncompatibleArgumentsError(
-                "Tick spacing and tick positions cannot be set simultaneously."
-            )
-
-        if ticks is not None and tick_labels is not None and not callable(tick_labels):
-            if len(ticks) != len(tick_labels):
-                raise IncompatibleArgumentsError(
-                    f"Number of ticks ({len(ticks)}) and number of tick labels ({len(tick_labels)}) must be the same."
-                )
-
-        params = [
-            "ticks",
-            "tick_labels",
-            "tick_spacing",
-            "minor_ticks",
-            "minor_tick_spacing",
-        ]
-        values = locals()
-        changes = {
-            param: values[param] for param in params if values[param] is not None
-        }
+        dimensions = ("",)
+        changes = _cartesian_tick_changes(
+            dimensions,
+            ticks=ticks,
+            minor_ticks=minor_ticks,
+            tick_labels=tick_labels,
+            tick_spacing=tick_spacing,
+            minor_tick_spacing=minor_tick_spacing,
+        )
         config = _updated_tick_config(
-            self._ticks, changes, reset=reset, dimensions=("",)
+            self._ticks, changes, reset=reset, dimensions=dimensions
         )
         self._ticks = _stage_live_value(self, "_ticks", config)
 
