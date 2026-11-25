@@ -14,6 +14,6 @@ curve = gl.Curve.from_function(
 
 curve.add_error_curves(y_error=10)
 
-fig = gl.Figure(size=(8, 6), x_label="x values", y_label="y values")
+fig = gl.SmartFigure(size=(8, 6), x_label="x values", y_label="y values")
 fig.add_elements(curve)
 fig.show()

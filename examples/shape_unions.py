@@ -30,6 +30,6 @@ smaller_rectangle = gl.Rectangle(
 l_shape = main_rectangle.create_difference(smaller_rectangle, copy_style=True)
 l_shape.translate(dx=2.5, dy=0)
 
-fig = gl.Figure(aspect_ratio=1, x_lim=(-1, 4.5), y_lim=(-1, 3))
+fig = gl.SmartFigure(aspect_ratio=1, x_lim=(-1, 4.5), y_lim=(-1, 3))
 fig.add_elements(g_shape, l_shape)
 fig.show()

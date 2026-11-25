@@ -35,6 +35,6 @@ curve_b = gl.Curve.from_function(
 )
 
 # Create a figure and add the curves
-fig = gl.Figure(size=(8, 6), x_label="x values", y_label="y values")
+fig = gl.SmartFigure(size=(8, 6), x_label="x values", y_label="y values")
 fig.add_elements(curve_a, curve_b)
 fig.show()

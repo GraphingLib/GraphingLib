@@ -36,6 +36,6 @@ vlines = gl.Vlines(
     colors="gray",
 )
 
-figure = gl.Figure(x_lim=(0, 5), y_lim=(0, 6))
+figure = gl.SmartFigure(x_lim=(0, 5), y_lim=(0, 6))
 figure.add_elements(curve, hlines, vlines, point_1, point_2)
 figure.show()

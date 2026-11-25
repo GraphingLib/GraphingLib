@@ -18,6 +18,6 @@ heatmap = gl.Heatmap(
     aspect_ratio="equal",
 )
 
-fig = gl.Figure(size=(8, 6), x_label="x values", y_label="y values")
+fig = gl.SmartFigure(size=(8, 6), x_label="x values", y_label="y values")
 fig.add_elements(heatmap)
 fig.show()

@@ -61,7 +61,7 @@ well = gl.Rectangle(
 )
 
 # Create figure and add elements
-fig = gl.Figure(
+fig = gl.SmartFigure(
     x_label="$x$",
     y_label="Energy and $\\psi_n(x)$",
     x_lim=(-0.2 * well_width, 1.2 * well_width),

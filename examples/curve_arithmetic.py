@@ -39,6 +39,6 @@ corrected_curve.label = "Corrected Curve"
 
 
 # Create a figure and add the curves
-fig = gl.Figure(size=(8, 6), x_label="x values", y_label="y values")
+fig = gl.SmartFigure(size=(8, 6), x_label="x values", y_label="y values")
 fig.add_elements(trend_curve, raw_data_curve, corrected_curve)
 fig.show()

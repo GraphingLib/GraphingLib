@@ -15,13 +15,18 @@ integral_curve = curve.create_integral_curve(label="Integral")
 normal_curve = curve.create_normal_curve(2, label="Normal at x=2")
 tangent_curve = curve.create_tangent_curve(2, label="Tangent at x=2")
 
-# Create figures and add the curves
-fig1 = gl.Figure(y_lim=(-6, 25))
-fig1.add_elements(curve, derivative_curve, integral_curve)
-
-fig2 = gl.Figure(x_lim=(-5, 5), y_lim=(-6, 4), aspect_ratio=1)
-fig2.add_elements(curve, normal_curve, tangent_curve)
-
-# Create a multifigure from the figures
-multifig = gl.MultiFigure.from_row([fig1, fig2], size=(12, 6), reference_labels=False)
-multifig.show()
+# Create a panel for each group of curves
+figure = gl.SmartFigure(
+    1,
+    2,
+    elements=[
+        [curve, derivative_curve, integral_curve],
+        [curve, normal_curve, tangent_curve],
+    ],
+    size=(12, 6),
+    x_lim=[None, (-5, 5)],
+    y_lim=[(-6, 25), (-6, 4)],
+    aspect_ratio=["auto", 1],
+    reference_labels=False,
+)
+figure.show()

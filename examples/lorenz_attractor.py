@@ -44,7 +44,7 @@ xs, ys, zs = lorenz_attractor(sigma, beta, rho, initial_state, num_steps, dt)
 curve = gl.Curve(x_data=xs, y_data=zs, line_width=1)
 
 # Choosing a style from the matplotlib library
-fig = gl.Figure(x_label="x", y_label="z", figure_style="Solarize_Light2")
+fig = gl.SmartFigure(x_label="x", y_label="z", figure_style="Solarize_Light2")
 
 fig.add_elements(curve)
 fig.show()

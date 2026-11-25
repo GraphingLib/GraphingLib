@@ -22,7 +22,7 @@ stream = gl.Stream.from_function(
     density=2,
 )
 
-fig = gl.Figure(size=(8, 6), x_label="x values", y_label="y values")
+fig = gl.SmartFigure(size=(8, 6), x_label="x values", y_label="y values")
 fig.add_elements(stream)
 
 fig.show()
