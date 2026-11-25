@@ -1934,6 +1934,24 @@ The :py:meth:`~graphinglib.SmartFigure.show` method displays a :class:`~graphing
     # Fullscreen display
     fig.show(fullscreen=True)
 
+For a multi-panel figure, pass ``size="auto"`` to multiply the style's base width by the
+number of columns and its base height by the number of rows. Empty cells and spans retain
+their space in the outer grid. Nested figures share the space allocated by their parent.
+Omitting ``size`` uses the style's fixed figure size, and passing a tuple sets the overall
+size in inches.
+
+.. code-block:: python
+
+    fig = gl.SmartFigure(1, 3, size="auto", elements=[curve1, curve2, curve3])
+    fig.show(fit_to_window=True)  # Use the available monitor area on a Qt backend.
+    fig.show(fit_to_window=(1280, 760))  # Set preview bounds in logical pixels.
+    fig.save("wide-layout.pdf")
+
+The preview bounds apply to ``show()`` only. The preview shrinks proportionally as needed,
+and the axes are laid out inside the smaller canvas. If screen bounds are unavailable,
+``fit_to_window=True`` raises an error with instructions for passing explicit bounds.
+Use ``fullscreen`` and ``fit_to_window`` separately.
+
 .. warning::
    For figures with general legends in "outside" positions, use inline Jupyter display or save to a file for correct rendering.
 

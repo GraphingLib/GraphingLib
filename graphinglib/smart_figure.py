@@ -100,11 +100,10 @@ class SmartFigure:
         Defaults to ``1``.
     x_label, y_label : str, optional
         Labels for the x and y axes of the figure.
-    size : tuple[float, float], optional
-        Overall size of the figure. Note that this option is useless if the SmartFigure is nested inside another
-        SmartFigure, as the size is then determined by the parent SmartFigure and the available space.
-        Figure size is in inches; typical width is ``4`` to ``12`` and typical height is ``3`` to ``8``.
-        Default depends on the ``figure_style`` configuration.
+    size : tuple[float, float] or 'auto', optional
+        Overall size in inches. With ``"auto"``, multiply the style's width by the number of columns and
+        its height by the number of rows. By default, use the style size for the whole figure.
+        A nested SmartFigure gets its available space from its parent.
     title : str, optional
         General title of the figure.
     x_lim, y_lim : tuple[float, float] | list[tuple[float, float]], optional
@@ -280,7 +279,7 @@ class SmartFigure:
         num_cols: int = 1,
         x_label: str | None = None,
         y_label: str | None = None,
-        size: tuple[float, float] | Inherit = INHERIT,
+        size: tuple[float, float] | Literal["auto"] | Inherit = INHERIT,
         title: str | None = None,
         x_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
         y_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
@@ -494,16 +493,16 @@ class SmartFigure:
         self._y_label = value
 
     @property
-    def size(self) -> tuple[float, float] | Inherit:
+    def size(self) -> tuple[float, float] | Literal["auto"] | Inherit:
         return self._size
 
     @size.setter
-    def size(self, value: tuple[float, float] | Inherit):
-        if is_inherit(value):
+    def size(self, value: tuple[float, float] | Literal["auto"] | Inherit):
+        if is_inherit(value) or (isinstance(value, str) and value == "auto"):
             self._size = value
             return
         if not isinstance(value, tuple):
-            raise InvalidParameterTypeError("size must be a tuple or 'default'.")
+            raise InvalidParameterTypeError("size must be a tuple, 'auto', or INHERIT.")
         if len(value) != 2:
             raise InvalidParameterError("size must be a tuple of length 2.")
         if value[0] <= 0 or value[1] <= 0:
@@ -1886,6 +1885,8 @@ class SmartFigure:
     def show(
         self,
         fullscreen: bool = False,
+        *,
+        fit_to_window: bool | tuple[int, int] = False,
     ) -> Self:
         """
         Plots and displays the :class:`~graphinglib.SmartFigure`. The :meth:`~graphinglib.SmartFigure.save` method is
@@ -1903,13 +1904,31 @@ class SmartFigure:
         fullscreen : bool, optional
             If True, the figure will be displayed in fullscreen mode.
             Defaults to ``False``.
+        fit_to_window : bool or tuple[int, int], optional
+            Shrink the preview proportionally to fit the screen on Qt backends, or use an explicit
+            ``(max_width, max_height)`` in logical pixels when screen bounds are unavailable.
+            The saved size is independent of the preview. Cannot be combined with ``fullscreen``.
+            Defaults to ``False``.
 
         Returns
         -------
         Self
             The same SmartFigure instance, allowing for method chaining.
         """
-        self._initialize_parent_smart_figure()
+        if not isinstance(fit_to_window, bool) and (
+            not isinstance(fit_to_window, tuple)
+            or len(fit_to_window) != 2
+            or any(type(value) is not int or value <= 0 for value in fit_to_window)
+        ):
+            raise InvalidParameterError(
+                "fit_to_window must be a bool or a pair of positive integer pixel bounds."
+            )
+        if fullscreen and fit_to_window:
+            raise IncompatibleArgumentsError(
+                "fullscreen and fit_to_window cannot be used together."
+            )
+
+        self._initialize_parent_smart_figure(fit_to_window=fit_to_window)
         assert self._figure is not None and self._gridspec is not None
 
         # Create an artificial axis to add padding around the figure
@@ -2061,6 +2080,8 @@ class SmartFigure:
 
     def _initialize_parent_smart_figure(
         self,
+        *,
+        fit_to_window: bool | tuple[int, int] = False,
     ) -> None:
         """
         Initializes the parent :class:`~graphinglib.SmartFigure` for plotting. This method initializes the appropriate
@@ -2096,11 +2117,24 @@ class SmartFigure:
         )  # Custom rc parameters supersede the defaults
         self._fill_in_rc_params(is_matplotlib_style)
 
+        size = resolved(self._size)
+        if size == "auto":
+            if is_matplotlib_style:
+                base_size = plt.rcParams["figure.figsize"]
+            else:
+                base_size = self._default_params.get("SmartFigure", {}).get("_size")
+                if base_size is None:
+                    base_size = FileLoader("plain").load()["SmartFigure"]["_size"]
+            base_width, base_height = base_size
+            size = base_width * self._num_cols, base_height * self._num_rows
+
         # The following try/except removes lingering figures when errors occur during the plotting process
         try:
             self._figure = plt.figure(
-                constrained_layout=True, figsize=resolved(self._size)
+                constrained_layout=True, figsize=(1, 1) if fit_to_window else size
             )
+            if fit_to_window:
+                self._fit_preview(self._figure, size, fit_to_window)
             layout_engine = self._figure.get_layout_engine()
             assert isinstance(layout_engine, ConstrainedLayoutEngine)
             layout_engine.set(w_pad=0, h_pad=0)
@@ -2119,6 +2153,45 @@ class SmartFigure:
         finally:
             self._reset_params_to_default(self, parent_figure_params_to_reset)
             self._default_params = {}
+
+    @staticmethod
+    def _fit_preview(
+        figure: Figure,
+        size: tuple[float, float],
+        fit_to_window: Literal[True] | tuple[int, int],
+    ) -> None:
+        """Set the preview canvas size before any plots are laid out or drawn."""
+        if fit_to_window is True:
+            manager = figure.canvas.manager
+            window: Any = getattr(manager, "window", None)
+            get_screen = getattr(window, "screen", None)
+            screen = get_screen() if callable(get_screen) else None
+            if screen is None:
+                raise UnsupportedFeatureError(
+                    "Screen size is unavailable. Pass fit_to_window=(width, height) "
+                    "to set preview bounds in pixels."
+                )
+            area = screen.availableGeometry()
+            frame = window.frameGeometry()
+            content = window.geometry()
+            toolbar: Any = getattr(manager, "toolbar", None)
+            bounds = (
+                area.width() - max(0, frame.width() - content.width()),
+                area.height()
+                - max(0, frame.height() - content.height())
+                - (toolbar.sizeHint().height() if toolbar is not None else 0),
+            )
+        else:
+            bounds = fit_to_window
+
+        dpi = figure.dpi / figure.canvas.device_pixel_ratio
+        width, height = size
+        scale = min(
+            1.0, max(1, bounds[0]) / (width * dpi), max(1, bounds[1]) / (height * dpi)
+        )
+        figure.set_size_inches(
+            max(1 / dpi, width * scale), max(1 / dpi, height * scale)
+        )
 
     def _prepare_figure(
         self,
@@ -4083,11 +4156,10 @@ class SmartFigureWCS(SmartFigure):
         Defaults to ``1``.
     x_label, y_label : str, optional
         Labels for the x and y axes of the figure.
-    size : tuple[float, float], optional
-        Overall size of the figure. Note that this option is useless if the SmartFigure is nested inside another
-        SmartFigure, as the size is then determined by the parent SmartFigure and the available space.
-        Figure size is in inches; typical width is ``4`` to ``12`` and typical height is ``3`` to ``8``.
-        Default depends on the ``figure_style`` configuration.
+    size : tuple[float, float] or 'auto', optional
+        Overall size in inches. With ``"auto"``, multiply the style's width by the number of columns and
+        its height by the number of rows. By default, use the style size for the whole figure.
+        A nested SmartFigure gets its available space from its parent.
     title : str, optional
         General title of the figure.
     x_lim, y_lim : tuple[float, float] | list[tuple[float, float]], optional
@@ -4257,7 +4329,7 @@ class SmartFigureWCS(SmartFigure):
         num_cols: int = 1,
         x_label: str | None = None,
         y_label: str | None = None,
-        size: tuple[float, float] | Inherit = INHERIT,
+        size: tuple[float, float] | Literal["auto"] | Inherit = INHERIT,
         title: str | None = None,
         x_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
         y_lim: ListOrItem[tuple[float | None, float | None] | None] = None,

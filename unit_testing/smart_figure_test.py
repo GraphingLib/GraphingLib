@@ -5,6 +5,7 @@ import warnings
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 from unittest.mock import patch
 from weakref import ref
 
@@ -393,6 +394,112 @@ class TestSmartFigureContainer(SmartFigurePropertyMixin):
         self.child_curve = DummyPlottable("child")
         self.other_curve = DummyPlottable("other")
         self.plain_defaults = FileLoader("plain").load()
+
+    def test_auto_canvas_size_tracks_grid_on_each_render(self):
+        figure = SmartFigure(2, 3, size="auto", figure_style="plain")
+        figure[0, 0] = DummyPlottable()
+
+        with patch.object(plt, "show"):
+            for columns, width in ((3, 19.2), (4, 25.6), (3, 19.2)):
+                with self.subTest(columns=columns):
+                    figure.num_cols = columns
+                    figure.show()
+                    try:
+                        w, h = figure._figure.get_size_inches()
+                        self.assertAlmostEqual(w, width)
+                        self.assertAlmostEqual(h, 9.6)
+                        self.assertEqual(figure.size, "auto")
+                    finally:
+                        plt.close(figure._figure)
+
+            figure.size = (8, 5)
+            figure.show()
+            try:
+                self.assertEqual(tuple(figure._figure.get_size_inches()), (8, 5))
+            finally:
+                plt.close(figure._figure)
+
+    def test_bounded_preview_keeps_inherited_and_saved_sizes(self):
+        figure = SmartFigure(1, 3, figure_style="plain")
+        figure[0, 0] = DummyPlottable()
+        figure.set_rc_params({"figure.dpi": 100})
+        with patch.object(plt, "show"):
+            figure.show(fit_to_window=(1280, 760))
+            self.assertEqual(tuple(figure._figure.get_size_inches()), (6.4, 4.8))
+            plt.close(figure._figure)
+
+            figure.size = "auto"
+            figure.show(fit_to_window=(1280, 760))
+            w, h = figure._figure.get_size_inches()
+            self.assertAlmostEqual(w, 12.8)
+            self.assertAlmostEqual(h, 3.2)
+            plt.close(figure._figure)
+
+        with patch.object(plt, "savefig") as save:
+
+            def check_saved_size(*args, **kwargs):
+                w, h = plt.gcf().get_size_inches()
+                self.assertAlmostEqual(w, 19.2)
+                self.assertAlmostEqual(h, 4.8)
+
+            save.side_effect = check_saved_size
+            figure.save("wide.pdf")
+            save.assert_called_once()
+
+    def test_automatic_preview_uses_screen_bounds_or_rejects_unsupported_backend(self):
+        figure = SmartFigure(1, 3, size="auto", figure_style="plain")
+        figure[0, 0] = DummyPlottable()
+        figure.set_rc_params({"figure.dpi": 100})
+
+        def rect(width, height):
+            return SimpleNamespace(width=lambda: width, height=lambda: height)
+
+        window = SimpleNamespace(
+            screen=lambda: SimpleNamespace(availableGeometry=lambda: rect(1300, 750)),
+            frameGeometry=lambda: rect(120, 140),
+            geometry=lambda: rect(100, 100),
+        )
+        original_figure = plt.figure
+
+        def figure_with_window(*args, **kwargs):
+            canvas = original_figure(*args, **kwargs)
+            canvas.canvas.manager.window = window
+            return canvas
+
+        with patch.object(plt, "show"):
+            with patch.object(plt, "figure", side_effect=figure_with_window):
+                figure.show(fit_to_window=True)
+            w, h = figure._figure.get_size_inches()
+            self.assertAlmostEqual(w, 12.8)
+            self.assertAlmostEqual(h, 3.2)
+            plt.close(figure._figure)
+
+            plt.rcParams["figure.dpi"] = 73
+            self.addCleanup(plt.rcdefaults)
+            with self.assertRaisesRegex(
+                UnsupportedFeatureError, "Screen size is unavailable"
+            ):
+                figure.show(fit_to_window=True)
+            self.assertIsNone(figure._figure)
+            self.assertEqual(plt.rcParams["figure.dpi"], 73)
+            figure.show(fit_to_window=(1280, 760))
+            self.assertAlmostEqual(figure._figure.get_size_inches()[0], 12.8)
+            plt.close(figure._figure)
+
+    def test_split_pdf_allocates_only_the_page_canvases(self):
+        figure = SmartFigure(
+            1, 40, size="auto", figure_style="plain", width_ratios=[1] * 40
+        )
+        figure[0, 0] = DummyPlottable()
+        figure[0, 1] = DummyPlottable()
+
+        with PdfPages(BytesIO()) as pdf:
+            with patch.object(plt, "figure", wraps=plt.figure) as create:
+                figure.save(pdf, split_pdf=True)
+            self.assertEqual(pdf.get_pagecount(), 2)
+        self.assertEqual(create.call_count, 2)
+        for call in create.call_args_list:
+            self.assertEqual(call.kwargs["figsize"], (6.4, 4.8))
 
     def test_split_pdf_releases_preview_canvas_after_close(self):
         figure = SmartFigure(elements=Curve([0, 1], [0, 1]), figure_style="plain")
@@ -857,7 +964,10 @@ class TestSmartFigureInsets(unittest.TestCase):
         return Curve([1, 2, 3], [1, 3, 2], label=label)
 
     def nested_layout(self):
-        root = SmartFigure(2, 2, log_scale_x=[True, False, False], figure_style="plain")
+        root = SmartFigure(
+            2, 2, size="auto", log_scale_x=[True, False, False], figure_style="plain"
+        )
+        root.set_rc_params({"figure.dpi": 100})
         root[0, :] = [self.curve("span"), self.curve("span companion")]
         span = root[0, 1].create_inset(
             self.bounds,
@@ -866,7 +976,7 @@ class TestSmartFigureInsets(unittest.TestCase):
             y_lim=(1, 2.5),
             indicate_zoom=True,
         )
-        nested = SmartFigure(2, 1)
+        nested = SmartFigure(2, 1, size="auto", figure_style="plain")
         nested[0] = self.curve("nested sibling")
         nested[0].create_inset(self.bounds, elements=self.curve("sibling detail"))
         host = SmartFigure(elements=self.curve("nested host"))
@@ -885,8 +995,9 @@ class TestSmartFigureInsets(unittest.TestCase):
         root, span = self.nested_layout()
         self.assertIs(root[0, 0].insets[0], span)
         with patch.object(plt, "show"):
-            root.show()
+            root.show(fit_to_window=(640, 480))
         figure = root._figure
+        assert_allclose(figure.get_size_inches(), (6.4, 4.8))
         plots = self.plotted_axes(figure)
         self.assertEqual(
             set(plots), {"span", "nested sibling", "nested host", "root sibling"}
@@ -925,9 +1036,11 @@ class TestSmartFigureInsets(unittest.TestCase):
         root, _ = self.nested_layout()
         original_savefig = PdfPages.savefig
         pages = []
+        sizes = []
 
         def inspect_page(pdf, figure, **kwargs):
             plots = self.plotted_axes(figure)
+            sizes.append(tuple(figure.get_size_inches()))
             pages.append(
                 {
                     label: [ax.containers[0].get_label() for ax in host.child_axes]
@@ -965,6 +1078,7 @@ class TestSmartFigureInsets(unittest.TestCase):
         ):
             with self.subTest(split=split):
                 pages.clear()
+                sizes.clear()
                 output = BytesIO()
                 with PdfPages(output) as pdf:
                     with patch.object(PdfPages, "savefig", new=inspect_page):
@@ -972,6 +1086,10 @@ class TestSmartFigureInsets(unittest.TestCase):
                     self.assertEqual(pdf.get_pagecount(), len(expected))
                 self.assertTrue(output.getvalue().startswith(b"%PDF-"))
                 self.assertEqual(pages, expected)
+                expected_sizes = (
+                    [(6.4, 4.8), (6.4, 9.6), (6.4, 4.8)] if split else [(12.8, 9.6)]
+                )
+                assert_allclose(sizes, expected_sizes)
 
     def test_promotion_copy_removal_and_repeat_render(self):
         figure = SmartFigure(figure_style="plain")
