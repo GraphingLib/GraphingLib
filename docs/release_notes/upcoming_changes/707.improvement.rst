@@ -1,0 +1,6 @@
+Share Cartesian tick validation
+-------------------------------
+
+``SmartFigure.set_ticks()`` and ``SmartTwinAxis.set_ticks()`` now share the
+normalization and validation for Cartesian tick settings. Both keep their
+existing arguments, error messages, and reset behavior.
