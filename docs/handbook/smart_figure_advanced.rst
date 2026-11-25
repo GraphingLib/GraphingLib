@@ -1580,6 +1580,45 @@ It can also be used to combine figures into a parent figure by changing seamless
     )
     parent.show()
 
+Inset Axes
+==========
+
+Use :meth:`~graphinglib.SmartFigure.create_inset` to add a smaller plot inside a
+subplot. Bounds are given as ``(left, bottom, width, height)`` in fractions of the
+host axes, with ``(0, 0)`` at the lower left. Supply the inset's plottables
+directly or add them later with :meth:`~graphinglib.SmartInset.add_elements`.
+
+.. code-block:: python
+
+    fig = gl.SmartFigure(2, 2)
+    fig[0, :] = curve1
+    host = fig[0, 1]  # Either cell in the span selects the same host plot.
+    detail = host.create_inset(
+        (0.58, 0.52, 0.36, 0.42),
+        elements=curve1.copy(),
+        x_lim=(4.85, 5.75),
+        y_lim=(0.10, 0.65),
+        indicate_zoom=True,
+    )
+    fig.show()
+
+For a nested layout, continue indexing until you reach the host plot. For
+example, ``root[0, 1][1].create_inset(...)`` attaches the inset to the second
+plot in the nested single-column figure. The root figure renders the inset with
+its host in ``show()``, ``save()``, and split PDF export. A nested layout stays
+together on its page when splitting its parent.
+
+An inset uses the host's effective style and has its own color cycle and limits.
+Its artists are excluded from the host and general legends. A zoom indicator
+requires both limit pairs in the host's data coordinates and uses the host's
+linear or logarithmic scales. Insets are supported on Cartesian plots and can
+be stacked in creation order. Same-plot twin axes and inset colorbars are
+currently unsupported. Use a copy when plotting the same element in both the
+host and the inset so that each has its own artist handles.
+
+Inspect a plot's insets with ``host.insets`` and remove one with
+``host.remove_inset(detail)``.
+
 Twin Axes
 =========
 
@@ -1895,6 +1934,24 @@ The :py:meth:`~graphinglib.SmartFigure.show` method displays a :class:`~graphing
     # Fullscreen display
     fig.show(fullscreen=True)
 
+For a multi-panel figure, pass ``size="auto"`` to multiply the style's base width by the
+number of columns and its base height by the number of rows. Empty cells and spans retain
+their space in the outer grid. Nested figures share the space allocated by their parent.
+Omitting ``size`` uses the style's fixed figure size, and passing a tuple sets the overall
+size in inches.
+
+.. code-block:: python
+
+    fig = gl.SmartFigure(1, 3, size="auto", elements=[curve1, curve2, curve3])
+    fig.show(fit_to_window=True)  # Use the available monitor area on a Qt backend.
+    fig.show(fit_to_window=(1280, 760))  # Set preview bounds in logical pixels.
+    fig.save("wide-layout.pdf")
+
+The preview bounds apply to ``show()`` only. The preview shrinks proportionally as needed,
+and the axes are laid out inside the smaller canvas. If screen bounds are unavailable,
+``fit_to_window=True`` raises an error with instructions for passing explicit bounds.
+Use ``fullscreen`` and ``fit_to_window`` separately.
+
 .. warning::
    For figures with general legends in "outside" positions, use inline Jupyter display or save to a file for correct rendering.
 
@@ -2178,6 +2235,8 @@ parent slot padding with its own settings. Use ``reset=True`` to clear
 that figure's overrides and fall back to inherited or figure style padding.
 
 Configure subplot membership, axis sharing, and projections before playback.
+Supported plottables inside an inset can update in place. Configure inset
+bounds, limits, zoom indicators, and membership before playback.
 A callback that tries to change one of these settings fails the frame and
 restores its pending edits. Legend candidates and colorbar placement are
 established from the initial figure. For a scalar Heatmap, Contour, or Scatter with an intensity

@@ -30,7 +30,7 @@ from typing import (
     cast,
 )
 
-from .inherit import INHERIT, Inherit, is_inherit, resolved, strip_inherit
+from .inherit import INHERIT, Inherit, is_inherit, resolve_or, resolved, strip_inherit
 
 try:  # Optional dependency: astropy
     from astropy.units import Quantity
@@ -79,6 +79,7 @@ from ._animation import (
     _updated_tick_config,
     _WCSTickStyle,
 )
+from .data_plotting_1d import Scatter
 from .exceptions import (
     IncompatibleArgumentsError,
     InvalidOperationError,
@@ -151,11 +152,10 @@ class SmartFigure:
         Defaults to ``1``.
     x_label, y_label : str, optional
         Labels for the x and y axes of the figure.
-    size : tuple[float, float], optional
-        Overall size of the figure. Note that this option is useless if the SmartFigure is nested inside another
-        SmartFigure, as the size is then determined by the parent SmartFigure and the available space.
-        Figure size is in inches; typical width is ``4`` to ``12`` and typical height is ``3`` to ``8``.
-        Default depends on the ``figure_style`` configuration.
+    size : tuple[float, float] or 'auto', optional
+        Overall size in inches. With ``"auto"``, multiply the style's width by the number of columns and
+        its height by the number of rows. By default, use the style size for the whole figure.
+        A nested SmartFigure gets its available space from its parent.
     title : str, optional
         General title of the figure.
     x_lim, y_lim : tuple[float, float] | list[tuple[float, float]], optional
@@ -331,7 +331,7 @@ class SmartFigure:
         num_cols: int = 1,
         x_label: str | None = None,
         y_label: str | None = None,
-        size: tuple[float, float] | Inherit = INHERIT,
+        size: tuple[float, float] | Literal["auto"] | Inherit = INHERIT,
         title: str | None = None,
         x_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
         y_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
@@ -372,6 +372,7 @@ class SmartFigure:
     ) -> None:
         self._mode: Literal["leaf", "container"] = "leaf"
         self._leaf_elements: list[Plottable] = []
+        self._insets: list[SmartInset] = []
         self._children: OrderedDict[tuple[slice, slice], SmartFigure] = OrderedDict()
         self._is_auto_child = False
         self._flatten_in_parent = False
@@ -467,7 +468,9 @@ class SmartFigure:
             if self._num_rows > value:
                 removed_rows = list(range(value, self._num_rows))
                 for pos, element in self._children.items():
-                    if (pos[0].stop - 1) in removed_rows and element:
+                    if (pos[0].stop - 1) in removed_rows and (
+                        element or element._insets
+                    ):
                         raise InvalidOperationError(
                             "Cannot remove rows from the SmartFigure when there are elements in "
                             "them. Please remove the elements first."
@@ -501,7 +504,9 @@ class SmartFigure:
             if self._num_cols > value:
                 removed_cols = list(range(value, self._num_cols))
                 for pos, element in self._children.items():
-                    if (pos[1].stop - 1) in removed_cols and element:
+                    if (pos[1].stop - 1) in removed_cols and (
+                        element or element._insets
+                    ):
                         raise InvalidOperationError(
                             "Cannot remove cols from the SmartFigure when there are elements in "
                             "them. Please remove the elements first."
@@ -544,17 +549,17 @@ class SmartFigure:
         self._y_label = _stage_live_value(self, "_y_label", value)
 
     @property
-    def size(self) -> tuple[float, float] | Inherit:
+    def size(self) -> tuple[float, float] | Literal["auto"] | Inherit:
         return self._size
 
     @size.setter
-    def size(self, value: tuple[float, float] | Inherit):
+    def size(self, value: tuple[float, float] | Literal["auto"] | Inherit):
         _reject_animated_layout(self)
-        if is_inherit(value):
+        if is_inherit(value) or (isinstance(value, str) and value == "auto"):
             self._size = value
             return
         if not isinstance(value, tuple):
-            raise InvalidParameterTypeError("size must be a tuple or 'default'.")
+            raise InvalidParameterTypeError("size must be a tuple, 'auto', or INHERIT.")
         if len(value) != 2:
             raise InvalidParameterError("size must be a tuple of length 2.")
         if value[0] <= 0 or value[1] <= 0:
@@ -1038,6 +1043,10 @@ class SmartFigure:
     def twin_x_axis(self, value: SmartTwinAxis | None) -> None:
         _reject_animated_layout(self)
         if value is not None:
+            if self._insets:
+                raise UnsupportedFeatureError(
+                    "Insets and twin axes cannot share a plot."
+                )
             if not self.is_single_subplot:
                 raise InvalidOperationError(
                     "Twin axes can only be created for single subplot SmartFigures."
@@ -1056,6 +1065,10 @@ class SmartFigure:
     def twin_y_axis(self, value: SmartTwinAxis | None) -> None:
         _reject_animated_layout(self)
         if value is not None:
+            if self._insets:
+                raise UnsupportedFeatureError(
+                    "Insets and twin axes cannot share a plot."
+                )
             if not self.is_single_subplot:
                 raise InvalidOperationError(
                     "Twin axes can only be created for single subplot SmartFigures."
@@ -1533,6 +1546,8 @@ class SmartFigure:
     def _iter_all_plottables_recursive(self) -> Iterator[Plottable]:
         if self._mode == "leaf":
             yield from self._leaf_elements
+            for inset in self._insets:
+                yield from inset.elements
             return
         for child in self._children.values():
             yield from child._iter_all_plottables_recursive()
@@ -1540,7 +1555,7 @@ class SmartFigure:
     @property
     def _ordered_elements(self) -> OrderedDict:
         if self._mode == "leaf":
-            if not self._leaf_elements:
+            if not (self._leaf_elements or self._insets):
                 return OrderedDict()
             return OrderedDict({(slice(0, 1), slice(0, 1)): list(self._leaf_elements)})
 
@@ -1815,7 +1830,10 @@ class SmartFigure:
         if self._mode == "container":
             return
         self._mode = "container"
+        self._is_auto_child = False
+        self._flatten_in_parent = False
         self._leaf_elements = []
+        self._insets = []
 
     def _promote_leaf_to_container(self) -> None:
         if self._mode != "leaf":
@@ -1823,6 +1841,7 @@ class SmartFigure:
         child = None
         if (
             self._leaf_elements
+            or self._insets
             or self._twin_x_axis is not None
             or self._twin_y_axis is not None
         ):
@@ -1833,8 +1852,8 @@ class SmartFigure:
             child._children = OrderedDict()
             child._is_auto_child = True
             child._flatten_in_parent = True
-        self._mode = "container"
-        self._leaf_elements = []
+            child._insets = self._insets
+        self._ensure_container_mode()
         self._twin_x_axis = None
         self._twin_y_axis = None
         self._children = OrderedDict()
@@ -1894,7 +1913,8 @@ class SmartFigure:
         for span, child in self._iter_child_items():
             self._sync_auto_child_projection(span, child)
 
-    def _normalize_leaf_rhs(self, value: Any) -> list[Plottable]:
+    @staticmethod
+    def _normalize_leaf_rhs(value: Any) -> list[Plottable]:
         if isinstance(value, Plottable):
             return [value]
         if isinstance(value, (str, bytes, SmartFigure)) or not isinstance(
@@ -1997,6 +2017,8 @@ class SmartFigure:
     def show(
         self,
         fullscreen: bool = False,
+        *,
+        fit_to_window: bool | tuple[int, int] = False,
     ) -> Self:
         """
         Plots and displays the :class:`~graphinglib.SmartFigure`. The :meth:`~graphinglib.SmartFigure.save` method is
@@ -2014,13 +2036,31 @@ class SmartFigure:
         fullscreen : bool, optional
             If True, the figure will be displayed in fullscreen mode.
             Defaults to ``False``.
+        fit_to_window : bool or tuple[int, int], optional
+            Shrink the preview proportionally to fit the screen on Qt backends, or use an explicit
+            ``(max_width, max_height)`` in logical pixels when screen bounds are unavailable.
+            The saved size is independent of the preview. Cannot be combined with ``fullscreen``.
+            Defaults to ``False``.
 
         Returns
         -------
         Self
             The same SmartFigure instance, allowing for method chaining.
         """
-        self._initialize_parent_smart_figure()
+        if not isinstance(fit_to_window, bool) and (
+            not isinstance(fit_to_window, tuple)
+            or len(fit_to_window) != 2
+            or any(type(value) is not int or value <= 0 for value in fit_to_window)
+        ):
+            raise InvalidParameterError(
+                "fit_to_window must be a bool or a pair of positive integer pixel bounds."
+            )
+        if fullscreen and fit_to_window:
+            raise IncompatibleArgumentsError(
+                "fullscreen and fit_to_window cannot be used together."
+            )
+
+        self._initialize_parent_smart_figure(fit_to_window=fit_to_window)
         assert self._figure is not None and self._gridspec is not None
 
         # Create an artificial axis to add padding around the figure
@@ -2104,21 +2144,31 @@ class SmartFigure:
             The same SmartFigure instance, allowing for method chaining.
         """
 
-        def recursive_save(pdf_file: PdfPages) -> None:
-            """Recursively saves each element of a SmartFigure to a separate page in the provided PdfPages object."""
-            for element in self._ordered_elements.values():
+        def save_pages(pdf_file: PdfPages) -> None:
+            """Save each top-level panel to a page, keeping insets with their host."""
+            self._fill_per_subplot_params()
+            subplot_params, self._subplot_p = self._subplot_p, {}
+            for index, (span, element) in enumerate(self._ordered_elements.items()):
                 if isinstance(element, (Plottable, list)):
                     leaf_elements = element if isinstance(element, list) else [element]
                     subfig = self.copy_with(
-                        elements=leaf_elements,
+                        elements=[],
                         num_rows=1,
                         num_cols=1,
+                        width_ratios=None,
+                        height_ratios=None,
                     )
+                    subfig.elements = leaf_elements
+                    host = self if self._mode == "leaf" else self._children[span]
+                    subfig._insets = list(host._insets)
+                    for name, values in subplot_params.items():
+                        if name.endswith("_pad"):
+                            subfig._pad_params[name] = values[index]
+                        else:
+                            setattr(subfig, f"_{name}", deepcopy(values[index]))
                 elif isinstance(element, SmartFigure):
                     subfig = element
                 subfig.save(pdf_file, dpi, transparent)
-
-        self._initialize_parent_smart_figure()
 
         if not isinstance(file_name, PdfPages) and split_pdf:
             if not file_name.endswith(".pdf"):
@@ -2132,23 +2182,34 @@ class SmartFigure:
                 )
 
         if split_pdf:
+            _reject_live_update(
+                self, "Finish the animation before rendering this figure again."
+            )
+            if self._animation is not None:
+                raise InvalidOperationError(
+                    "Close the current animation before rendering this figure again."
+                )
+            # Pages render independently of any previously displayed canvas.
+            self._figure = None
+            self._gridspec = None
             if isinstance(file_name, PdfPages):
-                recursive_save(file_name)
+                save_pages(file_name)
             else:
                 pdf_file = PdfPages(file_name)
                 with pdf_file as pdf:
-                    recursive_save(pdf)
+                    save_pages(pdf)
+            return self
 
+        self._initialize_parent_smart_figure()
+        save_kwargs = {
+            "bbox_inches": "tight",
+            "dpi": dpi if dpi is not None else "figure",
+            "transparent": transparent,
+        }
+        if isinstance(file_name, PdfPages):
+            file_name.savefig(self._figure, **save_kwargs)
         else:
-            save_kwargs = {
-                "bbox_inches": "tight",
-                "dpi": dpi if dpi is not None else "figure",
-                "transparent": transparent,
-            }
-            if isinstance(file_name, PdfPages):
-                file_name.savefig(self._figure, **save_kwargs)
-            else:
-                plt.savefig(file_name, **save_kwargs)
+            plt.savefig(file_name, **save_kwargs)
 
         plt.close()
         plt.rcParams.update(plt.rcParamsDefault)
@@ -2376,6 +2437,8 @@ class SmartFigure:
             session.apply_initial_visibility()
             for axes in figure.axes:
                 axes.set_autoscale_on(False)
+                for child_axes in axes.child_axes:
+                    child_axes.set_autoscale_on(False)
             frame_style = plt.rcParams.copy()
             animation = FuncAnimation(
                 figure,
@@ -2461,6 +2524,8 @@ class SmartFigure:
 
     def _initialize_parent_smart_figure(
         self,
+        *,
+        fit_to_window: bool | tuple[int, int] = False,
     ) -> None:
         """
         Initializes the parent :class:`~graphinglib.SmartFigure` for plotting. This method initializes the appropriate
@@ -2474,6 +2539,7 @@ class SmartFigure:
             raise InvalidOperationError(
                 "Close the current animation before rendering this figure again."
             )
+        previous_rc_params = plt.rcParams.copy()
         if is_inherit(self._figure_style):
             self._figure_style = get_default_style()
         try:
@@ -2515,8 +2581,23 @@ class SmartFigure:
 
         figure = None
         try:
-            figure = plt.figure(constrained_layout=True, figsize=resolved(self._size))
+            size = resolved(self._size)
+            if size == "auto":
+                if is_matplotlib_style:
+                    base_size = plt.rcParams["figure.figsize"]
+                else:
+                    base_size = self._default_params.get("SmartFigure", {}).get("_size")
+                    if base_size is None:
+                        base_size = FileLoader("plain").load()["SmartFigure"]["_size"]
+                base_width, base_height = base_size
+                size = base_width * self._num_cols, base_height * self._num_rows
+
+            figure = plt.figure(
+                constrained_layout=True, figsize=(1, 1) if fit_to_window else size
+            )
             self._figure = figure
+            if fit_to_window:
+                self._fit_preview(figure, size, fit_to_window)
             layout_engine = figure.get_layout_engine()
             assert isinstance(layout_engine, ConstrainedLayoutEngine)
             if _DRAW_SESSION.get() is None:
@@ -2542,10 +2623,50 @@ class SmartFigure:
                 plt.close(figure)
                 self._figure = None
                 self._gridspec = None
+            plt.rcParams.update(previous_rc_params)
             raise
         finally:
             self._reset_params_to_default(self, parent_figure_params_to_reset)
             self._default_params = {}
+
+    @staticmethod
+    def _fit_preview(
+        figure: Figure,
+        size: tuple[float, float],
+        fit_to_window: Literal[True] | tuple[int, int],
+    ) -> None:
+        """Set the preview canvas size before any plots are laid out or drawn."""
+        if fit_to_window is True:
+            manager = figure.canvas.manager
+            window: Any = getattr(manager, "window", None)
+            get_screen = getattr(window, "screen", None)
+            screen = get_screen() if callable(get_screen) else None
+            if screen is None:
+                raise UnsupportedFeatureError(
+                    "Screen size is unavailable. Pass fit_to_window=(width, height) "
+                    "to set preview bounds in pixels."
+                )
+            area = screen.availableGeometry()
+            frame = window.frameGeometry()
+            content = window.geometry()
+            toolbar: Any = getattr(manager, "toolbar", None)
+            bounds = (
+                area.width() - max(0, frame.width() - content.width()),
+                area.height()
+                - max(0, frame.height() - content.height())
+                - (toolbar.sizeHint().height() if toolbar is not None else 0),
+            )
+        else:
+            bounds = fit_to_window
+
+        dpi = figure.dpi / figure.canvas.device_pixel_ratio
+        width, height = size
+        scale = min(
+            1.0, max(1, bounds[0]) / (width * dpi), max(1, bounds[1]) / (height * dpi)
+        )
+        figure.set_size_inches(
+            max(1 / dpi, width * scale), max(1 / dpi, height * scale)
+        )
 
     def _prepare_figure(
         self,
@@ -2771,21 +2892,13 @@ class SmartFigure:
                 z_order = 2
                 for index, current_element in enumerate(current_elements):
                     if current_element is not None:
-                        params_to_reset = []
-                        if not is_matplotlib_style:
-                            params_to_reset = self._fill_in_missing_params(
-                                current_element
-                            )
-                        try:
-                            current_element._plot_element(
-                                ax,
-                                z_order,
-                                cycle_color=cycle_colors[index % num_cycle_colors],
-                            )
-                        finally:
-                            self._reset_params_to_default(
-                                current_element, params_to_reset
-                            )
+                        self._draw_plottable(
+                            ax,
+                            current_element,
+                            z_order,
+                            cycle_colors[index % num_cycle_colors],
+                            is_matplotlib_style,
+                        )
                         try:
                             label = current_element.label
                             if label is not None:
@@ -2919,6 +3032,12 @@ class SmartFigure:
                     for name in self._hidden_spines:
                         if name in ax.spines:
                             ax.spines[name].set_visible(False)
+
+                host = self if self._mode == "leaf" else self._children[rows, cols]
+                if host._insets:
+                    self._draw_insets(
+                        ax, host._insets, cycle_colors, is_matplotlib_style
+                    )
 
                 # Twin axes
                 for i, twin_axis in enumerate(
@@ -3207,6 +3326,81 @@ class SmartFigure:
             }
         self._subplot_p = {}  # clear the ListOrItem subplot parameters to free memory
         return legend_info
+
+    def _draw_plottable(
+        self,
+        axes: Axes,
+        element: Plottable,
+        z_order: int,
+        color: Any,
+        is_matplotlib_style: bool,
+        *,
+        in_inset: bool = False,
+    ) -> None:
+        params_to_reset = (
+            [] if is_matplotlib_style else self._fill_in_missing_params(element)
+        )
+        try:
+            if in_inset:
+                # With Matplotlib styles, Scatter's inherited setting defaults to off.
+                if resolve_or(
+                    getattr(element, "show_color_bar", False),
+                    not isinstance(element, Scatter),
+                ) or (
+                    _DRAW_SESSION.get() is not None
+                    and getattr(element, "_reserve_color_bar", False)
+                ):
+                    raise UnsupportedFeatureError("Insets cannot draw colorbars.")
+            element._plot_element(axes, z_order, cycle_color=color)
+        finally:
+            if not is_matplotlib_style:
+                self._reset_params_to_default(element, params_to_reset)
+
+    def _draw_insets(
+        self,
+        host: Axes,
+        insets: list[SmartInset],
+        cycle_colors: list[Any],
+        is_matplotlib_style: bool,
+    ) -> None:
+        if isinstance(self, SmartFigureWCS) or host.name != "rectilinear":
+            raise UnsupportedFeatureError("Insets require a Cartesian host plot.")
+        marker_zorder = max(artist.get_zorder() for artist in host.get_children()) + 1
+        session = _DRAW_SESSION.get()
+        for index, inset in enumerate(insets):
+            if session is not None:
+                session.mark_present(inset)
+            x_scale, y_scale = "linear", "linear"
+            if inset.indicate_zoom:
+                x_scale, y_scale = host.get_xscale(), host.get_yscale()
+                for scale, limits in ((x_scale, inset.x_lim), (y_scale, inset.y_lim)):
+                    if scale not in ("linear", "log"):
+                        raise UnsupportedFeatureError(
+                            "Inset zoom indicators require linear or logarithmic axes."
+                        )
+                    if scale == "log" and limits is not None and min(limits) <= 0:
+                        raise InvalidParameterError(
+                            "Logarithmic inset zoom limits must be positive."
+                        )
+
+            axes = host.inset_axes(inset.bounds, zorder=marker_zorder + 1 + index)
+            axes.set_xscale(x_scale)
+            axes.set_yscale(y_scale)
+            for element_i, element in enumerate(inset.elements):
+                self._draw_plottable(
+                    axes,
+                    element,
+                    2 + 5 * element_i,
+                    cycle_colors[element_i % len(cycle_colors)],
+                    is_matplotlib_style,
+                    in_inset=True,
+                )
+            if inset.x_lim is not None:
+                axes.set_xlim(*inset.x_lim)
+            if inset.y_lim is not None:
+                axes.set_ylim(*inset.y_lim)
+            if inset.indicate_zoom:
+                host.indicate_inset_zoom(axes, zorder=marker_zorder)
 
     def _fill_per_subplot_params(self) -> None:
         """
@@ -4831,6 +5025,61 @@ class SmartFigure:
 
         return self
 
+    @property
+    def insets(self) -> tuple[SmartInset, ...]:
+        """Insets attached directly to this plot, in drawing order."""
+        return tuple(self._insets)
+
+    def create_inset(
+        self,
+        bounds: tuple[float, float, float, float],
+        *,
+        elements: Plottable | Iterable[Plottable | None] = (),
+        x_lim: tuple[float, float] | None = None,
+        y_lim: tuple[float, float] | None = None,
+        indicate_zoom: bool = False,
+    ) -> SmartInset:
+        """Attach a configurable inset to this single plot.
+
+        Parameters
+        ----------
+        bounds : tuple[float, float, float, float]
+            Left, bottom, width and height in fractions of the host axes.
+        elements : Plottable or iterable of Plottable, optional
+            Elements to draw inside the inset. A later call to ``add_elements`` can add more.
+        x_lim, y_lim : tuple[float, float] or None, optional
+            Inset axis limits. ``None`` autoscales from the inset's data.
+        indicate_zoom : bool, optional
+            Draw a rectangle and connectors using the supplied limits in the host's data coordinates.
+
+        Returns
+        -------
+        SmartInset
+            The attached inset. For a layout, index the desired subplot before calling this method.
+        """
+        _reject_animated_layout(self)
+        if not self.is_single_subplot:
+            raise LayoutError("Select a single subplot before creating an inset.")
+        if self._twin_x_axis is not None or self._twin_y_axis is not None:
+            raise UnsupportedFeatureError("Insets and twin axes cannot share a plot.")
+        inset = SmartInset(
+            bounds,
+            elements=elements,
+            x_lim=x_lim,
+            y_lim=y_lim,
+            indicate_zoom=indicate_zoom,
+        )
+        self._insets.append(inset)
+        return inset
+
+    def remove_inset(self, inset: SmartInset) -> Self:
+        """Remove an inset from its host and return the host for chaining."""
+        _reject_animated_layout(self)
+        if inset not in self._insets:
+            raise InvalidOperationError("The inset is not attached to this plot.")
+        self._insets.remove(inset)
+        return self
+
     def create_twin_axis(
         self,
         is_y: bool = True,
@@ -4902,6 +5151,130 @@ class SmartFigure:
         return twin_axis
 
 
+class SmartInset:
+    """An inset configured through :meth:`~graphinglib.SmartFigure.create_inset`.
+
+    The inset stores plot settings and elements. Plot the host to render it.
+    """
+
+    def __init__(
+        self,
+        bounds: tuple[float, float, float, float],
+        *,
+        elements: Plottable | Iterable[Plottable | None] = (),
+        x_lim: tuple[float, float] | None = None,
+        y_lim: tuple[float, float] | None = None,
+        indicate_zoom: bool = False,
+    ) -> None:
+        self._indicate_zoom = False
+        self.bounds = bounds
+        self.x_lim = x_lim
+        self.y_lim = y_lim
+        self.indicate_zoom = indicate_zoom
+        self.elements = elements
+
+    @property
+    def bounds(self) -> tuple[float, float, float, float]:
+        """Left, bottom, width and height in fractions of the host axes."""
+        return self._bounds
+
+    @bounds.setter
+    def bounds(self, value: tuple[float, float, float, float]) -> None:
+        _reject_animated_layout(self)
+        left, bottom, width, height = self._coordinates(value, 4, "bounds")
+        if not (0 <= left < left + width <= 1 and 0 <= bottom < bottom + height <= 1):
+            raise InvalidParameterError(
+                "Inset bounds must have positive dimensions and fit inside the host axes."
+            )
+        self._bounds = (left, bottom, width, height)
+
+    @property
+    def x_lim(self) -> tuple[float, float] | None:
+        """Horizontal limits, or ``None`` to autoscale."""
+        return self._x_lim
+
+    @x_lim.setter
+    def x_lim(self, value: tuple[float, float] | None) -> None:
+        _reject_animated_layout(self)
+        self._x_lim = self._limits(value, "x_lim")
+
+    @property
+    def y_lim(self) -> tuple[float, float] | None:
+        """Vertical limits, or ``None`` to autoscale."""
+        return self._y_lim
+
+    @y_lim.setter
+    def y_lim(self, value: tuple[float, float] | None) -> None:
+        _reject_animated_layout(self)
+        self._y_lim = self._limits(value, "y_lim")
+
+    @property
+    def indicate_zoom(self) -> bool:
+        """Whether to connect the inset to its data window on the host plot."""
+        return self._indicate_zoom
+
+    @indicate_zoom.setter
+    def indicate_zoom(self, value: bool) -> None:
+        _reject_animated_layout(self)
+        if not isinstance(value, bool):
+            raise InvalidParameterTypeError("indicate_zoom must be a bool.")
+        if value and (self.x_lim is None or self.y_lim is None):
+            raise IncompatibleArgumentsError(
+                "A zoom indicator requires x_lim and y_lim."
+            )
+        self._indicate_zoom = value
+
+    @property
+    def elements(self) -> list[Plottable]:
+        """Elements plotted in the inset."""
+        return self._elements
+
+    @elements.setter
+    def elements(self, value: Plottable | Iterable[Plottable | None]) -> None:
+        _reject_animated_layout(self)
+        self._elements = SmartFigure._normalize_leaf_rhs(value)
+
+    def add_elements(self, *elements: Plottable | None) -> Self:
+        """Add plottables to the inset and return it for chaining."""
+        _reject_animated_layout(self)
+        self._elements.extend(SmartFigure._normalize_leaf_rhs(elements))
+        return self
+
+    def _limits(
+        self, value: tuple[float, float] | None, name: str
+    ) -> tuple[float, float] | None:
+        if value is None:
+            if self.indicate_zoom:
+                raise IncompatibleArgumentsError(
+                    "A zoom indicator requires x_lim and y_lim."
+                )
+            return None
+        first, second = self._coordinates(value, 2, name)
+        if first == second:
+            raise InvalidParameterError(f"Inset {name} endpoints must be different.")
+        return first, second
+
+    @staticmethod
+    def _coordinates(
+        value: tuple[float, ...], count: int, name: str
+    ) -> tuple[float, ...]:
+        if not isinstance(value, tuple):
+            raise InvalidParameterTypeError(f"Inset {name} must be a tuple.")
+        if len(value) != count:
+            raise InvalidParameterError(f"Inset {name} must contain {count} numbers.")
+        if any(isinstance(item, bool) or not isinstance(item, Real) for item in value):
+            raise InvalidParameterTypeError(f"Inset {name} must contain real numbers.")
+        try:
+            coordinates = tuple(float(item) for item in value)
+        except OverflowError as exc:
+            raise InvalidParameterError(
+                f"Inset {name} must contain finite numbers."
+            ) from exc
+        if not all(isfinite(item) for item in coordinates):
+            raise InvalidParameterError(f"Inset {name} must contain finite numbers.")
+        return coordinates
+
+
 class SmartFigureWCS(SmartFigure):
     """
     This class implements a figure object for plotting :class:`~graphinglib.Plottable` elements with a
@@ -4932,11 +5305,10 @@ class SmartFigureWCS(SmartFigure):
         Defaults to ``1``.
     x_label, y_label : str, optional
         Labels for the x and y axes of the figure.
-    size : tuple[float, float], optional
-        Overall size of the figure. Note that this option is useless if the SmartFigure is nested inside another
-        SmartFigure, as the size is then determined by the parent SmartFigure and the available space.
-        Figure size is in inches; typical width is ``4`` to ``12`` and typical height is ``3`` to ``8``.
-        Default depends on the ``figure_style`` configuration.
+    size : tuple[float, float] or 'auto', optional
+        Overall size in inches. With ``"auto"``, multiply the style's width by the number of columns and
+        its height by the number of rows. By default, use the style size for the whole figure.
+        A nested SmartFigure gets its available space from its parent.
     title : str, optional
         General title of the figure.
     x_lim, y_lim : tuple[float, float] | list[tuple[float, float]], optional
@@ -5106,7 +5478,7 @@ class SmartFigureWCS(SmartFigure):
         num_cols: int = 1,
         x_label: str | None = None,
         y_label: str | None = None,
-        size: tuple[float, float] | Inherit = INHERIT,
+        size: tuple[float, float] | Literal["auto"] | Inherit = INHERIT,
         title: str | None = None,
         x_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
         y_lim: ListOrItem[tuple[float | None, float | None] | None] = None,

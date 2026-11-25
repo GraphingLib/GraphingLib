@@ -382,6 +382,52 @@ class TestAnimation(unittest.TestCase):
         self.assertIsNone(fig._figure)
         self.assertFalse(self.output.exists())
 
+    def test_autosized_animation_updates_nested_and_spanning_insets(self):
+        host_curve = Curve([0, 1], [0, 1])
+        spanning_detail = Curve([0, 1], [0, 1])
+        nested_detail = Curve([0, 1], [1, 0])
+        root = SmartFigure(2, 2, size="auto", figure_style="plain")
+        root[0, :] = host_curve
+        span = root[0, 1]
+        bounds = (0.54, 0.48, 0.4, 0.42)
+        inset = span.create_inset(bounds, elements=spanning_detail)
+        nested = SmartFigure(1, 2, elements=[Curve([0, 1], [0, 1]), Text(0, 0, "B")])
+        nested[0].create_inset(bounds, elements=nested_detail)
+        root[1, :] = nested
+        seen = []
+
+        def update(frame):
+            figure = plt.gcf()
+            inset_axes = tuple(ax for parent in figure.axes for ax in parent.child_axes)
+            assert_allclose(figure.get_size_inches(), [12.8, 9.6])
+            self.assertEqual(len(inset_axes), 2)
+            self.assertTrue(all(not ax.get_autoscale_on() for ax in inset_axes))
+            seen.append(inset_axes)
+            spanning_detail.y_data = [frame, 1 - frame]
+            nested_detail.y_data = [1 - frame, frame]
+            if frame == 0:
+                with self.assertRaisesRegex(
+                    GraphingException, "Configure figure layout"
+                ):
+                    span.remove_inset(inset)
+                with self.assertRaisesRegex(
+                    GraphingException, "Configure figure layout"
+                ):
+                    inset.bounds = (0.1, 0.1, 0.4, 0.4)
+                with self.assertRaisesRegex(GraphingException, "Finish the animation"):
+                    root.save(str(self.output.with_suffix(".pdf")), split_pdf=True)
+
+        root.save_animation(self.output, update, 2, dpi=55)
+        self.assertEqual(len(seen), 2)
+        self.assertEqual(seen[0], seen[1])
+        self.assertEqual(inset.bounds, bounds)
+        self.assertEqual(span.insets, (inset,))
+        assert_allclose(spanning_detail.handle.lines[0].get_ydata(), [1, 0])
+        assert_allclose(nested_detail.handle.lines[0].get_ydata(), [0, 1])
+        self.assertFalse(self.output.with_suffix(".pdf").exists())
+        with Image.open(self.output) as gif:
+            self.assertEqual(gif.n_frames, 2)
+
     def test_rejects_deferred_callbacks_before_drawing(self):
         class AsyncCallback:
             async def __call__(self, frame):
