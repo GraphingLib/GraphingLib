@@ -1,3 +1,4 @@
+import gc
 import os
 import unittest
 import warnings
@@ -5,6 +6,7 @@ from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
+from weakref import ref
 
 from graphinglib import INHERIT, SmartInset
 
@@ -391,6 +393,23 @@ class TestSmartFigureContainer(SmartFigurePropertyMixin):
         self.child_curve = DummyPlottable("child")
         self.other_curve = DummyPlottable("other")
         self.plain_defaults = FileLoader("plain").load()
+
+    def test_split_pdf_releases_preview_canvas_after_close(self):
+        figure = SmartFigure(elements=Curve([0, 1], [0, 1]), figure_style="plain")
+        with patch.object(plt, "show"):
+            figure.show()
+        preview_number = plt.gcf().number
+        preview = ref(plt.gcf())
+        self.addCleanup(plt.close, preview_number)
+
+        with PdfPages(BytesIO()) as pdf:
+            figure.save(pdf, split_pdf=True)
+            self.assertEqual(pdf.get_pagecount(), 1)
+
+        self.assertTrue(plt.fignum_exists(preview_number))
+        plt.close(preview_number)
+        gc.collect()
+        self.assertIsNone(preview())
 
     def test_basic_scalar_property_validation(self):
         self.assert_basic_scalar_property_validation()
@@ -1040,6 +1059,24 @@ class TestSmartFigureInsets(unittest.TestCase):
         self.assertEqual(
             pages, [{"promoted host", "new inner sibling"}, {"outer sibling"}]
         )
+
+    def test_split_pdf_releases_inset_preview_canvas_after_close(self):
+        figure = SmartFigure(elements=self.curve("host"), figure_style="plain")
+        figure.create_inset(self.bounds, elements=self.curve("detail"))
+        with patch.object(plt, "show"):
+            figure.show()
+        preview_number = plt.gcf().number
+        preview = ref(plt.gcf())
+        self.addCleanup(plt.close, preview_number)
+
+        with PdfPages(BytesIO()) as pdf:
+            figure.save(pdf, split_pdf=True)
+            self.assertEqual(pdf.get_pagecount(), 1)
+
+        self.assertTrue(plt.fignum_exists(preview_number))
+        plt.close(preview_number)
+        gc.collect()
+        self.assertIsNone(preview())
 
     def test_default_scatter_inset_renders_with_matplotlib_style(self):
         host = SmartFigure(figure_style="matplotlib", elements=self.curve("host"))

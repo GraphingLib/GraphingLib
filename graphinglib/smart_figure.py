@@ -2007,9 +2007,9 @@ class SmartFigure:
                         width_ratios=None,
                         height_ratios=None,
                     )
-                    subfig.elements = deepcopy(leaf_elements)
+                    subfig.elements = leaf_elements
                     host = self if self._mode == "leaf" else self._children[span]
-                    subfig._insets = deepcopy(host._insets)
+                    subfig._insets = list(host._insets)
                     for name, values in subplot_params.items():
                         if name.endswith("_pad"):
                             subfig._pad_params[name] = values[index]
@@ -2031,6 +2031,9 @@ class SmartFigure:
                 )
 
         if split_pdf:
+            # Pages render independently of any previously displayed canvas.
+            self._figure = None
+            self._gridspec = None
             if isinstance(file_name, PdfPages):
                 save_pages(file_name)
             else:
