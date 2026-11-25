@@ -1,15 +1,23 @@
 from __future__ import annotations as _annotations_
 
-from .inherit import INHERIT, Inherit, is_inherit, resolve_or, resolved, strip_inherit
-
 from collections import OrderedDict
-from copy import deepcopy
+from collections.abc import Sequence
+from copy import copy, deepcopy
+from fractions import Fraction
+from functools import partial
+from inspect import (
+    isasyncgenfunction,
+    iscoroutinefunction,
+    isgeneratorfunction,
+    signature,
+)
 from logging import warning
 from math import isfinite
-from numbers import Real
+from numbers import Integral, Real
+from pathlib import Path
 from shutil import which
 from string import ascii_lowercase
-from collections.abc import Sequence
+from tempfile import NamedTemporaryFile
 from typing import (
     Any,
     Callable,
@@ -21,6 +29,8 @@ from typing import (
     Union,
     cast,
 )
+
+from .inherit import INHERIT, Inherit, is_inherit, resolve_or, resolved, strip_inherit
 
 try:  # Optional dependency: astropy
     from astropy.units import Quantity
@@ -34,20 +44,42 @@ except ImportError:
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import numpy as np
+from matplotlib.animation import FuncAnimation, writers
 from matplotlib.axes import Axes
+from matplotlib.axis import Axis
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure, SubFigure
 from matplotlib.gridspec import GridSpec
 from matplotlib.layout_engine import ConstrainedLayoutEngine
+from matplotlib.legend import Legend
 from matplotlib.legend_handler import HandlerPatch
 from matplotlib.patches import Polygon
 from matplotlib.projections import get_projection_names
 from matplotlib.transforms import ScaledTranslation
 from numpy.typing import ArrayLike
 
+from ._animation import (
+    _DRAW_SESSION,
+    _AnimationSession,
+    _ArtistEdit,
+    _axis_removal,
+    _bound_session,
+    _combine_edits,
+    _edit,
+    _legend_placement,
+    _LegendFilter,
+    _NativeTickStyle,
+    _reject_live_update,
+    _stage_live_value,
+    _subplot_visibility_entries,
+    _tick_removal,
+    _TickStyle,
+    _updated_tick_config,
+    _WCSTickStyle,
+)
 from .data_plotting_1d import Scatter
-from .file_manager import FileLoader, FileUpdater, get_default_style, get_styles
 from .exceptions import (
     IncompatibleArgumentsError,
     InvalidOperationError,
@@ -58,6 +90,7 @@ from .exceptions import (
     StyleNotFoundError,
     UnsupportedFeatureError,
 )
+from .file_manager import FileLoader, FileUpdater, get_default_style, get_styles
 from .graph_elements import Plottable, Text
 from .legend_artists import (
     HandlerMultipleLines,
@@ -70,6 +103,19 @@ from .tools import _copy_with_overrides, _require_optional_dependency
 
 T = TypeVar("T")
 ListOrItem = Union[T, list[T]]
+_GRID_RC = ("grid.color", "grid.alpha", "grid.linestyle", "grid.linewidth")
+_LIVE_VISUAL_RC = (
+    "figure.facecolor",
+    "axes.facecolor",
+    "axes.edgecolor",
+    "axes.linewidth",
+)
+_SPINE_NAMES = ("right", "left", "top", "bottom")
+_SUBPLOT_TEXT = {
+    "_x_label": "_sub_x_labels",
+    "_y_label": "_sub_y_labels",
+    "_title": "_subtitles",
+}
 
 
 def _require_astropy(feature: str = "this feature") -> None:
@@ -78,6 +124,12 @@ def _require_astropy(feature: str = "this feature") -> None:
 
 
 HAS_ASTROPY = _ASTROPY_AVAILABLE
+
+
+def _reject_animated_layout(element: object) -> None:
+    _reject_live_update(
+        element, "Configure figure layout and axis properties before animating."
+    )
 
 
 class SmartFigure:
@@ -109,23 +161,23 @@ class SmartFigure:
     x_lim, y_lim : tuple[float, float] | list[tuple[float, float]], optional
         Limits for the x and y axes of the figure. This can be given as a single value or a list of values to apply to
         each subplot.
-    sub_x_labels, sub_y_labels : Iterable[str], optional
+    sub_x_labels, sub_y_labels : Iterable[str | None], optional
         Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
         single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
         :class:`~graphinglib.SmartFigure` objects for each subfigure only to set the x and y labels. This list cannot
         be longer than the number of subfigures drawn by the SmartFigure and None values can be used to skip specific
         subfigures.
-    subtitles : Iterable[str], optional
+    subtitles : Iterable[str | None], optional
         Labels for the subtitles of each subfigure, respectively. Similarly to `sub_x_labels` and `sub_y_labels`, this
         allows to set subtitles for each subfigure without needing to create nested
         :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
         each subfigure needs its own subtitle. This list cannot be longer than the number of subfigures drawn by the
         SmartFigure and None values can be used to skip specific subfigures.
-    log_scale_x, log_scale_y : bool | list[bool], optional
+    log_scale_x, log_scale_y : bool | list[bool | None], optional
         Whether to use a logarithmic scale for the x and y axes, respectively. This can be given as a single value or
         a list of values to apply to each subplot.
         Defaults to ``False``.
-    remove_axes : bool | list[bool], optional
+    remove_axes : bool | list[bool | None], optional
         Whether to remove the axes from the figure. This can be given as a single boolean or a list of booleans to apply
         to each subplot.
         Defaults to ``False``.
@@ -150,13 +202,13 @@ class SmartFigure:
             data itself. The `box_aspect_ratio` parameter changes the size of the plot, which does not affect the
             figure's axes.
 
-    remove_x_ticks, remove_y_ticks : bool | list[bool], optional
+    remove_x_ticks, remove_y_ticks : bool | list[bool | None], optional
         Whether to remove the x and y ticks from the figure, respectively. This can be given as a single value or a list
         of values to apply to each subplot.
         Defaults to ``False``.
-    invert_x_axis, invert_y_axis : bool | list[bool], optional
-        Whether to invert the x and y axes, respectively. This can be given as a single value or a list of values to
-        apply to each subplot.
+    invert_x_axis, invert_y_axis : bool | list[bool | None], optional
+        Whether to invert the x and y axes, respectively. Use a single value or a list aligned with the subplots.
+        During animation, a list entry of ``None`` leaves that subplot alone.
         Defaults to ``False``.
     reference_labels : bool | list[bool], optional
         Whether or not to add reference labels to the subfigures. If set to ``True``, each subfigure will be labeled
@@ -235,7 +287,7 @@ class SmartFigure:
         Number of columns to display the labels in the legend. This is only used if the legend is displayed. This can be
         given as a single value or a list of values to apply to each subplot.
         Defaults to ``1``.
-    show_legend : bool | list[bool], optional
+    show_legend : bool | list[bool | None], optional
         Whether to show the legend for the figure. This allows to easily toggle the visibility of the legend. This can
         be given as a single value or a list of values to apply to each subplot.
         Defaults to ``True``.
@@ -283,18 +335,18 @@ class SmartFigure:
         title: str | None = None,
         x_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
         y_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
-        sub_x_labels: Iterable[str] | None = None,
-        sub_y_labels: Iterable[str] | None = None,
-        subtitles: Iterable[str] | None = None,
-        log_scale_x: ListOrItem[bool] = False,
-        log_scale_y: ListOrItem[bool] = False,
-        remove_axes: ListOrItem[bool] = False,
+        sub_x_labels: Iterable[str | None] | None = None,
+        sub_y_labels: Iterable[str | None] | None = None,
+        subtitles: Iterable[str | None] | None = None,
+        log_scale_x: bool | list[bool | None] = False,
+        log_scale_y: bool | list[bool | None] = False,
+        remove_axes: bool | list[bool | None] = False,
         aspect_ratio: ListOrItem[float | Literal["auto", "equal"]] = "auto",
         box_aspect_ratio: ListOrItem[float | None] = None,
-        remove_x_ticks: ListOrItem[bool] = False,
-        remove_y_ticks: ListOrItem[bool] = False,
-        invert_x_axis: ListOrItem[bool] = False,
-        invert_y_axis: ListOrItem[bool] = False,
+        remove_x_ticks: bool | list[bool | None] = False,
+        remove_y_ticks: bool | list[bool | None] = False,
+        invert_x_axis: bool | list[bool | None] = False,
+        invert_y_axis: bool | list[bool | None] = False,
         reference_labels: ListOrItem[bool] = True,
         global_reference_label: bool = False,
         reference_labels_loc: ListOrItem[
@@ -310,7 +362,7 @@ class SmartFigure:
         general_legend: bool = False,
         legend_loc: ListOrItem[str | tuple | None] = None,
         legend_cols: ListOrItem[int] = 1,
-        show_legend: ListOrItem[bool] = True,
+        show_legend: bool | list[bool | None] = True,
         twin_x_axis: SmartTwinAxis | None = None,
         twin_y_axis: SmartTwinAxis | None = None,
         figure_style: str | Inherit = INHERIT,
@@ -369,6 +421,7 @@ class SmartFigure:
         self._figure: Figure | SubFigure | None = None
         self._gridspec: GridSpec | None = None
         self._reference_label_i: int | None = None
+        self._animation: FuncAnimation | None = None
 
         self._ticks: dict[str, Any] = {}
         self._tick_params: dict[str, dict[str, Any]] = {
@@ -377,13 +430,13 @@ class SmartFigure:
             "x minor": {},
             "y minor": {},
         }
-        self._pad_params = {}
+        self._pad_params: dict[str, Any] = {}
         self._reference_labels_params = {}
 
         self._x_axis_label_color = "k"
         self._y_axis_label_color = "k"
 
-        self.show_grid = False
+        self._show_grid: bool | list[bool | None] | None = None
         self._grid = {}
 
         self.hide_custom_legend_elements = False
@@ -404,6 +457,7 @@ class SmartFigure:
 
     @num_rows.setter
     def num_rows(self, value: int) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, int):
             raise InvalidParameterTypeError("num_rows must be an integer.")
         if value < 1:
@@ -439,6 +493,7 @@ class SmartFigure:
 
     @num_cols.setter
     def num_cols(self, value: int) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, int):
             raise InvalidParameterTypeError("num_cols must be an integer.")
         if value < 1:
@@ -474,6 +529,7 @@ class SmartFigure:
 
     @shape.setter
     def shape(self, value: tuple[int, int]) -> None:
+        _reject_animated_layout(self)
         self.num_rows, self.num_cols = value
 
     @property
@@ -482,7 +538,7 @@ class SmartFigure:
 
     @x_label.setter
     def x_label(self, value: str | None) -> None:
-        self._x_label = value
+        self._x_label = _stage_live_value(self, "_x_label", value)
 
     @property
     def y_label(self) -> str | None:
@@ -490,7 +546,7 @@ class SmartFigure:
 
     @y_label.setter
     def y_label(self, value: str | None) -> None:
-        self._y_label = value
+        self._y_label = _stage_live_value(self, "_y_label", value)
 
     @property
     def size(self) -> tuple[float, float] | Literal["auto"] | Inherit:
@@ -498,6 +554,7 @@ class SmartFigure:
 
     @size.setter
     def size(self, value: tuple[float, float] | Literal["auto"] | Inherit):
+        _reject_animated_layout(self)
         if is_inherit(value) or (isinstance(value, str) and value == "auto"):
             self._size = value
             return
@@ -515,7 +572,7 @@ class SmartFigure:
 
     @title.setter
     def title(self, value: str | None) -> None:
-        self._title = value
+        self._title = _stage_live_value(self, "_title", value)
 
     @property
     def x_lim(self) -> ListOrItem[tuple[float | None, float | None] | None]:
@@ -531,7 +588,7 @@ class SmartFigure:
                     raise InvalidParameterTypeError("x_lim must be a tuple.")
                 if len(v) != 2:
                     raise InvalidParameterError("x_lim must be a tuple of length 2.")
-        self._x_lim = value
+        self._x_lim = _stage_live_value(self, "_x_lim", value)
 
     @property
     def y_lim(self) -> ListOrItem[tuple[float | None, float | None] | None]:
@@ -547,79 +604,91 @@ class SmartFigure:
                     raise InvalidParameterTypeError("y_lim must be a tuple.")
                 if len(v) != 2:
                     raise InvalidParameterError("y_lim must be a tuple of length 2.")
-        self._y_lim = value
+        self._y_lim = _stage_live_value(self, "_y_lim", value)
 
     @property
-    def sub_x_labels(self) -> Iterable[str] | None:
+    def sub_x_labels(self) -> Iterable[str | None] | None:
         return self._sub_x_labels
 
     @sub_x_labels.setter
-    def sub_x_labels(self, value: Iterable[str] | None) -> None:
-        if value is not None:
-            if not isinstance(value, Iterable):
-                raise InvalidParameterTypeError(
-                    "sub_x_labels must be an iterable of strings."
-                )
-        self._sub_x_labels = value
+    def sub_x_labels(self, value: Iterable[str | None] | None) -> None:
+        self._sub_x_labels = self._stage_subplot_text("_sub_x_labels", value)
 
     @property
-    def sub_y_labels(self) -> Iterable[str] | None:
+    def sub_y_labels(self) -> Iterable[str | None] | None:
         return self._sub_y_labels
 
     @sub_y_labels.setter
-    def sub_y_labels(self, value: Iterable[str] | None) -> None:
-        if value is not None:
-            if not isinstance(value, Iterable):
-                raise InvalidParameterTypeError(
-                    "sub_y_labels must be an iterable of strings."
-                )
-        self._sub_y_labels = value
+    def sub_y_labels(self, value: Iterable[str | None] | None) -> None:
+        self._sub_y_labels = self._stage_subplot_text("_sub_y_labels", value)
 
     @property
-    def subtitles(self) -> Iterable[str] | None:
+    def subtitles(self) -> Iterable[str | None] | None:
         return self._subtitles
 
     @subtitles.setter
-    def subtitles(self, value: Iterable[str] | None) -> None:
-        if value is not None:
+    def subtitles(self, value: Iterable[str | None] | None) -> None:
+        self._subtitles = self._stage_subplot_text("_subtitles", value)
+
+    def _stage_subplot_text(
+        self, name: str, value: Iterable[str | None] | None
+    ) -> str | list[str | None] | None:
+        if value is not None and not isinstance(value, str):
             if not isinstance(value, Iterable):
                 raise InvalidParameterTypeError(
-                    "subtitles must be an iterable of strings."
+                    f"{name[1:]} must be an iterable of strings or None."
                 )
-        self._subtitles = value
+            value = value if isinstance(value, list) else list(value)
+            if _bound_session(self) is not None:
+                if len(value) > len(self._ordered_elements):
+                    raise InvalidParameterError(
+                        f"Too many {name[1:]} entries for this SmartFigure."
+                    )
+                if any(
+                    item is not None and not isinstance(item, str) for item in value
+                ):
+                    raise InvalidParameterTypeError(
+                        f"{name[1:]} entries must be strings or None."
+                    )
+        return _stage_live_value(self, name, value)
+
+    def _stage_view_flag(
+        self, name: str, value: bool | list[bool | None]
+    ) -> bool | list[bool | None]:
+        valid = (
+            all(flag is None or isinstance(flag, bool) for flag in value)
+            if isinstance(value, list)
+            else isinstance(value, bool)
+        )
+        if not valid:
+            raise InvalidParameterTypeError(
+                f"{name} must be a bool or a list of bool or None."
+            )
+        return _stage_live_value(self, f"_{name}", value)
 
     @property
-    def log_scale_x(self) -> ListOrItem[bool]:
+    def log_scale_x(self) -> bool | list[bool | None]:
         return self._log_scale_x
 
     @log_scale_x.setter
-    def log_scale_x(self, value: ListOrItem[bool]) -> None:
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("log_scale_x must be a bool.")
-        self._log_scale_x = value
+    def log_scale_x(self, value: bool | list[bool | None]) -> None:
+        self._log_scale_x = self._stage_view_flag("log_scale_x", value)
 
     @property
-    def log_scale_y(self) -> ListOrItem[bool]:
+    def log_scale_y(self) -> bool | list[bool | None]:
         return self._log_scale_y
 
     @log_scale_y.setter
-    def log_scale_y(self, value: ListOrItem[bool]) -> None:
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("log_scale_y must be a bool.")
-        self._log_scale_y = value
+    def log_scale_y(self, value: bool | list[bool | None]) -> None:
+        self._log_scale_y = self._stage_view_flag("log_scale_y", value)
 
     @property
-    def remove_axes(self) -> ListOrItem[bool]:
+    def remove_axes(self) -> bool | list[bool | None]:
         return self._remove_axes
 
     @remove_axes.setter
-    def remove_axes(self, value: ListOrItem[bool]) -> None:
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("remove_axes must be a bool.")
-        self._remove_axes = value
+    def remove_axes(self, value: bool | list[bool | None]) -> None:
+        self._remove_axes = self._stage_view_flag("remove_axes", value)
 
     @property
     def aspect_ratio(self) -> ListOrItem[float | Literal["auto", "equal"]]:
@@ -632,9 +701,11 @@ class SmartFigure:
                 raise InvalidParameterTypeError(
                     "aspect_ratio must be a float, 'auto' or 'equal'."
                 )
-            if isinstance(v, (float, int)) and v <= 0:
+            if isinstance(v, (float, int)) and (not isfinite(v) or v <= 0):
                 raise InvalidParameterError("aspect_ratio must be greater than 0.")
-        self._aspect_ratio = value
+        self._aspect_ratio = _stage_live_value(
+            self, "_aspect_ratio", list(value) if isinstance(value, list) else value
+        )
 
     @property
     def box_aspect_ratio(self) -> ListOrItem[float | None]:
@@ -648,55 +719,45 @@ class SmartFigure:
                     raise InvalidParameterTypeError(
                         "box_aspect_ratio must be a number."
                     )
-                if v <= 0:
+                if not isfinite(v) or v <= 0:
                     raise InvalidParameterError(
                         "box_aspect_ratio must be greater than 0."
                     )
-        self._box_aspect_ratio = value
+        self._box_aspect_ratio = _stage_live_value(
+            self, "_box_aspect_ratio", list(value) if isinstance(value, list) else value
+        )
 
     @property
-    def remove_x_ticks(self) -> ListOrItem[bool]:
+    def remove_x_ticks(self) -> bool | list[bool | None]:
         return self._remove_x_ticks
 
     @remove_x_ticks.setter
-    def remove_x_ticks(self, value: ListOrItem[bool]) -> None:
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("remove_x_ticks must be a bool.")
-        self._remove_x_ticks = value
+    def remove_x_ticks(self, value: bool | list[bool | None]) -> None:
+        self._remove_x_ticks = self._stage_view_flag("remove_x_ticks", value)
 
     @property
-    def remove_y_ticks(self) -> ListOrItem[bool]:
+    def remove_y_ticks(self) -> bool | list[bool | None]:
         return self._remove_y_ticks
 
     @remove_y_ticks.setter
-    def remove_y_ticks(self, value: ListOrItem[bool]) -> None:
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("remove_y_ticks must be a bool.")
-        self._remove_y_ticks = value
+    def remove_y_ticks(self, value: bool | list[bool | None]) -> None:
+        self._remove_y_ticks = self._stage_view_flag("remove_y_ticks", value)
 
     @property
-    def invert_x_axis(self) -> ListOrItem[bool]:
+    def invert_x_axis(self) -> bool | list[bool | None]:
         return self._invert_x_axis
 
     @invert_x_axis.setter
-    def invert_x_axis(self, value: ListOrItem[bool]) -> None:
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("invert_x_axis must be a bool.")
-        self._invert_x_axis = value
+    def invert_x_axis(self, value: bool | list[bool | None]) -> None:
+        self._invert_x_axis = self._stage_view_flag("invert_x_axis", value)
 
     @property
-    def invert_y_axis(self) -> ListOrItem[bool]:
+    def invert_y_axis(self) -> bool | list[bool | None]:
         return self._invert_y_axis
 
     @invert_y_axis.setter
-    def invert_y_axis(self, value: ListOrItem[bool]) -> None:
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("invert_y_axis must be a bool.")
-        self._invert_y_axis = value
+    def invert_y_axis(self, value: bool | list[bool | None]) -> None:
+        self._invert_y_axis = self._stage_view_flag("invert_y_axis", value)
 
     @property
     def reference_labels(self) -> ListOrItem[bool]:
@@ -704,6 +765,7 @@ class SmartFigure:
 
     @reference_labels.setter
     def reference_labels(self, value: ListOrItem[bool]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError("reference_labels must be a bool.")
@@ -715,6 +777,7 @@ class SmartFigure:
 
     @global_reference_label.setter
     def global_reference_label(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("global_reference_label must be a bool.")
         self._global_reference_label = value
@@ -729,6 +792,7 @@ class SmartFigure:
     def reference_labels_loc(
         self, value: ListOrItem[Literal["inside", "outside"] | tuple[float, float]]
     ) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if isinstance(v, tuple):
                 if len(v) != 2:
@@ -747,6 +811,7 @@ class SmartFigure:
 
     @width_padding.setter
     def width_padding(self, value: float | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not isinstance(value, (float, int)):
                 raise InvalidParameterTypeError("width_padding must be a number.")
@@ -762,6 +827,7 @@ class SmartFigure:
 
     @height_padding.setter
     def height_padding(self, value: float | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not isinstance(value, (float, int)):
                 raise InvalidParameterTypeError("height_padding must be a number.")
@@ -777,6 +843,7 @@ class SmartFigure:
 
     @width_ratios.setter
     def width_ratios(self, value: ArrayLike | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not hasattr(value, "__len__"):
                 raise InvalidParameterTypeError("width_ratios must be an ArrayLike.")
@@ -797,6 +864,7 @@ class SmartFigure:
 
     @height_ratios.setter
     def height_ratios(self, value: ArrayLike | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not hasattr(value, "__len__"):
                 raise InvalidParameterTypeError("height_ratios must be an ArrayLike.")
@@ -817,6 +885,7 @@ class SmartFigure:
 
     @share_x.setter
     def share_x(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("share_x must be a bool.")
         self._share_x = value
@@ -827,6 +896,7 @@ class SmartFigure:
 
     @share_y.setter
     def share_y(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("share_y must be a bool.")
         self._share_y = value
@@ -837,6 +907,7 @@ class SmartFigure:
 
     @projection.setter
     def projection(self, value: ListOrItem[Any | None]) -> None:
+        _reject_animated_layout(self)
         valid_projections = get_projection_names()
         if "3d" in valid_projections:
             valid_projections.remove("3d")
@@ -863,6 +934,7 @@ class SmartFigure:
 
     @general_legend.setter
     def general_legend(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("general_legend must be a bool.")
         self._general_legend = value
@@ -902,7 +974,9 @@ class SmartFigure:
                             "legend_loc cannot be 'best' when general_legend is True."
                         )
                 elif isinstance(v, tuple):
-                    if len(v) != 2:
+                    if len(v) != 2 or any(
+                        not isinstance(n, Real) or not isfinite(n) for n in v
+                    ):
                         raise InvalidParameterError(
                             "legend_loc must be a string or a tuple of length 2."
                         )
@@ -910,7 +984,17 @@ class SmartFigure:
                     raise InvalidParameterTypeError(
                         "legend_loc must be a string or tuple."
                     )
-        self._legend_loc = value
+        if (
+            self._general_legend
+            and isinstance(value, list)
+            and _bound_session(self) is not None
+        ):
+            raise InvalidParameterError(
+                "A general legend requires a single legend_loc value."
+            )
+        self._legend_loc = _stage_live_value(
+            self, "_legend_loc", list(value) if isinstance(value, list) else value
+        )
 
     @property
     def legend_cols(self) -> ListOrItem[int]:
@@ -923,18 +1007,33 @@ class SmartFigure:
                 raise InvalidParameterTypeError("legend_cols must be an integer.")
             if v < 1:
                 raise InvalidParameterError("legend_cols must be greater than 0.")
-        self._legend_cols = value
+        if (
+            self._general_legend
+            and isinstance(value, list)
+            and _bound_session(self) is not None
+        ):
+            raise InvalidParameterError(
+                "A general legend requires a single legend_cols value."
+            )
+        self._legend_cols = _stage_live_value(
+            self, "_legend_cols", list(value) if isinstance(value, list) else value
+        )
 
     @property
-    def show_legend(self) -> ListOrItem[bool]:
+    def show_legend(self) -> bool | list[bool | None]:
         return self._show_legend
 
     @show_legend.setter
-    def show_legend(self, value: ListOrItem[bool]) -> None:
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("show_legend must be a bool.")
-        self._show_legend = value
+    def show_legend(self, value: bool | list[bool | None]) -> None:
+        if (
+            self._general_legend
+            and isinstance(value, list)
+            and _bound_session(self) is not None
+        ):
+            raise IncompatibleArgumentsError(
+                "A general legend requires a single show_legend boolean."
+            )
+        self._show_legend = self._stage_view_flag("show_legend", value)
 
     @property
     def twin_x_axis(self) -> SmartTwinAxis | None:
@@ -942,6 +1041,7 @@ class SmartFigure:
 
     @twin_x_axis.setter
     def twin_x_axis(self, value: SmartTwinAxis | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if self._insets:
                 raise UnsupportedFeatureError(
@@ -963,6 +1063,7 @@ class SmartFigure:
 
     @twin_y_axis.setter
     def twin_y_axis(self, value: SmartTwinAxis | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if self._insets:
                 raise UnsupportedFeatureError(
@@ -984,6 +1085,7 @@ class SmartFigure:
 
     @figure_style.setter
     def figure_style(self, value: str | Inherit) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, str) and not is_inherit(value):
             raise InvalidParameterTypeError("figure_style must be a string or INHERIT.")
         available_styles = [INHERIT, "matplotlib"] + get_styles(matplotlib=True)
@@ -1023,6 +1125,7 @@ class SmartFigure:
         For adding elements instead of replacing them, use the :meth:`~graphinglib.SmartFigure.add_elements` or the
         :meth:`~graphinglib.SmartFigure.__setitem__` methods.
         """
+        _reject_animated_layout(self)
         if isinstance(value, SmartFigure):
             raise InvalidParameterTypeError(
                 "Leaf elements cannot be assigned a SmartFigure directly."
@@ -1051,6 +1154,7 @@ class SmartFigure:
 
     @annotations.setter
     def annotations(self, value: Iterable[Text] | None) -> None:
+        _reject_animated_layout(self)
         if value is not None:
             if not isinstance(value, Iterable) or not all(
                 isinstance(t, Text) for t in value
@@ -1061,20 +1165,16 @@ class SmartFigure:
         self._annotations = value
 
     @property
-    def show_grid(self) -> ListOrItem[bool]:
+    def show_grid(self) -> bool | list[bool | None]:
         """
-        Whether to show the grid lines on the figure. A grid first needs to be created using the
-        :meth: `~graphinglib.SmartFigure.set_grid` method. This can be used to easily toggle the visibility of a
-        previously created grid.
+        Whether to show the grid lines on the figure. The figure style supplies
+        the default grid. Use :meth:`~graphinglib.SmartFigure.set_grid` to configure it.
         """
-        return self._show_grid
+        return self._show_grid if self._show_grid is not None else False
 
     @show_grid.setter
-    def show_grid(self, value: ListOrItem[bool]) -> None:
-        for v in value if isinstance(value, list) else [value]:
-            if not isinstance(v, bool):
-                raise InvalidParameterTypeError("show_grid must be a bool.")
-        self._show_grid = value
+    def show_grid(self, value: bool | list[bool | None]) -> None:
+        self._show_grid = self._stage_view_flag("show_grid", value)
 
     @property
     def hide_custom_legend_elements(self) -> bool:
@@ -1099,7 +1199,9 @@ class SmartFigure:
             raise InvalidParameterTypeError(
                 "hide_custom_legend_elements must be a bool."
             )
-        self._hide_custom_legend_elements = value
+        self._hide_custom_legend_elements = _stage_live_value(
+            self, "_hide_custom_legend_elements", value
+        )
 
     @property
     def hide_default_legend_elements(self) -> ListOrItem[bool]:
@@ -1120,12 +1222,39 @@ class SmartFigure:
 
     @hide_default_legend_elements.setter
     def hide_default_legend_elements(self, value: ListOrItem[bool]) -> None:
+        if isinstance(value, list) and _bound_session(self) is not None:
+            if self._general_legend:
+                raise IncompatibleArgumentsError(
+                    "A general legend takes a single hide_default_legend_elements boolean."
+                )
+            if len(value) > len(self._ordered_elements):
+                raise InvalidParameterError(
+                    "Too many legend visibility entries for this SmartFigure."
+                )
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, bool):
                 raise InvalidParameterTypeError(
                     "hide_default_legend_elements must be a bool."
                 )
-        self._hide_default_legend_elements = value
+        self._hide_default_legend_elements = _stage_live_value(
+            self, "_hide_default_legend_elements", value
+        )
+
+    def _default_legend_filter(self, index: int) -> _LegendFilter:
+        def is_hidden() -> bool:
+            value = self._hide_default_legend_elements
+            if isinstance(value, list):
+                return value[index] if index < len(value) else False
+            return value
+
+        return _LegendFilter(self, "_hide_default_legend_elements", is_hidden)
+
+    def _custom_legend_filter(self) -> _LegendFilter:
+        return _LegendFilter(
+            self,
+            "_hide_custom_legend_elements",
+            lambda: self._hide_custom_legend_elements,
+        )
 
     @property
     def is_single_subplot(self) -> bool:
@@ -1241,6 +1370,7 @@ class SmartFigure:
             |            |            |
             +------------+------------+
         """
+        _reject_animated_layout(self)
         if self._mode == "leaf":
             raise LayoutError(
                 "SmartFigures used as a single plot do not support subplot assignment. "
@@ -1357,7 +1487,7 @@ class SmartFigure:
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result
-        excluded_attrs = ["_figure", "_gridspec"]
+        excluded_attrs = ["_figure", "_gridspec", "_animation"]
         for property_, value in self.__dict__.items():
             if property_ not in excluded_attrs:
                 result.__dict__[property_] = deepcopy(value, memo)
@@ -1611,6 +1741,7 @@ class SmartFigure:
             For more information on how to use the ``__setitem__`` method to add elements that span multiple columns or
             rows to the :class:`~graphinglib.SmartFigure`.
         """
+        _reject_animated_layout(self)
         if self._mode == "leaf":
             for element in elements:
                 if element is None:
@@ -1662,6 +1793,7 @@ class SmartFigure:
         return result
 
     def __iadd__(self, other):
+        _reject_animated_layout(self)
         if self._mode == "leaf":
             self._leaf_elements.extend(self._normalize_leaf_rhs(other))
             return self
@@ -2050,6 +2182,13 @@ class SmartFigure:
                 )
 
         if split_pdf:
+            _reject_live_update(
+                self, "Finish the animation before rendering this figure again."
+            )
+            if self._animation is not None:
+                raise InvalidOperationError(
+                    "Close the current animation before rendering this figure again."
+                )
             # Pages render independently of any previously displayed canvas.
             self._figure = None
             self._gridspec = None
@@ -2078,6 +2217,311 @@ class SmartFigure:
         self._gridspec = None
         return self
 
+    def show_animation(
+        self,
+        update_function: Callable[[int], Any],
+        number_of_frames: int,
+        interval: int = 100,
+        *,
+        reserve_legend_entries: bool = False,
+    ) -> Self:
+        """
+        Animates and displays the :class:`~graphinglib.SmartFigure`.
+
+        Parameters
+        ----------
+        update_function : callable
+            Synchronous function that sets plot data for a zero-based frame index. Playback can request an index again.
+        number_of_frames : int
+            The number of frames in the animation.
+        interval : int
+            The time between each frame in milliseconds.
+            Defaults to ``100``.
+
+        reserve_legend_entries : bool, optional
+            Reserve legend entries for supported plots that start without labels.
+            Assign a label in a callback to reveal the entry. Defaults to ``False``.
+
+        Returns
+        -------
+        Self
+            The same SmartFigure instance, allowing for method chaining.
+        """
+        self._validate_animation_parameters(update_function, number_of_frames, interval)
+        with plt.rc_context():
+            figure, animation, session = self._create_animation(
+                update_function,
+                number_of_frames,
+                interval,
+                interactive=True,
+                reserve_legend_entries=reserve_legend_entries,
+            )
+
+            def on_close(event: Any) -> None:
+                figure.canvas.mpl_disconnect(close_id)
+                self._finish_animation(figure, animation, session, close=False)
+
+            close_id = figure.canvas.mpl_connect("close_event", on_close)
+            try:
+                figure.canvas.draw()
+                plt.show()
+            except BaseException:
+                self._finish_animation(figure, animation, session)
+                raise
+            finally:
+                if not plt.fignum_exists(figure.number):
+                    figure.canvas.mpl_disconnect(close_id)
+                    self._finish_animation(figure, animation, session, close=False)
+        return self
+
+    def save_animation(
+        self,
+        file_name: str | Path,
+        update_function: Callable[[int], Any],
+        number_of_frames: int,
+        interval: int = 100,
+        dpi: int | None = None,
+        fps: float | None = None,
+        writer: str | None = None,
+        transparent: bool = False,
+        *,
+        reserve_legend_entries: bool = False,
+    ) -> Self:
+        """
+        Animates the :class:`~graphinglib.SmartFigure` and saves it to a file.
+
+        Parameters
+        ----------
+        file_name : str | pathlib.Path
+            The output file path ending in ``.gif`` or ``.mp4``.
+        update_function : callable
+            Synchronous function that sets plot data for a zero-based frame index.
+        number_of_frames : int
+            The number of frames in the animation.
+        interval : int
+            The time between each frame in milliseconds.
+            Defaults to ``100``.
+        dpi : int, optional
+            Resolution used when rendering frames. If None, the figure DPI is used.
+        fps : float, optional
+            Frames per second for the saved animation. If None, this is inferred from ``interval``.
+        writer : str, optional
+            The writer matching the output format, ``"pillow"`` for GIF or ``"ffmpeg"`` for MP4.
+            The writer is inferred from the extension when omitted.
+        transparent : bool, optional
+            Whether to save with transparent background.
+            Defaults to ``False``.
+
+        reserve_legend_entries : bool, optional
+            Reserve legend entries for supported plots that start without labels.
+            Assign a label in a callback to reveal the entry. Defaults to ``False``.
+
+        Returns
+        -------
+        Self
+            The same SmartFigure instance, allowing for method chaining.
+        """
+        self._validate_animation_parameters(update_function, number_of_frames, interval)
+        save_fps: float | Fraction = fps if fps is not None else 1000 / interval
+        self._validate_animation_number("fps", save_fps)
+        if dpi is not None:
+            self._validate_animation_number("dpi", dpi)
+        destination = Path(file_name)
+        default_writer = {".gif": "pillow", ".mp4": "ffmpeg"}.get(
+            destination.suffix.lower()
+        )
+        if default_writer is None:
+            raise InvalidParameterError(
+                "Animation output must have a .gif or .mp4 extension."
+            )
+        if writer is None:
+            writer = default_writer
+        if not isinstance(writer, str):
+            raise InvalidParameterTypeError(
+                "writer must be the name of a Matplotlib animation writer."
+            )
+        if not writers.is_available(writer):
+            raise InvalidOperationError(
+                f"The Matplotlib animation writer {writer!r} is unavailable."
+            )
+        if writer != default_writer:
+            raise InvalidParameterError(
+                "Use the Pillow writer for GIF output or the FFmpeg writer for MP4 output."
+            )
+        if writer == "pillow" and fps is None:
+            # PillowWriter truncates 1000 / fps to milliseconds. Preserve exact GIF delays
+            # such as 120 ms when the inferred frame rate is a repeating decimal.
+            save_fps = Fraction(1000) / Fraction(float(interval))
+
+        with plt.rc_context():
+            figure, animation, session = self._create_animation(
+                update_function,
+                number_of_frames,
+                interval,
+                reserve_legend_entries=reserve_legend_entries,
+            )
+            temporary_path = None
+            try:
+                with NamedTemporaryFile(
+                    dir=destination.parent, suffix=destination.suffix, delete=False
+                ) as output:
+                    temporary_path = Path(output.name)
+                try:
+                    animation.save(
+                        temporary_path,
+                        writer=writer,
+                        fps=save_fps,  # ty: ignore[invalid-argument-type]  # Writers accept fractional rates.
+                        dpi=dpi,
+                        savefig_kwargs={"transparent": transparent},
+                    )
+                except BaseException as writer_error:
+                    # Pillow can fail while finishing an empty file and mask frame zero's error.
+                    if (
+                        session.failure is not None
+                        and session.failure is not writer_error
+                    ):
+                        raise session.failure from None
+                    raise
+                temporary_path.replace(destination)
+            finally:
+                try:
+                    if temporary_path is not None:
+                        temporary_path.unlink(missing_ok=True)
+                finally:
+                    self._finish_animation(figure, animation, session)
+        return self
+
+    def _create_animation(
+        self,
+        update_function: Callable[[int], Any],
+        number_of_frames: int,
+        interval: int,
+        *,
+        interactive: bool = False,
+        reserve_legend_entries: bool = False,
+    ) -> tuple[Figure, FuncAnimation, _AnimationSession]:
+        if not isinstance(reserve_legend_entries, bool):
+            raise InvalidParameterTypeError("reserve_legend_entries must be a bool.")
+        if self._animation is not None:
+            raise InvalidOperationError(
+                "Close the current animation before starting another one."
+            )
+
+        _reject_live_update(
+            self, "Finish the active animation before rendering this figure again."
+        )
+        session = _AnimationSession(reserve_legend_entries=reserve_legend_entries)
+        session.mark_present(self)
+        token = _DRAW_SESSION.set(session)
+        try:
+            self._initialize_parent_smart_figure()
+        except BaseException:
+            session.clear()
+            raise
+        finally:
+            _DRAW_SESSION.reset(token)
+        figure = self._figure
+        assert isinstance(figure, Figure)
+
+        def draw_frame(index: int) -> None:
+            try:
+                with plt.rc_context(rc=frame_style):
+                    session.draw_frame(update_function, index)
+            except BaseException:
+                if interactive:
+                    self._finish_animation(figure, animation, session)
+                raise
+
+        try:
+            figure.set_layout_engine("none")
+            session.apply_initial_visibility()
+            for axes in figure.axes:
+                axes.set_autoscale_on(False)
+                for child_axes in axes.child_axes:
+                    child_axes.set_autoscale_on(False)
+            frame_style = plt.rcParams.copy()
+            animation = FuncAnimation(
+                figure,
+                draw_frame,
+                frames=number_of_frames,
+                interval=interval,
+                init_func=lambda: None,
+                blit=False,
+                cache_frame_data=False,
+            )
+        except BaseException:
+            session.clear()
+            plt.close(figure)
+            self._figure = None
+            self._gridspec = None
+            raise
+        self._animation = animation
+        return figure, animation, session
+
+    def _finish_animation(
+        self,
+        figure: Figure,
+        animation: FuncAnimation,
+        session: _AnimationSession,
+        *,
+        close: bool = True,
+    ) -> None:
+        if self._animation is not animation:
+            return
+        if animation.event_source is not None:
+            animation.event_source.stop()
+        session.clear()
+        self._animation = None
+        if self._figure is figure:
+            self._figure = None
+            self._gridspec = None
+        if close:
+            plt.close(figure)
+
+    @classmethod
+    def _validate_animation_parameters(
+        cls, update_function: Callable[[int], Any], number_of_frames: int, interval: int
+    ) -> None:
+        cls._validate_animation_update_function(update_function)
+        if isinstance(number_of_frames, bool) or not isinstance(
+            number_of_frames, Integral
+        ):
+            raise InvalidParameterTypeError("number_of_frames must be an integer.")
+        if number_of_frames <= 0:
+            raise InvalidParameterError("number_of_frames must be positive.")
+        cls._validate_animation_number("interval", interval)
+
+    @staticmethod
+    def _validate_animation_number(name: str, value: float) -> None:
+        if isinstance(value, bool) or not isinstance(value, Real):
+            raise InvalidParameterTypeError(f"{name} must be a real number.")
+        if value <= 0 or not isfinite(value):
+            raise InvalidParameterError(f"{name} must be finite and positive.")
+
+    @staticmethod
+    def _validate_animation_update_function(
+        update_function: Callable[[int], Any],
+    ) -> None:
+        if not callable(update_function) or any(
+            iscoroutinefunction(candidate)
+            or isgeneratorfunction(candidate)
+            or isasyncgenfunction(candidate)
+            for candidate in (
+                update_function,
+                getattr(update_function, "__call__", None),
+            )
+        ):
+            raise InvalidParameterTypeError(
+                "The update function must be a synchronous callable."
+            )
+
+        try:
+            signature(update_function).bind(0)
+        except (TypeError, ValueError) as exc:
+            raise InvalidOperationError(
+                "The update function must take an integer argument representing the frame number."
+            ) from exc
+
     def _initialize_parent_smart_figure(
         self,
         *,
@@ -2088,6 +2532,13 @@ class SmartFigure:
         figure style, parameters and matplotlib figure and calls the :meth:`~graphinglib.SmartFigure._prepare_figure`
         method.
         """
+        _reject_live_update(
+            self, "Finish the animation before rendering this figure again."
+        )
+        if self._animation is not None:
+            raise InvalidOperationError(
+                "Close the current animation before rendering this figure again."
+            )
         previous_rc_params = plt.rcParams.copy()
         if is_inherit(self._figure_style):
             self._figure_style = get_default_style()
@@ -2112,43 +2563,67 @@ class SmartFigure:
         parent_figure_params_to_reset = self._fill_in_missing_params(
             self
         )  # Fill "default" parameters
+        animation_grid_defaults = None
+        if _DRAW_SESSION.get() is not None:
+            style = (
+                plt.rcParams
+                if is_matplotlib_style
+                else self._default_params["rc_params"]
+            )
+            animation_grid_defaults = {
+                key: style.get(key, plt.rcParams[key]) for key in _GRID_RC
+            }
+
         self._default_params["rc_params"].update(
             self._user_rc_dict
         )  # Custom rc parameters supersede the defaults
         self._fill_in_rc_params(is_matplotlib_style)
 
-        size = resolved(self._size)
-        if size == "auto":
-            if is_matplotlib_style:
-                base_size = plt.rcParams["figure.figsize"]
-            else:
-                base_size = self._default_params.get("SmartFigure", {}).get("_size")
-                if base_size is None:
-                    base_size = FileLoader("plain").load()["SmartFigure"]["_size"]
-            base_width, base_height = base_size
-            size = base_width * self._num_cols, base_height * self._num_rows
-
-        # The following try/except removes lingering figures when errors occur during the plotting process
+        figure = None
         try:
-            self._figure = plt.figure(
+            size = resolved(self._size)
+            if size == "auto":
+                if is_matplotlib_style:
+                    base_size = plt.rcParams["figure.figsize"]
+                else:
+                    base_size = self._default_params.get("SmartFigure", {}).get("_size")
+                    if base_size is None:
+                        base_size = FileLoader("plain").load()["SmartFigure"]["_size"]
+                base_width, base_height = base_size
+                size = base_width * self._num_cols, base_height * self._num_rows
+
+            figure = plt.figure(
                 constrained_layout=True, figsize=(1, 1) if fit_to_window else size
             )
+            self._figure = figure
             if fit_to_window:
-                self._fit_preview(self._figure, size, fit_to_window)
-            layout_engine = self._figure.get_layout_engine()
+                self._fit_preview(figure, size, fit_to_window)
+            layout_engine = figure.get_layout_engine()
             assert isinstance(layout_engine, ConstrainedLayoutEngine)
-            layout_engine.set(w_pad=0, h_pad=0)
+            if _DRAW_SESSION.get() is None:
+                layout_engine.set(w_pad=0, h_pad=0)
             self._reference_label_i = self._reference_labels_params.get(
                 "start_index", 0
             )
-            self._prepare_figure(is_matplotlib_style)
-            self._figure.canvas.draw()
+            if animation_grid_defaults is None:
+                self._prepare_figure(is_matplotlib_style)
+            else:
+                self._prepare_figure(
+                    is_matplotlib_style, animation_grid_defaults=animation_grid_defaults
+                )
+            figure.canvas.draw()
+            session = _DRAW_SESSION.get()
+            if session is not None:
+                session.configure_legend_layout(
+                    figure, layout_engine, self._align_shared_x_spines
+                )
             self._align_shared_x_spines()
-        except Exception:
-            plt.close()
+        except BaseException:
+            if figure is not None:
+                plt.close(figure)
+                self._figure = None
+                self._gridspec = None
             plt.rcParams.update(previous_rc_params)
-            self._figure = None
-            self._gridspec = None
             raise
         finally:
             self._reset_params_to_default(self, parent_figure_params_to_reset)
@@ -2197,7 +2672,10 @@ class SmartFigure:
         self,
         is_matplotlib_style: bool = False,
         make_legend: bool = True,
-    ) -> dict[str, dict[str, list[str | Any]]]:
+        *,
+        animation_parent: tuple[SmartFigure, int] | None = None,
+        animation_grid_defaults: dict[str, Any] | None = None,
+    ) -> dict[str, dict[str, list[Any]]]:
         """
         Prepares the figure for plotting. This method sets up the figure, axes, and any other necessary elements
         before plotting the elements. It also handles the creation of legends and reference labels. If nested
@@ -2219,7 +2697,7 @@ class SmartFigure:
 
         Returns
         -------
-        dict[str, dict[str, list[str | Any]]]
+        dict[str, dict[str, list[Any]]]
             A dictionary containing the legend information for the figure. The keys are "default" and "custom", and
             the values are dictionaries with the "labels" and "handles" keys, which give the list of each type of
             element. The "default" elements are the ones created by the Plottable elements' labels, while the "custom"
@@ -2269,7 +2747,31 @@ class SmartFigure:
         ax = None  # keep track of the last plt.Axes object, needed for sharing axes
         default_labels, default_handles = [], []
         custom_labels, custom_handles = [], []
+        legend_info: dict[str, dict[str, list[Any]]]
+        default_filters: list[tuple[_LegendFilter, ...]] = []
+        custom_filters: list[tuple[_LegendFilter, ...]] = []
 
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            session.bind_property(self, "figure.facecolor", figure.patch, "facecolor")
+            for name in (
+                *_LIVE_VISUAL_RC[1:],
+                "_hidden_spines",
+                "_hide_default_legend_elements",
+                "_hide_custom_legend_elements",
+            ):
+                # A figure can have no direct artists or legend entries for these settings.
+                session.bind_update(self, name, lambda _: _combine_edits([]))
+            for child in self._children.values():
+                session.mark_present(child)
+
+        limit_axes: list[tuple[int, Axes]] = []
+        legend_targets: dict[int, Legend | None] = {}
+        adjustable_defaults: dict[int, Literal["box", "datalim"]] = {}
+        axis_visibility: dict[int, Callable[[bool], _ArtistEdit]] = {}
+        tick_styles: dict[str, dict[int, _TickStyle]] = {"x": {}, "y": {}}
+        grid_defaults = self._grid_defaults()
+        grid_options = self._grid_options(grid_defaults)
         # Plottable and subfigure plotting
         for subplot_i, ((rows, cols), element) in enumerate(
             self._ordered_elements.items()
@@ -2278,6 +2780,11 @@ class SmartFigure:
                 element._default_params = deepcopy(self._default_params)
                 subfig_params_to_reset = []
                 parent_rc_params = None
+                local_grid_defaults = (
+                    {key: plt.rcParams[key] for key in _GRID_RC}
+                    if session is not None
+                    else None
+                )
                 if is_matplotlib_style:
                     parent_rc_params = plt.rcParams.copy()
                     plt.rcParams.update(element._user_rc_dict)
@@ -2305,19 +2812,55 @@ class SmartFigure:
                     if param_is_none and sub_param is not None:
                         setattr(element, attr, sub_param)
 
-                subfig = figure.add_subfigure(gridspec[rows, cols])
-                element._figure = subfig  # associates the current subfigure with the nested SmartFigure
-                element._reference_label_i = self._reference_label_i
                 try:
+                    subfig = figure.add_subfigure(gridspec[rows, cols])
+                    if session is not None:
+
+                        def release_child(child=element, owned=subfig) -> None:
+                            if child._figure is owned:
+                                child._figure = None
+                                child._gridspec = None
+
+                        session.on_finish(release_child)
+                    element._figure = subfig  # associates the current subfigure with the nested SmartFigure
+                    element._reference_label_i = self._reference_label_i
                     legend_info = element._prepare_figure(
                         is_matplotlib_style=is_matplotlib_style,
                         make_legend=(not self._general_legend and make_legend),
+                        **(
+                            {
+                                "animation_parent": (self, subplot_i),
+                                "animation_grid_defaults": local_grid_defaults,
+                            }
+                            if session is not None
+                            else {}
+                        ),
                     )
+
+                    self._reference_label_i = element._reference_label_i
+                    if session is not None or not (
+                        self._general_legend and self._hide_default_legend_elements
+                    ):
+                        default_labels += legend_info["labels"]["default"]
+                        default_handles += legend_info["handles"]["default"]
+                    custom_labels += legend_info["labels"]["custom"]
+                    custom_handles += legend_info["handles"]["custom"]
+                    if session is not None:
+                        inherited_default = legend_info["filters"]["default"]
+                        if self._general_legend:
+                            rule = self._default_legend_filter(subplot_i)
+                            inherited_default = [
+                                (*rules, rule) for rules in inherited_default
+                            ]
+                        default_filters += inherited_default
+                        custom_filters += legend_info["filters"]["custom"]
                 finally:
                     if is_matplotlib_style:
                         plt.rcParams.update(cast(Any, parent_rc_params))
                     else:
-                        plt.rcParams.update(self._default_params["rc_params"])
+                        plt.rcParams.update(
+                            self._default_params["rc_params"]
+                        )  # Return to the parent SmartFigure's rc params
                         element._reset_params_to_default(
                             element, subfig_params_to_reset
                         )
@@ -2327,12 +2870,6 @@ class SmartFigure:
                     ):
                         if param_was_none:
                             setattr(element, param, None)
-
-                self._reference_label_i = element._reference_label_i
-                default_labels += legend_info["labels"]["default"]
-                default_handles += legend_info["handles"]["default"]
-                custom_labels += legend_info["labels"]["custom"]
-                custom_handles += legend_info["handles"]["custom"]
 
             elif isinstance(element, (Plottable, list)):
                 current_elements = element if isinstance(element, list) else [element]
@@ -2347,7 +2884,11 @@ class SmartFigure:
                     projection=self._subplot_p["projection"][subplot_i],
                 )
 
+                if session is not None:
+                    limit_axes.append((subplot_i, ax))
+
                 # Plotting loop
+                direct_start = len(default_labels)
                 z_order = 2
                 for index, current_element in enumerate(current_elements):
                     if current_element is not None:
@@ -2359,9 +2900,18 @@ class SmartFigure:
                             is_matplotlib_style,
                         )
                         try:
-                            if current_element.label is not None:
+                            label = current_element.label
+                            if label is not None:
                                 default_handles.append(current_element.handle)
-                                default_labels.append(current_element.label)
+                                default_labels.append(label)
+                            elif (
+                                session is not None
+                                and session.can_reserve_legend_entry(
+                                    getattr(current_element, "handle", None)
+                                )
+                            ):
+                                default_handles.append(current_element.handle)
+                                default_labels.append("")
                         except AttributeError:
                             continue
                         z_order += 5
@@ -2385,10 +2935,13 @@ class SmartFigure:
                 if self._subplot_p["log_scale_y"][subplot_i]:
                     ax.set_yscale("log")
 
-                # Remove axes
                 if self._subplot_p["remove_axes"][subplot_i]:
-                    ax.axis("off")
+                    ax.set_axis_off()
+                if session is not None:
+                    axis_visibility[subplot_i] = partial(_axis_removal, ax)
 
+                if session is not None:
+                    adjustable_defaults[subplot_i] = ax.get_adjustable()
                 ax.set_aspect(self._subplot_p["aspect_ratio"][subplot_i])
                 ax.set_box_aspect(self._subplot_p["box_aspect_ratio"][subplot_i])
                 ax.set_axisbelow(
@@ -2408,6 +2961,12 @@ class SmartFigure:
                 ):
                     ax.invert_yaxis()
 
+                if session is not None:
+                    for dimension in ("x", "y"):
+                        tick_styles[dimension][subplot_i] = self._animation_tick_style(
+                            ax, dimension
+                        )
+
                 self._customize_ticks(ax, subplot_i)
 
                 # If axes are shared, manually remove ticklabels from unnecessary plots as it is not done automatically
@@ -2423,18 +2982,36 @@ class SmartFigure:
                     if cols.stop != self._num_cols:
                         ax.tick_params(axis="y", labelright=False)
 
-                # Customize grid
-                if self._subplot_p["show_grid"][subplot_i]:
-                    ax.grid(
-                        self._grid.get("visible_x"),
-                        which=self._grid.get("which_x"),
-                        axis="x",
-                    )
-                    ax.grid(
-                        self._grid.get("visible_y"),
-                        which=self._grid.get("which_y"),
-                        axis="y",
-                    )
+                for dimension in ("x", "y"):
+                    name = f"remove_{dimension}_ticks"
+                    hidden = self._subplot_p[name][subplot_i]
+                    if hidden:
+                        self._prepare_tick_removal(ax, dimension)(True).apply()
+                    style = tick_styles[dimension].get(subplot_i)
+                    if style is not None:
+                        style.hidden = bool(hidden)
+                        if dimension == "x" and self._share_x:
+                            style.suppressed_labels = tuple(
+                                label
+                                for label, suppress in (
+                                    ("labeltop", rows.start != 0),
+                                    ("labelbottom", rows.stop != self._num_rows),
+                                )
+                                if suppress
+                            )
+                        elif dimension == "y" and self._share_y:
+                            style.suppressed_labels = tuple(
+                                label
+                                for label, suppress in (
+                                    ("labelleft", cols.start != 0),
+                                    ("labelright", cols.stop != self._num_cols),
+                                )
+                                if suppress
+                            )
+
+                show_grid = self._subplot_p["show_grid"][subplot_i]
+                if show_grid is not None:
+                    self._prepare_grid(ax, show_grid, grid_options).apply()
 
                 # Axes subtitles
                 if self._subtitles is not None:
@@ -2445,11 +3022,16 @@ class SmartFigure:
 
                 # Axes sub_labels
                 self._customize_ax_label(ax, subplot_i)
+                if session is not None and not self.is_single_subplot:
+                    self._bind_subplot_animation_text(session, ax, subplot_i)
 
                 # Hidden spines
+                if session is not None:
+                    self._bind_animation_spines(session, ax)
                 if self._hidden_spines is not None:
-                    for spine in set(self._hidden_spines):
-                        ax.spines[spine].set_visible(False)
+                    for name in self._hidden_spines:
+                        if name in ax.spines:
+                            ax.spines[name].set_visible(False)
 
                 host = self if self._mode == "leaf" else self._children[rows, cols]
                 if host._insets:
@@ -2503,20 +3085,36 @@ class SmartFigure:
                         twin_axis._default_params = {}
 
                 # Axes legend
-                if self._subplot_p["hide_default_legend_elements"][subplot_i]:
+                if session is not None:
+                    rule = self._default_legend_filter(subplot_i)
+                    default_filters.extend(
+                        [(rule,)] * (len(default_labels) - direct_start)
+                    )
+                elif self._subplot_p["hide_default_legend_elements"][subplot_i]:
                     default_labels = []
                     default_handles = []
                 if not self._general_legend and make_legend:
                     if self.is_single_subplot:
                         custom_labels += self._custom_legend_labels
                         custom_handles += self._custom_legend_handles
-                    if self._hide_custom_legend_elements or not self.is_single_subplot:
+                        if session is not None:
+                            custom_filters.extend(
+                                [(self._custom_legend_filter(),)]
+                                * len(self._custom_legend_labels)
+                            )
+                    if (
+                        self._hide_custom_legend_elements and session is None
+                    ) or not self.is_single_subplot:
                         custom_labels = []
                         custom_handles = []
+                        custom_filters = []
                     labels = default_labels + custom_labels
                     handles = default_handles + custom_handles
 
-                    if self._subplot_p["show_legend"][subplot_i] and labels:
+                    show_legend = self._subplot_p["show_legend"][subplot_i] is not False
+                    if session is not None:
+                        legend_targets[subplot_i] = None
+                    if labels and (show_legend or session is not None):
                         legend_params = self._get_legend_params(
                             labels, handles, -0.1, subplot_i
                         )
@@ -2538,13 +3136,85 @@ class SmartFigure:
                                 **legend_params,
                             )
                         _legend.set_zorder(10000)
+                        if session is not None:
+                            legend_targets[subplot_i] = _legend
+                            session.bind_legend(
+                                _legend,
+                                handles,
+                                default_filters + custom_filters,
+                                initially_visible=show_legend,
+                            )
                     default_labels, default_handles = [], []
                     custom_labels, custom_handles = [], []
+                    default_filters, custom_filters = [], []
 
             elif element is not None:
                 raise InvalidParameterTypeError(
                     f"Unsupported element type in list: {type(element).__name__}."
                 )
+
+        if session is not None:
+            subplot_count = len(self._ordered_elements)
+            if legend_targets:
+                session.bind_legend_visibility(self, legend_targets, subplot_count)
+                session.bind_legend_layout(
+                    self,
+                    legend_targets,
+                    subplot_count,
+                    lambda: self._legend_loc,
+                    lambda: self._legend_cols,
+                )
+            session.bind_axis_visibility(
+                self, "_remove_axes", axis_visibility, subplot_count
+            )
+            for dimension, styles in tick_styles.items():
+                session.bind_tick_style(
+                    self,
+                    dimension,
+                    styles,
+                    subplot_count,
+                    lambda: self._tick_params,
+                    lambda dim=dimension: getattr(self, f"_remove_{dim}_ticks"),
+                )
+            if not isinstance(self, SmartFigureWCS):
+                session.bind_axis_ticks(
+                    self,
+                    [
+                        (axis, dim)
+                        for _, ax in limit_axes
+                        for axis, dim in ((ax.xaxis, "x"), (ax.yaxis, "y"))
+                    ],
+                    lambda: self._ticks,
+                )
+            if limit_axes:
+                self._bind_animation_grid(
+                    session,
+                    limit_axes,
+                    subplot_count,
+                    grid_defaults,
+                    animation_grid_defaults,
+                )
+            for dimension in ("x", "y"):
+                session.bind_axis_view(
+                    self,
+                    f"_{dimension}_lim",
+                    f"_invert_{dimension}_axis",
+                    f"_log_scale_{dimension}",
+                    dimension,
+                    [
+                        (
+                            index,
+                            axes,
+                            bool(self._subplot_p[f"invert_{dimension}_axis"][index]),
+                        )
+                        for index, axes in limit_axes
+                    ],
+                    subplot_count,
+                )
+
+            self._bind_animation_aspect(
+                session, limit_axes, adjustable_defaults, subplot_count
+            )
 
         # Set a general axis for adding general labels/title and controlling padding
         general_ax = figure.add_subplot(gridspec[:, :], frameon=False)
@@ -2565,21 +3235,22 @@ class SmartFigure:
             right=False,
         )
 
-        # General labels
-        if self.is_single_subplot:
-            if (
-                ax is not None
-            ):  # makes sure an element was plotted and that an axis was created
-                self._customize_ax_label(ax)
-        else:
-            self._customize_ax_label(general_ax)
-
-        # Title (if the SmartFigure is not a single subplot)
-        if self._title:
-            if self.is_single_subplot and ax is not None:
-                ax.set_title(self._title, pad=self._pad_params.get("title_pad"))
-            else:
-                general_ax.set_title(self._title, pad=self._pad_params.get("title_pad"))
+        # General labels and title
+        label_axes = ax if self.is_single_subplot else general_ax
+        if label_axes is not None:
+            self._customize_ax_label(label_axes)
+        title_axes = label_axes if label_axes is not None else general_ax
+        title_pad = self._pad_params.get("title_pad")
+        if session is not None:
+            self._bind_subplot_animation_text(
+                session,
+                title_axes,
+                limit_axes[-1][0] if self.is_single_subplot and limit_axes else None,
+                general=True,
+                parent=animation_parent,
+            )
+        elif self._title:
+            title_axes.set_title(self._title, pad=title_pad)
 
         # Annotations
         if self._annotations is not None:
@@ -2589,19 +3260,31 @@ class SmartFigure:
                 z_order += 5
 
         # Legend parameters
-        if self._hide_custom_legend_elements:
+        if self._hide_custom_legend_elements and session is None:
             custom_labels = []
             custom_handles = []
         else:
             custom_labels += self._custom_legend_labels
             custom_handles += self._custom_legend_handles
+            if session is not None:
+                custom_rule = self._custom_legend_filter()
+                custom_filters = [(*rules, custom_rule) for rules in custom_filters] + [
+                    (custom_rule,)
+                ] * len(self._custom_legend_labels)
         if (
             self._general_legend
         ):  # making a general legend is priorized over make_legend=False
             labels = default_labels + custom_labels
             handles = default_handles + custom_handles
-            if labels and self._show_legend:
+            general_legend: Legend | None = None
+            if labels and (self._show_legend or session is not None):
                 legend_params = self._get_legend_params(labels, handles, 0)
+                if session is not None:
+                    location = self._legend_loc
+                    if isinstance(location, str) and location.startswith("outside "):
+                        # Native outside placement participates in constrained layout.
+                        legend_params.pop("bbox_to_anchor", None)
+                        legend_params["loc"] = location
                 try:
                     _legend = figure.legend(
                         **legend_params,
@@ -2612,14 +3295,34 @@ class SmartFigure:
                         **legend_params,
                     )
                 _legend.set_zorder(10000)
+                general_legend = _legend
+                if session is not None:
+                    session.bind_legend(
+                        _legend,
+                        handles,
+                        default_filters + custom_filters,
+                        initially_visible=bool(self._show_legend),
+                    )
+            if session is not None:
+                session.bind_legend_visibility(self, {0: general_legend}, 1)
+                session.bind_legend_layout(
+                    self,
+                    {0: general_legend},
+                    1,
+                    lambda: self._legend_loc,
+                    lambda: self._legend_cols,
+                    general=True,
+                )
             legend_info = {
                 "labels": {"default": [], "custom": []},
                 "handles": {"default": [], "custom": []},
+                "filters": {"default": [], "custom": []},
             }
         else:
             legend_info = {
                 "labels": {"default": default_labels, "custom": custom_labels},
                 "handles": {"default": default_handles, "custom": custom_handles},
+                "filters": {"default": default_filters, "custom": custom_filters},
             }
         self._subplot_p = {}  # clear the ListOrItem subplot parameters to free memory
         return legend_info
@@ -2643,6 +3346,9 @@ class SmartFigure:
                 if resolve_or(
                     getattr(element, "show_color_bar", False),
                     not isinstance(element, Scatter),
+                ) or (
+                    _DRAW_SESSION.get() is not None
+                    and getattr(element, "_reserve_color_bar", False)
                 ):
                     raise UnsupportedFeatureError("Insets cannot draw colorbars.")
             element._plot_element(axes, z_order, cycle_color=color)
@@ -2660,7 +3366,10 @@ class SmartFigure:
         if isinstance(self, SmartFigureWCS) or host.name != "rectilinear":
             raise UnsupportedFeatureError("Insets require a Cartesian host plot.")
         marker_zorder = max(artist.get_zorder() for artist in host.get_children()) + 1
+        session = _DRAW_SESSION.get()
         for index, inset in enumerate(insets):
+            if session is not None:
+                session.mark_present(inset)
             x_scale, y_scale = "linear", "linear"
             if inset.indicate_zoom:
                 x_scale, y_scale = host.get_xscale(), host.get_yscale()
@@ -2915,25 +3624,234 @@ class SmartFigure:
         if minor_y_tick_spacing is not None:
             ax.yaxis.set_minor_locator(ticker.MultipleLocator(minor_y_tick_spacing))
 
-        # Remove ticks
-        if self._subplot_p["remove_x_ticks"][subplot_i]:
-            ax.tick_params(
-                "x",
-                which="both",
-                labelbottom=False,
-                labeltop=False,
-                bottom=False,
-                top=False,
+    def _bind_animation_spines(self, session: _AnimationSession, axes: Axes) -> None:
+        session.bind_property(self, "axes.facecolor", axes.patch, "facecolor")
+        for spine in axes.spines.values():
+            session.bind_property(self, "axes.edgecolor", spine, "edgecolor")
+            session.bind_property(self, "axes.linewidth", spine, "linewidth")
+        named_spines = [
+            (spine, name, spine.get_visible())
+            for name, spine in axes.spines.items()
+            if name in _SPINE_NAMES
+        ]
+
+        def prepare(hidden: tuple[str, ...]) -> _ArtistEdit:
+            return _combine_edits(
+                [
+                    _edit(
+                        spine.set_visible,
+                        spine.get_visible(),
+                        initial and name not in hidden,
+                    )
+                    for spine, name, initial in named_spines
+                ]
             )
-        if self._subplot_p["remove_y_ticks"][subplot_i]:
-            ax.tick_params(
-                "y",
-                which="both",
-                labelleft=False,
-                labelright=False,
-                left=False,
-                right=False,
+
+        session.bind_update(self, "_hidden_spines", prepare)
+
+    @staticmethod
+    def _grid_defaults() -> dict[str, tuple[str, bool]]:
+        return {
+            dimension: (
+                plt.rcParams["axes.grid.which"],
+                plt.rcParams["axes.grid.axis"] in ("both", dimension),
             )
+            for dimension in ("x", "y")
+        }
+
+    def _grid_options(
+        self, defaults: dict[str, tuple[str, bool]]
+    ) -> dict[str, tuple[str, bool]]:
+        return {
+            dimension: (
+                self._grid.get(f"which_{dimension}", which),
+                self._grid.get(f"visible_{dimension}", visible),
+            )
+            for dimension, (which, visible) in defaults.items()
+        }
+
+    def _bind_animation_grid(
+        self,
+        session: _AnimationSession,
+        axes: list[tuple[int, Axes]],
+        subplot_count: int,
+        defaults: dict[str, tuple[str, bool]],
+        base_style: dict[str, Any] | None,
+    ) -> None:
+        targets = dict(axes)
+        initial_linestyle = plt.rcParams["grid.linestyle"]
+        inherited_style = (
+            base_style
+            if base_style is not None
+            else {key: plt.rcParams[key] for key in _GRID_RC}
+        )
+
+        def prepare() -> _ArtistEdit:
+            assert self._show_grid is not None
+            entries = _subplot_visibility_entries(
+                self._show_grid, targets, subplot_count
+            )
+            options = self._grid_options(defaults)
+            style = {
+                key: self._user_rc_dict.get(key, inherited_style[key])
+                for key in _GRID_RC
+            }
+            return _combine_edits(
+                [
+                    self._prepare_grid(
+                        targets[index], show, options, style, initial_linestyle
+                    )
+                    for index, show in entries.items()
+                ]
+            )
+
+        session.bind_derived(self, ("_show_grid", "_grid"), prepare)
+
+    def _prepare_grid(
+        self,
+        ax: Axes,
+        show: bool,
+        options: dict[str, tuple[str, bool]],
+        style: dict[str, Any] | None = None,
+        initial_linestyle: Any = None,
+    ) -> _ArtistEdit:
+        edits = []
+        for dimension, (selected, enabled) in options.items():
+            axis = ax.xaxis if dimension == "x" else ax.yaxis
+            for tick_group in ("major", "minor"):
+                edits.append(
+                    self._prepare_native_grid_group(
+                        axis,
+                        tick_group,
+                        show and enabled and selected in (tick_group, "both"),
+                        style,
+                        initial_linestyle,
+                    )
+                )
+        return _combine_edits(edits)
+
+    @staticmethod
+    def _prepare_native_grid_group(
+        axis: Axis,
+        which: Literal["major", "minor"],
+        visible: bool,
+        style: dict[str, Any] | None,
+        initial_linestyle: Any,
+    ) -> _ArtistEdit:
+        params = axis.get_tick_params(which=which)
+        old = {"gridOn": params.get("gridOn", False)}
+        new: dict[str, Any] = {"gridOn": visible}
+        if style is not None:
+            get_ticks = (
+                axis.get_major_ticks if which == "major" else axis.get_minor_ticks
+            )
+            gridline = get_ticks(1)[0].gridline
+            old.update(
+                grid_color=gridline.get_color(),
+                grid_alpha=gridline.get_alpha(),
+                grid_linestyle=params.get("grid_linestyle", initial_linestyle),
+                grid_linewidth=gridline.get_linewidth(),
+            )
+            new.update({key.replace(".", "_"): value for key, value in style.items()})
+
+        def write(params: dict[str, Any]) -> None:
+            axis.set_tick_params(which=which, **params)
+
+        return _edit(write, old, new)
+
+    def _bind_animation_aspect(
+        self,
+        session: _AnimationSession,
+        targets: list[tuple[int, Axes]],
+        adjustable_defaults: dict[int, Literal["box", "datalim"]],
+        subplot_count: int,
+    ) -> None:
+        def entries(value, default):
+            if not isinstance(value, list):
+                return [value] * subplot_count
+            if len(value) > subplot_count:
+                raise InvalidParameterError(
+                    "Too many aspect ratios for this SmartFigure."
+                )
+            return value + [default] * (subplot_count - len(value))
+
+        def prepare() -> _ArtistEdit:
+            data = entries(self._aspect_ratio, "auto")
+            boxes = entries(self._box_aspect_ratio, None)
+            changed = []
+
+            def apply() -> None:
+                for index, ax in targets:
+                    aspect = 1 if data[index] == "equal" else data[index]
+                    box = boxes[index]
+                    twins = tuple(cast(Any, ax)._twinned_axes.get_siblings(ax))
+                    adjustable = (
+                        "datalim"
+                        if box is not None or len(twins) > 1
+                        else adjustable_defaults[index]
+                    )
+                    if (
+                        aspect != "auto"
+                        and adjustable == "datalim"
+                        and len(ax.get_shared_x_axes().get_siblings(ax)) > 1
+                        and len(ax.get_shared_y_axes().get_siblings(ax)) > 1
+                        and (
+                            box is None
+                            or abs(box / (aspect * ax.get_data_ratio()) - 1) >= 0.005
+                        )
+                    ):
+                        raise InvalidParameterError(
+                            "The data and box aspect ratios must agree with the limits "
+                            "when both axes are shared."
+                        )
+                    previous = ax.get_aspect(), ax.get_box_aspect(), ax.get_adjustable()
+                    if previous != (aspect, box, adjustable):
+                        changed.append(
+                            (
+                                ax,
+                                previous,
+                                [
+                                    (twin, twin.get_box_aspect(), twin.get_adjustable())
+                                    for twin in twins
+                                ],
+                            )
+                        )
+                        if previous[1] != box:
+                            ax.set_box_aspect(box)
+                        ax.set_aspect(aspect, adjustable=adjustable)
+
+            def undo() -> None:
+                for ax, (aspect, _, adjustable), twins in reversed(changed):
+                    # Native box setters change the whole twin group at once.
+                    for twin, old_box, old_adjustable in twins:
+                        cast(Any, twin)._box_aspect = old_box
+                        twin.set_adjustable(old_adjustable)
+                    ax.set_aspect(aspect, adjustable=adjustable)
+
+            return _ArtistEdit(apply, undo)
+
+        if targets:
+            session.bind_derived(
+                self,
+                (
+                    "_aspect_ratio",
+                    "_box_aspect_ratio",
+                    "_x_lim",
+                    "_y_lim",
+                    "_log_scale_x",
+                    "_log_scale_y",
+                ),
+                prepare,
+                after_artists=True,
+            )
+
+    def _animation_tick_style(self, ax: Axes, dimension: str) -> _TickStyle:
+        return _NativeTickStyle(ax.xaxis if dimension == "x" else ax.yaxis, dimension)
+
+    def _prepare_tick_removal(
+        self, ax: Axes, dimension: str
+    ) -> Callable[[bool], _ArtistEdit]:
+        return _tick_removal(ax.xaxis if dimension == "x" else ax.yaxis, dimension)
 
     def _customize_ax_label(
         self,
@@ -2967,6 +3885,175 @@ class SmartFigure:
             ax.set_xlabel(x_label, labelpad=x_pad, color=self._x_axis_label_color)
         if y_label is not None:
             ax.set_ylabel(y_label, labelpad=y_pad, color=self._y_axis_label_color)
+
+    def _bind_subplot_animation_text(
+        self,
+        session: _AnimationSession,
+        ax: Axes,
+        index: int | None,
+        *,
+        general: bool = False,
+        parent: tuple[SmartFigure, int] | None = None,
+    ) -> None:
+        def bind(
+            name: str,
+            read: Callable[[], str | None],
+            write: Callable[[str], Any],
+        ) -> None:
+            sub_name = _SUBPLOT_TEXT[name]
+
+            def subplot_text(owner: SmartFigure, slot: int) -> str | None:
+                values = getattr(owner, sub_name)
+                if isinstance(values, list):
+                    return values[slot] if slot < len(values) else None
+                return values
+
+            def resolve() -> str | None:
+                if general:
+                    value = getattr(self, name)
+                    if value is None and parent is not None:
+                        value = subplot_text(*parent)
+                    if value is not None and not (
+                        name == "_title" and isinstance(value, str) and not value
+                    ):
+                        return value
+                return subplot_text(self, index) if index is not None else None
+
+            sources: list[tuple[object, str]] = [(self, name)] if general else []
+            if parent is not None:
+                sources.append((parent[0], sub_name))
+            if index is not None:
+                sources.append((self, sub_name))
+            if index is None and parent is None:
+                session.bind_axis_text(self, name, read, write)
+            else:
+                session.bind_resolved_axis_text(sources, resolve, read, write)
+
+        def bind_padding(
+            name: str,
+            read: Callable[[], Any],
+            write: Callable[[Any], None],
+            default: float,
+        ) -> None:
+            subplot_name = (
+                "subtitles_pad" if name == "title" else f"sub_{name}_labels_pad"
+            )
+            main_name = "title_pad" if name == "title" else f"{name}_label_pad"
+
+            def subplot_pad(owner: SmartFigure, slot: int) -> float | None:
+                values = owner._pad_params.get(subplot_name)
+                return (
+                    values[slot] if values is not None and slot < len(values) else None
+                )
+
+            def resolve() -> float:
+                value = self._pad_params.get(main_name) if general else None
+                if value is None and index is not None:
+                    value = subplot_pad(self, index)
+                if value is None and parent is not None:
+                    value = subplot_pad(*parent)
+                return default if value is None else value
+
+            write(resolve())
+
+            def prepare() -> _ArtistEdit:
+                return _edit(write, read(), resolve())
+
+            session.bind_derived(self, ("_pad_params",), prepare)
+            if parent is not None:
+                session.bind_derived(parent[0], ("_pad_params",), prepare)
+
+        use_wcs = isinstance(self, SmartFigureWCS) and index is not None
+        label_axes = (
+            ("x", ax.xaxis, self._x_axis_label_color),
+            ("y", ax.yaxis, self._y_axis_label_color),
+        )
+        if general and self.is_single_subplot and index is None:
+            label_axes = ()
+        for name, axis, color in label_axes:
+            artist = axis.label
+            read_label, set_label = (
+                (ax.get_xlabel, ax.set_xlabel)
+                if name == "x"
+                else (ax.get_ylabel, ax.set_ylabel)
+            )
+            pad = self._pad_params.get(f"{name}_label_pad") if general else None
+            if index is not None and (
+                not general or (pad is None and getattr(self, f"_{name}_label") is None)
+            ):
+                pad = self._subplot_p[f"sub_{name}_labels_pad"][index]
+            if use_wcs:
+                coords = cast(Any, ax).coords
+                sides = frozenset("bh" if name == "x" else "lc")
+
+                def coordinate_label(coords=coords, sides=sides, refresh=read_label):
+                    refresh()
+                    for coord in coords:
+                        label = coord._axislabels
+                        if sides.intersection(label.get_visible_axes()):
+                            return label
+                    return None
+
+                def read_pad(find=coordinate_label, axis=axis):
+                    label = find()
+                    return (
+                        deepcopy(label._minpad) if label is not None else axis.labelpad
+                    )
+
+                def write_pad(value, find=coordinate_label, axis=axis):
+                    label = find()
+                    if label is not None:
+                        label.set_minpad(value)
+                    else:
+                        axis.labelpad = value
+
+                def write_label(
+                    value, setter=set_label, read_pad=read_pad, color=color
+                ):
+                    setter(value, labelpad=read_pad(), color=color)
+
+                bind(f"_{name}_label", read_label, write_label)
+                bind_padding(name, read_pad, write_pad, 1)
+            else:
+                if not artist.get_text():
+                    set_label("", labelpad=pad, color=color)
+                bind(f"_{name}_label", artist.get_text, artist.set_text)
+
+                def write_pad(value, axis=axis):
+                    axis.labelpad = value
+                    axis.stale = True
+
+                bind_padding(
+                    name,
+                    lambda axis=axis: axis.labelpad,
+                    write_pad,
+                    plt.rcParams["axes.labelpad"],
+                )
+
+        title_pad = self._pad_params.get("title_pad") if general else None
+        if index is not None and (
+            not general
+            or (not self._title and (self._subtitles is not None or title_pad is None))
+        ):
+            title_pad = self._subplot_p["subtitles_pad"][index]
+        title_location = plt.rcParams["axes.titlelocation"]
+        title = self._title if general else None
+        artist = ax.set_title(
+            title or ax.get_title(loc=title_location), pad=title_pad, loc=title_location
+        )
+        bind("_title", artist.get_text, artist.set_text)
+
+        default_title_pad = plt.rcParams["axes.titlepad"]
+        current_title_pad = default_title_pad
+
+        def write_title_pad(value: float) -> None:
+            nonlocal current_title_pad
+            cast(Any, ax)._set_title_offset_trans(value)
+            current_title_pad = value
+
+        bind_padding(
+            "title", lambda: current_title_pad, write_title_pad, default_title_pad
+        )
 
     def _create_reference_label(
         self,
@@ -3079,34 +4166,13 @@ class SmartFigure:
             },
             "ncols": self._subplot_p["legend_cols"][subplot_i],
         }
-        legend_loc = self._subplot_p["legend_loc"][subplot_i]
-        if legend_loc is None:
-            if self._general_legend:
-                legend_params.update({"loc": "lower center"})
-            else:
-                legend_params.update({"loc": "best"})
-        else:
-            if "outside" in legend_loc:
-                outside_coords = {
-                    "outside upper center": (0.5, 1),
-                    "outside center right": (1, 0.5),
-                    "outside lower center": (0.5, outside_lower_center_y_offset),
-                    "outside center left": (0, 0.5),
-                }
-                outside_keyword = {
-                    "outside upper center": "lower center",
-                    "outside center right": "center left",
-                    "outside lower center": "upper center",
-                    "outside center left": "center right",
-                }
-                legend_params.update(
-                    {
-                        "loc": outside_keyword[legend_loc],
-                        "bbox_to_anchor": outside_coords[legend_loc],
-                    }
-                )
-            else:
-                legend_params.update({"loc": legend_loc})
+        location = self._subplot_p["legend_loc"][subplot_i]
+        loc, anchor, _ = _legend_placement(
+            location, general=self._general_legend, below=outside_lower_center_y_offset
+        )
+        legend_params["loc"] = loc
+        if anchor is not None:
+            legend_params["bbox_to_anchor"] = anchor
         return legend_params
 
     def _fill_in_missing_params(self, element: SmartFigure | Plottable) -> list[str]:
@@ -3207,6 +4273,7 @@ class SmartFigure:
         Self
             For convenience, the same SmartFigure with the updated rc parameters.
         """
+        _reject_animated_layout(self)
         if reset:
             self._user_rc_dict.clear()
         for property_, value in rc_params_dict.items():
@@ -3317,6 +4384,19 @@ class SmartFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        spines = None
+        if hidden_spines is not None:
+            if not isinstance(hidden_spines, Iterable):
+                raise InvalidParameterTypeError(
+                    "hidden_spines must be an iterable of spine names."
+                )
+            spines = tuple(hidden_spines)
+            for spine in spines:
+                if spine not in _SPINE_NAMES:
+                    raise InvalidParameterError(
+                        f"Invalid spine name: {spine}. Must be one of 'right', 'left', 'top' or 'bottom'."
+                    )
+
         prop_cycle = plt.cycler(color=color_cycle) if color_cycle is not None else None
 
         rc_params_dict = {
@@ -3341,6 +4421,38 @@ class SmartFigure:
             "text.color": text_color,
             "text.usetex": use_latex,
         }
+        session = _bound_session(self)
+        if session is not None:
+            params = {
+                key: value for key, value in rc_params_dict.items() if value is not None
+            }
+            if (
+                reset
+                or x_axis_label_color is not None
+                or y_axis_label_color is not None
+                or params.keys() - set(_LIVE_VISUAL_RC)
+            ):
+                raise UnsupportedFeatureError(
+                    "During animation set_visual_params supports figure and axes face colors, "
+                    "axes edge color and line width, and hidden_spines."
+                )
+            validated = {
+                key: plt.rcParams.validate[key](value) for key, value in params.items()
+            }
+            original = self._user_rc_dict
+            for key, value in validated.items():
+                session.queue_property(self, key, value, lambda: None)
+            if validated:
+                session.remember(
+                    self,
+                    "_user_rc_dict",
+                    lambda: setattr(self, "_user_rc_dict", original),
+                )
+                self._user_rc_dict = {**original, **validated}
+            if spines is not None:
+                self._hidden_spines = _stage_live_value(self, "_hidden_spines", spines)
+            return self
+
         if reset:
             for key in rc_params_dict.keys():
                 self._user_rc_dict.pop(key, None)
@@ -3350,17 +4462,8 @@ class SmartFigure:
         }
         self.set_rc_params(rc_params_dict)
 
-        if hidden_spines is not None:
-            if not isinstance(hidden_spines, Iterable):
-                raise InvalidParameterTypeError(
-                    "hidden_spines must be an iterable of spine names."
-                )
-            for spine in hidden_spines:
-                if spine not in ["right", "left", "top", "bottom"]:
-                    raise InvalidParameterError(
-                        f"Invalid spine name: {spine}. Must be one of 'right', 'left', 'top' or 'bottom'."
-                    )
-            self._hidden_spines = hidden_spines
+        if spines is not None:
+            self._hidden_spines = spines
 
         if x_axis_label_color is not None:
             self._x_axis_label_color = x_axis_label_color
@@ -3487,9 +4590,6 @@ class SmartFigure:
                     f"({len(y_tick_labels)}) must be the same."
                 )
 
-        if reset:
-            self._ticks.clear()
-
         params = [
             "x_ticks",
             "y_ticks",
@@ -3502,10 +4602,14 @@ class SmartFigure:
             "minor_x_tick_spacing",
             "minor_y_tick_spacing",
         ]
-        for param in params:
-            value = locals()[param]
-            if value is not None:
-                self._ticks[param] = value
+        values = locals()
+        changes = {
+            param: values[param] for param in params if values[param] is not None
+        }
+        config = _updated_tick_config(
+            self._ticks, changes, reset=reset, dimensions=("x", "y")
+        )
+        self._ticks = _stage_live_value(self, "_ticks", config)
 
         return self
 
@@ -3603,13 +4707,15 @@ class SmartFigure:
             "labelleft": draw_left_labels,
             "labelright": draw_right_labels,
         }
+        config = deepcopy(self._tick_params)
+        changes = {
+            key: value for key, value in new_tick_params.items() if value is not None
+        }
         for axis_i in [axis] if axis != "both" else ["x", "y"]:
             for which_i in [which] if which != "both" else ["major", "minor"]:
-                if reset:
-                    self._tick_params[f"{axis_i} {which_i}"].clear()
-                for param, value in new_tick_params.items():
-                    if value is not None:
-                        self._tick_params[f"{axis_i} {which_i}"][param] = value
+                key = f"{axis_i} {which_i}"
+                config[key] = ({} if reset else config[key]) | changes
+        self._tick_params = _stage_live_value(self, "_tick_params", config)
         return self
 
     def set_grid(
@@ -3668,32 +4774,50 @@ class SmartFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        if reset:
-            self._grid.clear()
-            self._user_rc_dict.update(
-                {
-                    "grid.color": Inherit,
-                    "grid.alpha": Inherit,
-                    "grid.linestyle": Inherit,
-                    "grid.linewidth": Inherit,
-                }
+        if any(
+            value not in (None, "major", "minor", "both")
+            for value in (which_x, which_y)
+        ):
+            raise InvalidParameterError(
+                "Grid tick groups must be 'major', 'minor' or 'both'."
             )
 
-        self._show_grid = True
-        params = ["visible_x", "visible_y", "which_x", "which_y"]
-        for param in params:
-            value = locals()[param]
-            if value is not None:
-                self._grid[param] = value
-
-        rc_params_dict = {
-            "grid.color": color,
-            "grid.alpha": alpha,
-            "grid.linestyle": line_style,
-            "grid.linewidth": line_width,
+        grid = {} if reset else self._grid.copy()
+        new_options = {
+            "visible_x": visible_x,
+            "visible_y": visible_y,
+            "which_x": which_x,
+            "which_y": which_y,
         }
-        rc_params_dict = strip_inherit(rc_params_dict)
-        self.set_rc_params(rc_params_dict)
+        grid.update(
+            (name, value) for name, value in new_options.items() if value is not None
+        )
+        explicit_style = strip_inherit(
+            dict(zip(_GRID_RC, (color, alpha, line_style, line_width), strict=True))
+        )
+        rc = self._user_rc_dict.copy()
+        if reset:
+            for key in _GRID_RC:
+                rc.pop(key, None)
+        rc.update(explicit_style)
+
+        session = _bound_session(self)
+        if session is not None:
+            for key, value in explicit_style.items():
+                rc[key] = plt.rcParams.validate[key](value)
+            previous_rc = self._user_rc_dict
+            self._grid = _stage_live_value(self, "_grid", grid)
+            session.remember(
+                self,
+                "_user_rc_dict",
+                lambda: setattr(self, "_user_rc_dict", previous_rc),
+            )
+            self._user_rc_dict = rc
+            self.show_grid = True
+        else:
+            self._grid = grid
+            self._user_rc_dict = rc
+            self._show_grid = True
         return self
 
     def set_custom_legend(
@@ -3725,6 +4849,7 @@ class SmartFigure:
         Self
             For convenience, the same SmartFigure with the updated custom legend.
         """
+        _reject_animated_layout(self)
         if reset:
             self._custom_legend_handles = []
             self._custom_legend_labels = []
@@ -3780,33 +4905,48 @@ class SmartFigure:
                 raise InvalidParameterTypeError(
                     f"Padding parameters must be of type int or float, got {type(pad_param).__name__}."
                 )
-        for sub_pad_param in [sub_x_labels_pad, sub_y_labels_pad, subtitles_pad]:
-            if sub_pad_param is not None and (
-                not isinstance(sub_pad_param, Iterable)
-                or not all(
-                    isinstance(p, (int, float, type(None))) for p in sub_pad_param
-                )
-            ):
+        changes = {
+            "x_label_pad": x_label_pad,
+            "y_label_pad": y_label_pad,
+            "title_pad": title_pad,
+        }
+        for name, values in (
+            ("sub_x_labels_pad", sub_x_labels_pad),
+            ("sub_y_labels_pad", sub_y_labels_pad),
+            ("subtitles_pad", subtitles_pad),
+        ):
+            if values is None:
+                continue
+            if not isinstance(values, Iterable):
                 raise InvalidParameterTypeError(
-                    "Subfigure padding parameters must be an iterable of ints or floats."
+                    "Subfigure padding must be an iterable of numbers."
                 )
+            pads = list(values)
+            if not all(isinstance(pad, (int, float, type(None))) for pad in pads):
+                raise InvalidParameterTypeError(
+                    "Subfigure padding must contain numbers or None."
+                )
+            if _bound_session(self) is not None and len(pads) > (
+                1 if self._mode == "leaf" else len(self)
+            ):
+                raise InvalidParameterError(
+                    f"Too many {name} entries for this SmartFigure."
+                )
+            changes[name] = pads
 
-        if reset:
-            self._pad_params.clear()
-
-        params = [
-            "x_label_pad",
-            "y_label_pad",
-            "title_pad",
-            "sub_x_labels_pad",
-            "sub_y_labels_pad",
-            "subtitles_pad",
-        ]
-        for param in params:
-            value = locals()[param]
-            if value is not None:
-                self._pad_params[param] = value
-
+        config = {} if reset else self._pad_params
+        if _bound_session(self) is not None and any(
+            pad is not None and not isfinite(pad)
+            for value in changes.values()
+            for pad in (value if isinstance(value, list) else (value,))
+        ):
+            raise InvalidParameterError("Animated text padding must be finite.")
+        self._pad_params = _stage_live_value(
+            self,
+            "_pad_params",
+            config
+            | {key: value for key, value in changes.items() if value is not None},
+        )
         return self
 
     def set_reference_labels_params(
@@ -3858,6 +4998,7 @@ class SmartFigure:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        _reject_animated_layout(self)
         if start_index is not None:
             if not isinstance(start_index, int):
                 raise InvalidParameterTypeError("start_index must be an integer.")
@@ -3916,6 +5057,7 @@ class SmartFigure:
         SmartInset
             The attached inset. For a layout, index the desired subplot before calling this method.
         """
+        _reject_animated_layout(self)
         if not self.is_single_subplot:
             raise LayoutError("Select a single subplot before creating an inset.")
         if self._twin_x_axis is not None or self._twin_y_axis is not None:
@@ -3932,6 +5074,7 @@ class SmartFigure:
 
     def remove_inset(self, inset: SmartInset) -> Self:
         """Remove an inset from its host and return the host for chaining."""
+        _reject_animated_layout(self)
         if inset not in self._insets:
             raise InvalidOperationError("The inset is not attached to this plot.")
         self._insets.remove(inset)
@@ -4037,6 +5180,7 @@ class SmartInset:
 
     @bounds.setter
     def bounds(self, value: tuple[float, float, float, float]) -> None:
+        _reject_animated_layout(self)
         left, bottom, width, height = self._coordinates(value, 4, "bounds")
         if not (0 <= left < left + width <= 1 and 0 <= bottom < bottom + height <= 1):
             raise InvalidParameterError(
@@ -4051,6 +5195,7 @@ class SmartInset:
 
     @x_lim.setter
     def x_lim(self, value: tuple[float, float] | None) -> None:
+        _reject_animated_layout(self)
         self._x_lim = self._limits(value, "x_lim")
 
     @property
@@ -4060,6 +5205,7 @@ class SmartInset:
 
     @y_lim.setter
     def y_lim(self, value: tuple[float, float] | None) -> None:
+        _reject_animated_layout(self)
         self._y_lim = self._limits(value, "y_lim")
 
     @property
@@ -4069,6 +5215,7 @@ class SmartInset:
 
     @indicate_zoom.setter
     def indicate_zoom(self, value: bool) -> None:
+        _reject_animated_layout(self)
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("indicate_zoom must be a bool.")
         if value and (self.x_lim is None or self.y_lim is None):
@@ -4084,10 +5231,12 @@ class SmartInset:
 
     @elements.setter
     def elements(self, value: Plottable | Iterable[Plottable | None]) -> None:
+        _reject_animated_layout(self)
         self._elements = SmartFigure._normalize_leaf_rhs(value)
 
     def add_elements(self, *elements: Plottable | None) -> Self:
         """Add plottables to the inset and return it for chaining."""
+        _reject_animated_layout(self)
         self._elements.extend(SmartFigure._normalize_leaf_rhs(elements))
         return self
 
@@ -4165,23 +5314,23 @@ class SmartFigureWCS(SmartFigure):
     x_lim, y_lim : tuple[float, float] | list[tuple[float, float]], optional
         Limits for the x and y axes of the figure. This can be given as a single value or a list of values to apply to
         each subplot.
-    sub_x_labels, sub_y_labels : Iterable[str], optional
+    sub_x_labels, sub_y_labels : Iterable[str | None], optional
         Labels for the x and y axes of each subfigure, respectively. This is only useful for figures that are not a
         single subplot and when each subfigure needs its own x and y labels. This prevents the creation of nested
         :class:`~graphinglib.SmartFigure` objects for each subfigure only to set the x and y labels. This list cannot
         be longer than the number of subfigures drawn by the SmartFigure and None values can be used to skip specific
         subfigures.
-    subtitles : Iterable[str], optional
+    subtitles : Iterable[str | None], optional
         Labels for the subtitles of each subfigure, respectively. Similarly to `sub_x_labels` and `sub_y_labels`, this
         allows to set subtitles for each subfigure without needing to create nested
         :class:`~graphinglib.SmartFigure` objects. It is only useful for figures that are not a single subplot and when
         each subfigure needs its own subtitle. This list cannot be longer than the number of subfigures drawn by the
         SmartFigure and None values can be used to skip specific subfigures.
-    log_scale_x, log_scale_y : bool | list[bool], optional
+    log_scale_x, log_scale_y : bool | list[bool | None], optional
         Whether to use a logarithmic scale for the x and y axes, respectively. This can be given as a single value or
         a list of values to apply to each subplot.
         Defaults to ``False``.
-    remove_axes : bool | list[bool], optional
+    remove_axes : bool | list[bool | None], optional
         Whether to remove the axes from the figure. This can be given as a single boolean or a list of booleans to apply
         to each subplot.
         Defaults to ``False``.
@@ -4206,13 +5355,13 @@ class SmartFigureWCS(SmartFigure):
             data itself. The `box_aspect_ratio` parameter changes the size of the plot, which does not affect the
             figure's axes.
 
-    remove_x_ticks, remove_y_ticks : bool | list[bool], optional
+    remove_x_ticks, remove_y_ticks : bool | list[bool | None], optional
         Whether to remove the x and y ticks from the figure, respectively. This can be given as a single value or a list
         of values to apply to each subplot.
         Defaults to ``False``.
-    invert_x_axis, invert_y_axis : bool | list[bool], optional
-        Whether to invert the x and y axes, respectively. This can be given as a single value or a list of values to
-        apply to each subplot.
+    invert_x_axis, invert_y_axis : bool | list[bool | None], optional
+        Whether to invert the x and y axes, respectively. Use a single value or a list aligned with the subplots.
+        During animation, a list entry of ``None`` leaves that subplot alone.
         Defaults to ``False``.
     reference_labels : bool | list[bool], optional
         Whether or not to add reference labels to the subfigures. If set to ``True``, each subfigure will be labeled
@@ -4283,7 +5432,7 @@ class SmartFigureWCS(SmartFigure):
         Number of columns to display the labels in the legend. This is only used if the legend is displayed. This can be
         given as a single value or a list of values to apply to each subplot.
         Defaults to ``1``.
-    show_legend : bool | list[bool], optional
+    show_legend : bool | list[bool | None], optional
         Whether to show the legend for the figure. This allows to easily toggle the visibility of the legend. This can
         be given as a single value or a list of values to apply to each subplot.
         Defaults to ``True``.
@@ -4333,18 +5482,18 @@ class SmartFigureWCS(SmartFigure):
         title: str | None = None,
         x_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
         y_lim: ListOrItem[tuple[float | None, float | None] | None] = None,
-        sub_x_labels: Iterable[str] | None = None,
-        sub_y_labels: Iterable[str] | None = None,
-        subtitles: Iterable[str] | None = None,
-        log_scale_x: ListOrItem[bool] = False,
-        log_scale_y: ListOrItem[bool] = False,
-        remove_axes: ListOrItem[bool] = False,
+        sub_x_labels: Iterable[str | None] | None = None,
+        sub_y_labels: Iterable[str | None] | None = None,
+        subtitles: Iterable[str | None] | None = None,
+        log_scale_x: bool | list[bool | None] = False,
+        log_scale_y: bool | list[bool | None] = False,
+        remove_axes: bool | list[bool | None] = False,
         aspect_ratio: ListOrItem[float | Literal["auto", "equal"]] = "auto",
         box_aspect_ratio: ListOrItem[float | None] = None,
-        remove_x_ticks: ListOrItem[bool] = False,
-        remove_y_ticks: ListOrItem[bool] = False,
-        invert_x_axis: ListOrItem[bool] = False,
-        invert_y_axis: ListOrItem[bool] = False,
+        remove_x_ticks: bool | list[bool | None] = False,
+        remove_y_ticks: bool | list[bool | None] = False,
+        invert_x_axis: bool | list[bool | None] = False,
+        invert_y_axis: bool | list[bool | None] = False,
         reference_labels: ListOrItem[bool] = True,
         global_reference_label: bool = False,
         reference_labels_loc: ListOrItem[
@@ -4359,7 +5508,7 @@ class SmartFigureWCS(SmartFigure):
         general_legend: bool = False,
         legend_loc: ListOrItem[str | tuple | None] = None,
         legend_cols: ListOrItem[int] = 1,
-        show_legend: ListOrItem[bool] = True,
+        show_legend: bool | list[bool | None] = True,
         twin_x_axis: SmartTwinAxis | None = None,
         twin_y_axis: SmartTwinAxis | None = None,
         figure_style: str | Inherit = INHERIT,
@@ -4425,6 +5574,7 @@ class SmartFigureWCS(SmartFigure):
 
     @projection.setter
     def projection(self, value: ListOrItem[WCS]) -> None:
+        _reject_animated_layout(self)
         for v in value if isinstance(value, list) else [value]:
             if not isinstance(v, WCS):
                 raise InvalidParameterTypeError(
@@ -4438,7 +5588,10 @@ class SmartFigureWCS(SmartFigure):
         self,
         is_matplotlib_style: bool = False,
         make_legend: bool = True,
-    ) -> dict[str, dict[str, list[str | Any]]]:
+        *,
+        animation_parent: tuple[SmartFigure, int] | None = None,
+        animation_grid_defaults: dict[str, Any] | None = None,
+    ) -> dict[str, dict[str, list[Any]]]:
         """
         Wraps the parent method to check if the number of projections matches the number of subfigures drawn by the
         SmartFigure.
@@ -4448,7 +5601,95 @@ class SmartFigureWCS(SmartFigure):
                 f"Number of WCS projections ({len(self._projection)}) must be equal to the number of subfigures "
                 f"({len(self)})."
             )
-        return super()._prepare_figure(is_matplotlib_style, make_legend)
+        return super()._prepare_figure(
+            is_matplotlib_style,
+            make_legend,
+            animation_parent=animation_parent,
+            animation_grid_defaults=animation_grid_defaults,
+        )
+
+    @staticmethod
+    def _apply_coordinate_ticks(
+        coordinate: Any, dimension: str, config: dict[str, Any]
+    ) -> None:
+        formatter = config.get(f"{dimension}_tick_formatter")
+        if formatter is not None:
+            coordinate.set_major_formatter(formatter)
+        spacing = config.get(f"{dimension}_tick_spacing")
+        if spacing is not None and not spacing.unit.is_equivalent(
+            coordinate.coord_unit
+        ):
+            raise InvalidParameterError(
+                "WCS tick spacing must have compatible coordinate units."
+            )
+        coordinate.set_ticks(
+            values=config.get(f"{dimension}_ticks"),
+            spacing=spacing,
+            number=config.get(f"number_of_{dimension}_ticks"),
+        )
+        frequency = config.get(f"minor_{dimension}_tick_frequency")
+        if frequency is not None:
+            coordinate.display_minor_ticks(True)
+            coordinate.set_minor_frequency(frequency)
+
+    def _bind_coordinate_ticks(
+        self, session: _AnimationSession, coordinates: tuple[Any, Any]
+    ) -> None:
+        def read(coordinate: Any) -> tuple[Any, Any, bool, int]:
+            return (
+                coordinate._formatter_locator,
+                coordinate._custom_formatter,
+                coordinate._ticks.get_display_minor_ticks(),
+                coordinate.get_minor_frequency(),
+            )
+
+        def write(coordinate: Any, state: tuple[Any, Any, bool, int]) -> None:
+            locator, formatter, show_minor, frequency = state
+            coordinate._formatter_locator = locator
+            coordinate._custom_formatter = formatter
+            coordinate.display_minor_ticks(show_minor)
+            coordinate.set_minor_frequency(frequency)
+
+        defaults = []
+        for coordinate in coordinates:
+            locator, formatter, show_minor, frequency = read(coordinate)
+            defaults.append((copy(locator), formatter, show_minor, frequency))
+
+        current = self._ticks
+
+        def prepare() -> _ArtistEdit:
+            previous, requested = current, self._ticks
+            targets = []
+            for dimension, coordinate, default in zip(
+                ("x", "y"), coordinates, defaults, strict=True
+            ):
+                keys = (
+                    f"{dimension}_ticks",
+                    f"{dimension}_tick_spacing",
+                    f"number_of_{dimension}_ticks",
+                    f"{dimension}_tick_formatter",
+                    f"minor_{dimension}_tick_frequency",
+                )
+                if any(previous.get(key) is not requested.get(key) for key in keys):
+                    targets.append((dimension, coordinate, default, read(coordinate)))
+
+            def apply() -> None:
+                nonlocal current
+                for dimension, coordinate, default, _ in targets:
+                    locator, formatter, show_minor, frequency = default
+                    write(coordinate, (copy(locator), formatter, show_minor, frequency))
+                    self._apply_coordinate_ticks(coordinate, dimension, requested)
+                current = requested
+
+            def undo() -> None:
+                nonlocal current
+                for _, coordinate, _, old in reversed(targets):
+                    write(coordinate, old)
+                current = previous
+
+            return _ArtistEdit(apply, undo)
+
+        session.bind_derived(self, ("_ticks",), prepare)
 
     def _customize_ticks(
         self,
@@ -4464,28 +5705,10 @@ class SmartFigureWCS(SmartFigure):
         x_axis.set_auto_axislabel(False)
         y_axis.set_auto_axislabel(False)
 
-        if self._ticks.get("x_tick_formatter") is not None:
-            x_axis.set_major_formatter(self._ticks.get("x_tick_formatter"))
-        if self._ticks.get("y_tick_formatter") is not None:
-            y_axis.set_major_formatter(self._ticks.get("y_tick_formatter"))
-
-        x_axis.set_ticks(
-            values=self._ticks.get("x_ticks"),
-            spacing=self._ticks.get("x_tick_spacing"),
-            number=self._ticks.get("number_of_x_ticks"),
-        )
-        y_axis.set_ticks(
-            values=self._ticks.get("y_ticks"),
-            spacing=self._ticks.get("y_tick_spacing"),
-            number=self._ticks.get("number_of_y_ticks"),
-        )
-
-        if self._ticks.get("minor_x_tick_frequency") is not None:
-            x_axis.display_minor_ticks(True)
-            x_axis.set_minor_frequency(self._ticks.get("minor_x_tick_frequency"))
-        if self._ticks.get("minor_y_tick_frequency") is not None:
-            y_axis.display_minor_ticks(True)
-            y_axis.set_minor_frequency(self._ticks.get("minor_y_tick_frequency"))
+        if (session := _DRAW_SESSION.get()) is not None:
+            self._bind_coordinate_ticks(session, (x_axis, y_axis))
+        self._apply_coordinate_ticks(x_axis, "x", self._ticks)
+        self._apply_coordinate_ticks(y_axis, "y", self._ticks)
 
         # Manually set the tick_params using the recommended API
         for i, axis, ax_params in zip(
@@ -4549,21 +5772,79 @@ class SmartFigureWCS(SmartFigure):
                 length=self._tick_params["y minor"].get("length"),
             )
 
-        # Remove ticks
-        if self._subplot_p["remove_x_ticks"][subplot_i]:
-            x_axis.set_ticks_visible(False)
-            x_axis.set_ticklabel_visible(False)
-        if self._subplot_p["remove_y_ticks"][subplot_i]:
-            y_axis.set_ticks_visible(False)
-            y_axis.set_ticklabel_visible(False)
+    def _grid_options(
+        self, defaults: dict[str, tuple[str, bool]]
+    ) -> dict[str, tuple[str, bool]]:
+        return {
+            dimension: ("major", enabled)
+            for dimension, (_, enabled) in super()._grid_options(defaults).items()
+        }
+
+    def _prepare_grid(
+        self,
+        ax: Axes,
+        show: bool,
+        options: dict[str, tuple[str, bool]],
+        style: dict[str, Any] | None = None,
+        initial_linestyle: Any = None,
+    ) -> _ArtistEdit:
+        edits = []
+        for index, dimension in enumerate(("x", "y")):
+            coordinate = cast(Any, ax).coords[index]
+            _, enabled = options[dimension]
+            # CoordinateHelper exposes grid visibility through its drawing options.
+            previous = coordinate._grid_lines_kwargs
+            old = {"draw_grid": previous["visible"]}
+            new = {"draw_grid": show and enabled}
+            if style is not None:
+                new.update(
+                    {
+                        "edgecolor": style["grid.color"],
+                        "alpha": style["grid.alpha"],
+                        "linestyle": style["grid.linestyle"],
+                        "linewidth": style["grid.linewidth"],
+                    }
+                )
+                old.update(
+                    {name: previous[name] for name in new if name != "draw_grid"}
+                )
+
+            def write(params, coord=coordinate) -> None:
+                coord.grid(grid_type=getattr(coord, "_grid_type", None), **params)
+
+            edits.append(_edit(write, old, new))
+        return _combine_edits(edits)
+
+    def _animation_tick_style(self, ax: Axes, dimension: str) -> _TickStyle:
+        coordinate = cast(Any, ax).coords[0 if dimension == "x" else 1]
+        return _WCSTickStyle(coordinate, dimension)
+
+    def _prepare_tick_removal(
+        self, ax: Axes, dimension: str
+    ) -> Callable[[bool], _ArtistEdit]:
+        axis = cast(Any, ax).coords[0 if dimension == "x" else 1]
+
+        def read() -> tuple[bool, bool]:
+            return axis.get_ticks_visible(), axis.get_ticklabel_visible()
+
+        def write(flags: tuple[bool, bool]) -> None:
+            axis.set_ticks_visible(flags[0])
+            axis.set_ticklabel_visible(flags[1])
+
+        initial = read()
+
+        def prepare(remove: bool) -> _ArtistEdit:
+            return _edit(write, read(), (False, False) if remove else initial)
+
+        return prepare
 
     # WCSAxes uses Astropy Quantity ticks and WCS-specific tick controls, so this
     # intentionally is not a behavioral substitute for SmartFigure.set_ticks.
     def set_ticks(  # ty: ignore[invalid-method-override]
         self,
         reset: bool = False,
-        x_ticks: list[Quantity] | None = None,
-        y_ticks: list[Quantity] | None = None,
+        x_ticks: Quantity | list[Quantity] | None = None,
+        y_ticks: Quantity | list[Quantity] | None = None,
         x_tick_spacing: Quantity | None = None,
         y_tick_spacing: Quantity | None = None,
         number_of_x_ticks: int | None = None,
@@ -4581,7 +5862,7 @@ class SmartFigureWCS(SmartFigure):
         reset : bool, optional
             If ``True``, resets all previously set ticks to their default values before applying the new parameters.
             Defaults to ``False``.
-        x_ticks, y_ticks : list[Quantity], optional
+        x_ticks, y_ticks : Quantity | list[Quantity], optional
             Tick positions for the x or y axis. If a value is specified, the corresponding ``x_tick_spacing`` and
             ``number_of_x_ticks`` or ``y_tick_spacing`` and ``number_of_y_ticks`` parameters must be ``None``.
         x_tick_spacing, y_tick_spacing : Quantity, optional
@@ -4596,9 +5877,8 @@ class SmartFigureWCS(SmartFigure):
                 displayed may vary depending on the data and limits of the axes.
 
         x_tick_formatter, y_tick_formatter : str | Callable, optional
-            A function or a string format to apply to the x or y tick labels. If a function is provided, it should take
-            a single argument (the tick value) and return a formatted string. If a string is provided, it should be a
-            format string that will be applied to each tick value. See the `astropy documentation
+            A string format or Astropy formatter callable. A callable receives the tick coordinates as a Quantity
+            and can accept a ``spacing`` keyword. It returns an iterable of tick labels. See the `astropy documentation
             <https://docs.astropy.org/en/latest/visualization/wcsaxes/ticks_labels_grid.html>`_ for more details.
 
             .. warning::
@@ -4610,11 +5890,11 @@ class SmartFigureWCS(SmartFigure):
 
                 ``1h01m34.1s``
 
-                >>> x_tick_formatter = lambda x: f"{x:.2f} s"  # only for non-angular coordinate axes
+                >>> x_tick_formatter = lambda values, spacing=None: [f"{value:.2f}" for value in values]
 
                 ``1.23 s``
 
-        minor_x_tick_frequency, minor_y_tick_frequency : float, optional
+        minor_x_tick_frequency, minor_y_tick_frequency : int, optional
             Frequency of minor ticks on the x or y axis. This gives the number of minor ticks between each major tick.
 
             .. note::
@@ -4656,9 +5936,6 @@ class SmartFigureWCS(SmartFigure):
                 "Number of ticks and tick spacing cannot be set simultaneously."
             )
 
-        if reset:
-            self._ticks.clear()
-
         params = [
             "x_ticks",
             "y_ticks",
@@ -4671,10 +5948,55 @@ class SmartFigureWCS(SmartFigure):
             "minor_x_tick_frequency",
             "minor_y_tick_frequency",
         ]
-        for param in params:
-            value = locals()[param]
-            if value is not None:
-                self._ticks[param] = value
+        source = locals()
+        changes = {
+            param: source[param] for param in params if source[param] is not None
+        }
+        config = {} if reset else self._ticks.copy()
+        for dimension in ("x", "y"):
+            positions = f"{dimension}_ticks"
+            spacing = f"{dimension}_tick_spacing"
+            number = f"number_of_{dimension}_ticks"
+            frequency = f"minor_{dimension}_tick_frequency"
+            if any(key in changes for key in (positions, spacing, number)):
+                for key in (positions, spacing, number):
+                    config.pop(key, None)
+            if positions in changes:
+                ticks = Quantity(changes[positions], copy=True)
+                if (
+                    ticks.ndim != 1
+                    or not np.isrealobj(ticks.value)
+                    or not np.isfinite(ticks.value).all()
+                ):
+                    raise InvalidParameterError(
+                        "WCS ticks must be a one-dimensional quantity of finite numbers."
+                    )
+                changes[positions] = ticks
+            if spacing in changes:
+                step = changes[spacing]
+                if (
+                    not isinstance(step, Quantity)
+                    or not step.isscalar
+                    or not np.isrealobj(step.value)
+                    or not np.isfinite(step.value)
+                    or step.value <= 0
+                ):
+                    raise InvalidParameterError(
+                        "WCS tick spacing must be a finite positive quantity."
+                    )
+            for name in (number, frequency):
+                if name in changes:
+                    value = changes[name]
+                    if (
+                        isinstance(value, bool)
+                        or not isinstance(value, Integral)
+                        or value <= 0
+                    ):
+                        raise InvalidParameterError(
+                            "WCS tick counts and frequencies must be positive integers."
+                        )
+
+        self._ticks = _stage_live_value(self, "_ticks", {**config, **changes})
 
         return self
 
@@ -4785,19 +6107,19 @@ class SmartFigureWCS(SmartFigure):
             "labelleft": draw_left_labels,
             "labelright": draw_right_labels,
         }
+        config = deepcopy(self._tick_params)
+        changes = {
+            key: value for key, value in new_tick_params.items() if value is not None
+        }
         for axis_i in [axis] if axis != "both" else ["x", "y"]:
+            major, minor = f"{axis_i} major", f"{axis_i} minor"
             if reset:
-                self._tick_params[f"{axis_i} major"] = deepcopy(
-                    self._default_tick_params[f"{axis_i} major"]
-                )
-                self._tick_params[f"{axis_i} minor"] = deepcopy(
-                    self._default_tick_params[f"{axis_i} minor"]
-                )
-            for param, value in new_tick_params.items():
-                if value is not None:
-                    self._tick_params[f"{axis_i} major"][param] = value
+                config[major] = self._default_tick_params[major].copy()
+                config[minor] = self._default_tick_params[minor].copy()
+            config[major].update(changes)
             if minor_length is not None:
-                self._tick_params[f"{axis_i} minor"]["length"] = minor_length
+                config[minor]["length"] = minor_length
+        self._tick_params = _stage_live_value(self, "_tick_params", config)
         return self
 
     # WCSAxes grids only support major grid lines, so SmartFigure's which_x /
@@ -4934,7 +6256,7 @@ class SmartTwinAxis:
 
     @label.setter
     def label(self, value: str | None) -> None:
-        self._label = value
+        self._label = _stage_live_value(self, "_label", value)
 
     @property
     def axis_lim(self) -> tuple[float, float] | None:
@@ -4947,7 +6269,7 @@ class SmartTwinAxis:
                 raise InvalidParameterTypeError("axis_lim must be a tuple.")
             if len(value) != 2:
                 raise InvalidParameterError("axis_lim must be a tuple of length 2.")
-        self._axis_lim = value
+        self._axis_lim = _stage_live_value(self, "_axis_lim", value)
 
     @property
     def log_scale(self) -> bool:
@@ -4957,7 +6279,7 @@ class SmartTwinAxis:
     def log_scale(self, value: bool) -> None:
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("log_scale must be a boolean.")
-        self._log_scale = value
+        self._log_scale = _stage_live_value(self, "_log_scale", value)
 
     @property
     def remove_axes(self) -> bool:
@@ -4967,7 +6289,7 @@ class SmartTwinAxis:
     def remove_axes(self, value: bool) -> None:
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("remove_axes must be a bool.")
-        self._remove_axes = value
+        self._remove_axes = _stage_live_value(self, "_remove_axes", value)
 
     @property
     def remove_ticks(self) -> bool:
@@ -4977,7 +6299,7 @@ class SmartTwinAxis:
     def remove_ticks(self, value: bool) -> None:
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("remove_ticks must be a bool.")
-        self._remove_ticks = value
+        self._remove_ticks = _stage_live_value(self, "_remove_ticks", value)
 
     @property
     def invert_axis(self) -> bool:
@@ -4987,7 +6309,7 @@ class SmartTwinAxis:
     def invert_axis(self, value: bool) -> None:
         if not isinstance(value, bool):
             raise InvalidParameterTypeError("invert_axis must be a bool.")
-        self._invert_axis = value
+        self._invert_axis = _stage_live_value(self, "_invert_axis", value)
 
     @property
     def elements(self) -> list[Plottable | None]:
@@ -4995,6 +6317,7 @@ class SmartTwinAxis:
 
     @elements.setter
     def elements(self, value: Plottable | Iterable[Plottable | None]) -> None:
+        _reject_animated_layout(self)
         self._elements = []  # systematically reset the elements when setting them with the property
         if isinstance(value, Plottable):
             self.add_elements(value)
@@ -5083,6 +6406,7 @@ class SmartTwinAxis:
         Self
             For convenience, the same :class:`~graphinglib.SmartTwinAxis` with the added elements.
         """
+        _reject_animated_layout(self)
         if not SmartFigure._is_iterable_of_plottables(elements):
             raise InvalidParameterTypeError(
                 "Elements must be an iterable of Plottable objects."
@@ -5143,9 +6467,22 @@ class SmartTwinAxis:
             )
 
         self._axes = ax
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            session.mark_present(self)
+
+            def release_twin() -> None:
+                if self._axes is ax:
+                    self._axes = None
+
+            session.on_finish(release_twin)
 
         if self._label:
             ax_set_label(self._label)
+        if session is not None:
+            session.bind_axis_text(
+                self, "_label", ax.get_ylabel if is_y else ax.get_xlabel, ax_set_label
+            )
         if self._axis_lim:
             ax_set_lim(*self._axis_lim)
 
@@ -5156,24 +6493,69 @@ class SmartTwinAxis:
             ax.spines[spine_str].set_linewidth(self._line_width)
         for spine in ax.spines:
             ax.spines[spine].set_visible(False)
-        ax.spines[spine_str].set_visible(not self._hide_spine)
+        spine = ax.spines[spine_str]
+        spine.set_visible(not self._hide_spine)
+        if session is not None:
+            session.bind_property(self, "_edge_color", spine, "edgecolor")
+            session.bind_property(self, "_line_width", spine, "linewidth")
 
+            def prepare_hide(hidden: bool) -> _ArtistEdit:
+                return _edit(spine.set_visible, spine.get_visible(), not hidden)
+
+            session.bind_update(self, "_hide_spine", prepare_hide)
+
+        native_axis = ax.yaxis if is_y else ax.xaxis
+        tick_style = (
+            _NativeTickStyle(native_axis, "y" if is_y else "x")
+            if session is not None
+            else None
+        )
         self._customize_ticks(is_y)
 
         # Logarithmic scale
         if self._log_scale:
             ax_set_scale("log")
 
-        # Remove axes
         if self._remove_axes:
-            ax.axis("off")
+            ax.set_axis_off()
+        if self._remove_ticks:
+            prepare_ticks = _tick_removal(
+                ax.yaxis if is_y else ax.xaxis, "y" if is_y else "x"
+            )
+            prepare_ticks(True).apply()
+            if tick_style is not None:
+                tick_style.hidden = True
 
         # Invert axis
         if self.invert_axis:
-            if is_y:
+            if is_y and not ax.yaxis_inverted():
                 ax.invert_yaxis()
-            else:
+            elif not is_y and not ax.xaxis_inverted():
                 ax.invert_xaxis()
+
+        if session is not None:
+            if tick_style is not None:
+                session.bind_tick_style(
+                    self,
+                    "",
+                    {0: tick_style},
+                    1,
+                    lambda: self._tick_params,
+                    lambda: self._remove_ticks,
+                )
+            session.bind_axis_ticks(
+                self, [(ax.yaxis if is_y else ax.xaxis, "")], lambda: self._ticks
+            )
+            session.bind_update(self, "_remove_axes", partial(_axis_removal, ax))
+            session.bind_axis_view(
+                self,
+                "_axis_lim",
+                "_invert_axis",
+                "_log_scale",
+                "y" if is_y else "x",
+                [(0, ax, self.invert_axis)],
+                1,
+            )
 
         # Plotting loop
         num_cycle_colors = len(cycle_colors)
@@ -5194,9 +6576,15 @@ class SmartTwinAxis:
                 if not is_matplotlib_style:
                     self._reset_params_to_default(element, params_to_reset)
                 try:
-                    if element.label is not None:
+                    label = element.label
+                    if label is not None:
                         handles.append(element.handle)
-                        labels.append(element.label)
+                        labels.append(label)
+                    elif session is not None and session.can_reserve_legend_entry(
+                        getattr(element, "handle", None)
+                    ):
+                        handles.append(element.handle)
+                        labels.append("")
                 except AttributeError:
                     continue
                 z_order += 5
@@ -5256,21 +6644,6 @@ class SmartTwinAxis:
         minor_tick_spacing = self._ticks.get("minor_tick_spacing")
         if minor_tick_spacing is not None:
             ax_axis.set_minor_locator(ticker.MultipleLocator(minor_tick_spacing))
-
-        # Remove ticks
-        if self._remove_ticks:
-            axes.tick_params(
-                axis_str,
-                which="both",
-                labelbottom=False,
-                labelleft=False,
-                labelright=False,
-                labeltop=False,
-                bottom=False,
-                left=False,
-                right=False,
-                top=False,
-            )
 
     def _fill_in_missing_params(
         self,
@@ -5345,6 +6718,7 @@ class SmartTwinAxis:
         Self
             For convenience, the same SmartTwinAxis with the updated rc parameters.
         """
+        _reject_animated_layout(self)
         if reset:
             self._user_rc_dict.clear()
             self._edge_color = None
@@ -5410,6 +6784,8 @@ class SmartTwinAxis:
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
+        if hide_spine is not None and not isinstance(hide_spine, bool):
+            raise InvalidParameterTypeError("hide_spine must be a boolean.")
         rc_params_dict = {
             "axes.labelcolor": label_color,
             "axes.labelpad": label_pad,
@@ -5418,6 +6794,23 @@ class SmartTwinAxis:
             "font.weight": font_weight,
             "text.usetex": use_latex,
         }
+
+        if _bound_session(self) is not None:
+            if reset or any(value is not None for value in rc_params_dict.values()):
+                raise UnsupportedFeatureError(
+                    "During animation twin set_visual_params supports edge_color, line_width, and hide_spine."
+                )
+            if edge_color is not None:
+                edge_color = plt.rcParams.validate["axes.edgecolor"](edge_color)
+            if line_width is not None:
+                line_width = plt.rcParams.validate["axes.linewidth"](line_width)
+            if edge_color is not None:
+                self._edge_color = _stage_live_value(self, "_edge_color", edge_color)
+            if line_width is not None:
+                self._line_width = _stage_live_value(self, "_line_width", line_width)
+            if hide_spine is not None:
+                self._hide_spine = _stage_live_value(self, "_hide_spine", hide_spine)
+            return self
 
         if reset:
             self._edge_color = edge_color
@@ -5436,10 +6829,6 @@ class SmartTwinAxis:
         self.set_rc_params(rc_params_dict)
 
         if hide_spine is not None:
-            if not isinstance(hide_spine, bool):
-                raise InvalidParameterTypeError(
-                    "hide_spine must be a boolean or an iterable of spine names."
-                )
             self._hide_spine = hide_spine
 
         return self
@@ -5523,9 +6912,6 @@ class SmartTwinAxis:
                     f"Number of ticks ({len(ticks)}) and number of tick labels ({len(tick_labels)}) must be the same."
                 )
 
-        if reset:
-            self._ticks.clear()
-
         params = [
             "ticks",
             "tick_labels",
@@ -5533,10 +6919,14 @@ class SmartTwinAxis:
             "minor_ticks",
             "minor_tick_spacing",
         ]
-        for param in params:
-            value = locals()[param]
-            if value is not None:
-                self._ticks[param] = value
+        values = locals()
+        changes = {
+            param: values[param] for param in params if values[param] is not None
+        }
+        config = _updated_tick_config(
+            self._ticks, changes, reset=reset, dimensions=("",)
+        )
+        self._ticks = _stage_live_value(self, "_ticks", config)
 
         return self
 
@@ -5622,10 +7012,11 @@ class SmartTwinAxis:
             "labelleft": draw_labels,
             "labelright": draw_labels,
         }
+        config = deepcopy(self._tick_params)
+        changes = {
+            key: value for key, value in new_tick_params.items() if value is not None
+        }
         for which_i in [which] if which != "both" else ["major", "minor"]:
-            if reset:
-                self._tick_params[which_i].clear()
-            for param, value in new_tick_params.items():
-                if value is not None:
-                    self._tick_params[which_i][param] = value
+            config[which_i] = ({} if reset else config[which_i]) | changes
+        self._tick_params = _stage_live_value(self, "_tick_params", config)
         return self

@@ -1,5 +1,6 @@
 sphinx-copybutton
 pydata-sphinx-theme
+contourpy>=1.0.1,<2
 numpy
 scipy
 matplotlib

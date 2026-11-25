@@ -1,23 +1,50 @@
 from __future__ import annotations
 
-from .exceptions import (
-    IncompatibleArgumentsError,
-    InvalidParameterTypeError,
-    PlottingError,
-)
-from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
-
+from collections.abc import Iterator, Mapping
 from copy import deepcopy
 from dataclasses import dataclass, field
+from math import isfinite
+from numbers import Real
 from typing import Any, Literal, Optional, Protocol, Sequence, cast, runtime_checkable
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.collections import LineCollection
+from matplotlib.artist import Artist
+from matplotlib.axis import GRIDLINE_INTERPOLATION_STEPS
+from matplotlib.collections import LineCollection, PathCollection
+from matplotlib.container import Container
 from matplotlib.figure import Figure as MPLFigure
+from matplotlib.lines import Line2D
+from matplotlib.markers import MarkerStyle
+from matplotlib.table import Cell
+from matplotlib.text import Annotation
+from matplotlib.text import Text as TextArtist
 from numpy.typing import ArrayLike
 
-from .legend_artists import VerticalLineCollection
+from ._animation import (
+    _DRAW_SESSION,
+    _AnimationSession,
+    _ArtistEdit,
+    _attach_artists,
+    _bound_session,
+    _combine_edits,
+    _edit,
+    _stage_live_value,
+)
+from .exceptions import (
+    IncompatibleArgumentsError,
+    InvalidParameterError,
+    InvalidParameterTypeError,
+    PlottingError,
+    UnsupportedFeatureError,
+)
+from .inherit import INHERIT, Inherit, Styled, is_inherit, resolve_or, strip_inherit
+from .legend_artists import (
+    VerticalLineCollection,
+    _reference_collection_styles,
+    _reference_line_style,
+    _ReferenceLegendCollection,
+)
 from .tools import _copy_with_overrides
 
 try:
@@ -84,6 +111,294 @@ class Plottable(Protocol):
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         pass
+
+
+_REFERENCE_LINE_STYLE = {
+    "_colors": "color",
+    "_line_widths": "linewidth",
+    "_line_styles": "linestyle",
+    "_alpha": "alpha",
+}
+
+
+def _reference_positions(values: ArrayLike) -> np.ndarray:
+    positions = np.atleast_1d(values)
+    if positions.ndim != 1:
+        raise InvalidParameterError("Reference-line positions must be one-dimensional.")
+    return positions
+
+
+def _reference_line_styles(params: dict[str, Any], count: int) -> list[dict[str, Any]]:
+    styles: list[dict[str, Any]] = [{} for _ in range(count)]
+    for name, value in params.items():
+        if isinstance(value, (list, np.ndarray)):
+            if len(value) != count:
+                raise InvalidParameterError(
+                    "Reference-line styles must match the line count."
+                )
+            for style, item in zip(styles, value, strict=True):
+                style[name] = item
+        else:
+            for style in styles:
+                style[name] = value
+    return styles
+
+
+def _interpolate_spanning_line(line: Line2D) -> None:
+    # Older Matplotlib leaves the default straight path on polar axes.
+    cast(Any, line.get_path())._interpolation_steps = GRIDLINE_INTERPOLATION_STEPS
+
+
+def _draw_reference_lines(
+    element: Hlines | Vlines,
+    axes: plt.Axes,
+    z_order: int,
+    names: tuple[str, str, str],
+    *,
+    horizontal: bool,
+) -> LineCollection:
+    position, start, end = names
+    coords = _reference_positions(getattr(element, position))
+    low, high = getattr(element, start), getattr(element, end)
+    params = strip_inherit(
+        {field: getattr(element, attr) for attr, field in _REFERENCE_LINE_STYLE.items()}
+    )
+    capacity = 3 if horizontal else 4
+    collection = None
+    lines: list[Line2D] = []
+    if low is not None and high is not None:
+        plot = axes.hlines if horizontal else axes.vlines
+        collection = plot(
+            coords, low, high, zorder=z_order, **_reference_collection_kwargs(params)
+        )
+    else:
+        plot = axes.axhline if horizontal else axes.axvline
+        lines = [
+            plot(float(coord), zorder=z_order, **style)
+            for coord, style in zip(
+                coords, _reference_line_styles(params, len(coords)), strict=True
+            )
+        ]
+        for line in lines:
+            _interpolate_spanning_line(line)
+
+    swatch_count = min(len(coords), capacity)
+    legend_style = {
+        name: value
+        for name, value in params.items()
+        if len(coords) or not isinstance(value, (list, np.ndarray))
+    }
+    session = _DRAW_SESSION.get()
+    if session is not None:
+        if collection is None:
+            collection = LineCollection(
+                [],
+                zorder=z_order,
+                visible=False,
+                **_reference_collection_kwargs(legend_style),
+            )
+        _bind_reference_geometry(
+            session,
+            element,
+            axes,
+            names,
+            collection,
+            lines,
+            params,
+            z_order,
+            horizontal,
+        )
+
+        def read_styles() -> list[dict[str, Any]]:
+            if collection.get_visible():
+                return _reference_collection_styles(
+                    collection, min(len(collection.get_paths()), capacity)
+                )
+            return [
+                _reference_line_style(line)
+                for line in lines[:capacity]
+                if line.get_visible()
+            ]
+
+        handle = _ReferenceLegendCollection(
+            swatch_count, horizontal=horizontal, **legend_style
+        )
+        session.bind_legend_source(element, handle, lambda: element.label)
+        session.bind_reference_legend(
+            handle, (*names, *_REFERENCE_LINE_STYLE), read_styles
+        )
+    else:
+        # Keep a static legend sample for empty plots.
+        proxy_type = LineCollection if horizontal else VerticalLineCollection
+        legend_style.pop("linewidth", None)
+        handle = proxy_type([[(0, 0)]] * max(1, swatch_count), **legend_style)
+    return handle
+
+
+def _reference_collection_kwargs(styles: dict[str, Any]) -> dict[str, Any]:
+    return {
+        ("alpha" if field == "alpha" else f"{field}s"): value
+        for field, value in styles.items()
+    }
+
+
+def _bind_reference_geometry(
+    session: _AnimationSession,
+    element: Hlines | Vlines,
+    axes: plt.Axes,
+    names: tuple[str, str, str],
+    collection: LineCollection,
+    lines: list[Line2D],
+    initial_style: dict[str, Any],
+    z_order: int,
+    horizontal: bool,
+) -> None:
+    position, start, end = names
+    defaults = {
+        "color": plt.rcParams["lines.color"],
+        "linewidth": plt.rcParams["lines.linewidth"],
+        "linestyle": plt.rcParams["lines.linestyle"],
+        "alpha": None,
+        **initial_style,
+    }
+    transform = (
+        axes.get_yaxis_transform(which="grid")
+        if horizontal
+        else axes.get_xaxis_transform(which="grid")
+    )
+    get_coordinates = Line2D.get_ydata if horizontal else Line2D.get_xdata
+    set_coordinates = Line2D.set_ydata if horizontal else Line2D.set_xdata
+
+    def prepare_bounded(
+        positions: np.ndarray, low: ArrayLike, high: ArrayLike, style: dict[str, Any]
+    ) -> _ArtistEdit:
+        activating = not collection.get_visible()
+        mpl = cast(Any, collection)
+        edits = []
+        if collection.axes is None:
+            edits.append(_attach_artists(axes, (collection,)))
+        if activating or any(session.has_frame_update(element, name) for name in names):
+            try:
+                ends = np.stack(
+                    (
+                        np.broadcast_to(low, positions.shape),
+                        np.broadcast_to(high, positions.shape),
+                    ),
+                    axis=-1,
+                )
+            except ValueError as exc:
+                raise InvalidParameterError(
+                    "Reference-line bounds must match the line count."
+                ) from exc
+            across = np.repeat(positions[:, None], 2, axis=1)
+            x, y = (ends, across) if horizontal else (across, ends)
+            segments = list(np.stack((x, y), axis=-1))
+            edits.append(
+                _edit(
+                    collection.set_segments,
+                    [path.vertices for path in collection.get_paths()],
+                    segments,
+                )
+            )
+        for name, style_key, write, previous in (
+            ("_colors", "color", collection.set_edgecolor, mpl._original_edgecolor),
+            (
+                "_line_widths",
+                "linewidth",
+                collection.set_linewidth,
+                collection.get_linewidth(),
+            ),
+            ("_line_styles", "linestyle", collection.set_linestyle, mpl._us_linestyles),
+            ("_alpha", "alpha", collection.set_alpha, collection.get_alpha()),
+        ):
+            if activating or session.has_frame_update(element, name):
+                edits.append(_edit(write, previous, style[style_key]))
+        if activating:
+            edits.append(_edit(collection.set_visible, False, True))
+        edits.extend(
+            _edit(line.set_visible, True, False) for line in lines if line.get_visible()
+        )
+        return _combine_edits(edits)
+
+    def prepare_spanning(
+        positions: np.ndarray, styles: list[dict[str, Any]]
+    ) -> _ArtistEdit:
+        original_count = len(lines)
+        before = [
+            (
+                get_coordinates(line),
+                line.get_visible(),
+                _reference_line_style(line),
+            )
+            for line in lines[: len(positions)]
+        ]
+        previous_visibility = [line.get_visible() for line in lines[len(positions) :]]
+        additions = []
+        for coord, style in zip(
+            positions[original_count:], styles[original_count:], strict=True
+        ):
+            across, along = [float(coord)] * 2, [0, 1]
+            x, y = (along, across) if horizontal else (across, along)
+            line = Line2D(x, y, transform=transform, zorder=z_order, **style)
+            _interpolate_spanning_line(line)
+            additions.append(line)
+
+        def apply() -> None:
+            for line, coord, style in zip(lines, positions, styles):
+                set_coordinates(line, [float(coord)] * 2)
+                line.set(visible=True, **style)
+            for line in lines[len(positions) :]:
+                line.set_visible(False)
+            for line in additions:
+                # Adding the artist directly leaves the established data limits alone.
+                lines.append(line)
+                axes.add_artist(line)
+
+        def undo() -> None:
+            added = lines[original_count:]
+            if added:
+                attached = set(axes.lines)
+                for line in reversed(added):
+                    if line in attached:
+                        line.remove()
+            del lines[original_count:]
+            for line, (coordinates, visible, style) in zip(lines, before):
+                set_coordinates(line, coordinates)
+                line.set(visible=visible, **style)
+            for line, visible in zip(
+                lines[len(positions) :], previous_visibility, strict=True
+            ):
+                line.set_visible(visible)
+
+        return _ArtistEdit(apply, undo)
+
+    def prepare() -> _ArtistEdit:
+        element._validate_state()
+        positions = _reference_positions(getattr(element, position))
+        style = {
+            field: resolve_or(getattr(element, attr), defaults[field])
+            for attr, field in _REFERENCE_LINE_STYLE.items()
+        }
+        low, high = getattr(element, start), getattr(element, end)
+        if low is not None and high is not None:
+            return prepare_bounded(positions, low, high, style)
+        if (low is not None or high is not None) and (
+            session.has_frame_update(element, start)
+            or session.has_frame_update(element, end)
+        ):
+            raise IncompatibleArgumentsError(
+                f"{start.removeprefix('_')} and {end.removeprefix('_')} must both be provided, or neither."
+            )
+        return _combine_edits(
+            [
+                _edit(collection.set_visible, collection.get_visible(), False),
+                prepare_spanning(
+                    positions, _reference_line_styles(style, len(positions))
+                ),
+            ]
+        )
+
+    session.bind_derived(element, (*names, *_REFERENCE_LINE_STYLE), prepare)
 
 
 class Hlines(Plottable):
@@ -210,11 +525,9 @@ class Hlines(Plottable):
 
     @y.setter
     def y(self, y: ArrayLike) -> None:
-        if isinstance(y, (int, float)):
-            self._y = y
-        else:
-            self._y = np.asarray(y)
-        if not self._in_init:
+        value = y if isinstance(y, (int, float)) else np.asarray(y)
+        self._y = _stage_live_value(self, "_y", value)
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -223,11 +536,13 @@ class Hlines(Plottable):
 
     @x_min.setter
     def x_min(self, x_min: Optional[ArrayLike]) -> None:
-        if x_min is None or isinstance(x_min, (int, float)):
-            self._x_min = x_min
-        else:
-            self._x_min = np.asarray(x_min)
-        if not self._in_init:
+        value = (
+            x_min
+            if x_min is None or isinstance(x_min, (int, float))
+            else np.asarray(x_min)
+        )
+        self._x_min = _stage_live_value(self, "_x_min", value)
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -236,11 +551,13 @@ class Hlines(Plottable):
 
     @x_max.setter
     def x_max(self, x_max: Optional[ArrayLike]) -> None:
-        if x_max is None or isinstance(x_max, (int, float)):
-            self._x_max = x_max
-        else:
-            self._x_max = np.asarray(x_max)
-        if not self._in_init:
+        value = (
+            x_max
+            if x_max is None or isinstance(x_max, (int, float))
+            else np.asarray(x_max)
+        )
+        self._x_max = _stage_live_value(self, "_x_max", value)
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -249,7 +566,7 @@ class Hlines(Plottable):
 
     @label.setter
     def label(self, label: Optional[str]) -> None:
-        self._label = label
+        self._label = _stage_live_value(self, "_label", label)
 
     @property
     def colors(self) -> Styled[list[str] | str]:
@@ -257,8 +574,8 @@ class Hlines(Plottable):
 
     @colors.setter
     def colors(self, colors: Styled[list[str] | str]) -> None:
-        self._colors = colors
-        if not self._in_init:
+        self._colors = _stage_live_value(self, "_colors", colors)
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -267,8 +584,8 @@ class Hlines(Plottable):
 
     @line_widths.setter
     def line_widths(self, line_widths: Styled[list[float] | float]) -> None:
-        self._line_widths = line_widths
-        if not self._in_init:
+        self._line_widths = _stage_live_value(self, "_line_widths", line_widths)
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -277,13 +594,17 @@ class Hlines(Plottable):
 
     @line_styles.setter
     def line_styles(self, line_styles: Styled[list[str] | str]) -> None:
-        self._line_styles = line_styles
-        if not self._in_init:
+        self._line_styles = _stage_live_value(self, "_line_styles", line_styles)
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
     def alpha(self) -> float | Inherit:
         return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha: float | Inherit) -> None:
+        self._alpha = _stage_live_value(self, "_alpha", alpha)
 
     def copy(self) -> Self:
         """
@@ -296,86 +617,9 @@ class Hlines(Plottable):
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        y = self._y
-        assert y is not None
-        if isinstance(y, np.ndarray) and len(y) > 1:
-            if self._x_max is not None and self._x_min is not None:
-                x_min = self._x_min
-                x_max = self._x_max
-                params = {
-                    "colors": self._colors,
-                    "linestyles": self._line_styles,
-                    "linewidths": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                axes.hlines(
-                    y,
-                    x_min,
-                    x_max,
-                    zorder=z_order,
-                    **params,
-                )
-                params.pop("linewidths", None)
-            else:
-                params = {
-                    "color": self._colors,
-                    "linestyle": self._line_styles,
-                    "linewidth": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                for i in range(len(y)):
-                    axes.axhline(
-                        float(cast(Any, y)[i]),
-                        zorder=z_order,
-                        **{
-                            k: v if isinstance(v, (int, float, str)) else v[i]
-                            for k, v in params.items()
-                        },
-                    )
-                params.pop("linewidth")
-            self.handle = LineCollection(
-                [[(0, 0)]] * (len(y) if len(y) <= 3 else 3),
-                **params,
-            )
-        else:
-            y_scalar = float(cast(Any, y)[0]) if isinstance(y, np.ndarray) else y
-            if self._x_max is not None and self._x_min is not None:
-                x_min = self._x_min
-                x_max = self._x_max
-                params = {
-                    "colors": self._colors,
-                    "linestyles": self._line_styles,
-                    "linewidths": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                axes.hlines(
-                    y_scalar,
-                    x_min,
-                    x_max,
-                    zorder=z_order,
-                    **params,
-                )
-                params.pop("linewidths", None)
-            else:
-                params = {
-                    "color": self._colors,
-                    "linestyle": self._line_styles,
-                    "linewidth": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                axes.axhline(y_scalar, zorder=z_order, **params)
-                params.pop("linewidth")
-            if isinstance(y, (int, float)):
-                self.handle = LineCollection([[(0, 0)]] * 1, **params)
-            else:
-                self.handle = LineCollection(
-                    [[(0, 0)]] * (len(y) if len(y) <= 3 else 3),
-                    **params,
-                )
+        self.handle = _draw_reference_lines(
+            self, axes, z_order, ("_y", "_x_min", "_x_max"), horizontal=True
+        )
 
 
 class Vlines(Plottable):
@@ -497,11 +741,9 @@ class Vlines(Plottable):
 
     @x.setter
     def x(self, x: ArrayLike) -> None:
-        if isinstance(x, (int, float)):
-            self._x = x
-        else:
-            self._x = np.asarray(x)
-        if not self._in_init:
+        value = x if isinstance(x, (int, float)) else np.asarray(x)
+        self._x = _stage_live_value(self, "_x", value)
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -510,10 +752,12 @@ class Vlines(Plottable):
 
     @y_min.setter
     def y_min(self, y_min: Optional[ArrayLike]) -> None:
-        if y_min is None or isinstance(y_min, (int, float)):
-            self._y_min = y_min
-        else:
-            self._y_min = np.asarray(y_min)
+        value = (
+            y_min
+            if y_min is None or isinstance(y_min, (int, float))
+            else np.asarray(y_min)
+        )
+        self._y_min = _stage_live_value(self, "_y_min", value)
 
     @property
     def y_max(self) -> int | float | np.ndarray | None:
@@ -521,10 +765,12 @@ class Vlines(Plottable):
 
     @y_max.setter
     def y_max(self, y_max: Optional[ArrayLike]) -> None:
-        if y_max is None or isinstance(y_max, (int, float)):
-            self._y_max = y_max
-        else:
-            self._y_max = np.asarray(y_max)
+        value = (
+            y_max
+            if y_max is None or isinstance(y_max, (int, float))
+            else np.asarray(y_max)
+        )
+        self._y_max = _stage_live_value(self, "_y_max", value)
 
     @property
     def label(self) -> Optional[str]:
@@ -532,7 +778,7 @@ class Vlines(Plottable):
 
     @label.setter
     def label(self, label: Optional[str]) -> None:
-        self._label = label
+        self._label = _stage_live_value(self, "_label", label)
 
     @property
     def colors(self) -> Styled[list[str] | str]:
@@ -540,8 +786,8 @@ class Vlines(Plottable):
 
     @colors.setter
     def colors(self, colors: Styled[list[str] | str]) -> None:
-        self._colors = colors
-        if not self._in_init:
+        self._colors = _stage_live_value(self, "_colors", colors)
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -550,8 +796,8 @@ class Vlines(Plottable):
 
     @line_widths.setter
     def line_widths(self, line_widths: Styled[list[float] | float]) -> None:
-        self._line_widths = line_widths
-        if not self._in_init:
+        self._line_widths = _stage_live_value(self, "_line_widths", line_widths)
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -560,8 +806,8 @@ class Vlines(Plottable):
 
     @line_styles.setter
     def line_styles(self, line_styles: Styled[list[str] | str]) -> None:
-        self._line_styles = line_styles
-        if not self._in_init:
+        self._line_styles = _stage_live_value(self, "_line_styles", line_styles)
+        if not self._in_init and _bound_session(self) is None:
             self._validate_state()
 
     @property
@@ -570,7 +816,7 @@ class Vlines(Plottable):
 
     @alpha.setter
     def alpha(self, alpha: float | Inherit) -> None:
-        self._alpha = alpha
+        self._alpha = _stage_live_value(self, "_alpha", alpha)
 
     def copy(self) -> Self:
         """
@@ -583,86 +829,9 @@ class Vlines(Plottable):
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
-        x = self._x
-        assert x is not None
-        if isinstance(x, np.ndarray) and len(x) > 1:
-            if self._y_min is not None and self._y_max is not None:
-                y_min = self._y_min
-                y_max = self._y_max
-                params = {
-                    "colors": self._colors,
-                    "linestyles": self._line_styles,
-                    "linewidths": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                axes.vlines(
-                    x,
-                    y_min,
-                    y_max,
-                    zorder=z_order,
-                    **params,
-                )
-                params.pop("linewidths", None)
-            else:
-                params = {
-                    "color": self._colors,
-                    "linestyle": self._line_styles,
-                    "linewidth": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                for i in range(len(x)):
-                    axes.axvline(
-                        float(cast(Any, x)[i]),
-                        zorder=z_order,
-                        **{
-                            k: v if isinstance(v, (int, float, str)) else v[i]
-                            for k, v in params.items()
-                        },
-                    )
-                params.pop("linewidth")
-            self.handle = VerticalLineCollection(
-                [[(0, 0)]] * (len(x) if len(x) <= 4 else 4),
-                **params,
-            )
-        else:
-            x_scalar = float(cast(Any, x)[0]) if isinstance(x, np.ndarray) else x
-            if self._y_min is not None and self._y_max is not None:
-                y_min = self._y_min
-                y_max = self._y_max
-                params = {
-                    "colors": self._colors,
-                    "linestyles": self._line_styles,
-                    "linewidths": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                axes.vlines(
-                    x_scalar,
-                    y_min,
-                    y_max,
-                    zorder=z_order,
-                    **params,
-                )
-                params.pop("linewidths", None)
-            else:
-                params = {
-                    "color": self._colors,
-                    "linestyle": self._line_styles,
-                    "linewidth": self._line_widths,
-                    "alpha": self._alpha,
-                }
-                params = strip_inherit(params)
-                axes.axvline(x_scalar, zorder=z_order, **params)
-                params.pop("linewidth")
-            if isinstance(x, (int, float)):
-                self.handle = VerticalLineCollection([[(0, 0)]] * 1, **params)
-            else:
-                self.handle = VerticalLineCollection(
-                    [[(0, 0)]] * (len(x) if len(x) <= 4 else 4),
-                    **params,
-                )
+        self.handle = _draw_reference_lines(
+            self, axes, z_order, ("_x", "_y_min", "_y_max"), horizontal=False
+        )
 
 
 class Point(Plottable):
@@ -794,8 +963,17 @@ class Point(Plottable):
         (``"b"``), hex strings (``"#0000ff"``), grayscale strings (``"0.5"``), and RGB/RGBA tuples with
         values between ``0`` and ``1`` (``(0, 0, 1)`` or ``(0, 0, 1, 0.5)``).
         """
-        self.x = x
-        self.y = y
+        self._validate_coordinate(x)
+        self._validate_coordinate(y)
+        session = _bound_session(self)
+        if session is not None:
+            previous = self.coordinates
+
+            def restore() -> None:
+                self._x, self._y = previous
+
+            session.queue_property(self, "coordinates", (x, y), restore)
+        self._x, self._y = x, y
         self.label = label
         self.face_color = face_color
         self.edge_color = edge_color
@@ -824,7 +1002,10 @@ class Point(Plottable):
     @x.setter
     def x(self, x: float) -> None:
         self._validate_coordinate(x)
-        self._x = x
+        if _bound_session(self) is None:
+            self._x = x
+        else:
+            self.coordinates = x, self._y
 
     @property
     def y(self) -> float:
@@ -833,7 +1014,10 @@ class Point(Plottable):
     @y.setter
     def y(self, y: float) -> None:
         self._validate_coordinate(y)
-        self._y = y
+        if _bound_session(self) is None:
+            self._y = y
+        else:
+            self.coordinates = self._x, y
 
     @property
     def label(self) -> Optional[str]:
@@ -841,7 +1025,7 @@ class Point(Plottable):
 
     @label.setter
     def label(self, label: Optional[str]) -> None:
-        self._label = label
+        self._label = _stage_live_value(self, "_label", label)
 
     @property
     def face_color(self) -> Styled[str | None]:
@@ -849,7 +1033,7 @@ class Point(Plottable):
 
     @face_color.setter
     def face_color(self, face_color: Styled[str | None]) -> None:
-        self._face_color = face_color
+        self._face_color = _stage_live_value(self, "_face_color", face_color)
 
     @property
     def edge_color(self) -> Styled[str | None]:
@@ -857,7 +1041,7 @@ class Point(Plottable):
 
     @edge_color.setter
     def edge_color(self, edge_color: Styled[str | None]) -> None:
-        self._edge_color = edge_color
+        self._edge_color = _stage_live_value(self, "_edge_color", edge_color)
 
     @property
     def marker_size(self) -> float | Inherit:
@@ -865,7 +1049,7 @@ class Point(Plottable):
 
     @marker_size.setter
     def marker_size(self, marker_size: float | Inherit) -> None:
-        self._marker_size = marker_size
+        self._marker_size = _stage_live_value(self, "_marker_size", marker_size)
 
     @property
     def marker_style(self) -> Styled[str]:
@@ -873,7 +1057,7 @@ class Point(Plottable):
 
     @marker_style.setter
     def marker_style(self, marker_style: Styled[str]) -> None:
-        self._marker_style = marker_style
+        self._marker_style = _stage_live_value(self, "_marker_style", marker_style)
 
     @property
     def edge_width(self) -> float | Inherit:
@@ -881,7 +1065,7 @@ class Point(Plottable):
 
     @edge_width.setter
     def edge_width(self, edge_width: float | Inherit) -> None:
-        self._edge_width = edge_width
+        self._edge_width = _stage_live_value(self, "_edge_width", edge_width)
 
     @property
     def alpha(self) -> float | Inherit:
@@ -889,7 +1073,7 @@ class Point(Plottable):
 
     @alpha.setter
     def alpha(self, alpha: float | Inherit) -> None:
-        self._alpha = alpha
+        self._alpha = _stage_live_value(self, "_alpha", alpha)
 
     @property
     def font_size(self) -> float | Literal["same as figure"]:
@@ -897,7 +1081,7 @@ class Point(Plottable):
 
     @font_size.setter
     def font_size(self, font_size: float | Literal["same as figure"]) -> None:
-        self._font_size = font_size
+        self._font_size = _stage_live_value(self, "_font_size", font_size)
 
     @property
     def text_color(self) -> Styled[str]:
@@ -905,7 +1089,7 @@ class Point(Plottable):
 
     @text_color.setter
     def text_color(self, text_color: Styled[str]) -> None:
-        self._text_color = text_color
+        self._text_color = _stage_live_value(self, "_text_color", text_color)
 
     @property
     def h_align(self) -> str:
@@ -913,7 +1097,7 @@ class Point(Plottable):
 
     @h_align.setter
     def h_align(self, h_align: str) -> None:
-        self._h_align = h_align
+        self._h_align = _stage_live_value(self, "_h_align", h_align)
 
     @property
     def v_align(self) -> str:
@@ -921,7 +1105,7 @@ class Point(Plottable):
 
     @v_align.setter
     def v_align(self, v_align: str) -> None:
-        self._v_align = v_align
+        self._v_align = _stage_live_value(self, "_v_align", v_align)
 
     @property
     def show_coordinates(self) -> bool:
@@ -929,7 +1113,9 @@ class Point(Plottable):
 
     @show_coordinates.setter
     def show_coordinates(self, show_coordinates: bool) -> None:
-        self._show_coordinates = show_coordinates
+        self._show_coordinates = _stage_live_value(
+            self, "_show_coordinates", show_coordinates
+        )
 
     @property
     def coordinates(self) -> tuple[float, float]:
@@ -938,8 +1124,17 @@ class Point(Plottable):
     @coordinates.setter
     def coordinates(self, coordinates: tuple[float, float]) -> None:
         x, y = coordinates
-        self.x = x
-        self.y = y
+        self._validate_coordinate(x)
+        self._validate_coordinate(y)
+        session = _bound_session(self)
+        if session is not None:
+            previous = self.coordinates
+
+            def restore() -> None:
+                self._x, self._y = previous
+
+            session.queue_property(self, "coordinates", (x, y), restore)
+        self._x, self._y = x, y
 
     def copy(self) -> Self:
         """
@@ -951,7 +1146,141 @@ class Point(Plottable):
         """
         Displays the coordinates of the :class:`~graphinglib.graph_elements.Point` next to it.
         """
-        self._show_coordinates = True
+        self.show_coordinates = True
+
+    def _caption(self) -> str:
+        text = self._label
+        if text is not None and not isinstance(text, str):
+            raise InvalidParameterTypeError("A Point label must be a string or None.")
+        if self._show_coordinates:
+            coordinates = f"({self._x:.3f}, {self._y:.3f})"
+            text = coordinates if text is None else f"{text} : {coordinates}"
+        if text is None:
+            return ""
+        prefix = " " if self._h_align == "left" else ""
+        suffix = " " if self._h_align == "right" else ""
+        return f"{prefix}{text}{suffix}"
+
+    @staticmethod
+    def _annotation_color(color: Any, face: Any, edge: Any) -> Any:
+        if isinstance(color, str) and color == "same as point":
+            if edge is None or isinstance(edge, str) and edge == "face":
+                return face
+            return edge
+        return color
+
+    def _bind_live_point(
+        self,
+        session: _AnimationSession,
+        marker: PathCollection,
+        annotation: Annotation,
+    ) -> None:
+        figure_font_size = plt.rcParams["font.size"]
+        scatter_style = plt.rcParams["scatter.marker"]
+        initial_style = resolve_or(self._marker_style, scatter_style)
+        initial_face = self._face_color
+        if is_inherit(initial_face):
+            initial_face = marker.get_facecolor()
+            if not len(initial_face):
+                initial_face = marker.get_edgecolor()
+            initial_face = initial_face[0] if len(initial_face) else "none"
+        initial_edge = resolve_or(self._edge_color, plt.rcParams["scatter.edgecolors"])
+        initial_text_color = resolve_or(self._text_color, annotation.get_color())
+
+        def marker_colors(style: MarkerStyle, face: Any, edge: Any) -> tuple[Any, Any]:
+            if face is None and edge is None:
+                raise IncompatibleArgumentsError(
+                    "A point's face_color and edge_color cannot both be None; set at least one of them."
+                )
+            face = "none" if face is None else face
+            edge = "none" if edge is None else edge
+            if style.is_filled():
+                return face, edge
+            if style.get_fillstyle() == "none":
+                return "none", face
+            return face, "face"
+
+        active_style = MarkerStyle(initial_style)
+        active_colors = marker_colors(active_style, initial_face, initial_edge)
+        active = marker.get_paths(), *active_colors
+
+        def prepare_marker() -> _ArtistEdit:
+            style = MarkerStyle(resolve_or(self._marker_style, initial_style))
+            path = style.get_path().transformed(style.get_transform())
+            colors = marker_colors(
+                style,
+                resolve_or(self._face_color, initial_face),
+                resolve_or(self._edge_color, initial_edge),
+            )
+
+            def set_marker(state) -> None:
+                nonlocal active
+                paths, face, edge = state
+                marker.set_paths(paths)
+                marker.set_facecolor(face)
+                marker.set_edgecolor(edge)
+                active = state
+
+            return _edit(set_marker, active, ([path], *colors))
+
+        def prepare_text_color() -> _ArtistEdit:
+            color = self._annotation_color(
+                resolve_or(self._text_color, initial_text_color),
+                resolve_or(self._face_color, initial_face),
+                resolve_or(self._edge_color, initial_edge),
+            )
+            return _edit(annotation.set_color, annotation.get_color(), color)
+
+        def prepare_position(position: tuple[float, float]) -> _ArtistEdit:
+            if not all(isfinite(coord) for coord in position):
+                raise InvalidParameterError(
+                    "Animated Point coordinates must be finite."
+                )
+
+            def move(xy: tuple[float, float]) -> None:
+                annotation.xy = xy
+                annotation.set_position(xy)
+
+            return _combine_edits(
+                [
+                    _edit(marker.set_offsets, marker.get_offsets(), [position]),
+                    _edit(move, annotation.xy, position),
+                ]
+            )
+
+        def prepare_caption() -> _ArtistEdit:
+            if not isinstance(self._show_coordinates, (bool, np.bool_)):
+                raise InvalidParameterTypeError(
+                    "Point.show_coordinates must be a boolean."
+                )
+            return _edit(annotation.set_text, annotation.get_text(), self._caption())
+
+        session.bind_update(self, "coordinates", prepare_position)
+        session.bind_derived(
+            self,
+            ("coordinates", "_label", "_show_coordinates", "_h_align"),
+            prepare_caption,
+        )
+        session.bind_derived(
+            self, ("_marker_style", "_face_color", "_edge_color"), prepare_marker
+        )
+        session.bind_derived(
+            self, ("_text_color", "_face_color", "_edge_color"), prepare_text_color
+        )
+        session.bind_property(
+            self, "_marker_size", marker, "sizes", lambda value: [value]
+        )
+        session.bind_property(self, "_edge_width", marker, "linewidth")
+        session.bind_property(self, "_alpha", marker, "alpha")
+        session.bind_property(
+            self,
+            "_font_size",
+            annotation,
+            "fontsize",
+            lambda value: figure_font_size if value == "same as figure" else value,
+        )
+        session.bind_property(self, "_h_align", annotation, "horizontalalignment")
+        session.bind_property(self, "_v_align", annotation, "verticalalignment")
 
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
@@ -963,13 +1292,8 @@ class Point(Plottable):
                 "A point's face_color and edge_color cannot both be None; set at least "
                 "one of them."
             )
+        session = _DRAW_SESSION.get()
         size = self._font_size if self._font_size != "same as figure" else None
-        prefix = " " if self._h_align == "left" else ""
-        postfix = " " if self._h_align == "right" else ""
-        if self._label is not None and not self._show_coordinates:
-            point_label = prefix + self._label + postfix
-        else:
-            point_label = None
         params = {
             "c": self._face_color if self._face_color is not None else "none",
             "edgecolors": self._edge_color if self._edge_color is not None else "none",
@@ -978,67 +1302,42 @@ class Point(Plottable):
             "linewidths": self._edge_width,
             "alpha": self._alpha,
         }
-        params = strip_inherit(params)
-        axes.scatter(
-            self._x,
-            self._y,
-            zorder=z_order,
-            **params,
-        )
-        # get text color. if _text_color is "same as point", use the color of the point (prioritize edge color, then face color)
-        if self._text_color == "same as point":
-            if self._edge_color is not None:
-                text_color = self._edge_color
-            else:
-                text_color = self._face_color
-        else:
-            text_color = self._text_color
-        params = {
-            "color": text_color,
-            "fontsize": size,
-            "horizontalalignment": self._h_align,
-            "verticalalignment": self._v_align,
-        }
-        params = strip_inherit(params)
-        axes.annotate(
-            cast(str, point_label),
-            (self._x, self._y),
-            zorder=z_order,
-            **params,
-        )
-        if self._show_coordinates:
-            prefix = " " if self._h_align == "left" else ""
-            postfix = " " if self._h_align == "right" else ""
-            if self._label is not None:
-                point_label = (
-                    prefix
-                    + self._label
-                    + " : "
-                    + f"({self._x:.3f}, {self._y:.3f})"
-                    + postfix
-                )
-            else:
-                point_label = prefix + f"({self._x:.3f}, {self._y:.3f})" + postfix
-            if self._text_color == "same as point":
-                if self._edge_color is not None:
-                    text_color = self._edge_color
-                else:
-                    text_color = self._face_color
-            else:
-                text_color = self._text_color
-            params = {
-                "color": text_color,
+        marker = axes.scatter(self._x, self._y, zorder=z_order, **strip_inherit(params))
+        params = strip_inherit(
+            {
+                "color": self._annotation_color(
+                    self._text_color, self._face_color, self._edge_color
+                ),
                 "fontsize": size,
                 "horizontalalignment": self._h_align,
                 "verticalalignment": self._v_align,
             }
-            params = strip_inherit(params)
-            axes.annotate(
-                point_label,
-                (self._x, self._y),
-                zorder=z_order,
-                **params,
-            )
+        )
+        if session is None and self._show_coordinates:
+            # Keep the empty label slot created by the static plotting path.
+            axes.annotate("", self.coordinates, zorder=z_order, **params)
+        label = axes.annotate(
+            self._caption(), self.coordinates, zorder=z_order, **params
+        )
+        if session is not None:
+            self._bind_live_point(session, marker, label)
+
+
+class _LiveTextAnnotation(Annotation):
+    """Use one text artist and clip only its optional arrow at the target."""
+
+    def _check_xy(self, renderer=None) -> bool:
+        if self.arrow_patch is not None:
+            if self.arrowprops is None:
+                self.arrow_patch.set_visible(False)
+            else:
+                self.arrow_patch.set_visible(super()._check_xy(renderer))  # ty: ignore[unresolved-attribute]
+        return True
+
+    def get_window_extent(self, renderer=None):
+        # The Text extent is independent of the optional arrow and is already
+        # in data coordinates before the first render.
+        return TextArtist.get_window_extent(self, renderer)
 
 
 @dataclass
@@ -1186,6 +1485,7 @@ class Text(Plottable):
         self._highlight_alpha = highlight_alpha
         self._highlight_padding = highlight_padding
         self._arrow_pointing_to = None
+        self._arrow_properties: dict[str, float] = {}
 
     @property
     def x(self) -> float:
@@ -1193,7 +1493,7 @@ class Text(Plottable):
 
     @x.setter
     def x(self, x: float) -> None:
-        self._x = x
+        self._set_text_data(x, self._y, self._text)
 
     @property
     def y(self) -> float:
@@ -1201,7 +1501,7 @@ class Text(Plottable):
 
     @y.setter
     def y(self, y: float) -> None:
-        self._y = y
+        self._set_text_data(self._x, y, self._text)
 
     @property
     def text(self) -> str:
@@ -1209,7 +1509,24 @@ class Text(Plottable):
 
     @text.setter
     def text(self, text: str) -> None:
-        self._text = text
+        self._set_text_data(self._x, self._y, text)
+
+    def _set_text_data(self, x: float, y: float, content: str) -> None:
+        session = _bound_session(self)
+        if session is not None:
+            if not isinstance(content, str):
+                raise TypeError("Animated Text content must be a string.")
+            if not all(isinstance(value, Real) and isfinite(value) for value in (x, y)):
+                raise ValueError(
+                    "Animated Text coordinates must be finite real numbers."
+                )
+            previous = self._x, self._y, self._text
+
+            def restore() -> None:
+                self._x, self._y, self._text = previous
+
+            session.queue_text(self, x, y, content, restore)
+        self._x, self._y, self._text = x, y, content
 
     @property
     def color(self) -> Styled[str]:
@@ -1217,7 +1534,7 @@ class Text(Plottable):
 
     @color.setter
     def color(self, color: str) -> None:
-        self._color = color
+        self._color = _stage_live_value(self, "_color", color)
 
     @property
     def font_size(self) -> float | Literal["same as figure"]:
@@ -1225,7 +1542,7 @@ class Text(Plottable):
 
     @font_size.setter
     def font_size(self, font_size: float | Literal["same as figure"]) -> None:
-        self._font_size = font_size
+        self._font_size = _stage_live_value(self, "_font_size", font_size)
 
     @property
     def alpha(self) -> float | Inherit:
@@ -1233,7 +1550,7 @@ class Text(Plottable):
 
     @alpha.setter
     def alpha(self, alpha: float | Inherit) -> None:
-        self._alpha = alpha
+        self._alpha = _stage_live_value(self, "_alpha", alpha)
 
     @property
     def h_align(self) -> Styled[str]:
@@ -1241,7 +1558,7 @@ class Text(Plottable):
 
     @h_align.setter
     def h_align(self, h_align: str) -> None:
-        self._h_align = h_align
+        self._h_align = _stage_live_value(self, "_h_align", h_align)
 
     @property
     def v_align(self) -> Styled[str]:
@@ -1249,7 +1566,7 @@ class Text(Plottable):
 
     @v_align.setter
     def v_align(self, v_align: str) -> None:
-        self._v_align = v_align
+        self._v_align = _stage_live_value(self, "_v_align", v_align)
 
     @property
     def rotation(self) -> float:
@@ -1257,7 +1574,7 @@ class Text(Plottable):
 
     @rotation.setter
     def rotation(self, rotation: float) -> None:
-        self._rotation = rotation
+        self._rotation = _stage_live_value(self, "_rotation", rotation)
 
     @property
     def highlight_color(self) -> Optional[str]:
@@ -1265,7 +1582,9 @@ class Text(Plottable):
 
     @highlight_color.setter
     def highlight_color(self, highlight_color: Optional[str]) -> None:
-        self._highlight_color = highlight_color
+        self._highlight_color = _stage_live_value(
+            self, "_highlight_color", highlight_color
+        )
 
     @property
     def highlight_alpha(self) -> float:
@@ -1273,7 +1592,9 @@ class Text(Plottable):
 
     @highlight_alpha.setter
     def highlight_alpha(self, highlight_alpha: float) -> None:
-        self._highlight_alpha = highlight_alpha
+        self._highlight_alpha = _stage_live_value(
+            self, "_highlight_alpha", highlight_alpha
+        )
 
     @property
     def highlight_padding(self) -> float:
@@ -1281,7 +1602,9 @@ class Text(Plottable):
 
     @highlight_padding.setter
     def highlight_padding(self, highlight_padding: float) -> None:
-        self._highlight_padding = highlight_padding
+        self._highlight_padding = _stage_live_value(
+            self, "_highlight_padding", highlight_padding
+        )
 
     @property
     def arrow_pointing_to(self) -> Optional[tuple[float, float]]:
@@ -1291,7 +1614,9 @@ class Text(Plottable):
     def arrow_pointing_to(
         self, arrow_pointing_to: Optional[tuple[float, float]]
     ) -> None:
-        self._arrow_pointing_to = arrow_pointing_to
+        self._arrow_pointing_to = _stage_live_value(
+            self, "_arrow_pointing_to", arrow_pointing_to
+        )
 
     def copy(self) -> Self:
         """
@@ -1332,18 +1657,135 @@ class Text(Plottable):
             Opacity of the arrow.
             Range is ``0`` (transparent) to ``1`` (opaque).
         """
-        self._arrow_pointing_to = points_to
-        self._arrow_properties = {}
-        if width is not None:
-            self._arrow_properties["width"] = width
-        if shrink is not None:
-            self._arrow_properties["shrink"] = shrink
-        if head_width is not None:
-            self._arrow_properties["headwidth"] = head_width
-        if head_length is not None:
-            self._arrow_properties["headlength"] = head_length
-        if alpha is not None:
-            self._arrow_properties["alpha"] = alpha
+        properties = {
+            key: value
+            for key, value in (
+                ("width", width),
+                ("shrink", shrink),
+                ("headwidth", head_width),
+                ("headlength", head_length),
+                ("alpha", alpha),
+            )
+            if value is not None
+        }
+        self._arrow_properties = _stage_live_value(
+            self, "_arrow_properties", properties
+        )
+        self.arrow_pointing_to = points_to
+
+    def _bind_live_text(self, session: _AnimationSession, artist: TextArtist) -> None:
+        session.bind_text(self, artist)
+        figure_font_size = plt.rcParams["font.size"]
+        session.bind_property(
+            self,
+            "_font_size",
+            artist,
+            "fontsize",
+            lambda value: figure_font_size if value == "same as figure" else value,
+        )
+        for name, mpl_name in (
+            ("_color", "color"),
+            ("_alpha", "alpha"),
+            ("_h_align", "horizontalalignment"),
+            ("_v_align", "verticalalignment"),
+            ("_rotation", "rotation"),
+        ):
+            session.bind_property(self, name, artist, mpl_name)
+
+        box = artist.get_bbox_patch()
+        assert box is not None
+        box.set_visible(self._highlight_color is not None)
+
+        def prepare_highlight() -> _ArtistEdit:
+            color, alpha, padding = (
+                self._highlight_color,
+                self._highlight_alpha,
+                self._highlight_padding,
+            )
+            if not isinstance(padding, Real) or not isfinite(padding) or padding < 0:
+                raise InvalidParameterError(
+                    "Text highlight padding must be finite and nonnegative."
+                )
+            return _combine_edits(
+                [
+                    _edit(
+                        box.set_facecolor,
+                        box.get_facecolor(),
+                        "none" if color is None else color,
+                    ),
+                    _edit(box.set_alpha, box.get_alpha(), alpha),
+                    _edit(
+                        box.set_boxstyle, box.get_boxstyle(), f"square,pad={padding}"
+                    ),
+                    _edit(box.set_visible, box.get_visible(), color is not None),
+                ]
+            )
+
+        session.bind_derived(
+            self,
+            ("_highlight_color", "_highlight_alpha", "_highlight_padding"),
+            prepare_highlight,
+        )
+
+    def _bind_live_text_arrow(
+        self, session: _AnimationSession, annotation: _LiveTextAnnotation
+    ) -> None:
+        initial_color = annotation.get_color()
+        patch = annotation.arrow_patch
+        assert patch is not None
+
+        def prepare_arrow() -> _ArtistEdit:
+            target = self._arrow_pointing_to
+            if target is not None and (
+                len(target) != 2
+                or not all(
+                    isinstance(value, Real) and isfinite(value) for value in target
+                )
+            ):
+                raise InvalidParameterError(
+                    "An animated Text arrow needs a finite target."
+                )
+            options = self._arrow_properties
+            for name, value in options.items():
+                if not isinstance(value, Real) or not isfinite(value) or value < 0:
+                    raise InvalidParameterError(
+                        "Text arrow options must be finite and nonnegative."
+                    )
+                if (name == "shrink" and value > 0.5) or (
+                    name == "alpha" and value > 1
+                ):
+                    raise InvalidParameterError(
+                        "Text arrow shrink must be at most 0.5 and alpha at most 1."
+                    )
+            return _combine_edits(
+                [
+                    _edit(
+                        lambda value: setattr(annotation, "xy", value),
+                        annotation.xy,
+                        (self._x, self._y) if target is None else tuple(target),
+                    ),
+                    _edit(
+                        lambda value: setattr(annotation, "arrowprops", value),
+                        annotation.arrowprops,
+                        None if target is None else dict(options),
+                    ),
+                    _edit(
+                        patch.set_color,
+                        patch.get_facecolor(),
+                        resolve_or(self._color, initial_color),
+                    ),
+                    _edit(patch.set_alpha, patch.get_alpha(), options.get("alpha")),
+                    _edit(
+                        patch.set_visible,
+                        patch.get_visible(),
+                        target is not None,
+                    ),
+                ]
+            )
+
+        session.bind_derived(
+            self, ("_arrow_pointing_to", "_arrow_properties", "_color"), prepare_arrow
+        )
 
     def _plot_element(self, axes: plt.Axes | MPLFigure, z_order: int, **kwargs) -> None:
         """
@@ -1351,6 +1793,7 @@ class Text(Plottable):
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_ or a
         `Figure <https://matplotlib.org/stable/api/_as_gen/matplotlib.figure.Figure.html>`.
         """
+        session = _DRAW_SESSION.get()
         size = self._font_size if self._font_size != "same as figure" else None
         params = {
             "color": self._color,
@@ -1362,23 +1805,46 @@ class Text(Plottable):
         }
 
         # Add highlight/background box if highlight_color is specified
-        if self._highlight_color is not None:
+        if self._highlight_color is not None or session is not None:
             bbox_dict = {
                 "boxstyle": f"square,pad={self._highlight_padding}",
-                "facecolor": self._highlight_color,
+                "facecolor": "none"
+                if self._highlight_color is None
+                else self._highlight_color,
                 "edgecolor": "none",
                 "alpha": self._highlight_alpha,
             }
             params["bbox"] = bbox_dict
 
         params = strip_inherit(params)
-        axes.text(
-            self._x,
-            self._y,
-            self._text,
-            zorder=z_order,
-            **params,
-        )
+        if session is not None and isinstance(axes, plt.Axes):
+            target = self._arrow_pointing_to
+            position = self._x, self._y
+            arrow_options: dict[str, Any] = dict(self._arrow_properties)
+            arrow_options["color"] = resolve_or(self._color, plt.rcParams["text.color"])
+            annotation = _LiveTextAnnotation(
+                self._text,
+                position if target is None else target,
+                xytext=position,
+                zorder=z_order,
+                clip_on=False,
+                arrowprops=arrow_options,
+                **params,
+            )
+            annotation.set_transform(axes.transData)
+            if target is None:
+                annotation.arrowprops = None
+                assert annotation.arrow_patch is not None
+                annotation.arrow_patch.set_visible(False)
+            axes.add_artist(annotation)
+            self._bind_live_text(session, annotation)
+            self._bind_live_text_arrow(session, annotation)
+            return
+
+        artist = axes.text(self._x, self._y, self._text, zorder=z_order, **params)
+        if session is not None:
+            self._bind_live_text(session, artist)
+            return
         if self._arrow_pointing_to is not None and isinstance(axes, plt.Axes):
             # Build the arrow properties on a local copy: mutating the instance dict
             # here used to leak an unresolved INHERIT color into it, and the arrow
@@ -1424,22 +1890,22 @@ class Table(Plottable):
         Alignment of the cells' text. Must be one of the following:
         {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
     col_labels : list[str], optional
-        List of labels for the rows of the table. If none are specified, no row labels are displayed.
+        List of column labels. Set both these labels and col_colors to None to omit the column header.
     col_widths : list[float], optional
         Widths to apply to the columns. Must be a list the same length as the number of columns.
     col_align : str
         Alignment of the column labels' text. Must be one of the following:
         {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
-    col_colors : ArrayLike or str, optional
+    col_colors : ArrayLike, str or None, optional
         Colors to apply to the column labels' background. Must be a list of colors the same
         length as the number of columns.
         Default depends on the ``figure_style`` configuration.
     row_labels : list[str], optional
-        List of labels for the rows of the table. If none are specified, no row labels are displayed.
+        List of row labels. Set both these labels and row_colors to None to omit the row header.
     row_align : str
         Alignment of the row labels' text. Must be one of the following:
         {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
-    row_colors : ArrayLike or str, optional
+    row_colors : ArrayLike, str or None, optional
         Colors to apply to the row labels' background. Must be a list of colors the same
         length as the number of rows.
         Default depends on the ``figure_style`` configuration.
@@ -1478,10 +1944,10 @@ class Table(Plottable):
         col_labels: Optional[list[str]] = None,
         col_widths: Optional[list[float]] = None,
         col_align: str | Inherit = INHERIT,
-        col_colors: ArrayLike | str | Inherit = INHERIT,
+        col_colors: ArrayLike | str | None | Inherit = INHERIT,
         row_labels: Optional[list[str]] = None,
         row_align: str | Inherit = INHERIT,
-        row_colors: ArrayLike | str | Inherit = INHERIT,
+        row_colors: ArrayLike | str | None | Inherit = INHERIT,
         edge_width: float | Inherit = INHERIT,
         edge_color: str | Inherit = INHERIT,
         text_color: str | Inherit = INHERIT,
@@ -1507,22 +1973,22 @@ class Table(Plottable):
             Alignment of the cells' text. Must be one of the following:
             {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
         col_labels : list[str], optional
-            List of labels for the rows of the table. If none are specified, no row labels are displayed.
+            List of column labels. Set both these labels and col_colors to None to omit the column header.
         col_widths : list[float], optional
             Widths to apply to the columns. Must be a list the same length as the number of columns.
         col_align : str
             Alignment of the column labels' text. Must be one of the following:
             {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
-        col_colors : ArrayLike or str, optional
+        col_colors : ArrayLike, str or None, optional
             Colors to apply to the column labels' background. Must be a list of colors the same
             length as the number of columns.
             Default depends on the ``figure_style`` configuration
         row_labels : list[str], optional
-            List of labels for the rows of the table. If none are specified, no row labels are displayed.
+            List of row labels. Set both these labels and row_colors to None to omit the row header.
         row_align : str
             Alignment of the row labels' text. Must be one of the following:
             {'left', 'center', 'right'}. Default depends on the ``figure_style`` configuration.
-        row_colors : ArrayLike or str, optional
+        row_colors : ArrayLike, str or None, optional
             Colors to apply to the row labels' background. Must be a list of colors the same
             length as the number of rows.
             Default depends on the ``figure_style`` configuration.
@@ -1574,7 +2040,7 @@ class Table(Plottable):
 
     @cell_text.setter
     def cell_text(self, cell_text: Sequence[Sequence[str]]) -> None:
-        self._cell_text = cell_text
+        self._cell_text = _stage_live_value(self, "_cell_text", cell_text)
 
     @property
     def cell_colors(self) -> Styled[ArrayLike | str]:
@@ -1582,7 +2048,7 @@ class Table(Plottable):
 
     @cell_colors.setter
     def cell_colors(self, cell_colors: Styled[ArrayLike | str]) -> None:
-        self._cell_colors = cell_colors
+        self._cell_colors = _stage_live_value(self, "_cell_colors", cell_colors)
 
     @property
     def cell_align(self) -> Styled[str]:
@@ -1590,7 +2056,7 @@ class Table(Plottable):
 
     @cell_align.setter
     def cell_align(self, cell_align: Styled[str]) -> None:
-        self._cell_align = cell_align
+        self._cell_align = _stage_live_value(self, "_cell_align", cell_align)
 
     @property
     def col_labels(self) -> list[str] | None:
@@ -1598,7 +2064,7 @@ class Table(Plottable):
 
     @col_labels.setter
     def col_labels(self, col_labels: list[str] | None) -> None:
-        self._col_labels = col_labels
+        self._col_labels = _stage_live_value(self, "_col_labels", col_labels)
 
     @property
     def col_widths(self) -> list[float] | None:
@@ -1606,7 +2072,7 @@ class Table(Plottable):
 
     @col_widths.setter
     def col_widths(self, col_widths: list[float] | None) -> None:
-        self._col_widths = col_widths
+        self._col_widths = _stage_live_value(self, "_col_widths", col_widths)
 
     @property
     def col_align(self) -> Styled[str]:
@@ -1614,15 +2080,15 @@ class Table(Plottable):
 
     @col_align.setter
     def col_align(self, col_align: Styled[str]) -> None:
-        self._col_align = col_align
+        self._col_align = _stage_live_value(self, "_col_align", col_align)
 
     @property
-    def col_colors(self) -> Styled[ArrayLike | str]:
+    def col_colors(self) -> Styled[ArrayLike | str | None]:
         return self._col_colors
 
     @col_colors.setter
-    def col_colors(self, col_colors: Styled[ArrayLike | str]) -> None:
-        self._col_colors = col_colors
+    def col_colors(self, col_colors: Styled[ArrayLike | str | None]) -> None:
+        self._col_colors = _stage_live_value(self, "_col_colors", col_colors)
 
     @property
     def row_labels(self) -> list[str] | None:
@@ -1630,7 +2096,7 @@ class Table(Plottable):
 
     @row_labels.setter
     def row_labels(self, row_labels: list[str] | None) -> None:
-        self._row_labels = row_labels
+        self._row_labels = _stage_live_value(self, "_row_labels", row_labels)
 
     @property
     def row_align(self) -> Styled[str]:
@@ -1638,15 +2104,15 @@ class Table(Plottable):
 
     @row_align.setter
     def row_align(self, row_align: Styled[str]) -> None:
-        self._row_align = row_align
+        self._row_align = _stage_live_value(self, "_row_align", row_align)
 
     @property
-    def row_colors(self) -> Styled[ArrayLike | str]:
+    def row_colors(self) -> Styled[ArrayLike | str | None]:
         return self._row_colors
 
     @row_colors.setter
-    def row_colors(self, row_colors: Styled[ArrayLike | str]) -> None:
-        self._row_colors = row_colors
+    def row_colors(self, row_colors: Styled[ArrayLike | str | None]) -> None:
+        self._row_colors = _stage_live_value(self, "_row_colors", row_colors)
 
     @property
     def edge_width(self) -> Styled[float]:
@@ -1654,9 +2120,10 @@ class Table(Plottable):
 
     @edge_width.setter
     def edge_width(self, edge_width: float) -> None:
-        self._edge_width = edge_width
-        for (i, j), cell in self.handle.get_celld().items():
-            cell.set_linewidth(self._edge_width)
+        self._edge_width = _stage_live_value(self, "_edge_width", edge_width)
+        if _bound_session(self) is None:
+            for (i, j), cell in self.handle.get_celld().items():
+                cell.set_linewidth(edge_width)
 
     @property
     def edge_color(self) -> Styled[str]:
@@ -1664,9 +2131,10 @@ class Table(Plottable):
 
     @edge_color.setter
     def edge_color(self, edge_color: str) -> None:
-        self._edge_color = edge_color
-        for (i, j), cell in self.handle.get_celld().items():
-            cell.set_edgecolor(self._edge_color)
+        self._edge_color = _stage_live_value(self, "_edge_color", edge_color)
+        if _bound_session(self) is None:
+            for (i, j), cell in self.handle.get_celld().items():
+                cell.set_edgecolor(edge_color)
 
     @property
     def text_color(self) -> Styled[str]:
@@ -1674,9 +2142,10 @@ class Table(Plottable):
 
     @text_color.setter
     def text_color(self, text_color: str) -> None:
-        self._text_color = text_color
-        for (i, j), cell in self.handle.get_celld().items():
-            cell.set_text_props(color=self._text_color)
+        self._text_color = _stage_live_value(self, "_text_color", text_color)
+        if _bound_session(self) is None:
+            for (i, j), cell in self.handle.get_celld().items():
+                cell.set_text_props(color=self._text_color)
 
     @property
     def scaling(self) -> tuple[float, float]:
@@ -1684,7 +2153,7 @@ class Table(Plottable):
 
     @scaling.setter
     def scaling(self, scaling: tuple[float, float]) -> None:
-        self._scaling = scaling
+        self._scaling = _stage_live_value(self, "_scaling", scaling)
 
     @property
     def location(self) -> str:
@@ -1692,7 +2161,7 @@ class Table(Plottable):
 
     @location.setter
     def location(self, location: str) -> None:
-        self._location = location
+        self._location = _stage_live_value(self, "_location", location)
 
     def copy(self) -> Self:
         """
@@ -1738,12 +2207,230 @@ class Table(Plottable):
             zorder=z_order,
             **params,
         )
+        # Capture the unscaled height for absolute frame-to-frame size assignments.
+        session = _DRAW_SESSION.get()
+        base_height = (
+            next(iter(self.handle.get_celld().values())).get_height()
+            if session is not None
+            else 0
+        )
         self.handle.auto_set_font_size(False)
         self.handle.scale(self._scaling[0], self._scaling[1])
         for (i, j), cell in self.handle.get_celld().items():
             cell.set_text_props(color=resolve_or(self._text_color, "black"))
             cell.set_edgecolor(resolve_or(self._edge_color, "black"))
             cell.set_linewidth(resolve_or(self._edge_width, 1))
+
+        if session is not None:
+            self._bind_table(session, base_height)
+
+    def _bind_table(self, session: _AnimationSession, base_height: float) -> None:
+        table = self.handle
+        cells = table.get_celld()
+        backend_table = cast(Any, table)
+        defaults = {
+            "_cell_colors": resolve_or(self._cell_colors, "white"),
+            "_col_colors": resolve_or(self._col_colors, "#bfbfbf"),
+            "_row_colors": resolve_or(self._row_colors, "#bfbfbf"),
+            "_cell_align": resolve_or(self._cell_align, "right"),
+            "_col_align": resolve_or(self._col_align, "center"),
+            "_row_align": resolve_or(self._row_align, "left"),
+            "_edge_color": resolve_or(self._edge_color, "black"),
+            "_edge_width": resolve_or(self._edge_width, 1),
+            "_text_color": resolve_or(self._text_color, "black"),
+        }
+        offset = int(
+            self._col_labels is not None or defaults["_col_colors"] is not None
+        )
+        # A header changes Matplotlib's row indices. Logical body coordinates
+        # and separate header keys keep the same cell alive through that shift.
+        pool = {(row - offset, column): cell for (row, column), cell in cells.items()}
+        reference_cell = next(iter(cells.values()))
+        initial_font_size = reference_cell.get_fontsize()
+
+        def read(name: str):
+            return resolve_or(getattr(self, name), defaults[name])
+
+        def header(labels, colors, count, name):
+            if labels is None and colors is None:
+                return []
+            text = [""] * count if labels is None else list(labels)
+            palette = (
+                ["white" if colors is None else colors] * count
+                if colors is None or isinstance(colors, str)
+                else list(colors)
+            )
+            if len(text) != count or len(palette) != count:
+                raise InvalidParameterError(
+                    f"Animated Table {name} labels and colors must match the final table dimensions."
+                )
+            return list(zip(text, palette, strict=True))
+
+        def prepare() -> _ArtistEdit:
+            grid = tuple(tuple(row) for row in self._cell_text)
+            rows = len(grid)
+            columns = len(grid[0]) if rows else 0
+            if not columns or any(len(row) != columns for row in grid):
+                raise InvalidParameterError(
+                    "Animated Table cell_text must be a nonempty rectangular grid."
+                )
+            colors = read("_cell_colors")
+            if isinstance(colors, str):
+                colors = [[colors] * columns] * rows
+            elif len(colors) != rows or any(len(row) != columns for row in colors):
+                raise InvalidParameterError(
+                    "Animated Table cell_colors must match the final table dimensions."
+                )
+            row_entries = header(self._row_labels, read("_row_colors"), rows, "row")
+            col_entries = header(
+                self._col_labels, read("_col_colors"), columns, "column"
+            )
+            scale = np.asarray(self._scaling, dtype=float)
+            widths = np.asarray(
+                self._col_widths
+                if self._col_widths is not None
+                else [1 / columns] * columns,
+                dtype=float,
+            )
+            if (
+                scale.shape != (2,)
+                or widths.shape != (columns,)
+                or not np.isfinite(scale).all()
+                or not np.isfinite(widths).all()
+                or (scale <= 0).any()
+                or (widths <= 0).any()
+            ):
+                raise InvalidParameterError(
+                    "Animated Table widths and scales must be finite, positive, and match the table."
+                )
+            widths = widths * scale[0]
+            height = base_height * scale[1]
+            text_color, edge, edge_width = (
+                read("_text_color"),
+                read("_edge_color"),
+                read("_edge_width"),
+            )
+            column_offset = int(bool(col_entries))
+            row_auto = bool(row_entries) and self._row_labels is not None
+            row_width = 1e-15 if row_auto else widths[0]
+            planned: dict[tuple[int, int], Cell] = {}
+            added: dict[tuple[int, int], Cell] = {}
+            edits = []
+
+            def plan(key, text, face, align, width):
+                row, column = key
+                position = (0 if row < 0 else row + column_offset, column)
+                cell = pool.get(key)
+                if cell is None:
+                    cell = Cell((0, 0), width, height, visible_edges=table.edges)
+                    cell.set_fontsize(initial_font_size)
+                    added[key] = cell
+                label = cell.get_text()
+                for artist, property_name, value in (
+                    (cell, "width", width),
+                    (cell, "height", height),
+                    (cell, "facecolor", face),
+                    (cell, "edgecolor", edge),
+                    (cell, "linewidth", edge_width),
+                    (label, "text", text),
+                    (label, "color", text_color),
+                    (label, "horizontalalignment", align),
+                ):
+                    edits.append(
+                        _edit(
+                            getattr(artist, f"set_{property_name}"),
+                            getattr(artist, f"get_{property_name}")(),
+                            value,
+                        )
+                    )
+                planned[position] = cell
+
+            body_align, col_align, row_align = (
+                read("_cell_align"),
+                read("_col_align"),
+                read("_row_align"),
+            )
+            for row, entries in enumerate(grid):
+                for col, text in enumerate(entries):
+                    plan(
+                        (row, col),
+                        text,
+                        colors[row][col],
+                        body_align,
+                        widths[col],
+                    )
+            for col, (text, face) in enumerate(col_entries):
+                plan((-1, col), text, face, col_align, widths[col])
+            for row, (text, face) in enumerate(row_entries):
+                plan((row, -1), text, face, row_align, row_width)
+
+            previous = dict(cells)
+            previous_auto = backend_table._autoColumns.copy()
+
+            def apply_layout() -> None:
+                cells.clear()
+                for position, cell in planned.items():
+                    if cell.get_figure() is None:
+                        table[position] = cell
+                    else:
+                        cells[position] = cell
+                pool.update(added)
+                backend_table._autoColumns[:] = [
+                    col for col in previous_auto if col != -1
+                ]
+                if row_auto:
+                    table.auto_set_column_width(-1)
+                table.stale = True
+
+            def undo_layout() -> None:
+                cells.clear()
+                cells.update(previous)
+                for key in added:
+                    pool.pop(key, None)
+                backend_table._autoColumns[:] = previous_auto
+                table.stale = True
+
+            edits.append(_ArtistEdit(apply_layout, undo_layout))
+            return _combine_edits(edits)
+
+        session.bind_derived(
+            self,
+            (
+                "_cell_text",
+                "_col_labels",
+                "_row_labels",
+                "_col_widths",
+                "_scaling",
+                *defaults,
+            ),
+            prepare,
+        )
+
+        def prepare_location(value: str) -> _ArtistEdit:
+            if value not in table.codes:
+                raise InvalidParameterError(f"Unknown Table location {value!r}.")
+
+            # Matplotlib uses this placement code at draw time and offers no setter.
+            def set_location(code: int) -> None:
+                backend_table._loc = code
+                table.stale = True
+
+            return _edit(set_location, backend_table._loc, table.codes[value])
+
+        session.bind_update(self, "_location", prepare_location)
+
+
+def _artists_from_axes_result(result: Any) -> Iterator[Artist]:
+    if isinstance(result, Artist):
+        yield result
+    elif isinstance(result, Container):
+        yield from result.get_children()
+    elif isinstance(result, Mapping):
+        for value in result.values():
+            yield from _artists_from_axes_result(value)
+    elif isinstance(result, (list, tuple)):
+        for item in result:
+            yield from _artists_from_axes_result(item)
 
 
 class PlottableAxMethod(Plottable):
@@ -1779,30 +2466,51 @@ class PlottableAxMethod(Plottable):
         self.label = label
         self.handle = None
 
+    def set_artist_properties(
+        self, *, index: int | None = None, **properties: Any
+    ) -> Self:
+        """Set properties of existing Matplotlib artists during an animation frame.
+
+        Use the Matplotlib property name, such as ``height``, ``ydata`` or
+        ``facecolor``. Each property needs matching ``get_*`` and ``set_*``
+        methods, and the getter's value must be accepted by the setter for rollback.
+        Use ``index`` to address one artist in each appearance of this plottable.
+        By default the update applies to every artist. Nested lists, tuples,
+        containers, and dictionaries are flattened in their returned order.
+        """
+        session = _bound_session(self)
+        if session is None:
+            raise UnsupportedFeatureError(
+                "Use set_artist_properties in an animation callback for a plotted PlottableAxMethod."
+            )
+        session.queue_axes_method_properties(self, index, properties)
+        return self
+
     def _plot_element(self, axes: plt.Axes, z_order: int, **kwargs) -> None:
         """
         Plots the element in the specified
         `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html>`_.
         """
         try:
-            attrs = getattr(axes, self.meth)(*self.args, zorder=z_order, **self.kwargs)
-            if isinstance(attrs, list) and len(attrs) > 0:
-                self.handle = attrs[0]
-        except TypeError as e:
-            if "zorder" in str(e):
-                try:
-                    attrs = getattr(axes, self.meth)(*self.args, **self.kwargs)
-                    if isinstance(attrs, list) and len(attrs) > 0:
-                        self.handle = attrs[0]
-                except Exception as e2:
-                    raise PlottingError(
-                        f"Failed to call Axes method '{self.meth}' with the provided "
-                        "arguments. Please check that all provided arguments are valid "
-                        "for the given method."
-                    ) from e2
-            else:
+            result = getattr(axes, self.meth)(*self.args, zorder=z_order, **self.kwargs)
+        except TypeError as exc:
+            if "zorder" not in str(exc):
                 raise PlottingError(
                     f"Failed to call Axes method '{self.meth}' with the provided "
-                    "arguments. Please check that all provided arguments are valid for "
-                    "the given method."
-                ) from e
+                    "arguments. Please check that all provided arguments are valid "
+                    "for the given method."
+                ) from exc
+            try:
+                result = getattr(axes, self.meth)(*self.args, **self.kwargs)
+            except Exception as fallback:
+                raise PlottingError(
+                    f"Failed to call Axes method '{self.meth}' with the provided "
+                    "arguments. Please check that all provided arguments are valid "
+                    "for the given method."
+                ) from fallback
+        if isinstance(result, list) and result:
+            self.handle = result[0]
+        session = _DRAW_SESSION.get()
+        if session is not None:
+            artists = tuple(dict.fromkeys(_artists_from_axes_result(result)))
+            session.bind_axes_method(self, artists)

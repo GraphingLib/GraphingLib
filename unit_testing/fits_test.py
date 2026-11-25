@@ -747,3 +747,25 @@ class TestFitFromFOTF(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestRefit(unittest.TestCase):
+    def test_failed_solver_preserves_previous_fit_and_custom_label(self):
+        first = Curve([0, 1, 2], [1, 3, 5])
+        fit = FitFromPolynomial(first, degree=1, label="Generated label")
+        fit.label = "Custom label"
+        previous_function = fit.function
+        previous_covariance = fit.cov_matrix.copy()
+
+        with self.assertRaises(PlottingError):
+            fit.refit(Curve([0, 1], [2, 4]))
+        self.assertIs(fit.curve_to_be_fit, first)
+        self.assertIs(fit.function, previous_function)
+        np.testing.assert_allclose(fit.cov_matrix, previous_covariance)
+        np.testing.assert_allclose(fit.parameters, [1, 2])
+
+        replacement = Scatter([0, 1, 2], [2, 5, 8])
+        self.assertIs(fit.refit(replacement), fit)
+        self.assertIs(fit.curve_to_be_fit, replacement)
+        self.assertEqual(fit.label, "Custom label")
+        np.testing.assert_allclose(fit.parameters, [2, 3])

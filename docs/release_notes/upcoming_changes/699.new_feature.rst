@@ -1,0 +1,8 @@
+Live animations for SmartFigure
+-------------------------------
+
+``SmartFigure.show_animation()`` plays an animation and
+``SmartFigure.save_animation()`` exports it as a GIF or, with FFmpeg, an MP4.
+Supply a callback that updates plot data and styles through the GraphingLib
+API for each frame. This also works with nested and spanning subplots, and
+supports updating curve and scatter error bars.
