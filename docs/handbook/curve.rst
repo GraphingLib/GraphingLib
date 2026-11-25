@@ -51,6 +51,11 @@ Identifying points on a curve
 
 The :class:`~graphinglib.data_plotting_1d.Curve` class includes interpolation methods for creating coordinates and points on a curve at a specific x or y value. The :meth:`~graphinglib.Curve.get_coordinates_at_x` method returns a tuple of coordinates (x, y) representing a point on the curve at a given x value. Similarly, the :meth:`~graphinglib.Curve.get_coordinates_at_y` method returns a list of tuples (since a function can cross a y value at multiple points), each representing the coordinates of a point on the curve at the given y value. Alternatively, the :meth:`~graphinglib.Curve.create_point_at_x` and :meth:`~graphinglib.Curve.create_points_at_y` methods create a :class:`~graphinglib.graph_elements.Point` object or a list of such objects which can then be added to a Figure. Additionally, the :meth:`~graphinglib.Curve.get_intersection_coordinates` and :meth:`~graphinglib.Curve.create_intersection_points` methods, which identify the points of intersection between two curves, also follow this logic.
 
+The two curves can use different sampling grids. Intersection methods search their common x-domain
+using linear interpolation and return isolated intersections from left to right. Each curve's x
+coordinates must be finite and strictly increasing or decreasing. A shared segment has infinitely
+many intersections, so the methods omit the whole segment, including its endpoints.
+
 .. plot::
 
     curve_1 = gl.Curve.from_function(lambda x: 5 * np.sin(x), 0, 10)

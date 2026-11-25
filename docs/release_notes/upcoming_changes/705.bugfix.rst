@@ -1,0 +1,7 @@
+Fix curve intersections on different sampling grids
+---------------------------------------------------
+
+``Curve.get_intersection_coordinates()`` and
+``Curve.create_intersection_points()`` now search the common x-domain using
+both curves' samples. They return isolated intersections once in increasing x
+order and omit intervals where the curves coincide, including their endpoints.

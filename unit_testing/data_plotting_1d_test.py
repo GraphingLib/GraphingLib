@@ -2,7 +2,7 @@ import unittest
 from random import random
 
 from graphinglib import INHERIT
-from graphinglib.exceptions import IncompatibleArgumentsError
+from graphinglib.exceptions import IncompatibleArgumentsError, InvalidParameterError
 from matplotlib.collections import PathCollection
 from matplotlib.colors import to_hex, to_rgba
 from matplotlib.pyplot import close, sca, subplots
@@ -209,6 +209,55 @@ class TestCurve(unittest.TestCase):
             self.assertIsInstance(point, Point)
             self.assertAlmostEqual(point._x, points_x[i], places=3)
             self.assertAlmostEqual(point._y, points_y[i], places=3)
+
+    def test_intersections_use_both_sampling_grids(self):
+        baseline = Curve([0, 2, 4], [0, 0, 0])
+        other = Curve([4, 1, 0], [1, -1, 1])
+        expected = [(0.5, 0.0), (2.5, 0.0)]
+        self.assertEqual(baseline.get_intersection_coordinates(other), expected)
+        self.assertEqual(other.get_intersection_coordinates(baseline), expected)
+
+        points = baseline.create_intersection_points(
+            other, labels=["first"], face_colors=["red"]
+        )
+        self.assertEqual([(p.x, p.y) for p in points], expected)
+        self.assertEqual([p.label for p in points], ["first", None])
+        self.assertEqual([p.face_color for p in points], ["red", INHERIT])
+
+    def test_isolated_intersections_at_samples_and_domain_boundaries(self):
+        for x, y, other_x, other_y, expected in (
+            ([0, 1, 2], [-1, 0, 1], [0, 2], [0, 0], [(1.0, 0.0)]),
+            ([0, 1, 2], [1, 0, 1], [0, 2], [0, 0], [(1.0, 0.0)]),
+            ([0, 1], [0, 1], [1, 2], [1, 0], [(1.0, 1.0)]),
+            ([0, 1], [-1, 1], [3, 4], [0, 0], []),
+            ([0, 1], [0, 1], [0.5], [0.5], [(0.5, 0.5)]),
+            ([0, 1], [-1e308, 1e308], [0, 1], [1e308, -1e308], [(0.5, 0.0)]),
+            ([], [], [0, 1], [0, 0], []),
+        ):
+            with self.subTest(x=x, y=y, other_x=other_x, other_y=other_y):
+                curve = Curve(x, y)
+                other = Curve(other_x, other_y)
+                self.assertEqual(curve.get_intersection_coordinates(other), expected)
+                self.assertEqual(other.get_intersection_coordinates(curve), expected)
+
+    def test_coincident_intervals_are_excluded_and_gaps_are_preserved(self):
+        curve = Curve([-2, -1, 0, 1, 2, 3], [-1, 1, 0, 0, 0, 1])
+        baseline = Curve([-2, 0.5, 1.5, 3], [0, 0, 0, 0])
+        self.assertEqual(curve.get_intersection_coordinates(baseline), [(-1.5, 0.0)])
+        self.assertEqual(baseline.get_intersection_coordinates(baseline), [])
+        gap = Curve([0, 1, 2, 3], [-1, float("nan"), float("inf"), 1])
+        self.assertEqual(gap.get_intersection_coordinates(baseline), [])
+
+    def test_intersection_rejects_ambiguous_x_samples(self):
+        baseline = Curve([0, 2], [0, 0])
+        for x in ([0, 2, 1], [0, 0, 1], [0, float("nan"), 1]):
+            with (
+                self.subTest(x=x),
+                self.assertRaisesRegex(
+                    InvalidParameterError, "finite.*strictly monotonic"
+                ),
+            ):
+                Curve(x, [0, 1, 2]).get_intersection_coordinates(baseline)
 
     def test_intersection_points_style_list_shorter_than_points(self):
         # Regression: when a per-point style list is shorter than the number of
