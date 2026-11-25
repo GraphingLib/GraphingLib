@@ -1,5 +1,7 @@
 import unittest
 from os import path
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
 import yaml
@@ -99,42 +101,62 @@ class TestGetStyles(unittest.TestCase):
 
 
 class TestGetDefaultStyle(unittest.TestCase):
-    @patch("yaml.load")
-    @patch("yaml.dump")
-    def test_get_default_style(self, mock_dump, mock_load):
-        mock_load.return_value = {"default_style": "plain"}
-        style = get_default_style()
-        self.assertEqual(style, "plain")
-        mock_load.assert_called_once()
-        mock_dump.assert_not_called()
+    def setUp(self):
+        directory = self.enterContext(TemporaryDirectory())
+        self.enterContext(
+            patch("graphinglib.file_manager.user_config_dir", return_value=directory)
+        )
+        self.config = Path(directory) / "config.yml"
 
-    @patch("yaml.load")
-    @patch("yaml.dump")
-    def test_get_default_style_no_file(self, mock_dump, mock_load):
-        mock_load.side_effect = FileNotFoundError
-        style = get_default_style()
-        self.assertEqual(style, "plain")
-        mock_load.assert_called_once()
-        mock_dump.assert_called_once()
+    def test_get_default_style(self):
+        for style in ("plain", "dark", "matplotlib"):
+            with self.subTest(style=style):
+                contents = f"# my settings\ndefault_style: {style}\n"
+                self.config.write_text(contents)
+                self.assertEqual(get_default_style(), style)
+                self.assertEqual(self.config.read_text(), contents)
 
-    @patch("yaml.load")
-    @patch("yaml.dump")
-    def test_get_default_style_empty_file(self, mock_dump, mock_load):
-        mock_load.return_value = None
-        style = get_default_style()
-        self.assertEqual(style, "plain")
-        self.assertEqual(mock_load.call_count, 2)
-        mock_dump.assert_called_once()
+    def test_get_default_style_no_file(self):
+        self.assertEqual(get_default_style(), "plain")
+        self.assertEqual(
+            yaml.safe_load(self.config.read_text()), {"default_style": "plain"}
+        )
 
-    @patch("yaml.load")
-    @patch("yaml.dump")
-    def test_get_default_style_non_existent_style(self, mock_dump, mock_load):
-        mock_load.return_value = {"default_style": "non_existent_style"}
-        with self.assertWarns(UserWarning):
-            style = get_default_style()
-        self.assertEqual(style, "plain")
-        mock_load.assert_called_once()
-        mock_dump.assert_called_once()
+    def test_get_default_style_empty_file(self):
+        for contents in ("", "# empty\n", "---\n"):
+            with self.subTest(contents=contents):
+                self.config.write_text(contents)
+                self.assertEqual(get_default_style(), "plain")
+                self.assertEqual(
+                    yaml.safe_load(self.config.read_text()), {"default_style": "plain"}
+                )
+
+    def test_get_default_style_non_existent_style(self):
+        self.config.write_text(
+            "default_style: non_existent_style\nother_setting: true\n"
+        )
+        with self.assertWarnsRegex(UserWarning, "does not exist"):
+            self.assertEqual(get_default_style(), "plain")
+        self.assertEqual(
+            yaml.safe_load(self.config.read_text()),
+            {"default_style": "plain", "other_setting": True},
+        )
+
+    def test_get_default_style_preserves_malformed_config(self):
+        for contents in (
+            b"default_style: [\n",
+            b"plain\n",
+            b"[plain]\n",
+            b"null\n",
+            b"default_style: [plain]\n",
+            b"\xff\xfe\x00",
+        ):
+            with self.subTest(contents=contents):
+                self.config.write_bytes(contents)
+                with self.assertWarns(UserWarning) as warning:
+                    self.assertEqual(get_default_style(), "plain")
+                self.assertIn(str(self.config), str(warning.warning))
+                self.assertEqual(self.config.read_bytes(), contents)
 
 
 class TestSetDefaultStyle(unittest.TestCase):
